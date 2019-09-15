@@ -1,0 +1,15 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Project Detail</title>
+{% endblock head %}
+
+{% block body %}
+<project-detail
+  username="{{ user|stringformat:'s' }}"
+  project-id="{{ project.id }}"
+  token="{{ token }}">
+</project-detail>
+{% endblock body %}

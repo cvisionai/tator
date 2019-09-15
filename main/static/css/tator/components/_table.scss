@@ -1,0 +1,25 @@
+.table {
+  table-layout: fixed;
+
+  thead,
+  tbody {
+    border-bottom: 1px solid $color-charcoal--light;
+  }
+
+  td {
+    height: 40px;
+    vertical-align: middle;
+  }
+
+  tr:first-child td {
+    padding-top: 12px;
+  }
+
+  tr:last-child td {
+    padding-bottom: 12px;
+  }
+
+  .btn-small {
+    width: initial;
+  }
+}

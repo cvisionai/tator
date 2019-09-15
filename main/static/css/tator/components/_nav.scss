@@ -1,0 +1,55 @@
+.nav {
+  background-color: $color-charcoal--medium;
+  bottom: 0;
+  box-sizing: border-box;
+  position: fixed;
+  right: 100%;
+  top: 0;
+  transition-duration: .25s;
+  transition-property: transform;
+  width: 316px;
+  z-index: 2;
+  &.is-open {
+    transform: translateX(100%);
+  }
+}
+
+.nav__close {
+  height: 62px;
+  margin-bottom: $spacing-3;
+  margin-left: -$spacing-1; // SVG includes a bit of space around it
+  &:hover,
+  &:focus {
+    color: $color-white;
+  }
+}
+
+.nav__link {
+  color: inherit;
+  padding-bottom: $spacing-2;
+  padding-top: $spacing-2;
+  .nav__primary & {
+    &:hover,
+    &:focus {
+      text-decoration: underline;
+    }
+  }
+  .nav__secondary & {
+    &:hover,
+    &:focus {
+      color: $color-white;
+    }
+  }
+}
+
+.nav__heading {
+  border-bottom: 1px solid $color-charcoal--light;
+}
+
+.nav__shortcut {
+  span {
+    border: 1px solid $color-gray--dark;
+    height: 25px;
+    width: 25px;
+  }
+}

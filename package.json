@@ -1,0 +1,10 @@
+{
+  "name": "tator",
+  "version": "0.0.0",
+  "license": "",
+  "description": "",
+  "dependencies": {
+    "babel-minify": "^0.5.0",
+    "sass": "1.20.3"
+  }
+}

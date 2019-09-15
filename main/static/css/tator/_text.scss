@@ -1,0 +1,102 @@
+.h1,
+.h2,
+.h3 {
+  font-family: 'Cabin', bold;
+}
+
+.h1 {
+  font-size: 30px !important;
+}
+
+.h2 {
+  font-size: 24px !important;
+}
+
+.h3 {
+  font-size: 18px !important;
+}
+
+.f1 {
+  font-size: 16px !important;
+}
+
+.f2 {
+  font-size: 14px !important;
+}
+
+.f3 {
+  font-size: 12px !important;
+}
+
+.lh-expanded {
+  line-height: 1.75;
+}
+
+.lh-default {
+  line-height: 1.5;
+}
+
+.lh-condensed {
+  line-height: 1.25;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-semibold {
+  font-weight: $weight-semibold !important;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.text-white {
+  color: $color-white;
+}
+
+.text-gray {
+  color: $color-gray--light;
+}
+
+.text-red {
+  color: $color-red;
+}
+
+.text-purple {
+  color: $color-purple;
+}
+
+.hover-text-white {
+  &:hover,
+  &:focus {
+    color: $color-white;
+  }
+}
+
+.hover-text-underline {
+  &:hover,
+  &:focus {
+    text-decoration: underline;
+  }
+}
+
+.text-color-code {
+  align-items: center;
+  border-radius: 1px;
+  display: flex;
+  height: 6px;
+  margin-right: $spacing-2;
+  width: 6px;
+}
+
+.css-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

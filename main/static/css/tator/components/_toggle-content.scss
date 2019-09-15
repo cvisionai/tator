@@ -1,0 +1,12 @@
+.toggle-content {
+  display: none;
+}
+
+.toggle-content__trigger {
+  &:hover,
+  &:focus {
+    span {
+      text-decoration: underline;
+    }
+  }
+}

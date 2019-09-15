@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  annotations:
+    metallb.universe.tf/address-pool: my-ip-space
+spec:
+  loadBalancerIP: $LB_IP_ADDRESS
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: nginx
+  type: LoadBalancer

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        accelerator: nogpu
+      containers:
+        - name: nginx
+          image: nginx:1.16
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+            - mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+              name: nginx-conf
+            - mountPath: /ssl
+              readOnly: true
+              name: ssl
+            - mountPath: /data/static
+              name: static-pv-claim
+            - mountPath: /data/media
+              name: media-pv-claim
+            - mountPath: /data/raw
+              name: raw-pv-claim
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+        - name: ssl
+          secret:
+            secretName: tator-secrets
+            items:
+              - key: TATOR_SECRET_SSL_BUNDLE
+                path: CertificateBundle1.pem
+              - key: TATOR_SECRET_SSL_KEY
+                path: tator.key
+        - name: static-pv-claim
+          persistentVolumeClaim:
+            claimName: static-pv-claim
+        - name: media-pv-claim
+          persistentVolumeClaim:
+            claimName: media-pv-claim
+        - name: raw-pv-claim
+          persistentVolumeClaim:
+            claimName: raw-pv-claim
+

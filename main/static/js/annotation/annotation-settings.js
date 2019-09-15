@@ -1,0 +1,145 @@
+class AnnotationSettings extends TatorElement {
+  constructor() {
+    super();
+
+    const div = document.createElement("div");
+    div.setAttribute("class", "annotation__settings d-flex f2");
+    this._shadow.appendChild(div);
+
+    this._capture = document.createElement("media-capture-button");
+    div.appendChild(this._capture);
+
+    this._link = document.createElement("media-link-button");
+    div.appendChild(this._link);
+
+    this._prev = document.createElement("media-prev-button");
+    div.appendChild(this._prev);
+
+    this._next = document.createElement("media-next-button");
+    div.appendChild(this._next);
+
+    this._rate = document.createElement("rate-control");
+    div.appendChild(this._rate);
+
+    this._zoom = document.createElement("zoom-control");
+    div.appendChild(this._zoom);
+
+    this._link.addEventListener("click", () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      let url = window.location.origin + window.location.pathname;
+      url += "?attribute=" + searchParams.get("attribute");
+      url += this._queryParams();
+      const text = document.createElement("textarea");
+      text.textContent = url;
+      text.style.opacity = 0;
+      document.body.appendChild(text);
+      text.select();
+      document.execCommand("copy");
+      document.body.removeChild(text);
+    });
+  }
+
+  static get observedAttributes() {
+    return ["rate", "zoom", "media-id", "project-id"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "rate":
+        if (newValue >= 1) {
+          this._rate.textContent = Math.round(newValue) + "x";
+        } else {
+          this._rate.textContent = Number(newValue).toFixed(2) + "x";
+        }
+        break;
+      case "zoom":
+        this._zoom.setAttribute("zoom", newValue);
+        break;
+      case "media-id":
+        this._setupNav();
+        break;
+      case "project-id":
+        this._setupNav();
+        break;
+    }
+  }
+
+  _setupNav() {
+    const haveMedia = this.hasAttribute("media-id");
+    const haveProject = this.hasAttribute("project-id");
+    if (haveMedia && haveProject) {
+      const projectId = this.getAttribute("project-id");
+      const mediaId = this.getAttribute("media-id");
+      const query = window.location.search + "&operation=adjacent::" + mediaId;
+      fetch("/rest/EntityMedias/" + projectId + query, {
+        method: "GET",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const baseUrl = "/" + projectId + "/annotation/";
+        const searchParams = new URLSearchParams(window.location.search);
+        const media_id = parseInt(mediaId);
+
+        // Only enable next/prev if there is a next/prev
+        if (data.prev == media_id)
+        {
+          this._prev.disabled = true;
+        }
+        else
+        {
+          this._prev.addEventListener("click", () => {
+          let url = baseUrl + data.prev;
+          url += "?" + searchParams.toString();
+          url += this._typeParams();
+          window.location.href = url;
+          });
+        }
+
+        if (data.next == media_id)
+        {
+          this._next.disabled = true;
+        }
+        else
+        {
+          this._next.addEventListener("click", () => {
+            let url = baseUrl + data.next;
+            url += "?" + searchParams.toString();
+            url += this._typeParams();
+            window.location.href = url;
+          });
+        }
+      })
+      .catch(err => console.log("Failed to fetch adjacent media! " + err));
+    }
+  }
+
+  _typeParams() {
+    let params = "";
+    if (this.hasAttribute("type-id")) {
+      params += "&selected_type=" + this.getAttribute("type-id");
+    }
+    return params;
+  }
+
+  _queryParams() {
+    let params = "";
+    if (this.hasAttribute("entity-id")) {
+      params += "&selected_entity=" + this.getAttribute("entity-id");
+    }
+    if (this.hasAttribute("entity-type")) {
+      params += "&selected_entity_type=" + this.getAttribute("entity-type");
+    }
+    params += this._typeParams();
+    if (this.hasAttribute("frame")) {
+      params += "&frame=" + this.getAttribute("frame");
+    }
+    return params;
+  }
+}
+
+customElements.define("annotation-settings", AnnotationSettings);

@@ -1,0 +1,30 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Login</title>
+{% endblock head %}
+
+{% block body %}
+<main class="layout-max py-4">
+  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-6">
+    <img class="py-4" src="{% static 'images/cvision_horizontal.png' %}">
+    <h1 class="h1">Log in to continue to Tator</h1>
+  </div>
+  <form class="new-project__form rounded-2" style="width:400px" method="post">
+    <div class="py-3 px-6">
+      {% csrf_token %}
+      <label class="d-flex flex-column py-2 text-semibold">
+        <input class="form-control" name="username" id="id_username" placeholder="Username" autofocus required>
+      </label>
+      <label class="d-flex flex-column py-2 text-semibold">
+        <input class="form-control" name="password" id="id_password" placeholder="Password" type="password" required>
+      </label>
+    </div>
+    <div class="modal__footer d-flex">
+      <input class="btn btn-clear" type="submit" value="Continue">
+    </div>
+  </form>
+</main>
+{% endblock body %}

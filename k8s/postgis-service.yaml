@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgis-svc
+spec:
+  selector:
+    app: postgis
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

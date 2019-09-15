@@ -1,0 +1,333 @@
+.annotation__header {
+  flex-grow: 1;
+}
+
+.annotation__breadcrumbs {
+  button {
+    margin-left: $spacing-3;
+    justify-content: space-between;
+    width: 146px;
+  }
+}
+
+.annotation__setting {
+  background-color: $color-charcoal--light;
+  margin-left: $spacing-2;
+  height: 32px;
+
+  &:disabled,
+  [disabled] {
+    background-color: $color-charcoal--light;
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
+}
+
+.annotation__shape {
+  background-color: $color-charcoal--medium;
+  margin-bottom: $spacing-2;
+  &.is-selected {
+    color: $color-white;
+  }
+
+  &:disabled,
+  [disabled] {
+    background-color: $color-charcoal--light;
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
+
+  svg {
+    height: 22px;
+    width: 22px;
+  }
+}
+
+.annotation__shape-indicator {
+  background-color: $color-purple;
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+  height: 30px;
+  left: 0;
+  position: absolute;
+  top: 28px;
+  width: 4px;
+  transition-duration: .25s;
+  transition-property: transform;
+
+  box-button.is-selected + line-button + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+    transform: translateY(62px);
+  }
+
+  line-button.is-selected + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+    transform: translateY(124px);
+  }
+
+  point-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
+    transform: translateY(186px);
+  }
+
+  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+    transform: translateY(248px);
+  }
+
+  pan-button.is-selected + & {
+    transform: translateY(372px);
+  }
+}
+
+.annotation__panels {
+  flex-shrink: 0;
+  width: 334px;
+}
+
+.annotation__panel {
+  background-color: $color-charcoal--medium;
+  margin-bottom: $spacing-3;
+  overflow: hidden;
+}
+
+save-dialog {
+  box-sizing: border-box;
+  width: 334px;
+  opacity: 0;
+  overflow: initial;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(.95);
+  transition-duration: .25s;
+  transition-property: transform, opacity;
+  z-index: 2;
+  &.is-open {
+    opacity: 1;
+    pointer-events: initial;
+    transform: scale(1);
+  }
+}
+
+.annotation__panel-group {
+  border-top: 1px solid $color-charcoal--light;
+  padding-bottom: $spacing-3;
+
+  button {
+    justify-content: space-between;
+    width: (8 / 12 * 100%); // Same as col-8
+  }
+}
+
+.annotation__entities {
+  max-height: calc(100vh - 207px);
+  overflow-y: auto;
+  li {
+    attribute-panel {
+      display: none;
+      background-color: $color-charcoal--dark;
+    }
+    &.is-open,
+    &:hover {
+      background-color: $color-charcoal--light;
+    }
+    &.is-open {
+      .annotation__frame-player {
+        display: grid;
+      }
+      attribute-panel {
+        display: block;
+      }
+    }
+    &:last-child {
+      margin-bottom: $spacing-3;
+    }
+  }
+}
+
+.entity__selector {
+  &.is-open,
+  &:hover {
+    background-color: $color-charcoal--light;
+
+    .annotation__entity-count {
+      opacity: 1;
+    }
+  }
+}
+
+.annotation__entity {
+  height: 45px;
+}
+
+.annotation__entity-count {
+  background-image: linear-gradient(to right, rgba($color-charcoal--light, 0%), $color-charcoal--light 15%); // Safari bug on transparent
+  opacity: 0;
+  position: absolute;
+  right: 0;
+}
+
+.entity__button {
+  background-color: $color-charcoal--medium;
+  transition-duration: .25s;
+  transition-property: background-color, color;
+  &:hover,
+  &:focus {
+    background-color: $color-white;
+    color: $color-charcoal--medium;
+  }
+}
+
+.annotation__frame-player {
+  display: none;
+  grid-gap: $spacing-2;
+  grid-template-columns: min-content auto;
+  padding-bottom: $spacing-4;
+
+  button {
+    &:hover,
+    &:focus {
+      color: $color-gray--dark;
+    }
+  }
+}
+
+.annotation__recents {
+  flex-wrap: wrap;
+
+  button {
+    margin-bottom: $spacing-2;
+    margin-right: $spacing-2;
+    width: initial;
+  }
+}
+
+.annotation__video-player {
+  flex-grow: 1;
+  overflow: hidden;
+  margin-bottom: $spacing-3;
+  margin-top: $spacing-3;
+  &.is-full-screen {
+    margin-right: $spacing-3;
+
+    & + .annotation__panels {
+      display: none;
+    }
+
+    .video__maximize {
+      display: none;
+    }
+
+    .video__minimize {
+      display: block;
+    }
+  }
+}
+
+.video__minimize {
+  display: none;
+}
+
+annotation-player {
+  width: 100%;
+}
+
+video-canvas {
+  width: 100%;
+}
+
+.video {
+  min-width: 720px;
+  width: 100%;
+  background: black;
+}
+
+.video__controls {
+  background-color: $color-charcoal--medium;
+  height: 76px;
+}
+
+.video__rewind,
+.video__fast-forward {
+  &:hover,
+  &:focus {
+    color: $color-purple;
+  }
+}
+
+.video__play-wrap {
+  background-color: $color-charcoal--light;
+  height: 36px;
+  width: 36px;
+  &:hover,
+  &:focus {
+    background-color: $color-purple;
+  }
+
+  .video__play {
+    padding-left: 2px; // Optically center play button
+  }
+
+  &.is-paused {
+    .video__play {
+      display: none;
+    }
+    .video__pause {
+      display: block;
+    }
+  }
+}
+
+.video__pause {
+  display: none;
+}
+
+.select-crosshair {
+    cursor: crosshair;
+}
+
+.select-pointer {
+    cursor: pointer;
+}
+
+.select-grabbing {
+    cursor: grabbing;
+}
+
+.select-grab {
+    cursor: grab;
+}
+
+.select-move {
+    cursor: move;
+}
+.select-vertical-resize
+{
+    cursor: ns-resize;
+}
+
+.select-horizontal-resize
+{
+    cursor: ew-resize;
+}
+
+.select-ne-resize
+{
+    cursor: ne-resize;
+}
+
+.select-se-resize
+{
+    cursor: se-resize;
+}
+
+.select-nw-resize
+{
+    cursor: nw-resize;
+}
+
+.select-sw-resize
+{
+    cursor: sw-resize;
+}
+
+.select-zoom-roi
+{
+    cursor: zoom-in;
+}

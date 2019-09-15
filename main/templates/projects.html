@@ -1,0 +1,13 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Project Dashboard</title>
+{% endblock head %}
+
+{% block body %}
+<projects-dashboard
+  username="{{ user|stringformat:'s' }}">
+</projects-dashboard>
+{% endblock body %}

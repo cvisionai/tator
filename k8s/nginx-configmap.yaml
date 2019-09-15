@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    worker_processes 5;
+
+    events {
+      worker_connections 4096;
+    }
+
+    http {
+      include mime.types;
+      server_names_hash_bucket_size 128;
+
+      server {
+        listen 80;
+        server_name $TATOR_DOMAIN;
+        ssl_certificate /ssl/CertificateBundle1.pem;
+        ssl_certificate_key /ssl/tator.key;
+        return 301 https://$TATOR_DOMAIN$request_uri;
+      }
+
+      server {
+        listen 443 ssl;
+
+        server_name $TATOR_DOMAIN;
+
+        ssl_certificate /ssl/CertificateBundle1.pem;
+        ssl_certificate_key /ssl/tator.key;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        client_max_body_size 0;
+
+        location /favicon.ico {
+          alias /data/static/images/favicon.ico;
+          add_header Cache-Control "max-age=3600, must-revalidate";
+        }
+        location /static {
+          alias /data/static/;
+          autoindex off;
+          add_header Cache-Control "max-age=0, must-revalidate";
+        }
+        location /media {
+          alias /data/media/;
+          autoindex off;
+          add_header Cache-Control "max-age=3600, must-revalidate";
+        }
+        location /data/raw {
+          alias /data/raw;
+          autoindex off;
+          add_header Cache-Control "max-age=3600, must-revalidate";
+        }
+        location /files/ {
+          proxy_redirect https://$hostname/ https://$TATOR_DOMAIN/;
+          proxy_request_buffering off;
+          proxy_buffering off;
+          proxy_http_version 1.1;
+          proxy_set_header Tus-Version 1.0.0;
+          proxy_set_header Tus-Resumable 1.0.0;
+          proxy_set_header X-Forwarded-Host $host;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_pass http://tusd-svc:1080/files/;
+        }
+        location /ws {
+          proxy_pass http://daphne-svc:8001;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+
+          proxy_redirect off;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Host $server_name;
+        }
+        location / {
+          proxy_pass http://gunicorn-svc:8000;
+
+          proxy_redirect off;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Host $server_name;
+          proxy_set_header X-Forwarded-Proto https;
+          add_header Cache-Control "max-age=0, must-revalidate";
+        }
+
+        # Allow POST on static pages
+        error_page 405 =200 $uri;
+      }
+    }

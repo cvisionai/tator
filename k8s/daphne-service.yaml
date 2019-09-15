@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: daphne-svc
+  labels:
+    app: daphne
+spec:
+  ports:
+    - port: 8001
+      protocol: TCP
+      targetPort: 8001
+      name: daphne-port
+  selector:
+    app: daphne
+    type: web
+  type: NodePort
