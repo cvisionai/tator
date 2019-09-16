@@ -24,16 +24,13 @@ export LB_IP_RANGE_STOP=192.168.1.224
 source ~/.bashrc
 ```
 
+## Update your domain to access the load balancer
+
+Tator will be accessed via the LB_IP_ADDRESS defined in your bashrc. If you are using Tator locally, simply update your domain to point to this IP address. If you are setting up a website, you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
+
 ## Building Tator
 
-* Make sure git is installed and clone the repo:
-
-```
-sudo apt-get install git
-git clone https://github.com/cvisionai/Tator.git
-cd tator
-```
-
+* Navigate to where you cloned this repository.
 * Update submodules
 
 ```
@@ -45,6 +42,19 @@ git submodule update --init
 ```
 sudo apt-get install python3-pip
 pip3 install mako
+```
+
+* Install node
+
+```
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install nodejs
+```
+
+* Install npm packages
+
+```
+npm install
 ```
 
 * Install Tator
@@ -63,7 +73,29 @@ It will take a little while for all the services, pods, and volumes to come up. 
 make status
 ```
 
-* Open the site. Open your browser and navigate to mydomain.duckdns.org (or whatever your domain is).
+* Open the site. Open your browser and navigate to mydomain.duckdns.org (or whatever your domain is). If you get a login page, congrats! You have completed the Tator build process.
 
-## Tator make commands
+## Setting up a root user
 
+Before you can log in, you will need to create a root user account.
+
+* Use the following command to get a bash shell in the gunicorn pod:
+
+```
+make gunicorn-bash
+```
+
+* Use manage.py to create a super user:
+
+```
+python3 manage.py createsuperuser
+```
+
+* Follow the prompts to create a login.
+* Try logging in at the login screen.
+
+## Tator admin console
+
+The admin console is the primary means of configuring Tator users and projects. It can be accessed at the /admin URI (mydomain.duckdns.org/admin).
+
+Use the admin console to configure your user account, projects, media types, annotations, and attributes.

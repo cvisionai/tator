@@ -15,6 +15,7 @@ EOF
 apt-get update
 apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
 sysctl net.bridge.bridge-nf-call-iptables=1
+exit
 sudo iptables -P FORWARD ACCEPT
 ```
 
@@ -39,8 +40,10 @@ The master node is where the Kubernetes cluster is administered.
 * Initialize the master node:
 
 ```
-sudo kubeadm init --apiserver-advertise-address=192.168.1.180 --pod-network-cidr=10.100.0.0/21
+sudo kubeadm init --apiserver-advertise-address=<MASTER_NODE_IP_ADDRESS> --pod-network-cidr=10.100.0.0/21
 ```
+
+Replace the master node ip address with the IP address of your machine. You may change the pod network CIDR to something else if you want. It will take a little while for kubeadm to initialize the master node.
 
 * Configure kubectl to run without sudo:
 
@@ -62,13 +65,23 @@ sudo KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubus
 kubectl taint nodes --all node-role.kubernetes.io/master-
 ```
 
+This is required on a single node deployment.
+
 * Label the master node as a CPU node:
 
 ```
-kubectl label nodes rkn accelerator=nogpu
+kubectl label nodes <MASTER_NODE_NAME> accelerator=nogpu
 ```
 
-* Install the nvidia device plugin
+You can use:
+
+```
+kubectl get nodes
+```
+
+to determine your node name(s).
+
+* Install the nvidia device plugin (only required if you have GPU nodes)
 
 ```
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta/nvidia-device-plugin.yml
