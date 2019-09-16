@@ -3,7 +3,7 @@
 #Need to turn on ltree extension first
 python3 manage.py migrate django_ltree
 
-python3 manage.py makemigrations --no-input
+python3 manage.py makemigrations main --no-input
 ret=$?
 echo "return of manage.py == $?"
 # THis returns 3 if it needs user input
