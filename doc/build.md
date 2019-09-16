@@ -73,6 +73,12 @@ It will take a little while for all the services, pods, and volumes to come up. 
 make status
 ```
 
+* Once all pods show the status "Ready" use the following command to copy over static files:
+
+```
+make collect-static
+```
+
 * Open the site. Open your browser and navigate to mydomain.duckdns.org (or whatever your domain is). If you get a login page, congrats! You have completed the Tator build process.
 
 ## Setting up a root user
