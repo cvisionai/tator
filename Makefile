@@ -42,6 +42,7 @@ valid_secrets:
 
 .PHONY: production_check
 production_check:
+	chmod +x scripts/production_check.sh
 	@./scripts/production_check.sh
 
 # Update target (after a fetch/rebase)
@@ -262,6 +263,7 @@ main/version.py:
 	chmod +x main/version.py
 
 update-nfs: min-css min-js main/version.py production_check
+	chmod +x scripts/updateNfs.sh
 	scripts/updateNfs.sh
 
 collect-static: update-nfs
