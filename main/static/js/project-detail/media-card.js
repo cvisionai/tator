@@ -166,22 +166,26 @@ class MediaCard extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "thumb":
-        this._img.setAttribute("src", newValue);
-        this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
-        this._thumb = newValue;
+        if (this._thumb != newValue) {
+          this._img.setAttribute("src", newValue);
+          this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
+          this._thumb = newValue;
+        }
         break;
       case "thumb-gif":
-        this._thumbGif = newValue;
-        this._li.addEventListener("mouseenter", () => {
-          if (this.hasAttribute("thumb-gif")) {
-            this._img.setAttribute("src", this.getAttribute("thumb-gif"));
-          }
-        });
-        this._li.addEventListener("mouseleave", () => {
-          if (this.hasAttribute("thumb")) {
-            this._img.setAttribute("src", this.getAttribute("thumb"));
-          }
-        });
+        if (this._thumbGif != newValue) {
+          this._thumbGif = newValue;
+          this._li.addEventListener("mouseenter", () => {
+            if (this.hasAttribute("thumb-gif")) {
+              this._img.setAttribute("src", this.getAttribute("thumb-gif"));
+            }
+          });
+          this._li.addEventListener("mouseleave", () => {
+            if (this.hasAttribute("thumb")) {
+              this._img.setAttribute("src", this.getAttribute("thumb"));
+            }
+          });
+        }
         break;
       case "name":
         const dot = Math.max(0, newValue.lastIndexOf(".") || Infinity);
