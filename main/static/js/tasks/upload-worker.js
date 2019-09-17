@@ -9,6 +9,9 @@ importScripts("/static/js/md5.min.js");
 // Import uuid.
 importScripts("/static/js/node-uuid.js");
 
+// Import fetch retry.
+importScripts("/static/js/util/fetch-retry.js");
+
 // UID for this service worker.
 const serviceWorkerId = uuidv1();
 console.log("This service worker's UID: " + serviceWorkerId);
@@ -38,7 +41,7 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
-    fetch("/rest/UploadProgress/" + msg.projectId, {
+    fetchRetry("/rest/UploadProgress/" + msg.projectId, {
       method: "POST",
       headers: {
         "Authorization": "Token " + msg.token,
@@ -77,7 +80,7 @@ self.addEventListener("message", async msgEvent => {
       if (typeof record !== "undefined") {
         const index = uploadBuffer.indexOf(record);
         uploadBuffer.splice(index);
-        fetch("/rest/UploadProgress/" + record.projectId, {
+        fetchRetry("/rest/UploadProgress/" + record.projectId, {
           method: "POST",
           headers: {
             "Authorization": "Token " + record.token,
@@ -185,10 +188,10 @@ class Upload {
       },
       onSuccess: () => {
         // REST call initiating transcode.
-        fetch("/rest/Transcode/" + projectId, {
+        fetchRetry("/rest/Transcode/" + this.projectId, {
           method: "POST",
           headers: {
-            "Authorization": "Token " + token,
+            "Authorization": "Token " + this.token,
             "Accept": "application/json",
             "Content-Type": "application/json"
           },
@@ -214,7 +217,7 @@ class Upload {
 
   // Sends progress messages.
   progress(state, msg, pct) {
-    fetch("/rest/UploadProgress/" + this.projectId, {
+    fetchRetry("/rest/UploadProgress/" + this.projectId, {
       method: "POST",
       headers: {
         "Authorization": "Token " + this.token,
@@ -255,7 +258,7 @@ class Upload {
         }
       } else {
         this.md5 = spark.end();
-        fetch(
+        fetchRetry(
             "/rest/EntityMedias/" + this.projectId + "?format=json&type=" + 
             this.mediaTypeId + "&md5=" + this.md5)
           .then(response => response.json())
