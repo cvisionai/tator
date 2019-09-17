@@ -70,7 +70,11 @@ class TatorPage extends TatorElement {
 
         // Get the serviceworker.
         window._serviceWorker = registration.active;
-        window._serviceWorker.postMessage({command: "wake"});
+
+        // Send a wake command to the service worker every second.
+        window.setInterval(() => {
+          window._serviceWorker.postMessage({command: "wake"});
+        }, 1000);
       };
 
       // Set up listener for number of ongoing uploads.
