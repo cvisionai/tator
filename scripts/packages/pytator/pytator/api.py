@@ -1,6 +1,5 @@
 import json
 import math
-import mimetypes
 import requests
 import time
 import os
@@ -114,7 +113,6 @@ class Media(APIElement):
                                 'url': uploader.url,
                                 'name': fname,
                                 'section': section,
-                                'mimetype': mimetypes.guess_type(fname)[0],
                                 'md5': md5,
         })
         try:

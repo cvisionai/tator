@@ -1649,7 +1649,6 @@ class TranscodeTestCase(
             'url': 'http://asdf.com',
             'name': 'asdf.mp4',
             'section': 'asdf section',
-            'mimetype': 'video/mp4',
             'md5': '',
         }
         self.edit_permission = Permission.CAN_EXECUTE

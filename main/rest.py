@@ -2087,10 +2087,6 @@ class TranscodeAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='Name of the file used to create the database record after transcode.')),
-        coreapi.Field(name='mimetype',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Mimetype of the file.')),
         coreapi.Field(name='md5',
                       required=True,
                       location='body',
@@ -2122,9 +2118,6 @@ class TranscodeAPI(APIView):
             if 'name' not in reqObject:
                 raise Exception('Missing required name for uploaded video')
 
-            if 'mimetype' not in reqObject:
-                raise Exception('Missing mimetype for uploaded video')
-
             if 'md5' not in reqObject:
                 raise Exception('Missing md5 for uploaded video')
 
@@ -2145,7 +2138,6 @@ class TranscodeAPI(APIView):
                     'url': reqObject['url'],
                     'section': reqObject['section'],
                     'name': reqObject['name'],
-                    'mime_type': reqObject['mimetype'],
                     'md5': reqObject['md5'],
                 },
                 updated = datetime.datetime.now(datetime.timezone.utc),

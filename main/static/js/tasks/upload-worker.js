@@ -200,7 +200,6 @@ class Upload {
             url: this.tus.url,
             section: this.section,
             name: this.tus.file.name,
-            mimetype: this.tus.file.type,
             md5: this.md5,
           }),
           credentials: "omit",

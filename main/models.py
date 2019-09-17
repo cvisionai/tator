@@ -176,7 +176,6 @@ class EntityTypeBase(PolymorphicModel):
 
 class EntityTypeMediaBase(EntityTypeBase):
     uploadable = BooleanField()
-    mime_type = CharField(max_length=32)
 
 class EntityTypeMediaImage(EntityTypeMediaBase):
     entity_name = 'Image'

@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import requests
-import mimetypes
 import logging
 import tempfile
 import zipfile
@@ -319,8 +318,7 @@ def run_transcoder(content):
         thumb_path = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.jpg')
         upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
         if os.path.exists(upload_path):
-            ext = mimetypes.guess_extension(content['mime_type'])
-            media_path = os.path.join(settings.MEDIA_ROOT, media_uid + ext)
+            media_path = os.path.join(settings.MEDIA_ROOT, media_uid + '.mp4')
             raw_path = os.path.join(settings.RAW_ROOT, os.path.basename(media_path))
         else:
             fail_msg = "Failed to create media, unknown upload path {}"
