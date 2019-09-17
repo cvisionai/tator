@@ -420,7 +420,7 @@ def run_transcoder(content):
                     # Run the segmenter script
                     segment_name=f"{media_uid}_segments.json"
                     output_file=os.path.join(settings.MEDIA_ROOT,segment_name)
-                    cmd=["/scripts/makeFragmentInfo.py","-o",
+                    cmd=["python3", "/scripts/makeFragmentInfo.py","-o",
                          output_file, media_obj.file.path]
                     proc = subprocess.Popen(
                         cmd,
