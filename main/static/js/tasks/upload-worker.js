@@ -37,7 +37,6 @@ const emitMessage = msg => {
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
   if (msg.command == "addUpload") {
-    console.log("Received upload request for file " + msg.file.name);
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
@@ -158,7 +157,6 @@ class Upload {
 
     // Create a tus upload.
     this.tus_ep = self.location.origin + "/files/";
-    console.log("Uploading to endpoint " + this.tus_ep)
     this.tus = new tus.Upload(this.file, {
       endpoint: this.tus_ep,
       retryDelays: [0, 3000, 5000, 10000, 20000],
@@ -266,7 +264,6 @@ class Upload {
             if (json.length === 0) {
               this.tus.start();
             } else {
-              console.log("File has already been uploaded!");
               removeFromActive(this.upload_uid);
               this.progress("failed", "Already uploaded!", 0);
             }
