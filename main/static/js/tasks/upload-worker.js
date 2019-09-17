@@ -38,7 +38,7 @@ self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
   if (msg.command == "addUpload") {
     console.log("Received upload request for file " + msg.file.name);
-    const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username);
+    const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
     fetchRetry("/rest/UploadProgress/" + msg.projectId, {
@@ -136,7 +136,7 @@ class Upload {
     // Fingerprint function for TUS client.
     this.uploadUid = function(uname) {
       return function(file, options) {
-        return SparkMD5.hash(file.name + file.type + uname);
+        return SparkMD5.hash(file.name + file.type + uname + file.size);
       };
     }(uploadData.username);
 
