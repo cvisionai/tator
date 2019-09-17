@@ -57,9 +57,7 @@ self.addEventListener("message", async msgEvent => {
       }),
       credentials: "omit",
     })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(err => console.log("Error while broadcasting progress:" + err));
+    .catch(err => console.error("Error while broadcasting progress:" + err));
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
@@ -98,9 +96,7 @@ self.addEventListener("message", async msgEvent => {
           }),
           credentials: "omit",
         })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(err => console.log("Error attempting while broadcasting progress:" + err));
+        .catch(err => console.error("Error attempting while broadcasting progress:" + err));
       }
     }
   }
@@ -189,7 +185,6 @@ class Upload {
       },
       onSuccess: () => {
         // REST call initiating transcode.
-        console.log("Completed upload!");
         fetch("/rest/Transcode/" + projectId, {
           method: "POST",
           headers: {
@@ -209,9 +204,7 @@ class Upload {
           }),
           credentials: "omit",
         })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(err => console.log("Error attempting to initiate transcode:" + err));
+        .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
         this.progress("started", "Uploaded...", 50);
       }
@@ -240,9 +233,7 @@ class Upload {
       }),
       credentials: "omit",
     })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(err => console.log("Error attempting while broadcasting progress:" + err));
+    .catch(err => console.error("Error attempting while broadcasting progress:" + err));
   }
 
   // Calculates md5 hash.
@@ -269,7 +260,6 @@ class Upload {
             this.mediaTypeId + "&md5=" + this.md5)
           .then(response => response.json())
           .then(json => {
-            console.log("Matching media entities: " + JSON.stringify(json));
             if (json.length === 0) {
               this.tus.start();
             } else {
@@ -281,7 +271,7 @@ class Upload {
       }
     };
     reader.onerror = error => {
-      console.log("Error processing MD5");
+      console.error("Error processing MD5");
       removeFromActive(this.upload_uid);
       this.progress("failed", error, 0);
     };
