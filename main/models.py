@@ -51,7 +51,7 @@ class Depth(Transform):
 
 PathField.register_lookup(Depth)
 
-FileFormat= [('mp4','mp4'), ('webm','webm')]
+FileFormat= [('mp4','mp4'), ('webm','webm'), ('mov', 'mov')]
 ImageFileFormat= [('jpg','jpg'), ('png','png'), ('bmp', 'bmp'), ('raw', 'raw')]
 
 ## Describes different association models in the database
