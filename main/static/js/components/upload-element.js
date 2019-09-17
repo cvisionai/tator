@@ -62,7 +62,13 @@ class UploadElement extends TatorElement {
         // the same extension, in which case we might be uploading to the
         // wrong media type.
         const mediaType = this._mediaTypes[idx];
-        if (ext.toLowerCase() === mediaType.file_format.toLowerCase()) {
+        let fileOk;
+        if (mediaType.file_format === null) {
+          fileOk = true;
+        } else {
+          fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
+        }
+        if (fileOk) {
           messages.push({
             "command": "addUpload",
             "file": file,
