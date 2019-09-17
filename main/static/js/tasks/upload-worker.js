@@ -36,7 +36,7 @@ self.addEventListener("message", async msgEvent => {
   if (msg.command == "addUpload") {
     console.log("Received upload request for file " + msg.file.name);
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username);
-    uploadBuffer.push({...msg, uid: upload_uid});
+    uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
     fetch("/rest/UploadProgress/" + msg.projectId, {
       method: "POST",
@@ -116,15 +116,7 @@ function startUpload() {
     const upload = uploadBuffer.shift();
     if (!(upload.uid in activeUploads)) {
       // Start the upload.
-      activeUploads[upload.uid] = new Upload(
-        upload.file,
-        upload.projectId,
-        upload.gid,
-        upload.section,
-        upload.mediaTypeId,
-        upload.username,
-        upload.token,
-      );
+      activeUploads[upload.uid] = new Upload(upload);
       activeUploads[upload.uid].computeMd5();
     }
   }
@@ -141,28 +133,29 @@ function removeFromActive(uid) {
 // Manages an upload.
 class Upload {
 
-  constructor(file, projectId, gid, section, mediaTypeId, username, token) {
+  constructor(uploadData) {
     // Fingerprint function for TUS client.
     this.uploadUid = function(uname) {
       return function(file, options) {
         return SparkMD5.hash(file.name + file.type + uname);
       };
-    }(username);
+    }(uploadData.username);
 
     this.start_time = Date.now();
-    this.file = file;
-    this.projectId = projectId;
-    this.gid = gid;
-    this.section = section;
-    this.mediaTypeId = mediaTypeId;
-    this.username = username;
-    this.token = token;
-    this.upload_uid = this.uploadUid(file, null);
+    this.file = uploadData.file;
+    this.projectId = uploadData.projectId;
+    this.gid = uploadData.gid;
+    this.section = uploadData.section;
+    this.mediaTypeId = uploadData.mediaTypeId;
+    this.username = uploadData.username;
+    this.token = uploadData.token;
+    this.upload_uid = this.uploadUid(uploadData.file, null);
+    this.uploadData = uploadData;
     this.aborted = false;
 
     // Create a list item with progress bar.
     this.md5 = "";
-    this.fname = file.name;
+    this.fname = uploadData.file.name;
 
     // Create a tus upload.
     this.tus_ep = self.location.origin + "/files/";
@@ -186,7 +179,13 @@ class Upload {
       onError: error => {
         console.log("Error during upload: " + error);
         removeFromActive(this.upload_uid);
-        this.progress("failed", error, 100);
+        this.uploadData.retries++;
+        if (this.uploadData.retries > 2) {
+          this.progress("failed", error, 100);
+        } else {
+          uploadBuffer.push(this.uploadData);
+          startUpload();
+        }
       },
       onSuccess: () => {
         // REST call initiating transcode.
