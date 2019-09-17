@@ -386,13 +386,14 @@ def run_transcoder(content):
                          "-g", "25",
                          "-preset", "fast",
                          "-pix_fmt", "yuv420p",
+                         "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
                          "-movflags",
                          "faststart+frag_keyframe+empty_moov+default_base_moof",
                          "-tune", "fastdecode"]
 
                     if needs_transcode[1]:
                         #Resize to 720p
-                        cmd.extend(["-vf", "scale=-1:720"])
+                        cmd.extend(["-vf", "scale=-2:720"])
 
                     cmd.append("{}".format(f.name))
                     log.info('ffmpeg cmd = {}'.format(cmd))
