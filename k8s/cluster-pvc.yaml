@@ -161,6 +161,38 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
+  name: backup-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: default
+    name: backup-pv-claim
+  mountOptions:
+    - nolock
+    - nfsvers=3
+  nfs:
+    server: ${NFS_SERVER}
+    path: "/media/kubernetes_share/backup"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: backup-pv-claim
+  labels:
+    app: backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
   name: dev-pv
 spec:
   capacity:
