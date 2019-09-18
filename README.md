@@ -8,6 +8,12 @@ Introduction
 
 Tator is maintained and supported by [CVision AI](www.cvisionai.com).
 
+![projects](https://user-images.githubusercontent.com/7937658/65167417-83f95c00-da10-11e9-83aa-eec9db99c730.png)
+
+![project-detail](https://user-images.githubusercontent.com/7937658/65167420-865bb600-da10-11e9-86b0-2e5d64a12885.png)
+
+![annotation](https://user-images.githubusercontent.com/7937658/65167423-878ce300-da10-11e9-88e8-8c8926f45c6b.png)
+
 Getting started
 ===============
 
