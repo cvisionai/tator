@@ -57,13 +57,21 @@ reset:
 
 # Create backup with pg_dump
 backup:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S").sql;
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S").sql;
 
 # Restore database from specified backup (base filename only)
 # Example:
+#   make clean
+#   make cluster-pvc
+#   make postgis
 #   make restore SQL_FILE=backup_to_use.sql
-restore:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -f /backup/$(SQL_FILE)
+#   make cluster
+restore: check_restore
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -C -U django -d tator_online /backup/$(SQL_FILE) --jobs 8
+
+.PHONY: check_restore
+check_restore:
+	@echo -n "This will replace database contents. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
