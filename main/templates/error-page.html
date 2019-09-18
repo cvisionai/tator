@@ -1,11 +1,14 @@
+{% load static %}
+{% load settings_value %}
 <html lang="en">
     <head>
         <title>{{ msg }}</title>
         <meta charset="UTF-8" />
         <link rel="stylesheet" type="text/css"
               href="/static/css/tator/tator.min.css" />
+        <script src={% static "js/utilities.js" %}></script>
     </head>
-    <body>
+    <body onload="Utilities.errorPageFunction( {{ code }} );">
         <h1 class="h1">{{ msg }}</h1>
     </body>
 </html>

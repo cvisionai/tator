@@ -413,7 +413,9 @@ FILES = \
     annotation/annotation-data.js \
     annotation/annotation-page.js \
     annotation/seek-bar.js \
-    third_party/autocomplete.js
+    third_party/autocomplete.js \
+    utilities.js
+
 JSDIR = main/static/js
 OUTDIR = main/static/js/tator
 
