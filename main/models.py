@@ -189,8 +189,11 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
 class EntityTypeMediaVideo(EntityTypeMediaBase):
     entity_name = 'Video'
     dtype = 'video'
-    file_format = CharField(max_length=3, null=True,
-                            choices=FileFormat, default=FileFormat[0][0])
+    file_format = CharField(max_length=3,
+                            null=True,
+                            blank=True,
+                            choices=FileFormat,
+                            default=FileFormat[0][0])
     keep_original = BooleanField()
 
 class EntityTypeLocalizationBase(EntityTypeBase):
