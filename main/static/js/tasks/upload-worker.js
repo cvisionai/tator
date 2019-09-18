@@ -68,7 +68,6 @@ self.addEventListener("message", async msgEvent => {
     console.log("Responding with " + numUploads + " uploads.");
     emitMessage({msg: "numUploads", count: numUploads});
   } else if (msg.command == "wake") {
-    console.log("Received wake request...");
     startUpload();
   } else if (msg.command == "cancelUpload") {
     if (msg.uid in activeUploads) {
