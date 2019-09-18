@@ -15,6 +15,8 @@ from django.conf import settings
 import logging
 
 import slack
+import sys
+import traceback
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -83,8 +85,13 @@ def ErrorNotifierView(request, code,message,details=None):
         msg += f" ({request.user}/{request.user.id})"
         msg += f" caused {code} at {request.get_full_path()}"
         client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
-        client.chat_postMessage(channel=settings.TATOR_SLACK_CHANNEL,
-                                text=msg)
+        if details:
+            client.files_upload(channels=settings.TATOR_SLACK_CHANNEL,
+                                content=msg + '\n' + details,
+                                title=msg)
+        else:
+            client.chat_postMessage(channel=settings.TATOR_SLACK_CHANNEL,
+                                    text=msg)
 
     return response
 
@@ -93,4 +100,9 @@ def NotFoundView(request, exception=None):
 def PermissionErrorView(request, exception=None):
     return ErrorNotifierView(request, 403, "Permission Denied")
 def ServerErrorView(request, exception=None):
-    return ErrorNotifierView(request, 500, "Server Error")
+    e_type, value, tb = sys.exc_info()
+    error_trace=traceback.format_exception(e_type,value,tb)
+    return ErrorNotifierView(request,
+                             500,
+                             "Server Error",
+                             ''.join(error_trace))
