@@ -72,7 +72,7 @@ class VideoBufferDemux
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
-    this._numBuffers = 20;
+    this._numBuffers = 30;
     if (bufferSize)
     {
       this._bufferSize = bufferSize;
