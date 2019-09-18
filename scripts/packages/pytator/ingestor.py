@@ -348,10 +348,6 @@ def ingestMedia(args):
     parser.add_argument("--extension",
                         default="mp4",
                         help="video file extension")
-    parser.add_argument("--skipWait",
-                        default=True,
-                        action="store_true",
-                        help="Skip waiting for transcode")
     parser.add_argument("--section",
                         help="Section to apply to uploaded media")
     parser.add_argument("--parallel",
@@ -394,22 +390,22 @@ def ingestMedia(args):
                                     redirect_stderr=True)
 
         in_process=[]
-        for fname in filesToProcess:
+        for fname in bar(filesToProcess):
             # Delete in process elements first
             for md5 in in_process:
                     media_element=medias.byMd5(md5)
                     if media_element:
                         in_process.remove(md5)
-            print(f"In process = {in_process}")
             while len(in_process) >= args.parallel:
                 for md5 in in_process:
                     media_element=medias.byMd5(md5)
                     if media_element:
                         in_process.remove(md5)
                 print("Waiting for transcodes...")
+                print(f"In process = {in_process}")
                 time.sleep(2.5);
 
-            md5=importFile(os.path.join(args.directory, fname), True)
+            md5=importFile(os.path.join(args.directory, fname), False)
             in_process.append(md5)
     else:
         importFile(args.file, True)
