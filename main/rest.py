@@ -332,7 +332,7 @@ def annotate_attribute(qs, attr_type):
 
 def ids_by_attribute(qs, attr_name):
     field = 'attributes__' + attr_name
-    out = qs.values(field).order_by(field).annotate(ids=ArrayAgg('id'))
+    out = qs.values(field).order_by(field).annotate(ids=ArrayAgg('id', ordering='name'))
     return {item[field]:item['ids'] for item in out}
 
 def count_by_attribute(qs, attr_name):
