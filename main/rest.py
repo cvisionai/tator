@@ -7,6 +7,7 @@ from django.db.models import When
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models import Q
+from django.conf import settings
 
 import datetime
 from dateutil.parser import parse as dateutil_parse
@@ -119,6 +120,7 @@ import logging
 import time
 import traceback
 from uuid import uuid1
+import slack
 
 logger = logging.getLogger(__name__)
 
@@ -2600,3 +2602,39 @@ class AnalysisAPI(ListCreateAPIView):
         project_id = self.kwargs['project']
         qs = AnalysisBase.objects.filter(project__id=project_id)
         return qs
+
+class NotifyAPI(APIView):
+    """
+    Send a notification to administrators
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='message',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A message to send to administrators')),
+    ])
+    def post(self, request, format=None, **kwargs):
+        response=Response({'message' : str("Not Found")},
+                              status=status.HTTP_404_NOT_FOUND)
+        try:
+            reqObject=request.data
+
+            if 'message' not in reqObject:
+                raise Exception("Missing 'message' argument.")
+
+            if settings.TATOR_SLACK_TOKEN and settings.TATOR_SLACK_CHANNEL:
+                client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
+                slack_response=client.chat_postMessage(
+                    channel=settings.TATOR_SLACK_CHANNEL,
+                    text=reqObject['message'])
+                if slack_response["ok"]:
+                    response=Response({'message' : "Processed"},
+                                      status=status.HTTP_200_OK)
+                else:
+                    response=Response({'message': "Not Processed"},
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response
