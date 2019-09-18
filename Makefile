@@ -55,6 +55,16 @@ reset:
 	make $(foreach container, $(CONTAINERS), $(container)-reset)
 	kubectl delete jobs --all
 
+# Create backup with pg_dump
+backup:
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S").sql;
+
+# Restore database from specified backup (base filename only)
+# Example:
+#   make restore SQL_FILE=backup_to_use.sql
+restore:
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -f /backup/$(SQL_FILE)
+
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
 
