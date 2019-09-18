@@ -21,3 +21,7 @@ urlpatterns = [
     path('', include('main.urls')),
     path('admin/', admin.site.urls),
 ]
+
+handler404 = 'main.views.NotFoundView'
+handler403 = 'main.views.PermissionErrorView'
+handler500 = 'main.views.ServerErrorView'

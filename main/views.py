@@ -1,5 +1,6 @@
 from django.views import View
 from django.views.generic.base import TemplateView
+from django.shortcuts import render_to_response
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -61,3 +62,20 @@ class AnnotationView(ProjectBase, TemplateView):
         context['media'] = media
         return context
 
+
+
+def ErrorNotifierView(code,message,details=None):
+    context = {}
+    context['code'] = code
+    context['msg'] = message
+    context['details'] = details
+    response=render_to_response('error-page.html', context)
+    response.status_code = code
+    return response
+
+def NotFoundView(request, exception=None):
+    return ErrorNotifierView(404, "Not Found")
+def PermissionErrorView(request, exception=None):
+    return ErrorNotifierView(403, "Permission Denied")
+def ServerErrorView(request, exception=None):
+    return ErrorNotifierView(500, "Server Error")
