@@ -76,7 +76,7 @@ RUN pip3 --no-cache-dir install \
         django-rest-polymorphic coreapi django-extensions pygraphviz \
         pyparsing pydot markdown coreapi-cli channels_redis==2.4.0 redis==3.2.1 \
         daphne==2.2.5 gunicorn django_admin_json_editor django-ltree \
-        requests python-dateutil ujson
+        requests python-dateutil ujson slackclient
 
 # Install kubernetes client
 WORKDIR /working
