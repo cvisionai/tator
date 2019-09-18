@@ -10,7 +10,11 @@ from rest_framework.authtoken.models import Token
 from .models import Project
 from .models import EntityMediaBase
 
+from django.conf import settings
+
 import logging
+
+import slack
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -64,18 +68,29 @@ class AnnotationView(ProjectBase, TemplateView):
 
 
 
-def ErrorNotifierView(code,message,details=None):
+def ErrorNotifierView(request, code,message,details=None):
+
     context = {}
     context['code'] = code
     context['msg'] = message
     context['details'] = details
     response=render_to_response('error-page.html', context)
     response.status_code = code
+
+    # Generate slack message
+    if settings.TATOR_SLACK_TOKEN and settings.TATOR_SLACK_CHANNEL:
+        msg=f"{request.get_host()}:"
+        msg += f" ({request.user}/{request.user.id})"
+        msg += f" caused {code} at {request.get_full_path()}"
+        client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
+        client.chat_postMessage(channel=settings.TATOR_SLACK_CHANNEL,
+                                text=msg)
+
     return response
 
 def NotFoundView(request, exception=None):
-    return ErrorNotifierView(404, "Not Found")
+    return ErrorNotifierView(request, 404, "Not Found")
 def PermissionErrorView(request, exception=None):
-    return ErrorNotifierView(403, "Permission Denied")
+    return ErrorNotifierView(request, 403, "Permission Denied")
 def ServerErrorView(request, exception=None):
-    return ErrorNotifierView(500, "Server Error")
+    return ErrorNotifierView(request, 500, "Server Error")
