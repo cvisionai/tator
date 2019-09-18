@@ -92,7 +92,7 @@ class Media(APIElement):
             return False
 
         tus = TusClient(self.tusURL)
-        chunk_size=128*1024 # 128 Kb
+        chunk_size=1*1024*1024 # 1 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
         num_chunks=math.ceil(uploader.file_size/chunk_size)
         if progressBars:

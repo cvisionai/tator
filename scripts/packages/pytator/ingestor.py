@@ -7,7 +7,7 @@ import os.path
 import sys
 import math
 import progressbar
-
+import time
 import pytator
 
 def useRealTypes(obj):
@@ -349,12 +349,16 @@ def ingestMedia(args):
                         default="mp4",
                         help="video file extension")
     parser.add_argument("--skipWait",
-                        default=False,
+                        default=True,
                         action="store_true",
                         help="Skip waiting for transcode")
     parser.add_argument("--section",
                         help="Section to apply to uploaded media")
-    
+    parser.add_argument("--parallel",
+                        type=int,
+                        default=4,
+                        help="Number of workers use for uploads")
+
     args=parser.parse_args(args)
 
     if args.directory and args.file:
@@ -368,12 +372,13 @@ def ingestMedia(args):
 
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
     medias=tator.Media
+
+
     def importFile(filepath, showProgress):
         md5=pytator.md5sum.md5_sum(filepath)
-        medias.uploadFile(args.typeId, filepath, not args.skipWait, showProgress, md5=md5)
-        if args.section:
-            mediaEl=medias.byMd5(md5)
-            medias.applyAttribute(mediaEl["id"], {"tator_user_sections": args.section})
+        medias.uploadFile(args.typeId, filepath, False, showProgress, md5=md5, section=args.section)
+        return md5
+
     if args.directory:
         filesToProcess=[]
         for root, subdirs, files in os.walk(args.directory):
@@ -387,8 +392,25 @@ def ingestMedia(args):
         bar=progressbar.ProgressBar(prefix='Files',
                                     redirect_stdout=True,
                                     redirect_stderr=True)
-        for fname in bar(filesToProcess):
-            importFile(os.path.join(args.directory, fname), False)
+
+        in_process=[]
+        for fname in filesToProcess:
+            # Delete in process elements first
+            for md5 in in_process:
+                    media_element=medias.byMd5(md5)
+                    if media_element:
+                        in_process.remove(md5)
+            print(f"In process = {in_process}")
+            while len(in_process) >= args.parallel:
+                for md5 in in_process:
+                    media_element=medias.byMd5(md5)
+                    if media_element:
+                        in_process.remove(md5)
+                print("Waiting for transcodes...")
+                time.sleep(2.5);
+
+            md5=importFile(os.path.join(args.directory, fname), True)
+            in_process.append(md5)
     else:
         importFile(args.file, True)
 
