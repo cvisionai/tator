@@ -5,8 +5,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" type="text/css" href={% static "css/tator/tator.min.css" %} />
-    {% settings_value "DEBUG" as settings_debug %}
-    {% if settings_debug %}
+    {% settings_value "USE_MIN_JS" as settings_min_js %}
+    {% if not settings_min_js %}
     <script src={% static "js/reconnecting-websocket.min.js" %}></script>
     <script src={% static "js/node-uuid.js" %}></script>
     <script src={% static "js/util/get-cookie.js" %}></script>

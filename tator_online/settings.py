@@ -27,6 +27,9 @@ SECRET_KEY = os.getenv('TATOR_SECRET_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+# Control whether minified JS is used
+USE_MIN_JS = True
+
 ALLOWED_HOSTS = [
     os.getenv('MAIN_HOST'),
     'localhost',
