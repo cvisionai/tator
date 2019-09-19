@@ -26,6 +26,9 @@ let uploadBuffer = [];
 // Buffer of progress messages.
 let progressBuffer = {};
 
+// Time of last upload added.
+let lastUploadAdded = Date.now();
+
 // Define function for sending message to client.
 const emitMessage = msg => {
   self.clients.matchAll({includeUncontrolled: true})
@@ -59,9 +62,9 @@ self.setInterval(() => {
     }
   }
   progressBuffer = {};
-}, 1000);
+}, 100);
 
-// Define add message to progress buffer.
+// Define function to add message to progress buffer.
 const bufferMessage = (projectId, token, uid, msg) => { 
   const key = [projectId, token].join();
   if (!(key in progressBuffer)) {
@@ -74,9 +77,9 @@ const bufferMessage = (projectId, token, uid, msg) => {
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
   if (msg.command == "addUpload") {
+    lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
-    startUpload();
     bufferMessage(msg.projectId, msg.token, upload_uid, {
       gid: msg.gid,
       uid: upload_uid,
