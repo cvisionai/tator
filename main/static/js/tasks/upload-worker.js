@@ -121,17 +121,20 @@ self.addEventListener("message", async msgEvent => {
 });
 
 // Define function for starting an upload.
-function startUpload() {
-  // Begin uploading the files.
-  const belowMax = Object.keys(activeUploads).length < maxUploads;
-  const haveUploads = uploadBuffer.length > 0;
-  if (belowMax && haveUploads) {
-    // Grab uploads from buffer.
-    const upload = uploadBuffer.shift();
-    if (!(upload.uid in activeUploads)) {
-      // Start the upload.
-      activeUploads[upload.uid] = new Upload(upload);
-      activeUploads[upload.uid].computeMd5();
+async function startUpload() {
+  sinceLastAdd = Date.now() - lastUploadAdded;
+  if (sinceLastAdd > 250) {
+    // Begin uploading the files.
+    const belowMax = Object.keys(activeUploads).length < maxUploads;
+    const haveUploads = uploadBuffer.length > 0;
+    if (belowMax && haveUploads) {
+      // Grab uploads from buffer.
+      const upload = uploadBuffer.shift();
+      if (!(upload.uid in activeUploads)) {
+        // Start the upload.
+        activeUploads[upload.uid] = new Upload(upload);
+        activeUploads[upload.uid].computeMd5();
+      }
     }
   }
 }
