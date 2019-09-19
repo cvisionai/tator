@@ -23,6 +23,9 @@ const maxUploads = 1;
 // Buffer of uploads.
 let uploadBuffer = [];
 
+// Buffer of progress messages.
+let progressBuffer = {};
+
 // Define function for sending message to client.
 const emitMessage = msg => {
   self.clients.matchAll({includeUncontrolled: true})
@@ -33,6 +36,40 @@ const emitMessage = msg => {
   });
 };
 
+// Set up periodic function to send progress messages.
+self.setInterval(() => {
+  const maxMessages = 1000;
+  for (const key in progressBuffer) {
+    const [projectId, token] = key.split(",");
+    const messages = Object.values(progressBuffer[key]);
+    let start = 0;
+    while (start < messages.length) {
+      fetchRetry("/rest/UploadProgress/" + projectId, {
+        method: "POST",
+        headers: {
+          "Authorization": "Token " + token,
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(messages.slice(start, start + maxMessages)),
+        credentials: "omit",
+      })
+      .catch(err => console.error("Error while broadcasting progress:" + err));
+      start += maxMessages;
+    }
+  }
+  progressBuffer = {};
+}, 1000);
+
+// Define add message to progress buffer.
+const bufferMessage = (projectId, token, uid, msg) => { 
+  const key = [projectId, token].join();
+  if (!(key in progressBuffer)) {
+    progressBuffer[key] = {};
+  }
+  progressBuffer[key][uid] = msg;
+}
+
 // Add an event listener that saves the upload info in the buffer.
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
@@ -40,26 +77,16 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
-    fetchRetry("/rest/UploadProgress/" + msg.projectId, {
-      method: "POST",
-      headers: {
-        "Authorization": "Token " + msg.token,
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        gid: msg.gid,
-        uid: upload_uid,
-        swid: serviceWorkerId,
-        section: msg.section,
-        name: msg.file.name,
-        state: "queued",
-        message: "Queued...",
-        progress: 0,
-      }),
-      credentials: "omit",
-    })
-    .catch(err => console.error("Error while broadcasting progress:" + err));
+    bufferMessage(msg.projectId, msg.token, upload_uid, {
+      gid: msg.gid,
+      uid: upload_uid,
+      swid: serviceWorkerId,
+      section: msg.section,
+      name: msg.file.name,
+      state: "queued",
+      message: "Queued...",
+      progress: 0,
+    });
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
@@ -78,26 +105,16 @@ self.addEventListener("message", async msgEvent => {
       if (typeof record !== "undefined") {
         const index = uploadBuffer.indexOf(record);
         uploadBuffer.splice(index);
-        fetchRetry("/rest/UploadProgress/" + record.projectId, {
-          method: "POST",
-          headers: {
-            "Authorization": "Token " + record.token,
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            gid: record.gid,
-            uid: record.uid,
-            swid: serviceWorkerId,
-            section: record.section,
-            name: record.file.name,
-            state: "failed",
-            message: "Aborted!",
-            progress: 100,
-          }),
-          credentials: "omit",
-        })
-        .catch(err => console.error("Error attempting while broadcasting progress:" + err));
+        bufferMessage(record.projectId, record.token, record.uid, {
+          gid: record.gid,
+          uid: record.uid,
+          swid: serviceWorkerId,
+          section: record.section,
+          name: record.file.name,
+          state: "failed",
+          message: "Aborted!",
+          progress: 100,
+        });
       }
     }
   }
@@ -213,26 +230,16 @@ class Upload {
 
   // Sends progress messages.
   progress(state, msg, pct) {
-    fetchRetry("/rest/UploadProgress/" + this.projectId, {
-      method: "POST",
-      headers: {
-        "Authorization": "Token " + this.token,
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        gid: this.gid,
-        uid: this.upload_uid,
-        swid: serviceWorkerId,
-        section: this.section,
-        name: this.fname,
-        state: state,
-        message: msg,
-        progress: pct,
-      }),
-      credentials: "omit",
-    })
-    .catch(err => console.error("Error attempting while broadcasting progress:" + err));
+    bufferMessage(this.projectId, this.token, this.upload_uid, {
+      gid: this.gid,
+      uid: this.upload_uid,
+      swid: serviceWorkerId,
+      section: this.section,
+      name: this.fname,
+      state: state,
+      message: msg,
+      progress: pct,
+    });
   }
 
   // Calculates md5 hash.
