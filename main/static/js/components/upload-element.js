@@ -44,6 +44,9 @@ class UploadElement extends TatorElement {
     // Prevent browser default behavior.
     ev.preventDefault();
 
+    // Send immediate notification of adding files.
+    this.dispatchEvent(new Event("addingfiles", {composed: true}));
+
     // Messages to send to service worker.
     let messages = [];
 
@@ -116,7 +119,6 @@ class UploadElement extends TatorElement {
     }));
     for (const msg of messages) {
       window._serviceWorker.postMessage(msg);
-      await new Promise(resolve => setTimeout(resolve, 20));
     }
     if (numStarted > 0) {
       this.dispatchEvent(new Event("allset", {composed: true}));
