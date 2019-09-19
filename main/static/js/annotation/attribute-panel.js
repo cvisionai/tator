@@ -65,6 +65,11 @@ class AttributePanel extends TatorElement {
 
         this._div.appendChild(widget);
       }
+      if (column.default)
+      {
+        widget.setValue(column.default);
+      }
+
       widget.addEventListener("change", () => {
         if (this._emitChanges) {
           this.dispatchEvent(new Event("change"));
