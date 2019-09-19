@@ -1949,7 +1949,8 @@ class EntityTypeMediaDetailAPI(APIView):
 
 class UploadProgressAPI(APIView):
     """
-    Broadcast upload progress update.
+    Broadcast upload progress update. Body should be an array of objects each
+    containing the fields documented below.
     """
     schema = AutoSchema(manual_fields=[
         coreapi.Field(name='project',
@@ -1994,56 +1995,56 @@ class UploadProgressAPI(APIView):
         response=Response({})
 
         try:
-            reqObject=request.data;
+            for reqObject in request.data:
 
-            ## Check for required fields first
-            if 'gid' not in reqObject:
-                raise Exception('Missing required uuid for upload group')
+                ## Check for required fields first
+                if 'gid' not in reqObject:
+                    raise Exception('Missing required uuid for upload group')
 
-            if 'uid' not in reqObject:
-                raise Exception('Missing required uuid for upload')
+                if 'uid' not in reqObject:
+                    raise Exception('Missing required uuid for upload')
 
-            if 'swid' not in reqObject:
-                raise Exception('Missing required uuid for service worker')
+                if 'swid' not in reqObject:
+                    raise Exception('Missing required uuid for service worker')
 
-            if 'name' not in reqObject:
-                raise Exception('Missing required name for upload')
+                if 'name' not in reqObject:
+                    raise Exception('Missing required name for upload')
 
-            if 'state' not in reqObject:
-                raise Exception('Missing required state for upload')
+                if 'state' not in reqObject:
+                    raise Exception('Missing required state for upload')
 
-            if 'message' not in reqObject:
-                raise Exception('Missing required message for upload')
+                if 'message' not in reqObject:
+                    raise Exception('Missing required message for upload')
 
-            if 'progress' not in reqObject:
-                raise Exception('Missing required progress for upload')
+                if 'progress' not in reqObject:
+                    raise Exception('Missing required progress for upload')
 
-            if 'section' not in reqObject:
-                raise Exception('Missing required section for upload')
+                if 'section' not in reqObject:
+                    raise Exception('Missing required section for upload')
 
-            aux = {
-                'section': reqObject['section'],
-                'swid': reqObject['swid'],
-                'updated': str(datetime.datetime.now(datetime.timezone.utc)),
-            }
-            prog = ProgressProducer(
-                'upload',
-                self.kwargs['project'],
-                reqObject['gid'],
-                reqObject['uid'],
-                reqObject['name'],
-                self.request.user,
-                aux,
-            )
+                aux = {
+                    'section': reqObject['section'],
+                    'swid': reqObject['swid'],
+                    'updated': str(datetime.datetime.now(datetime.timezone.utc)),
+                }
+                prog = ProgressProducer(
+                    'upload',
+                    self.kwargs['project'],
+                    reqObject['gid'],
+                    reqObject['uid'],
+                    reqObject['name'],
+                    self.request.user,
+                    aux,
+                )
 
-            if reqObject['state'] == 'failed':
-                prog.failed(reqObject['message'])
-            elif reqObject['state'] == 'queued':
-                prog.queued(reqObject['message'])
-            elif reqObject['state'] == 'started':
-                prog.progress(reqObject['message'], float(reqObject['progress']))
-            else:
-                raise Exception(f"Invalid progress state {reqObject['state']}")
+                if reqObject['state'] == 'failed':
+                    prog.failed(reqObject['message'])
+                elif reqObject['state'] == 'queued':
+                    prog.queued(reqObject['message'])
+                elif reqObject['state'] == 'started':
+                    prog.progress(reqObject['message'], float(reqObject['progress']))
+                else:
+                    raise Exception(f"Invalid progress state {reqObject['state']}")
 
             response = Response({'message': "Upload progress sent successfully!"})
 
