@@ -172,9 +172,11 @@ class ProjectDetail extends TatorPage {
       }
     });
 
+    this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     this._newSection.addEventListener("allset", this._allSetCallback.bind(this));
 
+    this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     this._uploadButton.addEventListener("allset", this._allSetCallback.bind(this));
 
@@ -351,6 +353,7 @@ class ProjectDetail extends TatorPage {
     newSection.setAttribute("token", this._uploadButton.getAttribute("token"));
     newSection.mediaIds = mediaIds;
     newSection.algorithms = this._algorithms;
+    newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     newSection.addEventListener("allset", this._allSetCallback.bind(this));
     newSection.addEventListener("remove", this._removeCallback);
@@ -435,6 +438,11 @@ class ProjectDetail extends TatorPage {
       }
     }
   }
+
+  _addingFilesCallback(evt) {
+    this._progress.notify("Adding files...", false);
+    this._leaveConfirmOk = true;
+  };
 
   _filesAddedCallback(evt) {
     const numFiles = evt.detail.numStarted;
