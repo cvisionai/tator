@@ -72,10 +72,10 @@ class Media(APIElement):
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:
             r.raise_for_status()
-        with open(out_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
 
     def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None):
         if md5==None:
