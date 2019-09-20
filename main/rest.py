@@ -388,15 +388,11 @@ def bulk_patch_attributes(new_attrs, qs):
 def paginate(request, queryset):
     start = request.query_params.get('start', None)
     stop = request.query_params.get('stop', None)
-    qs_len = len(queryset)
     qs = queryset
     if start is not None and stop is not None:
         start = int(start)
         stop = int(stop)
-        if stop > qs_len:
-            qs = queryset[start:qs_len]
-        else:
-            qs = queryset[start:stop]
+        qs = queryset[start:stop]
     return qs
 
 class ProjectPermissionBase(BasePermission):
