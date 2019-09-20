@@ -1189,10 +1189,6 @@ def run_algorithm(content):
                     name='TATOR_AUTH_TOKEN',
                     value=token,
                 ),
-                kube_client.V1EnvVar(
-                    name='TATOR_PROJECT_ID',
-                    value=content['project_id'],
-                ),
             ],
             other_mounts=[setup_mount,],
             other_volumes=[setup_volume,]
@@ -1301,10 +1297,6 @@ def run_algorithm(content):
                 kube_client.V1EnvVar(
                     name='TATOR_AUTH_TOKEN',
                     value=token,
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_PROJECT_ID',
-                    value=content['project_id'],
                 ),
             ],
             other_mounts=[teardown_mount,],
