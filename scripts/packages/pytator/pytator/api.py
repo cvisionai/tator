@@ -63,7 +63,7 @@ class Media(APIElement):
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
 
-    def downloadFile(element, out_path):
+    def downloadFile(self, element, out_path):
         #Use streaming mp4 unless original is present
         url=element['url']
         if element['original_url']:
