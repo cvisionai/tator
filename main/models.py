@@ -297,6 +297,9 @@ class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
     frame = PositiveIntegerField(null=True)
+    thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
+                                 null=True,blank=True,
+                                 related_name='thumbnail_image')
 
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
