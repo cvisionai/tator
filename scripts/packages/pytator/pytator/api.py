@@ -16,7 +16,7 @@ from uuid import uuid1
 
 class APIElement:
     def __init__(self, api):
-        self.url = api[0]
+        self.url = api[0].rstrip('/')
         self.token = api[1]
         self.project = api[2]
         self.headers={"Authorization" : "Token {}".format(self.token),
