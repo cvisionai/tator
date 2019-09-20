@@ -116,6 +116,10 @@ class User(AbstractUser):
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
     organization = ForeignKey(Organization, on_delete=PROTECT, null=True, blank=True)
+    last_login = DateTimeField(null=True, blank=True)
+    last_failed_login = DateTimeField(null=True, blank=True)
+    failed_login_count = IntegerField(default=0)
+
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
