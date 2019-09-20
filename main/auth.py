@@ -34,7 +34,6 @@ class TatorAuth(ModelBackend):
             now=datetime.now(timezone.utc)
             last_failed=user.last_failed_login
             since_last_fail=now - last_failed
-            logger.info(f"Time since last fail = {since_last_fail}")
             if since_last_fail <= LOCKOUT_TIME:
                 user.last_failed_login = now
                 user.failed_login_count += 1
