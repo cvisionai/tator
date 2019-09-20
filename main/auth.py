@@ -2,6 +2,7 @@ from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
 
 from .notify import Notify
+import datetime
 
 UserModel = get_user_model()
 
@@ -23,7 +24,15 @@ class TatorAuth(ModelBackend):
             UserModel().set_password(password)
         else:
             if user.check_password(password) and self.user_can_authenticate(user):
+                user.last_login = datetime.datetime.now()
+                user.failed_login_count = 0
+                user.save()
                 return user
             else:
-                msg=f"Bad Login Attempt for {user}/{user.id}"
-                Notify.notify_admin_msg(msg)
+                user.last_failed_login = datetime.datetime.now()
+                user.failed_login_count += 1
+                user.save()
+                if user.failed_login_count >= 3:
+                    msg=f"Bad Login Attempt for {user}/{user.id}"
+                    msg+=f" Attempt count = {user.failed_login_count}"
+                    Notify.notify_admin_msg(msg)
