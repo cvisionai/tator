@@ -249,6 +249,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
 }
 
+AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 TATOR_SLACK_TOKEN = os.getenv('TATOR_SLACK_TOKEN')
