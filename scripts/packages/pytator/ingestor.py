@@ -72,6 +72,10 @@ Example:
     parser.add_argument("--no-normalize",
                         action='store_true',
                         default=False)
+    parser.add_argument("--trackId",
+                        help="Only upload detections with this track ID.")
+    parser.add_argument("--saveIds",
+                        help="If given, save database IDs to this path.")
 
     args=parser.parse_args(args)
 
@@ -156,6 +160,9 @@ def _ingestLocalizationsFromFile(args):
         count=0
         dimsToScale=["h","w","x","y"]
 
+        if args.trackId:
+            detections = [det for det in detections if det["id"] == args.trackId]
+
         for detection in detections:
             count=count+1
             if (count % 100 == 0):
@@ -211,11 +218,16 @@ def _ingestLocalizationsFromFile(args):
 
         # Block up the transport because django drops large POSTs
         blocks=math.ceil(len(detections) / 1000)
+        dbIds = []
         for block in range(blocks):
             startIdx=(1000*block)
             endIdx=(1000*(block+1))
             code, msg = localizations.addMany(detections[startIdx:endIdx])
+            dbIds += msg['id']
             print(f"{code} : {msg}")
+        if args.saveIds:
+            with open(args.saveIds, "w") as idFile:
+                json.dump(dbIds, idFile)
 
 def ingestTracks(args):
     parser = argparse.ArgumentParser(sys.argv[1],
@@ -250,6 +262,10 @@ def ingestTracks(args):
                         help="Map an old attribute to a new attribute (old:new)")
     parser.add_argument("--ignore",nargs="*",
                         help="Ignore an attribute from the json file.")
+    parser.add_argument("--trackId",
+                        help="Only upload a specific track ID.")
+    parser.add_argument("--localizationIds",
+                        help="Path to file containing localization IDs for this track.")
 
     args=parser.parse_args(args)
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
@@ -290,6 +306,8 @@ def ingestTracks(args):
         obj=json.load(data)
         tracks=obj["tracks"]
         count=0
+        if args.trackId:
+            tracks = [track for track in tracks if track["id"] == args.trackId]
         for track in tracks:
             # 0.) Transform the json object to match what the
             # server wants
@@ -301,18 +319,23 @@ def ingestTracks(args):
                 if k in track:
                     del track[k]
 
-            localizationIds=[]
-            mediaIds=set()
-            #1.) Get all the localizations for this track id
-            queryString=f"{args.trackField}::{track[args.trackField]}"
-            localizationLookup={"attribute" : queryString,
-                                "type" : args.localizationTypeId,
-                                "media_id" : mediaId}
+            if args.localizationIds:
+                with open(args.localizationIds, "r") as idFile:
+                    localizationIds = json.load(idFile)
+                mediaIds = [mediaId]
+            else:
+                localizationIds=[]
+                mediaIds=set()
+                #1.) Get all the localizations for this track id
+                queryString=f"{args.trackField}::{track[args.trackField]}"
+                localizationLookup={"attribute" : queryString,
+                                    "type" : args.localizationTypeId,
+                                    "media_id" : mediaId}
 
-            status, localizationsInTrack=localizations.query(localizationLookup)
-            for localization in localizationsInTrack:
-                localizationIds.append(localization["id"])
-                mediaIds.add(localization["media"])
+                status, localizationsInTrack=localizations.query(localizationLookup)
+                for localization in localizationsInTrack:
+                    localizationIds.append(localization["id"])
+                    mediaIds.add(localization["media"])
 
             track=useRealTypes(track)
             if len(mediaIds):
