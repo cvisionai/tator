@@ -32,7 +32,9 @@ class TatorAuth(ModelBackend):
 
         if user.failed_login_count >= LOCKOUT_LIMIT:
             now=datetime.now(timezone.utc)
-            since_last_fail=user.last_failed_login - now
+            last_failed=user.last_failed_login
+            since_last_fail=now - last_failed
+            logger.info(f"Time since last fail = {since_last_fail}")
             if since_last_fail <= LOCKOUT_TIME:
                 user.last_failed_login = now
                 user.failed_login_count += 1
@@ -50,7 +52,7 @@ class TatorAuth(ModelBackend):
                 return
 
         if user.check_password(password) and self.user_can_authenticate(user):
-            user.last_login = datetime.now()
+            user.last_login = datetime.now(timezone.utc)
             if user.failed_login_count >= LOCKOUT_LIMIT:
                 msg = "Login proceeded after lock expiry"
                 msg += f" User={user}/{user.id}"
@@ -59,7 +61,7 @@ class TatorAuth(ModelBackend):
             user.save()
             return user
         else:
-            user.last_failed_login = datetime.now()
+            user.last_failed_login = datetime.now(timezone.utc)
             user.failed_login_count += 1
             user.save()
             if user.failed_login_count >= LOCKOUT_LIMIT:
