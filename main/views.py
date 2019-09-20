@@ -79,7 +79,7 @@ def ErrorNotifierView(request, code,message,details=None):
 
     # Generate slack message
     if Notify.notification_enabled():
-        msg=f"{request.get_host()}:"
+        msg = f"{request.get_host()}:"
         msg += f" ({request.user}/{request.user.id})"
         msg += f" caused {code} at {request.get_full_path()}"
         if details:

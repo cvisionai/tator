@@ -23,4 +23,4 @@ class Notify:
             client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
             client.files_upload(channels=settings.TATOR_SLACK_CHANNEL,
                                 content=content,
-                                title=msg)
+                                title=title)
