@@ -389,7 +389,13 @@ def paginate(request, queryset):
     start = request.query_params.get('start', None)
     stop = request.query_params.get('stop', None)
     qs = queryset
-    if start is not None and stop is not None:
+    if start is None and stop is not None:
+        stop = int(stop)
+        qs = queryset[:stop]
+    elif start is not None and stop is None:
+        start = int(start)
+        qs = queryset[start:]
+    elif start is not None and stop is not None:
         start = int(start)
         stop = int(stop)
         qs = queryset[start:stop]
