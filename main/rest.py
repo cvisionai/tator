@@ -1112,7 +1112,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
 
         queryset = self.filter_by_attribute(queryset)
 
-        queryset = queryset.order_by("id")
+        queryset = queryset.order_by("name")
 
         queryset = paginate(self.request, queryset)
 
