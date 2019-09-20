@@ -1036,7 +1036,6 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 elif 'ids' in self.operation:
                     responseData = {'media_ids': qs.values_list('id', flat=True)}
                 elif 'overview' in self.operation:
-                    ids = list(map(lambda x: x.id, list(qs)))
                     responseData = {
                         'Images': qs.instance_of(EntityMediaImage).count(),
                         'Videos': qs.instance_of(EntityMediaVideo).count(),
