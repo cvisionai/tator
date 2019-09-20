@@ -20,6 +20,7 @@ class Notify:
     def notify_admin_file(title, content):
         """ Send a given file to administrators """
         if Notify.notification_enabled():
+            client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
             client.files_upload(channels=settings.TATOR_SLACK_CHANNEL,
                                 content=content,
                                 title=msg)
