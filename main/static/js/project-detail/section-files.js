@@ -229,6 +229,7 @@ class SectionFiles extends TatorElement {
     console.log("HAVE STOP: " + hasStop);
     if (hasAlgorithms && hasSections && hasProject && hasStart && hasStop) {
       console.log("GOT INTO MAKE CARDS, CARD INFO: " + JSON.stringify(cardInfo));
+      const children = this._main.children;
       for (const [index, media] of cardInfo.entries()) {
         const newCard = index >= children.length;
         let card;

@@ -1,8 +1,5 @@
 importScripts("/static/js/util/fetch-retry.js");
 
-// How much media to fetch at a time for a section.
-const mediaFetchSize = 100;
-
 self.addEventListener("message", async evt => {
   const msg = evt.data;
   if (msg.command == "processUpdate") {
@@ -75,37 +72,41 @@ class SectionData {
     this._start = 0;
 
     // Stop index of current page.
-    this._stop = 0;
+    this._stop = 6;
   }
 
-  fetchMedia() {
+  fetchMedia(doUpdate) {
     // Fetches next batch of data
-    start = this._mediaById.size();
-    stop = start + mediaFetchSize;
-    const url = "/rest/EntityMedias/" + self.projectId +
-      "?start=" + start + "&stop=" + stop;
-    fetchRetry(url, {
-      method: "GET",
-      credentials: "omit",
-      headers: self.headers,
-    })
-    .then(response => response.json())
-    .then(data => {
-      for (const media of data) {
-        this._mediaById.set(media.id, media);
-        this._mediaIds.push(media.id);
-      }
-      if (this._mediaById.size() >= this._numMedia) {
-        this._ready = true;
-      }
-    })
-    .catch(err => console.error("Error retrieving media info: " + err));
+    const start = this._mediaById.size;
+    if (start < this._stop) {
+      const url = "/rest/EntityMedias/" + self.projectId +
+        "?start=" + start + "&stop=" + this._stop;
+      fetchRetry(url, {
+        method: "GET",
+        credentials: "omit",
+        headers: self.headers,
+      })
+      .then(response => response.json())
+      .then(data => {
+        for (const media of data) {
+          this._mediaById.set(media.id, media);
+          this._mediaIds.push(media.id);
+        }
+        if (this._mediaById.size >= this._numMedia) {
+          this._ready = true;
+        }
+        if (doUpdate) {
+          this._emitUpdate();
+        }
+      })
+      .catch(err => console.error("Error retrieving media info: " + err));
+    }
   }
 
   setPage(start, stop) {
     this._start = start;
     this._stop = stop;
-    this._emitUpdate();
+    this.fetchMedia();
   }
 
   updateProcess(process) {
@@ -154,7 +155,9 @@ function setupSections(sectionCounts) {
   });
   self.sections = new Map();
   for (const section in sectionCounts) {
-    self.sections.set(section, new SectionData(section, sectionCounts[section]));
+    const data = new SectionData(section, sectionCounts[section]);
+    self.sections.set(section, data);
+    data.fetchMedia(true);
   }
 }
 
