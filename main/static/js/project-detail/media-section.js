@@ -67,7 +67,7 @@ class MediaSection extends TatorElement {
           this._overview.updateForAllSoft();
         }
         resolve();
-      }, 100));
+      }, 200));
     });
   }
 
@@ -109,10 +109,23 @@ class MediaSection extends TatorElement {
   get overview() {
     return this._overview;
   }
+
+  set numMedia(val) {
+    this._updateNumFiles(val);
+    this._files.numMedia = val;
+  }
+
+  set worker(val) {
+    this._files.worker = val;
+  }
+
+  set cardInfo(val) {
+    this._files.cardInfo = val;
+  }
+
   set mediaIds(val) {
     this._updateNumFiles(val.length);
     this._files.mediaIds = val;
-    this._lastOverviewUpdate = Date.now();
   }
 
   set algorithms(val) {

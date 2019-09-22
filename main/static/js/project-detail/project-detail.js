@@ -2,6 +2,8 @@ class ProjectDetail extends TatorPage {
   constructor() {
     super();
 
+    this._worker = new Worker("/static/js/project-detail/media-worker.js");
+
     const main = document.createElement("main");
     main.setAttribute("class", "layout-max py-4");
     this._shadow.appendChild(main);
@@ -41,7 +43,6 @@ class ProjectDetail extends TatorPage {
     this._search = document.createElement("project-search");
     subheader.appendChild(this._search);
 
-
     this._collaborators = document.createElement("project-collaborators");
     subheader.appendChild(this._collaborators);
 
@@ -67,6 +68,32 @@ class ProjectDetail extends TatorPage {
         evt.preventDefault();
         evt.returnValue = '';
         window.alert("Uploads are in progress. Still leave?");
+      }
+    });
+
+    this._worker.addEventListener("message", evt => {
+      const msg = evt.data;
+      if (msg.command == "setupSections") {
+        console.log("RECEIVED SETUP");
+        // Create the media sections.
+        const maxInitSections = 4;
+        let numSections = 0;
+        const allSections = Object.keys(msg.data);
+        for (const name of allSections) {
+          if (numSections >= maxInitSections) {
+            this._sections.set(name, null);
+          } else {
+            const numMedia = msg.data[name];
+            const projectId = this.getAttribute("project-id");
+            this._createNewSection(name, projectId, numMedia, allSections);
+          }
+          numSections++;
+        }
+        this._updateSectionNames();
+      } else if (msg.command == "updateSection") {
+        console.log("RECEIVED UPDATE SECTION: " + JSON.stringify(msg));
+        const section = this._sections.get(msg.name);
+        section.cardInfo = msg.data;
       }
     });
 
@@ -128,6 +155,10 @@ class ProjectDetail extends TatorPage {
     this._progress.addEventListener("uploadProgress", evt => {
       const msg = evt.detail.message;
       if (msg.project_id == this.getAttribute("project-id")) {
+      }
+      /*
+      const msg = evt.detail.message;
+      if (msg.project_id == this.getAttribute("project-id")) {
         const sections = [...this._shadow.querySelectorAll("media-section")];
         const names = sections.map(elem => elem._sectionName);
         let section;
@@ -140,9 +171,14 @@ class ProjectDetail extends TatorPage {
         }
         updateSection(section, msg, null);
       }
+      */
     });
 
     this._progress.addEventListener("algorithmProgress", evt => {
+      const msg = evt.detail.message;
+      if (msg.project_id == this.getAttribute("project-id")) {
+      }
+      /*
       const msg = evt.detail.message;
       if (msg.project_id != this.getAttribute("project-id"))
       {
@@ -170,6 +206,7 @@ class ProjectDetail extends TatorPage {
         media.state = msg.state;
         updateSection(section, media, mediaId);
       }
+      */
     });
 
     this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
@@ -182,7 +219,7 @@ class ProjectDetail extends TatorPage {
 
     this._loaded = 0;
     this._needScroll = true;
-    this._sections = {};
+    this._sections = new Map();
 
     this._lastQuery = (this._search.value == "" ? null : this._search.value);
     this._search.addEventListener('filterProject',(evt) => {
@@ -248,43 +285,22 @@ class ProjectDetail extends TatorPage {
     }
 
     // Attempt to use the last query if present
-    if (projectFilter == undefined)
-    {
+    if (projectFilter == undefined) {
       projectFilter = this._lastQuery;
     }
     // Get media ids by attribute.
     var url = "/rest/EntityMedias/" + project_id +
         "?operation=attribute_ids::tator_user_sections";
-    if (projectFilter)
-    {
+    if (projectFilter) {
       url += "&search=" + projectFilter;
     }
-    const mediaPromise = fetch(url, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    }).then(response => response.json());
 
-    return new Promise((resolve) => {
     // Get project data then create sections.
-      Promise.all([
-        //getProjectData("EntityMedias"),
-        mediaPromise,
-        getProjectData("Algorithms"),
-      ])
-        .then(([mediaIds, algorithms]) => {
-
-          this._mediaIds = mediaIds;
-          this._algorithms = algorithms;
-          this._algorithmButton.algorithms = algorithms;
-          this._makeSections("tator_user_sections", project_id);
-          resolve();
-        });
-    });
+    return getProjectData("Algorithms")
+      .then(algorithms => {
+        this._algorithms = algorithms;
+        this._algorithmButton.algorithms = algorithms;
+      });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -299,6 +315,11 @@ class ProjectDetail extends TatorPage {
         this._algorithmButton.setAttribute("project-id", newValue);
         this._newSection.setAttribute("project-id", newValue);
         this._updateMedia();
+        this._worker.postMessage({
+          command: "init",
+          projectId: newValue,
+          token: this.getAttribute("token"),
+        });
         break;
       case "token":
         this._uploadButton.setAttribute("token", newValue);
@@ -307,51 +328,39 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _makeSections(key, projectId) {
-
-    // Create the media sections.
-    const names = Object.keys(this._mediaIds);
-    for (const name of names) {
-      this._createNewSection(name, projectId, this._mediaIds[name]);
-    }
-    this._updateSectionNames();
-  }
-
   _updateSections() {
     // Update media sections
     const names = Object.keys(this._sections);
     for (const name of names) {
       var update=[]
-      if (name in this._mediaIds)
-      {
+      if (name in this._mediaIds) {
         update = this._mediaIds[name];
       }
       this._sections[name].mediaIds = update;
-      if (this._lastQuery)
-      {
+      if (this._lastQuery) {
         this._sections[name].overview.updateForSearch(update);
-      }
-      else
-      {
+      } else {
         this._sections[name].overview.updateForAllSoft();
       }
     }
     this._updateSectionNames();
   }
 
-  _createNewSection(sectionName, projectId, mediaIds) {
-    if (sectionName in this._sections)
-    {
+  _createNewSection(sectionName, projectId, numMedia, allSections) {
+    if (sectionName in this._sections) {
       return;
     }
     const newSection = document.createElement("media-section");
-    this._sections[sectionName] = newSection;
+    this._sections.set(sectionName, newSection);
     newSection.setAttribute("project-id", projectId);
     newSection.setAttribute("name", sectionName);
     newSection.setAttribute("id", sectionName);
     newSection.setAttribute("username", this._uploadButton.getAttribute("username"));
     newSection.setAttribute("token", this._uploadButton.getAttribute("token"));
-    newSection.mediaIds = mediaIds;
+    newSection.sections = allSections;
+    newSection.worker = this._worker;
+    //newSection.mediaIds = mediaIds;
+    newSection.numMedia = numMedia;
     newSection.algorithms = this._algorithms;
     newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
@@ -383,9 +392,8 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateSectionNames() {
-    const sections = [...this._shadow.querySelectorAll("media-section")];
-    const names = sections.map(elem => elem._sectionName);
-    for (const section of sections) {
+    const names = this._sections.keys();
+    for (const section in this._sections.values()) {
       section.sections = names;
     }
   }

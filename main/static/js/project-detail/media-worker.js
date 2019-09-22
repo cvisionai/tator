@@ -11,11 +11,14 @@ self.addEventListener("message", async evt => {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
     // Section changed pages
+    const section = self.sections.get(msg.section);
+    section.setPage(msg.start, msg.stop);
   } else if (msg.command == "sectionFilter") {
     // Applies filter to section
   } else if (msg.command == "projectFilter") {
     // Applies filter to whole project
   } else if (msg.command == "init") {
+    console.log("RECEIVED INIT");
     // Sets token, project.
     self.projectId = msg.projectId;
     self.headers = {
@@ -24,7 +27,7 @@ self.addEventListener("message", async evt => {
       "Content-Type": "application/json"
     };
     const url = "/rest/EntityMedias/" + msg.projectId +
-      "?operation=attribute_ids::tator_user_sections";
+      "?operation=attribute_count::tator_user_sections";
     fetchRetry(url, {
       method: "GET",
       credentials: "omit",
@@ -38,6 +41,9 @@ self.addEventListener("message", async evt => {
 
 class SectionData {
   constructor(name, numMedia) {
+    // Section name.
+    this._name = name;
+    
     // Map of UIDs to process objects.
     this._processById = new Map();
 
@@ -106,6 +112,7 @@ class SectionData {
     // Updates an existing process or adds a new one
     this._processById.set(process.uid, process);
     const currentIndex = this._sortedIds.indexOf(process.uid);
+    const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
     if (currentIndex > -1) {
       this._sortedIds.splice(currentIndex, 1);
       this._sortedProgress.splice(currentIndex, 1);
@@ -113,33 +120,45 @@ class SectionData {
     const sortedIndex = findSortedIndex(this._sortedProgress, process.percent);
     this._sortedIds.splice(sortedIndex, 0, process.uid);
     this._sortedProgress.splice(sortedIndex, 0, process.percent);
-    if (sortedIndex > 
+    const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
+    if (currentInRange || sortedInRange) {
+      this._emitUpdate();
+    }
   }
 
   _emitUpdate() {
-    const numProc = this._processById.size();
-    const procIds = this._sortedIds.slice(start, stop);
-    const procs = Array.prototype.from(
+    const numProc = this._processById.size;
+    const procIds = this._sortedIds.slice(this._start, this._stop);
+    const procs = Array.from(
       procIds,
       procId => this._processById.get(procId)
     );
-    const mediaIds = this._mediaIds.slice(numProc, stop);
-    const media = Array.prototype.from(
+    const mediaIds = this._mediaIds.slice(numProc, this._stop);
+    const media = Array.from(
       mediaIds,
       mediaId => this._mediaById.get(mediaId)
     );
-    self.prototype.postMessage(procs.concat(media));
+    self.postMessage({
+      command: "updateSection",
+      name: this._name,
+      data: procs.concat(media),
+    });
   }
 }
 
-setupSections(sectionCounts) {
-  self.sections = [];
+function setupSections(sectionCounts) {
+  console.log("SENDING SETUP MESSAGE");
+  self.postMessage({
+    command: "setupSections",
+    data: sectionCounts,
+  });
+  self.sections = new Map();
   for (const section in sectionCounts) {
-    self.sections.push(new SectionData(section, sectionCounts[section]));
+    self.sections.set(section, new SectionData(section, sectionCounts[section]));
   }
 }
 
-findSortedIndex(arr, val) {
+function findSortedIndex(arr, val) {
   let low = 0;
   let high = arr.length;
   while (low < high) {

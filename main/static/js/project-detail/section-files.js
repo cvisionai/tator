@@ -36,12 +36,6 @@ class SectionFiles extends TatorElement {
 
     this._processes = [];
 
-    this._paginator.addEventListener("change", evt => {
-      this._start = evt.detail.start;
-      this._stop = evt.detail.stop;
-      this._makeCards();
-    });
-
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(new CustomEvent("algorithm", {
         detail: {
@@ -79,7 +73,6 @@ class SectionFiles extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-id":
-        this._makeCards();
         this._upload.setAttribute("project-id", newValue);
         break;
       case "username":
@@ -98,20 +91,41 @@ class SectionFiles extends TatorElement {
     this._mediaFilter = val;
   }
 
+  set numMedia(val) {
+    this._updateNumCards(val);
+  }
+
+  set cardInfo(val) {
+    console.log("GOT CARD INFO IN FILES: " + val);
+    this._makeCards(val);
+  }
+
   set mediaIds(val) {
     this._media = val.map(id => {return {id: id}});
     this._updateNumCards();
   }
 
+  set worker(val) {
+    this._worker = val;
+    this._paginator.addEventListener("change", evt => {
+      this._start = evt.detail.start;
+      this._stop = evt.detail.stop;
+      this._worker.postMessage({
+        command: "sectionPage",
+        section: this.getAttribute("section"),
+        start: evt.detail.start,
+        stop: evt.detail.stop,
+      });
+    });
+  }
+
   set algorithms(val) {
     this._algorithms = val;
     this._more.algorithms = val;
-    this._makeCards();
   }
 
   set sections(val) {
     this._sections = val;
-    this._makeCards();
   }
 
   addMedia(val) {
@@ -149,11 +163,13 @@ class SectionFiles extends TatorElement {
     }
   }
 
-  _updateNumCards() {
+  _updateNumCards(numMedia) {
+    /*
     const processMediaIds = this._processes.map(elem => elem.id);
     const filteredMedia = this._media.filter(elem => !processMediaIds.includes(elem.id));
     this._joined = this._processes.concat(filteredMedia);
-    this._paginator.setAttribute("num-files", this._joined.length);
+    */
+    this._paginator.setAttribute("num-files", numMedia);
   }
 
   _updateCard(card, media) {
@@ -198,56 +214,59 @@ class SectionFiles extends TatorElement {
     card.setAttribute("project-id", this.getAttribute("project-id"));
   }
 
-  _makeCards() {
+  _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
-    const hasMedia = typeof this._media !== "undefined";
+    //const hasMedia = typeof this._media !== "undefined";
     const hasSections = typeof this._sections !== "undefined";
     const hasProject = this.hasAttribute("project-id");
     const hasStart = typeof this._start !== "undefined";
     const hasStop = typeof this._stop !== "undefined";
-    if (hasAlgorithms && hasMedia && hasSections && hasProject && hasStart && hasStop) {
-      const children = this._main.children;
-      const slice = this._joined.slice(this._start, this._stop);
-      const loadPromise = this._loadMedia(slice);
-      loadPromise.then(() => {
-        for (const [index, media] of slice.entries()) {
-          const newCard = index >= children.length;
-          let card;
-          if (newCard) {
-            card = document.createElement("media-card");
-            card.setAttribute("class", "col-6");
-            card.algorithms = this._algorithms;
-            card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
-            card.addEventListener("mouseenter", () => {
-              if (card.hasAttribute("media-id")) {
-                this.dispatchEvent(new CustomEvent("cardMouseover", {
-                  detail: {media: card.media}
-                }));
-              }
-            });
-            card.addEventListener("mouseleave", () => {
-              if (card.hasAttribute("media-id")) {
-                this.dispatchEvent(new Event("cardMouseexit"));
-              }
-            });
-          } else {
-            card = children[index];
-          }
-          this._updateCard(card, media);
-          if (newCard) {
-            this._main.appendChild(card);
-          }
+    console.log("MAKING CARDS...");
+    console.log("HAVE ALGS: " + hasAlgorithms);
+    console.log("HAVE SECTIONS: " + hasSections);
+    console.log("HAVE PROJECT: " + hasProject);
+    console.log("HAVE START: " + hasStart);
+    console.log("HAVE STOP: " + hasStop);
+    if (hasAlgorithms && hasSections && hasProject && hasStart && hasStop) {
+      console.log("GOT INTO MAKE CARDS, CARD INFO: " + JSON.stringify(cardInfo));
+      for (const [index, media] of cardInfo.entries()) {
+        const newCard = index >= children.length;
+        let card;
+        if (newCard) {
+          card = document.createElement("media-card");
+          card.setAttribute("class", "col-6");
+          card.algorithms = this._algorithms;
+          card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
+          card.addEventListener("mouseenter", () => {
+            if (card.hasAttribute("media-id")) {
+              this.dispatchEvent(new CustomEvent("cardMouseover", {
+                detail: {media: card.media}
+              }));
+            }
+          });
+          card.addEventListener("mouseleave", () => {
+            if (card.hasAttribute("media-id")) {
+              this.dispatchEvent(new Event("cardMouseexit"));
+            }
+          });
+        } else {
+          card = children[index];
         }
-        if (children.length > this._stop - this._start) {
-          const len = children.length;
-          for (let idx = len - 1; idx >= this._stop; idx--) {
-            this._main.removeChild(children[idx]);
-          }
+        this._updateCard(card, media);
+        if (newCard) {
+          this._main.appendChild(card);
         }
-      });
+      }
+      if (children.length > this._stop - this._start) {
+        const len = children.length;
+        for (let idx = len - 1; idx >= this._stop; idx--) {
+          this._main.removeChild(children[idx]);
+        }
+      }
     }
   }
 
+  /*
   _loadMedia(slice) {
     const numProcesses = this._processes.length;
     const needsLoad = [];
@@ -286,6 +305,7 @@ class SectionFiles extends TatorElement {
     }
     return promise;
   }
+  */
 
   _checkCardsLoaded() {
     this._loaded += 1;
