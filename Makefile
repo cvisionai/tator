@@ -429,7 +429,7 @@ $(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
 
 
 min-js:
-	if kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from tator_online.settings import DEBUG;import sys;sys.exit(1) if DEBUG else sys.exit(0)'; then 
+	if kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from tator_online.settings import USE_MIN_JS;import sys;sys.exit(0) if USE_MIN_JS else sys.exit(1)'; then 
 	mkdir -p $(OUTDIR)
 	rm $(OUTDIR)/tator.min.js
 	mkdir -p .min_js
