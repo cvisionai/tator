@@ -96,7 +96,6 @@ class SectionPaginator extends TatorElement {
           this._next.style.display = "flex";
           this._expand.style.display = "flex";
         }
-
         break;
     }
   }

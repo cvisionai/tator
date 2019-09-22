@@ -259,47 +259,6 @@ class SectionFiles extends TatorElement {
     }
   }
 
-  /*
-  _loadMedia(slice) {
-    const numProcesses = this._processes.length;
-    const needsLoad = [];
-    const indices = [];
-    for (const [index, media] of slice.entries()) {
-      if (("id" in media) && !("url" in media)) {
-        needsLoad.push(media.id);
-        indices.push(index);
-      }
-    }
-    const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project + "?media_id=" + needsLoad.join();
-    let promise;
-    if (needsLoad.length == 0) {
-      promise = new Promise(resolve => resolve());
-    } else {
-      promise = fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        for (let index = 0; index < needsLoad.length; index++) {
-          const pos = indices[index];
-          const val = data[index];
-          slice[pos] = val;
-          this._joined[pos + this._start] = val;
-          this._media[pos + this._start - numProcesses] = val;
-        }
-      });
-    }
-    return promise;
-  }
-  */
-
   _checkCardsLoaded() {
     this._loaded += 1;
     const cards = [...this._shadow.querySelectorAll("media-card")];
