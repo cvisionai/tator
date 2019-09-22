@@ -50,6 +50,9 @@ class SectionData {
     // Map of media ID to media, sorted by REST API.
     this._mediaById = new Map();
 
+    // List of media IDs.
+    this._mediaIds = [];
+
     // Map of media ID to processed media, populated upon process completion.
     this._processedMediaById = new Map();
 
@@ -84,6 +87,7 @@ class SectionData {
     .then(data => {
       for (const media of data) {
         this._mediaById.set(media.id, media);
+        this._mediaIds.push(media.id);
       }
       if (this._mediaById.size() >= this._numMedia) {
         this._ready = true;
@@ -109,12 +113,22 @@ class SectionData {
     const sortedIndex = findSortedIndex(this._sortedProgress, process.percent);
     this._sortedIds.splice(sortedIndex, 0, process.uid);
     this._sortedProgress.splice(sortedIndex, 0, process.percent);
-    if (sortedIndex
+    if (sortedIndex > 
   }
 
   _emitUpdate() {
     const numProc = this._processById.size();
-    self.prototype.postMessage(
+    const procIds = this._sortedIds.slice(start, stop);
+    const procs = Array.prototype.from(
+      procIds,
+      procId => this._processById.get(procId)
+    );
+    const mediaIds = this._mediaIds.slice(numProc, stop);
+    const media = Array.prototype.from(
+      mediaIds,
+      mediaId => this._mediaById.get(mediaId)
+    );
+    self.prototype.postMessage(procs.concat(media));
   }
 }
 
@@ -138,29 +152,4 @@ findSortedIndex(arr, val) {
   }
   return low;
 }
-      fetchRetry("/rest/UploadProgress/" + projectId, {
-        method: "POST",
-        headers: {
-          "Authorization": "Token " + token,
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(messages.slice(start, start + maxMessages)),
-        credentials: "omit",
-
-    // Get media ids by attribute.
-    var url = 
-    if (projectFilter)
-    {
-      url += "&search=" + projectFilter;
-    }
-    const mediaPromise = fetch(url, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    }).then(response => response.json());
 
