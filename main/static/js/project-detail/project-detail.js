@@ -74,7 +74,6 @@ class ProjectDetail extends TatorPage {
     this._worker.addEventListener("message", evt => {
       const msg = evt.data;
       if (msg.command == "setupSections") {
-        console.log("RECEIVED SETUP");
         // Create the media sections.
         const maxInitSections = 4;
         let numSections = 0;
@@ -91,7 +90,6 @@ class ProjectDetail extends TatorPage {
         }
         this._updateSectionNames();
       } else if (msg.command == "updateSection") {
-        console.log("RECEIVED UPDATE SECTION: " + JSON.stringify(msg));
         const section = this._sections.get(msg.name);
         section.cardInfo = msg.data;
       }

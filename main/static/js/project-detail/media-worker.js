@@ -15,7 +15,6 @@ self.addEventListener("message", async evt => {
   } else if (msg.command == "projectFilter") {
     // Applies filter to whole project
   } else if (msg.command == "init") {
-    console.log("RECEIVED INIT");
     // Sets token, project.
     self.projectId = msg.projectId;
     self.headers = {
@@ -65,9 +64,6 @@ class SectionData {
     // Whether this section is high priority
     this._priority = false;
 
-    // Whether this section has fetched all media
-    this._ready = false;
-
     // Start index of current page.
     this._start = 0;
 
@@ -75,7 +71,7 @@ class SectionData {
     this._stop = 6;
   }
 
-  fetchMedia(doUpdate) {
+  fetchMedia() {
     // Fetches next batch of data
     const start = this._mediaById.size;
     if (start < this._stop) {
@@ -92,14 +88,11 @@ class SectionData {
           this._mediaById.set(media.id, media);
           this._mediaIds.push(media.id);
         }
-        if (this._mediaById.size >= this._numMedia) {
-          this._ready = true;
-        }
-        if (doUpdate) {
-          this._emitUpdate();
-        }
+        this._emitUpdate();
       })
       .catch(err => console.error("Error retrieving media info: " + err));
+    } else {
+      this._emitUpdate();
     }
   }
 
@@ -129,12 +122,14 @@ class SectionData {
 
   _emitUpdate() {
     const numProc = this._processById.size;
-    const procIds = this._sortedIds.slice(this._start, this._stop);
+    const stop = Math.min(numProc, this._stop);
+    const procIds = this._sortedIds.slice(this._start, stop);
     const procs = Array.from(
       procIds,
       procId => this._processById.get(procId)
     );
-    const mediaIds = this._mediaIds.slice(numProc, this._stop);
+    const start = Math.max(numProc, this._start);
+    const mediaIds = this._mediaIds.slice(start, this._stop);
     const media = Array.from(
       mediaIds,
       mediaId => this._mediaById.get(mediaId)
@@ -148,7 +143,6 @@ class SectionData {
 }
 
 function setupSections(sectionCounts) {
-  console.log("SENDING SETUP MESSAGE");
   self.postMessage({
     command: "setupSections",
     data: sectionCounts,
@@ -157,7 +151,6 @@ function setupSections(sectionCounts) {
   for (const section in sectionCounts) {
     const data = new SectionData(section, sectionCounts[section]);
     self.sections.set(section, data);
-    data.fetchMedia(true);
   }
 }
 

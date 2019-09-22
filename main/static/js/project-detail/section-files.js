@@ -96,7 +96,6 @@ class SectionFiles extends TatorElement {
   }
 
   set cardInfo(val) {
-    console.log("GOT CARD INFO IN FILES: " + val);
     this._makeCards(val);
   }
 
@@ -221,14 +220,7 @@ class SectionFiles extends TatorElement {
     const hasProject = this.hasAttribute("project-id");
     const hasStart = typeof this._start !== "undefined";
     const hasStop = typeof this._stop !== "undefined";
-    console.log("MAKING CARDS...");
-    console.log("HAVE ALGS: " + hasAlgorithms);
-    console.log("HAVE SECTIONS: " + hasSections);
-    console.log("HAVE PROJECT: " + hasProject);
-    console.log("HAVE START: " + hasStart);
-    console.log("HAVE STOP: " + hasStop);
     if (hasAlgorithms && hasSections && hasProject && hasStart && hasStop) {
-      console.log("GOT INTO MAKE CARDS, CARD INFO: " + JSON.stringify(cardInfo));
       const children = this._main.children;
       for (const [index, media] of cardInfo.entries()) {
         const newCard = index >= children.length;
