@@ -1675,7 +1675,8 @@ class AnalysisCountTestCase(
         self.analysis = AnalysisCount.objects.create(
             project=self.project,
             name="count_test",
-            data_url='rest/EntityMedias/attribute=enum_test::enum_val1',
+            data_type=self.entity_type,
+            data_filter={'attributes__enum_test': 'enum_val1'},
         )
         self.attribute_type = AttributeTypeEnum.objects.create(
             name='enum_test',
@@ -1688,6 +1689,7 @@ class AnalysisCountTestCase(
             'resourcetype': 'AnalysisCount',
             'project': self.project.pk,
             'name': 'count_create_test',
-            'data_url': 'rest/EntityMedias?attribute=enum_test::enum_val2',
+            'data_type': self.entity_type.pk,
+            'data_filter': {'attributes__enum_test': 'enum_val2'},
         }
         self.edit_permission = Permission.FULL_CONTROL
