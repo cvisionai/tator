@@ -1539,7 +1539,7 @@ class PackageCreateTestCase(
         self.list_uri = 'PackageCreate'
         self.create_json = {
             'package_name': 'asdf',
-            'media_ids': '1,2,3',
+            'media_query': '?media_id=1,2,3',
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
