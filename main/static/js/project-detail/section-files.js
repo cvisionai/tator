@@ -47,19 +47,13 @@ class SectionFiles extends TatorElement {
 
     this._more.addEventListener("download", evt => {
       this.dispatchEvent(new CustomEvent("download", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          annotations: false
-        }
+        detail: {annotations: false}
       }));
     });
 
     this._more.addEventListener("annotations", evt => {
       this.dispatchEvent(new CustomEvent("download", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          annotations: true
-        }
+        detail: {annotations: true}
       }));
     });
 

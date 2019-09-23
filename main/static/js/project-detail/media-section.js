@@ -260,7 +260,7 @@ class MediaSection extends TatorElement {
 
       this._files.addEventListener("download", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/PackageCreate/" + projectId + this._sectionFilter(), {
+        fetch("/rest/PackageCreate/" + projectId, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -270,7 +270,7 @@ class MediaSection extends TatorElement {
           },
           body: JSON.stringify({
             "package_name": this._sectionName,
-            "media_ids": evt.detail.mediaIds,
+            "media_query": this._sectionFilter(),
             "use_originals": true,
             "annotations": evt.detail.annotations,
           }),

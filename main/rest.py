@@ -1056,7 +1056,8 @@ def query_string_to_media_ids(project_id, url):
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
     media_qs = get_media_queryset(project_id, query_params, attribute_filter)
-    media_ids = ','.join(list(media_qs.values_list('id', flat=True)))
+    media_ids = media_qs.values_list('id', flat=True)
+    media_ids = ','.join([str(media_id) for media_id in media_ids])
     return media_ids
 
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
