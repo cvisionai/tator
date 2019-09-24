@@ -78,6 +78,10 @@ class APIElement:
 
         return (response.status_code, response.json())
 
+class MediaType(APIElement):
+    def __init__(self, api):
+         super().__init__(api, "EntityTypeMedias")
+
 class Media(APIElement):
     def __init__(self, api):
         super().__init__(api, "EntityMedias")

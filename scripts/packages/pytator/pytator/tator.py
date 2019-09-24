@@ -8,6 +8,7 @@ class Tator:
     """
     def __init__(self, url, token, project):
         self.Media = apiImpl.Media((url,token,project))
+        self.MediaType = apiImpl.MediaType((url,token,project))
         self.LocalizationType = apiImpl.LocalizationType((url,token,project))
         self.StateType = apiImpl.StateType((url,token,project))
         self.State = apiImpl.State((url,token,project))
