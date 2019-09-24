@@ -1057,8 +1057,7 @@ def query_string_to_media_ids(project_id, url):
     attribute_filter.validate_attribute_filter(query_params)
     media_qs = get_media_queryset(project_id, query_params, attribute_filter)
     media_ids = media_qs.values_list('id', flat=True)
-    media_ids = ','.join([str(media_id) for media_id in media_ids])
-    return media_ids
+    return list(media_ids)
 
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
@@ -2248,6 +2247,7 @@ class PackageCreateAPI(APIView):
 
             project_id = self.kwargs['project']
             media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
+            media_ids = ','.join([str(media_id) for media_id in media_ids])
             package_name = reqObject['package_name']
             package_desc = reqObject.get('package_desc', '')
             use_originals = reqObject.get('use_originals', False)
@@ -2369,7 +2369,7 @@ class AlgorithmLaunchAPI(APIView):
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))
-                media_ids = [str(a) for a in media_ids]
+            media_ids = [str(a) for a in media_ids]
 
             # Create algorithm jobs
             gid = str(uuid1())

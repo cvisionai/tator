@@ -314,23 +314,25 @@ def run_transcoder(content):
         upload_uid = content['url'].split('/')[-1]
         media_uid = str(uuid1())
 
+        # Determine the entity type.
+        is_image = isinstance(media_type, EntityTypeMediaImage)
+        if is_image:
+            entity_type = EntityMediaImage
+            ext = os.path.splitext(content['name'])[1]
+        else:
+            entity_type = EntityMediaVideo
+            ext = '.mp4'
+
         # Get path to file on server and new path in media.
         thumb_path = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.jpg')
         upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
         if os.path.exists(upload_path):
-            media_path = os.path.join(settings.MEDIA_ROOT, media_uid + '.mp4')
+            media_path = os.path.join(settings.MEDIA_ROOT, media_uid + ext)
             raw_path = os.path.join(settings.RAW_ROOT, os.path.basename(media_path))
         else:
             fail_msg = "Failed to create media, unknown upload path {}"
             prog.failed(fail_msg.format(upload_path))
             raise RuntimeError("Failed to create media, unknown upload path {}")
-
-        # Determine the entity type.
-        is_image = isinstance(media_type, EntityTypeMediaImage)
-        if is_image:
-            entity_type = EntityMediaImage
-        else:
-            entity_type = EntityMediaVideo
 
         # Create the media object but don't save it yet.
         media_obj = entity_type(
