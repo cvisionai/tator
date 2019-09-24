@@ -119,6 +119,7 @@ class MediaSection extends TatorElement {
   }
 
   set worker(val) {
+    this._worker = val;
     this._files.worker = val;
   }
 
@@ -308,6 +309,11 @@ class MediaSection extends TatorElement {
           });
           input.addEventListener("blur", evt => {
             if (evt.target.value !== "") {
+              this._worker.postMessage({
+                command: "renameSection",
+                fromName: this._sectionName,
+                toName: evt.target.value,
+              });
               this._sectionName = evt.target.value;
             }
             const projectId = this.getAttribute("project-id");

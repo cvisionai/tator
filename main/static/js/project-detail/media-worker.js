@@ -65,6 +65,16 @@ self.addEventListener("message", async evt => {
       const media = fromSection.removeMedia(msg.mediaId);
       toSection.addMedia(media);
     });
+  } else if (msg.command == "renameSection") {
+    const section = self.sections.get(msg.fromName);
+    self.sections.set(msg.toName, section);
+    const index = self.sectionOrder.indexOf(msg.fromName);
+    self.sectionOrder[index] = msg.toName;
+    saveSectionOrder();
+    self.postMessage({
+      command: "updateSectionNames",
+      allSections: self.sectionOrder,
+    });
   }
 });
 

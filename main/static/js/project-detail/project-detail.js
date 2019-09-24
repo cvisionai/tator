@@ -93,6 +93,8 @@ class ProjectDetail extends TatorPage {
           this._createNewSection(msg.name, projectId, msg.count, msg.afterSection);
         }
         this._updateSectionNames(msg.allSections);
+      } else if (msg.command == "updateSectionNames") {
+        this._updateSectionNames(msg.allSections);
       }
     });
 
@@ -102,7 +104,6 @@ class ProjectDetail extends TatorPage {
       deleteSection.setAttribute("project-id", evt.detail.projectId);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
-      this._updateSectionNames();
     };
 
     deleteSection.addEventListener("close", evt => {
@@ -349,7 +350,6 @@ class ProjectDetail extends TatorPage {
         this._sections[name].overview.updateForAllSoft();
       }
     }
-    this._updateSectionNames();
   }
 
   _createNewSection(sectionName, projectId, numMedia, allSections, afterSection) {
@@ -378,7 +378,6 @@ class ProjectDetail extends TatorPage {
         fromSection: sectionName,
         mediaId: evt.detail.mediaId,
       });
-      this._updateSectionNames();
     });
     newSection.addEventListener("moveFile", evt => {
       this._worker.postMessage({
@@ -387,9 +386,6 @@ class ProjectDetail extends TatorPage {
         toSection: evt.detail.to,
         mediaId: evt.detail.mediaId,
       });
-    });
-    newSection.addEventListener("newName", () => {
-      this._updateSectionNames();
     });
     newSection.addEventListener("cancelUpload", evt => {
       window._serviceWorker.postMessage({
