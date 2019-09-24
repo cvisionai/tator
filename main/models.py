@@ -145,7 +145,7 @@ class Project(Model):
     num_files = IntegerField(default=0)
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
-    section_order = ArrayField(CharField(max_length=128), null=True, blank=True)
+    section_order = ArrayField(CharField(max_length=128), default=list)
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
     def __str__(self):

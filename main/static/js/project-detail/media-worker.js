@@ -17,6 +17,11 @@ self.addEventListener("message", async evt => {
   } else if (msg.command == "init") {
     // Sets token, project.
     self.projectId = msg.projectId;
+    if (typeof msg.sectionOrder == "undefined") {
+      self.sectionOrder = [];
+    } else {
+      self.sectionOrder = msg.sectionOrder;
+    }
     self.headers = {
       "Authorization": "Token " + msg.token,
       "Accept": "application/json",
@@ -32,6 +37,26 @@ self.addEventListener("message", async evt => {
     .then(response => response.json())
     .then(data => setupSections(data))
     .catch(err => console.log("Error initializing web worker: " + err));
+  } else if (msg.command == "moveFileToNew") {
+    // Moves media to new section
+    const name = newSectionName();
+    saveMediaSection(msg.mediaId, name)
+    .then(() => {
+      const section = self.sections.get(msg.fromSection);
+      section.removeMedia(msg.mediaId);
+      const data = new SectionData(name, 1);
+      self.sections.set(name, data);
+      console.log("SETTING SECTION WITH NAME: " + name);
+      const index = self.sectionOrder.indexOf(msg.fromSection) + 1;
+      self.sectionOrder.splice(index, 0, name);
+      saveSectionOrder();
+      self.postMessage({
+        command: "addSection",
+        name: name,
+        count: 1,
+        afterSection: msg.fromSection,
+      });
+    });
   }
 });
 
@@ -76,7 +101,8 @@ class SectionData {
     const start = this._mediaById.size;
     if (start < this._stop) {
       const url = "/rest/EntityMedias/" + self.projectId +
-        "?start=" + start + "&stop=" + this._stop;
+        "?attribute=tator_user_sections::" + this._name + 
+        "&start=" + start + "&stop=" + this._stop;
       fetchRetry(url, {
         method: "GET",
         credentials: "omit",
@@ -120,6 +146,23 @@ class SectionData {
     }
   }
 
+  removeMedia(mediaId) {
+    mediaId = Number(mediaId);
+    const media = this._mediaById.get(mediaId);
+    console.log("MEDIA: " + media);
+    console.log("TYPE OF MEDIA ID: " + typeof mediaId);
+    const currentIndex = this._mediaIds.indexOf(mediaId);
+    console.log("CURRENT INDEX: " + currentIndex);
+    this._mediaIds.splice(currentIndex, 1);
+    console.log("MEDIA IDS 1 TO 6: " + this._mediaIds.slice(0, 6));
+    this._mediaById.delete(mediaId);
+    if (currentIndex >= this._start && currentIndex < this._stop) {
+      console.log("EMITTING UPDATE");
+      this._emitUpdate();
+    }
+    return media;
+  }
+
   _emitUpdate() {
     const numProc = this._processById.size;
     const stop = Math.min(numProc, this._stop);
@@ -142,10 +185,33 @@ class SectionData {
   }
 }
 
+function saveSectionOrder() {
+  const url = "/rest/Project/" + self.projectId;
+  fetchRetry(url, {
+    method: "PATCH",
+    credentials: "omit",
+    headers: self.headers,
+    body: JSON.stringify({
+      section_order: self.sectionOrder
+    }),
+  });
+}
+
 function setupSections(sectionCounts) {
+  let missingOrder = false;
+  for (const section of Object.keys(sectionCounts)) {
+    if (!self.sectionOrder.includes(section)) {
+      self.sectionOrder.push(section);
+      missingOrder = true;
+    }
+  }
+  if (missingOrder) {
+    saveSectionOrder();
+  }
   self.postMessage({
     command: "setupSections",
     data: sectionCounts,
+    order: self.sectionOrder,
   });
   self.sections = new Map();
   for (const section in sectionCounts) {
@@ -166,5 +232,26 @@ function findSortedIndex(arr, val) {
     }
   }
   return low;
+}
+
+function newSectionName() {
+  let newName = "Unnamed Section";
+  let increment = 1;
+  while (self.sections.has(newName)) {
+    newName = "Unnamed Section (" + increment + ")";
+    increment++;
+  }
+  return newName;
+}
+
+function saveMediaSection(mediaId, sectionName) {
+  return fetch("/rest/EntityMedia/" + mediaId, {
+    method: "PATCH",
+    credentials: "omit",
+    headers: self.headers,
+    body: JSON.stringify({
+      attributes: {tator_user_sections: sectionName}
+    }),
+  });
 }
 
