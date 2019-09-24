@@ -112,7 +112,10 @@ class MediaSection extends TatorElement {
 
   set numMedia(val) {
     this._updateNumFiles(val);
-    this._files.numMedia = val;
+    if (val != this._files.numMedia) {
+      this._files.numMedia = val;
+      this._overview.updateForAll();
+    }
   }
 
   set worker(val) {

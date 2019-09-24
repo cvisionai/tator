@@ -154,6 +154,7 @@ class SectionData {
     const currentIndex = this._mediaIds.indexOf(mediaId);
     this._mediaIds.splice(currentIndex, 1);
     this._mediaById.delete(mediaId);
+    this._numMedia--;
     if (currentIndex >= this._start && currentIndex < this._stop) {
       this.fetchMedia();
     }
@@ -177,6 +178,7 @@ class SectionData {
     self.postMessage({
       command: "updateSection",
       name: this._name,
+      count: this._numMedia,
       data: procs.concat(media),
     });
   }

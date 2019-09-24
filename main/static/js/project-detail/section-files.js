@@ -89,6 +89,10 @@ class SectionFiles extends TatorElement {
     this._updateNumCards(val);
   }
 
+  get numMedia() {
+    return this._paginator.getAttribute("num-files");
+  }
+
   set cardInfo(val) {
     this._makeCards(val);
   }

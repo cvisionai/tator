@@ -94,6 +94,7 @@ class ProjectDetail extends TatorPage {
         const section = this._sections.get(msg.name);
         if (section !== null) {
           section.cardInfo = msg.data;
+          section.numMedia = msg.count;
         }
       } else if (msg.command == "addSection") {
         // Add a section dynamically, always drawn immediately
