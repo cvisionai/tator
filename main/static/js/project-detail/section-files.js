@@ -180,7 +180,8 @@ class SectionFiles extends TatorElement {
     } else {
       card.removeAttribute("media-id");
     }
-    if ("uid" in media) {
+    const inProgress = media.state == "started" || media.state == "queued";
+    if ("uid" in media && inProgress) {
       if (!("thumb_url" in media)) {
         card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
         card.removeAttribute("thumb-gif");
