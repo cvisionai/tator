@@ -911,7 +911,7 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
-class ProjectTestCase(APITestCase):
+class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.project = create_test_project(self.user)
@@ -1570,7 +1570,10 @@ class ProjectTestCase(APITestCase):
             for entity in self.entities
         ]
         self.detail_uri = 'Project'
-        self.patch_json = {'name': 'aaasdfasd'}
+        self.patch_json = {
+            'name': 'aaasdfasd',
+            'section_order': ['asdf1', 'asdf2', 'asdf3']
+        }
         self.edit_permission = Permission.FULL_CONTROL
 
     def test_detail_patch_permissions(self):
