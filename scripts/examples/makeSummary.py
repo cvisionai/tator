@@ -4,8 +4,8 @@ import argparse
 import pytator
 import pandas as pd
 import progressbar
-
-COLUMNS=['user', 'image', 'type', 'x','y','width','height']
+import math
+COLUMNS=['user', 'image', 'type', 'x','y','width','height', 'length']
 
 def processSection(tator, section, types_of_interest, medias):
     result=[]
@@ -28,6 +28,9 @@ def processSection(tator, section, types_of_interest, medias):
                            'y': localization['y']*height,
                            'width': localization['width']*width,
                            'height': localization['height']*height}
+                    datum['length'] = \
+                        math.sqrt(math.pow(datum['width'],2)+\
+                                  math.pow(datum['height'],2))
                 elif type_desc == 'line':
                     datum={'user': section,
                            'image': media['name'],
@@ -36,6 +39,9 @@ def processSection(tator, section, types_of_interest, medias):
                            'y': localization['y0']*height,
                            'width': localization['x1']*width,
                            'height': localization['y1']*height}
+                    datum['length'] = \
+                        math.sqrt(math.pow(datum['width']-datum['x'],2)+\
+                                  math.pow(datum['height']-datum['y'],2))
                 elif type_desc == 'dot':
                     datum={'user': section,
                            'image': media['name'],
