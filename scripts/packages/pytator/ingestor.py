@@ -211,7 +211,8 @@ def _ingestLocalizationsFromFile(args):
 
             detection = useRealTypes(detection)
 
-        existing=localizations.getMany(mediaId, args.localizationTypeId)
+        existing=localizations.filter({"media_id": mediaId,
+                                       "type": args.localizationTypeId})
         if existing and not args.append:
             print(f"Not in append-mode Skipping {element['name']}")
             return
