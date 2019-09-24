@@ -15,27 +15,39 @@ from uuid import uuid1
 """ API Implementation details """
 
 class APIElement:
-    def __init__(self, api):
+    def __init__(self, api, endpoint):
+        self.endpoint = endpoint
         self.url = api[0].rstrip('/')
         self.token = str(api[1])
         self.project = str(api[2])
         self.headers={"Authorization" : "Token {}".format(self.token),
                       "Content-Type": "application/json"}
 
+    # Deprecate direct calling of this
     def getMany(self, endpoint, params):
         obj = None
         try:
-            response=requests.get(self.url + "/" + endpoint+"/"+self.project,
+            ep = self.url + "/" + endpoint+"/"+self.project
+            response=requests.get(ep,
                                   params=params,
                                   headers=self.headers)
             if response.status_code == 200:
                 jsonList=response.json()
                 if (len(jsonList) >= 1):
                     obj = jsonList
+            else:
+                print(f"ERROR {response.status_code}: got {response.text}")
         except Exception as e:
             print(e)
         finally:
             return obj
+
+    def filter(self, params):
+        return self.getMany(self.endpoint, params)
+
+    def all(self):
+        return self.getMany(self.endpoint, None)
+
     def getSingleElement(self, endpoint, params):
         listObj=self.getMany(endpoint, params)
         if listObj != None and len(listObj) > 0:
@@ -59,7 +71,7 @@ class APIElement:
 
 class Media(APIElement):
     def __init__(self, api):
-        super().__init__(api)
+        super().__init__(api, "EntityMedias")
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
 
@@ -174,21 +186,21 @@ class Media(APIElement):
 
 class LocalizationType(APIElement):
     def __init__(self, api):
-         super().__init__(api)
+         super().__init__(api, "LocalizationTypes")
 
     def byTypeId(self, typeId):
         return self.getSingleElement("LocalizationTypes", {"type": typeId})
 
 class StateType(APIElement):
     def __init__(self, api):
-         super().__init__(api)
+         super().__init__(api, "EntityStateTypes")
 
     def byTypeId(self, typeId):
         return self.getSingleElement("EntityStateTypes", {"type": typeId})
 
 class State(APIElement):
     def __init__(self, api):
-        super().__init__(api)
+        super().__init__(api,"EntityStates")
     def byAttr(self, key, value):
         lookup=f"{key}::{value}"
         return self.getSingleElement("EntityStates", {"attribute": lookup})
@@ -241,7 +253,7 @@ class Track(State):
 
 class Localization(APIElement):
     def __init__(self, api):
-         super().__init__(api)
+         super().__init__(api, "Localizations")
 
     def add(self, mediaId, typeId, attrs):
         obj={"media_id" : mediaId,
@@ -252,10 +264,6 @@ class Localization(APIElement):
             return json
         else:
             return None
-
-    def getMany(self, mediaId, typeId):
-        return super().getMany("Localizations", {'media_id': mediaId,
-                                                 'type': typeId})
 
     def addMany(self, listObj):
         response=requests.post(self.url+"/Localizations"+"/"+self.project,
@@ -280,7 +288,7 @@ class Localization(APIElement):
 
 class TreeLeaf(APIElement):
     def __init__(self, api):
-        super().__init__(api)
+        super().__init__(api, "TreeLeaves")
 
     def isPresent(self, name):
         response=self.getSingleElement("TreeLeaves", {"name": name})
