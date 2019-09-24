@@ -38,10 +38,7 @@ class SectionFiles extends TatorElement {
 
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(new CustomEvent("algorithm", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          algorithmName: evt.detail.algorithmName
-        }
+        detail: {algorithmName: evt.detail.algorithmName}
       }));
     });
 
@@ -161,11 +158,6 @@ class SectionFiles extends TatorElement {
   }
 
   _updateNumCards(numMedia) {
-    /*
-    const processMediaIds = this._processes.map(elem => elem.id);
-    const filteredMedia = this._media.filter(elem => !processMediaIds.includes(elem.id));
-    this._joined = this._processes.concat(filteredMedia);
-    */
     this._paginator.setAttribute("num-files", numMedia);
   }
 

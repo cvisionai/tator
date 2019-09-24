@@ -237,7 +237,7 @@ class MediaSection extends TatorElement {
     if (projectDefined && nameDefined) {
       this._files.addEventListener("algorithm", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/AlgorithmLaunch/" + projectId + this._sectionFilter(), {
+        fetch("/rest/AlgorithmLaunch/" + projectId, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -247,7 +247,7 @@ class MediaSection extends TatorElement {
           },
           body: JSON.stringify({
             "algorithm_name": evt.detail.algorithmName,
-            "media_ids": evt.detail.mediaIds,
+            "media_query": this._sectionFilter(),
           }),
         })
         .then(response => {

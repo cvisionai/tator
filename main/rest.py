@@ -2335,10 +2335,10 @@ class AlgorithmLaunchAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='Name of the algorithm to execute.')),
-        coreapi.Field(name='media_ids',
-                      required=False,
+        coreapi.Field(name='media_query',
+                      required=True,
                       location='body',
-                      schema=coreschema.String(description='Comma separated list of media IDs. If omitted, the algorithm will be launched on all media in the project.')),
+                      schema=coreschema.String(description='Query string used to filter media IDs.')),
     ])
     permission_classes = [ProjectExecutePermission]
 
@@ -2364,8 +2364,8 @@ class AlgorithmLaunchAPI(APIView):
             files_per_job = alg_obj.files_per_job
 
             # Get media IDs
-            if 'media_ids' in reqObject:
-                media_ids = reqObject['media_ids'].split(',')
+            if 'media_query' in reqObject:
+                media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))
