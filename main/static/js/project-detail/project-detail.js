@@ -73,41 +73,26 @@ class ProjectDetail extends TatorPage {
 
     this._worker.addEventListener("message", evt => {
       const msg = evt.data;
-      if (msg.command == "setupSections") {
-        // Create the media sections.
-        const maxInitSections = 4;
-        let numSections = 0;
-        this._undrawnSectionCounts = new Map();
-        this._sectionOrder = msg.order;
-        for (const name of msg.order) {
-          if (numSections >= maxInitSections) {
-            this._undrawnSectionCounts.set(name, msg.data[name]);
-          } else {
-            const numMedia = msg.data[name];
-            const projectId = this.getAttribute("project-id");
-            this._createNewSection(name, projectId, numMedia);
-          }
-          numSections++;
-        }
-        this._updateSectionNames();
-      } else if (msg.command == "updateSection") {
+      if (msg.command == "updateSection") {
         const section = this._sections.get(msg.name);
         if (section !== null) {
           section.numMedia = msg.count;
           section.cardInfo = msg.data;
         }
+        this._updateSectionNames(msg.allSections);
       } else if (msg.command == "removeSection") {
-        const removeIndex = this._sectionOrder.indexOf(msg.name);
-        this._sectionOrder.splice(removeIndex, 1);
         const section = this._sections.get(msg.name);
         this._sections.delete(msg.name);
         this._projects.removeChild(section);
+        this._updateSectionNames(msg.allSections);
       } else if (msg.command == "addSection") {
-        // Add a section dynamically, always drawn immediately
-        const insertIndex = this._sectionOrder.indexOf(msg.afterSection) + 1;
-        this._sectionOrder.splice(insertIndex, 0, msg.name);
         const projectId = this.getAttribute("project-id");
-        this._createNewSection(msg.name, projectId, msg.count);
+        if (typeof msg.afterSection == "undefined") {
+          this._createNewSection(msg.name, projectId, msg.count);
+        } else {
+          this._createNewSection(msg.name, projectId, msg.count, msg.afterSection);
+        }
+        this._updateSectionNames(msg.allSections);
       }
     });
 
@@ -263,6 +248,9 @@ class ProjectDetail extends TatorPage {
   }
 
   _checkSectionVisibility() {
+    const rect = this._projects.getBoundingClientRect();
+    if (rect.bottom < window.innerHeight + 300) {
+    }
   }
 
   _updateMedia(projectFilter) {
@@ -364,7 +352,7 @@ class ProjectDetail extends TatorPage {
     this._updateSectionNames();
   }
 
-  _createNewSection(sectionName, projectId, numMedia) {
+  _createNewSection(sectionName, projectId, numMedia, allSections, afterSection) {
     if (sectionName in this._sections) {
       return;
     }
@@ -375,7 +363,6 @@ class ProjectDetail extends TatorPage {
     newSection.setAttribute("id", sectionName);
     newSection.setAttribute("username", this._uploadButton.getAttribute("username"));
     newSection.setAttribute("token", this._uploadButton.getAttribute("token"));
-    newSection.sections = this._sectionOrder;
     newSection.worker = this._worker;
     newSection.numMedia = numMedia;
     newSection.algorithms = this._algorithms;
@@ -411,19 +398,23 @@ class ProjectDetail extends TatorPage {
       });
     });
     newSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
-    const beforeIndex = Math.max(this._sectionOrder.indexOf(sectionName) - 1, 0);
-    if (this._sections.has(this._sectionOrder[beforeIndex])) {
-      const prevSection = this._sections.get(this._sectionOrder[beforeIndex]);
-      this._projects.insertBefore(newSection, prevSection.nextSibling);
+    if (typeof afterSection !== "undefined") {
+      const refSection = this._shadow.querySelector("#" + afterSection);
+      if (refSection === null) {
+        this._projects.appendChild(newSection);
+      } else {
+        this._projects.insertBefore(newSection, refSection.nextSibling);
+      }
     } else {
       this._projects.appendChild(newSection);
     }
     return newSection;
   }
 
-  _updateSectionNames() {
-    for (const section in this._sections.values()) {
-      section.sections = this._sectionOrder;
+  _updateSectionNames(allSections) {
+    const sections = [...this._shadow.querySelectorAll("media-section")];
+    for (const section of sections) {
+      section.sections = allSections;
     }
   }
 

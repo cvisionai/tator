@@ -8,7 +8,6 @@ self.addEventListener("message", async evt => {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
     // Section changed pages
-    console.log("GETTING SECTION WITH NAME: " + msg.section);
     const section = self.sections.get(msg.section);
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "sectionFilter") {
@@ -23,7 +22,6 @@ self.addEventListener("message", async evt => {
     } else {
       self.sectionOrder = msg.sectionOrder;
     }
-    console.log("SET SECTION ORDER TO: " + self.sectionOrder);
     self.headers = {
       "Authorization": "Token " + msg.token,
       "Accept": "application/json",
@@ -56,6 +54,7 @@ self.addEventListener("message", async evt => {
         name: name,
         count: 1,
         afterSection: msg.fromSection,
+        allSections: self.sectionOrder,
       });
     });
   } else if (msg.command == "moveFile") {
@@ -170,6 +169,7 @@ class SectionData {
       self.postMessage({
         command: "removeSection",
         name: this._name,
+        allSections: self.sectionOrder,
       });
     } else if (currentIndex >= this._start && currentIndex < this._stop) {
       this.fetchMedia();
@@ -205,6 +205,7 @@ class SectionData {
       name: this._name,
       count: this._numMedia,
       data: procs.concat(media),
+      allSections: self.sectionOrder,
     });
   }
 }
@@ -229,18 +230,34 @@ function setupSections(sectionCounts) {
       missingOrder = true;
     }
   }
+  const invalidSections = [];
+  for (const section of self.sectionOrder) {
+    if (!(section in sectionCounts)) {
+      invalidSections.push(section);
+    }
+  }
+  for (const section of invalidSections) {
+    const removeIndex = self.sectionOrder.indexOf(section);
+    self.sectionOrder.splice(removeIndex, 1);
+  }
   if (missingOrder) {
     saveSectionOrder();
   }
-  self.postMessage({
-    command: "setupSections",
-    data: sectionCounts,
-    order: self.sectionOrder,
-  });
   self.sections = new Map();
   for (const section in sectionCounts) {
     const data = new SectionData(section, sectionCounts[section]);
     self.sections.set(section, data);
+  }
+  for (const sectionName of self.sectionOrder) {
+    if (self.sections.has(sectionName)) {
+      const section = self.sections.get(sectionName);
+      self.postMessage({
+        command: "addSection",
+        name: sectionName,
+        count: section._numMedia,
+        allSections: self.sectionOrder,
+      });
+    }
   }
 }
 
