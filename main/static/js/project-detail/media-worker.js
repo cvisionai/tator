@@ -2,8 +2,20 @@ importScripts("/static/js/util/fetch-retry.js");
 
 self.addEventListener("message", async evt => {
   const msg = evt.data;
-  if (msg.command == "processUpdate") {
-    // New process update from websocket
+  if (msg.command == "algorithmProgress") {
+    // New algorithm process update from websocket
+    const sectionNames = msg.sections.split(",");
+    const mediaIds = msg.media_ids.split(",");
+    for (let index = 0; index < mediaIds.length; index++) {
+      const sectionName = sectionNames[index];
+      const mediaId = mediaIds[index];
+      if (self.sections.has(sectionName)) {
+        const section = self.sections.get(sectionName);
+        section.algorithmProgress(mediaId, msg);
+      }
+    }
+  } else if (msg.command == "uploadProgress") {
+    // New upload process update from websocket
   } else if (msg.command == "sectionInView") {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
@@ -84,6 +96,9 @@ class SectionData {
   constructor(name, numMedia) {
     // Section name.
     this._name = name;
+
+    // Media processes.
+    this._mediaProcesses = new Map();
     
     // Map of UIDs to process objects.
     this._processById = new Map();
@@ -100,7 +115,7 @@ class SectionData {
     // List of media IDs.
     this._mediaIds = [];
 
-    // Map of media ID to processed media, populated upon process completion.
+    // Map of media ID to media being processed.
     this._processedMediaById = new Map();
 
     // Number of media
@@ -148,29 +163,52 @@ class SectionData {
     this.fetchMedia();
   }
 
-  updateProcess(process) {
-    // Updates an existing process or adds a new one
-    this._processById.set(process.uid, process);
-    const currentIndex = this._sortedIds.indexOf(process.uid);
-    const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
-    if (currentIndex > -1) {
-      this._sortedIds.splice(currentIndex, 1);
-      this._sortedProgress.splice(currentIndex, 1);
-    }
-    const sortedIndex = findSortedIndex(this._sortedProgress, process.percent);
-    this._sortedIds.splice(sortedIndex, 0, process.uid);
-    this._sortedProgress.splice(sortedIndex, 0, process.percent);
-    const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
-    if (currentInRange || sortedInRange) {
+  algorithmProgress(mediaId, process) {
+    mediaId = Number(mediaId);
+    this._mediaProcesses.set(mediaId, process);
+    if (this._mediaById.has(mediaId)) {
       this._emitUpdate();
+    }
+    /*
+    if (this._mediaById.has(mediaId)) {
+      const mediaIndex = this._mediaIds.indexOf(mediaId);
+      const media = this._mediaIds.splice(mediaIndex, 1);
+      this._mediaById.delete(mediaId);
+    }
+    */
+  }
+
+  uploadProgress(mediaId, process) {
+    this.updateProcess(process);
+  }
+
+  updateProcess(process) {
+    if (process.state == "started" || process.state == "queued") {
+      // Updates an existing process or adds a new one
+      this._processById.set(process.uid, process);
+      const currentIndex = this._sortedIds.indexOf(process.uid);
+      const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
+      if (currentIndex > -1) {
+        this._sortedIds.splice(currentIndex, 1);
+        this._sortedProgress.splice(currentIndex, 1);
+      }
+      const sortedIndex = findSortedIndex(this._sortedProgress, process.percent);
+      this._sortedIds.splice(sortedIndex, 0, process.uid);
+      this._sortedProgress.splice(sortedIndex, 0, process.percent);
+      const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
+      if (currentInRange || sortedInRange) {
+        this._emitUpdate();
+      }
+    } else if (process.state == "failed" || process.state == "finished") {
+      this._processedMediaById.set(process.uid, process);
+      this._emitUpdate();//TODO check if necessary
     }
   }
 
   removeMedia(mediaId) {
     mediaId = Number(mediaId);
-    const media = this._mediaById.get(mediaId);
     const currentIndex = this._mediaIds.indexOf(mediaId);
-    this._mediaIds.splice(currentIndex, 1);
+    const media = this._mediaIds.splice(currentIndex, 1)[0];
     this._mediaById.delete(mediaId);
     this._numMedia--;
     if (this._numMedia <= 0) {
@@ -202,7 +240,21 @@ class SectionData {
     const mediaIds = this._mediaIds.slice(start, this._stop);
     const media = Array.from(
       mediaIds,
-      mediaId => this._mediaById.get(mediaId)
+      mediaId => {
+        mediaId = Number(mediaId);
+        let media = this._mediaById.get(mediaId);
+        if (this._mediaProcesses.has(mediaId)) {
+          const process = this._mediaProcesses.get(mediaId);
+          media = {
+            ...media,
+            uid: process.uid,
+            progress: process.progress,
+            state: process.state,
+            message: process.message,
+          };
+        }
+        return media;
+      }
     );
     self.postMessage({
       command: "updateSection",

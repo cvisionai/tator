@@ -193,7 +193,9 @@ class SectionFiles extends TatorElement {
     let percent = null;
     let message = null;
     if ("progress" in media) {
-      percent = media.progress;
+      if (typeof media.progress !== "undefined") {
+        percent = media.progress;
+      }
     }
     if ("message" in media) {
       message = media.message;

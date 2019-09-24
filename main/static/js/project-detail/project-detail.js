@@ -164,6 +164,10 @@ class ProjectDetail extends TatorPage {
     this._progress.addEventListener("uploadProgress", evt => {
       const msg = evt.detail.message;
       if (msg.project_id == this.getAttribute("project-id")) {
+        this._worker.postMessage({
+          command: "uploadProgress",
+          ...msg
+        });
       }
       /*
       const msg = evt.detail.message;
@@ -186,6 +190,10 @@ class ProjectDetail extends TatorPage {
     this._progress.addEventListener("algorithmProgress", evt => {
       const msg = evt.detail.message;
       if (msg.project_id == this.getAttribute("project-id")) {
+        this._worker.postMessage({
+          command: "algorithmProgress",
+          ...msg
+        });
       }
       /*
       const msg = evt.detail.message;
