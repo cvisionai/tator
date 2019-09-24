@@ -350,6 +350,8 @@ class VideoCanvas extends AnnotationCanvas {
     
     // This flag is used to force a vertex reload
     this._dirty = true;
+
+    this._startBias = 0.0;
   }
 
   refresh()
@@ -462,6 +464,8 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type == "ready")
       {
         that._dlWorker.postMessage({"type": "download"});
+        that._startBias = e.data["startBias"];
+        console.info(`Video has start bias of ${that._startBias}`);
       }
       else if (type == "error")
       {
@@ -637,7 +641,7 @@ class VideoCanvas extends AnnotationCanvas {
   seekFrame(frame, callback)
   {
     var that = this;
-    var time=((1/this._fps)*frame)+(1/(this._fps*4));
+    var time=this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
     var video=this.videoBuffer(frame);
 
     if (time <= video.duration)
