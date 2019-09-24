@@ -15,7 +15,10 @@ setup(
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
-    install_requires=['requests>=2.21.0', 'progressbar2>=3.42.0','tuspy>=0.2.4'],
+    install_requires=['requests>=2.21.0',
+                      'progressbar2>=3.42.0',
+                      'tuspy>=0.2.4',
+                      'pandas>=0.24.2'],
 
     # metadata to display on PyPI
     author="CVision AI",
