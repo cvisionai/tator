@@ -4,6 +4,7 @@ import requests
 import time
 import os
 import progressbar
+import pandas as pd
 
 from pytator.md5sum import md5_sum
 from itertools import count
@@ -44,6 +45,14 @@ class APIElement:
 
     def filter(self, params):
         return self.getMany(self.endpoint, params)
+
+    def dataframe(self, params):
+        allObjects=self.filter(params)
+        if allObjects:
+            return pd.DataFrame(data=allObjects,
+                                columns=allObjects[0].keys())
+        else:
+            return None
 
     def all(self):
         return self.getMany(self.endpoint, None)
