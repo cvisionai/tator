@@ -8,6 +8,7 @@ self.addEventListener("message", async evt => {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
     // Section changed pages
+    console.log("GETTING SECTION WITH NAME: " + msg.section);
     const section = self.sections.get(msg.section);
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "sectionFilter") {
@@ -22,6 +23,7 @@ self.addEventListener("message", async evt => {
     } else {
       self.sectionOrder = msg.sectionOrder;
     }
+    console.log("SET SECTION ORDER TO: " + self.sectionOrder);
     self.headers = {
       "Authorization": "Token " + msg.token,
       "Accept": "application/json",
@@ -149,16 +151,11 @@ class SectionData {
   removeMedia(mediaId) {
     mediaId = Number(mediaId);
     const media = this._mediaById.get(mediaId);
-    console.log("MEDIA: " + media);
-    console.log("TYPE OF MEDIA ID: " + typeof mediaId);
     const currentIndex = this._mediaIds.indexOf(mediaId);
-    console.log("CURRENT INDEX: " + currentIndex);
     this._mediaIds.splice(currentIndex, 1);
-    console.log("MEDIA IDS 1 TO 6: " + this._mediaIds.slice(0, 6));
     this._mediaById.delete(mediaId);
     if (currentIndex >= this._start && currentIndex < this._stop) {
-      console.log("EMITTING UPDATE");
-      this._emitUpdate();
+      this.fetchMedia();
     }
     return media;
   }
