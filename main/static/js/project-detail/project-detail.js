@@ -93,9 +93,15 @@ class ProjectDetail extends TatorPage {
       } else if (msg.command == "updateSection") {
         const section = this._sections.get(msg.name);
         if (section !== null) {
-          section.cardInfo = msg.data;
           section.numMedia = msg.count;
+          section.cardInfo = msg.data;
         }
+      } else if (msg.command == "removeSection") {
+        const removeIndex = this._sectionOrder.indexOf(msg.name);
+        this._sectionOrder.splice(removeIndex, 1);
+        const section = this._sections.get(msg.name);
+        this._sections.delete(msg.name);
+        this._projects.removeChild(section);
       } else if (msg.command == "addSection") {
         // Add a section dynamically, always drawn immediately
         const insertIndex = this._sectionOrder.indexOf(msg.afterSection) + 1;
@@ -385,18 +391,15 @@ class ProjectDetail extends TatorPage {
         fromSection: sectionName,
         mediaId: evt.detail.mediaId,
       });
-      /*
-      const name = this._newSectionName();
-      const allSections = Object.keys(this._sections);
-      allSections.unshift(name);
-      console.log("ALL SECTIONS: " + allSections);
-      const section = this._createNewSection(name, projectId, 1);
-      this._moveFile(evt.detail.mediaId, evt.target, name);
-      */
       this._updateSectionNames();
     });
     newSection.addEventListener("moveFile", evt => {
-      this._moveFile(evt.detail.mediaId, evt.target, evt.detail.to);
+      this._worker.postMessage({
+        command: "moveFile",
+        fromSection: sectionName,
+        toSection: evt.detail.to,
+        mediaId: evt.detail.mediaId,
+      });
     });
     newSection.addEventListener("newName", () => {
       this._updateSectionNames();
@@ -419,29 +422,9 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateSectionNames() {
-    const names = this._sections.keys();
     for (const section in this._sections.values()) {
-      section.sections = names;
+      section.sections = this._sectionOrder;
     }
-  }
-
-  _moveFile(mediaId, fromSection, toSectionName) {
-    const sectionQuery = "media-section[name='" + toSectionName + "']"
-    const toSection = this._shadow.querySelector(sectionQuery);
-    const media = fromSection.removeMedia(mediaId);
-    toSection.addMedia(media);
-    fetch("/rest/EntityMedia/" + mediaId, {
-      method: "PATCH",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "attributes": {"tator_user_sections": toSectionName}
-      }),
-    });
   }
 
   async _scrollToHash() {

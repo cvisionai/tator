@@ -48,7 +48,6 @@ self.addEventListener("message", async evt => {
       section.removeMedia(msg.mediaId);
       const data = new SectionData(name, 1);
       self.sections.set(name, data);
-      console.log("SETTING SECTION WITH NAME: " + name);
       const index = self.sectionOrder.indexOf(msg.fromSection) + 1;
       self.sectionOrder.splice(index, 0, name);
       saveSectionOrder();
@@ -58,6 +57,14 @@ self.addEventListener("message", async evt => {
         count: 1,
         afterSection: msg.fromSection,
       });
+    });
+  } else if (msg.command == "moveFile") {
+    saveMediaSection(msg.mediaId, msg.toSection)
+    .then(() => {
+      const fromSection = self.sections.get(msg.fromSection);
+      const toSection = self.sections.get(msg.toSection);
+      const media = fromSection.removeMedia(msg.mediaId);
+      toSection.addMedia(media);
     });
   }
 });
@@ -155,10 +162,28 @@ class SectionData {
     this._mediaIds.splice(currentIndex, 1);
     this._mediaById.delete(mediaId);
     this._numMedia--;
-    if (currentIndex >= this._start && currentIndex < this._stop) {
+    if (this._numMedia <= 0) {
+      const index = self.sectionOrder.indexOf(this._name);
+      self.sectionOrder.splice(index, 1);
+      saveSectionOrder();
+      self.sections.delete(this._name);
+      self.postMessage({
+        command: "removeSection",
+        name: this._name,
+      });
+    } else if (currentIndex >= this._start && currentIndex < this._stop) {
       this.fetchMedia();
     }
     return media;
+  }
+
+  addMedia(media) {
+    // Add media to top of list so user can see it was added, this ordering
+    // is not preserved on reload.
+    this._mediaIds.unshift(media.id);
+    this._mediaById.set(media.id, media);
+    this._numMedia++;
+    this.fetchMedia();
   }
 
   _emitUpdate() {
