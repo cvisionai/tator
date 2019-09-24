@@ -247,7 +247,7 @@ gunicorn:
 	env TATOR_DEPLOYMENT=gunicorn-deployment \
 	env TATOR_APP=gunicorn \
 	env TATOR_COMMAND=[\"gunicorn\"] \
-	env TATOR_ARGS=[\"--workers\",\ \"4\",\"--timeout\",\ \"60\",\"--reload\",\ \"-b\",\ \":8000\",\ \"tator_online.wsgi\"] \
+	env TATOR_ARGS=[\"--workers\",\ \"32\",\"--timeout\",\ \"60\",\"--reload\",\ \"-b\",\ \":8000\",\ \"tator_online.wsgi\"] \
 	env TATOR_INIT_COMMAND=[\"containers/tator/init.sh\"] \
 	env TATOR_REPLICAS=1 \
 	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
