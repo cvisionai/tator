@@ -727,7 +727,15 @@ def run_packager(content):
         # Send progress message indicating completion.
         log.info("Packaging job complete!")
         prog.finished("Package ready!")
+    except:
+        log.error("Exception creating package: \n{}".format(traceback.format_exc()))
 
+        if threading.current_thread().stopped():
+            # Send aborted message.
+            prog.failed("Aborted!");
+        else:
+            # Send failed message.
+            prog.failed("Failed!");
     finally:
         # Finish the job.
         finish_job(content['job_id'])
