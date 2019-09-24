@@ -75,6 +75,8 @@ self.addEventListener("message", async evt => {
       command: "updateSectionNames",
       allSections: self.sectionOrder,
     });
+  } else if (msg.command == "removeSection") {
+    removeSection(msg.sectionName);
   }
 });
 
@@ -172,15 +174,7 @@ class SectionData {
     this._mediaById.delete(mediaId);
     this._numMedia--;
     if (this._numMedia <= 0) {
-      const index = self.sectionOrder.indexOf(this._name);
-      self.sectionOrder.splice(index, 1);
-      saveSectionOrder();
-      self.sections.delete(this._name);
-      self.postMessage({
-        command: "removeSection",
-        name: this._name,
-        allSections: self.sectionOrder,
-      });
+      removeSection(this._name);
     } else if (currentIndex >= this._start && currentIndex < this._stop) {
       this.fetchMedia();
     }
@@ -218,6 +212,18 @@ class SectionData {
       allSections: self.sectionOrder,
     });
   }
+}
+
+function removeSection(sectionName) {
+  const index = self.sectionOrder.indexOf(sectionName);
+  self.sectionOrder.splice(index, 1);
+  saveSectionOrder();
+  self.sections.delete(sectionName);
+  self.postMessage({
+    command: "removeSection",
+    name: sectionName,
+    allSections: self.sectionOrder,
+  });
 }
 
 function saveSectionOrder() {
