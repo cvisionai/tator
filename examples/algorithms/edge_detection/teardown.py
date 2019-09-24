@@ -17,11 +17,11 @@ if __name__ == '__main__':
         "ingestor.py",
         "media",
         "--directory", work_dir,
-        "--typeId", "13",
+        "--typeId", "8",
         "--url", rest_svc,
         "--token", token,
-        "--project", "60",
-        "--extension", "jpe",
+        "--project", "5",
+        "--extension", "jpg",
     ], cwd='/')
     obj.wait()
 
