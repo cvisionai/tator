@@ -25,6 +25,8 @@ if __name__=="__main__":
     # only care about lines + dots
     for typeObj in types:
         if not typeObj['type']['dtype'] == 'dot':
+            type_id = typeObj['type']['id']
+            typeObj['dataframe']=tator.Localization.dataframe({'type': type_id})
             types_of_interest.append(typeObj)
 
     data=pd.DataFrame(columns=COLUMNS)
@@ -32,7 +34,6 @@ if __name__=="__main__":
         bar=progressbar.ProgressBar()
         section_filter=f"tator_user_sections::{section}"
         medias=tator.Media.filter({"attribute": section_filter})
-        
         for media in bar(medias):
             media_id = media['id']
             duration = 0
@@ -46,21 +47,17 @@ if __name__=="__main__":
                    'image': media['name'],
                    'count': 0,
                    'duration': duration}
-                   
+
             for typeObj in types_of_interest:
                 type_id=typeObj['type']['id']
-                localizations=tator.Localization.filter(
-                    {"media_id": media_id,
-                     "type": type_id})
-                if localizations:
-                    datum['count'] = datum['count'] + len(localizations)
+                df=typeObj['dataframe']
+                type_locals=df[(df['media']==media_id)]
+                datum['count'] = datum['count'] + len(type_locals)
             datum_frame=pd.DataFrame(data=[datum],
                                      columns=COLUMNS)
             data = data.append(datum_frame)
-                
-                                                         
-        
+
+
+
 
     data.to_csv(args.output, index=False)
-    
-    
