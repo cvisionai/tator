@@ -17,34 +17,34 @@ def processSection(tator, section, types_of_interest, medias):
         for typeObj in types_of_interest:
             type_id=typeObj['type']['id']
             type_desc=typeObj['type']['dtype']
-            per_media=tator.Localization.filter({"media_id": media_id,
-                                                     "type": type_id})
-            if per_media:
-                for localization in per_media:
-                    if type_desc == 'box':
-                        datum={'user': section,
-                               'image': media['name'],
-                               'type': type_desc,
-                               'x': localization['x']*width,
-                               'y': localization['y']*height,
-                               'width': localization['width']*width,
-                               'height': localization['height']*height}
-                        result.append(datum)
-                    elif type_desc == 'line':
-                        datum={'user': section,
-                               'type': type_desc,
-                               'x': localization['x0']*width,
-                               'y': localization['y0']*height,
-                               'width': localization['x1']*width,
-                               'height': localization['y1']*height}
-                    elif type_desc == 'dot':
-                        datum={'user': section,
-                               'type': type_desc,
-                               'x': localization['x']*width,
-                               'y': localization['y']*height,
-                               'width': 0.0,
-                               'height': 0.0}
-                        result.append(datum)
+            df=typeObj['dataframe']
+            per_media=df[df.media==media_id]
+            for idx,localization in per_media.iterrows():
+                if type_desc == 'box':
+                    datum={'user': section,
+                           'image': media['name'],
+                           'type': type_desc,
+                           'x': localization['x']*width,
+                           'y': localization['y']*height,
+                           'width': localization['width']*width,
+                           'height': localization['height']*height}
+                elif type_desc == 'line':
+                    datum={'user': section,
+                           'image': media['name'],
+                           'type': type_desc,
+                           'x': localization['x0']*width,
+                           'y': localization['y0']*height,
+                           'width': localization['x1']*width,
+                           'height': localization['y1']*height}
+                elif type_desc == 'dot':
+                    datum={'user': section,
+                           'image': media['name'],
+                           'type': type_desc,
+                           'x': localization['x']*width,
+                           'y': localization['y']*height,
+                           'width': 0.0,
+                           'height': 0.0}
+                result.append(datum)
     return result
 if __name__=="__main__":
     parser=argparse.ArgumentParser()
@@ -63,10 +63,12 @@ if __name__=="__main__":
     # only care about lines + dots
     for typeObj in types:
         if not typeObj['type']['dtype'] == 'dot':
+            type_id = typeObj['type']['id']
+            typeObj['dataframe']=tator.Localization.dataframe({'type': type_id})
             types_of_interest.append(typeObj)
 
 
-    
+
     data=pd.DataFrame(columns=COLUMNS)
     for section in section_names:
         section_filter=f"tator_user_sections::{section}"
@@ -77,5 +79,3 @@ if __name__=="__main__":
         data = data.append(section_data)
 
     data.to_csv(args.output, index=False)
-    
-    
