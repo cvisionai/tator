@@ -172,7 +172,7 @@ class EntityLocalizationBoxSerializer(serializers.ModelSerializer,
                                       EntityLocalizationBaseSerializer):
     class Meta:
         model = EntityLocalizationBox
-        fields = EntityLocalization_baseFields + ['x', 'y', 'width', 'height']
+        fields = EntityLocalization_baseFields + ['x', 'y', 'width', 'height', 'thumbnail_image']
 
 class EntityLocalizationSerializer(PolymorphicSerializer):
     model_serializer_mapping = {

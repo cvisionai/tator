@@ -1746,6 +1746,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 y = request.data.get("y", None)
                 height = request.data.get("height", None)
                 width = request.data.get("width", None)
+                thumbnail_image = request.data.get("thumbnail_image", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -1754,6 +1755,13 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                     localization_object.height = height
                 if width:
                     localization_object.width = width
+                if thumbnail_image:
+                    try:
+                        thumbnail_obj=\
+                            EntityMediaImage.objects.get(pk=thumbnail_image)
+                        localization_object.thumbnail_image = thumbnail_obj
+                    except:
+                        logger.error("Bad thumbnail reference given")
                 # TODO we shouldn't be saving here (after patch below)
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationLine:
