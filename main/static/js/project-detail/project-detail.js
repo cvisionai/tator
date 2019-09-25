@@ -458,9 +458,15 @@ class ProjectDetail extends TatorPage {
 
   _filesAddedCallback(evt) {
     const numFiles = evt.detail.numStarted;
-    this._progress.notify("Preparing " + numFiles + " files for upload...", false);
+    const numSkipped = evt.detail.numSkipped;
+    if (numFiles > 0) {
+      this._progress.notify("Preparing " + numFiles + " files for upload...", false);
+      this._leaveConfirmOk = true;
+    } else {
+      this._progress.notify("Skipped " + numSkipped + " files with invalid extension!", false);
+      this._leaveConfirmOk = false;
+    }
     this._newSection.close();
-    this._leaveConfirmOk = true;
   };
 
   _allSetCallback() {

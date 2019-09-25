@@ -136,11 +136,13 @@ class UploadElement extends TatorElement {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // For some reason calling await before using datatransfer corrupts
-    // the datatranfer.
-    const section = await this._uploadSection();
-    for (const [index, message] of this._messages.entries()) {
-      this._messages[index] = {...message, section: section};
+    if (numStarted > 0) {
+      // For some reason calling await before using datatransfer corrupts
+      // the datatranfer.
+      const section = await this._uploadSection();
+      for (const [index, message] of this._messages.entries()) {
+        this._messages[index] = {...message, section: section};
+      }
     }
 
     this.dispatchEvent(new CustomEvent("filesadded", {
