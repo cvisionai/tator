@@ -190,8 +190,9 @@ class SectionData {
 
   removeMedia(mediaId) {
     mediaId = Number(mediaId);
+    const media = this._mediaById.get(mediaId);
     const currentIndex = this._mediaIds.indexOf(mediaId);
-    const media = this._mediaIds.splice(currentIndex, 1)[0];
+    this._mediaIds.splice(currentIndex, 1)[0];
     this._mediaById.delete(mediaId);
     this._numMedia--;
     if (this._numMedia <= 0) {
