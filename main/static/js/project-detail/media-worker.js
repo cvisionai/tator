@@ -167,6 +167,9 @@ class SectionData {
 
   uploadProgress(process) {
     // Updates an existing process or adds a new one
+    if (!this._uploadProcesses.has(process.uid)) {
+      this._numMedia++;
+    }
     this._uploadProcesses.set(process.uid, process);
     const currentIndex = this._uploadIds.indexOf(process.uid);
     const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
@@ -176,7 +179,6 @@ class SectionData {
     }
     let sortMetric = process.progress;
     if (process.state == "finished") {
-      this._numMedia++;
       sortMetric = -1;
     }
     const sortedIndex = findSortedIndex(this._uploadProgress, sortMetric);
@@ -214,14 +216,15 @@ class SectionData {
 
   _emitUpdate() {
     const numUploads = this._uploadProcesses.size;
-    const stop = Math.min(numUploads, this._stop);
-    const procIds = this._uploadIds.slice(this._start, stop);
+    const stopUploads = Math.min(numUploads, this._stop);
+    const procIds = this._uploadIds.slice(this._start, stopUploads);
     const procs = Array.from(
       procIds,
       procId => this._uploadProcesses.get(procId)
     );
-    const start = Math.max(numUploads, this._start);
-    const mediaIds = this._mediaIds.slice(start, this._stop);
+    const start = Math.max(0, this._start - numUploads);
+    const stop = this._stop - numUploads;
+    const mediaIds = this._mediaIds.slice(start, stop);
     const media = Array.from(
       mediaIds,
       mediaId => {
