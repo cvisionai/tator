@@ -342,7 +342,7 @@ function findSortedIndex(arr, val) {
   let high = arr.length;
   while (low < high) {
     const mid = low + high >>> 1;
-    if (arr[mid] < val) {
+    if (arr[mid] >= val) {
       low = mid + 1;
     } else {
       high = mid;
