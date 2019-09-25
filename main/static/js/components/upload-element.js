@@ -5,8 +5,8 @@
 class UploadElement extends TatorElement {
   constructor() {
     super();
-
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
+    this._haveNewSection = false;
   }
       
   static get observedAttributes() {
@@ -38,6 +38,63 @@ class UploadElement extends TatorElement {
     }
   }
 
+  set worker(val) {
+    this._worker = val;
+    this._worker.addEventListener("message", evt => {
+      const msg = evt.data;
+      if (msg.command == "newUploadSection") {
+        this._newSectionName = msg.sectionName;
+        this._haveNewSection = true;
+      }
+    });
+  }
+
+  async _uploadSection() {
+    this._worker.postMessage({
+      command: "requestNewUploadSection",
+    });
+    while (!this._haveNewSection) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    this._haveNewSection = false;
+    return this._newSectionName;
+  }
+
+  _checkFile(file, gid) {
+    let ext = file.name.split(".").pop();
+    const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif)$/i);
+    const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv)$/i);
+    for (let idx = 0; idx < this._mediaTypes.length; idx++) {
+      // TODO: It is possible for users to define two media types with
+      // the same extension, in which case we might be uploading to the
+      // wrong media type.
+      const mediaType = this._mediaTypes[idx];
+      let fileOk = false;
+      if (mediaType.file_format === null) {
+        if (mediaType.resourcetype == "EntityTypeMediaImage" && isImage) {
+          fileOk = true;
+        } else if (mediaType.resourcetype == "EntityTypeMediaVideo" && isVideo) {
+          fileOk = true;
+        }
+      } else {
+        fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
+      }
+      if (fileOk) {
+        this._messages.push({
+          "command": "addUpload",
+          "file": file,
+          "gid": gid,
+          "username": this._username,
+          "projectId": this.getAttribute("project-id"),
+          "mediaTypeId": mediaType.id,
+          "token": this._token,
+        });
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Iterates through items from drag and drop or file select 
   // event and sends them to the upload worker.
   async _fileSelectCallback(ev) {
@@ -48,45 +105,10 @@ class UploadElement extends TatorElement {
     this.dispatchEvent(new Event("addingfiles", {composed: true}));
 
     // Messages to send to service worker.
-    let messages = [];
+    this._messages = [];
 
     // Set a group ID on the upload.
     const gid = uuidv1();
-
-    // Get section name for this element.
-    const section = this._uploadSection();
-
-    // Define a function for checking extension of a file. Returns true if 
-    // extension ok, false if skipped.
-    const checkFile = file => {
-      let ext = file.name.split(".").pop();
-      for (let idx = 0; idx < this._mediaTypes.length; idx++) {
-        // TODO: It is possible for users to define two media types with
-        // the same extension, in which case we might be uploading to the
-        // wrong media type.
-        const mediaType = this._mediaTypes[idx];
-        let fileOk;
-        if (mediaType.file_format === null) {
-          fileOk = true;
-        } else {
-          fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
-        }
-        if (fileOk) {
-          messages.push({
-            "command": "addUpload",
-            "file": file,
-            "gid": gid,
-            "section": section,
-            "username": this._username,
-            "projectId": this.getAttribute("project-id"),
-            "mediaTypeId": mediaType.id,
-            "token": this._token,
-          });
-          return true;
-        }
-      }
-      return false;
-    };
 
     let numSkipped = 0;
     let numStarted = 0;
@@ -95,7 +117,7 @@ class UploadElement extends TatorElement {
       const files = ev.target.files;
       totalFiles = files.length;
       for (const file of files) {
-        const added = checkFile(file);
+        const added = this._checkFile(file, gid);
         if (added) { numStarted++; } else { numSkipped++; }
       }
     } else {
@@ -104,7 +126,7 @@ class UploadElement extends TatorElement {
         if (item.isFile) {
           totalFiles++;
           item.file(file => {
-            const added = checkFile(file);
+            const added = this._checkFile(file, gid);
             if (added) { numStarted++; } else { numSkipped++; }
           });
         }
@@ -113,11 +135,19 @@ class UploadElement extends TatorElement {
     while (numSkipped + numStarted < totalFiles) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+
+    // For some reason calling await before using datatransfer corrupts
+    // the datatranfer.
+    const section = await this._uploadSection();
+    for (const [index, message] of this._messages.entries()) {
+      this._messages[index] = {...message, section: section};
+    }
+
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
       composed: true
     }));
-    for (const msg of messages) {
+    for (const msg of this._messages) {
       window._serviceWorker.postMessage(msg);
     }
     if (numStarted > 0) {

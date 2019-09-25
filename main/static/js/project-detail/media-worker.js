@@ -60,8 +60,8 @@ self.addEventListener("message", async evt => {
     saveMediaSection(msg.mediaId, name)
     .then(() => {
       const section = self.sections.get(msg.fromSection);
-      section.removeMedia(msg.mediaId);
       addSection(name, 1, msg.fromSection);
+      section.removeMedia(msg.mediaId);
     });
   } else if (msg.command == "moveFile") {
     saveMediaSection(msg.mediaId, msg.toSection)
@@ -83,6 +83,13 @@ self.addEventListener("message", async evt => {
     });
   } else if (msg.command == "removeSection") {
     removeSection(msg.sectionName);
+  } else if (msg.command == "requestNewUploadSection") {
+    const sectionName = newSectionName();
+    const section = addSection(sectionName, 0, 0);
+    self.postMessage({
+      command: "newUploadSection",
+      sectionName: sectionName,
+    });
   }
 });
 
@@ -167,8 +174,10 @@ class SectionData {
 
   uploadProgress(process) {
     // Updates an existing process or adds a new one
+    let numChanged = false;
     if (!this._uploadProcesses.has(process.uid)) {
       this._numMedia++;
+      numChanged = true;
     }
     this._uploadProcesses.set(process.uid, process);
     const currentIndex = this._uploadIds.indexOf(process.uid);
@@ -185,7 +194,7 @@ class SectionData {
     this._uploadIds.splice(sortedIndex, 0, process.uid);
     this._uploadProgress.splice(sortedIndex, 0, sortMetric);
     const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
-    if (currentInRange || sortedInRange) {
+    if (currentInRange || sortedInRange || numChanged) {
       this._emitUpdate();
     }
   }
@@ -257,7 +266,7 @@ function addSection(sectionName, count, afterSection) {
   const data = new SectionData(sectionName, count);
   self.sections.set(sectionName, data);
   let index = 0;
-  if (afterSection) {
+  if (typeof afterSection === "string") {
     index = self.sectionOrder.indexOf(afterSection) + 1;
   }
   self.sectionOrder.splice(index, 0, sectionName);
@@ -329,6 +338,7 @@ function setupSections(sectionCounts) {
         command: "addSection",
         name: sectionName,
         count: section._numMedia,
+        afterSection: -1, // Append to end
         allSections: self.sectionOrder,
       });
     }

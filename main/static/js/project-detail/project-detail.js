@@ -50,6 +50,7 @@ class ProjectDetail extends TatorPage {
     main.appendChild(this._projects);
 
     this._newSection = document.createElement("new-section");
+    this._newSection.worker = this._worker;
     this._projects.appendChild(this._newSection);
 
     const deleteSection = document.createElement("delete-section-form");
@@ -87,11 +88,7 @@ class ProjectDetail extends TatorPage {
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "addSection") {
         const projectId = this.getAttribute("project-id");
-        if (typeof msg.afterSection == "undefined") {
-          this._createNewSection(msg.name, projectId, msg.count);
-        } else {
-          this._createNewSection(msg.name, projectId, msg.count, msg.afterSection);
-        }
+        this._createNewSection(msg.name, projectId, msg.count, msg.afterSection);
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "updateSectionNames") {
         this._updateSectionNames(msg.allSections);
@@ -369,7 +366,7 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _createNewSection(sectionName, projectId, numMedia, allSections, afterSection) {
+  _createNewSection(sectionName, projectId, numMedia, afterSection) {
     if (sectionName in this._sections) {
       return;
     }
@@ -411,15 +408,19 @@ class ProjectDetail extends TatorPage {
       });
     });
     newSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
-    if (typeof afterSection !== "undefined") {
-      const refSection = this._shadow.querySelector("#" + afterSection);
+    if (typeof afterSection == "string") {
+      const refSection = this._shadow.querySelector("media-section[id='" + afterSection + "']");
       if (refSection === null) {
         this._projects.appendChild(newSection);
       } else {
         this._projects.insertBefore(newSection, refSection.nextSibling);
       }
-    } else {
-      this._projects.appendChild(newSection);
+    } else if (typeof afterSection === "number") {
+      if (afterSection == -1) {
+        this._projects.appendChild(newSection);
+      } else if (afterSection == 0) {
+        this._projects.insertBefore(newSection, this._newSection.nextSibling);
+      }
     }
     return newSection;
   }
