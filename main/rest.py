@@ -1755,6 +1755,12 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                     localization_object.height = height
                 if width:
                     localization_object.width = width
+
+                # If the localization moved; the thumbnail is expired
+                if (x or y or height or width) and \
+                   localization_object.thumbnail_image:
+                    localization_object.thumbnail_image.delete()
+
                 if thumbnail_image:
                     try:
                         thumbnail_obj=\
