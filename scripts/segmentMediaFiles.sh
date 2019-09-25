@@ -46,10 +46,8 @@ while [ ${idx} -lt ${count} ]; do
         echo "${original} is already fragmented"
     fi
 
-    if [ ! -e ${root}/media/${info_name} ]; then
-        echo "Generating fragment info file"
-        python3 makeFragmentInfo.py --output ${root}/media/${info_name} ${root}/media/${original}
-    fi
+    echo "Generating fragment info file"
+    python3 makeFragmentInfo.py --output ${root}/media/${info_name} ${root}/media/${original}
     idx=$((${idx}+1))
     echo $(tput bold) $(tput setf 2) "${idx} / ${count} Complete" $(tput sgr0)
 done
