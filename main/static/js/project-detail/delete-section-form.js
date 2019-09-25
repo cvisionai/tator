@@ -94,8 +94,10 @@ class DeleteSectionForm extends ModalDialog {
             "Content-Type": "application/json"
           },
         })
-        .then(response => window.location.reload(true))
         .catch(err => console.log(err));
+        this.dispatchEvent(new CustomEvent("confirmDelete", {
+          detail: {sectionName: this.getAttribute("section-name")}
+        }));
       });
     }
   }

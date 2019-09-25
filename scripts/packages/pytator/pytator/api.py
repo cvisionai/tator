@@ -87,8 +87,9 @@ class Media(APIElement):
     def downloadFile(self, element, out_path):
         #Use streaming mp4 unless original is present
         url=element['url']
-        if element['original_url']:
-            url=element.original_url
+        if 'original_url' in element:
+            if element['original_url']:
+                url=element.original_url
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:

@@ -42,7 +42,6 @@ class SectionPaginator extends TatorElement {
         this._start = 0;
         this._stop = Math.min(numFiles, SectionPaginator.collapsedFiles);
         this._numShown = this._stop;
-        this._expand.setAttribute("num-shown", this._numShown);
         this._expand.removeAttribute("is-expanded");
       } else {
         const inc = SectionPaginator.incrementFiles;
@@ -54,7 +53,6 @@ class SectionPaginator extends TatorElement {
         } else {
           this._stop = Math.min(this._start + this._numShown, numFiles);
           this._start = this._stop - this._numShown;
-          this._expand.setAttribute("num-shown", this._numShown);
         }
       }
       this._emitRange();
@@ -81,7 +79,6 @@ class SectionPaginator extends TatorElement {
             this._numShown = this._stop - this._start;
           }
         }
-        this._expand.setAttribute("num-shown", this._numShown);
         this._emitRange();
 
         if (newValue <= SectionPaginator.collapsedFiles) {
@@ -99,7 +96,6 @@ class SectionPaginator extends TatorElement {
           this._next.style.display = "flex";
           this._expand.style.display = "flex";
         }
-
         break;
     }
   }
@@ -119,6 +115,8 @@ class SectionPaginator extends TatorElement {
         stop: this._stop
       }
     }));
+    this._expand.setAttribute("start", this._start + 1);
+    this._expand.setAttribute("stop", this._stop);
   }
 }
 

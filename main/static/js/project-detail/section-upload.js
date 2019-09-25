@@ -38,9 +38,9 @@ class SectionUpload extends UploadElement {
     UploadElement.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "section":
-        this._uploadSection = () => {
+        this._uploadSection = async () => {
           return newValue;
-        }
+        };
         break;
     }
   }

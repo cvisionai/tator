@@ -23,10 +23,6 @@ class UploadButton extends UploadElement {
   attributeChangedCallback(name, oldValue, newValue) {
     UploadElement.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
   }
-
-  _uploadSection() {
-    return document.querySelector("project-detail")._newSectionName();
-  }
 }
 
 customElements.define("upload-button", UploadButton);

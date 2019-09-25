@@ -49,7 +49,10 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'summary', 'thumb', 'num_files', 'size', 'usernames', 'filter_autocomplete']
+        fields = [
+            'id', 'name', 'summary', 'thumb', 'num_files', 'size',
+            'usernames', 'filter_autocomplete', 'section_order'
+        ]
 
 class MembershipSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()

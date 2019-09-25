@@ -911,7 +911,7 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
-class ProjectTestCase(APITestCase):
+class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.project = create_test_project(self.user)
@@ -1539,7 +1539,7 @@ class PackageCreateTestCase(
         self.list_uri = 'PackageCreate'
         self.create_json = {
             'package_name': 'asdf',
-            'media_ids': '1,2,3',
+            'media_query': '?media_id=1,2,3',
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
@@ -1570,7 +1570,10 @@ class ProjectTestCase(APITestCase):
             for entity in self.entities
         ]
         self.detail_uri = 'Project'
-        self.patch_json = {'name': 'aaasdfasd'}
+        self.patch_json = {
+            'name': 'aaasdfasd',
+            'section_order': ['asdf1', 'asdf2', 'asdf3']
+        }
         self.edit_permission = Permission.FULL_CONTROL
 
     def test_detail_patch_permissions(self):
@@ -1675,7 +1678,8 @@ class AnalysisCountTestCase(
         self.analysis = AnalysisCount.objects.create(
             project=self.project,
             name="count_test",
-            data_url='rest/EntityMedias/attribute=enum_test::enum_val1',
+            data_type=self.entity_type,
+            data_filter={'attributes__enum_test': 'enum_val1'},
         )
         self.attribute_type = AttributeTypeEnum.objects.create(
             name='enum_test',
@@ -1688,6 +1692,7 @@ class AnalysisCountTestCase(
             'resourcetype': 'AnalysisCount',
             'project': self.project.pk,
             'name': 'count_create_test',
-            'data_url': 'rest/EntityMedias?attribute=enum_test::enum_val2',
+            'data_type': self.entity_type.pk,
+            'data_filter': {'attributes__enum_test': 'enum_val2'},
         }
         self.edit_permission = Permission.FULL_CONTROL

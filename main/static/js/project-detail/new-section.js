@@ -58,10 +58,6 @@ class NewSection extends UploadElement {
     UploadElement.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
   }
 
-  _uploadSection() {
-    return document.querySelector("project-detail")._newSectionName();
-  }
-
   close() {
     this._details.removeAttribute("open");
   }

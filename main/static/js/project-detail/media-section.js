@@ -67,7 +67,7 @@ class MediaSection extends TatorElement {
           this._overview.updateForAllSoft();
         }
         resolve();
-      }, 100));
+      }, 200));
     });
   }
 
@@ -109,10 +109,27 @@ class MediaSection extends TatorElement {
   get overview() {
     return this._overview;
   }
+
+  set numMedia(val) {
+    this._updateNumFiles(val);
+    if (val != this._files.numMedia) {
+      this._files.numMedia = val;
+      this._overview.updateForAll();
+    }
+  }
+
+  set worker(val) {
+    this._worker = val;
+    this._files.worker = val;
+  }
+
+  set cardInfo(val) {
+    this._files.cardInfo = val;
+  }
+
   set mediaIds(val) {
     this._updateNumFiles(val.length);
     this._files.mediaIds = val;
-    this._lastOverviewUpdate = Date.now();
   }
 
   set algorithms(val) {
@@ -126,80 +143,6 @@ class MediaSection extends TatorElement {
       sections.splice(index, 1);
     }
     this._files.sections = sections;
-  }
-
-  removeMedia(mediaId) {
-    const media = this._files._media;
-    const mediaIds = media.map(elem => elem.id);
-    const index = mediaIds.indexOf(Number(mediaId));
-    let elem = null;
-    if (index > -1) {
-      elem = media.splice(index, 1)[0];
-      if (media.length == 0) {
-        this.parentNode.removeChild(this);
-        this.dispatchEvent(new Event("newName"));
-      } else {
-        this._updateNumFiles(media.length);
-        this._files._updateNumCards();
-        this._overview.updateForAll();
-      }
-    }
-    return elem;
-  }
-
-  addMedia(val) {
-    this._files.addMedia(val);
-    this._updateNumFiles(this._files._media.length);
-    this._overview.updateForAll();
-  }
-
-  hasMedia(mediaId) {
-    const media = this._files._media;
-    const mediaIds = media.map(elem => elem.id);
-    if (mediaIds.includes(mediaId)) {
-      return media[mediaIds.indexOf(mediaId)];
-    }
-    return null;
-  }
-
-  addProcess(val, mediaId) {
-    this._files.addProcess(val, mediaId);
-  }
-
-  removeProcess(processId, mediaId) {
-    const processes = this._files._processes;
-    let index;
-    if (mediaId === null) {
-      const processIds = processes.map(elem => elem.uid);
-      index = processIds.indexOf(processId);
-    } else {
-      const processIds = processes.map(elem => elem.uid + "," + elem.id);
-      index = processIds.indexOf(processId + "," + mediaId);
-    }
-    if (index > -1) {
-      processes.splice(index, 1);
-      this._files._updateNumCards();
-    }
-  }
-
-  hasProcess(processId, mediaId) {
-    const processes = this._files._processes;
-    let index;
-    if (mediaId === null) {
-      const processIds = processes.map(elem => elem.uid);
-      index = processIds.indexOf(processId);
-    } else {
-      const processIds = processes.map(elem => elem.uid + "," + elem.id);
-      index = processIds.indexOf(processId + "," + mediaId);
-    }
-    if (index > -1) {
-      return processes[index];
-    }
-    return null;
-  }
-
-  updateProgress(processId, mediaId, state, percent, msg) {
-    this._files.updateProgress(processId, mediaId, state, percent, msg);
   }
 
   _updateNumFiles(numFiles) {
@@ -220,7 +163,7 @@ class MediaSection extends TatorElement {
     if (projectDefined && nameDefined) {
       this._files.addEventListener("algorithm", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/AlgorithmLaunch/" + projectId + this._sectionFilter(), {
+        fetch("/rest/AlgorithmLaunch/" + projectId, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -230,7 +173,7 @@ class MediaSection extends TatorElement {
           },
           body: JSON.stringify({
             "algorithm_name": evt.detail.algorithmName,
-            "media_ids": evt.detail.mediaIds,
+            "media_query": this._sectionFilter(),
           }),
         })
         .then(response => {
@@ -247,7 +190,7 @@ class MediaSection extends TatorElement {
 
       this._files.addEventListener("download", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/PackageCreate/" + projectId + this._sectionFilter(), {
+        fetch("/rest/PackageCreate/" + projectId, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -257,7 +200,7 @@ class MediaSection extends TatorElement {
           },
           body: JSON.stringify({
             "package_name": this._sectionName,
-            "media_ids": evt.detail.mediaIds,
+            "media_query": this._sectionFilter(),
             "use_originals": true,
             "annotations": evt.detail.annotations,
           }),
@@ -292,6 +235,11 @@ class MediaSection extends TatorElement {
           });
           input.addEventListener("blur", evt => {
             if (evt.target.value !== "") {
+              this._worker.postMessage({
+                command: "renameSection",
+                fromName: this._sectionName,
+                toName: evt.target.value,
+              });
               this._sectionName = evt.target.value;
             }
             const projectId = this.getAttribute("project-id");

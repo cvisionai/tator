@@ -429,7 +429,7 @@ $(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
 
 
 min-js:
-	if kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from tator_online.settings import DEBUG;import sys;sys.exit(1) if DEBUG else sys.exit(0)'; then 
+	if kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from tator_online.settings import USE_MIN_JS;import sys;sys.exit(0) if USE_MIN_JS else sys.exit(1)'; then 
 	mkdir -p $(OUTDIR)
 	rm $(OUTDIR)/tator.min.js
 	mkdir -p .min_js
@@ -446,6 +446,10 @@ migrate:
 	make submitter-reset
 	make pruner-reset
 	make sizer-reset
+
+testinit:
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION LTREE';
 
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py test --keep

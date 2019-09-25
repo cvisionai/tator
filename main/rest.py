@@ -13,6 +13,7 @@ import datetime
 from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
 from django.core.exceptions import ObjectDoesNotExist
+from urllib import parse as urllib_parse
 
 from rest_framework.compat import coreschema,coreapi
 from rest_framework.generics import ListAPIView
@@ -385,9 +386,9 @@ def bulk_patch_attributes(new_attrs, qs):
                 obj.attributes[attr_name] = new_attrs[attr_name]
     qs.bulk_update(objs, ['attributes'])
 
-def paginate(request, queryset):
-    start = request.query_params.get('start', None)
-    stop = request.query_params.get('stop', None)
+def paginate(query_params, queryset):
+    start = query_params.get('start', None)
+    stop = query_params.get('stop', None)
     qs = queryset
     if start is None and stop is not None:
         stop = int(stop)
@@ -563,20 +564,20 @@ class AttributeFilterMixin:
         'attribute_null': '__isnull',
     }
 
-    def validate_attribute_filter(self, request):
+    def validate_attribute_filter(self, query_params):
         """Validates attribute related parts of request, should be called
            from a try block.
         """
         # Grab the query parameters.
         self.attr_filter_params = {
-            'attribute_eq': request.query_params.get('attribute', None),
-            'attribute_lt': request.query_params.get('attribute_lt', None),
-            'attribute_lte': request.query_params.get('attribute_lte', None),
-            'attribute_gt': request.query_params.get('attribute_gt', None),
-            'attribute_gte': request.query_params.get('attribute_gte', None),
-            'attribute_contains': request.query_params.get('attribute_contains', None),
-            'attribute_distance': request.query_params.get('attribute_distance', None),
-            'attribute_null': request.query_params.get('attribute_null', None),
+            'attribute_eq': query_params.get('attribute', None),
+            'attribute_lt': query_params.get('attribute_lt', None),
+            'attribute_lte': query_params.get('attribute_lte', None),
+            'attribute_gt': query_params.get('attribute_gt', None),
+            'attribute_gte': query_params.get('attribute_gte', None),
+            'attribute_contains': query_params.get('attribute_contains', None),
+            'attribute_distance': query_params.get('attribute_distance', None),
+            'attribute_null': query_params.get('attribute_null', None),
         }
         self.meta = None
 
@@ -587,7 +588,7 @@ class AttributeFilterMixin:
             for attr in self.attr_filter_params
         ])
 
-        meta_id = request.query_params.get('type', None)
+        meta_id = query_params.get('type', None)
         if meta_id is None:
             if requiresType:
                 raise Exception("Parameter 'type' is required for numerical attribute filtering!")
@@ -605,7 +606,7 @@ class AttributeFilterMixin:
                         raise Exception(f"Invalid operator {filter_op} on attribute {attr_type.name} of type {type(attr_type)}")
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
-        self.operation = request.query_params.get('operation', None)
+        self.operation = query_params.get('operation', None)
 
     def filter_by_attribute(self, qs):
         """Filters objects of the specified type by attribute.
@@ -628,7 +629,7 @@ class AttributeFilterMixin:
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
             qs = self.get_queryset()
             if len(qs) > 0:
                 new_attrs = validate_attributes(request, qs[0])
@@ -647,7 +648,7 @@ class AttributeFilterMixin:
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
             qs = list(self.get_queryset())
             types = set(map(lambda x: type(x), qs))
             ids = list(map(lambda x: x.id, list(qs)))
@@ -761,7 +762,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
     def get(self, request, format=None, **kwargs):
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
             self.request=request
             before=time.time()
             qs=self.get_queryset()
@@ -776,7 +777,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
             else:
                 responseData=FastEntityLocalizationSerializer(qs)
                 if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request, responseData)
+                    responseData = paginate(self.request.query_params, responseData)
                 else:
                     # CSV creation requires a bit more
                     user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
@@ -989,6 +990,75 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
 
         return manual_fields + getOnly_fields + self.attribute_fields()
 
+def get_media_queryset(project, query_params, attr_filter):
+    """Converts raw media query string into queryset.
+    """
+    # Figure out what object we are dealing with
+    obj=EntityMediaBase
+    queryset = obj.objects.filter(project=project)
+
+    mediaId = query_params.get('media_id', None)
+    filterType = query_params.get('type', None)
+    name = query_params.get('name', None)
+    md5 = query_params.get('md5', None)
+    search = query_params.get('search', None)
+
+    if mediaId != None:
+        mediaId = list(map(lambda x: int(x), mediaId.split(',')))
+        queryset = queryset.filter(pk__in=mediaId)
+
+    if filterType != None:
+        queryset = queryset.filter(meta=filterType)
+
+    if name != None:
+        queryset = queryset.filter(name=name)
+
+    if search != None:
+        jsonEmbedded=f': \"{search}'
+        localizations=EntityLocalizationBase.objects\
+                            .annotate(attr_string=
+                                      Cast('attributes',
+                                           TextField()))\
+                            .filter(attr_string__icontains=jsonEmbedded)
+        l_medias=localizations.values('media').distinct()
+        states=EntityState.objects\
+                            .annotate(attr_string=
+                                      Cast('attributes',
+                                           TextField()))\
+                            .filter(attr_string__icontains=jsonEmbedded)
+        s_medias=states.values('association__media').distinct()
+
+        attr_media=EntityMediaBase.objects.annotate(attr_string=
+                                            Cast('attributes',
+                                                 TextField()))\
+                            .filter(attr_string__icontains=jsonEmbedded)
+
+        a_medias=attr_media.values('pk').distinct()
+
+        queryset = queryset.filter(Q(name__icontains=search) |
+                                   Q(pk__in=l_medias) |
+                                   Q(pk__in=s_medias) |
+                                   Q(pk__in=a_medias))
+
+    if md5 != None:
+        queryset = queryset.filter(md5=md5)
+
+    queryset = attr_filter.filter_by_attribute(queryset)
+
+    queryset = queryset.order_by("name")
+
+    queryset = paginate(query_params, queryset)
+
+    return queryset
+
+def query_string_to_media_ids(project_id, url):
+    query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
+    attribute_filter = AttributeFilterMixin()
+    attribute_filter.validate_attribute_filter(query_params)
+    media_qs = get_media_queryset(project_id, query_params, attribute_filter)
+    media_ids = media_qs.values_list('id', flat=True)
+    return list(media_ids)
+
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
@@ -1008,7 +1078,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
 
     def get(self, request, *args, **kwargs):
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
             qs = self.get_queryset()
             if self.operation:
                 if self.operation == 'count':
@@ -1066,62 +1136,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
-        # Figure out what object we are dealing with
-        obj=EntityMediaBase
-        queryset = obj.objects.filter(project=self.kwargs['project'])
-
-        mediaId=self.request.query_params.get('media_id', None)
-        filterType=self.request.query_params.get('type', None)
-        name=self.request.query_params.get('name', None)
-        md5=self.request.query_params.get('md5', None)
-        search=self.request.query_params.get('search', None)
-
-        if mediaId != None:
-            mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-            queryset = queryset.filter(pk__in=mediaId)
-
-        if filterType != None:
-            queryset = queryset.filter(meta=filterType)
-
-        if name != None:
-            queryset = queryset.filter(name=name)
-
-        if search != None:
-            jsonEmbedded=f': \"{search}'
-            localizations=EntityLocalizationBase.objects\
-                                .annotate(attr_string=
-                                          Cast('attributes',
-                                               TextField()))\
-                                .filter(attr_string__icontains=jsonEmbedded)
-            l_medias=localizations.values('media').distinct()
-            states=EntityState.objects\
-                                .annotate(attr_string=
-                                          Cast('attributes',
-                                               TextField()))\
-                                .filter(attr_string__icontains=jsonEmbedded)
-            s_medias=states.values('association__media').distinct()
-
-            attr_media=EntityMediaBase.objects.annotate(attr_string=
-                                                Cast('attributes',
-                                                     TextField()))\
-                                .filter(attr_string__icontains=jsonEmbedded)
-
-            a_medias=attr_media.values('pk').distinct()
-
-            queryset = queryset.filter(Q(name__icontains=search) |
-                                       Q(pk__in=l_medias) |
-                                       Q(pk__in=s_medias) |
-                                       Q(pk__in=a_medias))
-
-        if md5 != None:
-            queryset = queryset.filter(md5=md5)
-
-        queryset = self.filter_by_attribute(queryset)
-
-        queryset = queryset.order_by("name")
-
-        queryset = paginate(self.request, queryset)
-
+        queryset = get_media_queryset(self.kwargs['project'], self.request.query_params, self)
         return queryset
 
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
@@ -1229,7 +1244,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         """
         filterType=self.request.query_params.get('type', None)
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
             allStates = self.get_queryset()
             if self.operation:
                 if self.operation == 'count':
@@ -1242,7 +1257,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
             else:
                 response = EntityStateSerializer(allStates, many=True);
                 if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request, response.data)
+                    responseData = paginate(self.request.query_params, response.data)
                 else:
                     responseData=response.data
                     if filterType:
@@ -1504,7 +1519,7 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
 
     def get(self, request, *args, **kwargs):
         try:
-            self.validate_attribute_filter(request)
+            self.validate_attribute_filter(request.query_params)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -1591,7 +1606,7 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
 
         queryset = self.filter_by_attribute(queryset)
 
-        queryset = paginate(self.request, queryset)
+        queryset = paginate(self.request.query_params, queryset)
 
         return queryset;
 
@@ -2209,10 +2224,10 @@ class PackageCreateAPI(APIView):
                       required=False,
                       location='body',
                       schema=coreschema.String(description='Set to true to download annotations rather than media.')),
-        coreapi.Field(name='media_ids',
+        coreapi.Field(name='media_query',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='Comma separated list of media IDs.')),
+                      schema=coreschema.String(description='Query string used to filter media IDs.')),
     ])
     permission_classes = [ProjectExecutePermission]
 
@@ -2227,12 +2242,13 @@ class PackageCreateAPI(APIView):
             if 'package_name' not in reqObject:
                 raise Exception('Missing required field in request object "package_name"')
 
-            if 'media_ids' not in reqObject:
-                raise Exception('Missing required field in request object "media_ids"')
+            if 'media_query' not in reqObject:
+                raise Exception('Missing required field in request object "media_query"')
 
             project_id = self.kwargs['project']
+            media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
+            media_ids = ','.join([str(media_id) for media_id in media_ids])
             package_name = reqObject['package_name']
-            media_ids = reqObject['media_ids']
             package_desc = reqObject.get('package_desc', '')
             use_originals = reqObject.get('use_originals', False)
             annotations = reqObject.get('annotations', False)
@@ -2319,10 +2335,10 @@ class AlgorithmLaunchAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='Name of the algorithm to execute.')),
-        coreapi.Field(name='media_ids',
-                      required=False,
+        coreapi.Field(name='media_query',
+                      required=True,
                       location='body',
-                      schema=coreschema.String(description='Comma separated list of media IDs. If omitted, the algorithm will be launched on all media in the project.')),
+                      schema=coreschema.String(description='Query string used to filter media IDs.')),
     ])
     permission_classes = [ProjectExecutePermission]
 
@@ -2348,12 +2364,12 @@ class AlgorithmLaunchAPI(APIView):
             files_per_job = alg_obj.files_per_job
 
             # Get media IDs
-            if 'media_ids' in reqObject:
-                media_ids = reqObject['media_ids'].split(',')
+            if 'media_query' in reqObject:
+                media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))
-                media_ids = [str(a) for a in media_ids]
+            media_ids = [str(a) for a in media_ids]
 
             # Create algorithm jobs
             gid = str(uuid1())

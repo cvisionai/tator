@@ -27,7 +27,7 @@ class SectionExpand extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["num-files", "num-shown", "is-expanded"];
+    return ["num-files", "start", "stop", "is-expanded"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -35,7 +35,10 @@ class SectionExpand extends TatorElement {
       case "num-files":
         this._updateText();
         break;
-      case "num-shown":
+      case "start":
+        this._updateText();
+        break;
+      case "stop":
         this._updateText();
         break;
       case "is-expanded":
@@ -50,15 +53,17 @@ class SectionExpand extends TatorElement {
 
   _updateText() {
     const hasNumFiles = this.hasAttribute("num-files");
-    const hasNumShown = this.hasAttribute("num-shown");
-    if (hasNumFiles && hasNumShown) {
+    const hasStart = this.hasAttribute("start");
+    const hasStop = this.hasAttribute("stop");
+    if (hasNumFiles && hasStart && hasStop) {
       const numFiles = this.getAttribute("num-files");
-      const numShown = this.getAttribute("num-shown");
+      const start = this.getAttribute("start");
+      const stop = this.getAttribute("stop");
       let flabel = " files";
       if (numFiles == 1) {
         flabel = " file";
       }
-      this._span.textContent = "Showing " + numShown + " of " + numFiles + flabel;
+      this._span.textContent = "Showing " + start + " to " + stop + " of " + numFiles + flabel;
     }
   }
 }

@@ -36,36 +36,21 @@ class SectionFiles extends TatorElement {
 
     this._processes = [];
 
-    this._paginator.addEventListener("change", evt => {
-      this._start = evt.detail.start;
-      this._stop = evt.detail.stop;
-      this._makeCards();
-    });
-
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(new CustomEvent("algorithm", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          algorithmName: evt.detail.algorithmName
-        }
+        detail: {algorithmName: evt.detail.algorithmName}
       }));
     });
 
     this._more.addEventListener("download", evt => {
       this.dispatchEvent(new CustomEvent("download", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          annotations: false
-        }
+        detail: {annotations: false}
       }));
     });
 
     this._more.addEventListener("annotations", evt => {
       this.dispatchEvent(new CustomEvent("download", {
-        detail: {
-          mediaIds: this._media.map(media => media.id).join(),
-          annotations: true
-        }
+        detail: {annotations: true}
       }));
     });
 
@@ -79,7 +64,6 @@ class SectionFiles extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-id":
-        this._makeCards();
         this._upload.setAttribute("project-id", newValue);
         break;
       case "username":
@@ -98,62 +82,52 @@ class SectionFiles extends TatorElement {
     this._mediaFilter = val;
   }
 
+  set numMedia(val) {
+    this._updateNumCards(val);
+  }
+
+  get numMedia() {
+    return this._paginator.getAttribute("num-files");
+  }
+
+  set cardInfo(val) {
+    this._makeCards(val);
+  }
+
   set mediaIds(val) {
     this._media = val.map(id => {return {id: id}});
     this._updateNumCards();
   }
 
+  set worker(val) {
+    this._worker = val;
+    this._paginator.addEventListener("change", evt => {
+      this._start = evt.detail.start;
+      this._stop = evt.detail.stop;
+      this._worker.postMessage({
+        command: "sectionPage",
+        section: this.getAttribute("section"),
+        start: evt.detail.start,
+        stop: evt.detail.stop,
+      });
+    });
+  }
+
   set algorithms(val) {
     this._algorithms = val;
     this._more.algorithms = val;
-    this._makeCards();
   }
 
   set sections(val) {
     this._sections = val;
-    this._makeCards();
-  }
-
-  addMedia(val) {
-    this._media.unshift(val);
-    this._updateNumCards();
-  }
-
-  addProcess(val, mediaId) {
-    if (mediaId !== null) {
-      val.id = mediaId;
-    }
-    this._processes.unshift(val);
-    this._updateNumCards();
-  }
-
-  updateProgress(processId, mediaId, state, percent, msg) {
-    let selector, index;
-    if (mediaId === null) {
-      selector = "media-card[process-id='" + processId + "']";
-      const processIds = this._processes.map(elem => elem.uid);
-      index = processIds.indexOf(processId);
-    } else {
-      selector = "media-card[media-id='" + mediaId + "']";
-      const mediaIds = this._processes.map(elem => elem.id);
-      index = mediaIds.indexOf(mediaId);
-    }
-    if (index > -1) {
-      this._processes[index].state = state;
-      this._processes[index].progress = percent;
-      this._processes[index].message = msg;
-    }
-    const card = this._shadow.querySelector(selector);
-    if (card !== null) {
-      card.updateProgress(state, percent, msg);
+    const cards = [...this._shadow.querySelectorAll("media-card")];
+    for (const card of cards) {
+      card.sections = val;
     }
   }
 
-  _updateNumCards() {
-    const processMediaIds = this._processes.map(elem => elem.id);
-    const filteredMedia = this._media.filter(elem => !processMediaIds.includes(elem.id));
-    this._joined = this._processes.concat(filteredMedia);
-    this._paginator.setAttribute("num-files", this._joined.length);
+  _updateNumCards(numMedia) {
+    this._paginator.setAttribute("num-files", numMedia);
   }
 
   _updateCard(card, media) {
@@ -175,7 +149,8 @@ class SectionFiles extends TatorElement {
     } else {
       card.removeAttribute("media-id");
     }
-    if ("uid" in media) {
+    const inProgress = media.state == "started" || media.state == "queued";
+    if ("uid" in media && inProgress) {
       if (!("thumb_url" in media)) {
         card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
         card.removeAttribute("thumb-gif");
@@ -188,7 +163,9 @@ class SectionFiles extends TatorElement {
     let percent = null;
     let message = null;
     if ("progress" in media) {
-      percent = media.progress;
+      if (typeof media.progress !== "undefined") {
+        percent = media.progress;
+      }
     }
     if ("message" in media) {
       message = media.message;
@@ -198,93 +175,50 @@ class SectionFiles extends TatorElement {
     card.setAttribute("project-id", this.getAttribute("project-id"));
   }
 
-  _makeCards() {
+  _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
-    const hasMedia = typeof this._media !== "undefined";
+    //const hasMedia = typeof this._media !== "undefined";
     const hasSections = typeof this._sections !== "undefined";
     const hasProject = this.hasAttribute("project-id");
     const hasStart = typeof this._start !== "undefined";
     const hasStop = typeof this._stop !== "undefined";
-    if (hasAlgorithms && hasMedia && hasSections && hasProject && hasStart && hasStop) {
+    if (hasAlgorithms && hasSections && hasProject && hasStart && hasStop) {
       const children = this._main.children;
-      const slice = this._joined.slice(this._start, this._stop);
-      const loadPromise = this._loadMedia(slice);
-      loadPromise.then(() => {
-        for (const [index, media] of slice.entries()) {
-          const newCard = index >= children.length;
-          let card;
-          if (newCard) {
-            card = document.createElement("media-card");
-            card.setAttribute("class", "col-6");
-            card.algorithms = this._algorithms;
-            card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
-            card.addEventListener("mouseenter", () => {
-              if (card.hasAttribute("media-id")) {
-                this.dispatchEvent(new CustomEvent("cardMouseover", {
-                  detail: {media: card.media}
-                }));
-              }
-            });
-            card.addEventListener("mouseleave", () => {
-              if (card.hasAttribute("media-id")) {
-                this.dispatchEvent(new Event("cardMouseexit"));
-              }
-            });
-          } else {
-            card = children[index];
-          }
-          this._updateCard(card, media);
-          if (newCard) {
-            this._main.appendChild(card);
-          }
+      for (const [index, media] of cardInfo.entries()) {
+        const newCard = index >= children.length;
+        let card;
+        if (newCard) {
+          card = document.createElement("media-card");
+          card.setAttribute("class", "col-6");
+          card.algorithms = this._algorithms;
+          card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
+          card.addEventListener("mouseenter", () => {
+            if (card.hasAttribute("media-id")) {
+              this.dispatchEvent(new CustomEvent("cardMouseover", {
+                detail: {media: card.media}
+              }));
+            }
+          });
+          card.addEventListener("mouseleave", () => {
+            if (card.hasAttribute("media-id")) {
+              this.dispatchEvent(new Event("cardMouseexit"));
+            }
+          });
+        } else {
+          card = children[index];
         }
-        if (children.length > this._stop - this._start) {
-          const len = children.length;
-          for (let idx = len - 1; idx >= this._stop; idx--) {
-            this._main.removeChild(children[idx]);
-          }
+        this._updateCard(card, media);
+        if (newCard) {
+          this._main.appendChild(card);
         }
-      });
-    }
-  }
-
-  _loadMedia(slice) {
-    const numProcesses = this._processes.length;
-    const needsLoad = [];
-    const indices = [];
-    for (const [index, media] of slice.entries()) {
-      if (("id" in media) && !("url" in media)) {
-        needsLoad.push(media.id);
-        indices.push(index);
+      }
+      if (children.length > this._stop - this._start) {
+        const len = children.length;
+        for (let idx = len - 1; idx >= this._stop; idx--) {
+          this._main.removeChild(children[idx]);
+        }
       }
     }
-    const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project + "?media_id=" + needsLoad.join();
-    let promise;
-    if (needsLoad.length == 0) {
-      promise = new Promise(resolve => resolve());
-    } else {
-      promise = fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        for (let index = 0; index < needsLoad.length; index++) {
-          const pos = indices[index];
-          const val = data[index];
-          slice[pos] = val;
-          this._joined[pos + this._start] = val;
-          this._media[pos + this._start - numProcesses] = val;
-        }
-      });
-    }
-    return promise;
   }
 
   _checkCardsLoaded() {
