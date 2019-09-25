@@ -97,6 +97,8 @@ class ProjectDetail extends TatorPage {
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "updateSectionNames") {
         this._updateSectionNames(msg.allSections);
+      } else if (msg.command == "workerReady") {
+        window.dispatchEvent(new Event("readyForWebsocket"));
       }
     });
 

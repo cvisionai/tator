@@ -53,9 +53,7 @@ class ProgressSummary extends TatorElement {
     this._summaries = {};
     this._downloadOk = false;
 
-    window.addEventListener("load", async () => {
-      // We until everything is loaded (including from rest calls)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    window.addEventListener("readyForWebsocket", async () => {
       const ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
       const ws_path = ws_scheme + '://' + window.location.hostname + '/ws/progress/';
       this._socket = new ReconnectingWebSocket(ws_path);
