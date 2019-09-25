@@ -427,6 +427,7 @@ class ProjectPermissionBase(BasePermission):
         return self._validate_project(request, project)
 
     def _project_from_object(self, obj):
+        project=None
         if hasattr(obj, 'project'):
             project = obj.project
         # Object is a project
