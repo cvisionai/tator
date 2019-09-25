@@ -26,29 +26,22 @@ class MediaPanel extends TatorElement {
 
   set mediaInfo(val) {
     this._name.textContent = val.name;
-    fetch("/rest/EntityTypeMedia/" + val.meta, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          }
-    }).then((response) => {
-      return response.json();
-    }).then((json) => {
-      if (json.columns.length == 0)
-      {
-        // Hide the attribute viewer is there are none.
-        this._attrs.style.display="none";
-      }
-      else
-      {
-        // Setup the attribute display for the media
-        this._attrs.dataType = json;
-        this._attrs.setValues(val);
-      }
-    });
+    this._mediaData = val;
+  }
+
+  set mediaType(val)
+  {
+    if (val.columns.length == 0)
+    {
+      // Hide the attribute viewer is there are none.
+      this._attrs.style.display="none";
+    }
+    else
+    {
+      // Setup the attribute display for the media
+      this._attrs.dataType = val;
+      this._attrs.setValues(this._mediaData);
+    }
   }
 
   set annotationData(val) {

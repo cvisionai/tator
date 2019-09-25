@@ -72,6 +72,21 @@ class AnnotationPage extends TatorPage {
           this._breadcrumbs.setAttribute("section-name", data.attributes.tator_user_sections);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
+
+          fetch("/rest/EntityTypeMedia/" + data.meta, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          })
+          .then((response) => response.json())
+          .then(data => {
+            this._browser.mediaType = data;
+            this._undo.mediaType = data;
+          });
           if ("thumb_gif_url" in data) {
             const player = document.createElement("annotation-player");
             player.addDomParent({"object": this._headerDiv,
@@ -103,7 +118,7 @@ class AnnotationPage extends TatorPage {
                 });
           }
         })
-        .catch(err => console.log("Failed to retrieve media data: " + err));
+        .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
     }
   }

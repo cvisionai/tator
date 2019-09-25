@@ -43,6 +43,9 @@ class UndoBuffer extends HTMLElement {
             .then(data => console.log("Error during fetch: " + JSON.stringify(data)));
           }
         });
+
+        // Launch any edit trigger algorithms
+        var edit_triggers=this._media.editTriggers;
       }
     });
   }
@@ -63,6 +66,10 @@ class UndoBuffer extends HTMLElement {
 
   set mediaInfo(val) {
     this._media = val;
+  }
+
+  set mediaType(val) {
+    this._mediaType = val;
   }
 
   post(listUri, body, evt) {
