@@ -16,6 +16,11 @@ self.addEventListener("message", async evt => {
     }
   } else if (msg.command == "uploadProgress") {
     // New upload process update from websocket
+    let section;
+    if (self.sections.has(msg.section)) {
+      section = self.sections.get(msg.section);
+      section.uploadProgress(msg);
+    }
   } else if (msg.command == "sectionInView") {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
@@ -88,15 +93,15 @@ class SectionData {
 
     // Media processes.
     this._mediaProcesses = new Map();
+
+    // Upload processes.
+    this._uploadProcesses = new Map();
     
-    // Map of UIDs to process objects.
-    this._processById = new Map();
+    // Sorted list of upload UIDs.
+    this._uploadIds = [];
 
-    // Sorted list of process UIDs.
-    this._sortedIds = [];
-
-    // Sorted list of process progress.
-    this._sortedProgress = [];
+    // Sorted list of upload progress.
+    this._uploadProgress = [];
 
     // Map of media ID to media, sorted by REST API.
     this._mediaById = new Map();
@@ -158,39 +163,28 @@ class SectionData {
     if (this._mediaById.has(mediaId)) {
       this._emitUpdate();
     }
-    /*
-    if (this._mediaById.has(mediaId)) {
-      const mediaIndex = this._mediaIds.indexOf(mediaId);
-      const media = this._mediaIds.splice(mediaIndex, 1);
-      this._mediaById.delete(mediaId);
+  }
+
+  uploadProgress(process) {
+    // Updates an existing process or adds a new one
+    this._uploadProcesses.set(process.uid, process);
+    const currentIndex = this._uploadIds.indexOf(process.uid);
+    const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
+    if (currentIndex > -1) {
+      this._uploadIds.splice(currentIndex, 1);
+      this._uploadProgress.splice(currentIndex, 1);
     }
-    */
-  }
-
-  uploadProgress(mediaId, process) {
-    this.updateProcess(process);
-  }
-
-  updateProcess(process) {
-    if (process.state == "started" || process.state == "queued") {
-      // Updates an existing process or adds a new one
-      this._processById.set(process.uid, process);
-      const currentIndex = this._sortedIds.indexOf(process.uid);
-      const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
-      if (currentIndex > -1) {
-        this._sortedIds.splice(currentIndex, 1);
-        this._sortedProgress.splice(currentIndex, 1);
-      }
-      const sortedIndex = findSortedIndex(this._sortedProgress, process.percent);
-      this._sortedIds.splice(sortedIndex, 0, process.uid);
-      this._sortedProgress.splice(sortedIndex, 0, process.percent);
-      const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
-      if (currentInRange || sortedInRange) {
-        this._emitUpdate();
-      }
-    } else if (process.state == "failed" || process.state == "finished") {
-      this._processedMediaById.set(process.uid, process);
-      this._emitUpdate();//TODO check if necessary
+    let sortMetric = process.progress;
+    if (process.state == "finished") {
+      this._numMedia++;
+      sortMetric = -1;
+    }
+    const sortedIndex = findSortedIndex(this._uploadProgress, sortMetric);
+    this._uploadIds.splice(sortedIndex, 0, process.uid);
+    this._uploadProgress.splice(sortedIndex, 0, sortMetric);
+    const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
+    if (currentInRange || sortedInRange) {
+      this._emitUpdate();
     }
   }
 
@@ -218,14 +212,14 @@ class SectionData {
   }
 
   _emitUpdate() {
-    const numProc = this._processById.size;
-    const stop = Math.min(numProc, this._stop);
-    const procIds = this._sortedIds.slice(this._start, stop);
+    const numUploads = this._uploadProcesses.size;
+    const stop = Math.min(numUploads, this._stop);
+    const procIds = this._uploadIds.slice(this._start, stop);
     const procs = Array.from(
       procIds,
-      procId => this._processById.get(procId)
+      procId => this._uploadProcesses.get(procId)
     );
-    const start = Math.max(numProc, this._start);
+    const start = Math.max(numUploads, this._start);
     const mediaIds = this._mediaIds.slice(start, this._stop);
     const media = Array.from(
       mediaIds,
