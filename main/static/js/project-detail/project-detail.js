@@ -154,24 +154,6 @@ class ProjectDetail extends TatorPage {
 
     this._algorithmButton.addEventListener("newAlgorithm", this._newAlgorithmCallback);
 
-    const updateSection = (section, msg, mediaId) => {
-      if (msg.state == "finished") {
-        section.updateProgress(msg.uid, mediaId, msg.state, null, msg.message);
-        section.removeProcess(msg.uid, mediaId);
-        delete msg.uid;
-        section.addMedia(msg);
-        section.removeMedia(mediaId);
-      } else if (msg.state == "queued" || msg.state == "started") {
-        if (section.hasProcess(msg.uid, mediaId)) {
-          section.updateProgress(msg.uid, mediaId, msg.state, msg.progress, msg.message);
-        } else {
-          section.addProcess(msg, mediaId);
-        }
-      } else if (msg.state == "failed") {
-        section.updateProgress(msg.uid, mediaId, msg.state, null, msg.message);
-      }
-    }
-
     this._progress.addEventListener("uploadProgress", evt => {
       const msg = evt.detail.message;
       if (msg.project_id == this.getAttribute("project-id")) {
@@ -180,22 +162,6 @@ class ProjectDetail extends TatorPage {
           ...msg
         });
       }
-      /*
-      const msg = evt.detail.message;
-      if (msg.project_id == this.getAttribute("project-id")) {
-        const sections = [...this._shadow.querySelectorAll("media-section")];
-        const names = sections.map(elem => elem._sectionName);
-        let section;
-        if (names.includes(msg.section)) {
-          section = sections[names.indexOf(msg.section)];
-        } else {
-          const projectId = this.getAttribute("project-id");
-          section = this._createNewSection(msg.section, projectId, []);
-          this._updateSectionNames();
-        }
-        updateSection(section, msg, null);
-      }
-      */
     });
 
     this._progress.addEventListener("algorithmProgress", evt => {
@@ -206,35 +172,6 @@ class ProjectDetail extends TatorPage {
           ...msg
         });
       }
-      /*
-      const msg = evt.detail.message;
-      if (msg.project_id != this.getAttribute("project-id"))
-      {
-        return;
-      }
-      const sections = [...this._shadow.querySelectorAll("media-section")];
-      const names = sections.map(elem => elem._sectionName);
-      const mediaIds = msg.media_ids.split(",");
-      const msgSections = msg.sections.split(",");
-      for (let idx = 0; idx < mediaIds.length; idx++) {
-        const section = sections[names.indexOf(msgSections[idx])];
-        const mediaId = Number(mediaIds[idx]);
-        const media = section.hasMedia(mediaId);
-        media.uid = msg.uid;
-        if ("progress" in msg) {
-          media.progress = msg.progress;
-        } else {
-          delete media.progress;
-        }
-        if ("message" in msg) {
-          media.message = msg.message;
-        } else {
-          delete media.message;
-        }
-        media.state = msg.state;
-        updateSection(section, media, mediaId);
-      }
-      */
     });
 
     this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));

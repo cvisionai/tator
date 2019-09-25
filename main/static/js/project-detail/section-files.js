@@ -126,41 +126,6 @@ class SectionFiles extends TatorElement {
     }
   }
 
-  addMedia(val) {
-    this._media.unshift(val);
-    this._updateNumCards();
-  }
-
-  addProcess(val, mediaId) {
-    if (mediaId !== null) {
-      val.id = mediaId;
-    }
-    this._processes.unshift(val);
-    this._updateNumCards();
-  }
-
-  updateProgress(processId, mediaId, state, percent, msg) {
-    let selector, index;
-    if (mediaId === null) {
-      selector = "media-card[process-id='" + processId + "']";
-      const processIds = this._processes.map(elem => elem.uid);
-      index = processIds.indexOf(processId);
-    } else {
-      selector = "media-card[media-id='" + mediaId + "']";
-      const mediaIds = this._processes.map(elem => elem.id);
-      index = mediaIds.indexOf(mediaId);
-    }
-    if (index > -1) {
-      this._processes[index].state = state;
-      this._processes[index].progress = percent;
-      this._processes[index].message = msg;
-    }
-    const card = this._shadow.querySelector(selector);
-    if (card !== null) {
-      card.updateProgress(state, percent, msg);
-    }
-  }
-
   _updateNumCards(numMedia) {
     this._paginator.setAttribute("num-files", numMedia);
   }

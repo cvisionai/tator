@@ -23,16 +23,16 @@ self.addEventListener("message", async evt => {
       section = addSection(msg.section, 0, 0);
     }
     section.uploadProgress(msg);
-  } else if (msg.command == "sectionInView") {
-    // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
     // Section changed pages
     const section = self.sections.get(msg.section);
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "sectionFilter") {
     // Applies filter to section
+    // TODO: Implement
   } else if (msg.command == "projectFilter") {
     // Applies filter to whole project
+    // TODO: Implement
   } else if (msg.command == "init") {
     // Sets token, project.
     self.projectId = msg.projectId;
