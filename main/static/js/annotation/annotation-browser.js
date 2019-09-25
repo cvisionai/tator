@@ -23,6 +23,10 @@ class AnnotationBrowser extends TatorElement {
     this._mediaId = val.id;
   }
 
+  set mediaType(val) {
+    this._media.mediaType = val;
+  }
+
   set undoBuffer(val) {
     this._undo = val;
   }

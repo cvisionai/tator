@@ -45,7 +45,25 @@ class UndoBuffer extends HTMLElement {
         });
 
         // Launch any edit trigger algorithms
-        var edit_triggers=this._media.editTriggers;
+        var edit_triggers=this._mediaType.type.editTriggers;
+        if (edit_triggers)
+        {
+          edit_triggers.forEach(algo_name=>{
+            fetch("/rest/AlgorithmLaunch/" + this._media['project'], {
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                "algorithm_name": algo_name,
+                "media_ids": `${this._media['id']}`,
+              }),
+            })
+          });
+        }
       }
     });
   }
