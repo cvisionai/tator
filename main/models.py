@@ -180,6 +180,8 @@ class EntityTypeBase(PolymorphicModel):
 
 class EntityTypeMediaBase(EntityTypeBase):
     uploadable = BooleanField()
+    editTriggers = JSONField(null=True,
+                             blank=True)
 
 class EntityTypeMediaImage(EntityTypeMediaBase):
     entity_name = 'Image'
