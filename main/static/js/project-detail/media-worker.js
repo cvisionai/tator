@@ -19,8 +19,10 @@ self.addEventListener("message", async evt => {
     let section;
     if (self.sections.has(msg.section)) {
       section = self.sections.get(msg.section);
-      section.uploadProgress(msg);
+    } else {
+      section = addSection(msg.section, 0, 0);
     }
+    section.uploadProgress(msg);
   } else if (msg.command == "sectionInView") {
     // Section moved into or out of view
   } else if (msg.command == "sectionPage") {
