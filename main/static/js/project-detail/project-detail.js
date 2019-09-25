@@ -78,16 +78,18 @@ class ProjectDetail extends TatorPage {
     this._worker.addEventListener("message", evt => {
       const msg = evt.data;
       if (msg.command == "updateSection") {
-        const section = this._sections.get(msg.name);
-        if (section !== null) {
+        const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
+        if (section) {
           section.numMedia = msg.count;
           section.cardInfo = msg.data;
         }
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "removeSection") {
-        const section = this._sections.get(msg.name);
-        this._sections.delete(msg.name);
-        this._projects.removeChild(section);
+        const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
+        if (section) {
+          this._projects.removeChild(section);
+          this._checkSectionVisibility();
+        }
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "addSection") {
         const projectId = this.getAttribute("project-id");
@@ -245,7 +247,6 @@ class ProjectDetail extends TatorPage {
 
     this._loaded = 0;
     this._needScroll = true;
-    this._sections = new Map();
 
     this._lastQuery = (this._search.value == "" ? null : this._search.value);
     this._search.addEventListener('filterProject',(evt) => {
@@ -275,8 +276,10 @@ class ProjectDetail extends TatorPage {
   }
 
   _checkSectionVisibility() {
+    console.log("CHECKING VISIBILITY");
     const rect = this._projects.getBoundingClientRect();
     if (rect.bottom < window.innerHeight + 300) {
+      console.log("REQUESTING MORE SECTIONS");
       this._worker.postMessage({command: "requestMoreSections"});
     }
   }
@@ -380,11 +383,7 @@ class ProjectDetail extends TatorPage {
   }
 
   _createNewSection(sectionName, projectId, numMedia, afterSection) {
-    if (sectionName in this._sections) {
-      return;
-    }
     const newSection = document.createElement("media-section");
-    this._sections.set(sectionName, newSection);
     newSection.setAttribute("project-id", projectId);
     newSection.setAttribute("name", sectionName);
     newSection.setAttribute("id", sectionName);
@@ -439,6 +438,7 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateSectionNames(allSections) {
+    console.log("UPDATING SECTION NAMES TO: " + allSections);
     const sections = [...this._shadow.querySelectorAll("media-section")];
     for (const section of sections) {
       section.sections = allSections;

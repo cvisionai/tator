@@ -120,6 +120,10 @@ class SectionFiles extends TatorElement {
 
   set sections(val) {
     this._sections = val;
+    const cards = [...this._shadow.querySelectorAll("media-card")];
+    for (const card of cards) {
+      card.sections = val;
+    }
   }
 
   addMedia(val) {
