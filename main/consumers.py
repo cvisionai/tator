@@ -1165,18 +1165,8 @@ def run_algorithm(content):
             pod_path='setup.py',
             core_v1=core_v1
         )
-        # Create setup job.
-        create_job(
-            container_name=marshal_container_name,
-            command=['python',],
-            args=['/setup.py'],
-            image_name=marshal_container_image,
-            image_tag='latest',
-            cred_name=marshal_cred_name,
-            uid=run_uid,
-            metadata=setup_meta,
-            batch_v1=batch_v1,
-            other_envs=[
+
+        env_list = [
                 kube_client.V1EnvVar(
                     name='TATOR_API_SERVICE',
                     value='https://' + os.getenv("MAIN_HOST") + '/rest/',
@@ -1193,7 +1183,19 @@ def run_algorithm(content):
                     name='TATOR_AUTH_TOKEN',
                     value=token,
                 ),
-            ],
+            ]
+        # Create setup job.
+        create_job(
+            container_name=marshal_container_name,
+            command=['python',],
+            args=['/setup.py'],
+            image_name=marshal_container_image,
+            image_tag='latest',
+            cred_name=marshal_cred_name,
+            uid=run_uid,
+            metadata=setup_meta,
+            batch_v1=batch_v1,
+            other_envs=env_list,
             other_mounts=[setup_mount,],
             other_volumes=[setup_volume,]
         )
@@ -1289,24 +1291,7 @@ def run_algorithm(content):
             uid=run_uid,
             metadata=teardown_meta,
             batch_v1=batch_v1,
-            other_envs=[
-                kube_client.V1EnvVar(
-                    name='TATOR_API_SERVICE',
-                    value='https://' + os.getenv("MAIN_HOST") + '/rest/',
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_TUS_SERVICE',
-                    value='http://' + tusd_ip + ':1080/files/',
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_PROJECT_ID',
-                    value=str(algorithm.project.id),
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_AUTH_TOKEN',
-                    value=token,
-                ),
-            ],
+            other_envs=env_list,
             other_mounts=[teardown_mount,],
             other_volumes=[teardown_volume,]
         )
