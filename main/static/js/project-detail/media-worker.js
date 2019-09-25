@@ -133,6 +133,12 @@ class SectionData {
     // Stop index of current page.
     this._stop = 6;
 
+    // Last time a UI update was emitted.
+    this._lastEmit = Date.now();
+
+    // Timeout for emit function.
+    this._emitTimeout = null;
+
     // Whether this section has been drawn by the UI.
     this.drawn = false;
   }
@@ -233,7 +239,7 @@ class SectionData {
     this.fetchMedia();
   }
 
-  _emitUpdate() {
+  _emitUpdateUnthrottled() {
     if (this.drawn) {
       const numUploads = this._uploadProcesses.size;
       const stopUploads = Math.min(numUploads, this._stop);
@@ -271,6 +277,16 @@ class SectionData {
         allSections: self.sectionOrder,
       });
     }
+  }
+
+  _emitUpdate() {
+    clearTimeout(this._emitTimeout);
+    this._emitTimeout = setTimeout(() => {
+      if ((Date.now() - this._lastEmit) >= 250) {
+        this._emitUpdateUnthrottled();
+        this._lastEmit = Date.now();
+      }
+    }, 250 - (Date.now() - this._lastEmit));
   }
 }
 
@@ -344,6 +360,9 @@ function setupSections(sectionCounts) {
     const data = new SectionData(section, sectionCounts[section]);
     self.sections.set(section, data);
   }
+  self.postMessage({
+    command: "workerReady"
+  });
   loadSections();
 }
 
