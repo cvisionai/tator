@@ -272,6 +272,7 @@ class SectionData {
 
 function addSection(sectionName, count, afterSection) {
   const data = new SectionData(sectionName, count);
+  data.drawn = true;
   self.sections.set(sectionName, data);
   let index = 0;
   if (typeof afterSection === "string") {
