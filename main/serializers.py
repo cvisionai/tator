@@ -152,7 +152,8 @@ class EntityTypeMediaSerializer(PolymorphicSerializer):
         EntityTypeMediaVideo : EntityTypeMediaVideoSerializer,
         }
 
-EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media', 'attributes']
+EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media',
+                                'attributes', 'thumbnail_image']
 class EntityLocalizationBaseSerializer(serializers.Serializer):
     meta = EntityTypeLocalizationLWSerializer()
 
@@ -172,7 +173,7 @@ class EntityLocalizationBoxSerializer(serializers.ModelSerializer,
                                       EntityLocalizationBaseSerializer):
     class Meta:
         model = EntityLocalizationBox
-        fields = EntityLocalization_baseFields + ['x', 'y', 'width', 'height', 'thumbnail_image']
+        fields = EntityLocalization_baseFields + ['x', 'y', 'width', 'height']
 
 class EntityLocalizationSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
