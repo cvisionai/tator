@@ -94,6 +94,8 @@ self.addEventListener("message", async evt => {
       command: "newUploadSection",
       sectionName: sectionName,
     });
+  } else if (msg.command == "requestMoreSections") {
+    loadSections();
   }
 });
 
@@ -120,20 +122,17 @@ class SectionData {
     // List of media IDs.
     this._mediaIds = [];
 
-    // Map of media ID to media being processed.
-    this._processedMediaById = new Map();
-
     // Number of media
     this._numMedia = numMedia;
-
-    // Whether this section is high priority
-    this._priority = false;
 
     // Start index of current page.
     this._start = 0;
 
     // Stop index of current page.
     this._stop = 6;
+
+    // Whether this section has been drawn by the UI.
+    this.drawn = false;
   }
 
   fetchMedia() {
@@ -231,41 +230,43 @@ class SectionData {
   }
 
   _emitUpdate() {
-    const numUploads = this._uploadProcesses.size;
-    const stopUploads = Math.min(numUploads, this._stop);
-    const procIds = this._uploadIds.slice(this._start, stopUploads);
-    const procs = Array.from(
-      procIds,
-      procId => this._uploadProcesses.get(procId)
-    );
-    const start = Math.max(0, this._start - numUploads);
-    const stop = this._stop - numUploads;
-    const mediaIds = this._mediaIds.slice(start, stop);
-    const media = Array.from(
-      mediaIds,
-      mediaId => {
-        mediaId = Number(mediaId);
-        let media = this._mediaById.get(mediaId);
-        if (this._mediaProcesses.has(mediaId)) {
-          const process = this._mediaProcesses.get(mediaId);
-          media = {
-            ...media,
-            uid: process.uid,
-            progress: process.progress,
-            state: process.state,
-            message: process.message,
-          };
+    if (this.drawn) {
+      const numUploads = this._uploadProcesses.size;
+      const stopUploads = Math.min(numUploads, this._stop);
+      const procIds = this._uploadIds.slice(this._start, stopUploads);
+      const procs = Array.from(
+        procIds,
+        procId => this._uploadProcesses.get(procId)
+      );
+      const start = Math.max(0, this._start - numUploads);
+      const stop = this._stop - numUploads;
+      const mediaIds = this._mediaIds.slice(start, stop);
+      const media = Array.from(
+        mediaIds,
+        mediaId => {
+          mediaId = Number(mediaId);
+          let media = this._mediaById.get(mediaId);
+          if (this._mediaProcesses.has(mediaId)) {
+            const process = this._mediaProcesses.get(mediaId);
+            media = {
+              ...media,
+              uid: process.uid,
+              progress: process.progress,
+              state: process.state,
+              message: process.message,
+            };
+          }
+          return media;
         }
-        return media;
-      }
-    );
-    self.postMessage({
-      command: "updateSection",
-      name: this._name,
-      count: this._numMedia,
-      data: procs.concat(media),
-      allSections: self.sectionOrder,
-    });
+      );
+      self.postMessage({
+        command: "updateSection",
+        name: this._name,
+        count: this._numMedia,
+        data: procs.concat(media),
+        allSections: self.sectionOrder,
+      });
+    }
   }
 }
 
@@ -338,16 +339,29 @@ function setupSections(sectionCounts) {
     const data = new SectionData(section, sectionCounts[section]);
     self.sections.set(section, data);
   }
+  loadSections();
+}
+
+function loadSections() {
+  const maxSections = 4;
+  let numLoaded = 0;
   for (const sectionName of self.sectionOrder) {
     if (self.sections.has(sectionName)) {
       const section = self.sections.get(sectionName);
-      self.postMessage({
-        command: "addSection",
-        name: sectionName,
-        count: section._numMedia,
-        afterSection: -1, // Append to end
-        allSections: self.sectionOrder,
-      });
+      if (!section.drawn) {
+        section.drawn = true;
+        self.postMessage({
+          command: "addSection",
+          name: sectionName,
+          count: section._numMedia,
+          afterSection: -1, // Append to end
+          allSections: self.sectionOrder,
+        });
+        numLoaded++;
+        if (numLoaded >= maxSections) {
+          return;
+        }
+      }
     }
   }
 }

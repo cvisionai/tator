@@ -73,6 +73,8 @@ class ProjectDetail extends TatorPage {
       }
     });
 
+    window.addEventListener("scroll", this._checkSectionVisibility.bind(this));
+
     this._worker.addEventListener("message", evt => {
       const msg = evt.data;
       if (msg.command == "updateSection") {
@@ -275,6 +277,7 @@ class ProjectDetail extends TatorPage {
   _checkSectionVisibility() {
     const rect = this._projects.getBoundingClientRect();
     if (rect.bottom < window.innerHeight + 300) {
+      this._worker.postMessage({command: "requestMoreSections"});
     }
   }
 
