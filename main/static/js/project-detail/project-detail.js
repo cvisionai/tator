@@ -31,6 +31,7 @@ class ProjectDetail extends TatorPage {
     buttons.appendChild(this._algorithmButton);
 
     this._uploadButton = document.createElement("upload-button");
+    this._uploadButton.worker = this._worker;
     buttons.appendChild(this._uploadButton);
 
     this._description = document.createElement("project-text");
