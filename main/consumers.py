@@ -1184,6 +1184,13 @@ def run_algorithm(content):
                     value=token,
                 ),
             ]
+
+        # If the algorithm has arguments supply it to the pipeline
+        if algorithm.arguments:
+            env_list.append(kube_client.V1EnvVar(
+                    name='TATOR_PIPELINE_ARGS',
+                    value=json.dumps(algorithm.arguments))
+
         # Create setup job.
         create_job(
             container_name=marshal_container_name,
