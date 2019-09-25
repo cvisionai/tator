@@ -194,6 +194,8 @@ class SectionData {
     let sortMetric = process.progress;
     if (process.state == "finished") {
       sortMetric = -1;
+    } else if (process.state == "failed") { // Failures bubble to top
+      sortMetric = 100;
     }
     const sortedIndex = findSortedIndex(this._uploadProgress, sortMetric);
     this._uploadIds.splice(sortedIndex, 0, process.uid);
