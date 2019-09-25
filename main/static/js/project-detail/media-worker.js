@@ -56,18 +56,7 @@ self.addEventListener("message", async evt => {
     .then(() => {
       const section = self.sections.get(msg.fromSection);
       section.removeMedia(msg.mediaId);
-      const data = new SectionData(name, 1);
-      self.sections.set(name, data);
-      const index = self.sectionOrder.indexOf(msg.fromSection) + 1;
-      self.sectionOrder.splice(index, 0, name);
-      saveSectionOrder();
-      self.postMessage({
-        command: "addSection",
-        name: name,
-        count: 1,
-        afterSection: msg.fromSection,
-        allSections: self.sectionOrder,
-      });
+      addSection(name, 1, msg.fromSection);
     });
   } else if (msg.command == "moveFile") {
     saveMediaSection(msg.mediaId, msg.toSection)
@@ -264,6 +253,25 @@ class SectionData {
       allSections: self.sectionOrder,
     });
   }
+}
+
+function addSection(sectionName, count, afterSection) {
+  const data = new SectionData(sectionName, count);
+  self.sections.set(sectionName, data);
+  let index = 0;
+  if (afterSection) {
+    index = self.sectionOrder.indexOf(afterSection) + 1;
+  }
+  self.sectionOrder.splice(index, 0, sectionName);
+  saveSectionOrder();
+  self.postMessage({
+    command: "addSection",
+    name: sectionName,
+    count: count,
+    afterSection: afterSection,
+    allSections: self.sectionOrder,
+  });
+  return data;
 }
 
 function removeSection(sectionName) {
