@@ -83,6 +83,10 @@ self.addEventListener("message", async evt => {
     });
   } else if (msg.command == "removeSection") {
     removeSection(msg.sectionName);
+  } else if (msg.command == "removeFile") {
+    for (const section of self.sections.values()) {
+      section.removeMedia(msg.mediaId);
+    }
   } else if (msg.command == "requestNewUploadSection") {
     const sectionName = newSectionName();
     const section = addSection(sectionName, 0, 0);
@@ -201,15 +205,18 @@ class SectionData {
 
   removeMedia(mediaId) {
     mediaId = Number(mediaId);
-    const media = this._mediaById.get(mediaId);
-    const currentIndex = this._mediaIds.indexOf(mediaId);
-    this._mediaIds.splice(currentIndex, 1)[0];
-    this._mediaById.delete(mediaId);
-    this._numMedia--;
-    if (this._numMedia <= 0) {
-      removeSection(this._name);
-    } else if (currentIndex >= this._start && currentIndex < this._stop) {
-      this.fetchMedia();
+    let media = null;
+    if (this._mediaById.has(mediaId)) {
+      media = this._mediaById.get(mediaId);
+      const currentIndex = this._mediaIds.indexOf(mediaId);
+      this._mediaIds.splice(currentIndex, 1)[0];
+      this._mediaById.delete(mediaId);
+      this._numMedia--;
+      if (this._numMedia <= 0) {
+        removeSection(this._name);
+      } else if (currentIndex >= this._start && currentIndex < this._stop) {
+        this.fetchMedia();
+      }
     }
     return media;
   }

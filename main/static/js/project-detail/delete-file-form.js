@@ -41,8 +41,10 @@ class DeleteFileForm extends ModalDialog {
               "Content-Type": "application/json"
             },
           })
-          .then(response => window.location.reload(true))
           .catch(err => console.log(err));
+          this.dispatchEvent(new CustomEvent("confirmFileDelete", {
+            detail: {mediaId: newValue}
+          }));
         });
         break;
       case "media-name":

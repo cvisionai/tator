@@ -128,6 +128,15 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    deleteFile.addEventListener("confirmFileDelete", evt => {
+      this._worker.postMessage({
+        command: "removeFile",
+        mediaId: evt.detail.mediaId,
+      });
+      deleteFile.removeAttribute("is-open");
+      this.removeAttribute("has-open-modal", "");
+    });
+
     this._newAlgorithmCallback = evt => {
       const newAlgorithm = document.createElement("new-algorithm-form");
       this._projects.appendChild(newAlgorithm);
