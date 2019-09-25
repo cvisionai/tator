@@ -213,10 +213,8 @@ class ProjectDetail extends TatorPage {
   }
 
   _checkSectionVisibility() {
-    console.log("CHECKING VISIBILITY");
     const rect = this._projects.getBoundingClientRect();
     if (rect.bottom < window.innerHeight + 300) {
-      console.log("REQUESTING MORE SECTIONS");
       this._worker.postMessage({command: "requestMoreSections"});
     }
   }
@@ -375,7 +373,6 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateSectionNames(allSections) {
-    console.log("UPDATING SECTION NAMES TO: " + allSections);
     const sections = [...this._shadow.querySelectorAll("media-section")];
     for (const section of sections) {
       section.sections = allSections;
