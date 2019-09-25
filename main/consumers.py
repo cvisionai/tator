@@ -1186,6 +1186,10 @@ def run_algorithm(content):
                     value=content['media_list'],
                 ),
                 kube_client.V1EnvVar(
+                    name='TATOR_PROJECT_ID',
+                    value=str(algorithm.project.id),
+                ),
+                kube_client.V1EnvVar(
                     name='TATOR_AUTH_TOKEN',
                     value=token,
                 ),
@@ -1293,6 +1297,10 @@ def run_algorithm(content):
                 kube_client.V1EnvVar(
                     name='TATOR_TUS_SERVICE',
                     value='http://' + tusd_ip + ':1080/files/',
+                ),
+                kube_client.V1EnvVar(
+                    name='TATOR_PROJECT_ID',
+                    value=str(algorithm.project.id),
                 ),
                 kube_client.V1EnvVar(
                     name='TATOR_AUTH_TOKEN',
