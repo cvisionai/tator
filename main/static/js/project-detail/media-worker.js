@@ -185,10 +185,8 @@ class SectionData {
 
   uploadProgress(process) {
     // Updates an existing process or adds a new one
-    let numChanged = false;
     if (!this._uploadProcesses.has(process.uid)) {
       this._numMedia++;
-      numChanged = true;
     }
     this._uploadProcesses.set(process.uid, process);
     const currentIndex = this._uploadIds.indexOf(process.uid);
@@ -207,9 +205,7 @@ class SectionData {
     this._uploadIds.splice(sortedIndex, 0, process.uid);
     this._uploadProgress.splice(sortedIndex, 0, sortMetric);
     const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
-    if (currentInRange || sortedInRange || numChanged) {
-      this._emitUpdate();
-    }
+    this._emitUpdate();
   }
 
   removeMedia(mediaId) {
@@ -249,7 +245,7 @@ class SectionData {
         procId => this._uploadProcesses.get(procId)
       );
       const start = Math.max(0, this._start - numUploads);
-      const stop = this._stop - numUploads;
+      const stop = Math.max(0, this._stop - numUploads);
       const mediaIds = this._mediaIds.slice(start, stop);
       const media = Array.from(
         mediaIds,
