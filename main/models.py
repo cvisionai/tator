@@ -526,6 +526,7 @@ class Algorithm(Model):
     registry = CharField(max_length=256, default='https://index.docker.io/v2/')
     username = CharField(max_length=64)
     password = CharField(max_length=64)
+    arguments = JSONField(null=True,blank=True)
     needs_gpu = BooleanField()
     files_per_job = PositiveIntegerField(
         default=1,
