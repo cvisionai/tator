@@ -708,6 +708,10 @@ class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='body',
                               schema=coreschema.String(description='Various depending on `type`. See `/EntityTypeSchema` service.')),
+                coreapi.Field(name='operation',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
 
             ]
 
@@ -987,8 +991,11 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='query',
                               schema=coreschema.String(description='MD5 sum of the media file')),
+                coreapi.Field(name='operation',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name\nattribute_ids: Return a list of IDs split by a given attribute name\nadjacent: Return the media IDs that are adjacent to the given id (example: &operation=adjacent::3 finds adjacent media to media ID 3)\nids: Only return a list of IDs\noverview: Return an overview of the media list')),
             ]
-
         return manual_fields + getOnly_fields + self.attribute_fields()
 
 def get_media_queryset(project, query_params, attr_filter):
@@ -1187,6 +1194,10 @@ class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='query',
                               schema=coreschema.String(description='A unique integer value identifying an entity type.')),
+                coreapi.Field(name='operation',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
             ]
 
         return manual_fields + postOnly_fields + getOnly_fields + self.attribute_fields()
@@ -1213,8 +1224,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
     }
     ```
     """
-    schema=EntityStateCreateListSchema(manual_fields=
-    [])
+    schema=EntityStateCreateListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
