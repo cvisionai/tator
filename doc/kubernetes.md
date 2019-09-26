@@ -67,12 +67,6 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 This is required on a single node deployment.
 
-* Label the master node as a CPU node:
-
-```
-kubectl label nodes <MASTER_NODE_NAME> accelerator=nogpu
-```
-
 You can use:
 
 ```
@@ -107,11 +101,24 @@ kubeadm token create --print-join-command
 kubectl get nodes
 ```
 
-* Once the node is in the Ready state, label the node according to whether it is a GPU node:
+* Once the node is in the Ready state you can move to the next step.
 
+## Label nodes according to desired functions
+
+Tator uses three node labels to select which node a pod can be scheduled on. They are as follows:
+
+* **gpuWorker: [yes/no]** Indicates whether a node can execute GPU algorithms.
+* **cpuWorker: [yes/no]** Indicates whether a node can execute CPU algorithms, including transcoding media.
+* **webServer: [yes/no]** Indicates whether a node can be used for running web services, such as gunicorn or redis.
+
+For example, for a single node without a GPU we could use the following labels:
+ 
 ```
-kubectl label nodes <node-name> accelerator=nvidia # GPU nodes
-kubectl label nodes <node-name> accelerator=nogpu # Non-GPU nodes
+kubectl label nodes <node-name> gpuWorker=no
+kubectl label nodes <node-name> cpuWorker=yes
+kubectl label nodes <node-name> webServer=yes
 ```
+
+Make sure you apply labels for all nodes in the Kubernetes cluster.
 
 The Kubernetes cluster is now configured and you are ready to build Tator.
