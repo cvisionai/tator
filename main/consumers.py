@@ -895,12 +895,12 @@ def create_job(container_name, image_name, image_tag, cred_name, uid, metadata, 
     needs_gpu=False, command=None, args=None,
     other_envs=[], other_mounts=[], other_volumes=[]):
     if needs_gpu:
-        node_selector = {'accelerator': 'nvidia'}
+        node_selector = {'gpuWorker': 'yes'}
         resources = kube_client.V1ResourceRequirements(
             limits={'nvidia.com/gpu': 1},
         )
     else:
-        node_selector = None
+        node_selector = {'cpuWorker': 'yes'}
         resources = None
     mount = kube_client.V1VolumeMount(
         name='media-pv-claim',

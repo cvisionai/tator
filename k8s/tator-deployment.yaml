@@ -19,7 +19,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 10
       nodeSelector:
-        accelerator: nogpu
+        $TATOR_NODE_SELECTOR
       containers:
         - name: tator-online
           image: $DOCKERHUB_USER/tator_online:latest

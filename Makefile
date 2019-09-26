@@ -189,6 +189,7 @@ tusd:
 transcoder:
 	env TATOR_DEPLOYMENT=transcoder-deployment \
 	env TATOR_APP=transcoder \
+	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"transcoder\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -198,6 +199,7 @@ transcoder:
 packager:
 	env TATOR_DEPLOYMENT=packager-deployment \
 	env TATOR_APP=packager \
+	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"packager\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -210,6 +212,7 @@ algorithm:
 	#kubectl apply -f k8s/algo-teardown-networkpolicy.yaml
 	env TATOR_DEPLOYMENT=algorithm-deployment \
 	env TATOR_APP=algorithm \
+	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"algorithm\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -219,6 +222,7 @@ algorithm:
 submitter:
 	env TATOR_DEPLOYMENT=submitter-deployment \
 	env TATOR_APP=submitter \
+	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"submitjobs\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -228,6 +232,7 @@ submitter:
 pruner:
 	env TATOR_DEPLOYMENT=pruner-deployment \
 	env TATOR_APP=pruner \
+	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"prunemessages\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -237,6 +242,7 @@ pruner:
 sizer:
 	env TATOR_DEPLOYMENT=sizer-deployment \
 	env TATOR_APP=sizer \
+	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
 	env TATOR_COMMAND=[\"python3\"] \
 	env TATOR_ARGS=[\"manage.py\",\ \"updateprojects\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \
@@ -246,6 +252,7 @@ sizer:
 gunicorn:
 	env TATOR_DEPLOYMENT=gunicorn-deployment \
 	env TATOR_APP=gunicorn \
+	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
 	env TATOR_COMMAND=[\"gunicorn\"] \
 	env TATOR_ARGS=[\"--workers\",\ \"32\",\"--timeout\",\ \"60\",\"--reload\",\ \"-b\",\ \":8000\",\ \"tator_online.wsgi\"] \
 	env TATOR_INIT_COMMAND=[\"containers/tator/init.sh\"] \
@@ -256,6 +263,7 @@ gunicorn:
 daphne:
 	env TATOR_DEPLOYMENT=daphne-deployment \
 	env TATOR_APP=daphne \
+	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
 	env TATOR_COMMAND=[\"daphne\"] \
 	env TATOR_ARGS=[\"-b\",\ \"0.0.0.0\",\ \"-p\",\ \"8001\",\ \"tator_online.asgi:application\"] \
 	env TATOR_INIT_COMMAND=[\"echo\"] \

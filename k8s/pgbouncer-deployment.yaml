@@ -19,7 +19,7 @@ spec:
         app: pgbouncer
     spec:
       nodeSelector:
-        accelerator: nogpu
+        webServer: "yes"
       containers:
         - name: pgbouncer
           image: edoburu/pgbouncer:1.8.1

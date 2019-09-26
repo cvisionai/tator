@@ -25,10 +25,14 @@ while true; do
         [Yy]* ) kubectl taint nodes --all node-role.kubernetes.io/master-
 		if [ `lsmod | grep nvidia | wc -l` -ne 0 ]; then
 		    echo "GPU Node detected"
-		    kubectl label nodes $(hostname) accelerator=nogpu,nvidia
+		    kubectl label nodes $(hostname) gpuWorker=yes
+		    kubectl label nodes $(hostname) cpuWorker=no
+		    kubectl label nodes $(hostname) webServer=no
 		else
 		    echo "Not running on a GPU node"
-		    kubectl label nodes $(hostname) accelerator=nogpu
+		    kubectl label nodes $(hostname) gpuWorker=no
+		    kubectl label nodes $(hostname) cpuWorker=yes
+		    kubectl label nodes $(hostname) webServer=yes
 		fi
 		break;;
         [Nn]* ) exit;;

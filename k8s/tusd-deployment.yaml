@@ -18,7 +18,7 @@ spec:
         type: web
     spec:
       nodeSelector:
-        accelerator: nogpu
+        webServer: "yes"
       containers:
         - name: tusd
           image: ${DOCKERHUB_USER}/tator_tusd

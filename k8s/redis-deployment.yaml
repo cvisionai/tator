@@ -15,7 +15,7 @@ spec:
         app: redis
     spec:
       nodeSelector:
-        accelerator: nogpu
+        webServer: "yes"
       containers:
       - name: redis
         image: redis

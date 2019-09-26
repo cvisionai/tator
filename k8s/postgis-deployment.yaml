@@ -13,7 +13,7 @@ spec:
         app: postgis
     spec:
       nodeSelector:
-        accelerator: nogpu
+        webServer: "yes"
       containers:
         - name: postgis
           image: $DOCKERHUB_USER/tator_postgis:latest
