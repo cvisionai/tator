@@ -1798,6 +1798,13 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 pass
             new_attrs = validate_attributes(request, localization_object)
             patch_attributes(new_attrs, localization_object)
+
+            # Patch the thumbnail attributes
+            if localization_object.thumbnail_image:
+                for attr_name in new_attrs:
+                    localization_object.thumbnail_image.attributes[attr_name] =\
+                        new_attrs[attr_name]
+                localization_object.thumbnail_image.save()
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
