@@ -29,6 +29,10 @@ class MediaPanel extends TatorElement {
     this._mediaData = val;
   }
 
+  set undoBuffer(val) {
+    this._undo = val;
+  }
+
   set mediaType(val)
   {
     if (val.columns.length == 0)
@@ -41,6 +45,18 @@ class MediaPanel extends TatorElement {
       // Setup the attribute display for the media
       this._attrs.dataType = val;
       this._attrs.setValues(this._mediaData);
+      this._attrs.addEventListener("change", () => {
+      const values = this._attrs.getValues();
+      if (values !== null) {
+        const endpoint="EntityMedia";
+        const id = this._mediaData['id'];
+        const evt = new CustomEvent("update", {detail: val});
+        this._undo.patch(endpoint, id, {"attributes": values}, evt);
+        this.dispatchEvent(new CustomEvent("save", {
+          detail: this._values
+        }));
+      }
+    });
     }
   }
 

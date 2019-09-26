@@ -29,6 +29,7 @@ class AnnotationBrowser extends TatorElement {
 
   set undoBuffer(val) {
     this._undo = val;
+    this._media.undoBuffer = val;
   }
 
   set annotationData(val) {
