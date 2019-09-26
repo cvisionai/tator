@@ -95,6 +95,12 @@ After configuring the master node, kubeadm will print instructions for how to jo
 sudo kubeadm join --token <token> <master-ip>:<master-port> --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
+If you are joining a node to a cluster that has already been set up, you can generate the token and print the command needed to join with:
+
+```
+kubeadm token create --print-join-command
+```
+
 * You can check the status of the new node by executing the following on the master node:
 
 ```
