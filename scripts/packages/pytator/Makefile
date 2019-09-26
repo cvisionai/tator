@@ -11,3 +11,9 @@ wheel:
 	rm -fr build
 	python3 setup.py bdist_wheel
 
+.PHONY: install
+install:
+	pip3 install .
+#Hack to fix shebang in local lines
+	cp tator_testHarness.py `which tator_testHarness.py`
+

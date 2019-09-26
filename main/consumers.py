@@ -1175,6 +1175,34 @@ def run_algorithm(content):
             pod_path='setup.py',
             core_v1=core_v1
         )
+
+        env_list = [
+                kube_client.V1EnvVar(
+                    name='TATOR_API_SERVICE',
+                    value='https://' + os.getenv("MAIN_HOST") + '/rest/',
+                ),
+                kube_client.V1EnvVar(
+                    name='TATOR_MEDIA_IDS',
+                    value=content['media_list'],
+                ),
+                kube_client.V1EnvVar(
+                    name='TATOR_PROJECT_ID',
+                    value=str(algorithm.project.id),
+                ),
+                kube_client.V1EnvVar(
+                    name='TATOR_AUTH_TOKEN',
+                    value=token,
+                ),
+            ]
+
+        # If the algorithm has arguments supply it to the pipeline
+        if algorithm.arguments:
+            env_list.append(
+                kube_client.V1EnvVar(
+                    name='TATOR_PIPELINE_ARGS',
+                    value=json.dumps(algorithm.arguments))
+            )
+
         # Create setup job.
         create_job(
             container_name=marshal_container_name,
@@ -1186,20 +1214,7 @@ def run_algorithm(content):
             uid=run_uid,
             metadata=setup_meta,
             batch_v1=batch_v1,
-            other_envs=[
-                kube_client.V1EnvVar(
-                    name='TATOR_API_SERVICE',
-                    value='https://' + os.getenv("MAIN_HOST") + '/rest/',
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_MEDIA_IDS',
-                    value=content['media_list'],
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_AUTH_TOKEN',
-                    value=token,
-                ),
-            ],
+            other_envs=env_list,
             other_mounts=[setup_mount,],
             other_volumes=[setup_volume,]
         )
@@ -1251,6 +1266,7 @@ def run_algorithm(content):
             uid=run_uid,
             metadata=algorithm_meta,
             batch_v1=batch_v1,
+            other_envs=env_list,
         )
         # Log the output and wait for results.
         log_and_wait(
@@ -1295,20 +1311,7 @@ def run_algorithm(content):
             uid=run_uid,
             metadata=teardown_meta,
             batch_v1=batch_v1,
-            other_envs=[
-                kube_client.V1EnvVar(
-                    name='TATOR_API_SERVICE',
-                    value='https://' + os.getenv("MAIN_HOST") + '/rest/',
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_TUS_SERVICE',
-                    value='http://' + tusd_ip + ':1080/files/',
-                ),
-                kube_client.V1EnvVar(
-                    name='TATOR_AUTH_TOKEN',
-                    value=token,
-                ),
-            ],
+            other_envs=env_list,
             other_mounts=[teardown_mount,],
             other_volumes=[teardown_volume,]
         )

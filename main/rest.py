@@ -428,6 +428,7 @@ class ProjectPermissionBase(BasePermission):
         return self._validate_project(request, project)
 
     def _project_from_object(self, obj):
+        project=None
         if hasattr(obj, 'project'):
             project = obj.project
         # Object is a project
@@ -1730,6 +1731,13 @@ class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 self.check_object_permissions(request, media_object)
                 new_attrs = validate_attributes(request, media_object)
                 patch_attributes(new_attrs, media_object)
+
+                if type(media_object) == EntityMediaImage:
+                    for localization in media_object.thumbnail_image.all():
+                        for key in new_attrs:
+                            localization.attributes[key] = new_attrs[key]
+                        localization.save()
+
                 del request.data['attributes']
             if bool(request.data):
                 super().patch(request, **kwargs)
@@ -1761,6 +1769,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 y = request.data.get("y", None)
                 height = request.data.get("height", None)
                 width = request.data.get("width", None)
+                thumbnail_image = request.data.get("thumbnail_image", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -1769,6 +1778,19 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                     localization_object.height = height
                 if width:
                     localization_object.width = width
+
+                # If the localization moved; the thumbnail is expired
+                if (x or y or height or width) and \
+                   localization_object.thumbnail_image:
+                    localization_object.thumbnail_image.delete()
+
+                if thumbnail_image:
+                    try:
+                        thumbnail_obj=\
+                            EntityMediaImage.objects.get(pk=thumbnail_image)
+                        localization_object.thumbnail_image = thumbnail_obj
+                    except:
+                        logger.error("Bad thumbnail reference given")
                 # TODO we shouldn't be saving here (after patch below)
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationLine:
@@ -1798,6 +1820,13 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 pass
             new_attrs = validate_attributes(request, localization_object)
             patch_attributes(new_attrs, localization_object)
+
+            # Patch the thumbnail attributes
+            if localization_object.thumbnail_image:
+                for attr_name in new_attrs:
+                    localization_object.thumbnail_image.attributes[attr_name] =\
+                        new_attrs[attr_name]
+                localization_object.thumbnail_image.save()
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:

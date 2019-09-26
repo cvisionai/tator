@@ -181,6 +181,8 @@ class EntityTypeBase(PolymorphicModel):
 
 class EntityTypeMediaBase(EntityTypeBase):
     uploadable = BooleanField()
+    editTriggers = JSONField(null=True,
+                             blank=True)
 
 class EntityTypeMediaImage(EntityTypeMediaBase):
     entity_name = 'Image'
@@ -309,6 +311,12 @@ class EntityLocalizationBase(EntityBase):
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
 
+@receiver(pre_delete, sender=EntityLocalizationBase)
+def localization_delete(sender, instance, **kwargs):
+    """ Delete generated thumbnails if a localization box is deleted """
+    if instance.thumbnail_image:
+        instance.thumbnail_image.delete()
+
 class EntityLocalizationDot(EntityLocalizationBase):
     x = FloatField()
     y = FloatField()
@@ -340,7 +348,7 @@ class AssociationType(PolymorphicModel):
         # Get states with these associations
         states = EntityState.objects.filter(association__in=associations)
         return states
-        
+
 
 class MediaAssociation(AssociationType):
     def states(media_id):
@@ -527,6 +535,7 @@ class Algorithm(Model):
     registry = CharField(max_length=256, default='https://index.docker.io/v2/')
     username = CharField(max_length=64)
     password = CharField(max_length=64)
+    arguments = JSONField(null=True,blank=True)
     needs_gpu = BooleanField()
     files_per_job = PositiveIntegerField(
         default=1,

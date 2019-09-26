@@ -6,7 +6,7 @@
   PYTATOR_VERSION=PYTATOR_VERSION_FILE.read()
   PYTATOR_VERSION_FILE.close()
 %>
-FROM python:3-alpine
+FROM python:3-slim
 MAINTAINER CVision AI <info@cvisionai.com>
 
 % if multiArch.arch!=multiArch.host:

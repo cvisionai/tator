@@ -138,7 +138,7 @@ class EntityTypeLocalizationLWSerializer(PolymorphicSerializer):
 
 # EntityTypeMedias are pretty similar, but keep the pattern going
 # for flexibility down the line.
-EntityTypeMedia_BaseFields=['id', 'name', 'description']
+EntityTypeMedia_BaseFields=['id', 'name', 'description', 'editTriggers']
 class EntityTypeMediaImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntityTypeMediaImage
@@ -155,7 +155,8 @@ class EntityTypeMediaSerializer(PolymorphicSerializer):
         EntityTypeMediaVideo : EntityTypeMediaVideoSerializer,
         }
 
-EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media', 'attributes']
+EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media',
+                                'attributes', 'thumbnail_image']
 class EntityLocalizationBaseSerializer(serializers.Serializer):
     meta = EntityTypeLocalizationLWSerializer()
 
@@ -217,7 +218,7 @@ def FastEntityLocalizationSerializer(queryset):
 
 
 EntityMedia_baseFields = [
-    'id', 'meta', 'attributes', 'name', 'url', 
+    'id', 'project', 'meta', 'attributes', 'name', 'url',
     'last_edit_start', 'last_edit_end'
 ]
 class EntityMediaBaseSerializer(serializers.Serializer):
