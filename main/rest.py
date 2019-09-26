@@ -1716,6 +1716,13 @@ class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 self.check_object_permissions(request, media_object)
                 new_attrs = validate_attributes(request, media_object)
                 patch_attributes(new_attrs, media_object)
+
+                if type(media_object) == EntityMediaImage:
+                    for localization in media_object.thumbnail_image.all():
+                        for key in new_attrs:
+                            localization.attributes[key] = new_attrs[key]
+                        localization.save()
+
                 del request.data['attributes']
             if bool(request.data):
                 super().patch(request, **kwargs)
