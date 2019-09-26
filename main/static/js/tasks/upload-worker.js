@@ -62,7 +62,7 @@ self.setInterval(() => {
     }
   }
   progressBuffer = {};
-}, 100);
+}, 50);
 
 // Define function to add message to progress buffer.
 const bufferMessage = (projectId, token, uid, msg) => { 
