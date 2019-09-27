@@ -1744,9 +1744,7 @@ class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
 
                 if type(media_object) == EntityMediaImage:
                     for localization in media_object.thumbnail_image.all():
-                        for key in new_attrs:
-                            localization.attributes[key] = new_attrs[key]
-                        localization.save()
+                        patch_attributes(new_attrs, localization)
 
                 del request.data['attributes']
             if bool(request.data):
@@ -1833,10 +1831,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
 
             # Patch the thumbnail attributes
             if localization_object.thumbnail_image:
-                for attr_name in new_attrs:
-                    localization_object.thumbnail_image.attributes[attr_name] =\
-                        new_attrs[attr_name]
-                localization_object.thumbnail_image.save()
+                patch_attributes(new_attrs, localization_object.thumbnail_image)
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
