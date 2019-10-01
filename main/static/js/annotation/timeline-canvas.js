@@ -63,8 +63,10 @@ class TimelineCanvas extends TatorElement {
 
   _plotBoolState(attributeName, data) {
     this.clear();
-    const numFrames = this._range.getAttribute("max");
-    this._canvas.setAttribute("width", numFrames);
+    const numFrames = parseFloat(this._range.getAttribute("max"));
+    this._canvasWidth=2000;
+    this._canvasFactor=this._canvasWidth/numFrames;
+    this._canvas.setAttribute("width", this._canvasWidth);
     this._canvas.setAttribute("height", "1");
     const context = this._canvas.getContext("2d");
     const values = [];
@@ -77,7 +79,7 @@ class TimelineCanvas extends TatorElement {
       } else {
         context.fillStyle = "#262e3d";
       }
-      context.fillRect(frame, 0, numFrames, 1);
+      context.fillRect(frame*this._canvasFactor, 0, this._canvasWidth, 1);
       values.push(value);
       frames.push(frame);
     }
