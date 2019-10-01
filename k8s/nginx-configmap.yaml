@@ -93,6 +93,7 @@ data:
           add_header Cache-Control "max-age=0, must-revalidate";
         }
 
+        error_page 503 /static/maintenance.html;
         # Allow POST on static pages
         error_page 405 =200 $uri;
       }
