@@ -84,7 +84,7 @@ data:
         location / {
           # for now turn off routing to gunicorn (comment this to turn us back
           # on)
-          return 503;
+          # return 503;
           proxy_pass http://gunicorn-svc:8000;
 
           proxy_redirect off;
