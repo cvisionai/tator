@@ -18,6 +18,8 @@ def processSection(tator, section, types_of_interest, medias):
             type_id=typeObj['type']['id']
             type_desc=typeObj['type']['dtype']
             df=typeObj['dataframe']
+            if type(df) != pd.DataFrame:
+                continue
             per_media=df[df.media==media_id]
             for idx,localization in per_media.iterrows():
                 if type_desc == 'box':
@@ -58,6 +60,7 @@ if __name__=="__main__":
     parser.add_argument("--project", required=True)
     parser.add_argument("--token", required=True)
     parser.add_argument("--output", required=False,default="summary.csv")
+    parser.add_argument("--section", required=False)
     args=parser.parse_args()
 
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
@@ -68,20 +71,26 @@ if __name__=="__main__":
 
     # only care about lines + dots
     for typeObj in types:
-        if not typeObj['type']['dtype'] == 'dot':
-            type_id = typeObj['type']['id']
-            typeObj['dataframe']=tator.Localization.dataframe({'type': type_id})
-            types_of_interest.append(typeObj)
-
-
+        type_id = typeObj['type']['id']
+        typeObj['dataframe']=tator.Localization.dataframe({'type': type_id})
+        types_of_interest.append(typeObj)
 
     data=pd.DataFrame(columns=COLUMNS)
-    for section in section_names:
+    if args.section:
+        section=args.section
         section_filter=f"tator_user_sections::{section}"
         medias=tator.Media.filter({"attribute": section_filter})
         section_locals=processSection(tator, section, types_of_interest, medias)
         section_data=pd.DataFrame(data=section_locals,
                                   columns=COLUMNS)
         data = data.append(section_data)
+    else:
+        for section in section_names:
+            section_filter=f"tator_user_sections::{section}"
+            medias=tator.Media.filter({"attribute": section_filter})
+            section_locals=processSection(tator, section, types_of_interest, medias)
+            section_data=pd.DataFrame(data=section_locals,
+                                  columns=COLUMNS)
+            data = data.append(section_data)
 
     data.to_csv(args.output, index=False)
