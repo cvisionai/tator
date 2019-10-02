@@ -88,6 +88,20 @@ class APIElement:
 
         return response.json()
 
+    def new(self, obj):
+        response=requests.post(self.url + "/" + self.endpoint +"/"+self.project,
+                               json=obj,
+                               headers=self.headers)
+        if response.status_code >= 300 or response.status_code < 200:
+            try:
+                msg=response.json()
+                print("Error: {}\nDetails: {}".format(msg['message'],
+                                                      msg['details']))
+            except:
+                print("Error: {}".format(response.text))
+
+        return (response.status_code, response.json())
+
     def getSingleElement(self, endpoint, params):
         listObj=self.getMany(endpoint, params)
         if listObj != None and len(listObj) > 0:
