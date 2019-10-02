@@ -14,7 +14,7 @@ if __name__=="__main__":
     parser.add_argument("--output", required=False,default="fileSummary.csv")
     parser.add_argument("--section", required=True)
     args=parser.parse_args()
-    
+
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
 
     # Gather up all the types for a project
@@ -42,7 +42,7 @@ if __name__=="__main__":
 
     print(f"CSV File Columsn = {col_names}")
 
-    
+
 
     data = pd.DataFrame(columns=col_names,
                         data=None)
@@ -56,12 +56,13 @@ if __name__=="__main__":
     for media in bar(medias):
         datum={'File': media['name'],
                'URL': url.format(media['id'], sectionEncoded)}
-        
+
         detail = media_types[media['meta']]
         if detail['columns']:
             for attr in detail['columns']:
                 attr_name=attr['name']
                 datum.update({attr_name : media['attributes'][attr_name]})
+
 
         for stateType in state_types:
             state_id=stateType['type']['id']
@@ -75,15 +76,15 @@ if __name__=="__main__":
                 datum.update({state_name: 0})
 
         for localizationType in localization_types:
-            local_id=stateType['type']['id']
-            local_name=stateType['type']['name']
+            local_id=localizationType['type']['id']
+            local_name=localizationType['type']['name']
             localizations=tator.Localization.filter({'media_id': media['id'],
                                                      'type': local_id,
                                                      'operation' : 'count'})
-            if states:
-                datum.update({state_name: states['count']})
+            if localizations:
+                datum.update({local_name: localizations['count']})
             else:
-                datum.update({state_name: 0})
+                datum.update({local_name: 0})
 
         data = pd.DataFrame(columns=col_names,
                             data=[datum])
