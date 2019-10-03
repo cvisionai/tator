@@ -2,6 +2,7 @@
 
 import pytator.api as apiImpl
 import argparse
+import requests
 
 def cli_parser():
     """ Returns an argument parser with project required arguments """
@@ -10,6 +11,18 @@ def cli_parser():
     parser.add_argument("--project", required=True)
     parser.add_argument("--token", required=True)
     return parser
+
+class Auth:
+    def getToken(url, username, password):
+        response=requests.post(url.rstrip('/') + '/' + 'Token',
+                               json={'username': username,
+                                     'password': password})
+        if response.code==200:
+            token_msg = response.json()
+            return token_msg['token']
+        else:
+            print("ERROR: {}".format(response.json()))
+            return None
 
 class Tator:
     """
