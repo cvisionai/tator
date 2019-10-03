@@ -2,3 +2,4 @@ build
 dist
 Gnocchi.egg-info
 gnocchi/ui_project.py
+*.pyc
