@@ -4,7 +4,7 @@ import argparse
 import pytator
 import pandas as pd
 import progressbar
-import math
+import os
 
 def processSection(tator, col_names, section, types_of_interest, medias):
     result=[]
@@ -65,15 +65,20 @@ def processSection(tator, col_names, section, types_of_interest, medias):
 
 
 
-                if localization['thumbnail']:
-                    thumb_media=tator.Media.get(localization['thumbnail'])
+                try:
+                    thumbnail_id = int(localization['thumbnail_image'])
+                except:
+                    thumbnail_id = None
+                if thumbnail_id:
+                    thumb_media=tator.Media.get(thumbnail_id)
                     if primary_attribute:
                         datum['thumbnail'] = localization['attributes'][primary_attribute]
                         datum['thumbnail'] += '_'
                     else:
                         datum['thumbnail'] = ''
-                        datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
+                    datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
 
+                    os.makedirs("images", exist_ok=True)
                     tator.Media.downloadFile(thumb_media,
                                              os.path.join("images",
                                                           datum['thumbnail']))
