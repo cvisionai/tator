@@ -24,7 +24,7 @@ def processSection(tator, col_names, section, types_of_interest, medias):
             for idx,localization in per_media.iterrows():
                 if type_desc == 'box':
                     datum={'section': section,
-                           'image': media['name'],
+                           'media': media['name'],
                            'type': type_desc,
                            'x': localization['x']*width,
                            'y': localization['y']*height,
@@ -32,7 +32,7 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                            'height': localization['height']*height}
                 elif type_desc == 'line':
                     datum={'section': section,
-                           'image': media['name'],
+                           'media': media['name'],
                            'type': type_desc,
                            'x': localization['x0']*width,
                            'y': localization['y0']*height,
@@ -40,7 +40,7 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                            'height': localization['y1']*height}
                 elif type_desc == 'dot':
                     datum={'section': section,
-                           'image': media['name'],
+                           'media': media['name'],
                            'type': type_desc,
                            'x': localization['x']*width,
                            'y': localization['y']*height,
@@ -76,7 +76,7 @@ if __name__=="__main__":
     types_of_interest=[]
 
     # TODO: put URL back in when frame jump works
-    col_names=['section', 'image', 'id', 'type', 'x','y','width','height']
+    col_names=['section', 'media', 'id', 'type', 'x','y','width','height']
     # only care about lines + dots
     for typeObj in types:
         type_id = typeObj['type']['id']
