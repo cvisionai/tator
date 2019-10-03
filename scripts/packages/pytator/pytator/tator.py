@@ -1,6 +1,15 @@
 """ Python library for interacting with Tator REST API"""
 
 import pytator.api as apiImpl
+import argparse
+
+def cli_parser():
+    """ Returns an argument parser with project required arguments """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--url", required=True)
+    parser.add_argument("--project", required=True)
+    parser.add_argument("--token", required=True)
+    return parser
 
 class Tator:
     """
