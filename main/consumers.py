@@ -403,8 +403,7 @@ def run_transcoder(content):
                             cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
-                            bufsize=1,
-                            universal_newlines=True) as proc:
+                            bufsize=1) as proc:
                         for line in proc.stdout:
                             # Listen for stop signal
                             if threading.current_thread().stopped():
