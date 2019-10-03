@@ -45,10 +45,14 @@ class BoolInput extends TatorElement {
 
     this._on.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));
+      this._onLabel.blur();
+      this._offLabel.blur();
     });
 
     off.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));
+      this._onLabel.blur();
+      this._offLabel.blur();
     });
 
     span.addEventListener("click", () => {
