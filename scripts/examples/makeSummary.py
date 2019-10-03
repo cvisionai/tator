@@ -17,6 +17,10 @@ def processSection(tator, col_names, section, types_of_interest, medias):
         for typeObj in types_of_interest:
             type_id=typeObj['type']['id']
             type_desc=typeObj['type']['dtype']
+            primary_attribute=None
+            for col in typeObj['columns']:
+                if col['order'] == 0:
+                    primary_attribute = col['name']
             df=typeObj['dataframe']
             if type(df) != pd.DataFrame:
                 continue
@@ -59,6 +63,15 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                 # Add unique id
                 datum['id'] = localization['id']
 
+
+
+                if primary_attribute:
+                    datum['thumbnail'] = localization['attributes'][primary_attribute]
+                    datum['thumbnail'] += '_'
+                else:
+                    datum['thumbnail'] = ''
+                datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
+
                 result.append(datum)
     return result
 if __name__=="__main__":
@@ -76,7 +89,7 @@ if __name__=="__main__":
     types_of_interest=[]
 
     # TODO: put URL back in when frame jump works
-    col_names=['section', 'media', 'id', 'type', 'x','y','width','height']
+    col_names=['section', 'media', 'thumbnail', 'id', 'type', 'x','y','width','height']
     # only care about lines + dots
     for typeObj in types:
         type_id = typeObj['type']['id']
