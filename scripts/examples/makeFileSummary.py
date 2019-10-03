@@ -18,7 +18,7 @@ if __name__=="__main__":
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
 
     # Gather up all the types for a project
-    col_names=['File', 'URL']
+    col_names=['Section', 'File', 'URL']
     media_types={}
     for mediaType in tator.MediaType.all():
         detail = tator.MediaType.get(mediaType['id'])
@@ -54,7 +54,8 @@ if __name__=="__main__":
     medias=tator.Media.filter({"attribute": section_filter})
     bar = progressbar.ProgressBar(redirect_stdout=True)
     for media in bar(medias):
-        datum={'File': media['name'],
+        datum={'Section': args.section,
+               'File': media['name'],
                'URL': url.format(media['id'], sectionEncoded)}
 
         detail = media_types[media['meta']]
