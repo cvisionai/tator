@@ -7,6 +7,8 @@ class Tator:
     Top-level module for access Tator API endpoints
     """
     def __init__(self, url, token, project):
+        self.project = project
+        self._url = url
         self.Media = apiImpl.Media((url,token,project))
         self.MediaType = apiImpl.MediaType((url,token,project))
         self.LocalizationType = apiImpl.LocalizationType((url,token,project))
@@ -15,3 +17,8 @@ class Tator:
         self.Track = apiImpl.Track((url,token,project))
         self.Localization = apiImpl.Localization((url,token,project))
         self.TreeLeaf = apiImpl.TreeLeaf((url,token,project))
+
+    def baseURL(self):
+        """ Returns the URL for accessing site content """
+        remove_rest = self._url.replace("/rest", "")
+        return remove_rest + "/"
