@@ -65,12 +65,18 @@ def processSection(tator, col_names, section, types_of_interest, medias):
 
 
 
-                if primary_attribute:
-                    datum['thumbnail'] = localization['attributes'][primary_attribute]
-                    datum['thumbnail'] += '_'
-                else:
-                    datum['thumbnail'] = ''
-                datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
+                if localization['thumbnail']:
+                    thumb_media=tator.Media.get(localization['thumbnail'])
+                    if primary_attribute:
+                        datum['thumbnail'] = localization['attributes'][primary_attribute]
+                        datum['thumbnail'] += '_'
+                    else:
+                        datum['thumbnail'] = ''
+                        datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
+
+                    tator.Media.downloadFile(thumb_media,
+                                             os.path.join("images",
+                                                          datum['thumbnail']))
 
                 result.append(datum)
     return result
