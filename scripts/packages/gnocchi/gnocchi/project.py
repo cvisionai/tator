@@ -35,7 +35,16 @@ class Project(QtWidgets.QMainWindow):
         if token is None:
             logging.warning("Bad user credentials")
         else:
-            logging.info("Acquired Token")
+            self.ui.login_widget.setVisible(False)
+
+            tator=pytator.Tator('https://cvision.tatorapp.com/rest',
+                                token,
+                                None)
+            projects=tator.Project.all()
+            for project in projects:
+                self.ui.tabWidget.addTab(QtWidgets.QWidget(self), project['name'])
+            self.ui.tabWidget.setVisible(True)
+            self.adjustSize()
 
 def start():
     parser = argparse.ArgumentParser(description='Camera Control Utility')
