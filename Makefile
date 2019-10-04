@@ -6,6 +6,8 @@ OPERATIONS=reset logs bash
 
 IMAGES=tator-image marshal-image tus-image postgis-image
 
+GIT_VERSION=$(shell git rev-parse HEAD)
+
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -57,7 +59,7 @@ reset:
 
 # Create backup with pg_dump
 backup:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S").sql;
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
 
 # Restore database from specified backup (base filename only)
 # Example:
