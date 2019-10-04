@@ -10,6 +10,12 @@
     <height>600</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
    <string>Gnocchi</string>
   </property>
@@ -35,7 +41,7 @@
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="connectBtn">
          <property name="text">
           <string>Connect</string>
          </property>
@@ -46,22 +52,17 @@
     </item>
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
       <widget class="QWidget" name="projectsTab">
        <attribute name="title">
-        <string>Projects</string>
+        <string>Project</string>
        </attribute>
        <zorder>widget</zorder>
-      </widget>
-      <widget class="QWidget" name="tab_2">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <attribute name="title">
-        <string/>
-       </attribute>
       </widget>
      </widget>
     </item>
@@ -80,10 +81,16 @@
     <property name="title">
      <string>Settings</string>
     </property>
+    <addaction name="actionExit"/>
    </widget>
    <addaction name="menuSettings"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
