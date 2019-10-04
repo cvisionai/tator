@@ -17,7 +17,7 @@ class Auth:
         response=requests.post(url.rstrip('/') + '/' + 'Token',
                                json={'username': username,
                                      'password': password})
-        if response.code==200:
+        if response.status_code==200:
             token_msg = response.json()
             return token_msg['token']
         else:
