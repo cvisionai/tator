@@ -21,7 +21,10 @@ class APIElement:
         self.individual_endpoint = endpoint.rstrip('s')
         self.url = api[0].rstrip('/')
         self.token = str(api[1])
-        self.project = str(api[2])
+        if api[2]:
+            self.project = str(api[2])
+        else:
+            self.project = None
         self.headers={"Authorization" : "Token {}".format(self.token),
                       "Content-Type": "application/json"}
 
@@ -29,7 +32,10 @@ class APIElement:
     def getMany(self, endpoint, params):
         obj = None
         try:
-            ep = self.url + "/" + endpoint+"/"+self.project
+            if self.project:
+                ep = self.url + "/" + endpoint+"/"+self.project
+            else:
+                ep = self.url + "/" + endpoint
             response=requests.get(ep,
                                   params=params,
                                   headers=self.headers)
@@ -126,6 +132,10 @@ class APIElement:
 class MediaType(APIElement):
     def __init__(self, api):
          super().__init__(api, "EntityTypeMedias")
+
+class Project(APIElement):
+    def __init__(self, api):
+         super().__init__(api, "Projects")
 
 class Media(APIElement):
     def __init__(self, api):
