@@ -52,6 +52,7 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                            'height': 0.0}
                 #Add attributes
                 datum.update(localization['attributes'])
+                datum.update({"frame": localization['frame']})
 
                 # Add persistent url
                 url = base_url.rstrip("/") + "/" + tator.project
@@ -100,7 +101,7 @@ if __name__=="__main__":
     types_of_interest=[]
 
     # TODO: put URL back in when frame jump works
-    col_names=['section', 'media', 'thumbnail', 'id', 'type', 'x','y','width','height']
+    col_names=['section', 'media', 'thumbnail', 'id', 'frame', 'type', 'x','y','width','height']
     # only care about lines + dots
     for typeObj in types:
         type_id = typeObj['type']['id']
