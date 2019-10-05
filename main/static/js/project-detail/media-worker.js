@@ -32,7 +32,6 @@ self.addEventListener("message", async evt => {
     // TODO: Implement
   } else if (msg.command == "filterProject") {
     // Applies filter to whole project
-    console.log("RECEIVED FILTER PROJECT MESSAGE: " + JSON.stringify(msg));
     let url = "/rest/EntityMedias/" + self.projectId +
       "?operation=attribute_count::tator_user_sections";
     if (msg.query) {
@@ -44,7 +43,7 @@ self.addEventListener("message", async evt => {
       headers: self.headers,
     })
     .then(response => response.json())
-    .then(attrs => updateSections(attrs))
+    .then(attrs => updateSections(attrs, msg.query))
     .catch(err => console.log("Error applying filter: " + err));
   } else if (msg.command == "init") {
     // Sets token, project.
@@ -59,12 +58,18 @@ self.addEventListener("message", async evt => {
       "Accept": "application/json",
       "Content-Type": "application/json"
     };
-    let url = "/rest/EntityMedias/" + msg.projectId +
+    const url = "/rest/EntityMedias/" + msg.projectId +
       "?operation=attribute_count::tator_user_sections";
-    if (msg.projectFilter) {
-      url += "&search=" + msg.projectFilter;
-    }
     const attributePromise = fetchRetry(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: self.headers,
+    });
+    let filterUrl = url;
+    if (msg.projectFilter) {
+      filterUrl += "&search=" + msg.projectFilter;
+    }
+    const filterPromise = fetchRetry(filterUrl, {
       method: "GET",
       credentials: "omit",
       headers: self.headers,
@@ -75,15 +80,14 @@ self.addEventListener("message", async evt => {
       credentials: "omit",
       headers: self.headers,
     });
-    Promise.all([attributePromise, algorithmPromise])
+    Promise.all([attributePromise, filterPromise, algorithmPromise])
     .then(responses => Promise.all(responses.map(resp => resp.json())))
-    .then(([attrs, algs]) => {
-      console.log("ATTR COUNTS: " + JSON.stringify(attrs));
+    .then(([attrs, filtAttrs, algs]) => {
       self.postMessage({
         command: "algorithms",
         algorithms: algs,
       });
-      setupSections(attrs);
+      setupSections(attrs, filtAttrs, msg.projectFilter);
     })
     .catch(err => console.log("Error initializing web worker: " + err));
   } else if (msg.command == "moveFileToNew") {
@@ -132,7 +136,7 @@ self.addEventListener("message", async evt => {
 });
 
 class SectionData {
-  constructor(name, numMedia) {
+  constructor(name, numMedia, search) {
     // Section name.
     this._name = name;
 
@@ -157,6 +161,9 @@ class SectionData {
     // Number of media
     this._numMedia = numMedia;
 
+    // Search string
+    this._search = search 
+
     // Start index of current page.
     this._start = 0;
 
@@ -177,9 +184,12 @@ class SectionData {
     // Fetches next batch of data
     const start = this._mediaById.size;
     if (start < this._stop) {
-      const url = "/rest/EntityMedias/" + self.projectId +
+      let url = "/rest/EntityMedias/" + self.projectId +
         "?attribute=tator_user_sections::" + this._name + 
         "&start=" + start + "&stop=" + this._stop;
+      if (this._search !== null) {
+        url += "&search=" + this._search;
+      }
       fetchRetry(url, {
         method: "GET",
         credentials: "omit",
@@ -197,6 +207,14 @@ class SectionData {
     } else {
       this._emitUpdate();
     }
+  }
+
+  setFilter(numMedia, search) {
+    this._mediaById = new Map();
+    this._mediaIds = [];
+    this._search = search;
+    this._numMedia = numMedia;
+    this.fetchMedia();
   }
 
   setPage(start, stop) {
@@ -360,7 +378,7 @@ function saveSectionOrder() {
   });
 }
 
-function setupSections(sectionCounts) {
+function setupSections(sectionCounts, filteredCounts, projectFilter) {
   let missingOrder = false;
   for (const section of Object.keys(sectionCounts)) {
     if (!self.sectionOrder.includes(section)) {
@@ -383,7 +401,12 @@ function setupSections(sectionCounts) {
   }
   self.sections = new Map();
   for (const section in sectionCounts) {
-    const data = new SectionData(section, sectionCounts[section]);
+    let data;
+    if (section in filteredCounts) {
+      data = new SectionData(section, filteredCounts[section], projectFilter);
+    } else {
+      data = new SectionData(section, 0, projectFilter);
+    }
     self.sections.set(section, data);
   }
   self.postMessage({
@@ -392,8 +415,17 @@ function setupSections(sectionCounts) {
   loadSections();
 }
 
-function updateSections(sectionCounts) {
-  console.log("SECTION COUNTS: " + JSON.stringify(sectionCounts));
+function updateSections(sectionCounts, projectFilter) {
+  for (const sectionName of self.sectionOrder) {
+    if (self.sections.has(sectionName)) {
+      const section = self.sections.get(sectionName);
+      if (sectionName in sectionCounts) {
+        section.setFilter(sectionCounts[sectionName], projectFilter);
+      } else {
+        section.setFilter(0, projectFilter);
+      }
+    }
+  }
 }
 
 function loadSections() {

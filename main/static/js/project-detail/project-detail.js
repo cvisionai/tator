@@ -196,21 +196,8 @@ class ProjectDetail extends TatorPage {
       if (query != this._lastQuery) {
         if (query.length >= 3) {
           this._lastQuery = query;
-          document.body.style.cursor = "progress";
-          /*
-          this._updateMedia(query).then(() => {
-            this._updateSections();
-            document.body.style.cursor = null;
-          });
-          */
         } else if (query == "") {
           this._lastQuery = null;
-          /*
-          this._updateMedia().then(() => {
-            this._updateSections();
-            document.body.style.cursor = null;
-          });
-          */
         }
         this._worker.postMessage({
           command: "filterProject",
