@@ -35,13 +35,12 @@ class ProjectSearch extends TatorElement {
     div.appendChild(this._input);
 
     this._filtered_already = false;
-    this._input.addEventListener('change',()=>{
-      return;
+    this._input.addEventListener('change',() => {
+
       // Update search params to new value
       let params = new URLSearchParams(document.location.search.substring(1));
       params.delete("search");
-      if (this._input.value != "")
-      {
+      if (this._input.value != "") {
         params.set("search", this._input.value);
       }
 
@@ -50,31 +49,27 @@ class ProjectSearch extends TatorElement {
       var newUrl = path;
       newUrl += "?" + searchArgs;
 
-      if (this._filtered_already)
-      {
+      if (this._filtered_already) {
         window.history.replaceState(this._input.value,"Filter",newUrl);
-      }
-      else
-      {
+      } else {
         window.history.pushState(this._input.value,"Filter",newUrl);
         this._filtered_already = true;
       }
 
-      this.dispatchEvent(new CustomEvent('filterProject',
-                                             {composed: true,
-                                              detail:
-                                              {'query': this._input.value}}));
+      this.dispatchEvent(new CustomEvent('filterProject', {
+        composed: true,
+        detail: {'query': this._input.value}
+      }));
     });
 
     //Handle filter done via page load TODO (fix this)
     let params = new URLSearchParams(document.location.search.substring(1));
-    if (params.has("search"))
-    {
+    if (params.has("search")) {
       this._input.value = params.get("search");
-      this.dispatchEvent(new CustomEvent('filterProject',
-                                         {composed: true,
-                                          detail:
-                                          {'query': this._input.value}}));
+      this.dispatchEvent(new CustomEvent('filterProject', {
+        composed: true,
+        detail: {'query': this._input.value}
+      }));
     }
   }
 
@@ -86,8 +81,7 @@ class ProjectSearch extends TatorElement {
     return this._input.value;
   }
 
-  set autocomplete(config)
-  {
+  set autocomplete(config) {
     TatorAutoComplete.enable(this._input, config);
   }
 

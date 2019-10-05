@@ -99,6 +99,9 @@ class ProjectDetail extends TatorPage {
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "workerReady") {
         window.dispatchEvent(new Event("readyForWebsocket"));
+      } else if (msg.command == "algorithms") {
+        this._algorithms = msg.algorithms;
+        this._algorithmButton.algorithms = msg.algorithms;
       }
     });
 
@@ -188,12 +191,16 @@ class ProjectDetail extends TatorPage {
     this._needScroll = true;
 
     this._lastQuery = (this._search.value == "" ? null : this._search.value);
-    this._search.addEventListener('filterProject',(evt) => {
+    this._search.addEventListener("filterProject", evt => {
       const query = evt.detail.query;
       if (query.length >= 3 && query != this._lastQuery)
       {
         this._lastQuery = query;
         document.body.style.cursor = "progress";
+        this._worker.postMessage({
+          command: "filterProject",
+          query: evt.detail.query,
+        });
         this._updateMedia(query).then(() => {
           this._updateSections();
           document.body.style.cursor = null;
@@ -248,38 +255,6 @@ class ProjectDetail extends TatorPage {
       });
     })
     .catch(err => console.log("Failed to retrieve project data: " + err));
-
-    // Define a function for retrieving project data.
-    const getProjectData = endpoint => {
-      const url = "/rest/" + endpoint + "/" + projectId;
-      return fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      }).then(response => response.json())
-    }
-
-    // Attempt to use the last query if present
-    if (projectFilter == undefined) {
-      projectFilter = this._lastQuery;
-    }
-    // Get media ids by attribute.
-    var url = "/rest/EntityMedias/" + projectId +
-        "?operation=attribute_ids::tator_user_sections";
-    if (projectFilter) {
-      url += "&search=" + projectFilter;
-    }
-
-    // Get project data then create sections.
-    return getProjectData("Algorithms")
-      .then(algorithms => {
-        this._algorithms = algorithms;
-        this._algorithmButton.algorithms = algorithms;
-      });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

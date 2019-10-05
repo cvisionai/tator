@@ -27,10 +27,10 @@ self.addEventListener("message", async evt => {
     // Section changed pages
     const section = self.sections.get(msg.section);
     section.setPage(msg.start, msg.stop);
-  } else if (msg.command == "sectionFilter") {
+  } else if (msg.command == "filterSection") {
     // Applies filter to section
     // TODO: Implement
-  } else if (msg.command == "projectFilter") {
+  } else if (msg.command == "filterProject") {
     // Applies filter to whole project
     // TODO: Implement
   } else if (msg.command == "init") {
@@ -48,13 +48,26 @@ self.addEventListener("message", async evt => {
     };
     const url = "/rest/EntityMedias/" + msg.projectId +
       "?operation=attribute_count::tator_user_sections";
-    fetchRetry(url, {
+    const attributePromise = fetchRetry(url, {
       method: "GET",
       credentials: "omit",
       headers: self.headers,
+    });
+    const algUrl = "/rest/Algorithms/" + msg.projectId;
+    const algorithmPromise = fetchRetry(algUrl, {
+      method: "GET",
+      credentials: "omit",
+      headers: self.headers,
+    });
+    Promise.all([attributePromise, algorithmPromise])
+    .then(responses => Promise.all(responses.map(resp => resp.json())))
+    .then(([attrs, algs]) => {
+      self.postMessage({
+        command: "algorithms",
+        algorithms: algs,
+      });
+      setupSections(attrs);
     })
-    .then(response => response.json())
-    .then(data => setupSections(data))
     .catch(err => console.log("Error initializing web worker: " + err));
   } else if (msg.command == "moveFileToNew") {
     // Moves media to new section
