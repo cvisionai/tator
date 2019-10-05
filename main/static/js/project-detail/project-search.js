@@ -35,7 +35,7 @@ class ProjectSearch extends TatorElement {
     div.appendChild(this._input);
 
     this._filtered_already = false;
-    this._input.addEventListener('change',() => {
+    this._input.addEventListener("change",() => {
 
       // Update search params to new value
       let params = new URLSearchParams(document.location.search.substring(1));
@@ -56,20 +56,16 @@ class ProjectSearch extends TatorElement {
         this._filtered_already = true;
       }
 
-      this.dispatchEvent(new CustomEvent('filterProject', {
+      this.dispatchEvent(new CustomEvent("filterProject", {
         composed: true,
-        detail: {'query': this._input.value}
+        detail: {"query": this._input.value}
       }));
     });
 
-    //Handle filter done via page load TODO (fix this)
+    // Update text from url
     let params = new URLSearchParams(document.location.search.substring(1));
     if (params.has("search")) {
       this._input.value = params.get("search");
-      this.dispatchEvent(new CustomEvent('filterProject', {
-        composed: true,
-        detail: {'query': this._input.value}
-      }));
     }
   }
 

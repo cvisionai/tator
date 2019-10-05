@@ -193,25 +193,28 @@ class ProjectDetail extends TatorPage {
     this._lastQuery = (this._search.value == "" ? null : this._search.value);
     this._search.addEventListener("filterProject", evt => {
       const query = evt.detail.query;
-      if (query.length >= 3 && query != this._lastQuery)
-      {
-        this._lastQuery = query;
-        document.body.style.cursor = "progress";
+      if (query != this._lastQuery) {
+        if (query.length >= 3) {
+          this._lastQuery = query;
+          document.body.style.cursor = "progress";
+          /*
+          this._updateMedia(query).then(() => {
+            this._updateSections();
+            document.body.style.cursor = null;
+          });
+          */
+        } else if (query == "") {
+          this._lastQuery = null;
+          /*
+          this._updateMedia().then(() => {
+            this._updateSections();
+            document.body.style.cursor = null;
+          });
+          */
+        }
         this._worker.postMessage({
           command: "filterProject",
-          query: evt.detail.query,
-        });
-        this._updateMedia(query).then(() => {
-          this._updateSections();
-          document.body.style.cursor = null;
-        });
-      }
-      if (query == "")
-      {
-        this._lastQuery = null;
-        this._updateMedia().then(() => {
-          this._updateSections();
-          document.body.style.cursor = null;
+          query: this._lastQuery,
         });
       }
     });
@@ -229,7 +232,7 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateMedia(projectFilter) {
-    const projectId = this.getAttribute('project-id');
+    const projectId = this.getAttribute("project-id");
     // Get info about the project.
     fetch("/rest/Project/" + projectId, {
       method: "GET",
@@ -247,10 +250,16 @@ class ProjectDetail extends TatorPage {
       this._description.setAttribute("text", data.summary);
       this._collaborators.usernames = data.usernames;
       this._search.autocomplete = data.filter_autocomplete;
+      let projectFilter = null;
+      let params = new URLSearchParams(document.location.search.substring(1));
+      if (params.has("search")) {
+        projectFilter = params.get("search");
+      }
       this._worker.postMessage({
         command: "init",
         projectId: projectId,
         sectionOrder: data.section_order,
+        projectFilter: projectFilter,
         token: this.getAttribute("token"),
       });
     })

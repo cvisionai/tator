@@ -32,7 +32,20 @@ self.addEventListener("message", async evt => {
     // TODO: Implement
   } else if (msg.command == "filterProject") {
     // Applies filter to whole project
-    // TODO: Implement
+    console.log("RECEIVED FILTER PROJECT MESSAGE: " + JSON.stringify(msg));
+    let url = "/rest/EntityMedias/" + self.projectId +
+      "?operation=attribute_count::tator_user_sections";
+    if (msg.query) {
+      url += "&search=" + msg.query;
+    }
+    fetchRetry(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: self.headers,
+    })
+    .then(response => response.json())
+    .then(attrs => updateSections(attrs))
+    .catch(err => console.log("Error applying filter: " + err));
   } else if (msg.command == "init") {
     // Sets token, project.
     self.projectId = msg.projectId;
@@ -46,8 +59,11 @@ self.addEventListener("message", async evt => {
       "Accept": "application/json",
       "Content-Type": "application/json"
     };
-    const url = "/rest/EntityMedias/" + msg.projectId +
+    let url = "/rest/EntityMedias/" + msg.projectId +
       "?operation=attribute_count::tator_user_sections";
+    if (msg.projectFilter) {
+      url += "&search=" + msg.projectFilter;
+    }
     const attributePromise = fetchRetry(url, {
       method: "GET",
       credentials: "omit",
@@ -62,6 +78,7 @@ self.addEventListener("message", async evt => {
     Promise.all([attributePromise, algorithmPromise])
     .then(responses => Promise.all(responses.map(resp => resp.json())))
     .then(([attrs, algs]) => {
+      console.log("ATTR COUNTS: " + JSON.stringify(attrs));
       self.postMessage({
         command: "algorithms",
         algorithms: algs,
@@ -373,6 +390,10 @@ function setupSections(sectionCounts) {
     command: "workerReady"
   });
   loadSections();
+}
+
+function updateSections(sectionCounts) {
+  console.log("SECTION COUNTS: " + JSON.stringify(sectionCounts));
 }
 
 function loadSections() {
