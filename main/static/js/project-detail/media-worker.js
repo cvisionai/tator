@@ -508,7 +508,7 @@ function newSectionName() {
 }
 
 function saveMediaSection(mediaId, sectionName) {
-  return fetch("/rest/EntityMedia/" + mediaId, {
+  return fetchRetry("/rest/EntityMedia/" + mediaId, {
     method: "PATCH",
     credentials: "omit",
     headers: self.headers,
