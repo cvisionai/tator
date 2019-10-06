@@ -408,11 +408,9 @@ function saveSectionOrder() {
 }
 
 function setupSections(sectionCounts, filteredCounts, projectFilter) {
-  let missingOrder = false;
   for (const section of Object.keys(sectionCounts)) {
     if (!self.sectionOrder.includes(section)) {
       self.sectionOrder.push(section);
-      missingOrder = true;
     }
   }
   const invalidSections = [];
@@ -425,9 +423,10 @@ function setupSections(sectionCounts, filteredCounts, projectFilter) {
     const removeIndex = self.sectionOrder.indexOf(section);
     self.sectionOrder.splice(removeIndex, 1);
   }
-  if (missingOrder) {
-    saveSectionOrder();
-  }
+  self.sectionOrder.sort((left, right) => {
+    return left.toLowerCase().localeCompare(right.toLowerCase());
+  });
+  saveSectionOrder();
   self.sections = new Map();
   for (const section in sectionCounts) {
     let data;
