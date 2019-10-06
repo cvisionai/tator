@@ -58,9 +58,11 @@ self.addEventListener("message", async evt => {
     .then(response => response.json())
     .then(attrs => updateSections(attrs, msg.query))
     .catch(err => console.log("Error applying filter: " + err));
+    self.projectFilter = msg.query;
   } else if (msg.command == "init") {
     // Sets token, project.
     self.projectId = msg.projectId;
+    self.projectFilter = msg.projectFilter;
     if (typeof msg.sectionOrder == "undefined") {
       self.sectionOrder = [];
     } else {
@@ -354,7 +356,7 @@ class SectionData {
 }
 
 function addSection(sectionName, count, afterSection) {
-  const data = new SectionData(sectionName, count);
+  const data = new SectionData(sectionName, count, self.projectFilter);
   data.drawn = true;
   self.sections.set(sectionName, data);
   let index = 0;
