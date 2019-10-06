@@ -82,6 +82,9 @@ class ProjectDetail extends TatorPage {
         if (section) {
           section.numMedia = msg.count;
           section.cardInfo = msg.data;
+          if (section.sectionFilter != msg.sectionFilter) {
+            section.sectionFilter = msg.sectionFilter;
+          }
         }
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "removeSection") {

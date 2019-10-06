@@ -193,16 +193,21 @@ class SectionData {
     this.drawn = false;
   }
 
+  getSectionFilter() {
+    let url = "?attribute=tator_user_sections::" + this._name;
+    if (this._search !== null) {
+      url += "&search=" + this._search;
+    }
+    return url;
+  }
+
   fetchMedia() {
     // Fetches next batch of data
     const start = this._mediaById.size;
     if (start < this._stop) {
-      let url = "/rest/EntityMedias/" + self.projectId +
-        "?attribute=tator_user_sections::" + this._name + 
+      const url = "/rest/EntityMedias/" + self.projectId + 
+        this.getSectionFilter() +
         "&start=" + start + "&stop=" + this._stop;
-      if (this._search !== null) {
-        url += "&search=" + this._search;
-      }
       fetchRetry(url, {
         method: "GET",
         credentials: "omit",
@@ -331,6 +336,7 @@ class SectionData {
         name: this._name,
         count: this._numMedia,
         data: procs.concat(media),
+        sectionFilter: this.getSectionFilter(),
         allSections: self.sectionOrder,
       });
     }
