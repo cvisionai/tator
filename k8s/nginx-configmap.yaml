@@ -4,10 +4,10 @@ metadata:
   name: nginx-conf
 data:
   nginx.conf: |
-    worker_processes 5;
+    worker_processes 1;
 
     events {
-      worker_connections 4096;
+      worker_connections 1024;
     }
 
     http {
@@ -23,7 +23,7 @@ data:
       }
 
       server {
-        listen 443 ssl;
+        listen 443 ssl http2;
 
         server_name $TATOR_DOMAIN;
 
