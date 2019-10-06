@@ -87,6 +87,11 @@ class ProjectDetail extends TatorPage {
           }
         }
         this._updateSectionNames(msg.allSections);
+      } else if (msg.command == "updateOverview") {
+        const section = this._shadow.querySelector("media-section[id='" + msg.sectionName + "']");
+        if (section) {
+          section._overview.updateForAll();
+        }
       } else if (msg.command == "removeSection") {
         const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
         if (section) {

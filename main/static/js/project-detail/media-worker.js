@@ -291,6 +291,10 @@ class SectionData {
         this.fetchMedia();
       }
     }
+    self.postMessage({
+      command: "updateOverview",
+      sectionName: this._name,
+    });
     return media;
   }
 
@@ -301,6 +305,10 @@ class SectionData {
     this._mediaById.set(media.id, media);
     this._numMedia++;
     this.fetchMedia();
+    self.postMessage({
+      command: "updateOverview",
+      sectionName: this._name,
+    });
   }
 
   _emitUpdateUnthrottled() {
