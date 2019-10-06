@@ -18,8 +18,8 @@ class SectionFiles extends TatorElement {
     actions.setAttribute("class", "files__actions d-flex flex-items-center py-3");
     header.appendChild(actions);
 
-    const search = document.createElement("section-search");
-    actions.appendChild(search);
+    this._search = document.createElement("section-search");
+    actions.appendChild(this._search);
 
     this._upload = document.createElement("section-upload");
     actions.appendChild(this._upload);
@@ -109,6 +109,14 @@ class SectionFiles extends TatorElement {
         section: this.getAttribute("section"),
         start: evt.detail.start,
         stop: evt.detail.stop,
+      });
+    });
+
+    this._search.addEventListener("filterSection", evt => {
+      this._worker.postMessage({
+        command: "filterSection",
+        sectionName: this.getAttribute("section"),
+        query: evt.detail.query,
       });
     });
   }

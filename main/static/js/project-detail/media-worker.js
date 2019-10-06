@@ -29,7 +29,20 @@ self.addEventListener("message", async evt => {
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "filterSection") {
     // Applies filter to section
-    // TODO: Implement
+    let url = "/rest/EntityMedias/" + self.projectId +
+      "?operation=attribute_count::tator_user_sections" +
+      "&attribute=tator_user_sections::" + msg.sectionName;
+    if (msg.query) {
+      url += "&search=" + msg.query;
+    }
+    fetchRetry(url, {
+      method: "GET",
+      credentials: "omit",
+      headers: self.headers,
+    })
+    .then(response => response.json())
+    .then(attrs => updateSection(attrs, msg.query))
+    .catch(err => console.log("Error applying filter: " + err));
   } else if (msg.command == "filterProject") {
     // Applies filter to whole project
     let url = "/rest/EntityMedias/" + self.projectId +
@@ -425,6 +438,13 @@ function updateSections(sectionCounts, projectFilter) {
         section.setFilter(0, projectFilter);
       }
     }
+  }
+}
+
+function updateSection(sectionCounts, sectionFilter) {
+  for (const sectionName in sectionCounts) {
+    const section = self.sections.get(sectionName);
+    section.setFilter(sectionCounts[sectionName], sectionFilter);
   }
 }
 

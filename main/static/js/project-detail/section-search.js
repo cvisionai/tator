@@ -10,6 +10,13 @@ class SectionSearch extends TatorElement {
     input.setAttribute("type", "search");
     input.setAttribute("placeholder", "Search within...");
     label.appendChild(input);
+
+    input.addEventListener("change",() => {
+      this.dispatchEvent(new CustomEvent("filterSection", {
+        composed: true,
+        detail: {"query": input.value}
+      }));
+    });
   }
 }
 
