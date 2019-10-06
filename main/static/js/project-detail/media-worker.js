@@ -313,9 +313,17 @@ class SectionData {
 
   _emitUpdateUnthrottled() {
     if (this.drawn) {
-      const numUploads = this._uploadProcesses.size;
+      const uploadIds = this._uploadIds.filter(procId => {
+        let keep = true;
+        if (this._search !== null) {
+          const proc = this._uploadProcesses.get(procId);
+          keep = proc.name.includes(this._search);
+        }
+        return keep;
+      });
+      const numUploads = uploadIds.length;
       const stopUploads = Math.min(numUploads, this._stop);
-      const procIds = this._uploadIds.slice(this._start, stopUploads);
+      const procIds = uploadIds.slice(this._start, stopUploads);
       const procs = Array.from(
         procIds,
         procId => this._uploadProcesses.get(procId)
