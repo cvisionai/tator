@@ -1022,32 +1022,41 @@ def get_media_queryset(project, query_params, attr_filter):
         queryset = queryset.filter(name=name)
 
     if search != None:
-        jsonEmbedded = f'{search}' # This will currently search on keys too
-        localizations = EntityLocalizationBase.objects.filter(project=project)\
-                            .annotate(attr_string=
-                                      Cast('attributes',
-                                           TextField()))\
-                            .filter(attr_string__icontains=jsonEmbedded)
-        l_medias=localizations.values('media').distinct()
-        states=EntityState.objects.filter(project=project)\
-                            .annotate(attr_string=
-                                      Cast('attributes',
-                                           TextField()))\
-                            .filter(attr_string__icontains=jsonEmbedded)
-        s_medias=states.values('association__media').distinct()
-
-        attr_media=EntityMediaBase.objects.filter(project=project)\
-                            .annotate(attr_string=
-                                            Cast('attributes',
-                                                 TextField()))\
-                            .filter(attr_string__icontains=jsonEmbedded)
-
-        a_medias=attr_media.values('pk').distinct()
-
-        queryset = queryset.filter(Q(name__icontains=search) |
-                                   Q(pk__in=l_medias) |
-                                   Q(pk__in=s_medias) |
-                                   Q(pk__in=a_medias))
+        media_queries = []
+        # Find string and enum attribute types
+        attr_types = AttributeTypeBase.objects.filter(project=project)
+        for attr_type in attr_types:
+            is_str = isinstance(attr_type, AttributeTypeString)
+            is_enum = isinstance(attr_type, AttributeTypeEnum)
+            if is_str or is_enum:
+                entity_type = attr_type.applies_to
+                name_filter = {f'attributes__{attr_type.name}__icontains': search}
+                if isinstance(entity_type, EntityTypeLocalizationBase):
+                    entities = EntityLocalizationBase.objects.filter(
+                        meta=entity_type,
+                        **name_filter,
+                    )
+                    medias = entities.values('media').distinct()
+                elif isinstance(entity_type, EntityTypeState):
+                    entities = EntityState.objects.filter(
+                        meta=entity_type,
+                        **name_filter,
+                    )
+                    medias = entities.values('association__media').distinct()
+                elif isinstance(entity_type, EntityTypeMediaBase):
+                    entities = EntityMediaBase.objects.filter(
+                        meta=entity_type,
+                        **name_filter,
+                    )
+                    medias = entities.values('pk').distinct()
+                media_queries.append(medias)
+        
+        search_qs = EntityMediaBase.objects.filter(
+            Q(name__icontains=search) | Q(attributes__tator_user_sections=search),
+            project=project
+        ).values('pk').distinct()
+        search_qs = search_qs.union(*media_queries)
+        queryset = queryset.filter(pk__in=search_qs)
 
     if md5 != None:
         queryset = queryset.filter(md5=md5)
