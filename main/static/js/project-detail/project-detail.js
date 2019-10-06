@@ -82,8 +82,16 @@ class ProjectDetail extends TatorPage {
         if (section) {
           section.numMedia = msg.count;
           section.cardInfo = msg.data;
+          if (section.sectionFilter != msg.sectionFilter) {
+            section.sectionFilter = msg.sectionFilter;
+          }
         }
         this._updateSectionNames(msg.allSections);
+      } else if (msg.command == "updateOverview") {
+        const section = this._shadow.querySelector("media-section[id='" + msg.sectionName + "']");
+        if (section) {
+          section._overview.updateForAll();
+        }
       } else if (msg.command == "removeSection") {
         const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
         if (section) {
@@ -99,6 +107,11 @@ class ProjectDetail extends TatorPage {
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "workerReady") {
         window.dispatchEvent(new Event("readyForWebsocket"));
+      } else if (msg.command == "algorithms") {
+        this._algorithms = msg.algorithms;
+        this._algorithmButton.algorithms = msg.algorithms;
+      } else if (msg.command == "checkVisibility") {
+        this._checkSectionVisibility();
       }
     });
 
@@ -188,23 +201,17 @@ class ProjectDetail extends TatorPage {
     this._needScroll = true;
 
     this._lastQuery = (this._search.value == "" ? null : this._search.value);
-    this._search.addEventListener('filterProject',(evt) => {
+    this._search.addEventListener("filterProject", evt => {
       const query = evt.detail.query;
-      if (query.length >= 3 && query != this._lastQuery)
-      {
-        this._lastQuery = query;
-        document.body.style.cursor = "progress";
-        this._updateMedia(query).then(() => {
-          this._updateSections();
-          document.body.style.cursor = null;
-        });
-      }
-      if (query == "")
-      {
-        this._lastQuery = null;
-        this._updateMedia().then(() => {
-          this._updateSections();
-          document.body.style.cursor = null;
+      if (query != this._lastQuery) {
+        if (query.length >= 3) {
+          this._lastQuery = query;
+        } else if (query == "") {
+          this._lastQuery = null;
+        }
+        this._worker.postMessage({
+          command: "filterProject",
+          query: this._lastQuery,
         });
       }
     });
@@ -222,7 +229,7 @@ class ProjectDetail extends TatorPage {
   }
 
   _updateMedia(projectFilter) {
-    const projectId = this.getAttribute('project-id');
+    const projectId = this.getAttribute("project-id");
     // Get info about the project.
     fetch("/rest/Project/" + projectId, {
       method: "GET",
@@ -240,46 +247,20 @@ class ProjectDetail extends TatorPage {
       this._description.setAttribute("text", data.summary);
       this._collaborators.usernames = data.usernames;
       this._search.autocomplete = data.filter_autocomplete;
+      let projectFilter = null;
+      let params = new URLSearchParams(document.location.search.substring(1));
+      if (params.has("search")) {
+        projectFilter = params.get("search");
+      }
       this._worker.postMessage({
         command: "init",
         projectId: projectId,
         sectionOrder: data.section_order,
+        projectFilter: projectFilter,
         token: this.getAttribute("token"),
       });
     })
     .catch(err => console.log("Failed to retrieve project data: " + err));
-
-    // Define a function for retrieving project data.
-    const getProjectData = endpoint => {
-      const url = "/rest/" + endpoint + "/" + projectId;
-      return fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      }).then(response => response.json())
-    }
-
-    // Attempt to use the last query if present
-    if (projectFilter == undefined) {
-      projectFilter = this._lastQuery;
-    }
-    // Get media ids by attribute.
-    var url = "/rest/EntityMedias/" + projectId +
-        "?operation=attribute_ids::tator_user_sections";
-    if (projectFilter) {
-      url += "&search=" + projectFilter;
-    }
-
-    // Get project data then create sections.
-    return getProjectData("Algorithms")
-      .then(algorithms => {
-        this._algorithms = algorithms;
-        this._algorithmButton.algorithms = algorithms;
-      });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

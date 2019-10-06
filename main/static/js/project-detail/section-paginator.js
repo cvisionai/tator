@@ -69,11 +69,12 @@ class SectionPaginator extends TatorElement {
         this._expand.setAttribute("num-files", newValue);
         const needsInit = typeof this._numShown === "undefined";
         const belowMin = this._numShown < SectionPaginator.collapsedFiles;
+        this._start = 0;
         if (needsInit || belowMin) {
-          this._start = 0;
           this._stop = Math.min(newValue, SectionPaginator.collapsedFiles);
           this._numShown = this._stop;
         } else {
+          this._stop = this._numShown;
           if (this._stop > newValue) {
             this._stop = newValue;
             this._numShown = this._stop - this._start;

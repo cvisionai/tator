@@ -42,17 +42,7 @@ class MediaSection extends TatorElement {
       const projectId = this.getAttribute("project-id");
       const mediaId = evt.detail.mediaId;
       const url = "/" + projectId + "/annotation/" + mediaId;
-
-      //Merge section + search params
-      var section_params =
-          new URLSearchParams(this._sectionFilter().substring(1));
-      var search_params =
-          new URLSearchParams(document.location.search.substring(1));
-      if (search_params.has('search'))
-      {
-        section_params.set('search', search_params.get('search'));
-      }
-      window.location.href = url + '?' + section_params.toString();
+      window.location.href = url + this._sectionFilter();
     });
 
     this._files.addEventListener("cardMouseover", evt => {
@@ -86,14 +76,11 @@ class MediaSection extends TatorElement {
         if (newValue === "null") {
           this._nameText.nodeValue = "Unnamed Section";
           this._sectionName = "Unnamed Section";
-          this._attributeFilter = "attribute_null=tator_user_sections::true";
         }
         else {
           this._nameText.nodeValue = newValue;
           this._sectionName = newValue;
-          this._attributeFilter = "attribute=tator_user_sections::" + newValue;
         }
-        this._overview.updateForAll();
         this._files.setAttribute("section", this._sectionName);
         this._setCallbacks();
         break;
@@ -112,10 +99,25 @@ class MediaSection extends TatorElement {
 
   set numMedia(val) {
     this._updateNumFiles(val);
-    if (val != this._files.numMedia) {
-      this._files.numMedia = val;
-      this._overview.updateForAll();
+    if (val == 0) {
+      this._overview.style.display = "none";
+      this._files.style.display = "none";
+    } else {
+      this._overview.style.display = "block";
+      this._files.style.display = "block";
+      if (val != this._files.numMedia) {
+        this._files.numMedia = val;
+      }
     }
+  }
+
+  set sectionFilter(val) {
+    this._attributeFilter = val;
+    this._overview.updateForAll();
+  }
+
+  get sectionFilter() {
+    return this._sectionFilter();
   }
 
   set worker(val) {
@@ -154,7 +156,7 @@ class MediaSection extends TatorElement {
   }
 
   _sectionFilter() {
-    return "?" + this._attributeFilter;
+    return this._attributeFilter;
   }
 
   _setCallbacks() {
