@@ -105,6 +105,8 @@ class ProjectDetail extends TatorPage {
       } else if (msg.command == "algorithms") {
         this._algorithms = msg.algorithms;
         this._algorithmButton.algorithms = msg.algorithms;
+      } else if (msg.command == "checkVisibility") {
+        this._checkSectionVisibility();
       }
     });
 

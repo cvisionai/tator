@@ -471,6 +471,11 @@ function loadSections() {
         });
         numLoaded++;
         if (numLoaded >= maxSections) {
+          setTimeout(() => {
+            self.postMessage({
+              command: "checkVisibility",
+            });
+          }, 1000);
           return;
         }
       }
