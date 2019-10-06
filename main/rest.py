@@ -1052,7 +1052,7 @@ def get_media_queryset(project, query_params, attr_filter):
                 media_queries.append(medias)
         
         search_qs = EntityMediaBase.objects.filter(
-            Q(name__icontains=search) | Q(attributes__tator_user_sections=search),
+            Q(name__icontains=search) | Q(attributes__tator_user_sections__icontains=search),
             project=project
         ).values('pk').distinct()
         search_qs = search_qs.union(*media_queries)
