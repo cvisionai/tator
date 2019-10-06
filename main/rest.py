@@ -1022,21 +1022,22 @@ def get_media_queryset(project, query_params, attr_filter):
         queryset = queryset.filter(name=name)
 
     if search != None:
-        jsonEmbedded=f': \"{search}'
-        localizations=EntityLocalizationBase.objects\
+        jsonEmbedded = f'{search}' # This will currently search on keys too
+        localizations = EntityLocalizationBase.objects.filter(project=project)\
                             .annotate(attr_string=
                                       Cast('attributes',
                                            TextField()))\
                             .filter(attr_string__icontains=jsonEmbedded)
         l_medias=localizations.values('media').distinct()
-        states=EntityState.objects\
+        states=EntityState.objects.filter(project=project)\
                             .annotate(attr_string=
                                       Cast('attributes',
                                            TextField()))\
                             .filter(attr_string__icontains=jsonEmbedded)
         s_medias=states.values('association__media').distinct()
 
-        attr_media=EntityMediaBase.objects.annotate(attr_string=
+        attr_media=EntityMediaBase.objects.filter(project=project)\
+                            .annotate(attr_string=
                                             Cast('attributes',
                                                  TextField()))\
                             .filter(attr_string__icontains=jsonEmbedded)
