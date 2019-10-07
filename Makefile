@@ -307,6 +307,7 @@ FILES = \
     node-uuid.js \
     util/get-cookie.js \
     util/identifying-attribute.js \
+    util/fetch-retry.js \
     components/tator-element.js \
     components/upload-element.js \
     components/labeled-checkbox.js \
