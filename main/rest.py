@@ -71,6 +71,7 @@ from .models import AnalysisBase
 from .models import AnalysisCount
 from .models import User
 from .models import InterpolationMethods
+from django.contrib.auth.models import AnonymousUser
 
 #Association Types
 from .models import MediaAssociation
@@ -443,22 +444,25 @@ class ProjectPermissionBase(BasePermission):
     def _validate_project(self, request, project):
         granted = True
 
-        # Find membership for this user and project
-        membership = Membership.objects.filter(
-            user=request.user,
-            project=project
-        )
-
-        # If user is not part of project, deny access
-        if len(membership) == 0:
+        if isinstance(request.user, AnonymousUser):
             granted = False
         else:
-            # If user has insufficient permission, deny access
-            permission = membership[0].permission
-            insufficient = permission in self.insufficient_permissions
-            is_edit = request.method not in SAFE_METHODS
-            if is_edit and insufficient:
+            # Find membership for this user and project
+            membership = Membership.objects.filter(
+                user=request.user,
+                project=project
+            )
+
+            # If user is not part of project, deny access
+            if len(membership) == 0:
                 granted = False
+            else:
+                # If user has insufficient permission, deny access
+                permission = membership[0].permission
+                insufficient = permission in self.insufficient_permissions
+                is_edit = request.method not in SAFE_METHODS
+                if is_edit and insufficient:
+                    granted = False
         return granted
 
 class ProjectViewOnlyPermission(ProjectPermissionBase):
