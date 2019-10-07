@@ -26,7 +26,7 @@ class UndoBuffer extends HTMLElement {
     window.addEventListener("beforeunload", () => {
       if (this._editsMade) {
         const sessionEnd = new Date();
-        fetch("/rest/EntityMedia/" + this._media.id, {
+        fetchRetry("/rest/EntityMedia/" + this._media.id, {
           method: "PATCH",
           body: JSON.stringify({
             last_edit_start: this._sessionStart.toISOString(),
@@ -40,7 +40,7 @@ class UndoBuffer extends HTMLElement {
             return response;
           } else {
             response.json()
-            .then(data => console.log("Error during fetch: " + JSON.stringify(data)));
+            .then(data => console.error("Error during fetch: " + JSON.stringify(data)));
           }
         });
 
@@ -49,7 +49,7 @@ class UndoBuffer extends HTMLElement {
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{
-            fetch("/rest/AlgorithmLaunch/" + this._media['project'], {
+            fetchRetry("/rest/AlgorithmLaunch/" + this._media['project'], {
               method: "POST",
               credentials: "same-origin",
               headers: {
@@ -226,7 +226,7 @@ class UndoBuffer extends HTMLElement {
       if (response.ok) {
         return response.json();
       } else {
-        console.log("Error getting current value, got " + response.status);
+        console.error("Error getting current value, got " + response.status);
         return null;
       }
     });
@@ -243,13 +243,15 @@ class UndoBuffer extends HTMLElement {
     if (body) {
       obj.body = JSON.stringify(body);
     }
-    const promise = fetch(url, obj)
+    const promise = fetchRetry(url, obj)
     .then(response => {
       if (response.ok) {
+        console.log("Fetch successful!");
         return response;
       } else {
+        console.error("Error during fetch!");
         response.json()
-        .then(data => console.log("Error during fetch: " + JSON.stringify(data)));
+        .then(data => console.error("Error during fetch: " + JSON.stringify(data)));
       }
     });
     if (evt) {

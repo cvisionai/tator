@@ -95,12 +95,12 @@ class AnnotationData extends HTMLElement {
     }
 
     // Fetch new ones from server
-    fetch(this._updateUrls.get(typeId))
+    fetchRetry(this._updateUrls.get(typeId))
     .then(response => {
       if (response.ok) {
         return response.json();
       } else {
-        console.log("Error fetching updated data for type ID " + typeId);
+        console.error("Error fetching updated data for type ID " + typeId);
         response.json()
         .then(json => console.log(JSON.stringify(json)));
       }
