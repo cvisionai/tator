@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'enumfields',
     'channels',
     'main',
+    'cacheops',
     'rest_framework',
     'rest_framework.authtoken',
     'django_extensions',
@@ -66,6 +67,23 @@ CHANNEL_LAYERS = {
             'hosts': [('redis-svc', 6379)],
         },
     },
+}
+
+CACHEOPS_REDIS = {
+    'host': 'redis-svc',
+    'port': 6379,
+    'db': 1,
+}
+
+CACHEOPS_DEFAULTS = {
+    'timeout': 60*60
+}
+
+CACHEOPS = {
+    'auth.user': {'ops': 'get', 'timeout': 60*15},
+    'auth.*': {'ops': ('fetch', 'get')},
+    'auth.permission': {'ops': 'all'},
+    '*.*': {},
 }
 
 GRAPH_MODELS = {
