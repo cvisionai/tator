@@ -169,10 +169,6 @@ class EntitySelector extends TatorElement {
       this._current.textContent = String(Number(this._slider.value) + 1);
       this._emitSelection(true, true);
     });
-
-    this._slider.addEventListener("blur", () => {
-      details.removeAttribute("open");
-    });
   }
 
   static get observedAttributes() {
