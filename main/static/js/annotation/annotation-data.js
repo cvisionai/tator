@@ -87,6 +87,55 @@ class AnnotationData extends HTMLElement {
     }
   }
 
+  updateTypeLocal(method, id, body, typeObj) {
+    const typeId = typeObj.type.id;
+    if (this._updateUrls.has(typeId) == false) {
+      console.error("Unregistered type " + typeId);
+      return;
+    }
+    const attributeNames = typeObj.columns.map(column => column.name);
+    const setupObject = obj => {
+      obj.id = id;
+      obj.meta = typeId;
+      obj.attributes = {};
+      for (const key in body) {
+        if (attributeNames.includes(key)) {
+          obj.attributes[key] = body[key];
+        }
+      }
+      if (typeObj.isTLState) {
+        obj.association = {
+          frame: body.frame,
+          media: [Number(body.media_ids)],
+        };
+      }
+      return body;
+    };
+    if (method == "POST") {
+      this._dataByType.get(typeId).push(setupObject(body));
+    } else if (method == "PATCH") {
+      const ids = this._dataByType.get(typeId).map(elem => elem.id);
+      const index = ids.indexOf(id);
+      const elem = this._dataByType.get(typeId)[index];
+      for (const key in body) {
+        if (key in elem) {
+          elem[key] = body[key];
+        }
+      }
+      this._dataByType.get(typeId)[index] = elem;
+    } else if (method == "DELETE") {
+      const ids = this._dataByType.get(typeId).map(elem => elem.id);
+      const index = ids.indexOf(id);
+      this._dataByType.get(typeId).splice(index, 1);
+    }
+    this.dispatchEvent(new CustomEvent("freshData", {
+      detail: {
+        typeObj: typeObj,
+        data: this._dataByType.get(typeId),
+      }
+    }));
+  }
+
   updateType(typeObj, callback) {
     const typeId = typeObj.type.id;
     if (this._updateUrls.has(typeId) == false) {
