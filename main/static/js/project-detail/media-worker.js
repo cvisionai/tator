@@ -233,8 +233,6 @@ class SectionData {
         }
       })
       .catch(err => console.error("Error retrieving media info: " + err));
-    } else {
-      this._emitUpdate();
     }
   }
 
