@@ -1,5 +1,7 @@
 importScripts("/static/js/util/fetch-retry.js");
 
+const _fetchBufferSize = 100; // Additional media to fetch past last displayed
+
 self.addEventListener("message", async evt => {
   const msg = evt.data;
   if (msg.command == "algorithmProgress") {
@@ -206,10 +208,15 @@ class SectionData {
   fetchMedia() {
     // Fetches next batch of data
     const start = this._mediaById.size;
-    if (start < this._stop) {
+    const stop = this._stop + _fetchBufferSize;
+    const needData = start < this._stop;
+    if (!needData) {
+      this._emitUpdate();
+    }
+    if (start < stop) {
       const url = "/rest/EntityMedias/" + self.projectId + 
         this.getSectionFilter() +
-        "&start=" + start + "&stop=" + this._stop;
+        "&start=" + start + "&stop=" + stop;
       fetchRetry(url, {
         method: "GET",
         credentials: "omit",
@@ -221,7 +228,9 @@ class SectionData {
           this._mediaById.set(media.id, media);
           this._mediaIds.push(media.id);
         }
-        this._emitUpdate();
+        if (needData) {
+          this._emitUpdate();
+        }
       })
       .catch(err => console.error("Error retrieving media info: " + err));
     } else {
