@@ -1060,7 +1060,7 @@ def get_media_queryset(project, query_params, attr_filter):
             project=project
         ).values('pk').distinct()
         search_qs = search_qs.union(*media_queries)
-        queryset = queryset.filter(pk__in=search_qs)
+        queryset = queryset.filter(pk__in=search_qs).cache()
 
     if md5 != None:
         queryset = queryset.filter(md5=md5)
