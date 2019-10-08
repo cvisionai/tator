@@ -270,9 +270,13 @@ class AnnotationPage extends TatorPage {
           this._settings.setAttribute("entity-type", evt.detail.meta);
           this._settings.setAttribute("type-id", evt.detail.meta);
         });
-        this._undo.addEventListener("update", async evt => {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          this._data.updateType(evt.detail);
+        this._undo.addEventListener("update", evt => {
+          this._data.updateTypeLocal(
+            evt.detail.method,
+            evt.detail.id,
+            evt.detail.body,
+            evt.detail.dataType,
+          );
         });
         this._browser.addEventListener("select", evt => {
           if (evt.detail.byUser) {
