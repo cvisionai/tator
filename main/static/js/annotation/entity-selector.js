@@ -139,8 +139,7 @@ class EntitySelector extends TatorElement {
         endpoint = "EntityState";
       }
       const index = parseInt(this._current.textContent) - 1;
-      const evt = new CustomEvent("update", {detail: this._dataType});
-      this._undo.del(endpoint, this._data[index].id, evt);
+      this._undo.del(endpoint, this._data[index].id, this._dataType);
     });
 
     more.addEventListener("click", () => {

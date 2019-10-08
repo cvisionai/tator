@@ -50,8 +50,7 @@ class MediaPanel extends TatorElement {
       if (values !== null) {
         const endpoint="EntityMedia";
         const id = this._mediaData['id'];
-        const evt = new CustomEvent("update", {detail: val});
-        this._undo.patch(endpoint, id, {"attributes": values}, evt);
+        this._undo.patch(endpoint, id, {"attributes": values}, val);
         this.dispatchEvent(new CustomEvent("save", {
           detail: this._values
         }));

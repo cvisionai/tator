@@ -140,8 +140,7 @@ class EntityBrowser extends TatorElement {
                     endpoint = "EntityState";
                   }
                   const id = selector.data.id;
-                  const evt = new CustomEvent("update", {detail: this._dataType});
-                  this._undo.patch(endpoint, id, {"attributes": values}, evt);
+                  this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
                   this.dispatchEvent(new CustomEvent("save", {
                     detail: this._values
                   }));

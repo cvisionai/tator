@@ -59,8 +59,7 @@ class SaveDialog extends TatorElement {
         ...this._requestObj,
         ...this._values,
       };
-      const evt = new CustomEvent("update", {detail: this._dataType});
-      this._undo.post("Localizations", body, evt);
+      this._undo.post("Localizations", body, this._dataType);
       this._loaded=true;
       this.dispatchEvent(new CustomEvent("save", {
         detail: this._values

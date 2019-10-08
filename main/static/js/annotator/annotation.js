@@ -1761,8 +1761,7 @@ class AnnotationCanvas extends TatorElement
     }
 
     const objDescription = this.getObjectDescription(localization);
-    const evt = new CustomEvent("update", {detail: objDescription});
-    this._undo.del("Localization", localization.id, evt)
+    this._undo.del("Localization", localization.id, objDescription)
     this._mouseMode = MouseMode.QUERY;
   }
 
@@ -1796,8 +1795,7 @@ class AnnotationCanvas extends TatorElement
       patchObj.y = this.activeLocalization.y;
     }
 
-    const evt = new CustomEvent("update", {detail: objDescription});
-    this._undo.patch("Localization", this.activeLocalization.id, patchObj, evt);
+    this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
   }
 
   dragHandler(dragEvent)

@@ -35,7 +35,6 @@ class FramePanel extends TatorElement {
       if (values !== null) {
         this._blockingUpdates = true;
         const data = this._data._dataByType.get(val.type.id);
-        const evt = new CustomEvent("update", {detail: val});
         const index = data.findIndex(elem => elem.association.frame === this._frame);
         if (index === -1) {
           const mediaId = this.getAttribute("media-id");
@@ -46,10 +45,10 @@ class FramePanel extends TatorElement {
             frame: this._frame,
             ...values,
           };
-          this._undo.post("EntityStates", body, evt);
+          this._undo.post("EntityStates", body, val);
         } else {
           const state = data[index];
-          this._undo.patch("EntityState", state.id, {"attributes": values}, evt);
+          this._undo.patch("EntityState", state.id, {"attributes": values}, val);
         }
       }
     });
@@ -93,8 +92,7 @@ class FramePanel extends TatorElement {
             }
             body[column.name] = defaultValue;
           }
-          const update = new CustomEvent("update", {detail: typeObj});
-          this._undo.post("EntityStates", body, update);
+          this._undo.post("EntityStates", body, typeObj);
         }
       }
     });
