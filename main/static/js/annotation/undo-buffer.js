@@ -4,7 +4,7 @@ class UndoBuffer extends HTMLElement {
 
     this._forwardOps = [];
     this._backwardOps = [];
-    this._events = [];
+    this._dataTypes = [];
     this._index = 0;
     this._editsMade = false;
     this._sessionStart = new Date();
@@ -90,25 +90,26 @@ class UndoBuffer extends HTMLElement {
     this._mediaType = val;
   }
 
-  post(listUri, body, evt) {
+  post(listUri, body, dataType) {
     const projectId = this.getAttribute("project-id");
     const op = ["POST", listUri, projectId, body];
-    const promise = this._fetch(op, evt);
+    const promise = this._fetch(op, dataType);
     if (promise) {
       promise
       .then(response => response.json())
       .then(data => {
+        this._emitUpdate("POST", data.id, body, dataType);
         const detailUri = UndoBuffer.listToDetail[listUri];
         this._resetFromNow();
         this._forwardOps.push(op);
         this._backwardOps.push(["DELETE", detailUri, data.id, null]);
-        this._events.push(evt);
+        this._dataTypes.push(dataType);
         this._index++;
       });
     }
   }
 
-  patch(detailUri, id, body, evt) {
+  patch(detailUri, id, body, dataType) {
     const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
@@ -127,7 +128,7 @@ class UndoBuffer extends HTMLElement {
         this._resetFromNow();
         this._forwardOps.push(["PATCH", detailUri, id, body]);
         this._backwardOps.push(["PATCH", detailUri, id, original]);
-        this._events.push(evt);
+        this._dataTypes.push(dataType);
         return this.redo();
       });
     } else {
@@ -135,7 +136,7 @@ class UndoBuffer extends HTMLElement {
     }
   }
 
-  del(detailUri, id, evt) {
+  del(detailUri, id, dataType) {
     const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
@@ -164,7 +165,7 @@ class UndoBuffer extends HTMLElement {
         this._resetFromNow();
         this._forwardOps.push(["DELETE", detailUri, id, null]);
         this._backwardOps.push(["POST", listUri, projectId, body]); 
-        this._events.push(evt);
+        this._dataTypes.push(dataType);
         return this.redo();
       });
     } else {
@@ -176,12 +177,14 @@ class UndoBuffer extends HTMLElement {
     if (this._index > 0) {
       this._index--;
       const op = this._backwardOps[this._index];
-      const evt = this._events[this._index];
-      const promise = this._fetch(op, evt);
-      if (op[0] == "POST") {
+      const [method, uri, id, body] = op;
+      const dataType = this._dataTypes[this._index];
+      const promise = this._fetch(op, dataType)
+      if (method == "POST") {
         promise
         .then(response => response.json())
         .then(data => {
+          this._emitUpdate(method, data.id, body, dataType);
           const delId = this._forwardOps[this._index][2];
           const newId = data.id;
           const replace = op => {
@@ -192,6 +195,8 @@ class UndoBuffer extends HTMLElement {
           this._forwardOps.forEach(replace);
           this._backwardOps.forEach(replace);
         });
+      } else {
+        this._emitUpdate(method, id, body, dataType);
       }
     }
   }
@@ -199,12 +204,14 @@ class UndoBuffer extends HTMLElement {
   redo() {
     if (this._index < this._forwardOps.length) {
       const op = this._forwardOps[this._index];
-      const evt = this._events[this._index];
-      const promise = this._fetch(op, evt);
-      if (op[0] == "POST") {
+      const [method, uri, id, body] = op;
+      const dataType = this._dataTypes[this._index];
+      const promise = this._fetch(op, dataType);
+      if (method == "POST") {
         promise
         .then(response => response.json())
         .then(data => {
+          this._emitUpdate(method, data.id, body, dataType);
           const delId = this._backwardOps[this._index - 1][2];
           const newId = data.id;
           const replace = op => {
@@ -215,13 +222,19 @@ class UndoBuffer extends HTMLElement {
           this._forwardOps.forEach(replace);
           this._backwardOps.forEach(replace);
         });
+      } else {
+        this._emitUpdate(method, id, body, dataType);
       }
       this._index++;
     }
   }
 
   _get(detailUri, id) {
-    return this._fetch(["GET", detailUri, id, null])
+    const url = "/rest/" + detailUri + "/" + id;
+    return fetchRetry(url, {
+      method: "GET",
+      ...this._headers(),
+    })
     .then(response => {
       if (response.ok) {
         return response.json();
@@ -232,7 +245,7 @@ class UndoBuffer extends HTMLElement {
     });
   }
 
-  _fetch(op, evt) {
+  _fetch(op, dataType) {
     this._editsMade = true;
     const [method, uri, id, body] = op;
     const url = "/rest/" + uri + "/" + id;
@@ -243,7 +256,7 @@ class UndoBuffer extends HTMLElement {
     if (body) {
       obj.body = JSON.stringify(body);
     }
-    const promise = fetchRetry(url, obj)
+    return fetchRetry(url, obj)
     .then(response => {
       if (response.ok) {
         console.log("Fetch successful!");
@@ -254,11 +267,17 @@ class UndoBuffer extends HTMLElement {
         .then(data => console.error("Error during fetch: " + JSON.stringify(data)));
       }
     });
-    if (evt) {
-      return promise.then(this.dispatchEvent(evt));
-    } else {
-      return promise;
-    }
+  }
+
+  _emitUpdate(method, id, body, dataType) {
+    this.dispatchEvent(new CustomEvent("update", {
+      detail: {
+        method: method,
+        id: id,
+        body: body,
+        dataType: dataType,
+      }
+    }));
   }
 
   _headers() {
@@ -273,10 +292,10 @@ class UndoBuffer extends HTMLElement {
   }
 
   _resetFromNow() {
-    if (this._index < this._events.length) {
+    if (this._index < this._dataTypes.length) {
       this._forwardOps.splice(this._index);
       this._backwardOps.splice(this._index);
-      this._events.splice(this._index);
+      this._dataTypes.splice(this._index);
     }
   }
 }
