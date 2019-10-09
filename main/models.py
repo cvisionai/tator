@@ -96,6 +96,7 @@ class JobChannel(Enum):
 class Permission(Enum):
     VIEW_ONLY = 'r'
     CAN_EDIT = 'w'
+    CAN_TRANSFER = 't'
     CAN_EXECUTE = 'x'
     FULL_CONTROL = 'a'
 
