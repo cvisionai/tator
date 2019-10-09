@@ -19,12 +19,15 @@ class SectionFiles extends TatorElement {
     header.appendChild(actions);
 
     this._search = document.createElement("section-search");
+    this._search.setAttribute("class", "px-2");
     actions.appendChild(this._search);
 
     this._upload = document.createElement("section-upload");
+    this._upload.setAttribute("class", "px-2");
     actions.appendChild(this._upload);
 
     this._more = document.createElement("section-more");
+    this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
 
     this._main = document.createElement("ul");
