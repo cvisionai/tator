@@ -209,6 +209,13 @@ class MediaCard extends TatorElement {
     }
   }
 
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._more.style.display = "none";
+    }
+    this._more.permission = val;
+  }
+
   set algorithms(val) {
     this._more.algorithms = val;
   }

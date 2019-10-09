@@ -32,17 +32,17 @@ class SectionMore extends TatorElement {
     this._download.setAttribute("text", "Download section");
     otherButtons.appendChild(this._download);
 
-    const annotations = document.createElement("download-button");
-    annotations.setAttribute("text", "Download metadata");
-    otherButtons.appendChild(annotations);
+    this._annotations = document.createElement("download-button");
+    this._annotations.setAttribute("text", "Download metadata");
+    otherButtons.appendChild(this._annotations);
 
-    const rename = document.createElement("rename-button");
-    rename.setAttribute("text", "Rename section");
-    otherButtons.appendChild(rename);
+    this._rename = document.createElement("rename-button");
+    this._rename.setAttribute("text", "Rename section");
+    otherButtons.appendChild(this._rename);
 
-    const del = document.createElement("delete-button");
-    del.setAttribute("text", "Delete section");
-    otherButtons.appendChild(del);
+    this._del = document.createElement("delete-button");
+    this._del.setAttribute("text", "Delete section");
+    otherButtons.appendChild(this._del);
 
     this._algorithmMenu.addEventListener("click", () => {
       details.removeAttribute("open");
@@ -53,20 +53,34 @@ class SectionMore extends TatorElement {
       this.dispatchEvent(new Event("download"));
     });
 
-    annotations.addEventListener("click", () => {
+    this._annotations.addEventListener("click", () => {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("annotations"));
     });
 
-    rename.addEventListener("click", evt => {
+    this._rename.addEventListener("click", evt => {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("rename", {composed: true}));
     });
 
-    del.addEventListener("click", evt => {
+    this._del.addEventListener("click", evt => {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("delete", {composed: true}));
     });
+  }
+
+  set permission(val) {
+    if (!hasPermission(val, "Can Execute")) {
+      this._algorithmMenu.style.display = "none";
+    }
+    if (!hasPermission(val, "Can Transfer")) {
+      this._download.style.display = "none";
+      this._annotations.style.display = "none";
+      this._del.style.display = "none";
+    }
+    if (!hasPermission(val, "Can Edit")) {
+      this._rename.style.display = "none";
+    }
   }
 
   set algorithms(val) {
