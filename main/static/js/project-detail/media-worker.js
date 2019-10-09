@@ -217,6 +217,7 @@ class SectionData {
       const url = "/rest/EntityMedias/" + self.projectId + 
         this.getSectionFilter() +
         "&start=" + start + "&stop=" + stop;
+      console.log("Fetching media " + start + " to " + stop);
       fetchRetry(url, {
         method: "GET",
         credentials: "omit",
@@ -225,8 +226,13 @@ class SectionData {
       .then(response => response.json())
       .then(data => {
         for (const media of data) {
-          this._mediaById.set(media.id, media);
-          this._mediaIds.push(media.id);
+          if (this._mediaIds.includes(media.id)) {
+            // TODO figure out why this is happening
+            console.error("Media with ID " + media.id + " was fetched more than once!");
+          } else {
+            this._mediaById.set(media.id, media);
+            this._mediaIds.push(media.id);
+          }
         }
         if (needData) {
           this._emitUpdate();
