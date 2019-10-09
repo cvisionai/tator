@@ -87,8 +87,9 @@ class AnnotationPage extends TatorPage {
             this._browser.mediaType = data;
             this._undo.mediaType = data;
           });
+          let player;
           if ("thumb_gif_url" in data) {
-            const player = document.createElement("annotation-player");
+            player = document.createElement("annotation-player");
             player.addDomParent({"object": this._headerDiv,
                                  "alignTo":  this._browser});
             player.mediaInfo = data;
@@ -102,21 +103,36 @@ class AnnotationPage extends TatorPage {
                   player._video.captureFrame(e.detail.localizations);
                 });
           } else {
-            const image = document.createElement("annotation-image");
-            image.style.minWidth="70%";
-            image.addDomParent({"object": this._headerDiv,
+            player = document.createElement("annotation-image");
+            player.style.minWidth="70%";
+            player.addDomParent({"object": this._headerDiv,
                                  "alignTo":  this._browser});
-            image.mediaInfo = data;
-            this._main.insertBefore(image, this._browser);
-            this._setupInitHandlers(image);
-            this._getMetadataTypes(image, image._image._canvas);
+            player.mediaInfo = data;
+            this._main.insertBefore(player, this._browser);
+            this._setupInitHandlers(player);
+            this._getMetadataTypes(player, player._image._canvas);
             this._settings._capture.addEventListener(
               'captureFrame',
               (e) =>
                 {
-                  image._image.captureFrame(e.detail.localizations);
+                  player._image.captureFrame(e.detail.localizations);
                 });
           }
+          fetch("/rest/Project/" + data.project, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            player.permission = data.permission;
+            this._browser.permission = data.permission;
+            this._sidebar.permission = data.permission;
+          });
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
