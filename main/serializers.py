@@ -50,7 +50,11 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_permission(self, obj):
         user_id = self.context['request'].user.pk
-        return str(obj.user_permission(user_id))
+        if user_id == obj.creator.pk:
+            permission = "Creator"
+        else:
+            permission = str(obj.user_permission(user_id))
+        return permission
 
     class Meta:
         model = Project
