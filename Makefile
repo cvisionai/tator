@@ -308,6 +308,7 @@ FILES = \
     util/get-cookie.js \
     util/identifying-attribute.js \
     util/fetch-retry.js \
+    util/has-permission.js \
     components/tator-element.js \
     components/upload-element.js \
     components/labeled-checkbox.js \
