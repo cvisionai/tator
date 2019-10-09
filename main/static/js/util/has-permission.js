@@ -1,6 +1,7 @@
 const levels = [
   "View Only",
   "Can Edit",
+  "Can Transfer",
   "Can Execute",
   "Full Control",
   "Creator"
