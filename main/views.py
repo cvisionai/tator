@@ -39,10 +39,9 @@ class ProjectBase(LoginRequiredMixin):
         context = super().get_context_data(**kwargs)
         project = get_object_or_404(Project, pk=self.kwargs['project_id'])
         context['project'] = project
-        context['permission'] = project.user_permission(self.request.user.pk)
 
         # Check if user is part of project.
-        if context['permission'] is None:
+        if not project.has_user(self.request.user.pk):
             raise PermissionDenied
         return context
 

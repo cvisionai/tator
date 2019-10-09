@@ -33,8 +33,9 @@ class UserSerializerBasic(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
 class ProjectSerializer(serializers.ModelSerializer):
-    thumb = serializers.SerializerMethodField();
-    usernames = serializers.SerializerMethodField();
+    thumb = serializers.SerializerMethodField()
+    usernames = serializers.SerializerMethodField()
+    permission = serializers.SerializerMethodField()
 
     def get_thumb(self, obj):
         url = ""
@@ -47,11 +48,15 @@ class ProjectSerializer(serializers.ModelSerializer):
         users = User.objects.filter(pk__in=Membership.objects.filter(project=obj).values_list('user'))
         return [str(user) for user in users]
 
+    def get_permission(self, obj):
+        user_id = self.context['request'].user.pk
+        return str(obj.user_permission(user_id))
+
     class Meta:
         model = Project
         fields = [
             'id', 'name', 'summary', 'thumb', 'num_files', 'size',
-            'usernames', 'filter_autocomplete', 'section_order'
+            'usernames', 'filter_autocomplete', 'section_order', 'permission'
         ]
 
 class MembershipSerializer(serializers.ModelSerializer):
