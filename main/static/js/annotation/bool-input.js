@@ -28,12 +28,12 @@ class BoolInput extends TatorElement {
     this._onLabel.setAttribute("for", "on");
     controls.appendChild(this._onLabel);
 
-    const off = document.createElement("input");
-    off.setAttribute("class", "sr-only");
-    off.setAttribute("type", "radio");
-    off.setAttribute("id", "off");
-    off.setAttribute("name", "asdf");
-    controls.appendChild(off);
+    this._off = document.createElement("input");
+    this._off.setAttribute("class", "sr-only");
+    this._off.setAttribute("type", "radio");
+    this._off.setAttribute("id", "off");
+    this._off.setAttribute("name", "asdf");
+    controls.appendChild(this._off);
 
     this._offLabel = document.createElement("label");
     this._offLabel.setAttribute("for", "off");
@@ -49,7 +49,7 @@ class BoolInput extends TatorElement {
       this._offLabel.blur();
     });
 
-    off.addEventListener("change", () => {
+    this._off.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));
       this._onLabel.blur();
       this._offLabel.blur();
@@ -82,15 +82,30 @@ class BoolInput extends TatorElement {
     }
   }
 
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._on.setAttribute("readonly", "");
+      this._off.setAttribute("readonly", "");
+      this._onLabel.addEventListener("click", evt => {
+        evt.preventDefault();
+      });
+      this._offLabel.addEventListener("click", evt => {
+        evt.preventDefault();
+      });
+    }
+  }
+
   getValue() {
     return this._on.checked;
   }
 
   setValue(val) {
     if (val) {
-      this._onLabel.click();
+      this._on.setAttribute("checked", "");
+      this._off.removeAttribute("checked");
     } else {
-      this._offLabel.click();
+      this._on.removeAttribute("checked");
+      this._off.setAttribute("checked", "");
     }
   }
 }

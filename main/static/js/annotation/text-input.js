@@ -72,6 +72,12 @@ class TextInput extends TatorElement {
     }
   }
 
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._input.setAttribute("readonly", "");
+    }
+  }
+
   _validateInt() {
     let val = parseInt(this._input.value);
     if (isNaN(val)) {

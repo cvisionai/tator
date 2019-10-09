@@ -129,6 +129,9 @@ class EntityBrowser extends TatorElement {
             if ((!this._dataType.isTLState) && haveAttributes) {
               const attributes = document.createElement("attribute-panel");
               attributes.dataType = evt.detail.typeObj;
+              if (typeof this._permission !== "undefined") {
+                attributes.permission = this._permission;
+              }
               attributes.setAttribute("in-entity-browser", "");
               li.appendChild(attributes);
               this._attributes[group] = attributes;

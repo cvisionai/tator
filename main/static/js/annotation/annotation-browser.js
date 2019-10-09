@@ -26,6 +26,7 @@ class AnnotationBrowser extends TatorElement {
     for (const key in this._entityPanels) {
       this._entityPanels[key].permission = val;
     }
+    this._media.permission = val;
   }
 
   set mediaInfo(val) {
@@ -52,8 +53,10 @@ class AnnotationBrowser extends TatorElement {
     for (const dataType of val) {
       if (dataType.type.visible) {
         const entity = document.createElement("entity-browser");
-        entity.permission = this._permission;
         entity.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          entity.permission = this._permission;
+        }
         entity.undoBuffer = this._undo;
         entity.annotationData = this._data;
         entity.style.display = "none";
@@ -72,11 +75,13 @@ class AnnotationBrowser extends TatorElement {
       const isInterpolated = dataType.type.interpolation !== "none";
       if (isFrameState && isInterpolated) {
         const frame = document.createElement("frame-panel");
-        frame.permission = this._permission;
         frame.setAttribute("media-id", this._mediaId);
         frame.undoBuffer = this._undo;
         frame.annotationData = this._data;
         frame.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          frame.permission = this._permission;
+        }
         this._panels.appendChild(frame);
         this._framePanels[dataType.type.id] = frame;
       }

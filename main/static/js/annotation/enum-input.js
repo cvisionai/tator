@@ -47,6 +47,12 @@ class EnumInput extends TatorElement {
     }
   }
 
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._select.setAttribute("disabled", "");
+    }
+  }
+
   set choices(val) {
     for (const choice of val) {
       const option = document.createElement("option");

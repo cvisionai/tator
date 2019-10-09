@@ -14,6 +14,10 @@ class FramePanel extends TatorElement {
     div.appendChild(this._attributes);
   }
 
+  set permission(val) {
+    this._attributes.permission = val;
+  }
+
   set undoBuffer(val) {
     this._undo = val;
   }
