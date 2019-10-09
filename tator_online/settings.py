@@ -91,18 +91,6 @@ GRAPH_MODELS = {
     'group_models': True,
 }
 
-GOOGLE_MAP_API_KEY = os.getenv('TATOR_SECRET_GOOGLE_MAPS_KEY')
-
-MAP_WIDGETS = {
-    'GooglePointFieldWidget': (
-        ('zoom', 7),
-        ('mapCenterLocationName', 'Woods Hole'),
-        ('markerFitZoom', 12),
-    ),
-    'GOOGLE_MAP_API_KEY': GOOGLE_MAP_API_KEY,
-}
-
-CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'main.User'
