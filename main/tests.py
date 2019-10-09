@@ -272,6 +272,7 @@ def latlon_distance(lat0, lon0, lat1, lon1):
 permission_levels = [
     Permission.VIEW_ONLY,
     Permission.CAN_EDIT,
+    Permission.CAN_TRANSFER,
     Permission.CAN_EXECUTE,
     Permission.FULL_CONTROL
 ]
@@ -1541,7 +1542,7 @@ class PackageCreateTestCase(
             'package_name': 'asdf',
             'media_query': '?media_id=1,2,3',
         }
-        self.edit_permission = Permission.CAN_EXECUTE
+        self.edit_permission = Permission.CAN_TRANSFER
 
 class PackagesTestCase(
         APITestCase,
@@ -1654,7 +1655,7 @@ class TranscodeTestCase(
             'section': 'asdf section',
             'md5': '',
         }
-        self.edit_permission = Permission.CAN_EXECUTE
+        self.edit_permission = Permission.CAN_TRANSFER
 
 class AnalysisCountTestCase(
         APITestCase,
