@@ -50,6 +50,7 @@ class ProjectSummary extends TatorElement {
     this._description.setAttribute("num-files", val.num_files);
     this._description.setAttribute("size", val.size);
     this._nav.setAttribute("project-id", val.id);
+    this._nav.setAttribute("permission", val.permission);
     let first = true;
     for (let username of val.usernames) {
       const span = document.createElement("span");

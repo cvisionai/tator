@@ -41,13 +41,21 @@ class ProjectNav extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["project-id"];
+    return ["project-id", "permission"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-id":
         this._settings.setAttribute("project-id", newValue);
+        break;
+      case "permission":
+        if (!hasPermission(newValue, "Creator")) {
+          this._remove.style.display = "none";
+        }
+        if (!hasPermission(newValue, "Full Control")) {
+          this._settings.style.display = "none";
+        }
         break;
     }
   }
