@@ -148,6 +148,12 @@ class Project(Model):
     section_order = ArrayField(CharField(max_length=128), default=list)
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
+    def user_permission(self, user_id):
+        permission = None
+        qs = self.membership_set.filter(user_id=user_id)
+        if qs.exists():
+            permission = qs[0].permission
+        return permission
     def __str__(self):
         return self.name
 

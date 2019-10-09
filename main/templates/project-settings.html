@@ -9,6 +9,7 @@
 {% block body %}
 <project-settings
   username="{{ user|stringformat:'s' }}"
-  project-id="{{ project.id }}">
+  project-id="{{ project.id }}"
+  permission={{ permission }}>
 </project-settings>
 {% endblock body %}

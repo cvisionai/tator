@@ -8,6 +8,7 @@
 
 {% block body %}
 <projects-dashboard
-  username="{{ user|stringformat:'s' }}">
+  username="{{ user|stringformat:'s' }}"
+  permission={{ permission }}>
 </projects-dashboard>
 {% endblock body %}
