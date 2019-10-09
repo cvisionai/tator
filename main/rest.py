@@ -478,11 +478,21 @@ class ProjectEditPermission(ProjectPermissionBase):
     message = "Insufficient permission to modify this project."
     insufficient_permissions = [Permission.VIEW_ONLY]
 
+class ProjectTransferPermission(ProjectPermissionBase):
+    """Checks whether a user has transfer access to a project.
+    """
+    message = "Insufficient permission to transfer media within this project."
+    insufficient_permissions = [Permission.VIEW_ONLY, Permission.CAN_EDIT]
+
 class ProjectExecutePermission(ProjectPermissionBase):
     """Checks whether a user has execute access to a project.
     """
     message = "Insufficient permission to execute within this project."
-    insufficient_permissions = [Permission.VIEW_ONLY, Permission.CAN_EDIT]
+    insufficient_permissions = [
+        Permission.VIEW_ONLY,
+        Permission.CAN_EDIT,
+        Permission.CAN_TRANSFER,
+    ]
 
 class ProjectFullControlPermission(ProjectPermissionBase):
     """Checks if user has full control over a project.
@@ -491,6 +501,7 @@ class ProjectFullControlPermission(ProjectPermissionBase):
     insufficient_permissions = [
         Permission.VIEW_ONLY,
         Permission.CAN_EDIT,
+        Permission.CAN_TRANSFER,
         Permission.CAN_EXECUTE,
     ]
 
@@ -2160,7 +2171,7 @@ class TranscodeAPI(APIView):
                       location='body',
                       schema=coreschema.String(description='MD5 sum of the media file')),
     ])
-    permission_classes = [ProjectExecutePermission]
+    permission_classes = [ProjectTransferPermission]
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
@@ -2277,7 +2288,7 @@ class PackageCreateAPI(APIView):
                       location='body',
                       schema=coreschema.String(description='Query string used to filter media IDs.')),
     ])
-    permission_classes = [ProjectExecutePermission]
+    permission_classes = [ProjectTransferPermission]
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
@@ -2501,7 +2512,7 @@ class JobDetailAPI(APIView):
                       location='path',
                       schema=coreschema.String(description='A uid identifying a queued or running job')),
     ])
-    permission_classes = [ProjectExecutePermission]
+    permission_classes = [ProjectTransferPermission]
 
     def delete(self, request, format=None, **kwargs):
         response=Response({})
