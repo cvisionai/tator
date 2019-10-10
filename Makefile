@@ -316,6 +316,7 @@ FILES = \
     components/modal-warning.js \
     components/modal-dialog.js \
     components/cancel-button.js \
+    components/cancel-confirm.js \
     components/progress-job.js \
     components/progress-summary.js \
     components/header-notification.js \
