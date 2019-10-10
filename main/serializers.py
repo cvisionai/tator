@@ -45,8 +45,13 @@ class ProjectSerializer(serializers.ModelSerializer):
         return url
 
     def get_usernames(self, obj):
-        users = User.objects.filter(pk__in=Membership.objects.filter(project=obj).values_list('user'))
-        return [str(user) for user in users]
+        users = User.objects.filter(pk__in=Membership.objects.filter(project=obj).values_list('user')).order_by('last_name')
+        usernames = [str(user) for user in users]
+        creator = str(obj.creator)
+        if creator in usernames:
+            usernames.remove(creator)
+            usernames.insert(0, creator)
+        return usernames
 
     def get_permission(self, obj):
         user_id = self.context['request'].user.pk
