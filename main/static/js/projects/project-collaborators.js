@@ -12,17 +12,26 @@ class ProjectCollaborators extends TatorElement {
     this._div.innerHTML="";
 
     let first = true;
-    for (let username of val) {
+    const maxAvatars = 1;
+    for (const [index, username] of val.entries()) {
       const span = document.createElement("span");
       span.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center f3");
       if (!first) {
         span.setAttribute("style", "background-color: #696cff");
       }
-      let initials = username.match(/\b\w/g) || [];
-      initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
+      let initials;
+      if (index >= maxAvatars) {
+        initials = "+" + String(val.length - maxAvatars);
+      } else {
+        initials = username.match(/\b\w/g) || [];
+        initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
+      }
       span.textContent = initials;
       this._div.appendChild(span);
       first = false;
+      if (index >= maxAvatars) {
+        break;
+      }
     }
   }
 }
