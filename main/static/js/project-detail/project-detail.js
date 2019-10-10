@@ -203,6 +203,10 @@ class ProjectDetail extends TatorPage {
       cancelJob.removeAttribute("is-open");
     });
 
+    cancelJob.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal");
+    });
+
     this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     this._newSection.addEventListener("allset", this._allSetCallback.bind(this));
