@@ -2585,6 +2585,40 @@ class JobDetailAPI(APIView):
         finally:
             return response;
 
+class JobGroupAPI(APIView):
+    """
+    Interact with a group of background jobs.
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='group_id',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A uid identifying a queued or running job')),
+    ])
+    permission_classes = [ProjectTransferPermission]
+
+    def delete(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            # Find the job and delete it.
+            group_id = kwargs['group_id']
+            jobs = Job.objects.filter(group_id=group_id)
+            if not jobs.exists():
+                raise Http404
+            for job in jobs:
+                delete_job(job, self.request.user)
+
+            response = Response({'message': f"Jobs with group ID {group_id} deleted!"})
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
 
 class MembershipListAPI(ListAPIView):
     serializer_class = MembershipSerializer
