@@ -110,6 +110,7 @@ class MediaMore extends TatorElement {
           this._rename.style.display = "block";
           this._del.style.display = "block";
           this._cancel.style.display = "none";
+          this.permission = this._permission;
         } else {
           this._algorithmMenu.style.display = "none";
           this._mediaMove.style.display = "none";
@@ -118,8 +119,26 @@ class MediaMore extends TatorElement {
           this._rename.style.display = "none";
           this._del.style.display = "none";
           this._cancel.style.display = "block";
+          this.permission = this._permission;
         }
         break;
+    }
+  }
+
+  set permission(val) {
+    this._permission = val;
+    if (!hasPermission(val, "Can Execute")) {
+      this._algorithmMenu.style.display = "none";
+      this._cancel.style.display = "none";
+    }
+    if (!hasPermission(val, "Can Transfer")) {
+      this._download.style.display = "none";
+      this._annotations.style.display = "none";
+      this._del.style.display = "none";
+    }
+    if (!hasPermission(val, "Can Edit")) {
+      this._mediaMove.style.display = "none";
+      this._rename.style.display = "none";
     }
   }
 

@@ -242,6 +242,14 @@ class ProjectDetail extends TatorPage {
     })
     .then(response => response.json())
     .then(data => {
+      this._permission = data.permission;
+      if (!hasPermission(data.permission, "Can Execute")) {
+        this._algorithmButton.style.display = "none";
+      }
+      if (!hasPermission(data.permission, "Can Transfer")) {
+        this._uploadButton.style.display = "none";
+        this._newSection.style.display = "none";
+      }
       this._projectText.nodeValue = data.name;
       this._search.setAttribute("project-name", data.name);
       this._description.setAttribute("text", data.summary);
@@ -307,6 +315,7 @@ class ProjectDetail extends TatorPage {
     newSection.setAttribute("id", sectionName);
     newSection.setAttribute("username", this._uploadButton.getAttribute("username"));
     newSection.setAttribute("token", this._uploadButton.getAttribute("token"));
+    newSection.permission = this._permission;
     newSection.worker = this._worker;
     newSection.numMedia = numMedia;
     newSection.algorithms = this._algorithms;

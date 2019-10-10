@@ -58,10 +58,10 @@ class EntitySelector extends TatorElement {
     const next = document.createElement("entity-next-button");
     controls.appendChild(next);
 
-    const del = document.createElement("entity-delete-button");
-    del.style.marginLeft = "8px";
-    del.style.display = "none";
-    controls.appendChild(del);
+    this._del = document.createElement("entity-delete-button");
+    this._del.style.marginLeft = "8px";
+    this._del.style.display = "none";
+    controls.appendChild(this._del);
 
     const capture = document.createElement("button");
     capture.setAttribute("class", "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button");
@@ -131,7 +131,7 @@ class EntitySelector extends TatorElement {
       this._emitCapture();
     });
 
-    del.addEventListener("click", () => {
+    this._del.addEventListener("click", () => {
       let endpoint;
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
@@ -143,15 +143,17 @@ class EntitySelector extends TatorElement {
     });
 
     more.addEventListener("click", () => {
-      if (del.style.display == "none") {
-        del.style.display = "block";
+      if (capture.style.display == "none") {
+        if (hasPermission(this._permission, "Can Edit")) {
+          this._del.style.display = "block";
+        }
         // Enable snapshots for boxes
         if (this._dataType.isLocalization &&
             this._dataType.type.dtype == "box") {
           capture.style.display = null;
         }
       } else {
-        del.style.display = "none";
+        this._del.style.display = "none";
         capture.style.display = "none";
       }
     });
@@ -181,6 +183,10 @@ class EntitySelector extends TatorElement {
         this._name.textContent = newValue;
         break;
     }
+  }
+
+  set permission(val) {
+    this._permission = val;
   }
 
   get data() {

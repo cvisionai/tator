@@ -431,6 +431,10 @@ class AnnotationCanvas extends TatorElement
     this._offscreenDraw = new DrawGL(this._offscreen);
   }
 
+  set permission(val) {
+    this._canEdit = hasPermission(val, "Can Edit");
+  }
+
   resetRoi()
   {
     // Center zoom
@@ -674,7 +678,7 @@ class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.SELECT)
     {
-      if (event.code == 'Delete')
+      if (event.code == 'Delete' && this._canEdit)
       {
         this.deleteLocalization(this.activeLocalization);
         this.activeLocalization=null;
@@ -716,8 +720,8 @@ class AnnotationCanvas extends TatorElement
       }
     }
 
-    if (this._mouseMode == MouseMode.SELECT ||
-        this._mouseMode == MouseMode.MOVE)
+    if ((this._mouseMode == MouseMode.SELECT ||
+        this._mouseMode == MouseMode.MOVE ) && this._canEdit)
     {
       if (event.key == 'ArrowRight' ||
           event.key == 'ArrowLeft' ||
@@ -1097,7 +1101,7 @@ class AnnotationCanvas extends TatorElement
         }
       }
     }
-    if (this._mouseMode == MouseMode.SELECT)
+    if (this._mouseMode == MouseMode.SELECT && this._canEdit)
     {
       var resizeType=null;
       var type = this.getObjectDescription(this.activeLocalization).type.dtype;
@@ -1287,24 +1291,28 @@ class AnnotationCanvas extends TatorElement
                                               poly);
 
         // Grab the target
-        this._canvas.classList.add("select-grabbing");
+        if (this._canEdit) {
+          this._canvas.classList.add("select-grabbing");
+        }
       }
     }
     else if (this._mouseMode == MouseMode.SELECT)
     {
       var resizeType = null;
-      var type = this.getObjectDescription(this.activeLocalization).type.dtype;
-      if (type == 'box')
-      {
-        var poly = this.localizationToPoly(this.activeLocalization);
-        resizeType=determineBoxResizeType(clickLocation,
-                                          poly);
-      }
-      else if (type == 'line')
-      {
-        var line = this.localizationToLine(this.activeLocalization);
-        resizeType=determineLineResizeType(clickLocation,
-                                           line);
+      if (this._canEdit) {
+        var type = this.getObjectDescription(this.activeLocalization).type.dtype;
+        if (type == 'box')
+        {
+          var poly = this.localizationToPoly(this.activeLocalization);
+          resizeType=determineBoxResizeType(clickLocation,
+                                            poly);
+        }
+        else if (type == 'line')
+        {
+          var line = this.localizationToLine(this.activeLocalization);
+          resizeType=determineLineResizeType(clickLocation,
+                                             line);
+        }
       }
 
       if (resizeType)
@@ -1313,7 +1321,7 @@ class AnnotationCanvas extends TatorElement
         this._impactVector=resizeType[1];
         this._canvas.classList.add("select-"+resizeType[0]);
       }
-      else if (localization == this.activeLocalization)
+      else if (localization == this.activeLocalization && this._canEdit)
       {
         this._canvas.classList.add("select-grabbing");
       }
@@ -1954,7 +1962,7 @@ class AnnotationCanvas extends TatorElement
         console.info(`ERROR: Unsupported Localization type '${type}'`);
       }
     }
-    else
+    else if (this._canEdit)
     {
       var that = this;
       //We are moving or resizing

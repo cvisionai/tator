@@ -93,6 +93,10 @@ class MediaSection extends TatorElement {
     }
   }
 
+  set permission(val) {
+    this._files.permission = val;
+  }
+
   get overview() {
     return this._overview;
   }

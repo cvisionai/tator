@@ -18,6 +18,17 @@ class AnnotationBrowser extends TatorElement {
     });
   }
 
+  set permission(val) {
+    this._permission = val;
+    for (const key in this._framePanels) {
+      this._framePanels[key].permission = val;
+    }
+    for (const key in this._entityPanels) {
+      this._entityPanels[key].permission = val;
+    }
+    this._media.permission = val;
+  }
+
   set mediaInfo(val) {
     this._media.mediaInfo = val;
     this._mediaId = val.id;
@@ -43,6 +54,9 @@ class AnnotationBrowser extends TatorElement {
       if (dataType.type.visible) {
         const entity = document.createElement("entity-browser");
         entity.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          entity.permission = this._permission;
+        }
         entity.undoBuffer = this._undo;
         entity.annotationData = this._data;
         entity.style.display = "none";
@@ -65,6 +79,9 @@ class AnnotationBrowser extends TatorElement {
         frame.undoBuffer = this._undo;
         frame.annotationData = this._data;
         frame.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          frame.permission = this._permission;
+        }
         this._panels.appendChild(frame);
         this._framePanels[dataType.type.id] = frame;
       }

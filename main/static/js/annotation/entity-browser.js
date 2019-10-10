@@ -55,6 +55,16 @@ class EntityBrowser extends TatorElement {
     });
   }
 
+  set permission(val) {
+    this._permission = val;
+    for (const key in this._selectors) {
+      this._selectors[key].permission = val;
+    }
+    for (const key in this._attributes) {
+      this._attributes[key].permission = val;
+    }
+  }
+
   set dataType(val) {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
@@ -107,6 +117,7 @@ class EntityBrowser extends TatorElement {
             this._ul.appendChild(li);
 
             const selector = document.createElement("entity-selector");
+            selector.permission = this._permission;
             selector.setAttribute("name", group);
             selector.dataType = this._dataType;
             selector.undoBuffer = this._undo;
@@ -118,6 +129,9 @@ class EntityBrowser extends TatorElement {
             if ((!this._dataType.isTLState) && haveAttributes) {
               const attributes = document.createElement("attribute-panel");
               attributes.dataType = evt.detail.typeObj;
+              if (typeof this._permission !== "undefined") {
+                attributes.permission = this._permission;
+              }
               attributes.setAttribute("in-entity-browser", "");
               li.appendChild(attributes);
               this._attributes[group] = attributes;

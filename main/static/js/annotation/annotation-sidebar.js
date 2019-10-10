@@ -69,6 +69,14 @@ class AnnotationSidebar extends TatorElement {
     });
   }
 
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._box.style.display = "none";
+      this._line.style.display = "none";
+      this._point.style.display = "none";
+    }
+  }
+
   set localizationTypes(val) {
     if (typeof val.box !== "undefined") {
       this._box.addEventListener("click", (evt) => {

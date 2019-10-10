@@ -19,6 +19,13 @@ class AttributePanel extends TatorElement {
     }
   }
 
+  set permission(val) {
+    this._permission = val;
+    for (const widget of this._div.children) {
+      widget.permission = val;
+    }
+  }
+
   set dataType(val) {
     if (val.isTrack) {
       const div = document.createElement("div");
@@ -49,12 +56,10 @@ class AttributePanel extends TatorElement {
         widget.setAttribute("name", column.name);
         widget.setAttribute("on-text", "Yes");
         widget.setAttribute("off-text", "No");
-        this._div.appendChild(widget);
       } else if (column.dtype == "enum") {
         widget = document.createElement("enum-input");
         widget.setAttribute("name", column.name);
         widget.choices = column.choices;
-        this._div.appendChild(widget);
       } else {
         // TODO: Implement a better datetime widget
         // TODO: Implement a better geopos widget
@@ -62,9 +67,11 @@ class AttributePanel extends TatorElement {
         widget.setAttribute("name", column.name);
         widget.setAttribute("type", column.dtype);
         widget.autocomplete = column.autocomplete;
-
-        this._div.appendChild(widget);
       }
+      if (typeof this._permission !== "undefined") {
+        widget.permission = this._permission;
+      }
+      this._div.appendChild(widget);
       if (column.default)
       {
         widget.setValue(column.default);

@@ -96,6 +96,7 @@ class JobChannel(Enum):
 class Permission(Enum):
     VIEW_ONLY = 'r'
     CAN_EDIT = 'w'
+    CAN_TRANSFER = 't'
     CAN_EXECUTE = 'x'
     FULL_CONTROL = 'a'
 
@@ -148,6 +149,12 @@ class Project(Model):
     section_order = ArrayField(CharField(max_length=128), default=list)
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
+    def user_permission(self, user_id):
+        permission = None
+        qs = self.membership_set.filter(user_id=user_id)
+        if qs.exists():
+            permission = qs[0].permission
+        return permission
     def __str__(self):
         return self.name
 
@@ -168,6 +175,8 @@ class Membership(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
+    def __str__(self):
+        return f'{self.user} | {self.permission} | {self.project}'
 
 # Entity types
 

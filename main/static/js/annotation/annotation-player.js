@@ -179,6 +179,10 @@ class AnnotationPlayer extends TatorElement {
     });
   }
 
+  set permission(val) {
+    this._video.permission = val;
+  }
+
   addDomParent(val)
   {
     this._video.domParents.push(val);

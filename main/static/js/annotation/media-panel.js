@@ -24,6 +24,10 @@ class MediaPanel extends TatorElement {
     this._dataTypes = null;
   }
 
+  set permission(val) {
+    this._attrs.permission = val;
+  }
+
   set mediaInfo(val) {
     this._name.textContent = val.name;
     this._mediaData = val;

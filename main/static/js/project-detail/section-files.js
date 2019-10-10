@@ -19,12 +19,15 @@ class SectionFiles extends TatorElement {
     header.appendChild(actions);
 
     this._search = document.createElement("section-search");
+    this._search.setAttribute("class", "px-2");
     actions.appendChild(this._search);
 
     this._upload = document.createElement("section-upload");
+    this._upload.setAttribute("class", "px-2");
     actions.appendChild(this._upload);
 
     this._more = document.createElement("section-more");
+    this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
 
     this._main = document.createElement("ul");
@@ -76,6 +79,17 @@ class SectionFiles extends TatorElement {
         this._upload.setAttribute("section", newValue);
         break;
     }
+  }
+
+  set permission(val) {
+    if (!hasPermission(val, "Can Edit")) {
+      this._more.style.display = "none";
+    }
+    if (!hasPermission(val, "Can Transfer")) {
+      this._upload.style.display = "none";
+    }
+    this._more.permission = val;
+    this._permission = val;
   }
 
   set mediaFilter(val) {
@@ -185,7 +199,6 @@ class SectionFiles extends TatorElement {
 
   _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
-    //const hasMedia = typeof this._media !== "undefined";
     const hasSections = typeof this._sections !== "undefined";
     const hasProject = this.hasAttribute("project-id");
     const hasStart = typeof this._start !== "undefined";
@@ -198,6 +211,7 @@ class SectionFiles extends TatorElement {
         if (newCard) {
           card = document.createElement("media-card");
           card.setAttribute("class", "col-6");
+          card.permission = this._permission;
           card.algorithms = this._algorithms;
           card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
           card.addEventListener("mouseenter", () => {
