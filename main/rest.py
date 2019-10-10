@@ -2589,7 +2589,7 @@ class JobDetailAPI(APIView):
         finally:
             return response;
 
-class JobGroupAPI(APIView):
+class JobGroupDetailAPI(APIView):
     """
     Interact with a group of background jobs.
     """

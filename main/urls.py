@@ -40,6 +40,7 @@ from .rest import AlgorithmListAPI;
 from .rest import AlgorithmLaunchAPI;
 from .rest import AlgorithmResultListAPI;
 from .rest import JobDetailAPI
+from .rest import JobGroupDetailAPI
 from .rest import MembershipListAPI;
 from .rest import ProjectListAPI
 from .rest import ProjectDetailAPI
@@ -166,6 +167,10 @@ urlpatterns += [
     path(
         'rest/Job/<str:run_uid>',
         JobDetailAPI.as_view(),
+    ),
+    path(
+        'rest/JobGroup/<str:group_id>',
+        JobGroupDetailAPI.as_view(),
     ),
     path(
         'rest/Memberships/<int:project>',
