@@ -1780,10 +1780,6 @@ class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 del request.data['attributes']
             if bool(request.data):
                 super().patch(request, **kwargs)
-            # Necessarry to invalidate cache on base class since django-cacheops
-            # does not currently invalidate inherited tables.
-            base_object = EntityMediaBase.objects.non_polymorphic().get(pk=self.kwargs['pk'])
-            base_object.save()
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -1868,10 +1864,6 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             if localization_object.thumbnail_image:
                 patch_attributes(new_attrs, localization_object.thumbnail_image)
 
-            # Necessarry to invalidate cache on base class since django-cacheops
-            # does not currently invalidate inherited tables.
-            base_object = EntityLocalizationBase.objects.non_polymorphic().get(pk=self.kwargs['pk'])
-            base_object.save()
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:

@@ -35,6 +35,7 @@ from polymorphic.models import PolymorphicModel
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
+from cacheops import invalidate_model
 
 import logging
 
@@ -283,8 +284,13 @@ class EntityMediaImage(EntityMediaBase):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
 
+@receiver(post_save, sender=EntityMediaImage)
+def image_save(**kwargs):
+    invalidate_model(EntityMediaBase)
+
 @receiver(pre_delete, sender=EntityMediaImage)
 def image_delete(sender, instance, **kwargs):
+    invalidate_model(EntityMediaBase)
     instance.file.delete(False)
     instance.thumbnail.delete(False)
 
@@ -303,8 +309,13 @@ class EntityMediaVideo(EntityMediaBase):
                                  blank=True)
     """ Segment info file to support MSE-based playback """
 
+@receiver(post_save, sender=EntityMediaVideo)
+def video_save(sender, instance, created, **kwargs):
+    invalidate_model(EntityMediaBase)
+
 @receiver(pre_delete, sender=EntityMediaVideo)
 def video_delete(sender, instance, **kwargs):
+    invalidate_model(EntityMediaBase)
     instance.file.delete(False)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
@@ -330,17 +341,41 @@ class EntityLocalizationDot(EntityLocalizationBase):
     x = FloatField()
     y = FloatField()
 
+@receiver(post_save, sender=EntityLocalizationDot)
+def dot_save(sender, instance, created, **kwargs):
+    invalidate_model(EntityLocalizationBase)
+
+@receiver(pre_delete, sender=EntityLocalizationDot)
+def dot_delete(sender, instance, **kwargs):
+    invalidate_model(EntityLocalizationBase)
+
 class EntityLocalizationLine(EntityLocalizationBase):
     x0 = FloatField()
     y0 = FloatField()
     x1 = FloatField()
     y1 = FloatField()
 
+@receiver(post_save, sender=EntityLocalizationLine)
+def line_save(sender, instance, created, **kwargs):
+    invalidate_model(EntityLocalizationBase)
+
+@receiver(pre_delete, sender=EntityLocalizationLine)
+def line_delete(sender, instance, **kwargs):
+    invalidate_model(EntityLocalizationBase)
+
 class EntityLocalizationBox(EntityLocalizationBase):
     x = FloatField()
     y = FloatField()
     width = FloatField()
     height = FloatField()
+
+@receiver(post_save, sender=EntityLocalizationBox)
+def box_save(sender, instance, created, **kwargs):
+    invalidate_model(EntityLocalizationBase)
+
+@receiver(pre_delete, sender=EntityLocalizationBox)
+def box_delete(sender, instance, **kwargs):
+    invalidate_model(EntityLocalizationBase)
 
 class AssociationType(PolymorphicModel):
     media = ManyToManyField(EntityMediaBase)
