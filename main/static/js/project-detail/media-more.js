@@ -49,6 +49,7 @@ class MediaMore extends TatorElement {
 
     this._cancel = document.createElement("cancel-button");
     this._cancel.setAttribute("text", "Cancel processing");
+    this._cancel.setAttribute("class", "py-2");
     this._cancel.style.display = "none"; 
     otherButtons.appendChild(this._cancel);
 
