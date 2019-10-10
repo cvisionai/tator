@@ -3,7 +3,7 @@ class CancelButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center");
+    button.setAttribute("class", "btn-clear px-0 text-gray hover-text-white d-flex flex-items-center");
     this._shadow.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
