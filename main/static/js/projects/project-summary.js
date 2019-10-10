@@ -38,6 +38,7 @@ class ProjectSummary extends TatorElement {
 
   set info(val) {
     this._text.nodeValue = val.name;
+    this._projectId = val.id;
     if (val.thumb) {
       this._img.setAttribute("src", val.thumb);
       this._img.setAttribute("style", "object-fit:cover");

@@ -47,6 +47,17 @@ class ProjectsDashboard extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    deleteProject.addEventListener("confirmDeleteProject", evt => {
+      for (const project of this._projects.children) {
+        if (project._projectId == evt.detail.projectId) {
+          this._projects.removeChild(project);
+          break;
+        }
+      }
+      this.removeAttribute("has-open-modal");
+      deleteProject.removeAttribute("is-open");
+    });
+
     window.addEventListener("load", () => {
       window.dispatchEvent(new Event("readyForWebsocket"));
     });
