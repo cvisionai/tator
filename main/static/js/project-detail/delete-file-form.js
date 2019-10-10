@@ -21,32 +21,33 @@ class DeleteFileForm extends ModalDialog {
     this._footer.appendChild(cancel);
 
     cancel.addEventListener("click", this._closeCallback);
+
+    this._accept.addEventListener("click", async evt => {
+      const mediaId = this.getAttribute("media-id");
+      fetch("/rest/EntityMedia/" + mediaId, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      })
+      .catch(err => console.log(err));
+
+      this.dispatchEvent(new CustomEvent("confirmFileDelete", {
+        detail: {mediaId: mediaId}
+      }));
+    });
   }
 
   static get observedAttributes() {
-    return ["media-id", "media-name"].concat(ModalDialog.observedAttributes);
+    return ["media-name"].concat(ModalDialog.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
-      case "media-id":
-        this._accept.addEventListener("click", async evt => {
-          fetch("/rest/EntityMedia/" + newValue, {
-            method: "DELETE",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            },
-          })
-          .catch(err => console.log(err));
-          this.dispatchEvent(new CustomEvent("confirmFileDelete", {
-            detail: {mediaId: newValue}
-          }));
-        });
-        break;
       case "media-name":
         this._title.nodeValue = "Delete \"" + newValue + "\"";
         break;

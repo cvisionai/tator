@@ -49,23 +49,35 @@ class DeleteSectionForm extends ModalDialog {
         }
       });
     });
+
+    this._accept.addEventListener("click", async evt => {
+      const projectId = this.getAttribute("project-id");
+      const filter = this.getAttribute("section-filter");
+      fetch("/rest/EntityMedias/" + projectId + filter, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      })
+      .catch(err => console.log(err));
+      this.dispatchEvent(new CustomEvent("confirmDelete", {
+        detail: {sectionName: this.getAttribute("section-name")}
+      }));
+    });
   }
 
   static get observedAttributes() {
-    return ["section-filter", "section-name", "project-id"].concat(ModalDialog.observedAttributes);
+    return ["section-name"].concat(ModalDialog.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
-      case "section-filter":
-        this._setCallbacks();
-        break;
       case "section-name":
         this._title.nodeValue = "Delete \"" + newValue + "\"";
-        break;
-      case "project-id":
-        this._setCallbacks();
         break;
       case "is-open":
         if (newValue === null) {
@@ -75,30 +87,6 @@ class DeleteSectionForm extends ModalDialog {
           this._accept.setAttribute("disabled", "");
         }
         break;
-    }
-  }
-
-  _setCallbacks() {
-    const filterDefined = this.hasAttribute("section-filter");
-    const projectDefined = this.hasAttribute("project-id");
-    if (filterDefined && projectDefined) {
-      const filter = this.getAttribute("section-filter");
-      const projectId = this.getAttribute("project-id");
-      this._accept.addEventListener("click", async evt => {
-        fetch("/rest/EntityMedias/" + projectId + filter, {
-          method: "DELETE",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-        })
-        .catch(err => console.log(err));
-        this.dispatchEvent(new CustomEvent("confirmDelete", {
-          detail: {sectionName: this.getAttribute("section-name")}
-        }));
-      });
     }
   }
 }

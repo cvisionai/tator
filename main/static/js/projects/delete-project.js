@@ -50,30 +50,33 @@ class DeleteProject extends ModalDialog {
         }
       });
     });
+
+    this._accept.addEventListener("click", evt => {
+      const projectId = this.getAttribute("project-id");
+      console.log("PROJECT ID: " + projectId);
+      fetch("/rest/Project/" + projectId, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      })
+      .catch(err => console.log(err));
+      this.dispatchEvent(new CustomEvent("confirmDeleteProject", {
+        detail: {projectId: projectId}
+      }));
+    });
   }
 
   static get observedAttributes() {
-    return ["project-id", "project-name"].concat(ModalDialog.observedAttributes);
+    return ["project-name"].concat(ModalDialog.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
-      case "project-id":
-        this._accept.addEventListener("click", evt => {
-          fetch("/rest/Project/" + newValue, {
-            method: 'DELETE',
-            credentials: 'same-origin',
-            headers: {
-              'X-CSRFToken': getCookie('csrftoken'),
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-          })
-          .then(response => window.location.reload(true))
-          .catch(err => console.log(err));
-        });
-        break;
       case "project-name":
         this._title.nodeValue = "Delete \"" + newValue + "\"";
         break;
