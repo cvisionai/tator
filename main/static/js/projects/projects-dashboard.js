@@ -61,6 +61,17 @@ class ProjectsDashboard extends TatorPage {
       deleteProject.removeAttribute("is-open");
     });
 
+    this._progress.addEventListener("groupCancel", evt => {
+      cancelJob.gid = evt.detail.gid;
+      cancelJob.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    cancelJob.addEventListener("confirmGroupCancel", () => {
+      this.removeAttribute("has-open-modal");
+      cancelJob.removeAttribute("is-open");
+    });
+
     window.addEventListener("load", () => {
       window.dispatchEvent(new Event("readyForWebsocket"));
     });
