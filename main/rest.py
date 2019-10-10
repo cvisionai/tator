@@ -2507,6 +2507,49 @@ class AlgorithmResultListAPI(ListAPIView):
         qs = AlgorithmResult.objects.filter(algorithm__in=algorithms)
         return qs
 
+def delete_job(job, user):
+    """Cancels a job.
+    """
+    job.delete()
+
+    # Broadcast a stop signal for this run uid.
+    logger.info(f"Sending stop signal to {job.run_uid}")
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(job.run_uid, {
+        'type': 'stop',
+        'run_uid': job.run_uid,
+    })
+
+    # Get the job type
+    if job.channel == JobChannel.ALGORITHM:
+        job_type = 'algorithm'
+        prog = ProgressProducer(
+            job_type,
+            job.project.pk,
+            job.group_id,
+            job.run_uid,
+            job.name,
+            user, {
+                'media_ids': job.message['media_list'],
+                'sections': job.message['section_list'],
+            },
+        )
+        prog.failed("Aborted!")
+    elif job.channel == JobChannel.PACKAGER:
+        job_type = 'download'
+    else:
+        job_type = 'upload'
+        prog = ProgressProducer(
+            job_type,
+            job.project.pk,
+            job.group_id,
+            job.run_uid,
+            job.name,
+            user,
+            {'section': job.message['section']},
+        )
+        prog.failed("Aborted!")
+
 class JobDetailAPI(APIView):
     """
     Interact with a background job.
@@ -2529,45 +2572,7 @@ class JobDetailAPI(APIView):
             if len(job) != 1:
                 raise Http404
             job = job[0]
-            job.delete()
-
-            # Broadcast a stop signal for this run uid.
-            logger.info(f"Sending stop signal to {run_uid}")
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(run_uid, {
-                'type': 'stop',
-                'run_uid': run_uid,
-            })
-
-            # Get the job type
-            if job.channel == JobChannel.ALGORITHM:
-                job_type = 'algorithm'
-                prog = ProgressProducer(
-                    job_type,
-                    job.project.pk,
-                    job.group_id,
-                    run_uid,
-                    job.name,
-                    self.request.user, {
-                        'media_ids': job.message['media_list'],
-                        'sections': job.message['section_list'],
-                    },
-                )
-                prog.failed("Aborted!")
-            elif job.channel == JobChannel.PACKAGER:
-                job_type = 'download'
-            else:
-                job_type = 'upload'
-                prog = ProgressProducer(
-                    job_type,
-                    job.project.pk,
-                    job.group_id,
-                    run_uid,
-                    job.name,
-                    self.request.user,
-                    {'section': job.message['section']},
-                )
-                prog.failed("Aborted!")
+            delete_job(job, self.request.user)
 
             response = Response({'message': f"Job with run UID {run_uid} deleted!"})
 
