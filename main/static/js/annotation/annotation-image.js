@@ -12,6 +12,10 @@ class AnnotationImage extends TatorElement {
     imageDiv.appendChild(this._image);
   }
 
+  set permission(val) {
+    this._image.permission = val;
+  }
+
   addDomParent(val)
   {
     this._image.domParents.push(val);

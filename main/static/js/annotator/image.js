@@ -36,7 +36,6 @@ class ImageCanvas extends AnnotationCanvas
     });
   }
 
-
   refresh()
   {
     // Prevent image buffer from loading prior to localizations
