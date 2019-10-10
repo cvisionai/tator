@@ -1857,6 +1857,11 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             # Patch the thumbnail attributes
             if localization_object.thumbnail_image:
                 patch_attributes(new_attrs, localization_object.thumbnail_image)
+
+            # Necessarry to invalidate cache on base class since django-cacheops
+            # does not currently invalidate inherited tables.
+            base_object = EntityLocalizationBase.objects.non_polymorphic().get(pk=self.kwargs['pk'])
+            base_object.save()
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
