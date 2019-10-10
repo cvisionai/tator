@@ -12,7 +12,7 @@ class ProjectCollaborators extends TatorElement {
     this._div.innerHTML="";
 
     let first = true;
-    const maxAvatars = 1;
+    const maxAvatars = 4;
     for (const [index, username] of val.entries()) {
       const span = document.createElement("span");
       span.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center f3");
