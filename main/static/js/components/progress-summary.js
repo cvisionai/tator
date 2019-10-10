@@ -88,6 +88,7 @@ class ProgressSummary extends TatorElement {
           job.setAttribute("text", text);
           job.setAttribute("max", data.num_procs);
           job.setAttribute("done", data.num_complete);
+          job.setAttribute("gid", data.gid);
           if (exists) {
             if (data.num_complete == data.num_procs) {
               ul.removeChild(job);

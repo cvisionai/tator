@@ -63,6 +63,9 @@ class ProjectDetail extends TatorPage {
     this._progress = document.createElement("progress-summary");
     this._shadow.insertBefore(this._progress, main);
 
+    const cancelJob = document.createElement("cancel-confirm");
+    this._shadow.appendChild(cancelJob);
+
     this._leaveConfirmOk = false;
 
     window.addEventListener("beforeunload", evt => {
@@ -187,6 +190,17 @@ class ProjectDetail extends TatorPage {
           ...msg
         });
       }
+    });
+
+    this._progress.addEventListener("groupCancel", evt => {
+      cancelJob.gid = evt.detail.gid;
+      cancelJob.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    cancelJob.addEventListener("confirmGroupCancel", () => {
+      this.removeAttribute("has-open-modal");
+      cancelJob.removeAttribute("is-open");
     });
 
     this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));

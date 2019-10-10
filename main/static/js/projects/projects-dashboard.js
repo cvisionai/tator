@@ -36,6 +36,9 @@ class ProjectsDashboard extends TatorPage {
     this._progress = document.createElement("progress-summary");
     this._shadow.insertBefore(this._progress, main);
 
+    const cancelJob = document.createElement("cancel-confirm");
+    this._shadow.appendChild(cancelJob);
+
     this._removeCallback = evt => {
       deleteProject.setAttribute("project-id", evt.detail.projectId);
       deleteProject.setAttribute("project-name", evt.detail.projectName);
