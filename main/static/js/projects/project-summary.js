@@ -29,6 +29,7 @@ class ProjectSummary extends TatorElement {
     text.appendChild(this._description);
 
     this._collaborators = document.createElement("project-collaborators");
+    this._collaborators.setAttribute("class", "d-flex flex-grow");
     div.appendChild(this._collaborators);
 
     this._nav = document.createElement("project-nav");
