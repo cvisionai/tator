@@ -28,8 +28,7 @@ class ProjectSummary extends TatorElement {
     this._description = document.createElement("project-description");
     text.appendChild(this._description);
 
-    this._collaborators = document.createElement("div");
-    this._collaborators.setAttribute("class", "projects__collaborators avatars d-flex");
+    this._collaborators = document.createElement("project-collaborators");
     div.appendChild(this._collaborators);
 
     this._nav = document.createElement("project-nav");
@@ -56,18 +55,7 @@ class ProjectSummary extends TatorElement {
     this._nav.setAttribute("project-id", val.id);
     this._nav.setAttribute("permission", val.permission);
     let first = true;
-    for (let username of val.usernames) {
-      const span = document.createElement("span");
-      span.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center f3");
-      if (!first) {
-        span.setAttribute("style", "background-color: #696cff");
-      }
-      let initials = username.match(/\b\w/g) || [];
-      initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
-      span.textContent = initials;
-      this._collaborators.appendChild(span);
-      first = false;
-    }
+    this._collaborators.usernames = val.usernames;
 
     this._nav.addEventListener("remove", evt => {
       const remove = new CustomEvent("remove", {
