@@ -1,5 +1,8 @@
 from main.models import *
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 """ Utility scripts for data management in django-shell """
 
@@ -51,19 +54,21 @@ def updateProjectTotals():
     projects=Project.objects.all()
     for project in projects:
         files = EntityMediaBase.objects.filter(project=project)
-        project.num_files=len(files)
-        project.size = 0
-        for file in files:
-            try:
-                project.size = project.size + file.file.size
-                project.size = project.size + file.thumbnail.size
-                if type(file) == EntityMediaVideo:
-                    if file.original:
-                        statinfo = os.stat(file.original)
-                        project.size = project.size + statinfo.st_size
-                    project.size = project.size + file.thumbnail_gif.size
-            except:
-                pass
+        if files.count() != project.num_files:
+            project.num_files = files.count()
+            project.size = 0
+            for file in files:
+                try:
+                    project.size += file.file.size
+                    project.size += file.thumbnail.size
+                    if isinstance(file, EntityMediaVideo):
+                        if file.original:
+                            statinfo = os.stat(file.original)
+                            project.size = project.size + statinfo.st_size
+                        project.size += file.thumbnail_gif.size
+                except:
+                    pass
+            logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
         project.save()
 
 def moveCompletedAlgRuns(project_id, from_section, to_section):
