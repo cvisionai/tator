@@ -418,7 +418,13 @@ class ProjectPermissionBase(BasePermission):
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
             qs = Job.objects.filter(run_uid=uid)
-            if len(qs) == 0:
+            if not qs.exists():
+                raise Http404
+            project = self._project_from_object(qs[0])
+        elif 'group_id' in view.kwargs:
+            uid = view.kwargs['group_id']
+            qs = Job.objects.filter(group_id=uid)
+            if not qs.exists():
                 raise Http404
             project = self._project_from_object(qs[0])
         return self._validate_project(request, project)
