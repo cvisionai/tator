@@ -69,7 +69,7 @@ def updateProjectTotals():
                 except:
                     pass
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
-        project.save()
+            project.save()
 
 def moveCompletedAlgRuns(project_id, from_section, to_section):
     results = AlgorithmResult.objects.filter(
