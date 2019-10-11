@@ -78,6 +78,19 @@ class TextInput extends TatorElement {
     }
   }
 
+  set default(val) {
+    this._default = val;
+  }
+
+  reset() {
+    // Go back to default value
+    if (typeof this._default !== "undefined") {
+      this.setValue(this._default);
+    } else {
+      this.setValue("");
+    }
+  }
+
   _validateInt() {
     let val = parseInt(this._input.value);
     if (isNaN(val)) {

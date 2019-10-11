@@ -72,10 +72,10 @@ class AttributePanel extends TatorElement {
         widget.permission = this._permission;
       }
       this._div.appendChild(widget);
-      if (column.default)
-      {
-        widget.setValue(column.default);
+      if (column.default) {
+        widget.default = column.default;
       }
+      widget.reset();
 
       widget.addEventListener("change", () => {
         if (this._emitChanges) {
@@ -116,6 +116,13 @@ class AttributePanel extends TatorElement {
       widget.setValue(values.attributes[name]);
     }
     this._emitChanges = true;
+  }
+
+  reset() {
+    // Sets all widgets to default
+    for (const widget of this._div.children) {
+      widget.reset();
+    }
   }
 }
 

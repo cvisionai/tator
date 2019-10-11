@@ -50,6 +50,9 @@ class SaveDialog extends TatorElement {
 
     this._save.addEventListener("click", () => {
       this._values = this._attributes.getValues();
+      this.dispatchEvent(new CustomEvent("save", {
+        detail: this._values
+      }));
       this._recents.store(this._values);
       const mediaId = this.getAttribute("media-id");
       const body = {
@@ -61,22 +64,21 @@ class SaveDialog extends TatorElement {
       };
       this._undo.post("Localizations", body, this._dataType);
       this._loaded=true;
-      this.dispatchEvent(new CustomEvent("save", {
-        detail: this._values
-      }));
+      this._attributes.reset();
     });
 
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
+      this._attributes.reset();
     });
 
-    this._loaded=false;
+    this._loaded = false;
   }
 
   saveObject(requestObj)
   {
     this._requestObj = requestObj;
-    this._save.dispatchEvent(new MouseEvent('click'));
+    this._save.dispatchEvent(new MouseEvent("click"));
   }
 
   set undoBuffer(val) {

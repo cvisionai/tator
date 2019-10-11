@@ -62,6 +62,19 @@ class EnumInput extends TatorElement {
     }
   }
 
+  set default(val) {
+    this._default = val;
+  }
+
+  reset() {
+    // Go back to default value
+    if (typeof this._default !== "undefined") {
+      this.setValue(this._default);
+    } else {
+      this._select.selectedIndex = 0;
+    }
+  }
+
   getValue() {
     const selected = this._select.selectedIndex;
     return this._select.options[selected].value;
