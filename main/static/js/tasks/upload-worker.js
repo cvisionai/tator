@@ -73,6 +73,21 @@ const bufferMessage = (projectId, token, uid, msg) => {
   progressBuffer[key][uid] = msg;
 }
 
+// Define function to remove a queued upload.
+const removeQueued = index => {
+  const record = uploadBuffer.splice(index, 1)[0];
+  bufferMessage(record.projectId, record.token, record.uid, {
+    gid: record.gid,
+    uid: record.uid,
+    swid: serviceWorkerId,
+    section: record.section,
+    name: record.file.name,
+    state: "failed",
+    message: "Aborted!",
+    progress: 100,
+  });
+}
+
 // Add an event listener that saves the upload info in the buffer.
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
@@ -104,20 +119,34 @@ self.addEventListener("message", async msgEvent => {
       activeUploads[msg.uid].cancel();
     } else {
       // Get the record and use it to send failure message.
-      const record = uploadBuffer.find(elem => {return elem.uid == msg.uid});
-      if (typeof record !== "undefined") {
-        const index = uploadBuffer.indexOf(record);
-        uploadBuffer.splice(index);
-        bufferMessage(record.projectId, record.token, record.uid, {
-          gid: record.gid,
-          uid: record.uid,
-          swid: serviceWorkerId,
-          section: record.section,
-          name: record.file.name,
-          state: "failed",
-          message: "Aborted!",
-          progress: 100,
-        });
+      const index = uploadBuffer.findIndex(elem => elem.uid == msg.uid);
+      if (index != -1) {
+        removeQueued(index);
+      }
+    }
+  } else if (msg.command == "cancelGroupUpload") {
+    // Cancel queued uploads
+    while (true) {
+      const index = uploadBuffer.findIndex(elem => elem.gid == msg.gid);
+      if (index == -1) {
+        break;
+      } else {
+        removeQueued(index);
+      }
+    }
+    // Cancel active uploads
+    while (true) {
+      let found = false;
+      for (const uid in activeUploads) {
+        const upload = activeUploads[uid];
+        if (upload.gid == msg.gid) {
+          found = true;
+          upload.cancel();
+          break;
+        }
+      }
+      if (!found) {
+        break;
       }
     }
   }
