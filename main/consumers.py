@@ -63,11 +63,14 @@ def finish_job(job_id):
 class ProgressProducer:
     """Interface for generating progress messages.
     """
+    @classmethod
+    def setup_redis(cls):
+        cls.rds = redis.Redis(host='redis-svc')
+
     def __init__(self, prefix, project_id, gid, uid, name, user, aux={}):
         """Store uid, name, user in a dict. Store project id.
         """
         self.channel_layer = get_channel_layer()
-        self.rds = redis.Redis(host='redis-svc')
         self.prog_grp = prefix + '_prog_' + str(project_id)
         self.latest_grp = prefix + '_latest_' + str(project_id)
         self.prefix = prefix
@@ -90,18 +93,9 @@ class ProgressProducer:
             'name': name,
         }
 
-    def _refresh(self):
-        """Refresh the connection if necessary.
-        """
-        try:
-            self.rds.ping()
-        except:
-            self.rds = redis.Redis(host='redis-svc')
-
     def _broadcast(self, state, msg, progress=None, aux=None):
         """Output a progress message. Store message in redis.
         """
-        self._refresh()
         msg = {
             **self.header,
             'state': state,
@@ -120,7 +114,6 @@ class ProgressProducer:
     def _summary(self):
         """Broadcasts progress summary and stores message in redis.
         """
-        self._refresh()
         num_procs = self.rds.hlen(self.gid + ':started')
         num_complete = self.rds.hlen(self.gid + ':done')
         msg = {
@@ -140,7 +133,6 @@ class ProgressProducer:
     def _clear_latest(self):
         """Clears the latest queue from redis.
         """
-        self._refresh()
         self.rds.hset(self.gid + ':done', self.uid, self.uid)
         self.rds.hdel(self.latest_grp, self.uid)
         self._summary()
@@ -168,6 +160,9 @@ class ProgressProducer:
         """
         self._broadcast('finished', msg, None, aux)
         self._clear_latest()
+
+# Initialize global redis connection
+ProgressProducer.setup_redis()
 
 class ProgressConsumer(JsonWebsocketConsumer):
     """Consumer for all progress messages
