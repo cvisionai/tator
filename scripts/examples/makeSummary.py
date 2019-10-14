@@ -111,10 +111,10 @@ if __name__=="__main__":
     parser.add_argument("--url", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--token", required=True)
-    parser.add_argument("--output", required=False,default="summary.csv")
+    parser.add_argument("--output", required=False)
     parser.add_argument("--section", required=True) #TODO allow whole project
     args=parser.parse_args()
-
+    
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
 
     types=tator.LocalizationType.all()
@@ -156,4 +156,8 @@ if __name__=="__main__":
                                   columns=COLUMNS)
             data = data.append(section_data)
 
-    data.to_csv(args.output, index=False)
+    output_name = f"{args.section}_summary.csv"
+    if args.output:
+        output_name = args.output
+
+    data.to_csv(output_name, index=False)

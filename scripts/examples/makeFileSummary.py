@@ -11,7 +11,7 @@ if __name__=="__main__":
     parser.add_argument("--url", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--token", required=True)
-    parser.add_argument("--output", required=False,default="fileSummary.csv")
+    parser.add_argument("--output", required=False)
     parser.add_argument("--section", required=True)
     args=parser.parse_args()
 
@@ -43,11 +43,14 @@ if __name__=="__main__":
     print(f"CSV File Columsn = {col_names}")
 
 
+    output_name = f"{args.section}_fileSummary.csv"
+    if args.output:
+        output_name = args.output
 
     data = pd.DataFrame(columns=col_names,
                         data=None)
 
-    data.to_csv(args.output, index=False)
+    data.to_csv(output_name, index=False)
     sectionEncoded=args.section.replace(' ','+')
     url="https://cvision.tatorapp.com/4/annotation/{}?attribute=tator_user_sections%3A%3A{}"
     section_filter=f"tator_user_sections::{args.section}"
@@ -89,4 +92,4 @@ if __name__=="__main__":
 
         data = pd.DataFrame(columns=col_names,
                             data=[datum])
-        data.to_csv(args.output, index=False, header=False, mode='a')
+        data.to_csv(output_name, index=False, header=False, mode='a')
