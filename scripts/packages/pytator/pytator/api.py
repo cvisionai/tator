@@ -137,6 +137,10 @@ class Project(APIElement):
     def __init__(self, api):
          super().__init__(api, "Projects")
 
+class User(APIElement):
+    def __init__(self, api):
+         super().__init__(api, "Users")
+
 class Media(APIElement):
     def __init__(self, api):
         super().__init__(api, "EntityMedias")

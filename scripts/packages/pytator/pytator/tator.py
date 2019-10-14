@@ -40,6 +40,7 @@ class Tator:
         self.Localization = apiImpl.Localization((url,token,project))
         self.TreeLeaf = apiImpl.TreeLeaf((url,token,project))
         self.Project = apiImpl.Project((url,token,None))
+        self.User = apiImpl.User((url,token,None))
 
     def baseURL(self):
         """ Returns the URL for accessing site content """
