@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1473</width>
+    <height>1084</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,12 +31,19 @@
       </property>
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
-        <widget class="QLineEdit" name="username_field"/>
+        <widget class="QLineEdit" name="username_field">
+         <property name="placeholderText">
+          <string>Username</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="password_field">
          <property name="echoMode">
           <enum>QLineEdit::Password</enum>
+         </property>
+         <property name="placeholderText">
+          <string>Password</string>
          </property>
         </widget>
        </item>
@@ -54,8 +61,8 @@
      <widget class="QTabWidget" name="tabWidget">
       <property name="minimumSize">
        <size>
-        <width>640</width>
-        <height>480</height>
+        <width>1280</width>
+        <height>960</height>
        </size>
       </property>
       <property name="tabShape">
@@ -73,7 +80,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1473</width>
      <height>31</height>
     </rect>
    </property>
