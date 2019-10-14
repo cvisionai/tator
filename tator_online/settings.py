@@ -69,23 +69,6 @@ CHANNEL_LAYERS = {
     },
 }
 
-CACHEOPS_REDIS = {
-    'host': 'redis-svc',
-    'port': 6379,
-    'db': 1,
-}
-
-CACHEOPS_DEFAULTS = {
-    'timeout': 60*60
-}
-
-CACHEOPS = {
-    'auth.user': {'ops': 'get', 'timeout': 60*15},
-    'auth.*': {'ops': ('fetch', 'get')},
-    'auth.permission': {'ops': 'all'},
-    'main.*': {},
-}
-
 GRAPH_MODELS = {
     'all_applications': True,
     'group_models': True,
