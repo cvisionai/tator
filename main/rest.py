@@ -104,6 +104,8 @@ from .serializers import UserSerializerBasic
 
 from .consumers import ProgressProducer
 
+from .cache import TatorCache
+
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
 from django.contrib.gis.db.models import FloatField
@@ -1169,11 +1171,22 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
-                return super().get(request, *args, **kwargs)
+                response = super().get(request, *args, **kwargs)
+                TatorCache().set_media_list_cache(
+                    self.kwargs['project'],
+                    request.query_params,
+                    response.data,
+                )
+                return response
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
             return response;
+        TatorCache().set_media_list_cache(
+            self.kwargs['project'],
+            request.query_params,
+            responseData,
+        )
         return Response(responseData)
 
     def get_queryset(self):
