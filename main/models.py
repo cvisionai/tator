@@ -187,7 +187,7 @@ class EntityTypeBase(PolymorphicModel):
     description = CharField(max_length=256, blank=True)
     visible=BooleanField(default=True)
     def __str__(self):
-        return self.name
+        return f'{self.name} | {self.project}'
 
 class EntityTypeMediaBase(EntityTypeBase):
     uploadable = BooleanField()
@@ -504,7 +504,7 @@ class AttributeTypeBase(PolymorphicModel):
     order = IntegerField(default=0)
     """ Controls order (lower numbers first, negative is hide) """
     def __str__(self):
-        return self.name
+        return f'{self.name} | {self.project}'
 
 class AttributeTypeBool(AttributeTypeBase):
     attr_name = "Boolean"
