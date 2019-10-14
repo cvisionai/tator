@@ -98,7 +98,6 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                         datum['thumbnail'] += sanitizeString(f"{attribute}_{localization['attributes'][attribute]}")
                     # Add extension
                     datum['thumbnail'] += ".png"
-                    print(f"Saving to {datum['thumbnail']}")
                     os.makedirs("images", exist_ok=True)
                     tator.Media.downloadFile(thumb_media,
                                              os.path.join("images",
