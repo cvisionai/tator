@@ -21,6 +21,7 @@ class BoolInput extends TatorElement {
     this._on.setAttribute("type", "radio");
     this._on.setAttribute("id", "on");
     this._on.setAttribute("name", "asdf");
+    this._on.checked = true;
     controls.appendChild(this._on);
 
     this._onLabel = document.createElement("label");
