@@ -19,6 +19,7 @@ from rest_framework.compat import coreschema,coreapi
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.schemas import AutoSchema
@@ -99,6 +100,7 @@ from .serializers import LocalizationAssociationSerializer
 from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
 from .serializers import AnalysisSerializer
+from .serializers import UserSerializerBasic
 
 from .consumers import ProgressProducer
 
@@ -1071,7 +1073,7 @@ def get_media_queryset(project, query_params, attr_filter):
                     )
                     medias = entities.values('pk').distinct()
                 media_queries.append(medias)
-        
+
         search_qs = EntityMediaBase.objects.filter(
             Q(name__icontains=search) | Q(attributes__tator_user_sections__icontains=search),
             project=project
@@ -2762,3 +2764,37 @@ class NotifyAPI(APIView):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response
+
+class UserPermission(BasePermission):
+    """ 1.) Reject all anonymous requests
+        2.) Allow all super-user requests
+        3.) Allow any cousin requests (users on a common project) (read-only)
+        4.) Allow any request if user id = pk
+    """
+    def has_permission(self, request, view):
+        if isinstance(request.user, AnonymousUser):
+            return False
+
+        user = request.user
+        finger_user = view.kwargs['pk']
+        if user.is_staff:
+            return True
+        if user.id == finger_user:
+            return True
+
+        # find out if user is a cousin
+        user_projects=Membership.objects.filter(user=user).values('project')
+        cousins=Membership.objects.filter(project__in = user_projects).values('user').distinct()
+        is_cousin = (len(cousins.filter(user=finger_user)) > 0)
+        if is_cousin and request.method == 'GET':
+            # Cousins have read-only permission
+            return True
+
+        return False
+
+
+class UserDetailAPI(RetrieveUpdateAPIView):
+    """ View or update a user """
+    serializer_class = UserSerializerBasic
+    queryset = User.objects.all()
+    permission_classes = [UserPermission]

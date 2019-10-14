@@ -46,6 +46,7 @@ from .rest import ProjectListAPI
 from .rest import ProjectDetailAPI
 from .rest import AnalysisAPI
 from .rest import NotifyAPI
+from .rest import UserDetailAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -192,4 +193,8 @@ urlpatterns += [
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
+    path(
+        'rest/User/<int:pk>',
+        UserDetailAPI.as_view(),
+    )
 ]
