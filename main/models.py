@@ -344,11 +344,11 @@ class EntityLocalizationDot(EntityLocalizationBase):
 
 @receiver(post_save, sender=EntityLocalizationDot)
 def dot_save(sender, instance, created, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 class EntityLocalizationLine(EntityLocalizationBase):
     x0 = FloatField()
@@ -358,11 +358,11 @@ class EntityLocalizationLine(EntityLocalizationBase):
 
 @receiver(post_save, sender=EntityLocalizationLine)
 def line_save(sender, instance, created, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
 def line_delete(sender, instance, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 class EntityLocalizationBox(EntityLocalizationBase):
     x = FloatField()
@@ -372,11 +372,11 @@ class EntityLocalizationBox(EntityLocalizationBase):
 
 @receiver(post_save, sender=EntityLocalizationBox)
 def box_save(sender, instance, created, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):
-    invalidate_model(EntityLocalizationBase)
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
 
 class AssociationType(PolymorphicModel):
     media = ManyToManyField(EntityMediaBase)

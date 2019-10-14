@@ -792,6 +792,18 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
     def get(self, request, format=None, **kwargs):
         try:
+            mediaId = request.query_params.get('media_id', None)
+            entityType = request.query_params.get('type', None)
+            if (mediaId is not None) and (entityType is not None):
+                cache = TatorCache().get_localization_list_cache(
+                    mediaId,
+                    entityType,
+                    request.query_params,
+                )
+                if cache:
+                    return Response(cache)
+
+
             self.validate_attribute_filter(request.query_params)
             self.request=request
             before=time.time()
@@ -838,6 +850,12 @@ class LocalizationList(APIView, AttributeFilterMixin):
                         element['media'] = filename_dict[media_id]
 
                     responseData = responseData
+            TatorCache().set_localization_list_cache(
+                mediaId,
+                entityType,
+                request.query_params,
+                responseData,
+            )
             after=time.time()
         except Exception as e:
             response=Response({'message' : str(e),

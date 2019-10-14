@@ -9,6 +9,11 @@ def get_media_list_hash(project_id, query_params):
     key = json.dumps(query_params, sort_keys=True)
     return (group, key)
 
+def get_localization_list_hash(media_id, entity_type_id, query_params):
+    group = f"localization_{media_id}_{entity_type_id}"
+    key = json.dumps(query_params, sort_keys=True)
+    return (group, key)
+
 class TatorCache:
     """Interface for caching responses.
     """
@@ -35,6 +40,27 @@ class TatorCache:
         """Clears media list cache.
         """
         group, _ = get_media_list_hash(project_id, {})
+        self.rds.delete(group)
+
+    def get_localization_list_cache(self, media_id, entity_type_id, query_params):
+        """Returns localization list cache or None if it is not cached.
+        """
+        group, key = get_localization_list_hash(media_id, entity_type_id, query_params)
+        val = None
+        if self.rds.hexists(group, key):
+            val = json.loads(self.rds.hget(group, key))
+        return val
+
+    def set_localization_list_cache(self, media_id, entity_type_id, query_params, val):
+        """Caches an localization list response.
+        """
+        group, key = get_localization_list_hash(media_id, entity_type_id, query_params)
+        self.rds.hset(group, key, json.dumps(val))
+
+    def invalidate_localization_list_cache(self, media_id, entity_type_id):
+        """Clears localization list cache.
+        """
+        group, _ = get_localization_list_hash(media_id, entity_type_id, {})
         self.rds.delete(group)
 
 TatorCache.setup_redis()
