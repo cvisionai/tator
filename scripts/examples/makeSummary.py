@@ -5,7 +5,17 @@ import pytator
 import pandas as pd
 import progressbar
 import os
-
+def sanitizeString(string):
+    """ Sanitize a string to be safe for filenames """
+    return string.replace("|", "-").\
+        replace("/","-").\
+        replace("\\","-").\
+        replace(":","-").\
+        replace("*","").\
+        replace('"',"").\
+        replace("<","").\
+        replace(">","").\
+        replace("|","-")
 def processSection(tator, col_names, section, types_of_interest, medias):
     result=[]
     bar = progressbar.ProgressBar()
@@ -18,9 +28,12 @@ def processSection(tator, col_names, section, types_of_interest, medias):
             type_id=typeObj['type']['id']
             type_desc=typeObj['type']['dtype']
             primary_attribute=None
+            secondary_attributes=[]
             for col in typeObj['columns']:
                 if col['order'] == 0:
                     primary_attribute = col['name']
+                else:
+                    secondary_attributes.append(col['name'])
             df=typeObj['dataframe']
             if type(df) != pd.DataFrame:
                 continue
@@ -75,12 +88,17 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                 if thumbnail_id:
                     thumb_media=tator.Media.get(thumbnail_id)
                     if primary_attribute:
-                        datum['thumbnail'] = localization['attributes'][primary_attribute]
+                        datum['thumbnail'] = sanitizeString(localization['attributes'][primary_attribute])
                         datum['thumbnail'] += '_'
                     else:
                         datum['thumbnail'] = ''
-                    datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}.png"
+                    datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}"
 
+                    for attribute in secondary_attributes:
+                        datum['thumbnail'] += sanitizeString(f"{attribute}_{localization['attributes'][attribute]}")
+                    # Add extension
+                    datum['thumbnail'] += ".png"
+                    print(f"Saving to {datum['thumbnail']}")
                     os.makedirs("images", exist_ok=True)
                     tator.Media.downloadFile(thumb_media,
                                              os.path.join("images",
