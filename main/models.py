@@ -35,7 +35,8 @@ from polymorphic.models import PolymorphicModel
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
-from cacheops import invalidate_model
+
+from .cache import TatorCache
 
 import logging
 
@@ -285,12 +286,12 @@ class EntityMediaImage(EntityMediaBase):
     height=IntegerField(null=True)
 
 @receiver(post_save, sender=EntityMediaImage)
-def image_save(**kwargs):
-    invalidate_model(EntityMediaBase)
+def image_save(sender, instance, **kwargs):
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
 
 @receiver(pre_delete, sender=EntityMediaImage)
 def image_delete(sender, instance, **kwargs):
-    invalidate_model(EntityMediaBase)
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
     instance.file.delete(False)
     instance.thumbnail.delete(False)
 
@@ -311,11 +312,11 @@ class EntityMediaVideo(EntityMediaBase):
 
 @receiver(post_save, sender=EntityMediaVideo)
 def video_save(sender, instance, created, **kwargs):
-    invalidate_model(EntityMediaBase)
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
 
 @receiver(pre_delete, sender=EntityMediaVideo)
 def video_delete(sender, instance, **kwargs):
-    invalidate_model(EntityMediaBase)
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
     instance.file.delete(False)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
