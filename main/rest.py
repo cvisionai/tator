@@ -1,5 +1,4 @@
 from django.http import Http404
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.http import urlencode
 from django.db.models import Count
@@ -1128,7 +1127,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 request.query_params,
             )
             if cache:
-                return HttpResponse(cache, content_type='application/json')
+                return Response(cache)
 
             self.validate_attribute_filter(request.query_params)
             qs = self.get_queryset()

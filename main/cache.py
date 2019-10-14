@@ -22,7 +22,7 @@ class TatorCache:
         group, key = get_media_list_hash(project_id, query_params)
         val = None
         if self.rds.hexists(group, key):
-            val = self.rds.hget(group, key)
+            val = json.loads(self.rds.hget(group, key))
         return val
 
     def set_media_list_cache(self, project_id, query_params, val):
