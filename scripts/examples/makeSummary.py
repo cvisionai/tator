@@ -95,7 +95,8 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                     datum['thumbnail'] += f"{media['name']}_Frame_{localization['frame']}_Id_{localization['id']}"
 
                     for attribute in secondary_attributes:
-                        datum['thumbnail'] += sanitizeString(f"{attribute}_{localization['attributes'][attribute]}")
+                        if attribute in localization['attributes']:
+                            datum['thumbnail'] += sanitizeString(f"_{attribute}_{localization['attributes'][attribute]}")
                     # Add extension
                     datum['thumbnail'] += ".png"
                     os.makedirs("images", exist_ok=True)
