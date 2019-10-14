@@ -37,6 +37,27 @@ data:
 
         client_max_body_size 0;
 
+        location ~*phpinfo.php {
+          return 404;
+        }
+        location ~*index.php {
+          return 404;
+        }
+        location ~*elrekt.php {
+          return 404;
+        }
+        location ~*config.php {
+          return 404;
+        }
+        location ~*wp-login.php {
+          return 404;
+        }
+        location ~*phpmyadmin {
+          return 404;
+        }
+        location ~*recordings/theme/main.css {
+          return 404;
+        }
         location /favicon.ico {
           alias /data/static/images/favicon.ico;
           add_header Cache-Control "max-age=3600, must-revalidate";
