@@ -505,7 +505,7 @@ class AttributeTypeBase(PolymorphicModel):
     order = IntegerField(default=0)
     """ Controls order (lower numbers first, negative is hide) """
     def __str__(self):
-        return f'{self.name} | {self.project}'
+        return self.name
 
 class AttributeTypeBool(AttributeTypeBase):
     attr_name = "Boolean"
