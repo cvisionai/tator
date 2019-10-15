@@ -379,6 +379,7 @@ def run_transcoder(content):
                     cmd=["ffmpeg","-y",
                          "-i", upload_path,
                          "-an",
+                         "-metadata:s", "handler_name=tator",
                          "-vcodec", "libx264",
                          "-g", "25",
                          "-preset", "fast",
