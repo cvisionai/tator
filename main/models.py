@@ -487,6 +487,16 @@ class TreeLeaf(EntityBase):
             pathStr=projName+"."+pathStr
         return pathStr
 
+@receiver(post_save, sender=TreeLeaf)
+def treeleaf_save(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+
+@receiver(pre_delete, sender=TreeLeaf)
+def treeleaf_delete(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+
 # Attribute types
 # These table structures are used to describe the structure of
 # an Entity's JSON-B attribute field

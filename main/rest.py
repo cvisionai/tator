@@ -1487,6 +1487,13 @@ class SuggestionAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, format=None, **kwargs):
+        # Try grabbing data from cache
+        cache = TatorCache().get_treeleaf_list_cache(
+            kwargs['ancestor'],
+            request.query_params,
+        )
+        if cache:
+            return Response(cache)
         minLevel=int(self.request.query_params.get('minLevel', 1))
         startsWith=self.request.query_params.get('query', None)
         ancestor=None
@@ -1548,6 +1555,11 @@ class SuggestionAPI(APIView):
         resp = Response(suggestions)
         s4 = datetime.datetime.now()
         logger.info(f"Timing stage 0 = {s1-s0}, stage 1 = {s2-s1}, stage 2 = {s3-s2}, stage 3 = {s4-s3}, total={s4-s0}")
+        TatorCache().set_treeleaf_list_cache(
+            self.kwargs['ancestor'],
+            request.query_params,
+            suggestions,
+        )
         return resp
 
 class TreeLeafListSchema(AutoSchema, AttributeFilterSchemaMixin):

@@ -14,6 +14,11 @@ def get_localization_list_hash(media_id, entity_type_id, query_params):
     key = json.dumps(query_params, sort_keys=True)
     return (group, key)
 
+def get_treeleaf_list_hash(ancestor, query_params):
+    group = f"treeleaf_{ancestor}"
+    key = json.dumps(query_params, sort_keys=True)
+    return (group, key)
+
 class TatorCache:
     """Interface for caching responses.
     """
@@ -61,6 +66,27 @@ class TatorCache:
         """Clears localization list cache.
         """
         group, _ = get_localization_list_hash(media_id, entity_type_id, {})
+        self.rds.delete(group)
+
+    def get_treeleaf_list_cache(self, ancestor, query_params):
+        """Returns tree leaf list cache or None if it is not cached.
+        """
+        group, key = get_treeleaf_list_hash(ancestor, query_params)
+        val = None
+        if self.rds.hexists(group, key):
+            val = json.loads(self.rds.hget(group, key))
+        return val
+
+    def set_treeleaf_list_cache(self, ancestor, query_params, val):
+        """Caches a suggestion response.
+        """
+        group, key = get_treeleaf_list_hash(ancestor, query_params)
+        self.rds.hset(group, key, json.dumps(val))
+
+    def invalidate_treeleaf_list_cache(self, ancestor):
+        """Clears treeleaf list cache.
+        """
+        group, _ = get_treeleaf_list_hash(ancestor, {})
         self.rds.delete(group)
 
 TatorCache.setup_redis()
