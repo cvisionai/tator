@@ -48,7 +48,9 @@ class AttributePanel extends TatorElement {
         }
       });
     }
-    const sorted = val.columns.sort((a, b) => a.order - b.order);
+    const sorted = val.columns.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
     for (const column of sorted) {
       let widget;
       if (column.dtype == "bool") {
