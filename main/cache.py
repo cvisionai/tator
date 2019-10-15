@@ -89,4 +89,13 @@ class TatorCache:
         group, _ = get_treeleaf_list_hash(ancestor, {})
         self.rds.delete(group)
 
+    def invalidate_all(self):
+        """Invalidates all caches.
+        """
+        for prefix in ['media_', 'localization_', 'treeleaf_']:
+            for key in self.rds.scan_iter(match=prefix + '*'):
+                logger.info(f"Deleting cache key {key}...")
+                self.rds.delete(key)
+        logger.info("Cache cleared!")
+
 TatorCache.setup_redis()
