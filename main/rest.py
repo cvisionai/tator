@@ -1205,8 +1205,8 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 qs = self.get_queryset()
                 original_sql,params = qs.query.sql_with_params()
                 root_url = request.build_absolute_uri("/")
-                media_url = request.build_absolute_uri("/")
-                raw_url = request.build_absolute_uri("/")
+                media_url = request.build_absolute_uri(settings.MEDIA_URL)
+                raw_url = request.build_absolute_uri(settings.RAW_ROOT)
                 # Modify original sql to have aliases to match JSON output
                 original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,')
                 original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '')
@@ -1214,10 +1214,10 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,')
                 original_sql = original_sql.replace('"main_entitybase"."file",', f'CONCAT(\'{media_url}\'"main_entitybase"."file") AS url,')
 
-                new_selections =  f'CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail") AS video_thumbnail'
-                new_selections += f', CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail") AS image_thumbnail'
-                new_selections += f', CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif") AS video_thumbnail_gif'
-                new_selections += f', CONCAT(\'{raw_url}\',"main_entitymediavideo"."original") AS original'
+                new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
+                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
+                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
+                new_selections += f', NULLIF(CONCAT(\'{raw_url}\',"main_entitymediavideo"."original"),\'{raw_url}\') AS original_url'
                 original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ")
 
                 #Add new joins
