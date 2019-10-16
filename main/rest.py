@@ -1075,6 +1075,7 @@ def get_media_queryset(project, query_params, attr_filter):
             if is_str or is_enum:
                 entity_type = attr_type.applies_to
                 name_filter = {f'attributes__{attr_type.name}__icontains': search}
+                medias = None
                 if isinstance(entity_type, EntityTypeLocalizationBase):
                     entities = EntityLocalizationBase.objects.filter(
                         meta=entity_type,
@@ -1093,7 +1094,8 @@ def get_media_queryset(project, query_params, attr_filter):
                         **name_filter,
                     )
                     medias = entities.values('pk').distinct()
-                media_queries.append(medias)
+                if medias:
+                    media_queries.append(medias)
 
         search_qs = EntityMediaBase.objects.filter(
             Q(name__icontains=search) | Q(attributes__tator_user_sections__icontains=search),
