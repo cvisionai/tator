@@ -3,6 +3,7 @@ import sys
 import logging
 
 import pytator
+import os
 
 # QT Imports
 from PyQt5 import Qt,QtCore, QtGui, QtWidgets, uic
@@ -11,7 +12,10 @@ from gnocchi.ui_project import Ui_Project
 from gnocchi.ui_projectDetail import Ui_ProjectDetail
 import qdarkstyle
 
-
+DIRNAME = os.path.dirname(os.path.abspath(__file__))
+QT_ICON_PATH = os.path.join(DIRNAME, 'assets', 'cvision_no_text.ico')
+QT_DOWNLOAD_PATH = os.path.join(DIRNAME, 'assets', 'download.svg')
+QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, url, token, projectId):
@@ -25,6 +29,12 @@ class ProjectDetail(QtWidgets.QWidget):
         self.ui.sectionTree.setHeaderLabel("Media Files")
         # Enable multiple selections
         self.ui.sectionTree.setSelectionMode(QtWidgets.QTreeWidget.MultiSelection)
+
+        self.ui.downloadBtn.setIcon(QtGui.QIcon(QT_DOWNLOAD_PATH))
+        self.ui.uploadBtn.setIcon(QtGui.QIcon(QT_UPLOAD_PATH))
+
+        #Disable upload button for now
+        self.ui.uploadBtn.setEnabled(False)
 
     def refreshProjectData(self):
         project_data=self.tator.Project.get(self.project_id)
@@ -77,6 +87,7 @@ class Project(QtWidgets.QMainWindow):
         super(Project, self).__init__()
         self.ui = Ui_Project()
         self.ui.setupUi(self)
+        self.setWindowIcon(QtGui.QIcon(QT_ICON_PATH))
 
         # hide tab stuff at first
         self.ui.tabWidget.setVisible(False)
