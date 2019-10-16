@@ -10,6 +10,7 @@ from PyQt5 import Qt,QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 from gnocchi.ui_project import Ui_Project
 from gnocchi.ui_projectDetail import Ui_ProjectDetail
+from gnocchi.download import Download
 import qdarkstyle
 
 DIRNAME = os.path.dirname(os.path.abspath(__file__))
