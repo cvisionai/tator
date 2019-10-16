@@ -8,6 +8,7 @@ from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models import Q
 from django.conf import settings
+from django.db import connection
 
 import datetime
 from dateutil.parser import parse as dateutil_parse
@@ -1197,22 +1198,51 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
-                response = super().get(request, *args, **kwargs)
-                TatorCache().set_media_list_cache(
-                    self.kwargs['project'],
-                    request.query_params,
-                    response.data,
-                )
-                return response
+                # We are doing a full query; so we should bypass the ORM and
+                # use the SQL cursor directly.
+                # TODO: See if we can do this using queryset into a custom serializer instead
+                # of naked SQL.
+                qs = self.get_queryset()
+                original_sql,params = qs.query.sql_with_params()
+                root_url = request.build_absolute_uri("/")
+                media_url = request.build_absolute_uri("/")
+                raw_url = request.build_absolute_uri("/")
+                # Modify original sql to have aliases to match JSON output
+                original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,')
+                original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '')
+                original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,')
+                original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,')
+                original_sql = original_sql.replace('"main_entitybase"."file",', f'CONCAT(\'{media_url}\'"main_entitybase"."file") AS url,')
+
+                new_selections =  f'CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail") AS video_thumbnail'
+                new_selections += f', CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail") AS image_thumbnail'
+                new_selections += f', CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif") AS video_thumbnail_gif'
+                new_selections += f', CONCAT(\'{raw_url}\',"main_entitymediavideo"."original") AS original'
+                original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ")
+
+                #Add new joins
+                new_joins = f'LEFT JOIN "main_entitymediaimage" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediaimage"."entitymediabase_ptr_id")'
+                new_joins += f' LEFT JOIN "main_entitymediavideo" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediavideo"."entitymediabase_ptr_id")'
+                original_sql = original_sql.replace(" WHERE ", f" {new_joins} WHERE")
+
+                # Generate JSON serialization string
+                json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
+                logger.info(json_sql)
+
+                with connection.cursor() as cursor:
+                    cursor.execute(json_sql,params)
+                    result = cursor.fetchone()
+                    responseData=result[0]
         except Exception as e:
+            logger.error(traceback.format_exc())
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
             return response;
         TatorCache().set_media_list_cache(
             self.kwargs['project'],
             request.query_params,
-            responseData,
-        )
+            responseData)
+
         return Response(responseData)
 
     def get_queryset(self):
