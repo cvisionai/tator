@@ -170,7 +170,7 @@ class SectionFiles extends TatorElement {
         card.setAttribute("thumb", media.image_thumbnail);
       }
       if (media.video_thumbnail_gif) {
-        card.setAttribute("thumb-gif", media.thumb_gif_url);
+        card.setAttribute("thumb-gif", media.video_thumbnail_gif);
       } else {
         card.removeAttribute("thumb-gif");
       }
