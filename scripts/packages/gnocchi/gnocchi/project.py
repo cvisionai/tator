@@ -49,7 +49,18 @@ class ProjectDetail(QtWidgets.QWidget):
 
     @pyqtSlot()
     def on_downloadBtn_clicked(self):
-        logging.info("Downloading!")
+        selected_items = self.ui.sectionTree.selectedItems()
+        download_list = []
+        def addSelfAndChildren(obj):
+            if obj.data(0,0):
+                download_list.append(obj.data)
+            for child_idx in range(obj.childCount()):
+                addSelfAndChildren(obj.child(child_idx))
+
+        for item in selected_items:
+            addSelfAndChildren(item)
+
+        logging.info(f"Selected {len(download_list)} for download.")
 
     def refreshProjectData(self):
         project_data=self.tator.Project.get(self.project_id)
@@ -72,6 +83,7 @@ class ProjectDetail(QtWidgets.QWidget):
         progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         idx = 1
         progress_dialog.setMinimumDuration(0)
+        progress_dialog.show()
         for section in project_data['section_order']:
             medias = self.tator.Media.filter({"attribute":
                                               f"tator_user_sections::{section}"})
@@ -81,6 +93,7 @@ class ProjectDetail(QtWidgets.QWidget):
                 continue
             for media in medias:
                 media_item = QtWidgets.QTreeWidgetItem(section_tree)
+                media_item.setData(0,0,media)
                 self.sections[section]['medias'].append(media_item)
                 media_item.setText(0,media['name'])
             section_tree.addChildren(self.sections[section]['medias'])

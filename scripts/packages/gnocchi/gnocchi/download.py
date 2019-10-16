@@ -15,7 +15,7 @@ class Download(QObject):
     error = pyqtSignal(str)
     _trigger = pyqtSignal()
 
-    def __init__(self, projectData, outputDirectory):
+    def __init__(self, mediaList, outputDirectory):
         super(DownloadThread, self).__init__()
         self.output_dir = outputDirectory
         self._trigger.connect(self._process)
