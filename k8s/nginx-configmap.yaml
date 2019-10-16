@@ -31,7 +31,7 @@ data:
         ssl_certificate_key /ssl/tator.key;
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
-
+        
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log;
 
@@ -68,14 +68,11 @@ data:
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /media {
-          auth_request /auth-media;
           alias /data/media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
         location /data/raw {
-          auth_request /auth-raw;
-
           alias /data/raw;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
@@ -122,28 +119,6 @@ data:
           gzip on;
           gzip_types application/json;
           gzip_min_length 1024;
-        }
-
-        location /auth-media {
-        internal;
-
-        proxy_pass http://gunicorn-svc:8000/auth-media;
-
-        proxy_pass_request_body off;
-        proxy_set_header Host $host;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URI $request_uri;
-        }
-
-        location /auth-raw {
-        internal;
-
-        proxy_pass http://gunicorn-svc:8000/auth-raw;
-
-        proxy_pass_request_body off;
-        proxy_set_header Host $host;
-        proxy_set_header Content-Length "";
-        proxy_set_header X-Original-URI $request_uri;
         }
 
         error_page 503 /static/maintenance.html;
