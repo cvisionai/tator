@@ -34,7 +34,11 @@ class Download(QObject):
         idx = 0
         for media in self.mediaList:
             self.progress.emit(media['name'], idx)
-            time.sleep(0.1)
+            section_name = media['attributes'].get('tator_user_sections','No Section')
+            full_directory = os.path.join(self.output_dir, section_name)
+            os.makedirs(full_directory, exist_ok=True)
+            full_name = os.path.join(full_directory, media['name'])
+            self.tator.Media.downloadFile(media, full_name)
             idx += 1
             if self._terminated:
                 return
