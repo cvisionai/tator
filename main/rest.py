@@ -1233,6 +1233,8 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                     cursor.execute(json_sql,params)
                     result = cursor.fetchone()
                     responseData=result[0]
+                    if responseData is None:
+                        responseData=[]
         except Exception as e:
             logger.error(traceback.format_exc())
             response=Response({'message' : str(e),
