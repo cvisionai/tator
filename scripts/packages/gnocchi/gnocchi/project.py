@@ -19,8 +19,9 @@ QT_DOWNLOAD_PATH = os.path.join(DIRNAME, 'assets', 'download.svg')
 QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 
 class ProjectDetail(QtWidgets.QWidget):
-    def __init__(self, parent, url, token, projectId):
+    def __init__(self, parent, backgroundThread, url, token, projectId):
         super(ProjectDetail, self).__init__(parent)
+        self.background_thread = backgroundThread
         self.ui = Ui_ProjectDetail()
         self.ui.setupUi(self)
         self.project_id = projectId
@@ -52,15 +53,59 @@ class ProjectDetail(QtWidgets.QWidget):
         selected_items = self.ui.sectionTree.selectedItems()
         download_list = []
         def addSelfAndChildren(obj):
-            if obj.data(0,0):
-                download_list.append(obj.data)
+            if obj.data(0,0x100):
+                download_list.append(obj.data(0,0x100))
             for child_idx in range(obj.childCount()):
                 addSelfAndChildren(obj.child(child_idx))
 
         for item in selected_items:
             addSelfAndChildren(item)
 
-        logging.info(f"Selected {len(download_list)} for download.")
+        file_count = len(download_list)
+        logging.info(f"Selected {file_count} for download.")
+
+        my_documents=Qt.QStandardPaths.writableLocation(
+            Qt.QStandardPaths.DocumentsLocation)
+        output_directory=QtWidgets.QFileDialog.getExistingDirectory(
+            self,
+            f"Save {file_count} Files to...",
+            my_documents)
+
+        if output_directory:
+            logging.info(f"Saving to {output_directory}")
+            self.download = Download(self.tator,
+                                     download_list,
+                                     output_directory)
+            self.download.progress.connect(self.download_progress)
+            self.download.finished.connect(self.download_finished)
+            self.download.moveToThread(self.background_thread)
+            self.download_dialog = QtWidgets.QProgressDialog(
+                "Downloading project...",
+                "Cancel",
+                0,
+                file_count,
+                self)
+            self.download.start()
+            self.download_dialog.setMinimumDuration(0)
+            self.download_dialog.setValue(0)
+            self.download_dialog.canceled.connect(self.download_stopped)
+
+    @pyqtSlot()
+    def download_stopped(self):
+        logging.info("Stopping download")
+        self.download.stop()
+        self.download_dialog.reset()
+
+    @pyqtSlot(str, int)
+    def download_progress(self, filename, idx):
+        logging.info(f"Got download progress @ {idx}")
+        self.download_dialog.setValue(idx)
+        self.download_dialog.setLabelText(filename)
+
+    @pyqtSlot(int)
+    def download_finished(self, idx):
+        logging.info("Download complete")
+        self.download_dialog.reset()
 
     def refreshProjectData(self):
         project_data=self.tator.Project.get(self.project_id)
@@ -83,7 +128,7 @@ class ProjectDetail(QtWidgets.QWidget):
         progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         idx = 1
         progress_dialog.setMinimumDuration(0)
-        progress_dialog.show()
+        progress_dialog.setValue(0)
         for section in project_data['section_order']:
             medias = self.tator.Media.filter({"attribute":
                                               f"tator_user_sections::{section}"})
@@ -93,7 +138,7 @@ class ProjectDetail(QtWidgets.QWidget):
                 continue
             for media in medias:
                 media_item = QtWidgets.QTreeWidgetItem(section_tree)
-                media_item.setData(0,0,media)
+                media_item.setData(0,0x100,media)
                 self.sections[section]['medias'].append(media_item)
                 media_item.setText(0,media['name'])
             section_tree.addChildren(self.sections[section]['medias'])
@@ -120,6 +165,8 @@ class Project(QtWidgets.QMainWindow):
         # hide tab stuff at first
         self.ui.tabWidget.setVisible(False)
         self.adjustSize()
+        self.background_thread=QtCore.QThread(self)
+        self.background_thread.start()
 
 
     @pyqtSlot()
@@ -145,6 +192,7 @@ class Project(QtWidgets.QMainWindow):
             for project in projects:
                 self.ui.tabWidget.addTab(
                     ProjectDetail(self,
+                                  self.background_thread,
                                   'https://cvision.tatorapp.com/rest',
                                   token,
                                   project['id']),
@@ -157,7 +205,7 @@ class Project(QtWidgets.QMainWindow):
             self.move(marginLeft, marginRight)
 
 def start():
-    parser = argparse.ArgumentParser(description='Camera Control Utility')
+    parser = argparse.ArgumentParser(description='Gnocchi --- The PyTator GUI')
     parser.add_argument('--theme', default='dark',
                         choices=['dark', 'light'])
     args = parser.parse_args()
