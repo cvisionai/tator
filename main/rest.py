@@ -1210,22 +1210,22 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 media_url = request.build_absolute_uri(settings.MEDIA_URL)
                 raw_url = request.build_absolute_uri(settings.RAW_ROOT)
                 # Modify original sql to have aliases to match JSON output
-                original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,')
-                original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '')
-                original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,')
-                original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,')
-                original_sql = original_sql.replace('"main_entitybase"."file",', f'CONCAT(\'{media_url}\'"main_entitybase"."file") AS url,')
+                original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,',1)
+                original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '',1)
+                original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,',1)
+                original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,',1)
+                original_sql = original_sql.replace('"main_entitybase"."file",', f'CONCAT(\'{media_url}\'"main_entitybase"."file") AS url,',1)
 
                 new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
                 new_selections += f', NULLIF(CONCAT(\'{raw_url}\',"main_entitymediavideo"."original"),\'{raw_url}\') AS original_url'
-                original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ")
+                original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
 
                 #Add new joins
                 new_joins = f'LEFT JOIN "main_entitymediaimage" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediaimage"."entitymediabase_ptr_id")'
                 new_joins += f' LEFT JOIN "main_entitymediavideo" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediavideo"."entitymediabase_ptr_id")'
-                original_sql = original_sql.replace(" WHERE ", f" {new_joins} WHERE")
+                original_sql = original_sql.replace(" INNER JOIN ", f" {new_joins} INNER JOIN ",1)
 
                 # Generate JSON serialization string
                 json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
