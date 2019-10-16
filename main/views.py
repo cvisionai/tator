@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 
 from .models import Project
@@ -67,6 +68,35 @@ class AnnotationView(ProjectBase, TemplateView):
         return context
 
 
+class AuthMediaView(View):
+    def dispatch(self, request, *args, **kwargs):
+        """ Identifies permissions for a file in /media
+        Returns 200 on OK, returns 403 on Forbidden
+        """
+        original_url = request.headers['X-Original-URI']
+        filename = os.path.basename(original_url)
+
+        # Filename could be a thumbnail, thumbnail_gif, or url
+        extension = os.path.splitext(filename)[-1]
+
+        # If it is a JSON avoid a database query and supply segment
+        # info file as nothing sensitive is in there
+        if extension == 'json':
+            return HttpResponse(status=200)
+
+        return HttpResponse(status=200)
+
+class AuthRawView(View):
+    def dispatch(self, request, *args, **kwargs):
+        """ Identifies permissions for a file in /raw
+        Returns 200 on OK, returns 403 on Forbidden
+        """
+        original_url = request.headers['X-Original-URI']
+        filename = os.path.basename(original_url)
+
+        # Filename could be a original
+
+        return HttpResponse(status=200)
 
 def ErrorNotifierView(request, code,message,details=None):
 
