@@ -115,6 +115,10 @@ data:
           proxy_set_header X-Forwarded-Host $server_name;
           proxy_set_header X-Forwarded-Proto https;
           add_header Cache-Control "max-age=0, must-revalidate";
+
+          gzip on;
+          gzip_types application/json;
+          gzip_min_length 1024;
         }
 
         error_page 503 /static/maintenance.html;
