@@ -37,6 +37,16 @@ class ProjectDetail(QtWidgets.QWidget):
             self.ui.sectionTree.addTopLevelItem(section_tree)
 
         self.parentWidget().repaint()
+        number_of_sections = len(project_data['section_order'])
+        progress_dialog = QtWidgets.QProgressDialog("Loading project...",
+                                                    "Cancel",
+                                                    0,
+                                                    number_of_sections,
+                                                    self)
+
+        progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        idx = 1
+        progress_dialog.setMinimumDuration(0)
         for section in project_data['section_order']:
             medias = self.tator.Media.filter({"attribute":
                                               f"tator_user_sections::{section}"})
@@ -49,14 +59,19 @@ class ProjectDetail(QtWidgets.QWidget):
                 self.sections[section]['medias'].append(media_item)
                 media_item.setText(0,media['name'])
             section_tree.addChildren(self.sections[section]['medias'])
+
+            # Handle progress dialog
+            progress_dialog.setValue(idx)
+            idx += 1
             self.parentWidget().repaint()
-            
-                                 
-        
+            progress_dialog.repaint()
+
+
+
     def showEvent(self, evt):
         super(ProjectDetail, self).showEvent(evt)
         QtCore.QTimer.singleShot(50,self.refreshProjectData)
-        
+
 class Project(QtWidgets.QMainWindow):
     def __init__(self):
         super(Project, self).__init__()
@@ -66,7 +81,7 @@ class Project(QtWidgets.QMainWindow):
         # hide tab stuff at first
         self.ui.tabWidget.setVisible(False)
         self.adjustSize()
-        
+
 
     @pyqtSlot()
     def on_actionExit_triggered(self):
