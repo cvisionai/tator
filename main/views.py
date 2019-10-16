@@ -7,11 +7,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import AnonymousUser
 
 from .models import Project
 from .models import EntityMediaBase
-from .notify import Notify
+from .models import EntityMediaImage
+from .models import EntityMediaVideo
+from .models import Membership
 
+from .notify import Notify
+import os
 import logging
 
 import sys
@@ -68,35 +73,128 @@ class AnnotationView(ProjectBase, TemplateView):
         return context
 
 
+def validate_project(user, project):
+    granted = False
+    if isinstance(user, AnonymousUser):
+        granted = False
+    else:
+        # Find membership for this user and project
+        membership = Membership.objects.filter(
+            user=user,
+            project=project
+        )
+
+        # If user is not part of project, deny access
+        if membership.count() == 0:
+            granted = False
+        else:
+            granted = True
+
+    return granted
+
 class AuthMediaView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for a file in /media
+
+        User must be part of the project to access media files.
         Returns 200 on OK, returns 403 on Forbidden
         """
+
         original_url = request.headers['X-Original-URI']
         filename = os.path.basename(original_url)
+
+        # Unautherized users are rejected
+        if not request.user.is_authenticated:
+            msg = f"Anonymous access attempt to '{original_url}'"
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
 
         # Filename could be a thumbnail, thumbnail_gif, or url
         extension = os.path.splitext(filename)[-1]
 
         # If it is a JSON avoid a database query and supply segment
         # info file as nothing sensitive is in there
-        if extension == 'json':
+        if extension == '.json':
             return HttpResponse(status=200)
 
-        return HttpResponse(status=200)
+        # Find a matching object
+        match_object = None
+        media_match = EntityMediaBase.objects.filter(file__exact=filename)
+        video_thumb_match = EntityMediaVideo.objects.filter(thumbnail__exact=filename)
+        video_thumb_gif_match = EntityMediaVideo.objects.filter(thumbnail_gif__exact=filename)
+        image_thumb_match = EntityMediaImage.objects.filter(thumbnail__exact=filename)
+        if media_match.count():
+            match_object = media_match[0]
+        elif video_thumb_match.count():
+            match_object = video_thumb_match[0]
+        elif video_thumb_gif_match.count():
+            match_object = video_thumb_gif_match[0]
+        elif image_thumb_match.count():
+            match_object = image_thumb_match[0]
+
+        if match_object:
+            authorized = validate_project(request.user, match_object.project)
+            if authorized:
+                return HttpResponse(status=200)
+            else:
+                # Files that aren't in the whitelist or database are forbidden
+                msg = f"({request.user}/{request.user.id}): "
+                msg += f"Attempted to access unauthorized file '{original_url}'"
+                msg += f". "
+                msg += f"Does not have access to '{match_object.project.name}'"
+                Notify.notify_admin_msg(msg)
+                return HttpResponse(status=403)
+        else:
+            # Files that aren't in the whitelist or database are forbidden
+            msg = f"({request.user}/{request.user.id}): "
+            msg += f"Attempted to access unrecorded file '{original_url}'"
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
+
+        return HttpResponse(status=403)
+
 
 class AuthRawView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for a file in /raw
         Returns 200 on OK, returns 403 on Forbidden
         """
+
+        # Unautherized users are rejected
+        if not request.user.is_authenticated:
+            msg = f"Anonymous access attempt to '{original_url}'"
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
+
         original_url = request.headers['X-Original-URI']
         filename = os.path.basename(original_url)
 
         # Filename could be a original
+        match_object = None
+        video_original_match = EntityMediaVideo.objects.filter(original__exact=original_url)
+        if video_original_match.count():
+            match_object = video_original_match[0]
 
-        return HttpResponse(status=200)
+        if match_object:
+            authorized = validate_project(request.user, match_object.project)
+            if authorized:
+                return HttpResponse(status=200)
+            else:
+                # Files that aren't in the whitelist or database are forbidden
+                msg = f"({request.user}/{request.user.id}): "
+                msg += f"Attempted to access unauthorized file '{original_url}'"
+                msg += f". "
+                msg += f"Does not have access to '{match_object.project.name}'"
+                Notify.notify_admin_msg(msg)
+                return HttpResponse(status=403)
+        else:
+            # Files that aren't in the whitelist or database are forbidden
+            msg = f"({request.user}/{request.user.id}): "
+            msg += f"Attempted to access unrecorded file '{original_url}'"
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
+
+        return HttpResponse(status=403)
 
 def ErrorNotifierView(request, code,message,details=None):
 
