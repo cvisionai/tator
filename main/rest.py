@@ -1214,7 +1214,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '',1)
                 original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,',1)
                 original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,',1)
-                original_sql = original_sql.replace('"main_entitybase"."file",', f'CONCAT(\'{media_url}\'"main_entitybase"."file") AS url,',1)
+                original_sql = original_sql.replace('"main_entitymediabase"."file",', f'CONCAT(\'{media_url}\',"main_entitymediabase"."file") AS url,',1)
 
                 new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
