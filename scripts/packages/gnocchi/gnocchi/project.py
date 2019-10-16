@@ -35,6 +35,20 @@ class ProjectDetail(QtWidgets.QWidget):
 
         #Disable upload button for now
         self.ui.uploadBtn.setEnabled(False)
+        self.ui.downloadBtn.setEnabled(False)
+
+        self.ui.sectionTree.itemSelectionChanged.connect(self.onSelectionChanged)
+    @pyqtSlot()
+    def onSelectionChanged(self):
+        selected_items = self.ui.sectionTree.selectedItems()
+        if len(selected_items):
+            self.ui.downloadBtn.setEnabled(True)
+        else:
+            self.ui.downloadBtn.setEnabled(False)
+
+    @pyqtSlot()
+    def on_downloadBtn_clicked(self):
+        logging.info("Downloading!")
 
     def refreshProjectData(self):
         project_data=self.tator.Project.get(self.project_id)
