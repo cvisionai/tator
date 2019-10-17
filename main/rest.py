@@ -1228,7 +1228,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 original_sql = original_sql.replace(" INNER JOIN ", f" {new_joins} INNER JOIN ",1)
 
                 # Generate JSON serialization string
-                json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
+                json_sql = original_sql
                 logger.info(json_sql)
 
                 with connection.cursor() as cursor:
