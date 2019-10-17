@@ -167,6 +167,9 @@ class Project(QtWidgets.QMainWindow):
         self.adjustSize()
         self.background_thread=QtCore.QThread(self)
         self.background_thread.start()
+        self.ui.password_field.returnPressed.connect(self.on_connectBtn_clicked)
+        self.ui.username_field.returnPressed.connect(self.on_connectBtn_clicked)
+
 
 
     @pyqtSlot()
@@ -179,7 +182,8 @@ class Project(QtWidgets.QMainWindow):
                                     self.ui.username_field.text(),
                                     self.ui.password_field.text())
         if token is None:
-            logging.warning("Bad user credentials")
+            logging.warning("Access Denied")
+            QtWidgets.QMessageBox.critical(self,"Access Denied","Please check your username and password.")
         else:
             self.ui.login_widget.setVisible(False)
 
