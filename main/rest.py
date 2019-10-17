@@ -1164,13 +1164,13 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 elif 'adjacent' in self.operation:
                     _, this_id = self.operation.split('::')
                     this_name=qs.get(pk=this_id).name
-                    before = qs.filter(name__lt=this_name)
-                    if before.count() == 0:
+                    before = qs.filter(name__lt=this_name)[0:1]
+                    if before:
                         prev_obj = qs.last()
                     else:
                         prev_obj = before.last()
 
-                    after = qs.filter(name__gt=this_name)
+                    after = qs.filter(name__gt=this_name)[0:1]
                     if after.count() == 0:
                         next_obj = qs.first()
                     else:
