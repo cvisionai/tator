@@ -39,6 +39,42 @@ class Download(QObject):
             os.makedirs(full_directory, exist_ok=True)
             full_name = os.path.join(full_directory, media['name'])
             self.tator.Media.downloadFile(media, full_name)
+
+            # Fetch state types and for this media
+            state_types = self.tator.StateType.filter({"media_id": media['id']})
+            for dbType in state_types:
+                type_id = dbType['type']['id']
+                type_name = dbType['type']['name']
+                type_dir = os.path.join(full_directory, type_name)
+                os.makrdirs(type_dir, exist_ok=True)
+                type_file = f"{media['name']}.json"
+                full_type_path = os.path.join(type_dir, type_file)
+                elements = self.tator.State.filter({"media_id": media['id'],
+                                                    "type": type_id})
+                if elements is None:
+                    continue
+
+                with open(full_type_path, 'w') as output:
+                    json.dump(elements, output)
+
+            # Now export localizations
+            local_types = self.tator.StateType.filter({"media_id": media['id']})
+            for dbType in local_types:
+                type_id = dbType['type']['id']
+                type_name = dbType['type']['name']
+                type_dir = os.path.join(full_directory, type_name)
+                os.makrdirs(type_dir, exist_ok=True)
+                type_file = f"{media['name']}.json"
+                full_type_path = os.path.join(type_dir, type_file)
+                elements = self.tator.Localization.filter(
+                    {"media_id": media['id'],
+                     "type": type_id})
+                if elements is None:
+                    continue
+
+                with open(full_type_path, 'w') as output:
+                    json.dump(elements, output)
+
             idx += 1
             if self._terminated:
                 return
