@@ -23,8 +23,6 @@ from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields import JSONField
-from django.contrib.postgres.search import SearchVector
-from django.contrib.postgres.search import SearchVectorField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
 from django.db.models import FloatField, Transform
@@ -267,13 +265,6 @@ class EntityBase(PolymorphicModel):
     attributes = JSONField(null=True, blank=True)
     """ The attributes related to this entity, see `meta` for column
         definitions """
-    search_vector = SearchVectorField(null=True, blank=True)
-
-@receiver(post_save, sender=EntityBase)
-def update_search_vector(sender, instance, **kwargs):
-    EntityMediaBase.objects.get(pk=instance.pk).update(
-        search_vector=SearchVector('attributes')
-    )
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)

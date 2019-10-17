@@ -84,7 +84,3 @@ def moveCompletedAlgRuns(project_id, from_section, to_section):
             media.save()
             count += 1
     print(f"Moved {count} files.")
-
-def updateSearchVectors():
-    qs = EntityBase.objects.all()
-    qs.update(search_vector=SearchVector('attributes'))
