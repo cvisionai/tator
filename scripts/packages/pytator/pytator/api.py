@@ -26,7 +26,8 @@ class APIElement:
         else:
             self.project = None
         self.headers={"Authorization" : "Token {}".format(self.token),
-                      "Content-Type": "application/json"}
+                      "Content-Type": "application/json",
+                      "Accept-Encoding": "gzip"}
 
     # Deprecate direct calling of this
     def getMany(self, endpoint, params):
