@@ -19,3 +19,18 @@ install:
 .PHONY: run
 run: uic
 	python3 -m gnocchi
+
+ifeq ($(shell uname), "Linux")
+SEP=:
+OS_ARGS=
+NAME=dropcam
+else
+SEP=;
+OS_ARGS=-w --icon gnocchi/assets/cvision_no_text.ico
+NAME="Gnocchi"
+endif
+
+.PHONY: dist
+dist: uic
+	pyinstaller -F $(OS_ARGS) -n $(NAME) --add-data "gnocchi/assets$(SEP)gnocchi/assets" gnocchi/__main__.py
+	mv $(NAME).spec build
