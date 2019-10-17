@@ -1165,13 +1165,13 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                     _, this_id = self.operation.split('::')
                     this_name=qs.get(pk=this_id).name
                     before = qs.filter(name__lt=this_name)
-                    if len(before) == 0:
+                    if before.count() == 0:
                         prev_obj = qs.last()
                     else:
                         prev_obj = before.last()
 
                     after = qs.filter(name__gt=this_name)
-                    if len(after) == 0:
+                    if after.count() == 0:
                         next_obj = qs.first()
                     else:
                         next_obj = after.first()
