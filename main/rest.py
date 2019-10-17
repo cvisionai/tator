@@ -1165,7 +1165,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                     _, this_id = self.operation.split('::')
                     this_name=qs.get(pk=this_id).name
                     before = qs.filter(name__lt=this_name)[0:1]
-                    if before:
+                    if before.count() == 0:
                         prev_obj = qs.last()
                     else:
                         prev_obj = before.last()
