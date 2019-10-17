@@ -17,6 +17,7 @@ DIRNAME = os.path.dirname(os.path.abspath(__file__))
 QT_ICON_PATH = os.path.join(DIRNAME, 'assets', 'cvision_no_text.ico')
 QT_DOWNLOAD_PATH = os.path.join(DIRNAME, 'assets', 'download.svg')
 QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
+QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
@@ -34,12 +35,16 @@ class ProjectDetail(QtWidgets.QWidget):
 
         self.ui.downloadBtn.setIcon(QtGui.QIcon(QT_DOWNLOAD_PATH))
         self.ui.uploadBtn.setIcon(QtGui.QIcon(QT_UPLOAD_PATH))
-
+        self.ui.searchBtn.setIcon(QtGui.QIcon(QT_SEARCH_PATH))
+        
         #Disable upload button for now
         self.ui.uploadBtn.setEnabled(False)
         self.ui.downloadBtn.setEnabled(False)
 
         self.ui.sectionTree.itemSelectionChanged.connect(self.onSelectionChanged)
+
+        self.ui.searchEdit.returnPressed.connect(self.refreshProjectData)
+        self.ui.searchBtn.clicked.connect(self.refreshProjectData)
     @pyqtSlot()
     def onSelectionChanged(self):
         selected_items = self.ui.sectionTree.selectedItems()
@@ -108,6 +113,7 @@ class ProjectDetail(QtWidgets.QWidget):
         logging.info("Download complete")
         self.download_dialog.reset()
 
+    @pyqtSlot()
     def refreshProjectData(self):
         project_data=self.tator.Project.get(self.project_id)
         self.ui.sectionTree.clear()
@@ -134,7 +140,13 @@ class ProjectDetail(QtWidgets.QWidget):
         self.progress_dialog = progress_dialog
         QtCore.QTimer.singleShot(50,self.load_media)
     def load_media(self):
-        all_medias = self.tator.Media.all()
+        filter_string = self.ui.searchEdit.text().strip()
+        if filter_string == "":
+            all_medias = self.tator.Media.all()
+            self.ui.sectionTree.setHeaderLabel("Media Files")
+        else:
+            all_medias = self.tator.Media.filter({"search": filter_string})
+            self.ui.sectionTree.setHeaderLabel(f"Media Files ({filter_string})")
         self.progress_dialog.setMinimum(0)
         self.progress_dialog.setMaximum(len(all_medias))
         idx = 1
