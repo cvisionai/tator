@@ -85,6 +85,7 @@ class ProjectDetail(QtWidgets.QWidget):
                 0,
                 file_count,
                 self)
+            self.download_dialog.setWindowTitle("Downloading Project...")
             self.download.start()
             self.download_dialog.setMinimumDuration(0)
             self.download_dialog.setValue(0)
@@ -114,42 +115,41 @@ class ProjectDetail(QtWidgets.QWidget):
         for section in project_data['section_order']:
             section_tree = QtWidgets.QTreeWidgetItem(self.ui.sectionTree)
             section_tree.setText(0,section)
-            self.sections.update({section: {'widget': section_tree}})
+            self.sections[section] = {'widget': section_tree}
             self.ui.sectionTree.addTopLevelItem(section_tree)
 
         self.parentWidget().repaint()
         number_of_sections = len(project_data['section_order'])
+
         progress_dialog = QtWidgets.QProgressDialog("Loading project...",
                                                     "Cancel",
                                                     0,
-                                                    number_of_sections,
+                                                    100,
                                                     self)
 
-        progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
-        idx = 1
+        progress_dialog.setWindowTitle("Loading Project...")
         progress_dialog.setMinimumDuration(0)
-        progress_dialog.setValue(0)
-        for section in project_data['section_order']:
-            medias = self.tator.Media.filter({"attribute":
-                                              f"tator_user_sections::{section}"})
-            section_tree = self.sections[section]['widget']
-            self.sections[section]['medias'] = []
-            if medias is None:
-                continue
-            for media in medias:
-                media_item = QtWidgets.QTreeWidgetItem(section_tree)
-                media_item.setData(0,0x100,media)
-                self.sections[section]['medias'].append(media_item)
-                media_item.setText(0,media['name'])
-            section_tree.addChildren(self.sections[section]['medias'])
-
+        progress_dialog.setValue(33)
+        progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.progress_dialog = progress_dialog
+        QtCore.QTimer.singleShot(50,self.load_media)
+    def load_media(self):
+        all_medias = self.tator.Media.all()
+        self.progress_dialog.setMinimum(0)
+        self.progress_dialog.setMaximum(len(all_medias))
+        idx = 1
+        total = len(all_medias)
+        for media in all_medias:
+            section_name = media['attributes']['tator_user_sections']
+            parent = self.sections[section_name]['widget']
+            media_item = QtWidgets.QTreeWidgetItem(parent)
+            media_item.setData(0,0x100,media)
+            media_item.setText(0,media['name'])
             # Handle progress dialog
-            progress_dialog.setValue(idx)
+            self.progress_dialog.setValue(idx)
             idx += 1
-            self.parentWidget().repaint()
-            progress_dialog.repaint()
-
-
+            if self.progress_dialog.wasCanceled():
+                return
 
     def showEvent(self, evt):
         super(ProjectDetail, self).showEvent(evt)

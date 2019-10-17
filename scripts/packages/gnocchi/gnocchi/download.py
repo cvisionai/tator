@@ -5,6 +5,7 @@ import pathlib
 
 import logging
 import time
+import json
 
 class Download(QObject):
     """ Background thread to handle copying directories """
@@ -32,8 +33,9 @@ class Download(QObject):
     @pyqtSlot()
     def _process(self):
         idx = 0
+        total = len(self.mediaList)
         for media in self.mediaList:
-            self.progress.emit(media['name'], idx)
+            self.progress.emit(f"{media['name']} ({idx}/{total})", idx)
             section_name = media['attributes'].get('tator_user_sections','No Section')
             full_directory = os.path.join(self.output_dir, section_name)
             os.makedirs(full_directory, exist_ok=True)
@@ -46,7 +48,7 @@ class Download(QObject):
                 type_id = dbType['type']['id']
                 type_name = dbType['type']['name']
                 type_dir = os.path.join(full_directory, type_name)
-                os.makrdirs(type_dir, exist_ok=True)
+                os.makedirs(type_dir, exist_ok=True)
                 type_file = f"{media['name']}.json"
                 full_type_path = os.path.join(type_dir, type_file)
                 elements = self.tator.State.filter({"media_id": media['id'],
@@ -58,12 +60,12 @@ class Download(QObject):
                     json.dump(elements, output)
 
             # Now export localizations
-            local_types = self.tator.StateType.filter({"media_id": media['id']})
+            local_types = self.tator.LocalizationType.filter({"media_id": media['id']})
             for dbType in local_types:
                 type_id = dbType['type']['id']
                 type_name = dbType['type']['name']
                 type_dir = os.path.join(full_directory, type_name)
-                os.makrdirs(type_dir, exist_ok=True)
+                os.makedirs(type_dir, exist_ok=True)
                 type_file = f"{media['name']}.json"
                 full_type_path = os.path.join(type_dir, type_file)
                 elements = self.tator.Localization.filter(
