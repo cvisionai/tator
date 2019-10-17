@@ -156,11 +156,12 @@ class ProjectDetail(QtWidgets.QWidget):
         QtCore.QTimer.singleShot(50,self.refreshProjectData)
 
 class Project(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, url):
         super(Project, self).__init__()
         self.ui = Ui_Project()
         self.ui.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(QT_ICON_PATH))
+        self.url = url
 
         # hide tab stuff at first
         self.ui.tabWidget.setVisible(False)
@@ -178,7 +179,7 @@ class Project(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def on_connectBtn_clicked(self):
-        token=pytator.Auth.getToken('https://cvision.tatorapp.com/rest',
+        token=pytator.Auth.getToken(self.url,
                                     self.ui.username_field.text(),
                                     self.ui.password_field.text())
         if token is None:
@@ -187,7 +188,7 @@ class Project(QtWidgets.QMainWindow):
         else:
             self.ui.login_widget.setVisible(False)
 
-            tator=pytator.Tator('https://cvision.tatorapp.com/rest',
+            tator=pytator.Tator(self.url,
                                 token,
                                 None)
             projects=tator.Project.all()
@@ -197,7 +198,7 @@ class Project(QtWidgets.QMainWindow):
                 self.ui.tabWidget.addTab(
                     ProjectDetail(self,
                                   self.background_thread,
-                                  'https://cvision.tatorapp.com/rest',
+                                  self.url,
                                   token,
                                   project['id']),
                     project['name'])
@@ -212,12 +213,13 @@ def start():
     parser = argparse.ArgumentParser(description='Gnocchi --- The PyTator GUI')
     parser.add_argument('--theme', default='dark',
                         choices=['dark', 'light'])
+    parser.add_argument('--url', default='https://cvision.tatorapp.com/rest')
     args = parser.parse_args()
     """ Starts the camera control UI """
     app = QtWidgets.QApplication(sys.argv)
     if args.theme == 'dark':
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    window = Project()
+    window = Project(args.url)
     screenGeometry = QtWidgets.QApplication.desktop().screenGeometry()
     marginLeft = (screenGeometry.width() - window.width()) / 2
     marginRight = (screenGeometry.height() - window.height()) / 2
