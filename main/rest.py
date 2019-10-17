@@ -1204,7 +1204,6 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 # use the SQL cursor directly.
                 # TODO: See if we can do this using queryset into a custom serializer instead
                 # of naked SQL.
-                qs = self.get_queryset()
                 original_sql,params = qs.query.sql_with_params()
                 root_url = request.build_absolute_uri("/")
                 media_url = request.build_absolute_uri(settings.MEDIA_URL)
