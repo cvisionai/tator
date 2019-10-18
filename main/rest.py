@@ -1066,42 +1066,20 @@ def get_media_queryset(project, query_params, attr_filter):
         queryset = queryset.filter(name=name)
 
     if search != None:
-        media_queries = []
-        # Find string and enum attribute types
-        attr_types = AttributeTypeBase.objects.filter(project=project)
-        for attr_type in attr_types:
-            is_str = isinstance(attr_type, AttributeTypeString)
-            is_enum = isinstance(attr_type, AttributeTypeEnum)
-            if is_str or is_enum:
-                entity_type = attr_type.applies_to
-                name_filter = {f'attributes__{attr_type.name}__icontains': search}
-                medias = None
-                if isinstance(entity_type, EntityTypeLocalizationBase):
-                    entities = EntityLocalizationBase.objects.filter(
-                        meta=entity_type,
-                        **name_filter,
-                    )
-                    medias = entities.values('media').distinct()
-                elif isinstance(entity_type, EntityTypeState):
-                    entities = EntityState.objects.filter(
-                        meta=entity_type,
-                        **name_filter,
-                    )
-                    medias = entities.values('association__media').distinct()
-                elif isinstance(entity_type, EntityTypeMediaBase):
-                    entities = EntityMediaBase.objects.filter(
-                        meta=entity_type,
-                        **name_filter,
-                    )
-                    medias = entities.values('pk').distinct()
-                if medias:
-                    media_queries.append(medias)
-
-        search_qs = EntityMediaBase.objects.filter(
-            Q(name__icontains=search) | Q(attributes__tator_user_sections__icontains=search),
-            project=project
+        media_qs = EntityMediaBase.objects.filter(
+            Q(name__icontains=search) | Q(search_vector=search),
+            project=project,
         ).values('pk').distinct()
-        search_qs = search_qs.union(*media_queries)
+        logger.info(f"MEDIA QS COUNT: {media_qs.count()}")
+        localization_qs = EntityLocalizationBase.objects.filter(
+            project=project,
+            search_vector=search,
+        ).values('media').distinct()
+        state_qs = EntityState.objects.filter(
+            project=project,
+            search_vector=search,
+        ).values('association__media').distinct()
+        search_qs = media_qs.union(localization_qs, state_qs)
         queryset = queryset.filter(pk__in=search_qs)
 
     if md5 != None:
