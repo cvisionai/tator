@@ -93,6 +93,7 @@ def updateRelatedMedia():
     qs = EntityLocalizationBase.objects.all()
     for obj in qs:
         obj.related_media = obj.media
+    EntityLocalizationBase.objects.bulk_update(qs, ['related_media'])
     qs = EntityState.objects.all()
     for obj in qs:
         media = obj.association.media.all()
