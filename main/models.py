@@ -265,6 +265,7 @@ class EntityBase(PolymorphicModel):
     attributes = JSONField(null=True, blank=True)
     """ The attributes related to this entity, see `meta` for column
         definitions """
+    related_media = ForeignKey('EntityBase', on_delete=CASCADE, null=True, blank=True)
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)
