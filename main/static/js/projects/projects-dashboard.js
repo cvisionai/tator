@@ -30,6 +30,10 @@ class ProjectsDashboard extends TatorPage {
     this._newProject = document.createElement("new-project");
     this._projects.appendChild(this._newProject);
 
+    // Disable new projects until new project workflow is implemented
+    newProject.style.display = "none";
+    this._newProject.style.display = "none";
+
     const deleteProject = document.createElement("delete-project");
     this._projects.appendChild(deleteProject);
 
