@@ -1070,7 +1070,6 @@ def get_media_queryset(project, query_params, attr_filter):
             Q(name__icontains=search) | Q(search_vector=search),
             project=project,
         ).values('pk').distinct()
-        logger.info(f"MEDIA QS COUNT: {media_qs.count()}")
         localization_qs = EntityLocalizationBase.objects.filter(
             project=project,
             search_vector=search,
