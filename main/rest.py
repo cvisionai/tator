@@ -1066,20 +1066,12 @@ def get_media_queryset(project, query_params, attr_filter):
         queryset = queryset.filter(name=name)
 
     if search != None:
-        media_qs = EntityMediaBase.objects.filter(
-            Q(name__icontains=search) | Q(search_vector=search),
-            project=project,
-        ).values('pk').distinct()
-        localization_qs = EntityLocalizationBase.objects.filter(
-            project=project,
-            search_vector=search,
-        ).values('media').distinct()
-        state_qs = EntityState.objects.filter(
-            project=project,
-            search_vector=search,
-        ).values('association__media').distinct()
-        search_qs = media_qs.union(localization_qs, state_qs)
-        queryset = queryset.filter(pk__in=search_qs)
+        queryset = queryset.filter(
+            Q(name__icontains=search) |
+            Q(search_vector=search) |
+            Q(entitylocalizationbase__search_vector=search) |
+            Q(associationtype__entitystate__search_vector=search)
+        )
 
     if md5 != None:
         queryset = queryset.filter(md5=md5)
