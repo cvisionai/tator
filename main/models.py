@@ -269,6 +269,12 @@ class EntityBase(PolymorphicModel):
         definitions """
     search_vector = SearchVectorField(null=True, blank=True)
 
+@receiver(post_save, sender=EntityBase)
+def update_search_vector(sender, instance, **kwargs):
+    EntityMediaBase.objects.get(pk=instance.pk).update(
+        search_vector=SearchVector('attributes')
+    )
+
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)
     uploader = ForeignKey(User, on_delete=PROTECT)
