@@ -84,3 +84,18 @@ def moveCompletedAlgRuns(project_id, from_section, to_section):
             media.save()
             count += 1
     print(f"Moved {count} files.")
+
+def updateRelatedMedia():
+    qs = EntityMediaBase.objects.all()
+    for obj in qs:
+        obj.related_media = obj
+    EntityMediaBase.objects.bulk_update(qs, ['related_media'])
+    qs = EntityLocalizationBase.objects.all()
+    for obj in qs:
+        obj.related_media = obj.media
+    qs = EntityState.objects.all()
+    for obj in qs:
+        media = obj.association.media.all()
+        if media.exists():
+            obj.related_media = media[0]
+    EntityState.objects.bulk_update(qs, ['related_media'])
