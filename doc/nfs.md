@@ -85,12 +85,6 @@ docker logs nfs3
 
 It should show the message "READY AND WAITING FOR NFS CLIENT CONNECTIONS"
 
-* If the nfs server does not come up after restart you may need to reenable the drivers with modprobe and restart the container:
-
-```
-docker restart nfs3
-```
-
 ### Using NFS4 (potentially unstable!)
 
 * Install the nfs4 server package:
