@@ -13,7 +13,7 @@ spec:
         app: postgis
     spec:
       nodeSelector:
-        webServer: "yes"
+        dbServer: "yes"
       containers:
         - name: postgis
           image: $DOCKERHUB_USER/tator_postgis:latest
