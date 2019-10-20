@@ -6,7 +6,6 @@ Tator creates all Kubernetes persistent volumes using NFS shares. Its build syst
 * The **upload** share is for storing temporary upload data.
 * The **static** share contains static website files (javascript, images).
 * The **raw** share is for storing raw media.
-* The **postgis** share is for storing the database.
 * The **backup** share is for storing database backups.
 * The **dev** share is for storing source code and migrations.
 
@@ -25,7 +24,6 @@ Create a file called *exports* that we will use for defining the NFS shares and 
 /media/kubernetes_share/upload 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/static 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/raw 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-/media/kubernetes_share/postgis 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/backup 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/dev 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 ```
@@ -38,7 +36,6 @@ Create a file called *exports* that we will use for defining the NFS shares and 
 mkdir /media/kubernetes_share
 mkdir /media/kubernetes_share/media
 mkdir /media/kubernetes_share/static
-mkdir /media/kubernetes_share/postgis
 mkdir /media/kubernetes_share/backup
 mkdir /media/kubernetes_share/raw
 mkdir /media/kubernetes_share/upload
@@ -109,3 +106,6 @@ sudo apt-get install nfs-kernel-server
 sudo systemctl restart nfs-kernel-server
 ```
 
+# Database storage
+
+Database performance is dependent on high speed storage. Tator currently runs databases using a single pod with persistent storage mounted via host path rather than NFS. This means during the build phase an environment variable specifying the host path must be defined, and that the node that runs Postgres must be specified via node label. These steps are described in the kubernetes and build setup steps.

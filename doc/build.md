@@ -8,9 +8,12 @@ Before executing any make commands, the following should be added to ~/.bashrc. 
 
 The LB variables refer to the load balancer IP addresses. These should be IP addresses that are NOT in the assignable range of your router if it is running a DHCP server. LB_IP_ADDRESS should be within the range defined by LB_IP_RANGE_START and LB_IP_RANGE_STOP.
 
+The POSTGIS_HOST_PATH variable specifies the host path for the postgres data directory. This should be a path to high speed storage (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes setup step via the dbServer node label.
+
 Example for local dev:
 ```
 export DOCKERHUB_USER=myserver:5000
+export POSTGIS_HOST_PATH=/media/ssd/postgis
 export NFS_SERVER=192.168.1.201
 export TATOR_DOMAIN=mydomain.duckdns.org
 export LB_IP_ADDRESS=192.168.1.221

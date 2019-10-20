@@ -110,6 +110,7 @@ Tator uses three node labels to select which node a pod can be scheduled on. The
 * **gpuWorker: [yes/no]** Indicates whether a node can execute GPU algorithms.
 * **cpuWorker: [yes/no]** Indicates whether a node can execute CPU algorithms, including transcoding media.
 * **webServer: [yes/no]** Indicates whether a node can be used for running web services, such as gunicorn or redis.
+* **dbServer: [yes/no]** Should be used to label a specific node that has high speed storage for serving the database.
 
 For example, for a single node without a GPU we could use the following labels:
  
@@ -117,6 +118,7 @@ For example, for a single node without a GPU we could use the following labels:
 kubectl label nodes <node-name> gpuWorker=no
 kubectl label nodes <node-name> cpuWorker=yes
 kubectl label nodes <node-name> webServer=yes
+kubectl label nodes <node-name> dbServer=yes
 ```
 
 Make sure you apply labels for all nodes in the Kubernetes cluster.
