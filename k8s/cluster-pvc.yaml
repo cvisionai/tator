@@ -138,12 +138,8 @@ spec:
   claimRef:
     namespace: default
     name: postgis-pv-claim
-  mountOptions:
-    - nolock
-    - nfsvers=3
-  nfs:
-    server: ${NFS_SERVER}
-    path: "/media/kubernetes_share/postgis"
+  hostPath:
+    path: ${POSTGIS_HOST_PATH}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
