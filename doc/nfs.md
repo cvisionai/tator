@@ -74,7 +74,7 @@ sudo modprobe nfsd
 * Use the following command to create the NFS shares using the exports file, assuming the exports file is in $HOME:
 
 ```
-sudo docker run -d --privileged --name nfs3 --restart always -v /media/kubernetes_share:/media/kubernetes_share -v $HOME/exports:/etc/exports:ro --cap-add SYS_ADMIN -p 2049:2049 -p 2049:2049/udp -p 111:111 -p 111:111/udp -p 32765:32765 -p 32765:32765/udp -p 32767:32767 -p 32767:32767/udp -e NFS_VERSION=3 erichough/nfs-server
+sudo docker run -d --privileged --name nfs3 --restart always -v /media/kubernetes_share:/media/kubernetes_share -v $HOME/exports:/etc/exports:ro --cap-add SYS_ADMIN --cap-add SYS_MODULE -p 2049:2049 -p 2049:2049/udp -p 111:111 -p 111:111/udp -p 32765:32765 -p 32765:32765/udp -p 32767:32767 -p 32767:32767/udp -e NFS_VERSION=3 erichough/nfs-server
 ```
 
 * You can check the status of the nfs server using:
