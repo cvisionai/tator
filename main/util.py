@@ -87,16 +87,28 @@ def moveCompletedAlgRuns(project_id, from_section, to_section):
 
 def updateRelatedMedia():
     qs = EntityMediaBase.objects.all()
-    for obj in qs:
-        obj.related_media = obj
-    EntityMediaBase.objects.bulk_update(qs, ['related_media'])
+    count = qs.count()
+    for idx, obj in enumerate(qs):
+        if idx % 1000 == 0:
+            logger.info(f"Updating media {idx}/{count}")
+        if obj.related_media != obj:
+            obj.related_media = obj
+            obj.save()
     qs = EntityLocalizationBase.objects.all()
-    for obj in qs:
-        obj.related_media = obj.media
-    EntityLocalizationBase.objects.bulk_update(qs, ['related_media'])
+    count = qs.count()
+    for idx, obj in enumerate(qs):
+        if idx % 1000 == 0:
+            logger.info(f"Updating localizations {idx}/{count}")
+        if obj.related_media != obj.media:
+            obj.related_media = obj.media
+            obj.save()
     qs = EntityState.objects.all()
-    for obj in qs:
+    count = qs.count()
+    for idx, obj in enumerate(qs):
+        if idx % 1000 == 0:
+            logger.info(f"Updating states {idx}/{count}")
         media = obj.association.media.all()
         if media.exists():
-            obj.related_media = media[0]
-    EntityState.objects.bulk_update(qs, ['related_media'])
+            if obj.related_media != media[0]:
+                obj.related_media = media[0]
+                obj.save()
