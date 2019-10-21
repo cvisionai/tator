@@ -3,7 +3,7 @@
 %>
 % if multiArch.arch=="x86_64":
 FROM mdillon/postgis:11
-CMD ["postgres", "-N", "1000"]
+CMD ["postgres", "-N", "1000", "-S", "16MB", "-B", "4000MB"]
 % else:
 FROM postgres:9.6
 MAINTAINER CVision AI <info@cvisionai.com>
