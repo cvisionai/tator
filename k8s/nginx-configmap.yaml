@@ -62,6 +62,10 @@ data:
           alias /data/static/images/favicon.ico;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
+        location /gnocchi {
+          alias /data/static/gnocchi
+          add_header Cache-Control "max-age=0, must-revalidate";
+        }
         location /static {
           alias /data/static/;
           autoindex off;
