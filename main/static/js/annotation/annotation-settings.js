@@ -93,10 +93,12 @@ class AnnotationSettings extends TatorElement {
         else
         {
           this._prev.addEventListener("click", () => {
-          let url = baseUrl + data.prev;
-          url += "?" + searchParams.toString();
-          url += this._typeParams();
-          window.location.href = url;
+            let url = baseUrl + data.prev;
+            url += "?" + searchParams.toString();
+            if (!searchParams.has("selected_type")) {
+              url += this._typeParams();
+            }
+            window.location.href = url;
           });
         }
 
@@ -109,7 +111,9 @@ class AnnotationSettings extends TatorElement {
           this._next.addEventListener("click", () => {
             let url = baseUrl + data.next;
             url += "?" + searchParams.toString();
-            url += this._typeParams();
+            if (!searchParams.has("selected_type")) {
+              url += this._typeParams();
+            }
             window.location.href = url;
           });
         }
