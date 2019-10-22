@@ -115,10 +115,12 @@ class ProjectDetail(QtWidgets.QWidget):
 
     @pyqtSlot()
     def refreshProjectData(self):
-        project_data=self.tator.Project.get(self.project_id)
+        project_data = self.tator.Project.get(self.project_id)
         self.ui.sectionTree.clear()
         self.sections = {}
-        for section in project_data['section_order']:
+        section_data = self.tator.Media.filter({"operation":
+                                                "attribute_count::tator_user_sections"})
+        for section in section_data:
             section_tree = QtWidgets.QTreeWidgetItem(self.ui.sectionTree)
             section_tree.setText(0,section)
             self.sections[section] = {'widget': section_tree}
