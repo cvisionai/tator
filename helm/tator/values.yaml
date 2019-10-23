@@ -1,3 +1,4 @@
+dockerRegistry: localhost:5000
 nfsServer: 192.168.86.114
 metallb:
   enabled: true
