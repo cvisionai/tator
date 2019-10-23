@@ -1,0 +1,13 @@
+nfsServer: 192.168.86.114
+metallb:
+  enabled: true
+  ipRangeStart: 192.168.86.220
+  ipRangeStop: 192.168.86.224
+redis:
+  enabled: true
+  master:
+    persistence:
+      enabled: false
+  slave:
+    persistence:
+      enabled: false
