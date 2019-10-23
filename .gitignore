@@ -20,3 +20,6 @@ tus-image
 postgis-image
 *.min.js
 .min_js
+helm/tator/charts/*
+helm/tator/Chart.lock
+containers/*.whl
