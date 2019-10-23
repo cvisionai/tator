@@ -12,3 +12,6 @@ redis:
   slave:
     persistence:
       enabled: false
+postgis:
+  enabled: true
+  hostPath: /media/ssd/postgis

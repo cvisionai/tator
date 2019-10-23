@@ -139,7 +139,7 @@ spec:
     namespace: default
     name: postgis-pv-claim
   hostPath:
-    path: ${POSTGIS_HOST_PATH}
+    path: {{ .Values.postgis.hostPath }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
