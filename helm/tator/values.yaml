@@ -18,4 +18,6 @@ postgis:
   enabled: true
   hostPath: /media/ssd/postgis
 gunicornReplicas: 24
+transcoderReplicas: 4
+algorithmReplicas: 4
 
