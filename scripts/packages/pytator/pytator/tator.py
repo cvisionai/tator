@@ -32,6 +32,7 @@ class Tator:
     def __init__(self, url, token, project):
         self.project = project
         self._url = url
+        self.Algorithm = apiImpl.Algorithm((url,token,project))
         self.Media = apiImpl.Media((url,token,project))
         self.MediaType = apiImpl.MediaType((url,token,project))
         self.LocalizationType = apiImpl.LocalizationType((url,token,project))
