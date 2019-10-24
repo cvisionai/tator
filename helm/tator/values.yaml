@@ -1,5 +1,7 @@
 dockerRegistry: localhost:5000
 nfsServer: 192.168.86.114
+loadBalancerIp: 192.168.86.221
+domain: tatordev.duckdns.org
 metallb:
   enabled: true
   ipRangeStart: 192.168.86.220
@@ -15,3 +17,5 @@ redis:
 postgis:
   enabled: true
   hostPath: /media/ssd/postgis
+gunicornReplicas: 24
+
