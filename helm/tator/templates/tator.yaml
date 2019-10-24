@@ -1,6 +1,25 @@
 
 {{- $gunicornSettings := dict "Values" .Values "name" "gunicorn-deployment" "app" "gunicorn" "selector" "webServer: \"yes\""  "command" "[gunicorn]" "args" "[\"--workers\", \"1\", \"--timeout\", \"60\",\"--reload\", \"-b\", \":8000\", \"tator_online.wsgi\"]" "init" "[\"containers/tator/init.sh\"]" "replicas" .Values.gunicornReplicas }}
 {{include "tator.template" $gunicornSettings }}
-
+---
 {{- $daphneSettings := dict "Values" .Values "name" "daphne-deployment" "app" "daphne" "selector" "webServer: \"yes\""  "command" "[daphne]" "args" "[\"-b\", \"0.0.0.0\", \"-p\", \"8001\", \"tator_online.asgi:application\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $daphneSettings }}
+---
+{{- $transcoderSettings := dict "Values" .Values "name" "transcoder-deployment" "app" "transcoder" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"transcoder\"]" "init" "[echo]" "replicas" .Values.transcoderReplicas }}
+{{include "tator.template" $transcoderSettings }}
+---
+{{- $packagerSettings := dict "Values" .Values "name" "packager-deployment" "app" "packager" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"packager\"]" "init" "[echo]" "replicas" "1" }}
+{{include "tator.template" $packagerSettings }}
+---
+{{- $algorithmSettings := dict "Values" .Values "name" "algorithm-deployment" "app" "algorithm" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"algorithm\"]" "init" "[echo]" "replicas" .Values.algorithmReplicas }}
+{{include "tator.template" $algorithmSettings }}
+---
+{{- $submitterSettings := dict "Values" .Values "name" "submitter-deployment" "app" "submitter" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"submitjobs\"]" "init" "[echo]" "replicas" "1" }}
+{{include "tator.template" $submitterSettings }}
+
+{{- $prunerSettings := dict "Values" .Values "name" "pruner-deployment" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "init" "[echo]" "replicas" "1" }}
+{{include "tator.template" $prunerSettings }}
+
+{{- $sizerSettings := dict "Values" .Values "name" "sizer-deployment" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "init" "[echo]" "replicas" "1" }}
+{{include "tator.template" $sizerSettings }}
+
