@@ -20,7 +20,7 @@ def verify_extractions(tator,
         extracted_medias = all_medias.loc[all_medias.name==extracted_name]
         if len(extracted_medias) == 0:
             print(f"{media['name']} missing extraction for frame {frame}")
-            media_reruns.add(media)
+            media_reruns.add(media['id'])
         else:
             if len(extracted_medias) != 1:
                 print(f"{media['name']} has duplicate extractions!")
@@ -30,12 +30,9 @@ def verify_extractions(tator,
             metadata_for_extraction = project_metadata.loc[project_metadata.media == extracted_media.id]
             if len(metadata_for_extraction) == 0:
                 print(f"{media['name']} extraction is present, missing data")
-                media_reruns.add(media)
+                media_reruns.add(media['id'])
 
-    if algorithm_name:
-        for media in media_reruns:
-            print(f"Launching {algorithm_name} on {media['name']}")
-            tator.Algorithm.launch_on_media(algorithm_name, media['id'])
+    return media_reruns
 
 if __name__=="__main__":
     # Create a standard arg parse and add pytator args
@@ -60,14 +57,22 @@ if __name__=="__main__":
         metadata_endpoint = tator.Localization
 
     type_id = args.metadataTypeId
-    
+
     bar = progressbar.ProgressBar(redirect_stdout=True)
     project_metadata = metadata_endpoint.dataframe({'type': type_id})
+    media_reruns = set()
     for media in bar(medias):
-        verify_extractions(tator,
-                           type_id,
-                           metadata_endpoint,
-                           media,
-                           project_metadata,
-                           all_medias,
-                           args.algorithm)
+        new_media = verify_extractions(tator,
+                                       type_id,
+                                       metadata_endpoint,
+                                       media,
+                                       project_metadata,
+                                       all_medias,
+                                       args.algorithm)
+        if new_media:
+            media_reruns = media_reruns.union(new_media)
+
+    if args.algorithm:
+        for media in media_reruns:
+            print(f"Launching {args.algorithm} on {media}")
+            tator.Algorithm.launch_on_media(args.algorithm, media)
