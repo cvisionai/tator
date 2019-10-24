@@ -4,9 +4,10 @@ import pytator.api as apiImpl
 import argparse
 import requests
 
-def cli_parser():
+def cli_parser(parser=None):
     """ Returns an argument parser with project required arguments """
-    parser = argparse.ArgumentParser()
+    if parser is None:
+        parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True)
     parser.add_argument("--project", required=True)
     parser.add_argument("--token", required=True)
