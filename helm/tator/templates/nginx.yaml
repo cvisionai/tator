@@ -25,7 +25,7 @@ data:
       server {
         listen 443 ssl http2;
 
-        server_name $TATOR_DOMAIN;
+        server_name {{ .Values.domain }};
 
         ssl_certificate /ssl/CertificateBundle1.pem;
         ssl_certificate_key /ssl/tator.key;
