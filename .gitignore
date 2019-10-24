@@ -23,3 +23,4 @@ postgis-image
 helm/tator/charts/*
 helm/tator/Chart.lock
 containers/*.whl
+helm/tator/templates/real-secrets.yaml
