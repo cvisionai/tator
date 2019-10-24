@@ -109,9 +109,19 @@ status:
 .ONESHELL:
 
 cluster: valid_secrets update-nfs
-	$(MAKE) tator-image images config metallb cluster-rbac gunicorn daphne \
-	cluster-pvc postgis pgbouncer redis transcoder packager algorithm submitter \
-	pruner sizer tusd nginx
+	$(MAKE) tator-image images cluster-deps cluster-install
+
+cluster-deps:
+	helm dependency update helm/tator
+
+cluster-install:
+	helm install tator helm/tator
+
+cluster-upgrade:
+	helm upgrade tator helm/tator
+
+cluster-uninstall:
+	helm uninstall tator
 
 externals/build_tools/%.sh:
 	@echo "Downloading submodule"
