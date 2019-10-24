@@ -130,6 +130,36 @@ class APIElement:
 
         return (response.status_code, response.json())
 
+class Algorithm(APIElement):
+    def __init__(self, api):
+        super().__init__(api, "Algorithms")
+    def launch_on_media(self, algorithm_name, media_id):
+        """ Convenience function launch an algorithm on a particular media """
+        return self.launch({"algorithm_name": algorithm_name,
+                     "media_id": media_id})
+    def launch(self, params):
+        launch_endpoint="AlgorithmLaunch"
+        response=requests.post(self.url + "/" + launch_endpoint  +"/"+self.project,
+                               json=params,
+                               headers=self.headers)
+        if response.status_code >= 300 or response.status_code < 200:
+            try:
+                msg=response.json()
+                print("Error: {}\nDetails: {}".format(msg['message'],
+                                                      msg['details']))
+            except:
+                print("Error: {}".format(response.text))
+
+        return (response.status_code, response.json())
+    def get(self, pk):
+        """ Not supported for algorithms """
+        pass
+    def new(self, obj):
+        """ Not supported for algorithms """
+        pass
+    def update(self, pk, patch):
+        """ Not supported for algorithms """
+        pass
 class MediaType(APIElement):
     def __init__(self, api):
          super().__init__(api, "EntityTypeMedias")
