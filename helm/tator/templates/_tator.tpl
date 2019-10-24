@@ -90,7 +90,7 @@ spec:
           image: redis
           imagePullPolicy: "IfNotPresent"
           command: ["redis-cli"]
-          args: ["-h", "tator-dev-redis-headless", "-p", "6379", "ping"]
+          args: ["-h", "tator-redis-headless", "-p", "6379", "ping"]
       volumes:
         - name: static-pv-claim
           persistentVolumeClaim:

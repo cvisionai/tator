@@ -65,7 +65,7 @@ class ProgressProducer:
     """
     @classmethod
     def setup_redis(cls):
-        cls.rds = redis.Redis(host='redis-svc', health_check_interval=30)
+        cls.rds = redis.Redis(host='tator-redis-headless', health_check_interval=30)
 
     def __init__(self, prefix, project_id, gid, uid, name, user, aux={}):
         """Store uid, name, user in a dict. Store project id.
@@ -170,7 +170,7 @@ class ProgressConsumer(JsonWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         log.info("Creating progress consumer.")
-        self.rds = redis.Redis(host='redis-svc')
+        self.rds = redis.Redis(host='tator-redis-headless')
         super().__init__(*args, **kwargs)
 
     def connect(self):
