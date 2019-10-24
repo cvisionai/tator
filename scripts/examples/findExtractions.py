@@ -9,28 +9,25 @@ def verify_extractions(tator,
                        type_id,
                        metadata_endpoint,
                        media,
-                       metadata_for_media):
-    for metadata in metadata_for_media:
-        if 'association' in metadata:
-            frame = metadata['association']['frame']
-        else:
-            frame = metadata['frame']
+                       metadata,
+                       all_medias):
+    metadata_for_media = project_metadata.loc[project_metadata['media'] == media['id']]
+    for idx,metadata in metadata_for_media.iterrows():
+        frame = metadata.frame
         extracted_name = f"{media['id']}_{media['name']}_{frame}.png"
-        extracted_medias = tator.Media.filter({"name":
-                                              extracted_name})
-        if extracted_medias is None:
+        extracted_medias = all_medias.loc[all_medias.name==extracted_name]
+        if len(extracted_medias) == 0:
             print(f"{media['name']} missing extraction for frame {frame}")
         else:
             if len(extracted_medias) != 1:
                 print(f"{media['name']} has duplicate extractions!")
                 continue
 
-            extracted_media = extracted_medias[0]
-            metadata_for_extraction = metadata_endpoint.filter(
-                {"media_id": extracted_media['id'],
-                 "type": type_id})
-            if metadata_for_extraction is None:
+            extracted_media = extracted_medias.iloc[0]
+            metadata_for_extraction = project_metadata.loc[project_metadata.media == extracted_media.id]
+            if len(metadata_for_extraction) == 0:
                 print(f"{media['name']} extraction is present, missing data")
+
 if __name__=="__main__":
     # Create a standard arg parse and add pytator args
     parser = argparse.ArgumentParser(description="Find missing extractions")
@@ -41,6 +38,7 @@ if __name__=="__main__":
     args = parser.parse_args()
     tator = pytator.Tator(args.url, args.token, args.project)
     medias = tator.Media.filter({"attribute": f"tator_user_sections::{args.section}"})
+    all_medias = tator.Media.dataframe(None)
 
     if medias is None:
         print("No Medias Found")
@@ -54,12 +52,11 @@ if __name__=="__main__":
     type_id = args.metadataTypeId
     
     bar = progressbar.ProgressBar(wrap_stdout=True)
+    project_metadata = metadata_endpoint.dataframe({'type': type_id})
     for media in bar(medias):
-        metadata_for_media = metadata_endpoint.filter({'media_id': media['id'],
-                                                       'type': type_id})
-        if metadata_for_media:
-            verify_extractions(tator,
-                               type_id,
-                               metadata_endpoint,
-                               media,
-                               metadata_for_media)
+        verify_extractions(tator,
+                           type_id,
+                           metadata_endpoint,
+                           media,
+                           project_metadata,
+                           all_medias)
