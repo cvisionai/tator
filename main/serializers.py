@@ -8,6 +8,7 @@ from django.db.models.functions import Cast
 
 from .models import *
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -368,7 +369,29 @@ class AssociationSerializer(PolymorphicSerializer):
         FrameAssociation : FrameAssociationSerializer,
         }
 
+# Poor man's serializer to bypass polymorphic logjam
+class EntityStateFrameSerializer():
+    def __init__(self, data):
+        self.serialized_data = []
+        # TODO: If we make the client side response compatible with the
+        # values object directly we can remove this iteration
+        for datum in data.values():
+            self.serialized_data.append(
+                {"id": datum['id'],
+                 "meta": datum['meta_id'],
+                 "association" :
+                 {"frame": datum['frame'],
+                  "media": datum['association_media'],
+                  "id": datum['association_id']},
+                 "attributes": datum['attributes']
+                })
+
+    @property
+    def data(self):
+        return self.serialized_data
+
 class EntityStateSerializer(serializers.ModelSerializer):
+    """ Slower generic serializer """
     class Meta:
         model=EntityState
         fields=['id', 'meta', 'association', 'attributes']

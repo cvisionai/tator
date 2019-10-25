@@ -7,6 +7,7 @@ from django.db.models import When
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models import Q
+from django.db.models import F
 from django.conf import settings
 from django.db import connection
 
@@ -87,6 +88,7 @@ from .serializers import EntityLocalizationSerializer
 from .serializers import FastEntityLocalizationSerializer
 from .serializers import EntityMediaSerializer
 from .serializers import EntityStateSerializer
+from .serializers import EntityStateFrameSerializer
 from .serializers import EntityTypeMediaSerializer
 from .serializers import EntityTypeLocalizationAttrSerializer
 from .serializers import EntityTypeMediaAttrSerializer
@@ -1324,7 +1326,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         if filterType:
             type_object=EntityTypeState.objects.get(pk=filterType)
             if type_object.association == 'Frame':
-                allStates = allStates.annotate(frame=Cast('association__frameassociation__frame', IntegerField())).order_by('frame')
+                allStates = allStates.annotate(frame=F('association__frameassociation__frame')).order_by('frame')
         return allStates
 
     def get(self, request, format=None, **kwargs):
@@ -1344,7 +1346,19 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
-                response = EntityStateSerializer(allStates, many=True);
+                if filterType:
+                    type_object = EntityTypeState.objects.get(pk=filterType)
+                    if type_object.association == 'Frame':
+                        # Add frame association media to SELECT columns (frame is there from frame sort operation)
+                        # This optomization only works for frame-based associations
+                        allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
+                        response = EntityStateFrameSerializer(allStates)
+                    else:
+                        logger.warning("Using generic/slow serializer")
+                        response = EntityStateSerializer(allStates, many=True)
+                    logger.info(allStates.query)
+                else:
+                    response = EntityStateSerializer(allStates, many=True)
                 if request.accepted_renderer.format != 'csv':
                     responseData = paginate(self.request.query_params, response.data)
                 else:
