@@ -137,6 +137,9 @@ class Algorithm(APIElement):
         """ Convenience function launch an algorithm on a particular media """
         return self.launch({"algorithm_name": algorithm_name,
                             "media_query": f"?media_id={media_id}"})
+    def launch_on_medias(self, algorithm_name, media_ids):
+        return self.launch({"algorithm_name": algorithm_name,
+                            "media_ids": media_ids})
     def launch(self, params):
         launch_endpoint="AlgorithmLaunch"
         response=requests.post(self.url + "/" + launch_endpoint  +"/"+self.project,
