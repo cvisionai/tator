@@ -9,7 +9,7 @@ def verify_extractions(tator,
                        type_id,
                        metadata_endpoint,
                        media,
-                       metadata,
+                       project_metadata,
                        all_medias,
                        algorithm_name):
     metadata_for_media = project_metadata.loc[project_metadata['media'] == media['id']]
