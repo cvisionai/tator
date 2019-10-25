@@ -10,8 +10,7 @@ def verify_extractions(tator,
                        metadata_endpoint,
                        media,
                        project_metadata,
-                       all_medias,
-                       algorithm_name):
+                       all_medias):
     metadata_for_media = project_metadata.loc[project_metadata['media'] == media['id']]
     media_reruns=set()
     for idx,metadata in metadata_for_media.iterrows():
@@ -67,12 +66,10 @@ if __name__=="__main__":
                                        metadata_endpoint,
                                        media,
                                        project_metadata,
-                                       all_medias,
-                                       args.algorithm)
+                                       all_medias)
         if new_media:
             media_reruns = media_reruns.union(new_media)
 
     if args.algorithm:
-        for media in media_reruns:
-            print(f"Launching {args.algorithm} on {media}")
-            tator.Algorithm.launch_on_media(args.algorithm, media)
+        print(f"Launching {args.algorithm}")
+        tator.Algorithm.launch_on_medias(args.algorithm, list(media_reruns))
