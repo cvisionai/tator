@@ -326,6 +326,22 @@ class State(APIElement):
         # TODO: Should we return something more than 200 back from serfver?
         return code == 200
 
+    def dataframe(self, params):
+        """ Flatten association sub-object to make queries possible """
+        allObjects=self.filter(params)
+        if allObjects:
+            columns = set(allObjects[0].keys())
+            columns = columns.union(set(allObjects[0]['association'].keys()))
+            columns = list(columns)
+            for obj in allObjects:
+                del obj['association']['id']
+                obj.update(obj['association'])
+            df = pd.DataFrame(data=allObjects,
+                              columns=columns)
+            return df
+        else:
+            return None
+
 class Track(State):
     def __init__(self, api):
         super().__init__(api)
