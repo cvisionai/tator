@@ -43,8 +43,10 @@ if __name__=="__main__":
     parser.add_argument("--algorithm", required=False, help="Algorithm name to launch if data is missing")
     args = parser.parse_args()
     tator = pytator.Tator(args.url, args.token, args.project)
+    print("Fetching media list...", end='', flush=True)
     medias = tator.Media.filter({"attribute": f"tator_user_sections::{args.section}"})
     all_medias = tator.Media.dataframe(None)
+    print("Done.")
 
     if medias is None:
         print("No Medias Found")
@@ -58,7 +60,9 @@ if __name__=="__main__":
     type_id = args.metadataTypeId
 
     bar = progressbar.ProgressBar(redirect_stdout=True)
+    print("Fetching metadata...", end='', flush=True)
     project_metadata = metadata_endpoint.dataframe({'type': type_id})
+    print("Done.")
     media_reruns = set()
     for media in bar(medias):
         new_media = verify_extractions(tator,
