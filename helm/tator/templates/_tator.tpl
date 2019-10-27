@@ -61,31 +61,6 @@ spec:
             - mountPath: /tator_online
               name: dev-pv-claim
       initContainers:
-        - name: init-tator-online
-          image: {{ .Values.dockerRegistry }}/tator_online:latest
-          imagePullPolicy: "Always"
-          command: {{ .init }}
-          envFrom:
-            - secretRef:
-                name: tator-secrets
-          env:
-            - name: POSTGRES_HOST
-              value: pgbouncer-svc
-            - name: MAIN_HOST
-              value: {{ .Values.domain }}
-            - name: LOAD_BALANCER_IP
-              value: {{ .Values.loadBalancerIp }}
-          volumeMounts:
-            - mountPath: /data/static
-              name: static-pv-claim
-            - mountPath: /data/uploads
-              name: upload-pv-claim
-            - mountPath: /data/media
-              name: media-pv-claim
-            - mountPath: /data/raw
-              name: raw-pv-claim
-            - mountPath: /tator_online
-              name: dev-pv-claim
         - name: redis
           image: redis
           imagePullPolicy: "IfNotPresent"
