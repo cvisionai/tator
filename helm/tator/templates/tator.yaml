@@ -16,10 +16,10 @@
 ---
 {{- $submitterSettings := dict "Values" .Values "name" "submitter-deployment" "app" "submitter" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"submitjobs\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $submitterSettings }}
-
+---
 {{- $prunerSettings := dict "Values" .Values "name" "pruner-deployment" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $prunerSettings }}
-
+---
 {{- $sizerSettings := dict "Values" .Values "name" "sizer-deployment" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $sizerSettings }}
 
