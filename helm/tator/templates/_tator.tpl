@@ -58,8 +58,8 @@ spec:
               name: media-pv-claim
             - mountPath: /data/raw
               name: raw-pv-claim
-            - mountPath: /tator_online
-              name: dev-pv-claim
+            - mountPath: /tator_online/main/migrations
+              name: migrations-pv-claim
       initContainers:
         - name: redis
           image: redis
@@ -79,7 +79,7 @@ spec:
         - name: raw-pv-claim
           persistentVolumeClaim:
             claimName: raw-pv-claim
-        - name: dev-pv-claim
+        - name: migrations-pv-claim
           persistentVolumeClaim:
-            claimName: dev-pv-claim
+            claimName: migrations-pv-claim
 {{ end }}

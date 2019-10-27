@@ -189,7 +189,7 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: dev-pv
+  name: migrations-pv
 spec:
   capacity:
     storage: 1Gi
@@ -197,20 +197,20 @@ spec:
     - ReadWriteMany
   claimRef:
     namespace: default
-    name: dev-pv-claim
+    name: migrations-pv-claim
   mountOptions:
     - nolock
     - nfsvers=3
   nfs:
     server: {{ .Values.nfsServer }}
-    path: "/media/kubernetes_share/dev"
+    path: "/media/kubernetes_share/migrations"
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: dev-pv-claim
+  name: migrations-pv-claim
   labels:
-    app: dev
+    app: migrations
 spec:
   accessModes:
     - ReadWriteMany
