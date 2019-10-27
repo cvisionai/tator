@@ -38,9 +38,9 @@ help:
 # Check for a valid secrets file
 .PHONY: valid_secrets
 valid_secrets:
-	@cd k8s
-	@./valid_secrets.sh
-	@cd ..
+ifeq ("$(wildcard real-secrets.yaml)","")
+		$(error Need to provide a real-secrets file in 'real-secrets.yaml')
+endif
 
 .PHONY: production_check
 production_check:
