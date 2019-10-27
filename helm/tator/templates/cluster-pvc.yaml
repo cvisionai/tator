@@ -4,7 +4,7 @@ metadata:
   name: static-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: {{ .Values.pv.staticSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -14,7 +14,7 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
+    server: {{ .Values.nfsServer }}
     path: "/media/kubernetes_share/static"
 ---
 kind: PersistentVolumeClaim
@@ -28,7 +28,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: {{ .Values.pv.staticSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -36,7 +36,7 @@ metadata:
   name: upload-pv
 spec:
   capacity:
-    storage: 1Ti
+    storage: {{ .Values.pv.uploadSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -46,7 +46,7 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
+    server: {{ .Values.nfsServer }}
     path: "/media/kubernetes_share/upload"
 ---
 kind: PersistentVolumeClaim
@@ -60,7 +60,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Ti
+      storage: {{ .Values.pv.uploadSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -68,7 +68,7 @@ metadata:
   name: media-pv
 spec:
   capacity:
-    storage: 4Ti
+    storage: {{ .Values.pv.mediaSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -78,7 +78,7 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
+    server: {{ .Values.nfsServer }}
     path: "/media/kubernetes_share/media"
 ---
 kind: PersistentVolumeClaim
@@ -92,7 +92,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 4Ti
+      storage: {{ .Values.pv.mediaSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -100,7 +100,7 @@ metadata:
   name: raw-pv
 spec:
   capacity:
-    storage: 6Ti
+    storage: {{ .Values.pv.rawSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -110,7 +110,7 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
+    server: {{ .Values.nfsServer }}
     path: "/media/kubernetes_share/raw"
 ---
 kind: PersistentVolumeClaim
@@ -124,7 +124,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 6Ti
+      storage: {{ .Values.pv.rawSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -132,14 +132,14 @@ metadata:
   name: postgis-pv
 spec:
   capacity:
-    storage: 10Gi
+    storage: {{ .Values.pv.postgisSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
     namespace: default
     name: postgis-pv-claim
   hostPath:
-    path: ${POSTGIS_HOST_PATH}
+    path: {{ .Values.postgis.hostPath }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -152,7 +152,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: {{ .Values.pv.postgisSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -160,7 +160,7 @@ metadata:
   name: backup-pv
 spec:
   capacity:
-    storage: 100Gi
+    storage: {{ .Values.pv.backupSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -170,7 +170,7 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
+    server: {{ .Values.nfsServer }}
     path: "/media/kubernetes_share/backup"
 ---
 kind: PersistentVolumeClaim
@@ -184,37 +184,37 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi
+      storage: {{ .Values.pv.backupSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: dev-pv
+  name: migrations-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: {{ .Values.pv.migrationsSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
     namespace: default
-    name: dev-pv-claim
+    name: migrations-pv-claim
   mountOptions:
     - nolock
     - nfsvers=3
   nfs:
-    server: ${NFS_SERVER}
-    path: "/media/kubernetes_share/dev"
+    server: {{ .Values.nfsServer }}
+    path: "/media/kubernetes_share/migrations"
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: dev-pv-claim
+  name: migrations-pv-claim
   labels:
-    app: dev
+    app: migrations
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: {{ .Values.pv.migrationsSize }}
 ---

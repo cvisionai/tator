@@ -11,7 +11,6 @@ main/static/js/tator/*
 node_modules/*
 package-lock.json
 containers/nginx/nginx.conf
-k8s/real-secrets.yaml
 examples/algorithms/groundfish_demo/fishtrackingdata
 main/version.py
 tator-image
@@ -20,3 +19,8 @@ tus-image
 postgis-image
 *.min.js
 .min_js
+helm/tator/charts/*
+helm/tator/Chart.lock
+containers/*.whl
+real-secrets.yaml
+

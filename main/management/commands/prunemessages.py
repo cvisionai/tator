@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Set up redis.
-        rds = redis.Redis(host='redis-svc')
+        rds = redis.Redis(host='tator-redis-master')
 
         # Max time with no updates.
         max_time = datetime.timedelta(seconds=30)

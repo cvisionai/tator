@@ -1,3 +1,5 @@
+{{ if .Values.postgis.enabled }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,7 +18,7 @@ spec:
         dbServer: "yes"
       containers:
         - name: postgis
-          image: $DOCKERHUB_USER/tator_postgis:latest
+          image: {{ .Values.dockerRegistry }}/tator_postgis:latest
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 5432
@@ -52,3 +54,17 @@ spec:
         - name: sharedmem
           emptyDir:
             medium: "Memory"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgis-svc
+spec:
+  selector:
+    app: postgis
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+{{ end }}

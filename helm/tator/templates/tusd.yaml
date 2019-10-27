@@ -21,7 +21,7 @@ spec:
         webServer: "yes"
       containers:
         - name: tusd
-          image: ${DOCKERHUB_USER}/tator_tusd
+          image: {{ .Values.dockerRegistry }}/tator_tusd
           command: ["tusd"]
           args: ["-behind-proxy","-dir","/data/uploads"]
           imagePullPolicy: "IfNotPresent"
@@ -34,3 +34,19 @@ spec:
         - name: upload-pv-claim
           persistentVolumeClaim:
             claimName: upload-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tusd-svc
+  labels:
+    app: tusd
+spec:
+  ports:
+  - name: tus
+    port: 1080
+    targetPort: 1080
+  selector:
+    app: tusd
+    type: web
+  type: NodePort

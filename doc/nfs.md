@@ -7,7 +7,7 @@ Tator creates all Kubernetes persistent volumes using NFS shares. Its build syst
 * The **static** share contains static website files (javascript, images).
 * The **raw** share is for storing raw media.
 * The **backup** share is for storing database backups.
-* The **dev** share is for storing source code and migrations.
+* The **migrations** share is for storing migrations.
 
 ## Make sure the nfs client package is installed
 
@@ -25,7 +25,7 @@ Create a file called *exports* that we will use for defining the NFS shares and 
 /media/kubernetes_share/static 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/raw 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 /media/kubernetes_share/backup 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-/media/kubernetes_share/dev 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
+/media/kubernetes_share/migrations 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 ```
 
 ## Preparing NFS server node
@@ -39,7 +39,7 @@ mkdir /media/kubernetes_share/static
 mkdir /media/kubernetes_share/backup
 mkdir /media/kubernetes_share/raw
 mkdir /media/kubernetes_share/upload
-mkdir /media/kubernetes_share/dev
+mkdir /media/kubernetes_share/migrations
 ```
 
 * Set NFS permissions:

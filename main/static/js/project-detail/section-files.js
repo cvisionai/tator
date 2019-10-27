@@ -161,17 +161,18 @@ class SectionFiles extends TatorElement {
       } else {
         card.setAttribute("media-url", media.url);
       }
-      if (media.video_thumbnail)
-      {
+      if (media.video_thumbnail) {
         card.setAttribute("thumb", media.video_thumbnail);
-      }
-      else if (media.image_thumbnail)
-      {
+      } else if (media.image_thumbnail) {
         card.setAttribute("thumb", media.image_thumbnail);
+      } else if (media.thumb_url) {
+        card.setAttribute("thumb", media.thumb_url);
       }
       if (media.video_thumbnail_gif) {
         card.setAttribute("thumb-gif", media.video_thumbnail_gif);
-      } else {
+      } else if (media.thumb_gif_url) {
+        card.setAttribute("thumb-gif", media.thumb_gif_url);
+      }else {
         card.removeAttribute("thumb-gif");
       }
       card.media = media;

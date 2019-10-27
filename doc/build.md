@@ -1,35 +1,27 @@
 # Tator build system
 
-Tator uses GNU Make as a means of executing kubectl and kubeadm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
+Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
 
-## Required variables in bashrc for makefile to work
+## Update the configuration file
 
-Before executing any make commands, the following should be added to ~/.bashrc. All IP addresses should have the same subnet as your LAN.
+The Tator configuration file is located at `helm/tator/values.yaml`. Modify this file to meet your requirements. Below is an explanation of each field:
 
-The LB variables refer to the load balancer IP addresses. These should be IP addresses that are NOT in the assignable range of your router if it is running a DHCP server. LB_IP_ADDRESS should be within the range defined by LB_IP_RANGE_START and LB_IP_RANGE_STOP.
-
-The POSTGIS_HOST_PATH variable specifies the host path for the postgres data directory. This should be a path to high speed storage (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes setup step via the dbServer node label.
-
-Example for local dev:
-```
-export DOCKERHUB_USER=myserver:5000
-export POSTGIS_HOST_PATH=/media/ssd/postgis
-export NFS_SERVER=192.168.1.201
-export TATOR_DOMAIN=mydomain.duckdns.org
-export LB_IP_ADDRESS=192.168.1.221
-export LB_IP_RANGE_START=192.168.1.220
-export LB_IP_RANGE_STOP=192.168.1.224
-```
-
-* Make sure you source ~/.bashrc after setting the variables!
-
-```
-source ~/.bashrc
-```
+* `dockerRegistry` is the host and port of the cluster's local docker registry that was set up earlier in this tutorial.
+* `nfsServer` is the IP address of the host serving the NFS shares.
+* `loadBalancerIp` is the external IP address of the load balancer. This is where NGINX will receive requests.
+* `domain` is the domain name that was set up earlier in this tutorial.
+* `metallb.enabled` is a boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud providers as in these cases a load balancer implementation is provided.
+* `metallb.ipRangeStart` and `metallb.ipRangeStop` indicate the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of any DHCP servers on your network (such as a router).
+* `redis.enabled` is a boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service, in which case this should be set to false.
+* Other redis settings should not be modified at this time.
+* `postgis.enabled` is a boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed postgresql service, in which case this should be set to false.
+* `postgis.hostPath` specifies the host path for the postgres data directory. This should be a path to high speed storage (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes setup step via the dbServer node label.
+* `gunicornReplicas`, `transcoderReplicas`, and `algorithmReplicas` indicate the number of pod replicas for each of these services.
+* `pv` variables indicate the size of the persistent volumes corresponding to the NFS shares. These can be modified according to available space on your NFS shares.
 
 ## Update your domain to access the load balancer
 
-Tator will be accessed via the LB_IP_ADDRESS defined in your bashrc. If you are using Tator locally, simply update your domain to point to this IP address. If you are setting up a website, you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
+Tator will be accessed via the `loadBalancerIp` defined in your `values.yaml`. If you are using Tator locally, simply update your domain to point to this IP address. If you are setting up a website, you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
 
 ## Building Tator
 
@@ -62,7 +54,7 @@ npm install
 
 * Install Tator
 
-This will attempt to create all the Kubernetes objects necessary to run Tator.
+This will attempt to create all docker images and install the Tator helm chart.
 
 ```
 make cluster

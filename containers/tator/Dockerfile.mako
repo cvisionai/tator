@@ -92,10 +92,8 @@ RUN python3 setup.py install
 #RUN python3 setup.py install
 #WORKDIR /
 
-# Copy over the project (TODO make this smarter now that we have mako)
-<%
-os.getenv('TATOR_SOURCE_COPY')
-%>
+# Copy over the project
+COPY . /tator_online
 WORKDIR /tator_online
 
 COPY scripts/makeFragmentInfo.py /scripts/makeFragmentInfo.py

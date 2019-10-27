@@ -1,31 +1,32 @@
+{{ define "tator.template" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: $TATOR_DEPLOYMENT
+  name: {{ .name }}
   labels:
-    app: $TATOR_APP
+    app: {{ .app }}
     type: web
 spec:
   selector:
     matchLabels:
-      app: $TATOR_APP
+      app: {{ .app }}
       type: web
-  replicas: $TATOR_REPLICAS
+  replicas: {{ .replicas }}
   template:
     metadata:
       labels:
-        app: $TATOR_APP
+        app: {{ .app }}
         type: web
     spec:
       terminationGracePeriodSeconds: 10
       nodeSelector:
-        $TATOR_NODE_SELECTOR
+        {{ .selector }}
       containers:
         - name: tator-online
-          image: $DOCKERHUB_USER/tator_online:latest
+          image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
           imagePullPolicy: "Always"
-          command: $TATOR_COMMAND
-          args: $TATOR_ARGS
+          command: {{ .command }}
+          args: {{ .args }}
           envFrom:
             - secretRef:
                 name: tator-secrets
@@ -33,11 +34,11 @@ spec:
             - name: POSTGRES_HOST
               value: pgbouncer-svc
             - name: MAIN_HOST
-              value: $TATOR_DOMAIN
+              value: {{ .Values.domain }}
             - name: LOAD_BALANCER_IP
-              value: $LB_IP_ADDRESS
+              value: {{ .Values.loadBalancerIp }}
             - name: DOCKERHUB_USER
-              value: $DOCKERHUB_USER
+              value: {{ .Values.dockerRegistry }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -57,39 +58,14 @@ spec:
               name: media-pv-claim
             - mountPath: /data/raw
               name: raw-pv-claim
-            - mountPath: /tator_online
-              name: dev-pv-claim
+            - mountPath: /tator_online/main/migrations
+              name: migrations-pv-claim
       initContainers:
-        - name: init-tator-online
-          image: $DOCKERHUB_USER/tator_online:latest
-          imagePullPolicy: "Always"
-          command: $TATOR_INIT_COMMAND
-          envFrom:
-            - secretRef:
-                name: tator-secrets
-          env:
-            - name: POSTGRES_HOST
-              value: pgbouncer-svc
-            - name: MAIN_HOST
-              value: $TATOR_DOMAIN
-            - name: LOAD_BALANCER_IP
-              value: $LB_IP_ADDRESS
-          volumeMounts:
-            - mountPath: /data/static
-              name: static-pv-claim
-            - mountPath: /data/uploads
-              name: upload-pv-claim
-            - mountPath: /data/media
-              name: media-pv-claim
-            - mountPath: /data/raw
-              name: raw-pv-claim
-            - mountPath: /tator_online
-              name: dev-pv-claim
         - name: redis
           image: redis
           imagePullPolicy: "IfNotPresent"
           command: ["redis-cli"]
-          args: ["-h", "redis-svc", "-p", "6379", "ping"]
+          args: ["-h", "tator-redis-master", "-p", "6379", "ping"]
       volumes:
         - name: static-pv-claim
           persistentVolumeClaim:
@@ -103,6 +79,7 @@ spec:
         - name: raw-pv-claim
           persistentVolumeClaim:
             claimName: raw-pv-claim
-        - name: dev-pv-claim
+        - name: migrations-pv-claim
           persistentVolumeClaim:
-            claimName: dev-pv-claim
+            claimName: migrations-pv-claim
+{{ end }}

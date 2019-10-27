@@ -1,0 +1,32 @@
+dockerRegistry: localhost:5000
+nfsServer: 192.168.86.114
+loadBalancerIp: 192.168.86.221
+domain: tatordev.duckdns.org
+metallb:
+  enabled: true
+  ipRangeStart: 192.168.86.220
+  ipRangeStop: 192.168.86.224
+redis:
+  enabled: true
+  master:
+    persistence:
+      enabled: false
+  slave:
+    persistence:
+      enabled: false
+  usePassword: false
+postgis:
+  enabled: true
+  hostPath: /media/ssd/postgis
+gunicornReplicas: 24
+transcoderReplicas: 4
+algorithmReplicas: 4
+pv:
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  postgisSize: 10Gi
+  backupSize: 100Gi
+  migrationsSize: 1Gi
+

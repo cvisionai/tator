@@ -38,9 +38,9 @@ help:
 # Check for a valid secrets file
 .PHONY: valid_secrets
 valid_secrets:
-	@cd k8s
-	@./valid_secrets.sh
-	@cd ..
+ifeq ("$(wildcard real-secrets.yaml)","")
+		$(error Need to provide a real-secrets file in 'real-secrets.yaml')
+endif
 
 .PHONY: production_check
 production_check:
@@ -109,9 +109,19 @@ status:
 .ONESHELL:
 
 cluster: valid_secrets update-nfs
-	$(MAKE) tator-image images config metallb cluster-rbac gunicorn daphne \
-	cluster-pvc postgis pgbouncer redis transcoder packager algorithm submitter \
-	pruner sizer tusd nginx
+	$(MAKE) tator-image images cluster-deps cluster-install
+
+cluster-deps:
+	helm dependency update helm/tator
+
+cluster-install:
+	helm install --set gitRevision=$(GIT_VERSION) tator helm/tator
+
+cluster-upgrade: tator-image
+	helm upgrade --set gitRevision=$(GIT_VERSION) tator helm/tator
+
+cluster-uninstall:
+	helm uninstall tator
 
 externals/build_tools/%.sh:
 	@echo "Downloading submodule"
@@ -127,8 +137,8 @@ externals/build_tools/%.py:
 	./externals/build_tools/makocc.py -o $@ $<
 
 tator-image: containers/tator/Dockerfile.gen
-	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:latest -f $< . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_online:latest
+	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-image
 
@@ -155,131 +165,9 @@ tus-image: containers/tus/Dockerfile.gen
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
 
-config:
-	kubectl apply -f k8s/tator-secrets.yaml
-
-cluster-rbac:
-	kubectl apply -f k8s/incluster-rbac.yaml
-
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py
 	./externals/build_tools/multiArch.py  --help
-
-metallb:
-	kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml
-	envsubst < k8s/metallb-configmap.yaml | kubectl apply -f -
-
-cluster-pvc:
-	envsubst < k8s/cluster-pvc.yaml | kubectl apply -f -
-
-postgis:
-	envsubst < k8s/postgis-deployment.yaml | kubectl apply -f -
-	kubectl apply -f k8s/postgis-service.yaml
-
-pgbouncer:
-	envsubst < k8s/pgbouncer-deployment.yaml | kubectl apply -f -
-	kubectl apply -f k8s/pgbouncer-service.yaml
-
-redis:
-	kubectl apply -f k8s/redis-deployment.yaml
-	kubectl apply -f k8s/redis-service.yaml
-
-tusd:
-	envsubst <  k8s/tusd-deployment.yaml | kubectl apply -f -
-	kubectl apply -f k8s/tusd-service.yaml
-
-transcoder:
-	env TATOR_DEPLOYMENT=transcoder-deployment \
-	env TATOR_APP=transcoder \
-	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"transcoder\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=2 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-packager:
-	env TATOR_DEPLOYMENT=packager-deployment \
-	env TATOR_APP=packager \
-	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"packager\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-algorithm:
-	#kubectl apply -f k8s/algo-setup-networkpolicy.yaml
-	#kubectl apply -f k8s/algorithm-networkpolicy.yaml
-	#kubectl apply -f k8s/algo-teardown-networkpolicy.yaml
-	env TATOR_DEPLOYMENT=algorithm-deployment \
-	env TATOR_APP=algorithm \
-	env TATOR_NODE_SELECTOR="cpuWorker: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"runworker\",\ \"algorithm\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-submitter:
-	env TATOR_DEPLOYMENT=submitter-deployment \
-	env TATOR_APP=submitter \
-	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"submitjobs\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-pruner:
-	env TATOR_DEPLOYMENT=pruner-deployment \
-	env TATOR_APP=pruner \
-	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"prunemessages\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-sizer:
-	env TATOR_DEPLOYMENT=sizer-deployment \
-	env TATOR_APP=sizer \
-	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
-	env TATOR_COMMAND=[\"python3\"] \
-	env TATOR_ARGS=[\"manage.py\",\ \"updateprojects\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-
-gunicorn:
-	env TATOR_DEPLOYMENT=gunicorn-deployment \
-	env TATOR_APP=gunicorn \
-	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
-	env TATOR_COMMAND=[\"gunicorn\"] \
-	env TATOR_ARGS=[\"--workers\",\ \"1\",\"--timeout\",\ \"60\",\"--reload\",\ \"-b\",\ \":8000\",\ \"tator_online.wsgi\"] \
-	env TATOR_INIT_COMMAND=[\"containers/tator/init.sh\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-	kubectl apply -f k8s/gunicorn-service.yaml
-
-daphne:
-	env TATOR_DEPLOYMENT=daphne-deployment \
-	env TATOR_APP=daphne \
-	env TATOR_NODE_SELECTOR="webServer: \"yes\"" \
-	env TATOR_COMMAND=[\"daphne\"] \
-	env TATOR_ARGS=[\"-b\",\ \"0.0.0.0\",\ \"-p\",\ \"8001\",\ \"tator_online.asgi:application\"] \
-	env TATOR_INIT_COMMAND=[\"echo\"] \
-	env TATOR_REPLICAS=1 \
-	envsubst < k8s/tator-deployment.yaml | kubectl apply -f -
-	kubectl apply -f k8s/daphne-service.yaml
-
-tator:
-	envsubst < k8s/tator-configmap.yaml | kubectl apply -f -
-
-nginx:
-	envsubst \$$TATOR_DOMAIN < k8s/nginx-configmap.yaml | kubectl apply -f -
-	envsubst < k8s/nginx-service.yaml | kubectl apply -f -
-	kubectl apply -f k8s/nginx-deployment.yaml
 
 .PHONY: externals/build_tools/version.py
 externals/build_tools/version.py:
@@ -452,13 +340,6 @@ min-js:
 migrate:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
-	make daphne-reset
-	make transcoder-reset
-	make packager-reset
-	make algorithm-reset
-	make submitter-reset
-	make pruner-reset
-	make sizer-reset
 
 testinit:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
