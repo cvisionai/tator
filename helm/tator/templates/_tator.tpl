@@ -23,7 +23,7 @@ spec:
         {{ .selector }}
       containers:
         - name: tator-online
-          image: {{ .Values.dockerRegistry }}/tator_online:latest
+          image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}

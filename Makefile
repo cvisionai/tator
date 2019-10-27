@@ -115,10 +115,10 @@ cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
-	helm install tator helm/tator
+	helm install --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade:
-	helm upgrade tator helm/tator
+	helm upgrade --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
 	helm uninstall tator
