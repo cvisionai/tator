@@ -1,11 +1,11 @@
-dockerRegistry: localhost:5000
-nfsServer: 192.168.86.114
-loadBalancerIp: 192.168.86.221
-domain: tatordev.duckdns.org
+dockerRegistry: adamant:5000
+nfsServer: 192.168.2.1
+loadBalancerIp: 192.168.1.221
+domain: cvision.tatorapp.com
 metallb:
   enabled: true
-  ipRangeStart: 192.168.86.220
-  ipRangeStop: 192.168.86.224
+  ipRangeStart: 192.168.1.220
+  ipRangeStop: 192.168.1.224
 redis:
   enabled: true
   master:
@@ -17,10 +17,10 @@ redis:
   usePassword: false
 postgis:
   enabled: true
-  hostPath: /media/ssd/postgis
-gunicornReplicas: 1
-transcoderReplicas: 1
-algorithmReplicas: 1
+  hostPath: /media/kubernetes_share/postgis
+gunicornReplicas: 24
+transcoderReplicas: 4
+algorithmReplicas: 4
 pv:
   staticSize: 1Gi
   uploadSize: 1Ti
