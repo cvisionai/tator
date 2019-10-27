@@ -462,13 +462,6 @@ min-js:
 migrate:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
-	make daphne-reset
-	make transcoder-reset
-	make packager-reset
-	make algorithm-reset
-	make submitter-reset
-	make pruner-reset
-	make sizer-reset
 
 testinit:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
