@@ -4,7 +4,7 @@ metadata:
   name: static-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: {{ .Values.pv.staticSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -28,7 +28,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: {{ .Values.pv.staticSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -36,7 +36,7 @@ metadata:
   name: upload-pv
 spec:
   capacity:
-    storage: 1Ti
+    storage: {{ .Values.pv.uploadSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -60,7 +60,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Ti
+      storage: {{ .Values.pv.uploadSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -68,7 +68,7 @@ metadata:
   name: media-pv
 spec:
   capacity:
-    storage: 4Ti
+    storage: {{ .Values.pv.mediaSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -92,7 +92,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 4Ti
+      storage: {{ .Values.pv.mediaSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -100,7 +100,7 @@ metadata:
   name: raw-pv
 spec:
   capacity:
-    storage: 6Ti
+    storage: {{ .Values.pv.rawSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -124,7 +124,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 6Ti
+      storage: {{ .Values.pv.rawSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -132,7 +132,7 @@ metadata:
   name: postgis-pv
 spec:
   capacity:
-    storage: 10Gi
+    storage: {{ .Values.pv.postgisSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -152,7 +152,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: {{ .Values.pv.postgisSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -160,7 +160,7 @@ metadata:
   name: backup-pv
 spec:
   capacity:
-    storage: 100Gi
+    storage: {{ .Values.pv.backupSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -184,7 +184,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi
+      storage: {{ .Values.pv.backupSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -192,7 +192,7 @@ metadata:
   name: migrations-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: {{ .Values.pv.migrationsSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -216,5 +216,5 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: {{ .Values.pv.migrationsSize }}
 ---

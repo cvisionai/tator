@@ -21,4 +21,12 @@ postgis:
 gunicornReplicas: 24
 transcoderReplicas: 4
 algorithmReplicas: 4
+pv:
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  postgisSize: 10Gi
+  backupSize: 100Gi
+  migrationsSize: 1Gi
 
