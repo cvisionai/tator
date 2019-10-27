@@ -117,7 +117,7 @@ cluster-deps:
 cluster-install:
 	helm install --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade:
+cluster-upgrade: tator-image
 	helm upgrade --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
