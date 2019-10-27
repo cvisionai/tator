@@ -63,7 +63,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('tator-redis-headless', 6379)],
+            'hosts': [('tator-redis-master', 6379)],
         },
     },
 }
