@@ -2,6 +2,23 @@
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
 
+## Install helm
+
+To build Tator you will need Helm 3 somewhere on your path.
+
+* Download and extract helm:
+
+```
+wget https://get.helm.sh/helm-v3.0.0-beta.5-linux-amd64.tar.gz
+tar xzvf helm-v3.0.0-beta.5-linux-amd64.tar.gz
+```
+
+* Add the executable to your PATH in bashrc:
+
+```
+export PATH=$HOME/linux-amd64/helm:$PATH
+```
+
 ## Update the configuration file
 
 The Tator configuration file is located at `helm/tator/values.yaml`. Modify this file to meet your requirements. Below is an explanation of each field:
