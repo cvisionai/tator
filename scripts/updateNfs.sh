@@ -1,23 +1,26 @@
 #!/bin/bash
 
 directories_to_update="main tator_online containers"
-NFS_Share=/media/kubernetes_share/dev
+POD="$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///')"
 
-if [ -e ${NFS_Share} ]; then
+if [ -z "${POD}" ]; then
+    echo "WARNING: no gunicorn pod detected."
+    exit -1
+else
+    echo "Copying source into pod ${POD}..."
+    POD_SRC="${POD}:/tator_online"
     for directory in ${directories_to_update}; do
-        mkdir -p ${NFS_Share}/${directory}
         for file in `ls ${directory}`; do
-	    if [ "$file" != "migrations" ] && [ "$file" != "__pycache__" ]; then
-		rsync -a "${directory}/${file}" ${NFS_Share}/${directory}
-	    fi
-	done
+            if [ "$file" != "migrations" ] && [ "$file" != "__pycache__" ]; then
+                echo "Copying ${directory}/${file}..."
+                kubectl exec -it ${POD} -- rm -rf ${directory}/${file}
+                kubectl cp ${directory}/${file} ${POD_SRC}/${directory}/${file}
+            fi
+        done
     done
 
-    cp main/static/js/tator/tator.min.js ${NFS_Share}/main/static/js/tator/tator.min.js
-    cp main/static/css/tator/tator.min.css ${NFS_Share}/main/static/css/tator/tator.min.js
-    cp manage.py ${NFS_Share}
+    kubectl cp main/static/js/tator/tator.min.js ${POD_SRC}/main/static/js/tator/tator.min.js
+    kubectl cp main/static/css/tator/tator.min.css ${POD_SRC}/main/static/css/tator/tator.min.js
+    kubectl cp manage.py ${POD_SRC}
     exit $?
-else
-    echo "WARNING: no NFS share detected."
-    exit -1
 fi
