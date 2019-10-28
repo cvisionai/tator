@@ -23,11 +23,8 @@ help:
 	@echo "\tExample: "
 	@echo "\t\tmake tator-reset"
 	@echo "\nOther useful targets: "
-	@echo "\t\t - update-nfs : Update NFS share"
 	@echo "\t\t - collect-static : Runs collect-static on server (manage.py)."
 	@echo "\t\t - migrate : Runs migrate on server (manage.py)"
-	@echo "\t\t - local : Rebuild images for local deployment"
-	@echo "\t\t - update: local+migrate+reset"
 	@echo "\t\t - status : Prints status of container deployment"
 	@echo "\t\t - reset : Reset all pods"
 
@@ -46,11 +43,6 @@ endif
 production_check:
 	chmod +x scripts/production_check.sh
 	@./scripts/production_check.sh
-
-# Update target (after a fetch/rebase)
-update:
-	@make local
-	@make reset
 
 # Global reset:
 reset:
