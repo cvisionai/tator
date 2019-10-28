@@ -108,7 +108,7 @@ status:
 
 .ONESHELL:
 
-cluster: valid_secrets update-nfs
+cluster: valid_secrets main/version.py production_check
 	$(MAKE) tator-image images cluster-deps cluster-install
 
 cluster-deps:
@@ -117,7 +117,7 @@ cluster-deps:
 cluster-install:
 	helm install --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: tator-image
+cluster-upgrade: main/version.py production_check tator-image 
 	helm upgrade --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -178,11 +178,9 @@ main/version.py:
 	externals/build_tools/version.sh > main/version.py
 	chmod +x main/version.py
 
-update-nfs: min-css min-js main/version.py production_check
-	chmod +x scripts/updateNfs.sh
-	scripts/updateNfs.sh
-
-collect-static: update-nfs
+collect-static: min-css min-js
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -rf /tator_online/main/static
+	kubectl cp main/static $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):/tator_online/main/static
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator/tator.min.js
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/css/tator/tator.min.css
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- python3 manage.py collectstatic --noinput
