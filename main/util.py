@@ -112,3 +112,94 @@ def updateRelatedMedia():
             if obj.related_media != media[0]:
                 obj.related_media = media[0]
                 obj.save()
+def moveFileToNewProjectFolder(element, fileField, project_number):
+    current_path = fileField.path
+    current_root = os.path.dirname(current_path)
+    if os.path.basename(current_root) == f"{project_number}":
+        print("Skipping processed file ({current_path})")
+        return
+    current_fname = os.path.basename(current_path)
+    project_base = os.path.join(current_root, f"{project_number}")
+    os.makedirs(project_base, exist_ok=True)
+    new_path = os.path.join(project_base, current_fname)
+    try:
+        os.rename(current_path, new_path)
+        element.save()
+    except Exception as e:
+        print(f"Unable to move {current_path} to {new_path}")
+
+def moveToProjectDirectories(project_number):
+    images = EntityMediaImage.objects.filter(project__id=project_number)
+    videos = EntityMediaVideo.objects.filter(project__id=project_number)
+    idx = 0
+    # Process images first
+    count = images.count()
+    for image in images:
+        idx += 1
+        moveFileToNewProjectFolder(image, image.thumbnail, project_number)
+        moveFileToNewProjectFolder(image, image.file, project_number)
+        print(f"Images: {idx}/{count}")
+
+    # Process videos second
+    count = videos.count()
+    idx = 0
+    for video in videos:
+        idx += 1
+        project_number = video.project.id
+        if video.segment_info:
+            current_base = os.path.dirname(video.segment_info)
+            if os.path.basename(current_base) == f"{project_number}":
+                print("Skipping already processed file")
+            else:
+                current_name = os.path.basename(video.segment_info)
+                project_base = os.path.join(current_base, f"{project_number}")
+                os.makedirs(project_base, exist_ok=True)
+                try:
+                    current_path = os.path.join(current_base,current_name)
+                    new_path = os.path.join(project_base, current_name)
+                    os.rename(current_path, new_path)
+                    video.segment_info = os.path.join(project_base, current_name)
+                    print(f"Moved {current_base}/{current_name} to {project_base}/{current_name}")
+                    video.save()
+                except Exception as e:
+                    print(f"Unable to move '{current_name}'")
+        else:
+            #Check for phantom segment
+            segment_name = f"{os.path.splitext(video.file.path)[0]}_segments.json"
+            current_base = os.path.dirname(video.file.path)
+            if os.path.basename(current_base) == f"{project_number}":
+                print("Skipping already processed file")
+            else:
+                project_base = os.path.join(current_base, f"{project_number}")
+                segment_path = os.path.join(current_base, segment_name)
+                if os.path.exists(segment_path):
+                    try:
+                        new_path = os.path.join(project_base, segment_name)
+                        os.rename(segment_path, new_path)
+                        print("Adding phantom segment.")
+                        video.segment_info = new_path
+                        video.save()
+                    except:
+                        print(f"Unable to move {segment_name}")
+                else:
+                    print(f"No segment file exists for {video}")
+
+        moveFileToNewProjectFolder(video, video.thumbnail, project_number)
+        moveFileToNewProjectFolder(video, video.thumbnail_gif, project_number)
+        moveFileToNewProjectFolder(video, video.file, project_number)
+
+        if video.original:
+            current_base = os.path.dirname(video.original)
+            if os.path.basename(current_base) == f"{project_number}":
+                print("Skipping already processed file")
+            else:
+                current_name = os.path.basename(video.original)
+                project_base = os.path.join(current_base, f"{project_number}")
+                os.makedirs(project_base, exist_ok=True)
+                video.original = os.path.join(project_base, current_name)
+                print(f"Moved {current_base}/{current_name} to {project_base}/{current_name}")
+                video.save()
+
+
+
+        print(f"Videos: {idx}/{count}")
