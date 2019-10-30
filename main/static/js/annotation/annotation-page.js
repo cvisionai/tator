@@ -256,9 +256,11 @@ class AnnotationPage extends TatorPage {
         }, {});
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
+          this.clearMetaCaches();
           canvas.defaultMode();
         });
         this._sidebar.addEventListener("newMeta", evt => {
+          this.clearMetaCaches();
           canvas.newMetadataItem(evt.detail.typeId, evt.detail.metaMode);
         });
         this._sidebar.addEventListener("zoomIn", evt => {
@@ -418,6 +420,12 @@ class AnnotationPage extends TatorPage {
 
   _getSave(objDescription) {
     return this._saves[objDescription.type.id];
+  }
+
+  clearMetaCaches() {
+    Object.values(this._saves).forEach(save => {
+      save.metaMode = false;
+    });
   }
 
   _makePreview(objDescription, dragInfo, canvasPosition) {
