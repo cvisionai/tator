@@ -198,7 +198,9 @@ def moveToProjectDirectories(project_number):
                 current_name = os.path.basename(video.original)
                 project_base = os.path.join(current_base, f"{project_number}")
                 os.makedirs(project_base, exist_ok=True)
-                video.original = os.path.join(project_base, current_name)
+                new_path = os.path.join(project_base, current_name)
+                os.rename(video.original, new_path)
+                video.original = new_path
                 print(f"Moved {current_base}/{current_name} to {project_base}/{current_name}")
                 video.save()
 
