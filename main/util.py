@@ -116,14 +116,16 @@ def moveFileToNewProjectFolder(element, fileField, project_number):
     current_path = fileField.path
     current_root = os.path.dirname(current_path)
     if os.path.basename(current_root) == f"{project_number}":
-        print("Skipping processed file ({current_path})")
+        print(f"Skipping processed file ({current_path})")
         return
     current_fname = os.path.basename(current_path)
     project_base = os.path.join(current_root, f"{project_number}")
     os.makedirs(project_base, exist_ok=True)
     new_path = os.path.join(project_base, current_fname)
     try:
-        os.rename(current_path, new_path)
+        if not os.path.exists(new_path):
+            os.rename(current_path, new_path)
+        fileField.name = f"{project_number}/{current_fname}"
         element.save()
     except Exception as e:
         print(f"Unable to move {current_path} to {new_path}")
