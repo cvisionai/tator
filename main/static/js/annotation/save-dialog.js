@@ -68,6 +68,12 @@ class SaveDialog extends TatorElement {
   // Save the underlying object to the database
   saveObject(requestObj, values)
   {
+    // Defensively program against null attribute values
+    if (values == undefined || values == null)
+    {
+      values = {};
+    }
+
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
