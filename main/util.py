@@ -130,6 +130,20 @@ def moveFileToNewProjectFolder(element, fileField, project_number):
     except Exception as e:
         print(f"Unable to move {current_path} to {new_path}")
 
+def moveAlgoLogsToProjectDirectories():
+    algo_results = AlgorithmResult.objects.all().select_related('algorithm__project')
+    count = algo_results.count()
+    idx = 0
+    for algo_result in algo_results:
+        idx += 1
+        for field in [algo_result.setup_log,
+                      algo_result.algorithm_log,
+                      algo_result.teardown_log]:
+            if field:
+                moveFileToNewProjectFolder(algo_result,
+                                           field,
+                                           algo_result.algorithm.project.id)
+        print(f"{idx}/{count}")
 def moveToProjectDirectories(project_number):
     images = EntityMediaImage.objects.filter(project__id=project_number)
     videos = EntityMediaVideo.objects.filter(project__id=project_number)
