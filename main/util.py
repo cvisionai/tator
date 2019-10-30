@@ -167,7 +167,7 @@ def moveToProjectDirectories(project_number):
                     print(f"Unable to move '{current_name}'")
         else:
             #Check for phantom segment
-            segment_name = f"{os.path.splitext(video.file.path)[0]}_segments.json"
+            segment_name = f"{os.path.splitext(video.file.name)[0]}_segments.json"
             current_base = os.path.dirname(video.file.path)
             if os.path.basename(current_base) == f"{project_number}":
                 print("Skipping already processed file")
