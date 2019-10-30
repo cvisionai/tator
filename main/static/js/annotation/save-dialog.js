@@ -50,20 +50,12 @@ class SaveDialog extends TatorElement {
 
     this._save.addEventListener("click", () => {
       this._values = this._attributes.getValues();
-      this.dispatchEvent(new CustomEvent("save", {
-        detail: this._values
-      }));
-      this._recents.store(this._values);
-      const mediaId = this.getAttribute("media-id");
-      const body = {
-        type: this._dataType.type.id,
-        name: this._dataType.type.name,
-        media_id: mediaId,
-        ...this._requestObj,
-        ...this._values,
-      };
-      this._undo.post("Localizations", body, this._dataType);
-      this._loaded=true;
+      this.saveObject(this._requestObj, this._values)
+      if (this._metaMode)
+      {
+        // Update the meta cache
+        this._metaCache = Object.assign({},this._values)
+      }
       this._attributes.reset();
     });
 
@@ -71,14 +63,25 @@ class SaveDialog extends TatorElement {
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
     });
-
-    this._loaded = false;
   }
 
-  saveObject(requestObj)
+  // Save the underlying object to the database
+  saveObject(requestObj, values)
   {
-    this._requestObj = requestObj;
-    this._save.dispatchEvent(new MouseEvent("click"));
+    this.dispatchEvent(new CustomEvent("save", {
+      detail: values
+    }));
+    this._recents.store(this._values);
+    const mediaId = this.getAttribute("media-id");
+    const body = {
+      type: this._dataType.type.id,
+      name: this._dataType.type.name,
+      media_id: mediaId,
+      ...requestObj,
+      ...values,
+    };
+
+    this._undo.post("Localizations", body, this._dataType);
   }
 
   set undoBuffer(val) {
@@ -103,12 +106,24 @@ class SaveDialog extends TatorElement {
     this._updatePosition();
   }
 
-  set requestObj(val) {
-    this._requestObj = val;
+  set metaMode(val) {
+    this._metaMode = val;
+    if (val == false)
+    {
+      this._metaCache = null;
+    }
   }
 
-  get loaded() {
-    return this._loaded;
+  get metaMode() {
+    return this._metaMode;
+  }
+
+  get metaCache() {
+    return this._metaCache;
+  }
+
+  set requestObj(val) {
+    this._requestObj = val;
   }
 
   addRecent(val) {

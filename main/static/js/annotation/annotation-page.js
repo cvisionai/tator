@@ -366,15 +366,20 @@ class AnnotationPage extends TatorPage {
           const requestObj = evt.detail.requestObj;
           const canvasPosition = canvasElement.getBoundingClientRect();
 
+          // Get the save dialog for this type. It gets created
+          // with a metamode flag that changes based on mode. If
+          // it has been created once in a given meta mode, reuse
+          // the attributes from previous runs.
+          // (Fixes Pulse #324572460)
           var save = this._getSave(objDescription);
-          if (metaMode && save.loaded)
+          if (metaMode && save.metaMode)
           {
-            save.saveObject(requestObj);
+            save.saveObject(requestObj, save.metaCache);
           }
           else
           {
             this._openModal(objDescription, dragInfo, canvasPosition,
-                            requestObj);
+                            requestObj,metaMode);
             this._makePreview(objDescription, dragInfo, canvasPosition);
           }
         });
@@ -400,11 +405,12 @@ class AnnotationPage extends TatorPage {
     }
   }
 
-  _openModal(objDescription, dragInfo, canvasPosition, requestObj) {
+  _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
     const save = this._saves[objDescription.type.id];
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
+    save.metaMode = metaMode;
     save.classList.add("is-open");
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
