@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 
+from rest_framework.authentication import TokenAuthentication
 from .models import Project
 from .models import EntityMediaBase
 from .models import EntityMediaImage
@@ -101,12 +102,28 @@ class AuthProjectView(View):
         """
 
         original_url = request.headers['X-Original-URI']
+
+        # For some reason, TokenAuthentication doesn't work by default
+        # So if the session authentication didn't trigger, manually check
+        # to see if a token was provided. Bail out if the user is anonymous
+        # before we get too far
+        user = request.user
+        if isinstance(user,AnonymousUser):
+            try:
+                (user,token) = TokenAuthentication().authenticate(request)
+                logger.info(f"Got {user}")
+            except Exception as e:
+                msg = "*Security Alert:* "
+                msg += f"Bad credentials presented for '{original_url}'"
+                Notify.notify_admin_msg(msg)
+                return HttpResponse(status=403)
+
         filename = os.path.basename(original_url)
         project_id = os.path.basename(os.path.dirname(original_url))
         project = None
         try:
             project = Project.objects.get(pk=project_id)
-            authorized = validate_project(request.user, project)
+            authorized = validate_project(user, project)
         except:
             authorized = False
 
@@ -114,7 +131,7 @@ class AuthProjectView(View):
             return HttpResponse(status=200)
         else:
             # Files that aren't in the whitelist or database are forbidden
-            msg = f"({request.user}/{request.user.id}): "
+            msg = f"({user}/{user.id}): "
             msg += f"Attempted to access unauthorized file '{original_url}'"
             msg += f". "
             msg += f"Does not have access to '{project}'"
