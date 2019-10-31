@@ -17,10 +17,6 @@ while [ ${idx} -lt ${count} ]; do
     project=`cat $1 | jq --raw-output .[${idx}].project`
     original=`basename ${original}`
     type=`cat $1 | jq --raw-output .[${idx}].resourcetype`
-    if [ "${type}" != "EntityMediaVideo" ]; then
-        idx=$((${idx}+1))
-        continue;
-    fi
 
     echo "processing ${original} "
     info_name="${original%.mp4}_segments.json"
