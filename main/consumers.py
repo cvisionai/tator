@@ -1126,7 +1126,7 @@ def run_algorithm(content):
         num_files = float(len(media_ids))
 
         # Create new directories to work out of.
-        work_dir = os.path.join(settings.MEDIA_ROOT, run_uid)
+        work_dir = os.path.join(settings.MEDIA_ROOT, "working", run_uid)
         os.makedirs(work_dir, exist_ok=True)
         log.info(f"work_dir = {work_dir}")
         project_dir = os.path.join(settings.MEDIA_ROOT, f"{project_id}")
