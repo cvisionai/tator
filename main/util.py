@@ -130,6 +130,12 @@ def moveFileToNewProjectFolder(element, fileField, project_number):
     except Exception as e:
         print(f"Unable to move {current_path} to {new_path}")
 
+def movePackagesToProjectDirectories():
+    packages = Package.objects.all()
+    for package in packages:
+        moveFileToNewProjectFolder(package,
+                                   package.file,
+                                   package.project.id)
 def moveAlgoLogsToProjectDirectories():
     algo_results = AlgorithmResult.objects.all().select_related('algorithm__project')
     count = algo_results.count()
