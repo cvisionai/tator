@@ -320,7 +320,7 @@ def run_transcoder(content):
             ext = '.mp4'
 
         project_dir = os.path.join(settings.MEDIA_ROOT, f"{project_id}")
-        os.makdirs(project_dir, exist_ok=True)
+        os.makedirs(project_dir, exist_ok=True)
         # Get path to file on server and new path in media.
         thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project_id}", str(uuid1()) + '.jpg')
         upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
