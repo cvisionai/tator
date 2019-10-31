@@ -39,6 +39,7 @@ from django_ltree.fields import PathField
 from .cache import TatorCache
 
 import logging
+import os
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -571,10 +572,13 @@ class AttributeTypeGeoposition(AttributeTypeBase):
     dtype = "geopos"
     default = PointField(null=True, blank=True)
 
+def ProjectBasedFileLocation(instance, filename):
+    return os.path.join(f"{instance.project.id}", filename)
+
 class Package(Model):
     name = CharField(max_length=128)
     description = CharField(max_length=256, null=True, blank=True)
-    file = FileField()
+    file = FileField(ProjectBasedFileLocation)
     use_originals = BooleanField()
     creator = ForeignKey(User, on_delete=PROTECT)
     created = DateTimeField()
@@ -591,10 +595,10 @@ class Algorithm(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=PROTECT)
     description = CharField(max_length=1024, null=True, blank=True)
-    setup = FileField()
+    setup = FileField(upload_to=ProjectBasedFileLocation)
     """ Script that uses api calls to set up algorithm.
     """
-    teardown = FileField()
+    teardown = FileField(upload_to=ProjectBasedFileLocation)
     """ Script that uses api calls to write outputs to database.
     """
     image_name = CharField(max_length=128)
