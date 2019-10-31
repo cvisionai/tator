@@ -1092,6 +1092,7 @@ def run_algorithm(content):
 
         algorithm_id = int(content['algorithm_id'])
         algorithm = AlgorithmModel.objects.get(pk=algorithm_id)
+        project_id = algorithm.project.id
 
         # Initialize names of things that need deletion.
         algorithm_name = None
@@ -1128,10 +1129,12 @@ def run_algorithm(content):
         work_dir = os.path.join(settings.MEDIA_ROOT, run_uid)
         os.makedirs(work_dir, exist_ok=True)
         log.info(f"work_dir = {work_dir}")
+        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project_id}")
+        os.makedirs(project_dir, exist_ok=True)
         # Set logging paths.
-        setup_log = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.txt')
-        algorithm_log = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.txt')
-        teardown_log = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.txt')
+        setup_log = os.path.join(project_dir, str(uuid1()) + '.txt')
+        algorithm_log = os.path.join(project_dir, str(uuid1()) + '.txt')
+        teardown_log = os.path.join(project_dir, str(uuid1()) + '.txt')
         log.info(f"algorithm_log = {algorithm_log}")
 
         # Get cluster IP address for services.
