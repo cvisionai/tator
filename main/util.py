@@ -144,6 +144,20 @@ def moveAlgoLogsToProjectDirectories():
                                            field,
                                            algo_result.algorithm.project.id)
         print(f"{idx}/{count}")
+
+    algos = Algorithm.objects.all()
+    count = algos.count()
+    idx = 0
+    for algo in algos:
+        idx += 1
+        for field in [algo.setup,
+                      algo.teardown]:
+            if field:
+                moveFileToNewProjectFolder(algo,
+                                           field,
+                                           algo.project.id)
+        print(f"{idx}/{count}")
+
 def moveToProjectDirectories(project_number):
     images = EntityMediaImage.objects.filter(project__id=project_number)
     videos = EntityMediaVideo.objects.filter(project__id=project_number)
