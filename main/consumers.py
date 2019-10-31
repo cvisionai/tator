@@ -290,6 +290,7 @@ def run_transcoder(content):
         # grab them from database using get.
         media_type = EntityTypeMediaBase.objects.get(pk=content['media_type_id'])
         user = User.objects.get(pk=content['user_id'])
+        project_id = media_type.project.id
 
         # Set up interface for sending progress messages.
         prog = ProgressProducer(
@@ -318,12 +319,14 @@ def run_transcoder(content):
             entity_type = EntityMediaVideo
             ext = '.mp4'
 
+        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project_id}")
+        os.makdirs(project_dir, exist_ok=True)
         # Get path to file on server and new path in media.
-        thumb_path = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.jpg')
+        thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project_id}", str(uuid1()) + '.jpg')
         upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
         if os.path.exists(upload_path):
-            media_path = os.path.join(settings.MEDIA_ROOT, media_uid + ext)
-            raw_path = os.path.join(settings.RAW_ROOT, os.path.basename(media_path))
+            media_path = os.path.join(settings.MEDIA_ROOT, f"{project_id}", media_uid + ext)
+            raw_path = os.path.join(settings.RAW_ROOT, f"{project_id}", os.path.basename(media_path))
         else:
             fail_msg = "Failed to create media, unknown upload path {}"
             prog.failed(fail_msg.format(upload_path))
@@ -341,10 +344,10 @@ def run_transcoder(content):
         )
 
         # Set thumbnail fields.
-        thumb_gif_path = os.path.join(settings.MEDIA_ROOT, str(uuid1()) + '.gif')
-        media_obj.thumbnail.name = os.path.basename(thumb_path)
+        thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project_id}", str(uuid1()) + '.gif')
+        media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
         if not is_image:
-            media_obj.thumbnail_gif.name = os.path.basename(thumb_gif_path)
+            media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
         
         # Send a message indicating processing started.
         check_stop()
@@ -359,7 +362,7 @@ def run_transcoder(content):
         # 2.) Transcode the video, if viewable, to x264 with fixed GoP
         #
         thumb_size = (256, 256)
-        media_base = os.path.basename(media_path)
+        media_base = os.path.relpath(media_path, settings.MEDIA_ROOT)
         if is_image:
             image = Image.open(upload_path)
             media_obj.width, media_obj.height = image.size
@@ -417,7 +420,7 @@ def run_transcoder(content):
 
                     # Run the segmenter script
                     segment_name=f"{media_uid}_segments.json"
-                    output_file=os.path.join(settings.MEDIA_ROOT,segment_name)
+                    output_file=os.path.join(project_dir, segment_name)
                     cmd=["python3", "/scripts/makeFragmentInfo.py","-o",
                          output_file, media_obj.file.path]
                     proc = subprocess.Popen(
