@@ -72,15 +72,25 @@ data:
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /media {
+          auth_request /auth-project;
           alias /data/media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
         location /data/raw {
+          auth_request /auth-project;
           alias /data/raw;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
+        location /auth-project {
+          internal;
+          proxy_pass http://gunicorn-svc:8000/auth-project;
+          proxy_pass_request_body off;
+          proxy_set_header Host $host;
+          proxy_set_header Content-Length "";
+          proxy_set_header X-Original-URI $request_uri;
+        }  
         location /files/ {
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
           proxy_request_buffering off;

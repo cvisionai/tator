@@ -14,8 +14,7 @@ from .views import CustomView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
 from .views import AnnotationView
-from .views import AuthMediaView
-from .views import AuthRawView
+from .views import AuthProjectView
 
 from .rest import LocalizationList;
 from .rest import LocalizationTypeListAPI;
@@ -58,8 +57,7 @@ urlpatterns = [
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
     path('<int:project_id>/annotation/<int:pk>', AnnotationView.as_view(), name='annotation'),
-    path('auth-media', AuthMediaView.as_view()),
-    path('auth-raw', AuthRawView.as_view())
+    path('auth-project', AuthProjectView.as_view()),
 ]
 
 # This is used for REST calls
