@@ -94,6 +94,7 @@ data:
           proxy_set_header Host $host;
           proxy_set_header Content-Length "";
           proxy_set_header X-Original-URI $request_uri;
+          proxy_pass_header Authorization;
         }  
         location /files/ {
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
