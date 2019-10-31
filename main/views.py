@@ -15,8 +15,9 @@ from .models import EntityMediaBase
 from .models import EntityMediaImage
 from .models import EntityMediaVideo
 from .models import Membership
-
 from .notify import Notify
+from .cache import TatorCache
+
 import os
 import logging
 
@@ -75,7 +76,11 @@ class AnnotationView(ProjectBase, TemplateView):
 
 
 def validate_project(user, project):
-    granted = False
+    # We only cache 'True' effectively with this logic
+    granted = None #TatorCache().get_cred_cache(user.id, project.id)
+    if granted:
+        return granted
+
     if isinstance(user, AnonymousUser):
         granted = False
     else:
@@ -89,8 +94,9 @@ def validate_project(user, project):
         if membership.count() == 0:
             granted = False
         else:
+            #Only cache granted attempts
             granted = True
-
+            TatorCache().set_cred_cache(user.id, project.id, granted)
     return granted
 
 class AuthProjectView(View):
@@ -111,7 +117,6 @@ class AuthProjectView(View):
         if isinstance(user,AnonymousUser):
             try:
                 (user,token) = TokenAuthentication().authenticate(request)
-                logger.info(f"Got {user}")
             except Exception as e:
                 msg = "*Security Alert:* "
                 msg += f"Bad credentials presented for '{original_url}'"
@@ -124,7 +129,8 @@ class AuthProjectView(View):
         try:
             project = Project.objects.get(pk=project_id)
             authorized = validate_project(user, project)
-        except:
+        except Exception as e:
+            logger.info(f"ERROR: {e}")
             authorized = False
 
         if authorized:
