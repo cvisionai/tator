@@ -644,6 +644,8 @@ class AttributeFilterMixin:
         """
         # Assuming validate has been called, if no attribute parameters
         # were passed then return the input queryset.
+        if not hasattr(self, 'filter_type_and_vals'):
+            return qs
         if self.filter_type_and_vals == []:
             return qs
 
