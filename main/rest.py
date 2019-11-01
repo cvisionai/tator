@@ -1184,7 +1184,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 # TODO: See if we can do this using queryset into a custom serializer instead
                 # of naked SQL.
                 original_sql,params = qs.query.sql_with_params()
-                root_url = request.build_absolute_uri("/")
+                root_url = request.build_absolute_uri("")
                 media_url = request.build_absolute_uri(settings.MEDIA_URL)
                 raw_url = request.build_absolute_uri(settings.RAW_ROOT)
                 # Modify original sql to have aliases to match JSON output
@@ -1197,7 +1197,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
-                new_selections += f', NULLIF(CONCAT(\'{raw_url}\',"main_entitymediavideo"."original"),\'{raw_url}\') AS original_url'
+                new_selections += f', NULLIF(CONCAT(\'{root_url}\',"main_entitymediavideo"."original"),\'{raw_url}\') AS original_url'
                 original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
 
                 #Add new joins
