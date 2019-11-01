@@ -119,7 +119,7 @@ class Organization(Model):
 class User(AbstractUser):
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
-    organization = ForeignKey(Organization, on_delete=PROTECT, null=True, blank=True)
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
@@ -266,7 +266,7 @@ class EntityBase(PolymorphicModel):
     attributes = JSONField(null=True, blank=True)
     """ The attributes related to this entity, see `meta` for column
         definitions """
-    related_media = ForeignKey('EntityBase', on_delete=CASCADE, null=True, blank=True)
+    related_media = ForeignKey('EntityBase', on_delete=SET_NULL, null=True, blank=True)
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)
