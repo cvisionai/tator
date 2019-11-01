@@ -107,10 +107,10 @@ cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
-	helm install --atomic --set gitRevision=$(GIT_VERSION) tator helm/tator
+	helm install --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade: main/version.py production_check tator-image 
-	helm upgrade --atomic --set gitRevision=$(GIT_VERSION) tator helm/tator
+	helm upgrade --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
 	helm uninstall tator
