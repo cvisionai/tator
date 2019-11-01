@@ -392,6 +392,8 @@ def bulk_patch_attributes(new_attrs, qs):
         else:
             for attr_name in new_attrs:
                 obj.attributes[attr_name] = new_attrs[attr_name]
+    if len(objs) > 0:
+        objs[0].save() # Trigger the save signal to invalidate cache
     qs.bulk_update(objs, ['attributes'])
 
 def paginate(query_params, queryset):
