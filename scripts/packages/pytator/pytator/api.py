@@ -270,8 +270,8 @@ class Media(APIElement):
     def byName(self, name):
         return self.getSingleElement("EntityMedias", {"name": name})
 
-    def byId(self, id):
-        return self.getSingleElement("EntityMedias", {"media_id": id})
+    def byId(self, pk):
+        return self.get(pk)
 
     def applyAttribute(self, media_id, attributes):
         patchUrl=f"EntityMedia/{media_id}"
