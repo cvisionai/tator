@@ -1352,13 +1352,18 @@ def run_algorithm(content):
         )
         if os.path.exists(setup_log):
             with open(setup_log, 'rb') as f:
-                result.setup_log.save(os.path.basename(setup_log), f)
+                result.setup_log.save(os.path.relpath(setup_log,
+                                                      settings.MEDIA_ROOT), f)
         if os.path.exists(algorithm_log):
             with open(algorithm_log, 'rb') as f:
-                result.algorithm_log.save(os.path.basename(algorithm_log), f)
+                result.algorithm_log.save(os.path.relpath(algorithm_log,
+                                                          settings.MEDIA_ROOT),
+                                          f)
         if os.path.exists(teardown_log):
             with open(teardown_log, 'rb') as f:
-                result.teardown_log.save(os.path.basename(teardown_log), f)
+                result.teardown_log.save(os.path.relpath(teardown_log,
+                                                         settings.MEDIA_ROOT),
+                                         f)
         result.save()
         for media_id in content['media_list'].split(','):
             result.media.add(int(media_id))
