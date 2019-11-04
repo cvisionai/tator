@@ -181,7 +181,11 @@ class SectionFiles extends TatorElement {
     }
     const inProgress = media.state == "started" || media.state == "queued";
     if ("uid" in media && inProgress) {
-      if (!("thumb_url" in media)) {
+      if (!(
+          ("thumb_url" in media) || 
+          ("video_thumbnail" in media) || 
+          ("image_thumbnail" in media)
+        )) {
         card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
         card.removeAttribute("thumb-gif");
       }
