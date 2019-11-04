@@ -394,9 +394,17 @@ class Localization(APIElement):
                                headers=self.headers)
 
         if response.status_code < 200 or response.status_code >= 300:
-            msg=response.json()
-            print("Error: {}\nDetails: {}".format(msg['message'],
-                                                  msg['details']))
+            try:
+                msg=response.json()
+                print("Error {}: {}\nDetails: {}".format(response.status_code,
+                                                         msg['message'],
+                                                         msg['details']))
+            except:
+                # message wasn't json
+                msg = response.text
+                print(f"Error {response.status_code}: {msg}")
+                return (response.status_code, None)
+
         return (response.status_code, response.json())
 
     def query(self, params):
