@@ -77,7 +77,8 @@ RUN pip3 --no-cache-dir install \
         pyparsing pydot markdown coreapi-cli \
         hiredis==1.0.0 channels_redis==2.4.0 redis==3.3.11 \
         daphne==2.2.5 gunicorn django_admin_json_editor django-ltree \
-        requests python-dateutil ujson slackclient
+        requests python-dateutil ujson slackclient \
+        google-auth==1.6.3
 
 # Install kubernetes client
 WORKDIR /working
