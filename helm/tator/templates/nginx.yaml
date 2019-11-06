@@ -122,6 +122,12 @@ data:
           proxy_set_header X-Forwarded-Host $server_name;
         }
         location / {
+          # Allow for big REST responses.
+          proxy_connect_timeout 300;
+          proxy_send_timeout 300;
+          proxy_read_timeout 300;
+          send_timeout 300;
+
           # for now turn off routing to gunicorn (comment this to turn us back
           # on)
           # return 503;
