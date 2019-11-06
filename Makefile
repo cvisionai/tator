@@ -123,7 +123,11 @@ externals/build_tools/%.py:
 	@echo "Downloading submodule"
 	@git submodule update --init
 
-# Dockerfile.gen rules
+# Add specific rule for marshal's .gen because it uses version input file
+containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/version
+	./externals/build_tools/makocc.py -o $@ containers/tator_algo_marshal/Dockerfile.mako
+
+# Dockerfile.gen rules (generic)
 %/Dockerfile.gen: %/Dockerfile.mako
 	echo $@ $<
 	./externals/build_tools/makocc.py -o $@ $<
