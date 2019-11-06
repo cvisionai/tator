@@ -4,6 +4,7 @@
   import os.path
   PYTATOR_VERSION_FILE=open('scripts/packages/pytator/version','r')
   PYTATOR_VERSION=PYTATOR_VERSION_FILE.read()
+  PYTATOR_VERSION=PYTATOR_VERSION.strip()
   PYTATOR_VERSION_FILE.close()
 %>
 FROM python:3-slim
