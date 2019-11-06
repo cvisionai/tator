@@ -160,7 +160,7 @@ spec:
   selector:
     matchLabels:
       app: nginx
-  replicas: 1
+  replicas: {{ .Values.nginxReplicas }}
   template:
     metadata:
       labels:

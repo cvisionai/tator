@@ -18,6 +18,7 @@ redis:
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis
+nginxReplicas: 1
 gunicornReplicas: 1
 transcoderReplicas: 1
 algorithmReplicas: 1
