@@ -309,6 +309,11 @@ def ingestTracks(args):
         count=0
         if args.trackId:
             tracks = [track for track in tracks if track["id"] == args.trackId]
+        all_localizations=tator.Localization.filter(
+            {"type": args.localizationTypeId,
+             "media_id": mediaId})
+        print("All localizations = {}".format(len(all_localizations)))
+
         for track in tracks:
             # 0.) Transform the json object to match what the
             # server wants
@@ -327,16 +332,14 @@ def ingestTracks(args):
             else:
                 localizationIds=[]
                 mediaIds=set()
+                trackIds=set()
                 #1.) Get all the localizations for this track id
                 queryString=f"{args.trackField}::{track[args.trackField]}"
-                localizationLookup={"attribute" : queryString,
-                                    "type" : args.localizationTypeId,
-                                    "media_id" : mediaId}
-
-                status, localizationsInTrack=localizations.query(localizationLookup)
-                for localization in localizationsInTrack:
-                    localizationIds.append(localization["id"])
-                    mediaIds.add(localization["media"])
+                localizationsInTrack=[]
+                for localization in all_localizations:
+                    if localization['attributes'][args.trackField] == int(track[args.trackField]):
+                        localizationIds.append(localization["id"])
+                        mediaIds.add(localization['media'])
 
             track=useRealTypes(track)
             if len(mediaIds):
