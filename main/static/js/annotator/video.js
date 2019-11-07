@@ -621,7 +621,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       frame = this.currentFrame();
     }
-    var time=((1/this._fps)*frame)+(1/(this._fps*4));
+    var time=this.frameToTime(frame);
     var direction = this._direction;
     if (direction == Direction.STOPPED)
     {
@@ -636,12 +636,17 @@ class VideoCanvas extends AnnotationCanvas {
     }
     return this._videoElement.forTime(time, direction);
   }
+
+  frameToTime(frame)
+  {
+    return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+  }
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
   seekFrame(frame, callback)
   {
     var that = this;
-    var time=this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+    var time=this.frameToTime(frame);
     var video=this.videoBuffer(frame);
 
     if (time <= video.duration)
