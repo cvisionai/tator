@@ -317,7 +317,7 @@ class AnnotationPlayer extends TatorElement {
 
   _frameToTime(frame) {
     const totalSeconds = frame / this._fps;
-    const seconds = Math.round(totalSeconds % 60);
+    const seconds = Math.floor(totalSeconds % 60);
     const secFormatted = ("0" + seconds).slice(-2);
     const minutes = Math.floor(totalSeconds / 60);
     return minutes + ":" + secFormatted;
