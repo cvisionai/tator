@@ -340,7 +340,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._videoElement=new VideoBufferDemux();
 
     this._playbackRate=1.0;
-    this._dispFrame=null; //represents the currently displayed frame
+    this._dispFrame=0; //represents the currently displayed frame
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
     this._fpsLoadDiag=0;
