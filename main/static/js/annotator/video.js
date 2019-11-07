@@ -173,7 +173,8 @@ class VideoBufferDemux
       }
     }
 
-    return this._vidBuffers[0];
+    // Return null if we get this far
+    return null;
   }
 
   currentIdx()
@@ -649,6 +650,11 @@ class VideoCanvas extends AnnotationCanvas {
     var time=this.frameToTime(frame);
     var video=this.videoBuffer(frame);
 
+    if (video == null)
+    {
+      console.info("Video is not loaded yet");
+      return new Promise((resolve,reject) => {});
+    }
     if (time <= video.duration)
 	  {
 	    video.currentTime=time;
