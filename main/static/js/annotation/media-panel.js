@@ -11,7 +11,6 @@ class MediaPanel extends TatorElement {
     div.appendChild(this._name);
 
     this._attrs = document.createElement("attribute-panel");
-    this._attrs.setAttribute("in-entity-browser", true);
 
     div.appendChild(this._attrs); // TODO: Fill this in with attribute data
 
