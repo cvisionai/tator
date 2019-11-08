@@ -85,6 +85,9 @@ class AnnotationSettings extends TatorElement {
         const searchParams = new URLSearchParams(window.location.search);
         const media_id = parseInt(mediaId);
 
+        // Turn disable selected_type.
+        searchParams.delete("selected_type");
+
         // Only enable next/prev if there is a next/prev
         if (data.prev == media_id)
         {
@@ -95,9 +98,7 @@ class AnnotationSettings extends TatorElement {
           this._prev.addEventListener("click", () => {
             let url = baseUrl + data.prev;
             url += "?" + searchParams.toString();
-            if (!searchParams.has("selected_type")) {
-              url += this._typeParams();
-            }
+            url += this._typeParams();
             window.location.href = url;
           });
         }
@@ -111,9 +112,7 @@ class AnnotationSettings extends TatorElement {
           this._next.addEventListener("click", () => {
             let url = baseUrl + data.next;
             url += "?" + searchParams.toString();
-            if (!searchParams.has("selected_type")) {
-              url += this._typeParams();
-            }
+            url += this._typeParams();
             window.location.href = url;
           });
         }
