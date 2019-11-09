@@ -34,6 +34,7 @@ class AnnotationImage extends TatorElement {
   }
 
   newMetadataItem(dtype, metaMode) {
+    this._image.style.cursor = "crosshair";
     this._image.newMetadataItem(dtype, metaMode);
   }
 
@@ -52,6 +53,7 @@ class AnnotationImage extends TatorElement {
 
   defaultMode() {
     this._image.defaultMode();
+    this._image.style.cursor = "default";
   }
 
   zoomPlus() {
@@ -81,6 +83,7 @@ class AnnotationImage extends TatorElement {
   }
 
   zoomIn() {
+    this._image.style.cursor="zoom-in";
     this._image.zoomIn();
   }
 
@@ -89,6 +92,7 @@ class AnnotationImage extends TatorElement {
   }
 
   pan() {
+    this._image.style.cursor="move";
     this._image.pan();
   }
 

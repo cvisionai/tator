@@ -223,6 +223,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   newMetadataItem(dtype, metaMode) {
+    this._video.style.cursor = "crosshair";
     this._video.newMetadataItem(dtype, metaMode);
   }
 
@@ -240,6 +241,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   defaultMode() {
+    this._video.style.cursor = "default";
     this._video.defaultMode();
   }
 
@@ -275,6 +277,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   zoomIn() {
+    this._video.style.cursor="zoom-in";
     this._video.zoomIn();
   }
 
@@ -283,6 +286,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   pan() {
+    this._video.style.cursor="move";
     this._video.pan();
   }
 

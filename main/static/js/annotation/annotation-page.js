@@ -257,23 +257,19 @@ class AnnotationPage extends TatorPage {
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
-          canvas.style.cursor = "default";
           canvas.defaultMode();
         });
         this._sidebar.addEventListener("newMeta", evt => {
           this.clearMetaCaches();
-          canvas.style.cursor = "crosshair";
           canvas.newMetadataItem(evt.detail.typeId, evt.detail.metaMode);
         });
         this._sidebar.addEventListener("zoomIn", evt => {
-          canvas.style.cursor = "zoom-in";
           canvas.zoomIn();
         });
         this._sidebar.addEventListener("zoomOut", evt => {
           canvas.zoomOut();
         });
         this._sidebar.addEventListener("pan", evt => {
-          canvas.style.cursor = "move";
           canvas.pan();
         });
         canvas.addEventListener("drawComplete", (evt) => {
