@@ -817,16 +817,18 @@ class AnnotationCanvas extends TatorElement
           // Add to current localization first
           if (coord == 0)
           {
-            var newX = this.activeLocalization.x += (amount*impactVector[0]);
-            if (newX < this.dims[0])
+            var pixel = 1.0/this._dims[0];
+            var newX = this.activeLocalization.x + (amount*impactVector[0]*pixel);
+            if (newX <= 1.0 && newX >= 0)
             {
               this.activeLocalization.x = newX;
             }
           }
           else if (coord == 1)
           {
-            var newY = this.activeLocalization.y += (amount*impactVector[0]);
-            if (newY < this.dims[1])
+            var pixel = 1.0/this._dims[1];
+            var newY = this.activeLocalization.y + (amount*impactVector[1]*pixel);
+            if (newY <= 1.0 && newY >= 0)
             {
               this.activeLocalization.y = newY;
             }
