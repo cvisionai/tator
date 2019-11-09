@@ -49,6 +49,8 @@ class CanvasDrag
     this._mouseUpBound=this.onMouseUp.bind(this)
   }
 
+
+
   onMouseDown(event)
   {
     this._event={start : {}, current: {}}
@@ -64,6 +66,10 @@ class CanvasDrag
 
   onMouseMove(event)
   {
+    if (event.buttons == 0)
+    {
+      this.onMouseUp(event);
+    }
     var now = Date.now();
     var scale = this._scaleFn();
     var x = event.offsetX*scale[0];
@@ -1822,7 +1828,7 @@ class AnnotationCanvas extends TatorElement
   {
     var xAdj = 0;
     var yAdj = 0;
-    
+
     // Calculate how over or under we are in a potential move
     var count = coords.length;
     for (var idx = 0; idx < count; idx++)
@@ -1832,7 +1838,7 @@ class AnnotationCanvas extends TatorElement
       var minusY = Math.max(0-coord[1],0);
       var overX = Math.min(this.clientWidth-coord[0],0);
       var overY = Math.min(this.clientHeight-coord[1]-1, 0);
-      
+
       if (minusX != 0)
       {
         xAdj = minusX;
@@ -1841,7 +1847,7 @@ class AnnotationCanvas extends TatorElement
       {
         xAdj = overX;
       }
-      
+
       if (minusY != 0)
       {
         yAdj = minusY;
@@ -1851,17 +1857,17 @@ class AnnotationCanvas extends TatorElement
         yAdj = overY;
       }
     }
-    
+
     // Apply the delta to get us back in the canvas
     for (var idx = 0; idx < count; idx++)
     {
       coords[idx][0] += xAdj;
       coords[idx][1] += yAdj;
     }
-    
+
     return coords
   }
-  
+
   dragHandler(dragEvent)
   {
     var that = this;
