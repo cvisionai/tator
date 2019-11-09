@@ -786,6 +786,7 @@ class AnnotationCanvas extends TatorElement
           {
             poly[idx][coord] += (amount*impactVector[idx]);
           }
+          poly = this.boundsCheck(poly);
 
           // Update localization based on motion
           var boxCoords=this.scaleToRelative(polyToBox(poly));
@@ -801,6 +802,7 @@ class AnnotationCanvas extends TatorElement
           {
             line[idx][coord] += (amount*impactVector[0]);
           }
+          line = this.boundsCheck(line);
 
           // Update localization based on motion
           var expLine=this.scaleToRelative(this.explodeLine(line));
@@ -815,11 +817,19 @@ class AnnotationCanvas extends TatorElement
           // Add to current localization first
           if (coord == 0)
           {
-            this.activeLocalization.x += (amount*impactVector[0]);
+            var newX = this.activeLocalization.x += (amount*impactVector[0]);
+            if (newX < this.dims[0])
+            {
+              this.activeLocalization.x = newX;
+            }
           }
           else if (coord == 1)
           {
-            this.activeLocalization.y += (amount*impactVector[0]);
+            var newY = this.activeLocalization.y += (amount*impactVector[0]);
+            if (newY < this.dims[1])
+            {
+              this.activeLocalization.y = newY;
+            }
           }
           var line = this.localizationToDot(this.activeLocalization,
                                             defaultDotWidth);
@@ -1806,6 +1816,50 @@ class AnnotationCanvas extends TatorElement
     this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
   }
 
+  boundsCheck(coords)
+  {
+    var xAdj = 0;
+    var yAdj = 0;
+    
+    // Calculate how over or under we are in a potential move
+    var count = coords.length;
+    for (var idx = 0; idx < count; idx++)
+    {
+      var coord = coords[idx];
+      var minusX = Math.max(0-coord[0],0);
+      var minusY = Math.max(0-coord[1],0);
+      var overX = Math.min(this.clientWidth-coord[0],0);
+      var overY = Math.min(this.clientHeight-coord[1]-1, 0);
+      
+      if (minusX != 0)
+      {
+        xAdj = minusX;
+      }
+      if (overX != 0)
+      {
+        xAdj = overX;
+      }
+      
+      if (minusY != 0)
+      {
+        yAdj = minusY;
+      }
+      if (overY != 0)
+      {
+        yAdj = overY;
+      }
+    }
+    
+    // Apply the delta to get us back in the canvas
+    for (var idx = 0; idx < count; idx++)
+    {
+      coords[idx][0] += xAdj;
+      coords[idx][1] += yAdj;
+    }
+    
+    return coords
+  }
+  
   dragHandler(dragEvent)
   {
     var that = this;
@@ -1978,50 +2032,6 @@ class AnnotationCanvas extends TatorElement
 
         var objType = this.getObjectDescription(this.activeLocalization);
 
-        var boundsCheck = function(coords)
-        {
-          var xAdj = 0;
-          var yAdj = 0;
-
-          // Calculate how over or under we are in a potential move
-          var count = coords.length;
-          for (var idx = 0; idx < count; idx++)
-          {
-            var coord = coords[idx];
-            var minusX = Math.max(0-coord[0],0);
-            var minusY = Math.max(0-coord[1],0);
-            var overX = Math.min(that.clientWidth-coord[0]-1,0);
-            var overY = Math.min(that.clientHeight-coord[1]-1,0);
-
-            if (minusX != 0)
-            {
-              xAdj = minusX;
-            }
-            if (overX != 0)
-            {
-              xAdj = overX;
-            }
-
-            if (minusY != 0)
-            {
-              yAdj = minusY;
-            }
-            if (overY != 0)
-            {
-              yAdj = overY;
-            }
-          }
-
-          console.info(`yadj = ${yAdj}; xadj = ${xAdj}`)
-          // Apply the delta to get us back in the canvas
-          for (var idx = 0; idx < count; idx++)
-          {
-            coords[idx][0] += xAdj;
-            coords[idx][1] += yAdj;
-          }
-
-          return coords
-        }
         var translatedLine = function(begin, end)
         {
           var line = that.localizationToLine(that.activeLocalization);
@@ -2030,7 +2040,7 @@ class AnnotationCanvas extends TatorElement
           line[0][1] += end.y - begin.y;
           line[1][1] += end.y - begin.y;
 
-          line = boundsCheck(line);
+          line = that.boundsCheck(line);
           return line;
         }
 
@@ -2053,7 +2063,7 @@ class AnnotationCanvas extends TatorElement
             box[idx][0] += end.x - begin.x;
             box[idx][1] += end.y - begin.y;
           }
-          box = boundsCheck(box);
+          box = that.boundsCheck(box);
           return box;
         };
 
