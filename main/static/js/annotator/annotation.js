@@ -1460,18 +1460,19 @@ class AnnotationCanvas extends TatorElement
   selectTrack(track)
   {
     const frame = track.association.segments[0][0];
-    this.gotoFrame(frame);
-    this._data._dataByType.forEach((value, key, map) => {
-      if (key != track.meta) {
-        for (const localization of value) {
-          const sameId = this._data._trackDb[localization.id].id == track.id;
-          const firstFrame = localization.frame == frame;
-          if (sameId && firstFrame) {
-            this.selectLocalization(localization);
-            return;
+    this.gotoFrame(frame).then(() => {
+      this._data._dataByType.forEach((value, key, map) => {
+        if (key != track.meta) {
+          for (const localization of value) {
+            const sameId = this._data._trackDb[localization.id].id == track.id;
+            const firstFrame = localization.frame == frame;
+            if (sameId && firstFrame) {
+              this.selectLocalization(localization, true);
+              return;
+            }
           }
         }
-      }
+      });
     });
   }
 
