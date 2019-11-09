@@ -33,13 +33,11 @@ class AnnotationSidebar extends TatorElement {
     this._div.appendChild(this._indicator);
 
     this._edit.addEventListener("click", () => {
-      document.body.style.cursor = "default";
       this._selectButton(this._edit);
       this.dispatchEvent(new Event("default"));
     });
 
     zoomIn.addEventListener("click", () => {
-      document.body.style.cursor = "zoom-in";
       this._selectButton(zoomIn);
       this.dispatchEvent(new Event("zoomIn"));
     });
@@ -50,7 +48,6 @@ class AnnotationSidebar extends TatorElement {
     });
 
     pan.addEventListener("click", () => {
-      document.body.style.cursor = "move";
       this._selectButton(pan);
       this.dispatchEvent(new Event("pan"));
     });
@@ -80,7 +77,6 @@ class AnnotationSidebar extends TatorElement {
   set localizationTypes(val) {
     if (typeof val.box !== "undefined") {
       this._box.addEventListener("click", (evt) => {
-        document.body.style.cursor = "crosshair";
         this._selectButton(this._box, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.box[0].type.id,
@@ -101,7 +97,6 @@ class AnnotationSidebar extends TatorElement {
 
     if (typeof val.line !== "undefined") {
       this._line.addEventListener("click", (evt) => {
-        document.body.style.cursor = "crosshair";
         this._selectButton(this._line, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.line[0].type.id,
@@ -122,7 +117,6 @@ class AnnotationSidebar extends TatorElement {
 
     if (typeof val.dot !== "undefined") {
       this._point.addEventListener("click", (evt) => {
-        document.body.style.cursor = "crosshair";
         this._selectButton(this._point, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.dot[0].type.id,
