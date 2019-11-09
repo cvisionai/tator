@@ -1861,19 +1861,21 @@ class AnnotationCanvas extends TatorElement
         let [x, y, w, h] = this._panStartRoi;
         x += dx;
         y += dy;
-        if ((x + w) > this._dims[0])
-        {
-          x = this._dims[0] - w;
-        }
-        if ((y + h) > this._dims[1])
-        {
-          y = this._dims[1] - h;
-        }
+
         if (x < 0) {
           x = 0;
         }
         if (y < 0) {
           y = 0;
+        }
+
+        if (x + w > 1.0)
+        {
+          x -= (x+w - 1.0);
+        }
+        if (y + h > 1.0)
+        {
+          y -= (y+h - 1.0);
         }
 
         this.setRoi(x, y, w, h);
