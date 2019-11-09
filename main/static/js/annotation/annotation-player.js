@@ -292,7 +292,7 @@ class AnnotationPlayer extends TatorElement {
 
   goToFrame(frame) {
     this._video.onPlay();
-    this._video.gotoFrame(frame);
+    return this._video.gotoFrame(frame);
   }
 
   selectNone() {
