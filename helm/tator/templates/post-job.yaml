@@ -1,0 +1,9 @@
+
+{{- $makeMigrationsSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-migrations" "app" "make-migrations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"makemigrations\"]" "hookWeight" "0" }}
+{{ include "postjob.template" $makeMigrationsSettings }}
+---
+{{- $migrateSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "migrate" "app" "migrate" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"migrate\"]" "hookWeight" "1" }}
+{{ include "postjob.template" $migrateSettings }}
+---
+{{- $collectStaticSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "collect-static" "app" "collect-static" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"collectstatic\", \"--noinput\"]" "hookWeight" "2" }}
+{{ include "postjob.template" $collectStaticSettings }}
