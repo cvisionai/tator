@@ -352,6 +352,7 @@ mrclean:
 clean:
 	kubectl delete deployment.apps --all
 	kubectl delete statefulsets --all
+	kubectl delete daemonsets --all
 	kubectl delete jobs --all
 	kubectl delete pods --all
 	kubectl delete svc --all
