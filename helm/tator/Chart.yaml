@@ -8,6 +8,11 @@ home: https://github.com/cvisionai/tator
 sources:
   - https://github.com/cvisionai/tator
 dependencies:
+  - name: metrics-server
+    version: 3.2.6
+    repository: https://charts.bitnami.com/bitnami
+    condition: metrics-server.enabled
+    namespace: kube-system
   - name: metallb
     version: 0.8.1
     repository: https://kubernetes-charts.storage.googleapis.com
