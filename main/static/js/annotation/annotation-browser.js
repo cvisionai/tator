@@ -115,7 +115,14 @@ class AnnotationBrowser extends TatorElement {
   selectEntity(obj) {
     const typeId = obj.meta;
     this._openForTypeId(typeId);
-    this._entityPanels[typeId].selectEntity(obj);
+    if (typeId in this._entityPanels)
+    {
+      this._entityPanels[typeId].selectEntity(obj);
+    }
+    else
+    {
+      console.warn("No entity browser for object.");
+    }
   }
 }
 
