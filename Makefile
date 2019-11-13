@@ -114,6 +114,7 @@ cluster-upgrade: main/version.py production_check tator-image
 	helm upgrade --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
+	kubectl delete apiservice v1beta1.metrics.k8s.io
 	kubectl delete all --namespace kubernetes-dashboard --all
 	helm uninstall tator
 
