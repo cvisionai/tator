@@ -17,10 +17,10 @@ redis:
   usePassword: false
 metrics-server:
   enabled: true
-  extraArgs:
-    v: 2
-    kubelet-insecure-tls: true
-    kubelet-preferred-address-types: InternalIP
+  args:
+    - --v=2
+    - --kubelet-insecure-tls=true
+    - --kubelet-preferred-address-types=InternalIP
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis
