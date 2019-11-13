@@ -305,8 +305,8 @@ class AnnotationPage extends TatorPage {
               } else {
                 frame = parseInt(evt.detail.data.association.frame);
               }
-              // Only jump to a frame if it is known.
-              if (frame)
+              // Only jump to a frame if it is known
+              if (frame != undefined)
               {
                 canvas.goToFrame(frame);
               }
@@ -314,6 +314,7 @@ class AnnotationPage extends TatorPage {
             if (evt.detail.dataType.isLocalization) {
               canvas.selectLocalization(evt.detail.data);
             } else if (evt.detail.dataType.isTrack) {
+              // select track takes care of frame jump
               canvas.selectTrack(evt.detail.data);
             }
           }
