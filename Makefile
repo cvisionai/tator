@@ -43,6 +43,9 @@ endif
 production_check:
 	chmod +x scripts/production_check.sh
 	@./scripts/production_check.sh
+ifeq ($(DOCKERHUB_USER),)
+	$(error Must set 'DOCKERHUB_USER' env variable)
+endif
 
 # Global reset:
 reset:
