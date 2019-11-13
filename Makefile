@@ -104,6 +104,7 @@ status:
 .ONESHELL:
 
 cluster: valid_secrets main/version.py production_check
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	$(MAKE) tator-image images cluster-deps cluster-install
 
 cluster-deps:
@@ -116,7 +117,12 @@ cluster-upgrade: main/version.py production_check tator-image
 	helm upgrade --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
+	kubectl delete apiservice v1beta1.metrics.k8s.io
+	kubectl delete all --namespace kubernetes-dashboard --all
 	helm uninstall tator
+
+dashboard-token:
+	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 externals/build_tools/%.sh:
 	@echo "Downloading submodule"
@@ -355,6 +361,7 @@ mrclean:
 clean:
 	kubectl delete deployment.apps --all
 	kubectl delete statefulsets --all
+	kubectl delete daemonsets --all
 	kubectl delete jobs --all
 	kubectl delete pods --all
 	kubectl delete svc --all

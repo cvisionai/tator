@@ -15,6 +15,12 @@ redis:
     persistence:
       enabled: false
   usePassword: false
+metrics-server:
+  enabled: true
+  args:
+    - --v=2
+    - --kubelet-insecure-tls=true
+    - --kubelet-preferred-address-types=InternalIP
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis
