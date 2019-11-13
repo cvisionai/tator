@@ -56,7 +56,7 @@ class CanvasDrag
     this._event={start : {}, current: {}}
     var scale = this._scaleFn();
     document.addEventListener("mouseup", this._mouseUpBound);
-    this._canvas.addEventListener("mousemove", this._mouseMoveBound);
+    document.addEventListener("mousemove", this._mouseMoveBound);
     this._event.start.x = event.offsetX*scale[0];
     this._event.start.y = event.offsetY*scale[1];
     this._event.current.x = this._event.start.x;
@@ -72,8 +72,10 @@ class CanvasDrag
     }
     var now = Date.now();
     var scale = this._scaleFn();
-    var x = event.offsetX*scale[0];
-    var y = event.offsetY*scale[1];
+    var x = Math.min((event.pageX-this._canvas.offsetLeft),
+                     this._canvas.offsetWidth)*scale[0]
+    var y = Math.min((event.pageY-this._canvas.offsetTop),
+                     this._canvas.offsetHeight)*scale[1];
     if (this._event.current != undefined)
     {
       if (now - this._event.current.time < this.dragLimiter)
@@ -107,7 +109,7 @@ class CanvasDrag
     this._event.end = {};
     var scale = this._scaleFn();
     document.removeEventListener("mouseup", this._mouseUpBound);
-    this._canvas.removeEventListener("mousemove", this._mouseMoveBound);
+    document.removeEventListener("mousemove", this._mouseMoveBound);
     // If the event ended off canvas; use the last known good coordinate
     if (event.path[0] == this._canvas)
     {
