@@ -12,6 +12,7 @@ from asgiref.sync import async_to_sync
 from kubernetes import client as kube_client
 from kubernetes import config as kube_config
 
+from main.util import waitForMigrations
 from main.models import Job
 from main.models import JobStatus
 from main.models import JobChannel
@@ -104,6 +105,9 @@ class Command(BaseCommand):
 
         # Make a dict to store pod names by job type.
         pod_names = defaultdict(list)
+
+        # Wait for migrations
+        waitForMigrations()
 
         while True:
 

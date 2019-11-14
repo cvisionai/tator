@@ -9,6 +9,7 @@ from collections import defaultdict
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
+from main.util import waitForMigrations
 from main.models import Project
 from main.consumers import ProgressProducer
 
@@ -39,6 +40,8 @@ class Command(BaseCommand):
 
         # Max time with no updates.
         max_time = datetime.timedelta(seconds=30)
+
+        waitForMigrations()
 
         while True:
             for project in Project.objects.all():
