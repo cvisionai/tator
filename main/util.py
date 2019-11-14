@@ -1,6 +1,7 @@
 from main.models import *
 import logging
 import os
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -241,3 +242,13 @@ def moveToProjectDirectories(project_number):
 
 
         print(f"Videos: {idx}/{count}")
+
+def waitForMigrations():
+    """Sleeps until database objects can be accessed.
+    """
+    while True:
+        try:
+            list(Project.objects.all())
+            break
+        except:
+            time.sleep(10)
