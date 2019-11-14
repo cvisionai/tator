@@ -104,13 +104,13 @@ status:
 .ONESHELL:
 
 cluster: valid_secrets main/version.py production_check
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	$(MAKE) tator-image images cluster-deps cluster-install
 
 cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade: main/version.py production_check tator-image 
