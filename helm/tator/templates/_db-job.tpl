@@ -40,7 +40,7 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: TATOR_SECRET_POSTGRES_USER
-            - name: POSTGRES_PASSWORD
+            - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tator-secrets
