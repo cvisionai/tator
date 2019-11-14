@@ -2,7 +2,7 @@
 {{- $makeInitSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-init-py" "app" "make-init-py" "selector" "webServer: \"yes\"" "command" "[touch]" "args" "[\"/tator_online/main/migrations/__init__.py\"]" "hookWeight" "-1" "hook" "post-install" }}
 {{ include "postjob.template" $makeInitSettings }}
 ---
-{{- $makeLTreeSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-ltree-extension" "app" "make-ltree-extension" "selector" "dbServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"django\", \"-d\", \"tator_online\", \"-c\", \"'CREATE EXTENSION LTREE';\"]" "hookWeight" "-1" "hook" "post-install" }}
+{{- $makeLTreeSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-ltree-extension" "app" "make-ltree-extension" "selector" "dbServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"$(POSTGRES_USER)\", \"-h\", \"postgis-svc\", \"-p\", \"5432\", \"-d\", \"tator_online\", \"-c\", \"CREATE EXTENSION LTREE;\"]" "hookWeight" "-1" "hook" "post-install" }}
 {{ include "dbjob.template" $makeLTreeSettings }}
 ---
 {{- $makeMigrationsSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-migrations" "app" "make-migrations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"makemigrations\"]" "hookWeight" "0" "hook" "post-install,post-upgrade" }}
