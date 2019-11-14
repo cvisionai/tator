@@ -45,25 +45,4 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: TATOR_SECRET_POSTGRES_PASSWORD
-            - name: POSTGRES_DB
-              value: tator_online
-            - name: PGDATA
-              value: /var/lib/postgresql/data/db-files
-          volumeMounts:
-            - mountPath: /var/lib/postgresql/data
-              name: postgis-pv-claim
-            - mountPath: /backup
-              name: backup-pv-claim
-            - mountPath: /dev/shm
-              name: sharedmem
-      volumes:
-        - name: postgis-pv-claim
-          persistentVolumeClaim:
-            claimName: postgis-pv-claim
-        - name: backup-pv-claim
-          persistentVolumeClaim:
-            claimName: backup-pv-claim
-        - name: sharedmem
-          emptyDir:
-            medium: "Memory"
 {{ end }}
