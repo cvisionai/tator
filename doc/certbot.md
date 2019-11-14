@@ -48,8 +48,8 @@ sudo chmod 0755 /usr/local/bin/certbot-auto
 
 ```
 sudo apt-get install git
-git clone https://github.com/cvisionai/Tator.git
-cd Tator
+git clone https://github.com/cvisionai/tator.git
+cd tator
 ```
 
 ## Real Secrets
@@ -57,11 +57,11 @@ cd Tator
 * Copy the example secrets file to the real secrets file.
 
 ```
-cp k8s/example-secrets.yaml k8s/real-secrets.yaml
+cp doc/example-secrets.yaml real-secrets.yaml
 ```
 
-* Update TATOR_SECRET_POSTGRES_USER
-* Update TATOR_SECRET_POSTGRES_PASSWORD
-* Update TATOR_SECRET_DOCKER_USERNAME: `<your Docker username>`
-* Update TATOR_SECRET_DOCKER_PASSWORD: `<your Docker password>`
-* Copy certificate information from the generated certificate files into the real-secrets.yaml file.
+* Update `TATOR_SECRET_POSTGRES_USER`
+* Update `TATOR_SECRET_POSTGRES_PASSWORD`
+* Update `TATOR_SECRET_DOCKER_USERNAME`: `<your Docker username>`
+* Update `TATOR_SECRET_DOCKER_PASSWORD`: `<your Docker password>`
+* Copy certificate information from the generated certificate files at `/etc/letsencrypt/live/<domain>` into the real-secrets.yaml file.
