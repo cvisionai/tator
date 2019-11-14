@@ -71,6 +71,8 @@ sudo modprobe nfs
 sudo modprobe nfsd
 ```
 
+* Configure node to load modules on boot by adding `nfs` and `nfsd` to `/etc/modules`
+
 * Use the following command to create the NFS shares using the exports file, assuming the exports file is in $HOME:
 
 ```
