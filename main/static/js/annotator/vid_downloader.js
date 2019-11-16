@@ -165,4 +165,8 @@ onmessage = function(e)
   {
     ref.downloadNextSegment();
   }
+  else if (type == 'seek')
+  {
+    ref.downloadForTime(msg['time']);
+  }
 }
