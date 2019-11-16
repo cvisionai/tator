@@ -699,7 +699,8 @@ class VideoCanvas extends AnnotationCanvas {
     var time=this.frameToTime(frame);
     var video=this.videoBuffer(frame);
 
-    if (video == null)
+    // Only support seeking if we are stopped (i.e. not playing)
+    if (video == null && this._direction == Direction.STOPPED)
     {
       // Set the seek buffer, and command worker to get the seek
       // response
@@ -707,6 +708,11 @@ class VideoCanvas extends AnnotationCanvas {
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
                                   "time": time});
+    }
+    else if (video == null)
+    {
+      console.warn("Video is not loaded yet.");
+      return new Promise((f,r)=>{});
     }
 
     var promise = new Promise(
