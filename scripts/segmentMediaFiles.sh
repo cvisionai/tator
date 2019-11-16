@@ -8,6 +8,7 @@
 ## ./segmentMediaFiles.sh project7.json /media/kubernetes_share
 file=$1
 root=$2
+skip=$3
 
 count=`cat $1 | jq length`
 idx=0
@@ -28,6 +29,12 @@ while [ ${idx} -lt ${count} ]; do
     fragments=`mp4info --format json  ${root}/media/${project}/${original} | jq --raw-output .movie.fragments`
 
     if [ "${fragments}" == "false" ]; then
+
+        if [ "${skip}" == "true" ]; then
+            echo "Skipping unfragmented file"
+            continue
+        fi
+
         if [ -e ${root}/raw/${project}/${original} ]; then
             tmp_file=$(mktemp --suffix=.mp4)
             ffmpeg -y -i ${root}/raw/${project}/${original} -an -g 25 -vcodec libx264 -preset fast -pix_fmt yuv420p -movflags faststart+frag_keyframe+empty_moov+default_base_moof -vf scale=-1:720 ${tmp_file}
