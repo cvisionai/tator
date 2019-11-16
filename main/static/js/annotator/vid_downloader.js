@@ -53,7 +53,7 @@ class VideoDownloader
     }
     if (version < 2)
     {
-      console.warning("Old version of segment file doesn't support seek operation");
+      console.warn("Old version of segment file doesn't support seek operation");
       return;
     }
     var matchIdx = -1;
