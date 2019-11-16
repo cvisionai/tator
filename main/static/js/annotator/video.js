@@ -39,10 +39,6 @@
 ///
 /// Known issues/Erratta:
 ///
-/// - We currently use the "source" access of the html5 object to a URL,
-///   rather than using a MediaSource (with MSE). This simplifies the encoding
-///   requirements of the video, but doesn't allow manual control of loading
-///   the video or optomization of network traffic to/from the client.
 ///
 /// - In order for the 'seek+play' strategy to work, videos need to have
 ///   fixed size GOP (i.e. number of frames per key frame region). This
