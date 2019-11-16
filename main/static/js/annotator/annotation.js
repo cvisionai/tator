@@ -1415,10 +1415,10 @@ class AnnotationCanvas extends TatorElement
       clearTimeout(this._animator);
     }
     this.activeLocalization = null;
-    this.refresh();
     if (this._mouseMode == MouseMode.SELECT) {
       this._mouseMode = MouseMode.QUERY;
     }
+    return this.refresh();
   }
 
   selectLocalization(localization, skipAnimation, muteOthers)
@@ -1427,7 +1427,6 @@ class AnnotationCanvas extends TatorElement
     // a localization
     if (localization.frame != this.currentFrame())
     {
-      this.selectNone();
       this.gotoFrame(localization.frame).then(() => {
         this.selectLocalization(localization, skipAnimation, muteOthers);
       });
