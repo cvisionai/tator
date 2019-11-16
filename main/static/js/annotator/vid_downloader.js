@@ -40,6 +40,56 @@ class VideoDownloader
     }
   }
 
+  downloadForTime(timeInSeconds)
+  {
+    var matchIdx = 0;
+    for (var idx = 0; idx < this._numPackets; idx++)
+    {
+      if (this._info["segments"]['name'] == 'moof')
+      {
+        var decode_time = parseInt(this._info["segments"][idx]["decode_time"]);
+        if (decode_time > timeInSeconds * 1000)
+        {
+          // Found the packet after which we seek
+          // moof / mdat / moof / mdat(HERE)
+          matchIdx = idx - 2
+        }
+      }
+    }
+    // No match
+    if (idx == this._numPackets)
+    {
+      console.warning(`Couldn't fetch video for ${time}`)
+      return;
+    }
+
+    matchIdx = Math.min(0,matchIdx);
+
+    const moof_packet = this._info["segments"][matchIdx];
+    const mdat_packet = this._info["segments"][matchIdx+1];
+    var startByte = parseInt(moof_packet["offset"]);
+    var offset = parseInt(moof_packet["size"]) + parseInt(moof_packet["size"]);
+
+    fetch(this._url,
+          {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
+         ).then(
+           function(response)
+           {
+             response.arrayBuffer().then(
+               function(buffer)
+               {
+                 // Transfer the buffer to the
+                 var data={"type": "seek_result",
+                           "pts_start": 0,
+                           "pts_end": 0,
+                           "offsets": offsets,
+                           "buffer": buffer};
+                 postMessage(data, [data.buffer]);
+               });
+           });
+
+  }
+
   downloadNextSegment()
   {
     var currentSize=0;
