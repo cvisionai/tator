@@ -32,11 +32,13 @@ while [ ${idx} -lt ${count} ]; do
             tmp_file=$(mktemp --suffix=.mp4)
             ffmpeg -y -i ${root}/raw/${project}/${original} -an -g 25 -vcodec libx264 -preset fast -pix_fmt yuv420p -movflags faststart+frag_keyframe+empty_moov+default_base_moof -vf scale=-1:720 ${tmp_file}
             mv ${tmp_file} ${root}/media/${project}/${original}
+            chmod 644 ${root}/media/${project}/${original}
         else
             echo $(tput bold) $(tput setf 1) "Original not present, reencoding. " $(tput sgr0)
             tmp_file=$(mktemp --suffix=.mp4)
             ffmpeg -y -i ${root}/media/${project}/${original} -an -g 25 -vcodec libx264 -preset fast -pix_fmt yuv420p -movflags faststart+frag_keyframe+empty_moov+default_base_moof -vf scale=-1:720 ${tmp_file}
             mv ${tmp_file} ${root}/media/${project}/${original}
+            chmod 644 ${root}/media/${project}/${original}
         fi
         rm -f ${root}/media/${info_name}
     else
