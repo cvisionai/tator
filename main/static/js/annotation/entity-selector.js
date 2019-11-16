@@ -209,7 +209,7 @@ class EntitySelector extends TatorElement {
     const current = parseInt(this._current.textContent);
     this._slider.max = data.length - 1;
     if (haveData && (current == 0)) {
-      this._current.textContent = "1";
+      this._current.textContent = "0";
       this._slider.value = 0;
     }
     if (haveData && (current > data.length)) {
@@ -232,7 +232,8 @@ class EntitySelector extends TatorElement {
   }
 
   _emitSelection(byUser, composed) {
-    const index = parseInt(this._current.textContent) - 1;
+    var index = parseInt(this._current.textContent) - 1;
+    index = Math.max(index, 0);
     this.dispatchEvent(new CustomEvent("select", {
       detail: {
         data: this._data[index],
