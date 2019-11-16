@@ -5,6 +5,8 @@ import json
 import sys
 import subprocess
 
+FRAGMENT_VERSION=2
+
 if __name__=="__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument("input", help="MP4 File", type=str);
@@ -34,13 +36,24 @@ if __name__=="__main__":
         outputFile=open(args.output, "w")
 
     currentOffset=0
-    info={"file": {"start": start_time}, "segments" : []}
+    currentFrame=0
+    info={"file": {"start": start_time, "version": FRAGMENT_VERSION}, "segments" : []}
     with open(args.input) as fp:
         obj=json.loads(mp4_data)
-        for block in obj:
-            block={"name": block['name'],
+        for data in obj:
+            block={"name": data['name'],
                    "offset": currentOffset,
-                   "size": block['size']}
+                   "size": data['size']}
+
+            # Add time offset for moof blocks
+            if block['name'] == 'moof':
+                for child in data['children']:
+                    if child['name'] == 'traf':
+                        for grandchild in child['children']:
+                            if grandchild['name'] == 'trun':
+                                block['frame_start'] = currentFrame
+                                block['frame_samples'] = grandchild['sample count']
+                                currentFrame += grandchild['sample count']
             info['segments'].append(block)
             
             currentOffset+=block['size']

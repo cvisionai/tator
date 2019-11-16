@@ -1423,6 +1423,17 @@ class AnnotationCanvas extends TatorElement
 
   selectLocalization(localization, skipAnimation, muteOthers)
   {
+    // Seek to a frame if we aren't actually there but trying to display
+    // a localization
+    if (localization.frame != this.currentFrame())
+    {
+      this.selectNone();
+      this.gotoFrame(localization.frame).then(() => {
+        this.selectLocalization(localization, skipAnimation, muteOthers);
+      });
+      return;
+    }
+
     var that = this;
     // Always go to select from query
     if ((this._mouseMode != MouseMode.PAN) && (this._mouseMode != MouseMode.ZOOM_ROI))

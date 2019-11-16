@@ -40,10 +40,79 @@ class VideoDownloader
     }
   }
 
+  downloadForFrame(frame, time)
+  {
+    var version = 1;
+    try
+    {
+      version = this._info["file"]["version"];
+    }
+    catch(error)
+    {
+
+    }
+    if (version < 2)
+    {
+      console.warning("Old version of segment file doesn't support seek operation");
+      return;
+    }
+    var matchIdx = -1;
+    for (var idx = 0; idx < this._numPackets; idx++)
+    {
+      if (this._info["segments"][idx]["name"] == "moof")
+      {
+        var frame_start = parseInt(this._info["segments"][idx]["frame_start"]);
+        var frame_samples = parseInt(this._info["segments"][idx]["frame_samples"]);
+        if (frame >= frame_start && frame < frame_start+frame_samples)
+        {
+          // Found the packet after which we seek
+          matchIdx = idx;
+          break;
+        }
+      }
+    }
+    // No match
+    if (matchIdx == -1)
+    {
+      console.warning(`Couldn't fetch video for ${time}`)
+      return;
+    }
+
+    const moof_packet = this._info["segments"][matchIdx];
+    const mdat_packet = this._info["segments"][matchIdx+1];
+    var startByte = parseInt(moof_packet["offset"]);
+    var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
+
+    fetch(this._url,
+          {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
+         ).then(
+           function(response)
+           {
+             response.arrayBuffer().then(
+               function(buffer)
+               {
+                 // Transfer the buffer to the
+                 var data={"type": "seek_result",
+                           "time": time,
+                           "buffer": buffer};
+                 postMessage(data, [data.buffer]);
+               });
+           });
+
+  }
+
   downloadNextSegment()
   {
     var currentSize=0;
     var idx = this._currentPacket;
+
+    // Temp code one can use to force network seeking
+    //if (idx > 0)
+    // {
+    //  console.log("Force seeking to test it out");
+    //  postMessage({"type": "finished"});
+    //  return;
+    // }
 
     if (idx >= this._numPackets)
     {
@@ -114,5 +183,9 @@ onmessage = function(e)
   else if (type == 'download')
   {
     ref.downloadNextSegment();
+  }
+  else if (type == 'seek')
+  {
+    ref.downloadForFrame(msg['frame'], msg['time']);
   }
 }
