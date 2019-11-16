@@ -51,7 +51,7 @@ class VideoDownloader
     {
 
     }
-    if (version < 2)
+    if (version < 2 || version == undefined)
     {
       console.warn("Old version of segment file doesn't support seek operation");
       return;
@@ -74,7 +74,7 @@ class VideoDownloader
     // No match
     if (matchIdx == -1)
     {
-      console.warning(`Couldn't fetch video for ${time}`)
+      console.warn(`Couldn't fetch video for ${time}`)
       return;
     }
 
