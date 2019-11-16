@@ -83,6 +83,7 @@ class VideoBufferDemux
     }
     this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
+    this._seekBuffer = document.createElement("VIDEO");
     this._inUse=[];
     this._full=[];
     this._mediaSources=[];
@@ -112,6 +113,16 @@ class VideoBufferDemux
       this._vidBuffers[idx].src=URL.createObjectURL(this._mediaSources[idx]);
       ms.onsourceopen=makeSourceBuffer.bind({"idx": idx, "ms": ms});
     }
+  }
+
+  setUrl(videoUrl)
+  {
+    // The seek buffer doesn't aim to support scrubbing just quick access to a
+    // certain point in a video. TODO: Make this the lowest res source when
+    // possible for efficiency.
+    this._seekBuffer.preload = 'none';
+    this._seekBuffer.src=videoUrl;
+    this._seekBuffer.load();
   }
 
   status()
@@ -173,8 +184,9 @@ class VideoBufferDemux
       }
     }
 
-    // Return null if we get this far
-    return null;
+    // Return the seek buffer if we get this far
+    console.info("Returning Seek Buffer");
+    return this._seekBuffer;
   }
 
   currentIdx()
@@ -496,6 +508,7 @@ class VideoCanvas extends AnnotationCanvas {
     this.resetRoi();
 
     var promise = this._videoElement.loadedDataPromise(this);
+    this._videoElement.setUrl(videoUrl);
     this.startDownload(videoUrl);
     if (fps > guiFPS)
     {
@@ -655,6 +668,25 @@ class VideoCanvas extends AnnotationCanvas {
       console.info("Video is not loaded yet");
       return new Promise((resolve,reject) => {});
     }
+
+    var promise = new Promise(
+      function(resolve,reject)
+	    {
+	      // Because we are using off-screen rendering we need to defer
+	      // updating the canvas until the video/frame is actually ready, we do this
+	      // by waiting for a signal off the video + then scheduling an animation frame.
+	      video.oncanplay=function()
+	      {
+	        // Don't do anything busy in the canplay interrupt as it holds up the GUI
+	        // rasterizer.
+	        // Need to bind the member function to the result handler
+	        callback=callback.bind(that);
+	        callback(frame, video, that._dims[0], that._dims[1])
+	        resolve();
+	        video.oncanplay=null;
+	      };
+	    });
+
     if (time <= video.duration)
 	  {
 	    video.currentTime=time;
@@ -674,23 +706,6 @@ class VideoCanvas extends AnnotationCanvas {
 	    video.currentTime=0;
 	  }
 
-    var promise = new Promise(
-      function(resolve,reject)
-	    {
-	      // Because we are using off-screen rendering we need to defer
-	      // updating the canvas until the video/frame is actually ready, we do this
-	      // by waiting for a signal off the video + then scheduling an animation frame.
-	      video.oncanplay=function()
-	      {
-	        // Don't do anything busy in the canplay interrupt as it holds up the GUI
-	        // rasterizer.
-	        // Need to bind the member function to the result handler
-	        callback=callback.bind(that);
-	        callback(frame, video, that._dims[0], that._dims[1])
-	        resolve();
-	        video.oncanplay=null;
-	      };
-	    });
 	  return promise;
   }
 
