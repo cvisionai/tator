@@ -36,6 +36,7 @@ if __name__=="__main__":
         outputFile=open(args.output, "w")
 
     currentOffset=0
+    currentFrame=0
     info={"file": {"start": start_time, "version": FRAGMENT_VERSION}, "segments" : []}
     with open(args.input) as fp:
         obj=json.loads(mp4_data)
@@ -49,8 +50,10 @@ if __name__=="__main__":
                 for child in data['children']:
                     if child['name'] == 'traf':
                         for grandchild in child['children']:
-                            if grandchild['name'] == 'tfdt':
-                                block['decode_time'] = grandchild['base media decode time']
+                            if grandchild['name'] == 'trun':
+                                block['frame_start'] = currentFrame
+                                block['frame_samples'] = grandchild['sample count']
+                                currentFrame += grandchild['sample count']
             info['segments'].append(block)
             
             currentOffset+=block['size']
