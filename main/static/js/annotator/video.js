@@ -79,7 +79,6 @@ class VideoBufferDemux
     }
     this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
-    this._seekBuffer = document.createElement("VIDEO");
     this._inUse=[];
     this._full=[];
     this._mediaSources=[];
@@ -87,6 +86,19 @@ class VideoBufferDemux
     this._compat = false;
     this._activeBuffers = 0;
 
+    // Video, source, and buffer for seek track
+    this._seekVideo = document.createElement("VIDEO");
+    this._seekBuffer = null;
+    this._seekSource = new MediaSource();
+
+    var mime_str='video/mp4; codecs="avc1.64001e"';
+
+    this._seekSource.onsourceopen=() => {
+      this._seekSource.onsourceopen = null;
+      this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
+    };
+
+    this._seekVideo.src = URL.createObjectURL(this._seekSource);
     var makeSourceBuffer = function(idx, event)
     {
       var args=this;
@@ -94,7 +106,6 @@ class VideoBufferDemux
       var idx = args["idx"];
       ms.onsourceopen=null;
       // Need to add a source buffer for the video.
-      var mime_str='video/mp4; codecs="avc1.64001e"';
       that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
     }
     var that = this;
@@ -109,16 +120,6 @@ class VideoBufferDemux
       this._vidBuffers[idx].src=URL.createObjectURL(this._mediaSources[idx]);
       ms.onsourceopen=makeSourceBuffer.bind({"idx": idx, "ms": ms});
     }
-  }
-
-  setUrl(videoUrl)
-  {
-    // The seek buffer doesn't aim to support scrubbing just quick access to a
-    // certain point in a video. TODO: Make this the lowest res source when
-    // possible for efficiency.
-    this._seekBuffer.preload = 'none';
-    this._seekBuffer.src=videoUrl;
-    this._seekBuffer.load();
   }
 
   status()
@@ -144,6 +145,21 @@ class VideoBufferDemux
         console.info("\tEmpty");
       }
 
+    }
+
+    console.info("Seek Buffer:")
+    var ranges=this._seekBuffer.buffered;
+    if (ranges.length > 0)
+    {
+      console.info("\tRanges:");
+      for (var rIdx = 0; rIdx < ranges.length; rIdx++)
+      {
+        console.info(`\t\t${rIdx}: ${ranges.start(rIdx)}:${ranges.end(rIdx)}`);
+      }
+    }
+    else
+    {
+      console.info("\tEmpty");
     }
   }
 
@@ -180,9 +196,12 @@ class VideoBufferDemux
       }
     }
 
-    // Return the seek buffer if we get this far
-    console.info("Returning Seek Buffer");
-    return this._seekBuffer;
+    return null;
+  }
+
+  seekBuffer()
+  {
+    return this._seekVideo;
   }
 
   currentIdx()
@@ -249,6 +268,17 @@ class VideoBufferDemux
         }
       });
     return promise;
+  }
+
+  appendSeekBuffer(data, time)
+  {
+    this._seekBuffer.onupdateend = () => {
+      // Seek to the time requested now that it is loaded
+      this._seekBuffer.onupdateend = null;
+      this._seekVideo.currentTime = time;
+    };
+    this._seekBuffer.appendBuffer(data);
+    console.info("Loaded seek buffer");
   }
 
   appendLatestBuffer(data, callback)
@@ -329,16 +359,23 @@ class VideoBufferDemux
         callback();
       }
     }
-    for (var idx = 0; idx < this._numBuffers; idx++)
-    {
-      this._sourceBuffers[idx].onupdateend=function()
+
+    // Update the seek buffer first; then the rest
+    this._seekBuffer.onupdateend=() =>
       {
-        this.onupdateend=null;
-        wrapper();
+        this._seekBuffer.onupdateend = null;
+        for (var idx = 0; idx < this._numBuffers; idx++)
+        {
+          this._sourceBuffers[idx].onupdateend=function()
+          {
+            this.onupdateend=null;
+            wrapper();
+          }
+          this._sourceBuffers[idx].appendBuffer(data);
+          this._inUse[idx] += data.byteLength;
+        }
       }
-      this._sourceBuffers[idx].appendBuffer(data);
-      this._inUse[idx] += data.byteLength;
-    }
+    this._seekBuffer.appendBuffer(data);
   }
 }
 class VideoCanvas extends AnnotationCanvas {
@@ -356,7 +393,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     this._playCb = [this.onPlay.bind(this)];
     this._pauseCb = [this.onPause.bind(this)];
-    
+
     // This flag is used to force a vertex reload
     this._dirty = true;
 
@@ -387,7 +424,11 @@ class VideoCanvas extends AnnotationCanvas {
       if (type == "finished")
       {
         console.info("Stopping download worker.");
-        that._dlWorker.terminate();
+        //that._dlWorker.terminate();
+      }
+      else if (type =="seek_result")
+      {
+        that._videoElement.appendSeekBuffer(e.data["buffer"], e.data['time']);
       }
       else if (type =="buffer")
       {
@@ -504,7 +545,6 @@ class VideoCanvas extends AnnotationCanvas {
     this.resetRoi();
 
     var promise = this._videoElement.loadedDataPromise(this);
-    this._videoElement.setUrl(videoUrl);
     this.startDownload(videoUrl);
     if (fps > guiFPS)
     {
@@ -661,8 +701,12 @@ class VideoCanvas extends AnnotationCanvas {
 
     if (video == null)
     {
-      console.info("Video is not loaded yet");
-      return new Promise((resolve,reject) => {});
+      // Set the seek buffer, and command worker to get the seek
+      // response
+      video = this._videoElement.seekBuffer();
+      that._dlWorker.postMessage({"type": "seek",
+                                  "frame": frame,
+                                  "time": time});
     }
 
     var promise = new Promise(
@@ -683,10 +727,9 @@ class VideoCanvas extends AnnotationCanvas {
 	      };
 	    });
 
-    if (time <= video.duration)
-	  {
+    if (time <= video.duration || isNaN(video.duration))
+    {
 	    video.currentTime=time;
-
 	  }
 	  else if (time > video.duration)
 	  {
@@ -730,7 +773,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  {
 	    return;
 	  }
-    
+
     var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame);
     promise.then(()=>
                  {this._pauseCb.forEach(cb => {cb(frameIdx);});}
