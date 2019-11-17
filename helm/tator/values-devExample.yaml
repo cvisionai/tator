@@ -30,6 +30,10 @@ filebeat:
   enabled: true
 kibana:
   enabled: true
+  kibanaConfig:
+    kibana.yml: |
+      server:
+        basePath: /logs
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis

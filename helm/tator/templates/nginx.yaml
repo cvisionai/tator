@@ -121,6 +121,19 @@ data:
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Host $server_name;
         }
+{{ if .Values.kibana.enabled }}
+        location /logs/ {
+          proxy_pass http://tator-kibana:{{ .Values.kibana.httpPort }}/;
+          proxy_redirect off;
+          proxy_buffering off;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host $host;
+          proxy_set_header Connection "Keep-Alive";
+          proxy_set_header Proxy-Connection "Keep-Alive";
+        }
+{{ end }}
         location / {
           # Allow for big REST responses.
           proxy_connect_timeout 600;
