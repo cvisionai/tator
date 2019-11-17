@@ -495,9 +495,6 @@ class TreeLeaf(EntityBase):
         pathStr=self.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
         if self.parent:
             pathStr=self.parent.computePath()+"."+pathStr
-        elif self.project:
-            projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
-            pathStr=projName+"."+pathStr
         return pathStr
 
 @receiver(post_save, sender=TreeLeaf)
