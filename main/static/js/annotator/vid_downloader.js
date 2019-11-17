@@ -1,3 +1,4 @@
+importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
@@ -83,7 +84,7 @@ class VideoDownloader
     var startByte = parseInt(moof_packet["offset"]);
     var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
 
-    fetch(this._url,
+    fetchRetry(this._url,
           {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
          ).then(
            function(response)
@@ -148,7 +149,7 @@ class VideoDownloader
     this._currentPacket = idx;
     var percent_complete=idx/this._numPackets;
 
-    fetch(this._url,
+    fetchRetry(this._url,
           {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
          ).then(
            function(response)
