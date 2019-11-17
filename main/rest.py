@@ -1662,7 +1662,7 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
             parent=reqObject.get("parent", None)
             name=reqObject.get("name", None)
             attr=reqObject.get("attributes", None)
-            project=kwargs['project']
+            project=Project.objects.get(pk=kwargs['project'])
 
             if name is None:
                 raise Exception('Missing required field in request Object "name", got={}'.format(reqObject))
