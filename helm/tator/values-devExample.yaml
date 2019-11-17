@@ -21,6 +21,11 @@ metrics-server:
     - --v=2
     - --kubelet-insecure-tls=true
     - --kubelet-preferred-address-types=InternalIP
+elasticsearch:
+  enabled: true
+  persistence:
+    enabled: false
+  replicas: 1
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis
