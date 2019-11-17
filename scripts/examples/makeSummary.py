@@ -22,8 +22,9 @@ def processSection(tator, col_names, section, types_of_interest, medias):
     base_url = tator.baseURL()
     for media in bar(medias):
         media_id = media['id']
-        width=media['width']
-        height=media['height']
+        media_detail = tator.Media.get(media_id)
+        width=media_detail['width']
+        height=media_detail['height']
         for typeObj in types_of_interest:
             type_id=typeObj['type']['id']
             type_desc=typeObj['type']['dtype']
