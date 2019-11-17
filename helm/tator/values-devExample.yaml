@@ -26,6 +26,10 @@ elasticsearch:
   persistence:
     enabled: false
   replicas: 1
+filebeat:
+  enabled: true
+kibana:
+  enabled: true
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis

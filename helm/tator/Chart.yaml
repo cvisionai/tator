@@ -24,6 +24,14 @@ dependencies:
     version: 7.4.1
     repository: https://helm.elastic.co
     condition: elasticsearch.enabled
+  - name: filebeat
+    version: 7.4.1
+    repository: https://helm.elastic.co
+    condition: filebeat.enabled
+  - name: kibana
+    version: 7.4.1
+    repository: https://helm.elastic.co
+    condition: kibana.enabled
 maintainers:
   - name: CVision AI
     email: info@cvisionai.com
