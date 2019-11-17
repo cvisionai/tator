@@ -52,20 +52,23 @@ if __name__=="__main__":
 
     data.to_csv(output_name, index=False)
     sectionEncoded=args.section.replace(' ','+')
-    url="https://cvision.tatorapp.com/4/annotation/{}?attribute=tator_user_sections%3A%3A{}"
+    url="https://cvision.tatorapp.com/{}/annotation/{}?attribute=tator_user_sections%3A%3A{}"
     section_filter=f"tator_user_sections::{args.section}"
     medias=tator.Media.filter({"attribute": section_filter})
     bar = progressbar.ProgressBar(redirect_stdout=True)
     for media in bar(medias):
         datum={'Section': args.section,
                'File': media['name'],
-               'URL': url.format(media['id'], sectionEncoded)}
+               'URL': url.format(args.project, media['id'], sectionEncoded)}
 
         detail = media_types[media['meta']]
         if detail['columns']:
             for attr in detail['columns']:
                 attr_name=attr['name']
-                datum.update({attr_name : media['attributes'][attr_name]})
+                try:
+                    datum.update({attr_name : media['attributes'][attr_name]})
+                except:
+                    datum.update({attr_name : None})
 
 
         for stateType in state_types:
