@@ -17,7 +17,6 @@ while [ ${idx} -lt ${count} ]; do
     original=`cat $1 | jq --raw-output .[${idx}].url`
     project=`cat $1 | jq --raw-output .[${idx}].project`
     original=`basename ${original}`
-    type=`cat $1 | jq --raw-output .[${idx}].resourcetype`
 
     echo "processing ${original} "
     info_name="${original%.mp4}_segments.json"
