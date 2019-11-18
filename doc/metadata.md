@@ -37,21 +37,49 @@ For videos, do the following:
 
 * Go to the admin console `<your-domain>/admin`.
 * Click the `+ Add` button next to `Entity type media videos`.
-* Select the project, specify a name for the video type, check the `Uploadable` box, and set the file format to the dashed line (null). This will allow most image formats to be uploaded.
+* Select the project, specify a name for the video type, check the `Uploadable` box, and set the file format to the dashed line (null). This will allow most video formats to be uploaded.
 * Click `Save`.
 
 Now you can return to the projects view `<your-domain>/projects`, click on your project, and start uploading media via either the `Upload` button or the `+ New Section` drag and drop interface. Recursive directory uploads are only possible via the drag and drop interface.
 
+Note that currently the front-end only supports at most one image type and one video type per project.
 
+## Defining media metadata
 
-In image classification the goal is to label an image according to its contents. To configure such a project:
+Media metadata consists of attributes that are applied to a file (video or image). For example, suppose we wish to do image classification. We could set up a project for this by creating a string attribute type:
 
+* Go to the admin console `<your-domain>/admin`.
 * Click the `+ Add` button next to `Attribute type strings`.
 * Specify a name for the attribute (such as "Class"), select the image type that was just created for `Applies to`, select the `Project`. If you had multiple attribute types that applied to the same entity type, you could specify the order that they appear in the front end with the `Order` field.
 * Click `Save`.
 
-Now if you return to the project detail view, you will be able to upload images. Clicking on one of the images will display a class field that can be used to label the image.
+Now if you return to the project detail view, clicking on one of the images will display a class field that can be used to label the image. Again, strings are just one of seven possible attribute types, and you can define multiple attribute types with the same data type.
 
-## Example: Object detection
+## Defining localization types and localization metadata
 
-Object detection
+Before you can draw boxes/lines/points on media, you will need to define at least one localization type (`EntityTypeLocalizationBox`, `EntityTypeLocalizationLine`, or `EntityTypeLocalizationDot`, respectively). For example, suppose we wish to do object detection. We could set up a project for this by defining a box localization type, then creating a string attribute type associated with those boxes:
+
+* Go to the admin console `<your-domain>/admin`.
+* Click the `+ Add` button next to `Entity type localization boxs`.
+* Select the `Project`, give the box type a name, and select the `Media` type for which these boxes can be drawn. Other settings can be left alone. If desired, set a default value.
+* Click `Save`.
+* Click the `+ Add` button next to `Attribute type strings`.
+* Specify a name for the attribute and select the box type that was just created for `Applies to`.
+* Click `Save`.
+
+Now if you return to the project detail view and click on an image, you will see that the box tool that was previously disabled is now enabled. Click the box tool and draw a box on your image by click and dragging. A dialog will appear asking you to fill in metadata about the box.
+
+If you need to draw multiple boxes per image with the same metadata, you can `Shift-Click` the box tool, or use the shortcut `Shift-B`. The same capability applies for line and point annotations.
+
+Note that you can also define localization types for videos. In these cases, the boxes are drawn on individual video frames.
+
+## Defining state types and state metadata
+
+Suppose we have a need to track an object that persists through multiple video frames, such as a person walking through the field of view. In another case, suppose our video data has geoposition data attached to it, and we wish to include this in Tator. Time varying information such as these can be captured by defining a `EntityTypeState`:
+
+* Go to the admin console `<your-domain>/admin`.
+* Click the `+ Add` button next to `Entity type states`.
+* Select the `Project`, give the state type a name, and select the `Media` type for which these states can exist. Select the association type for this state, namely `Relates to on or more media items` if the state applies to a series of files, `Relates to a specific frame in a video` if the state applies globally to video frames (such as temperature, geoposition, etc.), or `Relates to localization(s)` if the state represents a conventional track. `Interpolation should be left as `None` except for frame associated states, in which case `Latest` may be appropriate.
+* Click `Save`.
+
+Like localization and media types, state types typically need attribute types to be defined for them to be useful; this can be accomplished similarly to previous steps. Because it is often impractical to create and label states with a large amount of associated frames or localizations by hand, it is currently only possible to create states via the Tator REST API (`<your-domain>/rest`). Once a state object has been created, however, users can view and interact with state attribute values.
