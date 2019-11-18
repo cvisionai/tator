@@ -53,11 +53,6 @@ class AttributePanel extends TatorElement {
     });
     for (const column of sorted) {
       let widget;
-      // Hide attributes that are less than 0
-      if (column.order < 0)
-      {
-        continue;
-      }
 
       if (column.dtype == "bool") {
         widget = document.createElement("bool-input");
@@ -75,6 +70,12 @@ class AttributePanel extends TatorElement {
         widget.setAttribute("name", column.name);
         widget.setAttribute("type", column.dtype);
         widget.autocomplete = column.autocomplete;
+      }
+
+      // Hide attributes that are less than 0
+      if (column.order < 0)
+      {
+        widget.style.display = "none";
       }
 
       if (typeof this._permission !== "undefined") {
