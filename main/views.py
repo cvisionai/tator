@@ -146,6 +146,41 @@ class AuthProjectView(View):
 
         return HttpResponse(status=403)
 
+class AuthAdminView(View):
+    def dispatch(self, request, *args, **kwargs):
+        """ Identifies permissions for an nginx location requiring admin
+
+        User must have the is_staff flag enabled.
+        Returns 200 on OK, returns 403 on Forbidden
+        """
+        original_url = request.headers['X-Original-URI']
+
+        # For some reason, TokenAuthentication doesn't work by default
+        # So if the session authentication didn't trigger, manually check
+        # to see if a token was provided. Bail out if the user is anonymous
+        # before we get too far
+        user = request.user
+        if isinstance(user,AnonymousUser):
+            try:
+                (user,token) = TokenAuthentication().authenticate(request)
+            except Exception as e:
+                msg = "*Security Alert:* "
+                msg += f"Bad credentials presented for '{original_url}'"
+                Notify.notify_admin_msg(msg)
+                return HttpResponse(status=403)
+
+        if user.is_staff:
+            return HttpResponse(status=200)
+        else:
+            # Files that aren't in the whitelist or database are forbidden
+            msg = f"({user}/{user.id}): "
+            msg += f"Attempted to access unauthorized URL '{original_url}'"
+            msg += f"."
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
+
+        return HttpResponse(status=403)
+
 def ErrorNotifierView(request, code,message,details=None):
 
     context = {}
