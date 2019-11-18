@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: nginx
+      # Force nginx update whenever this file changes.
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
     spec:
       nodeSelector:
         webServer: "yes"
