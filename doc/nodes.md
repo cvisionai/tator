@@ -72,3 +72,4 @@ sudo apt-get install nvidia-docker2
 
 We will configure nvidia-docker as the default runtime after [setting up the docker registry](registry.md).
 
+Next step: [Set up a local docker registry](registry.md)

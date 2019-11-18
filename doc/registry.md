@@ -62,3 +62,5 @@ Each node must be configured to accept this registry as insecure.
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 ```
+
+Next step: [Set up an NFS server for storage](nfs.md)

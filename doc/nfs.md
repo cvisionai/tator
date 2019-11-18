@@ -105,3 +105,5 @@ sudo systemctl restart nfs-kernel-server
 # Database storage
 
 Database performance is dependent on high speed storage. Tator currently runs databases using a single pod with persistent storage mounted via host path rather than NFS. This means during the build phase an environment variable specifying the host path must be defined, and that the node that runs Postgres must be specified via node label. These steps are described in the kubernetes and build setup steps.
+
+Next step: [Create a Kubernetes cluster](kubernetes.md)

@@ -11,7 +11,6 @@ We recommend going through the full tutorial at least once using a single node o
 * [Set up an NFS server for storage](nfs.md)
 * [Create a Kubernetes cluster](kubernetes.md)
 * [Build Tator on the cluster](build.md)
-* [Backups and Restoring](backups.md)
 
 [duckdns]: http://www.duckdns.org/
 [letsencrypt]: https://letsencrypt.org/

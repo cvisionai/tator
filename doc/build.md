@@ -117,3 +117,5 @@ python3 manage.py createsuperuser
 The admin console is the primary means of configuring Tator users and projects. It can be accessed at the /admin URI (mydomain.duckdns.org/admin).
 
 Use the admin console to configure your user account, projects, media types, annotations, and attributes.
+
+Next steps: [Administer the deployment](doc/admin.md)

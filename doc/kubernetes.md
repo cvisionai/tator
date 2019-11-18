@@ -124,3 +124,5 @@ kubectl label nodes <node-name> dbServer=yes
 Make sure you apply labels for all nodes in the Kubernetes cluster.
 
 The Kubernetes cluster is now configured and you are ready to build Tator.
+
+Next step: [Build Tator on the cluster](build.md)

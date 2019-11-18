@@ -65,3 +65,5 @@ cp doc/example-secrets.yaml real-secrets.yaml
 * Update `TATOR_SECRET_DOCKER_USERNAME`: `<your Docker username>`
 * Update `TATOR_SECRET_DOCKER_PASSWORD`: `<your Docker password>`
 * Copy certificate information from the generated certificate files at `/etc/letsencrypt/live/<domain>` into the real-secrets.yaml file.
+
+Next step: [Prepare nodes and install Docker](nodes.md)
