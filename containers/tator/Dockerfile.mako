@@ -96,5 +96,7 @@ RUN python3 setup.py install
 # Copy over the project
 COPY . /tator_online
 WORKDIR /tator_online
+RUN rm real-secrets.yaml
+RUN rm -rf helm
 
 COPY scripts/makeFragmentInfo.py /scripts/makeFragmentInfo.py
