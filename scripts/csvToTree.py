@@ -2,7 +2,7 @@
 import argparse as argparse
 import csv
 import sys
-import tator
+import pytator
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -32,8 +32,8 @@ if __name__=="__main__":
                         required=True)
 
     args=parser.parse_args()
-    api=(args.url, args.token)
-    treeLeafService=tator.TreeLeaf(api, args.projectId)
+    tator = pytator.Tator(args.url, args.token, args.projectId)
+    treeLeafService = tator.TreeLeaf
     reader = csv.reader(open(args.input, 'r'))
 
     if treeLeafService.isPresent(args.root) == False:
