@@ -67,7 +67,7 @@ class TatorSearch:
         if isinstance(entity, EntityMediaBase):
             aux['name'] = entity.name
         if hasattr(entity, 'related_media'):
-            aux['related_media'] = entity.related_media
+            aux['related_media'] = entity.related_media.pk
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
