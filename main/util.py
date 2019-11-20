@@ -269,5 +269,20 @@ def buildSearchIndices():
     for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
         TatorSearch().create_mapping(attribute_type)
     # Create documents
+    logger.info("Building documents...")
     for entity in progressbar(list(EntityBase.objects.all())):
         TatorSearch().create_document(entity)
+
+def swapLatLon():
+    """ Swaps lat/lon stored in geoposition attributes.
+    """
+    logger.info("Building entity list...")
+    entities = []
+    for attribute_type in progressbar(list(AttributeTypeGeoposition.objects.all())):
+        entities = list(EntityBase.objects.filter(meta=attribute_type.applies_to))
+        for entity in progressbar(entities):
+            attr = attribute_type.name
+            if attr in entity.attributes:
+                entity.attributes[attr] = entity.attributes[attr][::-1]
+                entity.save()
+    logger.info("Updating entities...")
