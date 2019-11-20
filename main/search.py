@@ -12,8 +12,14 @@ class TatorSearch:
     def setup_elasticsearch(cls):
         cls.es = Elasticsearch(host='elasticsearch-master')
 
+    def __init__(self, prefix=''):
+        self.prefix = prefix
+
+    def index_name(self, entity_type_id):
+        return f'{self.prefix}entity_type_{entity_type_id}'
+
     def create_index(self, entity_type):
-        index = f'entity_type_{entity_type.pk}'
+        index = self.index_name(entity_type.pk)
         if not self.es.indices.exists(index):
             self.es.indices.create(index)
 
@@ -42,7 +48,7 @@ class TatorSearch:
         elif isinstance(attribute_type, AttributeTypeGeoposition):
             dtype='geo_point'
         self.es.indices.put_mapping(
-            index=f'entity_type_{attribute_type.applies_to.pk}',
+            index=self.index_name(attribute_type.applies_to.pk),
             body={'properties': {
                 attribute_type.name: {'type': dtype},
             }},
@@ -53,7 +59,7 @@ class TatorSearch:
         if isinstance(entity, EntityMediaBase):
             aux = {'name': entity.name}
         self.es.index(
-            index=f'entity_type_{entity.meta.pk}',
+            index=self.index_name(entity.meta.pk),
             body={
                 **entity.attributes,
                 **aux,
