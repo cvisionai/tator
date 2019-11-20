@@ -65,18 +65,20 @@ class TatorSearch:
     def create_document(self, entity):
         aux = {}
         if isinstance(entity, EntityMediaBase):
-            aux = {'name': entity.name}
-        try:
-            self.es.index(
-                index=self.index_name(entity.meta.pk),
-                body={
-                    **entity.attributes,
-                    **aux,
-                },
-                id=entity.pk,
-            )
-        except:
-            logger.info(f"Failed to create mapping for attributes: {entity.attributes}")
+            aux['name'] = entity.name}
+        if hasattr(entity, 'related_media'):
+            aux['related_media'] = entity.related_media
+        if entity.attributes is None:
+            entity.attributes = {}
+            entity.save()
+        self.es.index(
+            index=self.index_name(entity.meta.pk),
+            body={
+                **entity.attributes,
+                **aux,
+            },
+            id=entity.pk,
+        )
 
     def delete_document(self, entity):
         self.es.delete(
@@ -87,10 +89,17 @@ class TatorSearch:
     def search(self, project_id, query):
         entity_type_qs = EntityTypeBase.objects.filter(project=project_id)
         indices = [f'entity_type_{entity_type.pk}' for entity_type in entity_type_qs]
-        self.es.search(
+        result = self.es.search(
             index=indices,
             q=query,
             _source=False,
-        )
+            stored_fields=[],
+        )['hits']['hits']
+        if len(result) == 0:
+            return []
+        elif hasattr(result[0], 'related_media'):
+            return [int(obj['related_media']) for obj in result]
+        else:
+            return [int(obj['_id']) for obj in result]
 
 TatorSearch.setup_elasticsearch()
