@@ -1,7 +1,11 @@
-from main.models import *
 import logging
 import os
 import time
+
+from progressbar import progressbar
+
+from main.models import *
+from main.search import TatorSearch
 
 logger = logging.getLogger(__name__)
 
@@ -252,3 +256,18 @@ def waitForMigrations():
             break
         except:
             time.sleep(10)
+
+def buildSearchIndices():
+    """ Builds search index for all data.
+    """
+    # Create indices
+    logger.info("Building indices...")
+    for entity_type in progressbar(list(EntityTypeBase.objects.all())):
+        TatorSearch().create_index(entity_type)
+    # Create mappings
+    logger.info("Building mappings...")
+    for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
+        TatorSearch().create_mapping(attribute_type)
+    # Create documents
+    for entity in progressbar(list(EntityBase.objects.all())):
+        TatorSearch().create_document(entity)
