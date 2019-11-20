@@ -65,7 +65,7 @@ class TatorSearch:
     def create_document(self, entity):
         aux = {}
         if isinstance(entity, EntityMediaBase):
-            aux['name'] = entity.name}
+            aux['name'] = entity.name
         if hasattr(entity, 'related_media'):
             aux['related_media'] = entity.related_media
         if entity.attributes is None:
