@@ -78,7 +78,7 @@ RUN pip3 --no-cache-dir install \
         hiredis==1.0.0 channels_redis==2.4.0 redis==3.3.11 \
         daphne==2.2.5 gunicorn==20.0.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
         requests==2.22.0 python-dateutil==2.8.1 ujson==1.35 slackclient==2.3.1 \
-        google-auth==1.6.3 django-elasticsearch-dsl==7.1.0
+        google-auth==1.6.3 django-elasticsearch-dsl==7.1.0 progressbar2==3.47.0
 
 # Install kubernetes client
 WORKDIR /working
