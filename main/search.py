@@ -42,7 +42,7 @@ class TatorSearch:
         elif isinstance(attribute_type, AttributeTypeGeoposition):
             dtype='geo_point'
         self.es.indices.put_mapping(
-            index=f'entity_type_{entity_type.pk}',
+            index=f'entity_type_{attribute_type.applies_to.pk}',
             body={'properties': {
                 attribute_type.name: {'type': dtype},
             }},
