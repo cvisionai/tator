@@ -69,3 +69,5 @@ class TatorSearch:
             q=query,
             _source=False,
         )
+
+TatorSearch.setup_elasticsearch()
