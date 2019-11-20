@@ -1,6 +1,10 @@
+import logging
+
 from elasticsearch import Elasticsearch
 
 from main.models import *
+
+logger = logging.getLogger(__name__)
 
 class TatorSearch:
     """ Interface for elasticsearch documents.
@@ -32,6 +36,10 @@ class TatorSearch:
                 }},
             )
 
+    def delete_index(self, entity_type):
+        index = self.index_name(entity_type.pk)
+        self.es.indices.delete(index)
+
     def create_mapping(self, attribute_type):
         if isinstance(attribute_type, AttributeTypeBool):
             dtype='boolean'
@@ -58,12 +66,21 @@ class TatorSearch:
         aux = {}
         if isinstance(entity, EntityMediaBase):
             aux = {'name': entity.name}
-        self.es.index(
+        try:
+            self.es.index(
+                index=self.index_name(entity.meta.pk),
+                body={
+                    **entity.attributes,
+                    **aux,
+                },
+                id=entity.pk,
+            )
+        except:
+            logger.info(f"Failed to create mapping for attributes: {entity.attributes}")
+
+    def delete_document(self, entity):
+        self.es.delete(
             index=self.index_name(entity.meta.pk),
-            body={
-                **entity.attributes,
-                **aux,
-            },
             id=entity.pk,
         )
 
