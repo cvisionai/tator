@@ -91,13 +91,11 @@ class TatorSearch:
         result = self.es.search(
             index=indices,
             q=query,
-            _source=False,
-            stored_fields=[],
         )['hits']['hits']
         if len(result) == 0:
             return []
-        elif hasattr(result[0], 'related_media'):
-            return [int(obj['related_media']) for obj in result]
+        elif 'related_media' in result[0]['_source']:
+            return [int(obj['_source']['related_media']) for obj in result]
         else:
             return [int(obj['_id']) for obj in result]
 
