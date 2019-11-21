@@ -108,6 +108,7 @@ from .serializers import UserSerializerBasic
 from .consumers import ProgressProducer
 
 from .cache import TatorCache
+from .search import TatorSearch
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
