@@ -175,6 +175,7 @@ class SectionFiles extends TatorElement {
       }else {
         card.removeAttribute("thumb-gif");
       }
+      card.mediaFilter = this._mediaFilter;
       card.media = media;
     } else {
       card.removeAttribute("media-id");

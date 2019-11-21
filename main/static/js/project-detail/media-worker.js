@@ -208,7 +208,7 @@ class SectionData {
   fetchMedia() {
     // Fetches next batch of data
     const start = this._mediaById.size;
-    const stop = this._stop + _fetchBufferSize;
+    const stop = Number(this._stop) + Number(_fetchBufferSize);
     const needData = start < this._stop;
     if (!needData) {
       this._emitUpdate();
