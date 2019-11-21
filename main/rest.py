@@ -1072,20 +1072,13 @@ def get_media_queryset(project, query_params, attr_filter):
     if name != None:
         queryset = queryset.filter(name=name)
 
-    if search != None:
-        related_media = EntityBase.objects.filter(
-            attributes__icontains=search,
-            project=project
-        ).values('related_media').distinct()
-        search_qs = EntityMediaBase.objects.filter(
-            name__icontains=search,
-            project=project,
-        ).values('pk').distinct()
-        search_qs = search_qs.union(related_media)
-        queryset = queryset.filter(pk__in=search_qs)
-
     if md5 != None:
         queryset = queryset.filter(md5=md5)
+
+    if search != None:
+        entity_types = EntityTypeBase.objects.filter(project=project)
+        search_ids = TatorSearch().search(entity_types, search)
+        queryset = queryset.filter(pk__in=search_ids)
 
     queryset = attr_filter.filter_by_attribute(queryset)
 
