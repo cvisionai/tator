@@ -226,9 +226,11 @@ class MediaCard extends TatorElement {
 
   set media(val) {
     this._media = val;
-    var section = val.attributes['tator_user_sections'];
-    var uri = encodeURI(`/${val.project}/annotation/${val.id}?attribute=tator_user_sections::${section}`);
-    this._link.setAttribute("href", uri);
+    if (typeof val.attributes !== "undefined") {
+      var section = val.attributes['tator_user_sections'];
+      var uri = encodeURI(`/${val.project}/annotation/${val.id}?attribute=tator_user_sections::${section}`);
+      this._link.setAttribute("href", uri);
+    }
   }
 
   get media() {
