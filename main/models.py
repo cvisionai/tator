@@ -37,6 +37,7 @@ from enumfields import EnumField
 from django_ltree.fields import PathField
 
 from .cache import TatorCache
+from .search import TatorSearch
 
 import logging
 import os
