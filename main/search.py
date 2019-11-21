@@ -1,8 +1,7 @@
 import logging
+import os
 
 from elasticsearch import Elasticsearch
-
-from main.models import *
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class TatorSearch:
             self.es.indices.create(index)
 
         # If this is a media type, index the media name.
-        if isinstance(entity_type, EntityTypeMediaBase):
+        if entity_type.dtype in ['image', 'video']:
             self.es.indices.put_mapping(
                 index=index,
                 body={'properties': {
@@ -41,19 +40,19 @@ class TatorSearch:
         self.es.indices.delete(index)
 
     def create_mapping(self, attribute_type):
-        if isinstance(attribute_type, AttributeTypeBool):
+        if attribute_type.dtype == 'bool':
             dtype='boolean'
-        elif isinstance(attribute_type, AttributeTypeInt):
+        elif attribute_type.dtype == 'int':
             dtype='integer'
-        elif isinstance(attribute_type, AttributeTypeFloat):
+        elif attribute_type.dtype == 'float':
             dtype='float'
-        elif isinstance(attribute_type, AttributeTypeEnum):
+        elif attribute_type.dtype == 'enum':
             dtype='text'
-        elif isinstance(attribute_type, AttributeTypeString):
+        elif attribute_type.dtype == 'str':
             dtype='text'
-        elif isinstance(attribute_type, AttributeTypeDatetime):
+        elif attribute_type.dtype == 'datetime':
             dtype='date'
-        elif isinstance(attribute_type, AttributeTypeGeoposition):
+        elif attribute_type.dtype == 'geopos':
             dtype='geo_point'
         self.es.indices.put_mapping(
             index=self.index_name(attribute_type.applies_to.pk),
@@ -64,10 +63,11 @@ class TatorSearch:
 
     def create_document(self, entity):
         aux = {}
-        if isinstance(entity, EntityMediaBase):
+        if entity.meta.dtype in ['image', 'video']:
             aux['name'] = entity.name
         if hasattr(entity, 'related_media'):
-            aux['related_media'] = entity.related_media.pk
+            if entity.related_media is not None:
+                aux['related_media'] = entity.related_media.pk
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
@@ -86,9 +86,8 @@ class TatorSearch:
             id=entity.pk,
         )
 
-    def search(self, project_id, query):
-        entity_type_qs = EntityTypeBase.objects.filter(project=project_id)
-        indices = [f'entity_type_{entity_type.pk}' for entity_type in entity_type_qs]
+    def search(self, entity_types, query):
+        indices = [f'entity_type_{entity_type.pk}' for entity_type in entity_types]
         result = self.es.search(
             index=indices,
             q=query,
