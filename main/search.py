@@ -37,7 +37,8 @@ class TatorSearch:
 
     def delete_index(self, entity_type):
         index = self.index_name(entity_type.pk)
-        self.es.indices.delete(index)
+        if self.es.indices.exists(index):
+            self.es.indices.delete(index)
 
     def create_mapping(self, attribute_type):
         if attribute_type.dtype == 'bool':
@@ -81,10 +82,9 @@ class TatorSearch:
         )
 
     def delete_document(self, entity):
-        self.es.delete(
-            index=self.index_name(entity.meta.pk),
-            id=entity.pk,
-        )
+        index = self.index_name(entity.meta.pk)
+        if self.es.exists(index=index, id=entity.pk):
+            self.es.delete(index=index, id=entity.pk)
 
     def search(self, entity_types, query):
         indices = [f'entity_type_{entity_type.pk}' for entity_type in entity_types]
