@@ -14,10 +14,10 @@ class TatorSearch:
     """
     @classmethod
     def setup_elasticsearch(cls):
+        cls.prefix = os.getenv('ELASTICSEARCH_PREFIX')
+        if cls.prefix is None:
+            cls.prefix = ''
         cls.es = Elasticsearch(host='elasticsearch-master')
-
-    def __init__(self, prefix=''):
-        self.prefix = prefix
 
     def index_name(self, entity_type_id):
         return f'{self.prefix}entity_type_{entity_type_id}'
