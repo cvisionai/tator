@@ -638,7 +638,7 @@ class AttributeFilterMixin:
                     # Check if we should use type for this filter op.
                     filter_value, attr_type, typeOk = extract_attribute(kv_pair, self.meta, filter_op)
                     if requiresType and not typeOk:
-                        raise Exception(f"Invalid operator {filter_op} on attribute {attr_type.name} of type {type(attr_type)}")
+                        raise Exception(f"Invalid operator {filter_op} on attribute {attr_type}")
                     # TODO: Define es_body here
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
@@ -1054,51 +1054,73 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
         return manual_fields + getOnly_fields + self.attribute_fields()
 
 def get_media_queryset(project, query_params, attr_filter):
-    """Converts raw media query string into queryset.
+    """Converts raw media query string into a list of IDs and a count.
     """
-    # Figure out what object we are dealing with
-    obj=EntityMediaBase
-    queryset = obj.objects.filter(project=project)
-
     mediaId = query_params.get('media_id', None)
     filterType = query_params.get('type', None)
     name = query_params.get('name', None)
     md5 = query_params.get('md5', None)
     search = query_params.get('search', None)
+    start = query_params.get('start', None)
+    stop = query_params.get('stop', None)
+
+    query = {
+        'sort': {'exact_name': 'asc'},
+    }
+    entity_types = EntityTypeBase.objects.filter(project=project)
 
     if mediaId != None:
-        mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-        queryset = queryset.filter(pk__in=mediaId)
+        if 'query' not in query:
+            query['query'] = {}
+        query['query']['ids'] = {'values': mediaId.split(',')}
 
     if filterType != None:
-        queryset = queryset.filter(meta=filterType)
+        if 'query' not in query:
+            query['query'] = {}
+        if 'match' not in query['query']:
+            query['query']['match'] = {}
+        query['query']['match']['meta'] = {'query': int(filterType)}
 
     if name != None:
-        queryset = queryset.filter(name=name)
+        if 'query' not in query:
+            query['query'] = {}
+        if 'match' not in query['query']:
+            query['query']['match'] = {}
+        query['query']['match']['name'] = {'query': name}
 
     if md5 != None:
-        queryset = queryset.filter(md5=md5)
+        if 'query' not in query:
+            query['query'] = {}
+        if 'match' not in query['query']:
+            query['query']['match'] = {}
+        query['query']['match']['md5'] = {'query': md5}
 
     if search != None:
-        entity_types = EntityTypeBase.objects.filter(project=project)
-        search_ids = TatorSearch().search(entity_types, search)
-        queryset = queryset.filter(pk__in=search_ids)
+        if 'query' not in query:
+            query['query'] = {}
+        query['query']['query_string'] = {'query': search}
 
-    queryset = attr_filter.filter_by_attribute(queryset)
+    if start != None:
+        query['from'] = int(start)
 
-    queryset = queryset.order_by("name")
+    if start == None and stop != None:
+        query['size'] = int(stop)
 
-    queryset = paginate(query_params, queryset)
+    if start != None and stop != None:
+        query['size'] = int(stop) - int(start)
 
-    return queryset
+    #queryset = attr_filter.filter_by_attribute(queryset)
+
+    media_ids, media_count = TatorSearch().search(entity_types, query)
+
+    return media_ids, media_count
 
 def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_qs = get_media_queryset(project_id, query_params, attribute_filter)
-    media_ids = media_qs.values_list('id', flat=True)
-    return list(media_ids)
+    media_ids, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    return media_ids
 
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
@@ -1128,10 +1150,15 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 return Response(cache)
 
             self.validate_attribute_filter(request.query_params)
-            qs = self.get_queryset()
+            media_ids, media_count = get_media_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            qs = EntityMediaBase.objects.filter(pk__in=media_ids)
             if self.operation:
                 if self.operation == 'count':
-                    responseData = {'count': qs.count()}
+                    responseData = {'count': media_count}
                 elif 'attribute_count' in self.operation:
                     _, attr_name = self.operation.split('::')
                     responseData = count_by_attribute(qs, attr_name)

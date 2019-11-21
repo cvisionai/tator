@@ -26,14 +26,18 @@ class TatorSearch:
         if not self.es.indices.exists(index):
             self.es.indices.create(index)
 
-        # If this is a media type, index the media name.
+        # If this is a media type, index other fields.
         if entity_type.dtype in ['image', 'video']:
             self.es.indices.put_mapping(
                 index=index,
                 body={'properties': {
                     'name': {'type': 'text'},
+                    'exact_name': {'type': 'keyword'},
+                    'md5': {'type': 'text'},
+                    'meta': {'type': 'integer'},
                 }},
             )
+
 
     def delete_index(self, entity_type):
         index = self.index_name(entity_type.pk)
@@ -66,9 +70,14 @@ class TatorSearch:
         aux = {}
         if entity.meta.dtype in ['image', 'video']:
             aux['name'] = entity.name
+            aux['exact_name'] = entity.name
+            aux['md5'] = entity.md5
+            aux['meta'] = entity.meta.pk
         if hasattr(entity, 'related_media'):
             if entity.related_media is not None:
                 aux['related_media'] = entity.related_media.pk
+                aux['name'] = entity.related_media.name
+                aux['exact_name'] = entity.related_media.name
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
@@ -87,16 +96,21 @@ class TatorSearch:
             self.es.delete(index=index, id=entity.pk)
 
     def search(self, entity_types, query):
-        indices = [f'entity_type_{entity_type.pk}' for entity_type in entity_types]
+        logger.info(f"ELASTIC QUERY: {query}")
+        indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
         result = self.es.search(
             index=indices,
-            q=query,
-        )['hits']['hits']
-        if len(result) == 0:
-            return []
-        elif 'related_media' in result[0]['_source']:
-            return [int(obj['_source']['related_media']) for obj in result]
+            body=query,
+            size=10000,
+        )['hits']
+        data = result['hits']
+        count = result['total']
+        if count == 0:
+            ids = []
+        elif 'related_media' in data[0]['_source']:
+            ids = [int(obj['_source']['related_media']) for obj in data]
         else:
-            return [int(obj['_id']) for obj in result]
+            ids = [int(obj['_id']) for obj in data]
+        return ids, count
 
 TatorSearch.setup_elasticsearch()
