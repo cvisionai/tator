@@ -56,6 +56,8 @@ from .models import EntityTypeLocalizationDot
 from .models import EntityTypeLocalizationLine
 from .models import EntityTypeLocalizationBox
 from .models import EntityTypeMediaBase
+from .models import EntityTypeMediaVideo
+from .models import EntityTypeMediaImage
 from .models import EntityTypeState
 from .models import EntityTypeTreeLeaf
 from .models import EntityTypeMediaVideo
@@ -1187,6 +1189,42 @@ class MediaNextAPI(APIView):
 
     def get_queryset(self):
         return EntityMediaBase.objects.all()
+
+class MediaSectionsAPI(APIView):
+    """
+    Endpoint for getting section names and media counts of a project
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
+        query['size'] = 0
+
+        if search != None:
+            query['query']['bool']['must'].append({'query_string': {'query': search}})
+
+        query = get_attribute_query(query, request.query_params)
+
+        response_data = defaultdict(dict)
+
+        image_types = list(EntityTypeMediaImage.objects.filter(project=kwargs['project']))
+        if len(image_types) > 0:
+            num_images = TatorSearch().search_raw(image_types, query)
+            num_images = num_images['aggregations']['section_counts']['buckets']
+            for data in num_images:
+                response_data[data['key']]['num_images'] = data['doc_count']
+
+        video_types = list(EntityTypeMediaVideo.objects.filter(project=kwargs['project']))
+        if len(video_types) > 0:
+            num_videos = TatorSearch().search_raw(video_types, query)
+            num_videos = num_videos['aggregations']['section_counts']['buckets']
+            for data in num_videos:
+                response_data[data['key']]['num_videos'] = data['doc_count']
+
+        return Response(response_data)
 
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
