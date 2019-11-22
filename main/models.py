@@ -172,6 +172,11 @@ class Project(Model):
         delete_polymorphic_qs(qs)
         super().delete(*args, **kwargs)
 
+@receiver(post_save, sender=Project)
+def project_save(sender, instance, **kwargs):
+    TatorCache().invalidate_project_cache(instance.pk)
+
+
 class Membership(Model):
     """Stores a user and their access level for a project.
     """
