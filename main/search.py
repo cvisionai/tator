@@ -117,7 +117,7 @@ class TatorSearch:
             size=10000,
         )['hits']
         data = result['hits']
-        count = result['total']
+        count = result['total']['value']
         if count == 0:
             ids = []
         elif 'related_media' in data[0]['_source']:
