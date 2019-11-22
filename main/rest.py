@@ -601,8 +601,6 @@ class AttributeFilterMixin:
         """Validates attribute related parts of request, should be called
            from a try block. Sets elasticsearch body.
         """
-        # Initialize elasticsearch body.
-        self.es_body = {}
 
         # Grab the query parameters.
         self.attr_filter_params = {
@@ -640,7 +638,6 @@ class AttributeFilterMixin:
                     filter_value, attr_type, typeOk = extract_attribute(kv_pair, self.meta, filter_op)
                     if requiresType and not typeOk:
                         raise Exception(f"Invalid operator {filter_op} on attribute {attr_type}")
-                    # TODO: Define es_body here
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
         self.operation = query_params.get('operation', None)
