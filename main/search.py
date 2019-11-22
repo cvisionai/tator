@@ -30,12 +30,15 @@ class TatorSearch:
         if entity_type.dtype in ['image', 'video']:
             self.es.indices.put_mapping(
                 index=index,
-                body={'properties': {
-                    'name': {'type': 'text'},
-                    'exact_name': {'type': 'keyword'},
-                    'md5': {'type': 'text'},
-                    'meta': {'type': 'integer'},
-                }},
+                body={
+                    'properties': {
+                        'name': {'type': 'text'},
+                        'exact_name': {'type': 'keyword'},
+                        'md5': {'type': 'text'},
+                        'meta': {'type': 'integer'},
+                        'tator_user_sections': {'type': 'keyword'},
+                    },
+                },
             )
 
 
@@ -73,6 +76,8 @@ class TatorSearch:
             aux['exact_name'] = entity.name
             aux['md5'] = entity.md5
             aux['meta'] = entity.meta.pk
+            if entity.attributes['tator_user_sections']:
+                aux['tator_user_sections'] = entity.attributes['tator_user_sections']
         if hasattr(entity, 'related_media'):
             if entity.related_media is not None:
                 aux['related_media'] = entity.related_media.pk
