@@ -1064,7 +1064,11 @@ def get_attribute_query(query, query_params):
     if attribute_eq is not None:
         for kv_pair in attribute_eq.split(','):
             key, val = kv_pair.split(kv_separator)
-            query['query']['match'][key]['query'] = val
+            if query['query']['bool']['must'] == {}:
+                query['query']['bool']['must'] = []
+            query['query']['bool']['must'].append({
+                'match': {key: val},
+            })
     
     return query
 
