@@ -1189,7 +1189,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 self.request.query_params,
                 self
             )
-            qs = EntityMediaBase.objects.filter(pk__in=media_ids)
+            qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
             if self.operation:
                 if self.operation == 'count':
                     responseData = {'count': media_count}
