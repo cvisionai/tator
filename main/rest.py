@@ -1188,20 +1188,6 @@ class MediaNextAPI(APIView):
     def get_queryset(self):
         return EntityMediaBase.objects.all()
 
-class MediaSectionsAPI(ListCreateAPIView):
-    """
-    Endpoint for getting a section summary
-    """
-    serializer_class = MediaSectionSerializer
-    permission_classes = [ProjectEditPermission]
-
-    def get_queryset(self):
-        project = Project.objects.get(pk=self.kwargs['project'])
-        return project.mediasection_set.annotate(
-            num_images=Count('images'),
-            num_videos=Count('videos'),
-        )
-
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
