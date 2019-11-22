@@ -1120,6 +1120,38 @@ def query_string_to_media_ids(project_id, url):
     media_ids, _ = get_media_queryset(project_id, query_params, attribute_filter)
     return media_ids
 
+class MediaPrevAPI(APIView):
+    """
+    Endpoint for getting previous media in a media list
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+
+        media_id = kwargs['pk']
+        media = EntityMediaBase.objects.get(pk=media_id)
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['sort']['exact_name'] = 'desc'
+        query['query']['bool']['must'] = [{'range': {'exact_name': {'lt': media.name}}}]
+        query['size'] = 1
+
+        if search != None:
+            query['query']['bool']['must'].append({'query_string': {'query': search}})
+
+        query = get_attribute_query(query, request.query_params)
+
+        media_ids, count = TatorSearch().search([media.meta], query)
+        if count > 0:
+            response_data = {'prev': media_ids[0]}
+        else:
+            response_data = {'prev': -1}
+
+        return Response(response_data)
+
+    def get_queryset(self):
+        return EntityMediaBase.objects.all()
+
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
