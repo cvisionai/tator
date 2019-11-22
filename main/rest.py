@@ -130,6 +130,7 @@ import logging
 import time
 import traceback
 from uuid import uuid1
+from collections import defaultdict
 import slack
 
 logger = logging.getLogger(__name__)
@@ -1064,41 +1065,24 @@ def get_media_queryset(project, query_params, attr_filter):
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
 
-    query = {
-        'sort': {'exact_name': 'asc'},
-    }
+    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    query['sort']['exact_name'] = 'asc'
     entity_types = EntityTypeBase.objects.filter(project=project)
 
     if mediaId != None:
-        if 'query' not in query:
-            query['query'] = {}
-        query['query']['ids'] = {'values': mediaId.split(',')}
+        query['query']['ids']['values'] = mediaId.split(',')
 
     if filterType != None:
-        if 'query' not in query:
-            query['query'] = {}
-        if 'match' not in query['query']:
-            query['query']['match'] = {}
-        query['query']['match']['meta'] = {'query': int(filterType)}
+        query['query']['match']['meta']['query'] = int(filterType)
 
     if name != None:
-        if 'query' not in query:
-            query['query'] = {}
-        if 'match' not in query['query']:
-            query['query']['match'] = {}
-        query['query']['match']['name'] = {'query': name}
+        query['query']['match']['name']['query'] = name
 
     if md5 != None:
-        if 'query' not in query:
-            query['query'] = {}
-        if 'match' not in query['query']:
-            query['query']['match'] = {}
-        query['query']['match']['md5'] = {'query': md5}
+        query['query']['match']['md5']['query'] = md5
 
     if search != None:
-        if 'query' not in query:
-            query['query'] = {}
-        query['query']['query_string'] = {'query': search}
+        query['query']['query_string']['query'] = search
 
     if start != None:
         query['from'] = int(start)
