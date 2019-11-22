@@ -110,10 +110,33 @@ class TatorCache:
         group = f'creds_{project_id}'
         self.rds.delete(group)
 
+    def get_project_cache(self, project_id):
+        group = f'project_{project_id}'
+        key = f'project_{project_id}'
+        val = None
+        if self.rds.hexists(group, key):
+            val = self.rds.hget(group,key)
+        if val:
+            val=eval(val)
+        return val
+
+    def set_project_cache(self, project_id, val):
+        group = f'project_{project_id}'
+        key = f'project_{project_id}'
+        self.rds.hset(group, key, str(val))
+
+    def invalidate_project_cache(self, project_id):
+        group = f'project_{project_id}'
+        self.rds.delete(group)
+
     def invalidate_all(self):
         """Invalidates all caches.
         """
-        for prefix in ['media_', 'localization_', 'treeleaf_', 'creds_']:
+        for prefix in ['media_',
+                       'localization_',
+                       'treeleaf_',
+                       'creds_',
+                       'project_']:
             for key in self.rds.scan_iter(match=prefix + '*'):
                 logger.info(f"Deleting cache key {key}...")
                 self.rds.delete(key)

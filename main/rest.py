@@ -2799,6 +2799,26 @@ class ProjectDetailAPI(RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     permission_classes = [ProjectFullControlPermission, ProjectOwnerPermission]
 
+    def get(self, request, format=None, **kwargs):
+        # Try grabbing data from cache
+        cache = TatorCache().get_project_cache(self.kwargs['pk'])
+        try:
+            if cache:
+                response=Response(cache)
+            else:
+                data=self.serializer_class(Project.objects.get(pk=self.kwargs['pk']),
+                                               context=self.get_renderer_context()).data
+                TatorCache().set_project_cache(self.kwargs['pk'], data)
+                response=Response(data)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
 class AnalysisAPI(ListCreateAPIView):
     serializer_class = AnalysisSerializer
     schema = AutoSchema(manual_fields=[
