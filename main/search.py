@@ -24,7 +24,15 @@ class TatorSearch:
     def create_index(self, entity_type):
         index = self.index_name(entity_type.pk)
         if not self.es.indices.exists(index):
-            self.es.indices.create(index)
+            self.es.indices.create(
+                index,
+                body={
+                    'settings': {
+                        'number_of_shards': 1,
+                        'number_of_replicas': 1,
+                    },
+                },
+            )
 
         # If this is a media type, index other fields.
         if entity_type.dtype in ['image', 'video']:
