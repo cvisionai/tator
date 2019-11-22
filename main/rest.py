@@ -791,7 +791,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
             if len(mediaId) > 1:
                 queryset = queryset.filter(media__in=mediaId)
             else:
-                queryset = EntityMediaBase.objects.get(id=mediaId[0]).entitylocalizationbase_set.filter(project=self.kwargs['project'])
+                queryset = queryset.filter(media=mediaId[0])
 
         if filterType != None:
             queryset = queryset.filter(meta=filterType)
