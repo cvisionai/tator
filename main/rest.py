@@ -1054,6 +1054,23 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
+def get_attribute_query(query, query_params):
+    attribute_eq = query_params.get('attribute', None)
+    attribute_lt = query_params.get('attribute_lt', None)
+    attribute_lte = query_params.get('attribute_lte', None)
+    attribute_gt = query_params.get('attribute_gt', None)
+    attribute_gte = query_params.get('attribute_gte', None)
+    attribute_contains = query_params.get('attribute_contains', None)
+    attribute_distance = query_params.get('attribute_distance', None)
+    attribute_null = query_params.get('attribute_null', None)
+
+    if attribute_eq is not None:
+        for kv_pair in attribute_eq.split(','):
+            key, val = kv_pair.split(kv_separator)
+            query['query']['match'][key]['query'] = val
+    
+    return query
+
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
     """
@@ -1093,7 +1110,7 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    #queryset = attr_filter.filter_by_attribute(queryset)
+    query = get_attribute_query(query, query_params)
 
     media_ids, media_count = TatorSearch().search(entity_types, query)
 
