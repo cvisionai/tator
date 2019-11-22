@@ -108,14 +108,16 @@ class TatorSearch:
         if self.es.exists(index=index, id=entity.pk):
             self.es.delete(index=index, id=entity.pk)
 
-    def search(self, entity_types, query):
+    def search_raw(self, entity_types, query):
         logger.info(f"ELASTIC QUERY: {query}")
         indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
-        result = self.es.search(
+        return self.es.search(
             index=indices,
             body=query,
-            size=10000,
-        )['hits']
+        )
+
+    def search(self, entity_types, query):
+        result = self.search_raw(entity_types, query)['hits']
         data = result['hits']
         count = result['total']['value']
         if count == 0:
