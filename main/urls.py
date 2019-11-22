@@ -50,6 +50,7 @@ from .rest import AnalysisAPI
 from .rest import NotifyAPI
 from .rest import UserDetailAPI
 from .rest import MediaPrevAPI
+from .rest import MediaNextAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -206,5 +207,10 @@ urlpatterns += [
         'rest/MediaPrev/<int:pk>',
         MediaPrevAPI.as_view(),
         name='MediaPrev',
+    ),
+    path(
+        'rest/MediaNext/<int:pk>',
+        MediaNextAPI.as_view(),
+        name='MediaNext',
     ),
 ]

@@ -1156,6 +1156,52 @@ class MediaPrevAPI(APIView):
     def get_queryset(self):
         return EntityMediaBase.objects.all()
 
+class MediaNextAPI(APIView):
+    """
+    Endpoint for getting next media in a media list
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+
+        media_id = kwargs['pk']
+        media = EntityMediaBase.objects.get(pk=media_id)
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['sort']['exact_name'] = 'asc'
+        query['query']['bool']['must'] = [{'range': {'exact_name': {'gt': media.name}}}]
+        query['size'] = 1
+
+        if search != None:
+            query['query']['bool']['must'].append({'query_string': {'query': search}})
+
+        query = get_attribute_query(query, request.query_params)
+
+        media_ids, count = TatorSearch().search([media.meta], query)
+        if count > 0:
+            response_data = {'next': media_ids[0]}
+        else:
+            response_data = {'next': -1}
+
+        return Response(response_data)
+
+    def get_queryset(self):
+        return EntityMediaBase.objects.all()
+
+class MediaSectionsAPI(ListCreateAPIView):
+    """
+    Endpoint for getting a section summary
+    """
+    serializer_class = MediaSectionSerializer
+    permission_classes = [ProjectEditPermission]
+
+    def get_queryset(self):
+        project = Project.objects.get(pk=self.kwargs['project'])
+        return project.mediasection_set.annotate(
+            num_images=Count('images'),
+            num_videos=Count('videos'),
+        )
+
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
