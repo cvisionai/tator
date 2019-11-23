@@ -1998,10 +1998,14 @@ class EntityTypeListAPIMixin(APIView):
 
         try:
             media_id=self.request.query_params.get('media_id', None)
-            entityTypes = self.entityBaseObj.objects.filter(project=self.kwargs['project'])
             if media_id != None:
-                mediaElement = EntityMediaBase.objects.get(pk=media_id);
-                entityTypes = entityTypes.filter(media=mediaElement.meta)
+                logger.info(f"Getting media {media_id}")
+                mediaElement = EntityMediaBase.objects.get(pk=media_id)
+                if mediaElement.project.id != self.kwargs['project']:
+                    raise Exception('Media Not in Project')
+                entityTypes = self.entityBaseObj.objects.filter(media=mediaElement.meta)
+            else:
+                entityTypes = self.entityBaseObj.objects.filter(project=self.kwargs['project'])
 
             type_id=self.request.query_params.get('type', None)
             if type_id != None:
