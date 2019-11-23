@@ -785,16 +785,10 @@ class LocalizationList(APIView, AttributeFilterMixin):
         else:
             raise Exception('Missing type parameter!')
 
-        queryset = obj.objects.filter(project=self.kwargs['project'])
         if mediaId != None:
-            mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-            if len(mediaId) > 1:
-                queryset = queryset.filter(media__in=mediaId)
-            else:
-                media_el = EntityMediaBase.objects.get(pk=mediaId[0])
-                if media_el.project != self.kwargs['project']:
-                    raise Exception('Media ID not in project')
-                queryset = obj.objects.filter(media=mediaId[0])
+            queryset = obj.objects.filter(media=mediaId)
+        else:
+            queryset = obj.objects.filter(project=self.kwargs['project'])
 
         if filterType != None:
             queryset = queryset.filter(meta=filterType)
@@ -806,6 +800,11 @@ class LocalizationList(APIView, AttributeFilterMixin):
     def get(self, request, format=None, **kwargs):
         try:
             mediaId = request.query_params.get('media_id', None)
+
+            media_el = EntityMediaBase.objects.get(pk=mediaId)
+            if media_el.project.id != self.kwargs['project']:
+                raise Exception('Media ID not in project')
+
             entityType = request.query_params.get('type', None)
             if (mediaId is not None) and (entityType is not None):
                 cache = TatorCache().get_localization_list_cache(
