@@ -109,7 +109,6 @@ class TatorSearch:
             self.es.delete(index=index, id=entity.pk)
 
     def search_raw(self, entity_types, query):
-        logger.info(f"ELASTIC QUERY: {query}")
         indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
         return self.es.search(
             index=indices,

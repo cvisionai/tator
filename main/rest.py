@@ -1260,90 +1260,42 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 self
             )
             qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
-            if self.operation:
-                if self.operation == 'count':
-                    responseData = {'count': media_count}
-                elif 'attribute_count' in self.operation:
-                    _, attr_name = self.operation.split('::')
-                    responseData = count_by_attribute(qs, attr_name)
-                elif 'attribute_ids' in self.operation:
-                    _, attr_name = self.operation.split('::')
-                    responseData = ids_by_attribute(qs, attr_name)
-                elif 'adjacent' in self.operation:
-                    _, this_id = self.operation.split('::')
-                    this_name=qs.get(pk=this_id).name
-                    before = qs.filter(name__lt=this_name)
-                    if before.count() == 0:
-                        prev_obj = qs.last()
-                    else:
-                        prev_obj = before.last()
+            # We are doing a full query; so we should bypass the ORM and
+            # use the SQL cursor directly.
+            # TODO: See if we can do this using queryset into a custom serializer instead
+            # of naked SQL.
+            original_sql,params = qs.query.sql_with_params()
+            root_url = request.build_absolute_uri("/").strip("/")
+            media_url = request.build_absolute_uri(settings.MEDIA_URL)
+            raw_url = request.build_absolute_uri(settings.RAW_ROOT)
+            # Modify original sql to have aliases to match JSON output
+            original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,',1)
+            original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '',1)
+            original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,',1)
+            original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,',1)
+            original_sql = original_sql.replace('"main_entitymediabase"."file",', f'CONCAT(\'{media_url}\',"main_entitymediabase"."file") AS url,',1)
 
-                    after = qs.filter(name__gt=this_name)
-                    if after.count() == 0:
-                        next_obj = qs.first()
-                    else:
-                        next_obj = after.first()
-                    responseData = {'prev': prev_obj.id, 'next': next_obj.id}
-                elif 'ids' in self.operation:
-                    responseData = {'media_ids': qs.values_list('id', flat=True)}
-                elif 'overview' in self.operation:
-                    responseData = {
-                        'Images': qs.instance_of(EntityMediaImage).count(),
-                        'Videos': qs.instance_of(EntityMediaVideo).count(),
-                    }
-                    count_analyses = AnalysisCount.objects.filter(project=self.kwargs['project'])
-                    for analysis in count_analyses:
-                        if isinstance(analysis.data_type, EntityTypeMediaBase):
-                            data = qs
-                        elif isinstance(analysis.data_type, EntityTypeLocalizationBase):
-                            data = EntityLocalizationBase.objects.filter(media__in=qs)
-                        elif isinstance(analysis.data_type, EntityTypeState):
-                            data = EntityState.selectOnMedia(qs)
-                        else:
-                            raise Exception('Invalid analysis data type!')
-                        data = data.filter(meta=analysis.data_type)
-                        if analysis.data_filter:
-                            data = data.filter(**analysis.data_filter)
-                        responseData[analysis.name] = data.count()
-                else:
-                    raise Exception('Invalid operation parameter!')
-            else:
-                # We are doing a full query; so we should bypass the ORM and
-                # use the SQL cursor directly.
-                # TODO: See if we can do this using queryset into a custom serializer instead
-                # of naked SQL.
-                original_sql,params = qs.query.sql_with_params()
-                root_url = request.build_absolute_uri("/").strip("/")
-                media_url = request.build_absolute_uri(settings.MEDIA_URL)
-                raw_url = request.build_absolute_uri(settings.RAW_ROOT)
-                # Modify original sql to have aliases to match JSON output
-                original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,',1)
-                original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '',1)
-                original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,',1)
-                original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,',1)
-                original_sql = original_sql.replace('"main_entitymediabase"."file",', f'CONCAT(\'{media_url}\',"main_entitymediabase"."file") AS url,',1)
+            new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
+            new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
+            new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
+            new_selections += f', NULLIF(CONCAT(\'{root_url}\',"main_entitymediavideo"."original"),\'{root_url}\') AS original_url'
+            original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
 
-                new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
-                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
-                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
-                new_selections += f', NULLIF(CONCAT(\'{root_url}\',"main_entitymediavideo"."original"),\'{root_url}\') AS original_url'
-                original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
+            #Add new joins
+            new_joins = f'LEFT JOIN "main_entitymediaimage" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediaimage"."entitymediabase_ptr_id")'
+            new_joins += f' LEFT JOIN "main_entitymediavideo" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediavideo"."entitymediabase_ptr_id")'
+            original_sql = original_sql.replace(" INNER JOIN ", f" {new_joins} INNER JOIN ",1)
 
-                #Add new joins
-                new_joins = f'LEFT JOIN "main_entitymediaimage" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediaimage"."entitymediabase_ptr_id")'
-                new_joins += f' LEFT JOIN "main_entitymediavideo" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediavideo"."entitymediabase_ptr_id")'
-                original_sql = original_sql.replace(" INNER JOIN ", f" {new_joins} INNER JOIN ",1)
+            # Generate JSON serialization string
+            json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
+            logger.info(json_sql)
 
-                # Generate JSON serialization string
-                json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
-                logger.info(json_sql)
-
-                with connection.cursor() as cursor:
-                    cursor.execute(json_sql,params)
-                    result = cursor.fetchone()
-                    responseData=result[0]
-                    if responseData is None:
-                        responseData=[]
+            with connection.cursor() as cursor:
+                cursor.execute(json_sql,params)
+                result = cursor.fetchone()
+                responseData=result[0]
+                if responseData is None:
+                    responseData=[]
         except Exception as e:
             logger.error(traceback.format_exc())
             response=Response({'message' : str(e),
