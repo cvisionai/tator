@@ -83,11 +83,11 @@ class ProjectDetail extends TatorPage {
       if (msg.command == "updateSection") {
         const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
         if (section) {
-          section.numMedia = msg.count;
-          section.cardInfo = msg.data;
           if (section.sectionFilter != msg.sectionFilter) {
             section.sectionFilter = msg.sectionFilter;
           }
+          section.numMedia = msg.count;
+          section.cardInfo = msg.data;
         }
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "updateOverview") {
