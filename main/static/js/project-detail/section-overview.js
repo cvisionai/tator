@@ -45,8 +45,7 @@ class SectionOverview extends TatorElement {
   updateForMedia(media) {
     this._header.textContent = media.name;
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project +
-      "?media_id=" + media.id + "&operation=overview";
+    const url = "/rest/EntityMedia/" + media.id;
     fetch(url, {
       method: "GET",
       credentials: "same-origin",
@@ -57,9 +56,19 @@ class SectionOverview extends TatorElement {
       },
     })
     .then(response => response.json())
-    .then(data => this._updateText(data));
-  }
-
+    .then(data => {
+      if (typeof data.thumb_gif_url === "undefined") {
+        this._updateText({'counts': {
+          "num_videos": 0,
+          "num_images": 1,
+        }});
+      } else {
+        this._updateText({'counts': {
+          "num_videos": 1,
+          "num_images": 0,
+        }});
+      }
+    });
   }
 
   updateForAllSoft() {
@@ -77,8 +86,7 @@ class SectionOverview extends TatorElement {
   updateForAll() {
     this._header.textContent = "Section Overview";
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project +
-      this._mediaFilter() + "&operation=overview";
+    const url = "/rest/MediaSections/" + project + this._mediaFilter();
     fetch(url, {
       method: "GET",
       credentials: "same-origin",
@@ -90,6 +98,7 @@ class SectionOverview extends TatorElement {
     })
     .then(response => response.json())
     .then(data => {
+      
       this._updateText(data);
       this._lastAllData = data;
     });
@@ -97,8 +106,16 @@ class SectionOverview extends TatorElement {
 
   _updateText(data, skipMedia) {
 
-    const numImages = data.Images
-    const numVideos = data.Videos
+    const counts = data[Object.keys(data)[0]];
+    console.log("DATA: " + JSON.stringify(counts));
+    let numImages = 0;
+    let numVideos = 0;
+    if (typeof counts.num_images !== "undefined") {
+      numImages = counts.num_images;
+    }
+    if (typeof counts.num_videos !== "undefined") {
+      numVideos = counts.num_videos;
+    }
 
     let vidLabel = " Videos";
     if (numVideos === 1) {
@@ -114,8 +131,8 @@ class SectionOverview extends TatorElement {
 
     let index = 2;
     const divs = this._stats.children;
-    for (const name in data) {
-      if ((name != "Videos") && (name != "Images")) {
+    for (const name in counts) {
+      if ((name != "num_videos") && (name != "num_images")) {
         let div;
         if (index >= divs.length) {
           div = document.createElement("div");
@@ -124,7 +141,7 @@ class SectionOverview extends TatorElement {
         } else {
           div = divs[index];
         }
-        div.textContent = data[name] + " " + name;
+        div.textContent = counts[name] + " " + name;
         index++;
       }
     }

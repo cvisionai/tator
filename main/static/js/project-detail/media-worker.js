@@ -31,9 +31,8 @@ self.addEventListener("message", async evt => {
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "filterSection") {
     // Applies filter to section
-    let url = "/rest/EntityMedias/" + self.projectId +
-      "?operation=attribute_count::tator_user_sections" +
-      "&attribute=tator_user_sections::" + msg.sectionName;
+    let url = "/rest/MediaSections/" + self.projectId +
+      "?attribute=tator_user_sections::" + msg.sectionName;
     if (msg.query) {
       url += "&search=" + msg.query;
     }
@@ -47,8 +46,7 @@ self.addEventListener("message", async evt => {
     .catch(err => console.log("Error applying filter: " + err));
   } else if (msg.command == "filterProject") {
     // Applies filter to whole project
-    let url = "/rest/EntityMedias/" + self.projectId +
-      "?operation=attribute_count::tator_user_sections";
+    let url = "/rest/MediaSections/" + self.projectId;
     if (msg.query) {
       url += "&search=" + msg.query;
     }
@@ -75,8 +73,7 @@ self.addEventListener("message", async evt => {
       "Accept": "application/json",
       "Content-Type": "application/json"
     };
-    const url = "/rest/EntityMedias/" + msg.projectId +
-      "?operation=attribute_count::tator_user_sections";
+    const url = "/rest/MediaSections/" + msg.projectId;
     const attributePromise = fetchRetry(url, {
       method: "GET",
       credentials: "omit",
@@ -176,7 +173,7 @@ class SectionData {
     this._mediaIds = [];
 
     // Number of media
-    this._numMedia = numMedia;
+    this._numMedia = this._getNumMedia(numMedia);
 
     // Search string
     this._search = search 
@@ -195,6 +192,17 @@ class SectionData {
 
     // Whether this section has been drawn by the UI.
     this.drawn = false;
+  }
+
+  _getNumMedia(sectionResponse) {
+    let count = 0;
+    if (typeof sectionResponse.num_videos !== "undefined") {
+      count += sectionResponse.num_videos;
+    }
+    if (typeof sectionResponse.num_images !== "undefined") {
+      count += sectionResponse.num_images;
+    }
+    return count;
   }
 
   getSectionFilter() {
@@ -246,7 +254,7 @@ class SectionData {
     this._mediaById = new Map();
     this._mediaIds = [];
     this._search = search;
-    this._numMedia = numMedia;
+    this._numMedia = this._getNumMedia(numMedia);
     this.fetchMedia();
   }
 
