@@ -309,23 +309,6 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _updateSections() {
-    // Update media sections
-    const names = Object.keys(this._sections);
-    for (const name of names) {
-      var update=[]
-      if (name in this._mediaIds) {
-        update = this._mediaIds[name];
-      }
-      this._sections[name].mediaIds = update;
-      if (this._lastQuery) {
-        this._sections[name].overview.updateForSearch(update);
-      } else {
-        this._sections[name].overview.updateForAllSoft();
-      }
-    }
-  }
-
   _createNewSection(sectionName, projectId, numMedia, afterSection) {
     const newSection = document.createElement("media-section");
     newSection.setAttribute("project-id", projectId);

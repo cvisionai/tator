@@ -60,31 +60,6 @@ class SectionOverview extends TatorElement {
     .then(data => this._updateText(data));
   }
 
-  updateForSearch(media_ids) {
-    if (media_ids.length > 0 && media_ids.length < 100)
-    {
-      this._header.textContent = "Search Results";
-      const project = this.getAttribute("project-id");
-      const url = "/rest/EntityMedias/" + project +
-            "?media_id=" + media_ids.join(',') + "&operation=overview";
-      fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-        .then(response => response.json())
-        .then(data => this._updateText(data));
-    }
-    else if (media_ids.length == 0)
-    {
-      this._header.textContent = "Search Results";
-      this._updateText({"Videos": 0,
-                        "Images": 0});
-    }
   }
 
   updateForAllSoft() {
