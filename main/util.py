@@ -271,7 +271,7 @@ def buildSearchIndices():
     # Create documents
     logger.info("Building documents...")
     for entity in progressbar(list(EntityBase.objects.all())):
-        TatorSearch().create_document(entity)
+        TatorSearch().create_document(entity, wait=False)
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.
