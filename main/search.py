@@ -84,8 +84,9 @@ class TatorSearch:
             aux['exact_name'] = entity.name
             aux['md5'] = entity.md5
             aux['meta'] = entity.meta.pk
-            if entity.attributes['tator_user_sections']:
-                aux['tator_user_sections'] = entity.attributes['tator_user_sections']
+            if entity.attributes is not None:
+                if 'tator_user_sections' in entity.attributes:
+                    aux['tator_user_sections'] = entity.attributes['tator_user_sections']
         if hasattr(entity, 'related_media'):
             if entity.related_media is not None:
                 aux['related_media'] = entity.related_media.pk
