@@ -119,7 +119,7 @@ class TatorSearch:
         result = self.search_raw(entity_types, query)['hits']
         data = result['hits']
         count = result['total']['value']
-        if count == 0:
+        if len(data) == 0:
             ids = []
         elif 'related_media' in data[0]['_source']:
             ids = [int(obj['_source']['related_media']) for obj in data]
