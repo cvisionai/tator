@@ -88,7 +88,7 @@ class TatorSearch:
             }},
         )
 
-    def create_document(self, entity, wait='wait_for'):
+    def create_document(self, entity, wait=False):
         aux = {}
         if entity.meta.dtype in ['image', 'video']:
             aux['name'] = entity.name
@@ -106,7 +106,7 @@ class TatorSearch:
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
-                aux['related_media'] = media[0]
+                aux['related_media'] = media[0].pk
                 aux['name'] = media[0].name
                 aux['exact_name'] = media[0].name
         if entity.attributes is None:
@@ -146,5 +146,12 @@ class TatorSearch:
         else:
             ids = [int(obj['_id']) for obj in data]
         return ids, count
+
+    def refresh(self, entity_types):
+        """Force refresh on an index.
+        """
+        indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
+        self.es.indices.refresh(index=indices)
+        
 
 TatorSearch.setup_elasticsearch()
