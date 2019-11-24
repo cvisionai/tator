@@ -88,7 +88,7 @@ class TatorSearch:
             }},
         )
 
-    def create_document(self, entity):
+    def create_document(self, entity, wait='wait_for'):
         aux = {}
         if entity.meta.dtype in ['image', 'video']:
             aux['name'] = entity.name
@@ -119,6 +119,7 @@ class TatorSearch:
                 **aux,
             },
             id=entity.pk,
+            refresh=wait,
         )
 
     def delete_document(self, entity):
