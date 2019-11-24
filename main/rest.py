@@ -247,6 +247,8 @@ def extract_attribute(kv_pair, meta, filter_op):
         point = convert_attribute(attr_type, f"{vals[1]}_{vals[2]}")
         filter_value = (convert_attribute(attr_type, f"{vals[1]}_{vals[2]}"),
                         GisDistance(km=float(distance_km)))
+    elif not typeOk:
+        raise Exception(f"Invalid attribute {attr_name} has incompatible type {type(attr_type)} for operation {filter_op}")
     # We don't have a type, don't have a type suited to this filter op, or
     # the type is string/enum.
     elif (meta is None) or (not typeOk) or isinstance(attr_type, (AttributeTypeString, AttributeTypeEnum)):
