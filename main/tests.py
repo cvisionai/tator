@@ -668,7 +668,7 @@ class AttributeTestMixin:
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=int_test::1&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=int_test::false&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -703,7 +703,7 @@ class AttributeTestMixin:
             self.assertEqual(len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals]))
         # Contains on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=float_test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=float_test::false&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
