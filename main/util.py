@@ -90,33 +90,6 @@ def moveCompletedAlgRuns(project_id, from_section, to_section):
             count += 1
     print(f"Moved {count} files.")
 
-def updateRelatedMedia():
-    qs = EntityMediaBase.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating media {idx}/{count}")
-        if obj.related_media != obj:
-            obj.related_media = obj
-            obj.save()
-    qs = EntityLocalizationBase.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating localizations {idx}/{count}")
-        if obj.related_media != obj.media:
-            obj.related_media = obj.media
-            obj.save()
-    qs = EntityState.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating states {idx}/{count}")
-        media = obj.association.media.all()
-        if media.exists():
-            if obj.related_media != media[0]:
-                obj.related_media = media[0]
-                obj.save()
 def moveFileToNewProjectFolder(element, fileField, project_number):
     current_path = fileField.path
     current_root = os.path.dirname(current_path)
