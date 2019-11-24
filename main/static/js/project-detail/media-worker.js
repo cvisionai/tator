@@ -48,7 +48,7 @@ self.addEventListener("message", async evt => {
     // Applies filter to whole project
     let url = "/rest/MediaSections/" + self.projectId;
     if (msg.query) {
-      url += "&search=" + msg.query;
+      url += "?search=" + msg.query;
     }
     fetchRetry(url, {
       method: "GET",
@@ -81,7 +81,7 @@ self.addEventListener("message", async evt => {
     });
     let filterUrl = url;
     if (msg.projectFilter) {
-      filterUrl += "&search=" + msg.projectFilter;
+      filterUrl += "?search=" + msg.projectFilter;
     }
     const filterPromise = fetchRetry(filterUrl, {
       method: "GET",
