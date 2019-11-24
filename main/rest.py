@@ -1053,7 +1053,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query, query_params):
+def get_attribute_query(query_params):
     attribute_eq = query_params.get('attribute', None)
     attribute_lt = query_params.get('attribute_lt', None)
     attribute_lte = query_params.get('attribute_lte', None)
@@ -1063,16 +1063,13 @@ def get_attribute_query(query, query_params):
     attribute_distance = query_params.get('attribute_distance', None)
     attribute_null = query_params.get('attribute_null', None)
 
+    bools = []
     if attribute_eq is not None:
         for kv_pair in attribute_eq.split(','):
             key, val = kv_pair.split(kv_separator)
-            if query['query']['bool']['must'] == {}:
-                query['query']['bool']['must'] = []
-            query['query']['bool']['must'].append({
-                'match': {key: val},
-            })
+            bools.append({'match': {key: val}})
     
-    return query
+    return bools
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
@@ -1087,22 +1084,23 @@ def get_media_queryset(project, query_params, attr_filter):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['exact_name'] = 'asc'
+    bools = []
     entity_types = EntityTypeBase.objects.filter(project=project)
 
     if mediaId != None:
-        query['query']['ids']['values'] = mediaId.split(',')
+        bools.append({'ids': {'values': mediaId.split(',')}})
 
     if filterType != None:
-        query['query']['match']['meta']['query'] = int(filterType)
+        bools.append({'match': {'meta': {'query': int(filterType)}}})
 
     if name != None:
-        query['query']['match']['name']['query'] = name
+        bools.append({'match': {'name': {'query': name}}})
 
     if md5 != None:
-        query['query']['match']['md5']['query'] = md5
+        bools.append({'match': {'md5': {'query': md5}}})
 
     if search != None:
-        query['query']['query_string']['query'] = search
+        bools.append({'query_string': {'query': search}})
 
     if start != None:
         query['from'] = int(start)
@@ -1113,7 +1111,10 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    query = get_attribute_query(query, query_params)
+    bools += get_attribute_query(query_params)
+
+    if len(bools) > 0:
+        query['query']['bool']['must'] = bools
 
     media_ids, media_count = TatorSearch().search(entity_types, query)
 
@@ -1145,7 +1146,7 @@ class MediaPrevAPI(APIView):
         if search != None:
             query['query']['bool']['must'].append({'query_string': {'query': search}})
 
-        query = get_attribute_query(query, request.query_params)
+        query['query']['bool']['must'] += get_attribute_query(request.query_params)
 
         media_ids, count = TatorSearch().search([media.meta], query)
         if count > 0:
@@ -1177,7 +1178,7 @@ class MediaNextAPI(APIView):
         if search != None:
             query['query']['bool']['must'].append({'query_string': {'query': search}})
 
-        query = get_attribute_query(query, request.query_params)
+        query['query']['bool']['must'] += get_attribute_query(request.query_params)
 
         media_ids, count = TatorSearch().search([media.meta], query)
         if count > 0:
@@ -1202,11 +1203,15 @@ class MediaSectionsAPI(APIView):
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['size'] = 0
+        bools = []
 
         if search != None:
-            query['query']['bool']['must'].append({'query_string': {'query': search}})
+            bools.append({'query_string': {'query': search}})
 
-        query = get_attribute_query(query, request.query_params)
+        bools += get_attribute_query(request.query_params)
+
+        if len(bools) > 0:
+            query['query']['bool']['must'] = bools
 
         response_data = defaultdict(dict)
 
