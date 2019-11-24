@@ -190,7 +190,7 @@ def convert_attribute(attr_type, attr_val):
     elif isinstance(attr_type, AttributeTypeGeoposition):
         try:
             if isinstance(attr_val, list):
-                lat, lon = attr_val
+                lon, lat = attr_val
             else:
                 lat, lon = attr_val.split('_')
         except:
@@ -1065,33 +1065,34 @@ def get_attribute_query(query_params):
         'attribute_null': query_params.get('attribute_null', None),
     }
 
-    bools = []
+    must = []
+    filt = []
     for op in attr_filter_params:
         if attr_filter_params[op] is not None:
             for kv_pair in attr_filter_params[op].split(','):
                 if op == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(kv_separator)
-                    bools.append({'filter': {'geo_distance': {
+                    filt.append({'geo_distance': {
                         'distance': f'{dist_km}km',
-                        'pin.location': {'lat': lat, 'lon': lon},
-                    }}})
+                        key: {'lat': lat, 'lon': lon},
+                    }})
                 elif op == 'attribute_null':
-                    bools.append({'exists': {'field': kv_pair}})
+                    must.append({'exists': {'field': kv_pair}})
                 else:
                     key, val = kv_pair.split(kv_separator)
                     if op == 'attribute_eq':
-                        bools.append({'match': {key: val}})
+                        must.append({'match': {key: val}})
                     elif op == 'attribute_lt':
-                        bools.append({'range': {key: {'lt': val}}})
+                        must.append({'range': {key: {'lt': val}}})
                     elif op == 'attribute_lte':
-                        bools.append({'range': {key: {'lte': val}}})
+                        must.append({'range': {key: {'lte': val}}})
                     elif op == 'attribute_gt':
-                        bools.append({'range': {key: {'gt': val}}})
+                        must.append({'range': {key: {'gt': val}}})
                     elif op == 'attribute_gte':
-                        bools.append({'range': {key: {'gte': val}}})
+                        must.append({'range': {key: {'gte': val}}})
                     elif op == 'attribute_contains':
-                        bools.append({'wildcard': {key: {'value': f'*{val}*'}}})
-    return bools
+                        must.append({'wildcard': {key: {'value': f'*{val}*'}}})
+    return must, filt
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
@@ -1133,10 +1134,13 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    bools += get_attribute_query(query_params)
+    must, filt = get_attribute_query(query_params)
+    bools += must
 
     if len(bools) > 0:
         query['query']['bool']['must'] = bools
+    if len(filt) > 0:
+        query['query']['bool']['filter'] = filt
 
     media_ids, media_count = TatorSearch().search(entity_types, query)
 

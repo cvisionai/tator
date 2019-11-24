@@ -850,13 +850,13 @@ class AttributeTestMixin:
         # Test setting invalid geopositions
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
-            {'attributes': {'geoposition_test': [-91.0, 0.0]}},
+            {'attributes': {'geoposition_test': [0.0, -91.0]}},
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
-            {'attributes': {'geoposition_test': [0.0, -181.0]}},
+            {'attributes': {'geoposition_test': [-181.0, 0.0]}},
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -865,21 +865,20 @@ class AttributeTestMixin:
             lat, lon = test_val
             response = self.client.patch(
                 f'/rest/{self.detail_uri}/{pk}',
-                {'attributes': {'geoposition_test': [lat, lon]}},
+                {'attributes': {'geoposition_test': [lon, lat]}},
                 format='json',
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             attrs = response.data['attributes']['geoposition_test']
-            self.assertEqual(response.data['attributes']['geoposition_test'], [lat, lon])
+            self.assertEqual(response.data['attributes']['geoposition_test'], [lon, lat])
         TatorSearch().refresh([self.entity_type])
-        # Equality on geoposition not recommended, but it is allowed
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=geoposition_test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_lt=geoposition_test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
@@ -900,12 +899,11 @@ class AttributeTestMixin:
             f'type={self.entity_type.pk}&format=json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # Contains on geoposition not recommended, but it is allowed
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=geoposition_test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         test_lat, test_lon = random_latlon()
         for dist in [1.0, 100.0, 1000.0, 5000.0, 10000.0, 43000.0]:
             response = self.client.get(
