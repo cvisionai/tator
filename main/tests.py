@@ -834,12 +834,11 @@ class AttributeTestMixin:
                 len(response.data),
                 sum([(t >= lbound) and (t <= ubound) for t in test_vals])
             )
-        # Contains on datetime not recommended but allowed
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=datetime_test::asdf&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=datetime_test::asdf&'
             f'type={self.entity_type.pk}&format=json'
