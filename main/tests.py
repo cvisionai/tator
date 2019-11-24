@@ -772,6 +772,8 @@ class AttributeTestMixin:
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_datetime_attr(self):
+        def to_string(dt):
+            return dt.isoformat().replace('+00:00', 'Z')
         end_dt = datetime.datetime.now(datetime.timezone.utc)
         start_dt = end_dt - datetime.timedelta(days=5 * 365)
         test_vals = [
@@ -789,7 +791,7 @@ class AttributeTestMixin:
             pk = self.entities[idx].pk
             response = self.client.patch(
                 f'/rest/{self.detail_uri}/{pk}',
-                {'attributes': {'datetime_test': test_val.isoformat()}},
+                {'attributes': {'datetime_test': to_string(test_val)}},
                 format='json'
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -799,7 +801,7 @@ class AttributeTestMixin:
         TatorSearch().refresh([self.entity_type])
         # Testing for equality not recommended, but it is allowed
         response = self.client.get(
-            f'/rest/{self.list_uri}/{self.project.pk}?attribute=datetime_test::{test_val}&'
+            f'/rest/{self.list_uri}/{self.project.pk}?attribute=datetime_test::{to_string(test_val)}&'
             f'type={self.entity_type.pk}&format=json'
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK) 
@@ -810,8 +812,8 @@ class AttributeTestMixin:
                 (start_dt + delta_dt, end_dt - 2 * delta_dt),
                 (start_dt + 2 * delta_dt, end_dt - delta_dt),
             ]:
-            lbound_iso = lbound.isoformat()
-            ubound_iso = ubound.isoformat()
+            lbound_iso = to_string(lbound)
+            ubound_iso = to_string(ubound)
             response = self.client.get(
                 f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=datetime_test::{lbound_iso}&'
                 f'attribute_lt=datetime_test::{ubound_iso}&type={self.entity_type.pk}&'
