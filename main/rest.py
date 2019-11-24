@@ -1054,21 +1054,43 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
         return manual_fields + getOnly_fields + self.attribute_fields()
 
 def get_attribute_query(query_params):
-    attribute_eq = query_params.get('attribute', None)
-    attribute_lt = query_params.get('attribute_lt', None)
-    attribute_lte = query_params.get('attribute_lte', None)
-    attribute_gt = query_params.get('attribute_gt', None)
-    attribute_gte = query_params.get('attribute_gte', None)
-    attribute_contains = query_params.get('attribute_contains', None)
-    attribute_distance = query_params.get('attribute_distance', None)
-    attribute_null = query_params.get('attribute_null', None)
+    attr_filter_params = {
+        'attribute_eq': query_params.get('attribute', None),
+        'attribute_lt': query_params.get('attribute_lt', None),
+        'attribute_lte': query_params.get('attribute_lte', None),
+        'attribute_gt': query_params.get('attribute_gt', None),
+        'attribute_gte': query_params.get('attribute_gte', None),
+        'attribute_contains': query_params.get('attribute_contains', None),
+        'attribute_distance': query_params.get('attribute_distance', None),
+        'attribute_null': query_params.get('attribute_null', None),
+    }
 
     bools = []
-    if attribute_eq is not None:
-        for kv_pair in attribute_eq.split(','):
-            key, val = kv_pair.split(kv_separator)
-            bools.append({'match': {key: val}})
-    
+    for op in attr_filter_params:
+        if attr_filter_params[op] is not None:
+            for kv_pair in attr_filter_params[op].split(','):
+                if op == 'attribute_distance':
+                    key, dist_km, lat, lon = kv_pair.split(kv_separator)
+                    bools.append({'filter': {'geo_distance': {
+                        'distance': f'{dist_km}km',
+                        'pin.location': {'lat': lat, 'lon': lon},
+                    }}})
+                elif op == 'attribute_null':
+                    bools.append({'exists': {'field': kv_pair}})
+                else:
+                    key, val = kv_pair.split(kv_separator)
+                    if op == 'attribute_eq':
+                        bools.append({'match': {key: val}})
+                    elif op == 'attribute_lt':
+                        bools.append({'range': {key: {'lt': val}}})
+                    elif op == 'attribute_lte':
+                        bools.append({'range': {key: {'lte': val}}})
+                    elif op == 'attribute_gt':
+                        bools.append({'range': {key: {'gt': val}}})
+                    elif op == 'attribute_gte':
+                        bools.append({'range': {key: {'gte': val}}})
+                    elif op == 'attribute_contains':
+                        bools.append({'wildcard': {key: {'value': f'*{val}*'}}})
     return bools
 
 def get_media_queryset(project, query_params, attr_filter):
