@@ -106,17 +106,34 @@ class SectionOverview extends TatorElement {
 
   _updateText(data, skipMedia) {
 
-    const counts = data[Object.keys(data)[0]];
-    console.log("DATA: " + JSON.stringify(counts));
     let numImages = 0;
     let numVideos = 0;
-    if (typeof counts.num_images !== "undefined") {
-      numImages = counts.num_images;
-    }
-    if (typeof counts.num_videos !== "undefined") {
-      numVideos = counts.num_videos;
-    }
+    if (Object.keys(data).length > 0) {
+      const counts = data[Object.keys(data)[0]];
+      if (typeof counts.num_images !== "undefined") {
+        numImages = counts.num_images;
+      }
+      if (typeof counts.num_videos !== "undefined") {
+        numVideos = counts.num_videos;
+      }
 
+      let index = 2;
+      const divs = this._stats.children;
+      for (const name in counts) {
+        if ((name != "num_videos") && (name != "num_images")) {
+          let div;
+          if (index >= divs.length) {
+            div = document.createElement("div");
+            div.setAttribute("class", "py-2");
+            this._stats.appendChild(div);
+          } else {
+            div = divs[index];
+          }
+          div.textContent = counts[name] + " " + name;
+          index++;
+        }
+      }
+    }
     let vidLabel = " Videos";
     if (numVideos === 1) {
       vidLabel = " Video";
@@ -128,23 +145,6 @@ class SectionOverview extends TatorElement {
       imgLabel = " Image";
     }
     this._numImages.textContent = numImages + imgLabel;
-
-    let index = 2;
-    const divs = this._stats.children;
-    for (const name in counts) {
-      if ((name != "num_videos") && (name != "num_images")) {
-        let div;
-        if (index >= divs.length) {
-          div = document.createElement("div");
-          div.setAttribute("class", "py-2");
-          this._stats.appendChild(div);
-        } else {
-          div = divs[index];
-        }
-        div.textContent = counts[name] + " " + name;
-        index++;
-      }
-    }
   }
 }
 
