@@ -355,7 +355,6 @@ class EntityMediaImage(EntityMediaBase):
 @receiver(post_save, sender=EntityMediaImage)
 def image_save(sender, instance, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
-    EntityMediaImage.objects.filter(pk=instance.pk).update(related_media=instance.pk)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityMediaImage)
@@ -383,7 +382,6 @@ class EntityMediaVideo(EntityMediaBase):
 @receiver(post_save, sender=EntityMediaVideo)
 def video_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
-    EntityMediaVideo.objects.filter(pk=instance.pk).update(related_media=instance.pk)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityMediaVideo)
@@ -423,7 +421,6 @@ class EntityLocalizationDot(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationDot)
 def dot_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    EntityLocalizationDot.objects.filter(pk=instance.pk).update(related_media=instance.media)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
@@ -440,7 +437,6 @@ class EntityLocalizationLine(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationLine)
 def line_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    EntityLocalizationLine.objects.filter(pk=instance.pk).update(related_media=instance.media)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
@@ -457,7 +453,6 @@ class EntityLocalizationBox(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationBox)
 def box_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    EntityLocalizationBox.objects.filter(pk=instance.pk).update(related_media=instance.media)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
@@ -545,9 +540,6 @@ class EntityState(EntityBase):
 
 @receiver(post_save, sender=EntityState)
 def state_save(sender, instance, created, **kwargs):
-    media = instance.association.media.all()
-    if media.exists():
-        EntityState.objects.filter(pk=instance.pk).update(related_media=media[0])
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityState)

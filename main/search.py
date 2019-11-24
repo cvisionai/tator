@@ -49,6 +49,17 @@ class TatorSearch:
                 },
             )
 
+        # If this is a media, localization, or state, index related_media.
+        if entity_type.dtype in ['image', 'video', 'box', 'line', 'dot', 'state']:
+            self.es.indices.put_mapping(
+                index=index,
+                body={
+                    'properties': {
+                        'related_media': {'type': 'integer'},
+                    },
+                },
+            )
+
 
     def delete_index(self, entity_type):
         index = self.index_name(entity_type.pk)
@@ -87,11 +98,17 @@ class TatorSearch:
             if entity.attributes is not None:
                 if 'tator_user_sections' in entity.attributes:
                     aux['tator_user_sections'] = entity.attributes['tator_user_sections']
-        if hasattr(entity, 'related_media'):
-            if entity.related_media is not None:
-                aux['related_media'] = entity.related_media.pk
-                aux['name'] = entity.related_media.name
-                aux['exact_name'] = entity.related_media.name
+            aux['related_media'] = entity.pk
+        elif entity.meta.dtype in ['box', 'line', 'dot']:
+            aux['related_media'] = entity.media.pk
+            aux['name'] = entity.media.name
+            aux['exact_name'] = entity.media.name
+        elif entity.meta.dtype in ['state']:
+            media = entity.association.media.all()
+            if media.exists():
+                aux['related_media'] = media[0]
+                aux['name'] = media[0].name
+                aux['exact_name'] = media[0].name
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
@@ -117,7 +134,8 @@ class TatorSearch:
         )
 
     def search(self, entity_types, query):
-        result = self.search_raw(entity_types, query)['hits']
+        result = self.search_raw(entity_types, query)
+        result = result['hits']
         data = result['hits']
         count = result['total']['value']
         if len(data) == 0:
