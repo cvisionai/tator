@@ -331,9 +331,9 @@ def annotate_attribute(qs, attr_type):
         }
     elif isinstance(attr_type, AttributeTypeGeoposition):
         query_str = ("ST_PointFromText('POINT(' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
-            "' ' || " +
             "(main_entitybase.attributes#>>'{" + attr_name + ",0}') || " +
+            "' ' || " +
+            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
             "')')"
         )
         new_field = {
