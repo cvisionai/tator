@@ -581,7 +581,7 @@ class AttributeFilterMixin:
     """
     allowed_types = {
         'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat, 
-            AttributeTypeDatetime, AttributeTypeEnum, AttributeTypeString),
+            AttributeTypeDatetime, AttributeTypeEnum, AttributeTypeString, str),
         'attribute_lt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
         'attribute_lte': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
         'attribute_gt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
