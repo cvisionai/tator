@@ -669,6 +669,7 @@ def run_packager(content):
         use_originals = content['use_originals']
         annotations = content['annotations']
         package_uid = content['run_uid']
+        project_dir = content['project_id']
 
         # Set up interface for sending progress messages.
         prog = ProgressProducer(
@@ -722,7 +723,8 @@ def run_packager(content):
                 project=Project.objects.get(pk=content['project_id']),
                 use_originals=use_originals,
             )
-            pkg.file.save(package_uid + '.zip', tmp)
+            zip_path = os.path.join(str(project_dir), package_uid + '.zip')
+            pkg.file.save(zip_path, tmp)
 
         # Send progress message indicating completion.
         log.info("Packaging job complete!")

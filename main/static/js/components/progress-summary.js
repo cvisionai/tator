@@ -114,7 +114,7 @@ class ProgressSummary extends TatorElement {
           if (data.prefix == "download" && data.state == "finished") {
             if (this._downloadOk) {
               const link = document.createElement("a");
-              link.setAttribute("href", "/media/" + data.uid + ".zip");
+              link.setAttribute("href", `/media/${data.project_id}/` + data.uid + ".zip");
               link.setAttribute("download", data.name + ".zip");
               link.style.display = "none";
               this._shadow.appendChild(link);
