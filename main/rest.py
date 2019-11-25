@@ -1147,13 +1147,13 @@ def get_media_queryset(project, query_params, attr_filter):
 
     media_ids, media_count = TatorSearch().search(entity_types, query)
 
-    return media_ids, media_count
+    return media_ids, media_count, query, entity_types
 
 def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_ids, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    media_ids, _, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
     return media_ids
 
 class MediaPrevAPI(APIView):
@@ -1260,6 +1260,15 @@ class MediaSectionsAPI(APIView):
 
         return Response(response_data)
 
+def delete_polymorphic_qs(qs):
+    """Deletes a polymorphic queryset.
+    """
+    types = set(map(lambda x: type(x), qs))
+    ids = list(map(lambda x: x.id, list(qs)))
+    for entity_type in types:
+        qs = entity_type.objects.filter(pk__in=ids)
+        qs.delete()
+
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
@@ -1288,7 +1297,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 return Response(cache)
 
             self.validate_attribute_filter(request.query_params)
-            media_ids, media_count = get_media_queryset(
+            media_ids, media_count, _, _ = get_media_queryset(
                 self.kwargs['project'],
                 self.request.query_params,
                 self
@@ -1346,8 +1355,38 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
-        queryset = get_media_queryset(self.kwargs['project'], self.request.query_params, self)
+        media_ids, media_count, _, _ = get_media_queryset(
+            self.kwargs['project'],
+            self.request.query_params,
+            self
+        )
+        queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
         return queryset
+
+    def delete(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            media_ids, media_count, query, entity_types = get_media_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(media_ids) == 0:
+                raise ObjectDoesNotExist
+            qs = EntityBase.objects.filter(pk__in=media_ids)
+            delete_polymorphic_qs(qs)
+            TatorSearch().delete(entity_types, query)
+            response=Response({'message': 'Batch delete successful!'},
+                              status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
 
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
