@@ -152,6 +152,15 @@ class TatorSearch:
         """
         indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
         self.es.indices.refresh(index=indices)
-        
+
+    def delete(self, entity_types, query):
+        """Bulk delete on search results.
+        """
+        indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
+        self.es.delete_by_query(
+            index=indices,
+            body=query,
+            conflicts='proceed',
+        )
 
 TatorSearch.setup_elasticsearch()
