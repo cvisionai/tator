@@ -93,7 +93,15 @@ class TimelineCanvas extends TatorElement {
       const value = elem.attributes[attributeName];
       const frame = elem.association.frame;
       if (value) {
-        this._context.fillStyle = "#696cff";
+        //Alternate based on col number
+        if (col_idx % 2 == 0) {
+          this._context.fillStyle = "#696cff";
+        }
+        else
+        {
+          this._context.fillStyle = "#1b9ffb";
+        }
+
       } else {
         this._context.fillStyle = "#262e3d";
       }
