@@ -1069,6 +1069,7 @@ def get_attribute_query(query_params):
     }
 
     must = []
+    must_not = []
     filt = []
     for op in attr_filter_params:
         if attr_filter_params[op] is not None:
@@ -1079,8 +1080,6 @@ def get_attribute_query(query_params):
                         'distance': f'{dist_km}km',
                         key: {'lat': lat, 'lon': lon},
                     }})
-                elif op == 'attribute_null':
-                    must.append({'exists': {'field': kv_pair}})
                 else:
                     key, val = kv_pair.split(kv_separator)
                     if op == 'attribute_eq':
@@ -1095,7 +1094,15 @@ def get_attribute_query(query_params):
                         must.append({'range': {key: {'gte': val}}})
                     elif op == 'attribute_contains':
                         must.append({'wildcard': {key: {'value': f'*{val}*'}}})
-    return must, filt
+                    elif op == 'attribute_null':
+                        check = {'exists': {'field': key}}
+                        if val.lower() == 'false':
+                            must.append(check)
+                        elif val.lower() == 'true':
+                            must_not.append(check)
+                        else:
+                            raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
+    return must, must_not, filt
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
@@ -1137,11 +1144,13 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    must, filt = get_attribute_query(query_params)
+    must, must_not, filt = get_attribute_query(query_params)
     bools += must
 
     if len(bools) > 0:
         query['query']['bool']['must'] = bools
+    if len(must_not) > 0:
+        query['query']['bool']['must_not'] = must_not
     if len(filt) > 0:
         query['query']['bool']['filter'] = filt
 
@@ -1167,17 +1176,26 @@ class MediaPrevAPI(APIView):
 
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
+        entity_types = EntityTypeBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['sort']['exact_name'] = 'desc'
-        query['query']['bool']['must'] = [{'range': {'exact_name': {'lt': media.name}}}]
+        bools = [{'range': {'exact_name': {'lt': media.name}}}]
         query['size'] = 1
 
         if search != None:
-            query['query']['bool']['must'].append({'query_string': {'query': search}})
+            bools.append({'query_string': {'query': search}})
 
-        query['query']['bool']['must'] += get_attribute_query(request.query_params)
+        must, must_not, filt = get_attribute_query(request.query_params)
+        bools += must
 
-        media_ids, count = TatorSearch().search([media.meta], query)
+        if len(bools) > 0:
+            query['query']['bool']['must'] = bools
+        if len(must_not) > 0:
+            query['query']['bool']['must_not'] = must_not
+        if len(filt) > 0:
+            query['query']['bool']['filter'] = filt
+
+        media_ids, count = TatorSearch().search(entity_types, query)
         if count > 0:
             response_data = {'prev': media_ids[0]}
         else:
@@ -1199,17 +1217,26 @@ class MediaNextAPI(APIView):
 
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
+        entity_types = EntityTypeBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['sort']['exact_name'] = 'asc'
-        query['query']['bool']['must'] = [{'range': {'exact_name': {'gt': media.name}}}]
+        bools = [{'range': {'exact_name': {'gt': media.name}}}]
         query['size'] = 1
 
         if search != None:
-            query['query']['bool']['must'].append({'query_string': {'query': search}})
+            bools.append({'query_string': {'query': search}})
 
-        query['query']['bool']['must'] += get_attribute_query(request.query_params)
+        must, must_not, filt = get_attribute_query(request.query_params)
+        bools += must
 
-        media_ids, count = TatorSearch().search([media.meta], query)
+        if len(bools) > 0:
+            query['query']['bool']['must'] = bools
+        if len(must_not) > 0:
+            query['query']['bool']['must_not'] = must_not
+        if len(filt) > 0:
+            query['query']['bool']['filter'] = filt
+
+        media_ids, count = TatorSearch().search(entity_types, query)
         if count > 0:
             response_data = {'next': media_ids[0]}
         else:
@@ -1237,10 +1264,15 @@ class MediaSectionsAPI(APIView):
         if search != None:
             bools.append({'query_string': {'query': search}})
 
-        bools += get_attribute_query(request.query_params)
+        must, must_not, filt = get_attribute_query(request.query_params)
+        bools += must
 
         if len(bools) > 0:
             query['query']['bool']['must'] = bools
+        if len(must_not) > 0:
+            query['query']['bool']['must_not'] = must_not
+        if len(filt) > 0:
+            query['query']['bool']['filter'] = filt
 
         response_data = defaultdict(dict)
 
