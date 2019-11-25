@@ -49,7 +49,9 @@ class TimelineCanvas extends TatorElement {
     if (typeId in this._data._dataTypes) {
       const dataType = this._data._dataTypes[typeId];
       if (dataType.isTLState) {
-        for (const column of dataType.columns) {
+        var sorted_columns = dataType.columns;
+        sorted_columns.sort((a,b) => {return a.order < b.order});
+        for (const column of sorted_columns) {
           if (column.dtype == "bool") {
             this._currentTypeId = typeId;
             const data = this._data._dataByType.get(Number(typeId));
