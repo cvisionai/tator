@@ -549,6 +549,7 @@ class AttributeTestMixin:
                 f'/rest/{self.detail_uri}/{obj_id}',
                 {'attributes': {'string_test': 'DELETE ME!!!'}},
                 format='json')
+        TatorSearch().refresh([self.entity_type])
         response = self.client.delete(
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
@@ -799,7 +800,6 @@ class AttributeTestMixin:
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(dateutil_parse(response.data['attributes']['datetime_test']), test_val)
         TatorSearch().refresh([self.entity_type])
-        # Testing for equality not recommended, but it is allowed
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=datetime_test::{to_string(test_val)}&'
             f'type={self.entity_type.pk}&format=json'
