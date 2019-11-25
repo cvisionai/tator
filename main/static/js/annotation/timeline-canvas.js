@@ -51,37 +51,52 @@ class TimelineCanvas extends TatorElement {
       if (dataType.isTLState) {
         var sorted_columns = dataType.columns;
         sorted_columns.sort((a,b) => {return a.order < b.order});
+        var col_count=0;
+        for (const column of sorted_columns)
+        {
+          if (column.dtype == "bool") {
+            col_count += 1;
+          }
+        }
+        var col_idx = 0;
+        this.clear();
+        const numFrames = parseFloat(this._range.getAttribute("max"));
+        this._canvasWidth=2000;
+        this._canvasFactor=this._canvasWidth/numFrames;
+        this._canvas.setAttribute("width", this._canvasWidth);
+        this._canvas.setAttribute("height", col_count);
+        this._context = this._canvas.getContext("2d");
         for (const column of sorted_columns) {
           if (column.dtype == "bool") {
             this._currentTypeId = typeId;
             const data = this._data._dataByType.get(Number(typeId));
-            this._plotBoolState(column.name, data);
-            break;
+            this._plotBoolState(column.name, data, col_idx, col_count);
+            col_idx += 1;
           }
         }
       }
     }
   }
 
-  _plotBoolState(attributeName, data) {
-    this.clear();
+  _plotBoolState(attributeName, data, col_idx, col_count) {
+    if (col_count < 1 || col_idx >= col_count)
+    {
+      console.warning("Can't plot data with no columns")
+      return;
+    }
     const numFrames = parseFloat(this._range.getAttribute("max"));
-    this._canvasWidth=2000;
-    this._canvasFactor=this._canvasWidth/numFrames;
-    this._canvas.setAttribute("width", this._canvasWidth);
-    this._canvas.setAttribute("height", "1");
-    const context = this._canvas.getContext("2d");
+
     const values = [];
     const frames = [];
     for (const elem of data) {
       const value = elem.attributes[attributeName];
       const frame = elem.association.frame;
       if (value) {
-        context.fillStyle = "#696cff";
+        this._context.fillStyle = "#696cff";
       } else {
-        context.fillStyle = "#262e3d";
+        this._context.fillStyle = "#262e3d";
       }
-      context.fillRect(frame*this._canvasFactor, 0, this._canvasWidth, 1);
+      this._context.fillRect(frame*this._canvasFactor, 0+col_idx, this._canvasWidth, 1+col_idx);
       values.push(value);
       frames.push(frame);
     }
