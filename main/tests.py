@@ -501,6 +501,7 @@ class AttributeTestMixin:
                                          {'attributes': {'bool_test': test_val}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
+        TatorSearch().refresh([self.entity_type])
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?format=json'
@@ -570,6 +571,7 @@ class AttributeTestMixin:
                                          {'attributes': {'bool_test': test_val}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
+        TatorSearch().refresh([self.entity_type])
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=bool_test::false'
             f'&type={self.entity_type.pk}', # needed for localizations
