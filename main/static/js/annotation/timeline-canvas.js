@@ -65,6 +65,7 @@ class TimelineCanvas extends TatorElement {
         this._canvasFactor=this._canvasWidth/numFrames;
         this._canvas.setAttribute("width", this._canvasWidth);
         this._canvas.setAttribute("height", col_count);
+        this._canvas.style.height=`${3*col_count}px`;
         this._context = this._canvas.getContext("2d");
         for (const column of sorted_columns) {
           if (column.dtype == "bool") {
