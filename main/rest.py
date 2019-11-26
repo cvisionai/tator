@@ -809,9 +809,10 @@ class LocalizationList(APIView, AttributeFilterMixin):
         try:
             mediaId = request.query_params.get('media_id', None)
 
-            media_el = EntityMediaBase.objects.get(pk=mediaId)
-            if media_el.project.id != self.kwargs['project']:
-                raise Exception('Media ID not in project')
+            if mediaId is not None:
+                media_el = EntityMediaBase.objects.get(pk=mediaId)
+                if media_el.project.id != self.kwargs['project']:
+                    raise Exception('Media ID not in project')
 
             entityType = request.query_params.get('type', None)
             if (mediaId is not None) and (entityType is not None):
