@@ -427,15 +427,6 @@ class AttributeMediaTestMixin:
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_multiple_media_with_attr(self):
-        medias = random.choices(self.media_entities, k=3)
-        medias = ','.join(map(lambda x: str(x.pk), medias))
-        response = self.client.get(
-            f'/rest/{self.list_uri}/{self.project.pk}?media_id={medias}'
-            f'&type={self.entity_type.pk}&attribute=bool_test::true'
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
 class AttributeTestMixin:
     def test_query_no_attributes(self):
         response = self.client.get(
