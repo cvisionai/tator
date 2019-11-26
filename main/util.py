@@ -233,18 +233,28 @@ def waitForMigrations():
 def buildSearchIndices():
     """ Builds search index for all data.
     """
+    """
     # Create indices
     logger.info("Building indices...")
-    for entity_type in progressbar(list(EntityTypeBase.objects.all())):
+    for entity_type in progressbar(list(EntityTypeMediaBase.objects.all())):
         TatorSearch().create_index(entity_type)
     # Create mappings
     logger.info("Building mappings...")
     for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
         TatorSearch().create_mapping(attribute_type)
-    # Create documents
-    logger.info("Building documents...")
-    for entity in progressbar(list(EntityBase.objects.all())):
-        TatorSearch().create_document(entity, wait=False)
+    # Create media documents
+    logger.info("Building media documents...")
+    for entity in progressbar(list(EntityMediaBase.objects.all())):
+        TatorSearch().create_document(entity)
+    """
+    # Create localization documents
+    logger.info("Building localization documents...")
+    for entity in progressbar(list(EntityLocalizationBase.objects.all())):
+        TatorSearch().create_document(entity)
+    # Create state documents
+    logger.info("Building state documents...")
+    for entity in progressbar(list(EntityState.objects.all())):
+        TatorSearch().create_document(entity)
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.
