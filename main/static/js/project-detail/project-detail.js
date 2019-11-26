@@ -83,11 +83,11 @@ class ProjectDetail extends TatorPage {
       if (msg.command == "updateSection") {
         const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
         if (section) {
-          section.numMedia = msg.count;
-          section.cardInfo = msg.data;
           if (section.sectionFilter != msg.sectionFilter) {
             section.sectionFilter = msg.sectionFilter;
           }
+          section.numMedia = msg.count;
+          section.cardInfo = msg.data;
         }
         this._updateSectionNames(msg.allSections);
       } else if (msg.command == "updateOverview") {
@@ -306,23 +306,6 @@ class ProjectDetail extends TatorPage {
         this._uploadButton.setAttribute("token", newValue);
         this._newSection.setAttribute("token", newValue);
         break;
-    }
-  }
-
-  _updateSections() {
-    // Update media sections
-    const names = Object.keys(this._sections);
-    for (const name of names) {
-      var update=[]
-      if (name in this._mediaIds) {
-        update = this._mediaIds[name];
-      }
-      this._sections[name].mediaIds = update;
-      if (this._lastQuery) {
-        this._sections[name].overview.updateForSearch(update);
-      } else {
-        this._sections[name].overview.updateForAllSoft();
-      }
     }
   }
 

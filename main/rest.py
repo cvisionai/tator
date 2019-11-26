@@ -56,6 +56,8 @@ from .models import EntityTypeLocalizationDot
 from .models import EntityTypeLocalizationLine
 from .models import EntityTypeLocalizationBox
 from .models import EntityTypeMediaBase
+from .models import EntityTypeMediaVideo
+from .models import EntityTypeMediaImage
 from .models import EntityTypeState
 from .models import EntityTypeTreeLeaf
 from .models import EntityTypeMediaVideo
@@ -108,6 +110,7 @@ from .serializers import UserSerializerBasic
 from .consumers import ProgressProducer
 
 from .cache import TatorCache
+from .search import TatorSearch
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -129,6 +132,7 @@ import logging
 import time
 import traceback
 from uuid import uuid1
+from collections import defaultdict
 import slack
 
 logger = logging.getLogger(__name__)
@@ -186,7 +190,7 @@ def convert_attribute(attr_type, attr_val):
     elif isinstance(attr_type, AttributeTypeGeoposition):
         try:
             if isinstance(attr_val, list):
-                lat, lon = attr_val
+                lon, lat = attr_val
             else:
                 lat, lon = attr_val.split('_')
         except:
@@ -243,6 +247,8 @@ def extract_attribute(kv_pair, meta, filter_op):
         point = convert_attribute(attr_type, f"{vals[1]}_{vals[2]}")
         filter_value = (convert_attribute(attr_type, f"{vals[1]}_{vals[2]}"),
                         GisDistance(km=float(distance_km)))
+    elif not typeOk:
+        raise Exception(f"Invalid attribute {attr_name} has incompatible type {type(attr_type)} for operation {filter_op}")
     # We don't have a type, don't have a type suited to this filter op, or
     # the type is string/enum.
     elif (meta is None) or (not typeOk) or isinstance(attr_type, (AttributeTypeString, AttributeTypeEnum)):
@@ -327,9 +333,9 @@ def annotate_attribute(qs, attr_type):
         }
     elif isinstance(attr_type, AttributeTypeGeoposition):
         query_str = ("ST_PointFromText('POINT(' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
-            "' ' || " +
             "(main_entitybase.attributes#>>'{" + attr_name + ",0}') || " +
+            "' ' || " +
+            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
             "')')"
         )
         new_field = {
@@ -574,7 +580,8 @@ class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.
     """
     allowed_types = {
-        'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeEnum, AttributeTypeString),
+        'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat, 
+            AttributeTypeDatetime, AttributeTypeEnum, AttributeTypeString, str),
         'attribute_lt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
         'attribute_lte': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
         'attribute_gt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
@@ -597,8 +604,9 @@ class AttributeFilterMixin:
 
     def validate_attribute_filter(self, query_params):
         """Validates attribute related parts of request, should be called
-           from a try block.
+           from a try block. Sets elasticsearch body.
         """
+
         # Grab the query parameters.
         self.attr_filter_params = {
             'attribute_eq': query_params.get('attribute', None),
@@ -634,7 +642,7 @@ class AttributeFilterMixin:
                     # Check if we should use type for this filter op.
                     filter_value, attr_type, typeOk = extract_attribute(kv_pair, self.meta, filter_op)
                     if requiresType and not typeOk:
-                        raise Exception(f"Invalid operator {filter_op} on attribute {attr_type.name} of type {type(attr_type)}")
+                        raise Exception(f"Invalid operator {filter_op} on attribute {attr_type}")
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
         self.operation = query_params.get('operation', None)
@@ -814,7 +822,6 @@ class LocalizationList(APIView, AttributeFilterMixin):
                 )
                 if cache:
                     return Response(cache)
-
 
             self.validate_attribute_filter(request.query_params)
             self.request=request
@@ -1053,59 +1060,238 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_media_queryset(project, query_params, attr_filter):
-    """Converts raw media query string into queryset.
-    """
-    # Figure out what object we are dealing with
-    obj=EntityMediaBase
-    queryset = obj.objects.filter(project=project)
+def get_attribute_query(query_params, query, bools, project):
+    attr_filter_params = {
+        'attribute_eq': query_params.get('attribute', None),
+        'attribute_lt': query_params.get('attribute_lt', None),
+        'attribute_lte': query_params.get('attribute_lte', None),
+        'attribute_gt': query_params.get('attribute_gt', None),
+        'attribute_gte': query_params.get('attribute_gte', None),
+        'attribute_contains': query_params.get('attribute_contains', None),
+        'attribute_distance': query_params.get('attribute_distance', None),
+        'attribute_null': query_params.get('attribute_null', None),
+    }
+    project_attrs = Project.objects.get(pk=project).attributetypebase_set.all()
+    child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
+    attr_query = {
+        'media': {
+            'must': [],
+            'must_not': [],
+            'filter': [],
+        },
+        'annotation': {
+            'must': [],
+            'must_not': [],
+            'filter': [],
+        },
+    }
+    for op in attr_filter_params:
+        if attr_filter_params[op] is not None:
+            for kv_pair in attr_filter_params[op].split(','):
+                if op == 'attribute_distance':
+                    key, dist_km, lat, lon = kv_pair.split(kv_separator)
+                    relation = 'annotation' if key in child_attrs else 'media'
+                    attr_query[relation]['filter'].append({
+                        'geo_distance': {
+                            'distance': f'{dist_km}km',
+                            key: {'lat': lat, 'lon': lon},
+                        }
+                    })
+                else:
+                    key, val = kv_pair.split(kv_separator)
+                    relation = 'annotation' if key in child_attrs else 'media'
+                    if op == 'attribute_eq':
+                        attr_query[relation]['must'].append({'match': {key: val}})
+                    elif op == 'attribute_lt':
+                        attr_query[relation]['must'].append({'range': {key: {'lt': val}}})
+                    elif op == 'attribute_lte':
+                        attr_query[relation]['must'].append({'range': {key: {'lte': val}}})
+                    elif op == 'attribute_gt':
+                        attr_query[relation]['must'].append({'range': {key: {'gt': val}}})
+                    elif op == 'attribute_gte':
+                        attr_query[relation]['must'].append({'range': {key: {'gte': val}}})
+                    elif op == 'attribute_contains':
+                        attr_query[relation]['must'].append({'wildcard': {key: {'value': f'*{val}*'}}})
+                    elif op == 'attribute_null':
+                        check = {'exists': {'field': key}}
+                        if val.lower() == 'false':
+                            attr_query[relation]['must'].append(check)
+                        elif val.lower() == 'true':
+                            attr_query[relation]['must_not'].append(check)
+                        else:
+                            raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
 
+    attr_query['media']['must'] += bools
+    has_child = False
+    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['annotation'][key]) > 0:
+            has_child = True
+            child_query['query']['bool'][key] = attr_query['annotation'][key]
+
+    if has_child:
+        child_query['type'] = 'annotation'
+        attr_query['media']['must'].append({'has_child': child_query})
+
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['media'][key]) > 0:
+            query['query']['bool'][key] = attr_query['media'][key]
+
+    search = query_params.get('search', None)
+    if search != None:
+        query['query']['bool']['should'] = [
+            {'query_string': {'query': search}},
+            {'has_child': {
+                    'type': 'annotation',
+                    'query': {'query_string': {'query': search}},
+                },
+            },
+        ]
+        query['query']['bool']['minimum_should_match'] = 1
+
+    return query
+
+def get_media_queryset(project, query_params, attr_filter):
+    """Converts raw media query string into a list of IDs and a count.
+    """
     mediaId = query_params.get('media_id', None)
     filterType = query_params.get('type', None)
     name = query_params.get('name', None)
     md5 = query_params.get('md5', None)
-    search = query_params.get('search', None)
+    start = query_params.get('start', None)
+    stop = query_params.get('stop', None)
+
+    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    query['sort']['_exact_name'] = 'asc'
+    bools = []
 
     if mediaId != None:
-        mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-        queryset = queryset.filter(pk__in=mediaId)
+        bools.append({'ids': {'values': mediaId.split(',')}})
 
     if filterType != None:
-        queryset = queryset.filter(meta=filterType)
+        bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
     if name != None:
-        queryset = queryset.filter(name=name)
-
-    if search != None:
-        related_media = EntityBase.objects.filter(
-            attributes__icontains=search,
-            project=project
-        ).values('related_media').distinct()
-        search_qs = EntityMediaBase.objects.filter(
-            name__icontains=search,
-            project=project,
-        ).values('pk').distinct()
-        search_qs = search_qs.union(related_media)
-        queryset = queryset.filter(pk__in=search_qs)
+        bools.append({'match': {'_name': {'query': name}}})
 
     if md5 != None:
-        queryset = queryset.filter(md5=md5)
+        bools.append({'match': {'_md5': {'query': md5}}})
 
-    queryset = attr_filter.filter_by_attribute(queryset)
+    if start != None:
+        query['from'] = int(start)
 
-    queryset = queryset.order_by("name")
+    if start == None and stop != None:
+        query['size'] = int(stop)
 
-    queryset = paginate(query_params, queryset)
+    if start != None and stop != None:
+        query['size'] = int(stop) - int(start)
 
-    return queryset
+    query = get_attribute_query(query_params, query, bools, project)
+
+    media_ids, media_count = TatorSearch().search(project, query)
+
+    return media_ids, media_count, query
 
 def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_qs = get_media_queryset(project_id, query_params, attribute_filter)
-    media_ids = media_qs.values_list('id', flat=True)
-    return list(media_ids)
+    media_ids, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    return media_ids
+
+class MediaPrevAPI(APIView):
+    """
+    Endpoint for getting previous media in a media list
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        media_id = kwargs['pk']
+        media = EntityMediaBase.objects.get(pk=media_id)
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['sort']['_exact_name'] = 'desc'
+        bools = [{'range': {'_exact_name': {'lt': media.name}}}]
+        query['size'] = 1
+
+        query = get_attribute_query(request.query_params, query, bools, media.project.pk)
+
+        media_ids, count = TatorSearch().search(media.project.pk, query)
+        if count > 0:
+            response_data = {'prev': media_ids[0]}
+        else:
+            response_data = {'prev': -1}
+
+        return Response(response_data)
+
+    def get_queryset(self):
+        return EntityMediaBase.objects.all()
+
+class MediaNextAPI(APIView):
+    """
+    Endpoint for getting next media in a media list
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        media_id = kwargs['pk']
+        media = EntityMediaBase.objects.get(pk=media_id)
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['sort']['_exact_name'] = 'asc'
+        bools = [{'range': {'_exact_name': {'gt': media.name}}}]
+        query['size'] = 1
+
+        query = get_attribute_query(request.query_params, query, bools, media.project.pk)
+
+        media_ids, count = TatorSearch().search(media.project.pk, query)
+        if count > 0:
+            response_data = {'next': media_ids[0]}
+        else:
+            response_data = {'next': -1}
+
+        return Response(response_data)
+
+    def get_queryset(self):
+        return EntityMediaBase.objects.all()
+
+class MediaSectionsAPI(APIView):
+    """
+    Endpoint for getting section names and media counts of a project
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
+        query['size'] = 0
+
+
+        response_data = defaultdict(dict)
+
+        bools = [{'match': {'_dtype': {'query': 'image'}}}]
+        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
+        num_images = TatorSearch().search_raw(kwargs['project'], query)
+        num_images = num_images['aggregations']['section_counts']['buckets']
+        for data in num_images:
+            response_data[data['key']]['num_images'] = data['doc_count']
+
+        bools = [{'match': {'_dtype': {'query': 'video'}}}]
+        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
+        num_videos = TatorSearch().search_raw(kwargs['project'], query)
+        num_videos = num_videos['aggregations']['section_counts']['buckets']
+        for data in num_videos:
+            response_data[data['key']]['num_videos'] = data['doc_count']
+
+        return Response(response_data)
+
+def delete_polymorphic_qs(qs):
+    """Deletes a polymorphic queryset.
+    """
+    types = set(map(lambda x: type(x), qs))
+    ids = list(map(lambda x: x.id, list(qs)))
+    for entity_type in types:
+        qs = entity_type.objects.filter(pk__in=ids)
+        qs.delete()
 
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
@@ -1135,55 +1321,13 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 return Response(cache)
 
             self.validate_attribute_filter(request.query_params)
-            qs = self.get_queryset()
-            if self.operation:
-                if self.operation == 'count':
-                    responseData = {'count': qs.count()}
-                elif 'attribute_count' in self.operation:
-                    _, attr_name = self.operation.split('::')
-                    responseData = count_by_attribute(qs, attr_name)
-                elif 'attribute_ids' in self.operation:
-                    _, attr_name = self.operation.split('::')
-                    responseData = ids_by_attribute(qs, attr_name)
-                elif 'adjacent' in self.operation:
-                    _, this_id = self.operation.split('::')
-                    this_name=qs.get(pk=this_id).name
-                    before = qs.filter(name__lt=this_name)
-                    if before.count() == 0:
-                        prev_obj = qs.last()
-                    else:
-                        prev_obj = before.last()
-
-                    after = qs.filter(name__gt=this_name)
-                    if after.count() == 0:
-                        next_obj = qs.first()
-                    else:
-                        next_obj = after.first()
-                    responseData = {'prev': prev_obj.id, 'next': next_obj.id}
-                elif 'ids' in self.operation:
-                    responseData = {'media_ids': qs.values_list('id', flat=True)}
-                elif 'overview' in self.operation:
-                    responseData = {
-                        'Images': qs.instance_of(EntityMediaImage).count(),
-                        'Videos': qs.instance_of(EntityMediaVideo).count(),
-                    }
-                    count_analyses = AnalysisCount.objects.filter(project=self.kwargs['project'])
-                    for analysis in count_analyses:
-                        if isinstance(analysis.data_type, EntityTypeMediaBase):
-                            data = qs
-                        elif isinstance(analysis.data_type, EntityTypeLocalizationBase):
-                            data = EntityLocalizationBase.objects.filter(media__in=qs)
-                        elif isinstance(analysis.data_type, EntityTypeState):
-                            data = EntityState.selectOnMedia(qs)
-                        else:
-                            raise Exception('Invalid analysis data type!')
-                        data = data.filter(meta=analysis.data_type)
-                        if analysis.data_filter:
-                            data = data.filter(**analysis.data_filter)
-                        responseData[analysis.name] = data.count()
-                else:
-                    raise Exception('Invalid operation parameter!')
-            else:
+            media_ids, media_count, _ = get_media_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(media_ids) > 0:
+                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
                 # We are doing a full query; so we should bypass the ORM and
                 # use the SQL cursor directly.
                 # TODO: See if we can do this using queryset into a custom serializer instead
@@ -1220,6 +1364,8 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                     responseData=result[0]
                     if responseData is None:
                         responseData=[]
+            else:
+                responseData = []
         except Exception as e:
             logger.error(traceback.format_exc())
             response=Response({'message' : str(e),
@@ -1233,8 +1379,38 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
-        queryset = get_media_queryset(self.kwargs['project'], self.request.query_params, self)
+        media_ids, media_count, _ = get_media_queryset(
+            self.kwargs['project'],
+            self.request.query_params,
+            self
+        )
+        queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
         return queryset
+
+    def delete(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            media_ids, media_count, query = get_media_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(media_ids) == 0:
+                raise ObjectDoesNotExist
+            qs = EntityBase.objects.filter(pk__in=media_ids)
+            delete_polymorphic_qs(qs)
+            TatorSearch().delete(self.kwargs['project'], query)
+            response=Response({'message': 'Batch delete successful!'},
+                              status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
 
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
@@ -2524,7 +2700,7 @@ class AlgorithmLaunchAPI(APIView):
             if 'media_query' in reqObject:
                 media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
             elif 'media_ids' in reqObject:
-                media_ids.extend(reqObject['media_ids'])
+                media_ids.extend(reqObject['media_ids'].split(','))
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))

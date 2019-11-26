@@ -31,9 +31,8 @@ self.addEventListener("message", async evt => {
     section.setPage(msg.start, msg.stop);
   } else if (msg.command == "filterSection") {
     // Applies filter to section
-    let url = "/rest/EntityMedias/" + self.projectId +
-      "?operation=attribute_count::tator_user_sections" +
-      "&attribute=tator_user_sections::" + msg.sectionName;
+    let url = "/rest/MediaSections/" + self.projectId +
+      "?attribute=tator_user_sections::" + msg.sectionName;
     if (msg.query) {
       url += "&search=" + msg.query;
     }
@@ -47,10 +46,9 @@ self.addEventListener("message", async evt => {
     .catch(err => console.log("Error applying filter: " + err));
   } else if (msg.command == "filterProject") {
     // Applies filter to whole project
-    let url = "/rest/EntityMedias/" + self.projectId +
-      "?operation=attribute_count::tator_user_sections";
+    let url = "/rest/MediaSections/" + self.projectId;
     if (msg.query) {
-      url += "&search=" + msg.query;
+      url += "?search=" + msg.query;
     }
     fetchRetry(url, {
       method: "GET",
@@ -75,8 +73,7 @@ self.addEventListener("message", async evt => {
       "Accept": "application/json",
       "Content-Type": "application/json"
     };
-    const url = "/rest/EntityMedias/" + msg.projectId +
-      "?operation=attribute_count::tator_user_sections";
+    const url = "/rest/MediaSections/" + msg.projectId;
     const attributePromise = fetchRetry(url, {
       method: "GET",
       credentials: "omit",
@@ -84,7 +81,7 @@ self.addEventListener("message", async evt => {
     });
     let filterUrl = url;
     if (msg.projectFilter) {
-      filterUrl += "&search=" + msg.projectFilter;
+      filterUrl += "?search=" + msg.projectFilter;
     }
     const filterPromise = fetchRetry(filterUrl, {
       method: "GET",
@@ -176,7 +173,7 @@ class SectionData {
     this._mediaIds = [];
 
     // Number of media
-    this._numMedia = numMedia;
+    this._numMedia = this._getNumMedia(numMedia);
 
     // Search string
     this._search = search 
@@ -197,6 +194,17 @@ class SectionData {
     this.drawn = false;
   }
 
+  _getNumMedia(sectionResponse) {
+    let count = 0;
+    if (typeof sectionResponse.num_videos !== "undefined") {
+      count += sectionResponse.num_videos;
+    }
+    if (typeof sectionResponse.num_images !== "undefined") {
+      count += sectionResponse.num_images;
+    }
+    return count;
+  }
+
   getSectionFilter() {
     let url = "?attribute=tator_user_sections::" + this._name;
     if (this._search !== null) {
@@ -208,7 +216,7 @@ class SectionData {
   fetchMedia() {
     // Fetches next batch of data
     const start = this._mediaById.size;
-    const stop = this._stop + _fetchBufferSize;
+    const stop = Number(this._stop) + Number(_fetchBufferSize);
     const needData = start < this._stop;
     if (!needData) {
       this._emitUpdate();
@@ -246,7 +254,7 @@ class SectionData {
     this._mediaById = new Map();
     this._mediaIds = [];
     this._search = search;
-    this._numMedia = numMedia;
+    this._numMedia = this._getNumMedia(numMedia);
     this.fetchMedia();
   }
 

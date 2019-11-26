@@ -1,7 +1,11 @@
-from main.models import *
 import logging
 import os
 import time
+
+from progressbar import progressbar
+
+from main.models import *
+from main.search import TatorSearch
 
 logger = logging.getLogger(__name__)
 
@@ -86,33 +90,6 @@ def moveCompletedAlgRuns(project_id, from_section, to_section):
             count += 1
     print(f"Moved {count} files.")
 
-def updateRelatedMedia():
-    qs = EntityMediaBase.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating media {idx}/{count}")
-        if obj.related_media != obj:
-            obj.related_media = obj
-            obj.save()
-    qs = EntityLocalizationBase.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating localizations {idx}/{count}")
-        if obj.related_media != obj.media:
-            obj.related_media = obj.media
-            obj.save()
-    qs = EntityState.objects.all()
-    count = qs.count()
-    for idx, obj in enumerate(qs):
-        if idx % 1000 == 0:
-            logger.info(f"Updating states {idx}/{count}")
-        media = obj.association.media.all()
-        if media.exists():
-            if obj.related_media != media[0]:
-                obj.related_media = media[0]
-                obj.save()
 def moveFileToNewProjectFolder(element, fileField, project_number):
     current_path = fileField.path
     current_root = os.path.dirname(current_path)
@@ -252,3 +229,45 @@ def waitForMigrations():
             break
         except:
             time.sleep(10)
+
+def buildSearchIndices():
+    """ Builds search index for all data.
+    """
+    # Create indices
+    logger.info("Building indices...")
+    for project in progressbar(list(Project.objects.all())):
+        TatorSearch().create_index(project.pk)
+    # Create mappings
+    logger.info("Building mappings...")
+    for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
+        TatorSearch().create_mapping(attribute_type)
+    # Create media documents
+    logger.info("Building media documents...")
+    for entity in progressbar(list(EntityMediaBase.objects.all())):
+        TatorSearch().create_document(entity)
+    # Create localization documents
+    logger.info("Building localization documents...")
+    for entity in progressbar(list(EntityLocalizationBase.objects.all())):
+        TatorSearch().create_document(entity)
+    # Create state documents
+    logger.info("Building state documents...")
+    for entity in progressbar(list(EntityState.objects.all())):
+        TatorSearch().create_document(entity)
+    # Create treeleaf documents
+    logger.info("Building tree leaf documents...")
+    for entity in progressbar(list(TreeLeaf.objects.all())):
+        TatorSearch().create_document(entity)
+
+def swapLatLon():
+    """ Swaps lat/lon stored in geoposition attributes.
+    """
+    logger.info("Building entity list...")
+    entities = []
+    for attribute_type in progressbar(list(AttributeTypeGeoposition.objects.all())):
+        entities = list(EntityBase.objects.filter(meta=attribute_type.applies_to))
+        for entity in progressbar(entities):
+            attr = attribute_type.name
+            if attr in entity.attributes:
+                entity.attributes[attr] = entity.attributes[attr][::-1]
+                entity.save()
+    logger.info("Updating entities...")

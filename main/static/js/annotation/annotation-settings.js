@@ -70,17 +70,25 @@ class AnnotationSettings extends TatorElement {
     if (haveMedia && haveProject) {
       const projectId = this.getAttribute("project-id");
       const mediaId = this.getAttribute("media-id");
-      const query = window.location.search + "&operation=adjacent::" + mediaId;
-      fetch("/rest/EntityMedias/" + projectId + query, {
+      const nextPromise = fetch("/rest/MediaNext/" + mediaId + window.location.search, {
         method: "GET",
         headers: {
           "X-CSRFToken": getCookie("csrftoken"),
           "Accept": "application/json",
           "Content-Type": "application/json",
         }
-      })
-      .then(response => response.json())
-      .then(data => {
+      });
+      const prevPromise = fetch("/rest/MediaPrev/" + mediaId + window.location.search, {
+        method: "GET",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        }
+      });
+      Promise.all([nextPromise, prevPromise])
+      .then(responses => Promise.all(responses.map(resp => resp.json())))
+      .then(([nextData, prevData]) => {
         const baseUrl = "/" + projectId + "/annotation/";
         const searchParams = new URLSearchParams(window.location.search);
         const media_id = parseInt(mediaId);
@@ -89,28 +97,24 @@ class AnnotationSettings extends TatorElement {
         searchParams.delete("selected_type");
 
         // Only enable next/prev if there is a next/prev
-        if (data.prev == media_id)
-        {
+        if (prevData.prev == -1) {
           this._prev.disabled = true;
         }
-        else
-        {
+        else {
           this._prev.addEventListener("click", () => {
-            let url = baseUrl + data.prev;
+            let url = baseUrl + prevData.prev;
             url += "?" + searchParams.toString();
             url += this._typeParams();
             window.location.href = url;
           });
         }
 
-        if (data.next == media_id)
-        {
+        if (nextData.next == -1) {
           this._next.disabled = true;
         }
-        else
-        {
+        else {
           this._next.addEventListener("click", () => {
-            let url = baseUrl + data.next;
+            let url = baseUrl + nextData.next;
             url += "?" + searchParams.toString();
             url += this._typeParams();
             window.location.href = url;

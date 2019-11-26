@@ -45,8 +45,7 @@ class SectionOverview extends TatorElement {
   updateForMedia(media) {
     this._header.textContent = media.name;
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project +
-      "?media_id=" + media.id + "&operation=overview";
+    const url = "/rest/EntityMedia/" + media.id;
     fetch(url, {
       method: "GET",
       credentials: "same-origin",
@@ -57,34 +56,19 @@ class SectionOverview extends TatorElement {
       },
     })
     .then(response => response.json())
-    .then(data => this._updateText(data));
-  }
-
-  updateForSearch(media_ids) {
-    if (media_ids.length > 0 && media_ids.length < 100)
-    {
-      this._header.textContent = "Search Results";
-      const project = this.getAttribute("project-id");
-      const url = "/rest/EntityMedias/" + project +
-            "?media_id=" + media_ids.join(',') + "&operation=overview";
-      fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-        .then(response => response.json())
-        .then(data => this._updateText(data));
-    }
-    else if (media_ids.length == 0)
-    {
-      this._header.textContent = "Search Results";
-      this._updateText({"Videos": 0,
-                        "Images": 0});
-    }
+    .then(data => {
+      if (typeof data.thumb_gif_url === "undefined") {
+        this._updateText({'counts': {
+          "num_videos": 0,
+          "num_images": 1,
+        }});
+      } else {
+        this._updateText({'counts': {
+          "num_videos": 1,
+          "num_images": 0,
+        }});
+      }
+    });
   }
 
   updateForAllSoft() {
@@ -102,8 +86,7 @@ class SectionOverview extends TatorElement {
   updateForAll() {
     this._header.textContent = "Section Overview";
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedias/" + project +
-      this._mediaFilter() + "&operation=overview";
+    const url = "/rest/MediaSections/" + project + this._mediaFilter();
     fetch(url, {
       method: "GET",
       credentials: "same-origin",
@@ -115,6 +98,7 @@ class SectionOverview extends TatorElement {
     })
     .then(response => response.json())
     .then(data => {
+      
       this._updateText(data);
       this._lastAllData = data;
     });
@@ -122,9 +106,34 @@ class SectionOverview extends TatorElement {
 
   _updateText(data, skipMedia) {
 
-    const numImages = data.Images
-    const numVideos = data.Videos
+    let numImages = 0;
+    let numVideos = 0;
+    if (Object.keys(data).length > 0) {
+      const counts = data[Object.keys(data)[0]];
+      if (typeof counts.num_images !== "undefined") {
+        numImages = counts.num_images;
+      }
+      if (typeof counts.num_videos !== "undefined") {
+        numVideos = counts.num_videos;
+      }
 
+      let index = 2;
+      const divs = this._stats.children;
+      for (const name in counts) {
+        if ((name != "num_videos") && (name != "num_images")) {
+          let div;
+          if (index >= divs.length) {
+            div = document.createElement("div");
+            div.setAttribute("class", "py-2");
+            this._stats.appendChild(div);
+          } else {
+            div = divs[index];
+          }
+          div.textContent = counts[name] + " " + name;
+          index++;
+        }
+      }
+    }
     let vidLabel = " Videos";
     if (numVideos === 1) {
       vidLabel = " Video";
@@ -136,23 +145,6 @@ class SectionOverview extends TatorElement {
       imgLabel = " Image";
     }
     this._numImages.textContent = numImages + imgLabel;
-
-    let index = 2;
-    const divs = this._stats.children;
-    for (const name in data) {
-      if ((name != "Videos") && (name != "Images")) {
-        let div;
-        if (index >= divs.length) {
-          div = document.createElement("div");
-          div.setAttribute("class", "py-2");
-          this._stats.appendChild(div);
-        } else {
-          div = divs[index];
-        }
-        div.textContent = data[name] + " " + name;
-        index++;
-      }
-    }
   }
 }
 

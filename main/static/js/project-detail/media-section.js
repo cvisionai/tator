@@ -38,13 +38,6 @@ class MediaSection extends TatorElement {
     this._overview.mediaFilter = this._sectionFilter.bind(this);
     div.appendChild(this._overview);
 
-    this._files.addEventListener("annotation", evt => {
-      const projectId = this.getAttribute("project-id");
-      const mediaId = evt.detail.mediaId;
-      const url = "/" + projectId + "/annotation/" + mediaId;
-      window.location.href = url + this._sectionFilter();
-    });
-
     this._files.addEventListener("cardMouseover", evt => {
       this._latestMouse = "enter";
       this._overview.updateForMedia(evt.detail.media);

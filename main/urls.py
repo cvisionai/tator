@@ -49,6 +49,9 @@ from .rest import ProjectDetailAPI
 from .rest import AnalysisAPI
 from .rest import NotifyAPI
 from .rest import UserDetailAPI
+from .rest import MediaPrevAPI
+from .rest import MediaNextAPI
+from .rest import MediaSectionsAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -200,5 +203,20 @@ urlpatterns += [
     path(
         'rest/User/<int:pk>',
         UserDetailAPI.as_view(),
-    )
+    ),
+    path(
+        'rest/MediaPrev/<int:pk>',
+        MediaPrevAPI.as_view(),
+        name='MediaPrev',
+    ),
+    path(
+        'rest/MediaNext/<int:pk>',
+        MediaNextAPI.as_view(),
+        name='MediaNext',
+    ),
+    path(
+        'rest/MediaSections/<int:project>',
+        MediaSectionsAPI.as_view(),
+        name='MediaSections',
+    ),
 ]

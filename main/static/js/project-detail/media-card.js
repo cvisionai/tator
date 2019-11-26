@@ -38,14 +38,6 @@ class MediaCard extends TatorElement {
     this._more.setAttribute("class", "px-3");
     this._li.appendChild(this._more);
 
-    this._link.addEventListener("click", evt => {
-      evt.preventDefault();
-      this.dispatchEvent(new CustomEvent("annotation", {
-        detail: {mediaId: this.getAttribute("media-id")},
-        composed: true
-      }));
-    });
-
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(new CustomEvent("algorithm", {
         detail: {
@@ -224,10 +216,13 @@ class MediaCard extends TatorElement {
     this._more.sections = val;
   }
 
+  set mediaFilter(val) {
+    this._mediaFilter = val;
+  }
+
   set media(val) {
     this._media = val;
-    var section = val.attributes['tator_user_sections'];
-    var uri = encodeURI(`/${val.project}/annotation/${val.id}?attribute=tator_user_sections::${section}`);
+    var uri = encodeURI(`/${val.project}/annotation/${val.id}${this._mediaFilter()}`);
     this._link.setAttribute("href", uri);
   }
 
