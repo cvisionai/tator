@@ -173,6 +173,15 @@ class Project(Model):
         delete_polymorphic_qs(qs)
         super().delete(*args, **kwargs)
 
+
+@receiver(post_save, sender=Project)
+def create_index_project(sender, instance, **kwargs):
+    TatorSearch().create_index(instance.pk)
+
+@receiver(pre_delete, sender=Project)
+def delete_index_project(sender, instance, **kwargs):
+    TatorSearch().delete_index(instance.pk)
+
 class Membership(Model):
     """Stores a user and their access level for a project.
     """
@@ -206,14 +215,6 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
                             choices=ImageFileFormat,
                             default=ImageFileFormat[0][0])
 
-@receiver(post_save, sender=EntityTypeMediaImage)
-def create_index_images(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeMediaImage)
-def delete_index_images(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
-
 class EntityTypeMediaVideo(EntityTypeMediaBase):
     entity_name = 'Video'
     dtype = 'video'
@@ -223,14 +224,6 @@ class EntityTypeMediaVideo(EntityTypeMediaBase):
                             choices=FileFormat,
                             default=FileFormat[0][0])
     keep_original = BooleanField()
-
-@receiver(post_save, sender=EntityTypeMediaVideo)
-def create_index_videos(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeMediaVideo)
-def delete_index_videos(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
 
 class EntityTypeLocalizationBase(EntityTypeBase):
     media = ManyToManyField(EntityTypeMediaBase)
@@ -243,39 +236,15 @@ class EntityTypeLocalizationDot(EntityTypeLocalizationBase):
     marker = EnumField(Marker, max_length=9, default=Marker.CIRCLE)
     marker_size = PositiveIntegerField(default=12)
 
-@receiver(post_save, sender=EntityTypeLocalizationDot)
-def create_index_dots(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeLocalizationDot)
-def delete_index_dots(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
-
 class EntityTypeLocalizationLine(EntityTypeLocalizationBase):
     entity_name = 'Line'
     dtype = 'line'
     line_width = PositiveIntegerField(default=3)
 
-@receiver(post_save, sender=EntityTypeLocalizationLine)
-def create_index_lines(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeLocalizationLine)
-def delete_index_lines(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
-
 class EntityTypeLocalizationBox(EntityTypeLocalizationBase):
     entity_name = 'Box'
     dtype = 'box'
     line_width = PositiveIntegerField(default=3)
-
-@receiver(post_save, sender=EntityTypeLocalizationBox)
-def create_index_boxes(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeLocalizationBox)
-def delete_index_boxes(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
 
 class EntityTypeState(EntityTypeBase):
     """ Used to conglomerate AttributeTypes into a set """
@@ -291,25 +260,9 @@ class EntityTypeState(EntityTypeBase):
                             choices=AssociationTypes,
                             default=AssociationTypes[0][0])
 
-@receiver(post_save, sender=EntityTypeState)
-def create_index_states(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeState)
-def delete_index_states(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
-
 class EntityTypeTreeLeaf(EntityTypeBase):
     entity_name = 'TreeLeaf'
     dtype = 'treeleaf'
-
-@receiver(post_save, sender=EntityTypeTreeLeaf)
-def create_index_leaves(sender, instance, **kwargs):
-    TatorSearch().create_index(instance)
-
-@receiver(pre_delete, sender=EntityTypeTreeLeaf)
-def delete_index_leaves(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance)
 
 # Entities (stores actual data)
 
@@ -405,12 +358,12 @@ class EntityLocalizationBase(EntityBase):
 
 @receiver(post_save, sender=EntityLocalizationBase)
 def localization_save(sender, instance, created, **kwargs):
-    TatorSearch().create_index(instance)
+    TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
     """ Delete generated thumbnails if a localization box is deleted """
-    TatorSearch().delete_index(instance)
+    TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 

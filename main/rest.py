@@ -1160,7 +1160,6 @@ def get_media_queryset(project, query_params, attr_filter):
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
     bools = []
-    media_types = EntityTypeMediaBase.objects.filter(project=project)
 
     if mediaId != None:
         bools.append({'ids': {'values': mediaId.split(',')}})
@@ -1185,15 +1184,15 @@ def get_media_queryset(project, query_params, attr_filter):
 
     query = get_attribute_query(query_params, query, bools, project)
 
-    media_ids, media_count = TatorSearch().search(media_types, query)
+    media_ids, media_count = TatorSearch().search(project, query)
 
-    return media_ids, media_count, query, media_types
+    return media_ids, media_count, query
 
 def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_ids, _, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    media_ids, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
     return media_ids
 
 class MediaPrevAPI(APIView):
@@ -1205,7 +1204,6 @@ class MediaPrevAPI(APIView):
     def get(self, request, *args, **kwargs):
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
-        media_types = EntityTypeMediaBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['sort']['_exact_name'] = 'desc'
         bools = [{'range': {'_exact_name': {'lt': media.name}}}]
@@ -1213,7 +1211,7 @@ class MediaPrevAPI(APIView):
 
         query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        media_ids, count = TatorSearch().search(media_types, query)
+        media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
             response_data = {'prev': media_ids[0]}
         else:
@@ -1233,7 +1231,6 @@ class MediaNextAPI(APIView):
     def get(self, request, *args, **kwargs):
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
-        media_types = EntityTypeMediaBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['sort']['_exact_name'] = 'asc'
         bools = [{'range': {'_exact_name': {'gt': media.name}}}]
@@ -1241,7 +1238,7 @@ class MediaNextAPI(APIView):
 
         query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        media_ids, count = TatorSearch().search(media_types, query)
+        media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
             response_data = {'next': media_ids[0]}
         else:
@@ -1262,25 +1259,23 @@ class MediaSectionsAPI(APIView):
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['size'] = 0
-        bools = []
 
-        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
 
         response_data = defaultdict(dict)
 
-        image_types = list(EntityTypeMediaImage.objects.filter(project=kwargs['project']))
-        if len(image_types) > 0:
-            num_images = TatorSearch().search_raw(image_types, query)
-            num_images = num_images['aggregations']['section_counts']['buckets']
-            for data in num_images:
-                response_data[data['key']]['num_images'] = data['doc_count']
+        bools = [{'match': {'_dtype': {'query': 'image'}}}]
+        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
+        num_images = TatorSearch().search_raw(kwargs['project'], query)
+        num_images = num_images['aggregations']['section_counts']['buckets']
+        for data in num_images:
+            response_data[data['key']]['num_images'] = data['doc_count']
 
-        video_types = list(EntityTypeMediaVideo.objects.filter(project=kwargs['project']))
-        if len(video_types) > 0:
-            num_videos = TatorSearch().search_raw(video_types, query)
-            num_videos = num_videos['aggregations']['section_counts']['buckets']
-            for data in num_videos:
-                response_data[data['key']]['num_videos'] = data['doc_count']
+        bools = [{'match': {'_dtype': {'query': 'video'}}}]
+        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
+        num_videos = TatorSearch().search_raw(kwargs['project'], query)
+        num_videos = num_videos['aggregations']['section_counts']['buckets']
+        for data in num_videos:
+            response_data[data['key']]['num_videos'] = data['doc_count']
 
         return Response(response_data)
 
@@ -1321,7 +1316,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 return Response(cache)
 
             self.validate_attribute_filter(request.query_params)
-            media_ids, media_count, _, _ = get_media_queryset(
+            media_ids, media_count, _ = get_media_queryset(
                 self.kwargs['project'],
                 self.request.query_params,
                 self
@@ -1379,7 +1374,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
-        media_ids, media_count, _, _ = get_media_queryset(
+        media_ids, media_count, _ = get_media_queryset(
             self.kwargs['project'],
             self.request.query_params,
             self
@@ -1391,7 +1386,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         response = Response({})
         try:
             self.validate_attribute_filter(request.query_params)
-            media_ids, media_count, query, media_types = get_media_queryset(
+            media_ids, media_count, query = get_media_queryset(
                 self.kwargs['project'],
                 self.request.query_params,
                 self
@@ -1400,7 +1395,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 raise ObjectDoesNotExist
             qs = EntityBase.objects.filter(pk__in=media_ids)
             delete_polymorphic_qs(qs)
-            TatorSearch().delete(media_types, query)
+            TatorSearch().delete(self.kwargs['project'], query)
             response=Response({'message': 'Batch delete successful!'},
                               status=status.HTTP_204_NO_CONTENT)
         except ObjectDoesNotExist as dne:
