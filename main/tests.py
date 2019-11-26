@@ -454,45 +454,6 @@ class AttributeTestMixin:
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_count(self):
-        test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
-        for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f'/rest/{self.detail_uri}/{pk}', {
-                    'attributes': {'bool_test': test_val},
-                },
-                format='json'
-            )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(
-            f'/rest/{self.list_uri}/{self.project.pk}'
-            f'?attribute=bool_test::true'
-            f'&type={self.entity_type.pk}'
-            f'&format=json'
-            f'&operation=count'
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['count'], sum(test_vals))
-
-    def test_count_by_attribute(self):
-        test_vals = [random.choice(self.attribute_types['enum'].choices) for _ in range(len(self.entities))]
-        for idx, test_val in enumerate(test_vals):
-            pk = self.entities[idx].pk
-            response = self.client.patch(
-                f'/rest/{self.detail_uri}/{pk}',
-                {'attributes': {'enum_test': test_val}},
-                format='json')
-        response = self.client.get(
-            f'/rest/{self.list_uri}/{self.project.pk}'
-            f'?format=json'
-            f'&type={self.entity_type.pk}'
-            f'&operation=attribute_count::enum_test'
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for choice in self.attribute_types['enum'].choices:
-            self.assertEqual(response.data.get(choice, 0), test_vals.count(choice))
-
     def test_pagination(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
