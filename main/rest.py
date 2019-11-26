@@ -818,7 +818,6 @@ class LocalizationList(APIView, AttributeFilterMixin):
                 if cache:
                     return Response(cache)
 
-
             self.validate_attribute_filter(request.query_params)
             self.request=request
             before=time.time()
@@ -1056,7 +1055,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query_params):
+def get_attribute_query(query_params, project):
     attr_filter_params = {
         'attribute_eq': query_params.get('attribute', None),
         'attribute_lt': query_params.get('attribute_lt', None),
@@ -1067,42 +1066,56 @@ def get_attribute_query(query_params):
         'attribute_distance': query_params.get('attribute_distance', None),
         'attribute_null': query_params.get('attribute_null', None),
     }
-
-    must = []
-    must_not = []
-    filt = []
+    project_attrs = Project.objects.get(pk=project).attributetypebase_set.all()
+    child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
+    ret = {
+        'media': {
+            'must': [],
+            'must_not': [],
+            'filter': [],
+        },
+        'annotation': {
+            'must': [],
+            'must_not': [],
+            'filter': [],
+        },
+    }
     for op in attr_filter_params:
         if attr_filter_params[op] is not None:
             for kv_pair in attr_filter_params[op].split(','):
                 if op == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(kv_separator)
-                    filt.append({'geo_distance': {
-                        'distance': f'{dist_km}km',
-                        key: {'lat': lat, 'lon': lon},
-                    }})
+                    relation = 'annotation' if key in child_attrs else 'media'
+                    ret[relation]['filter'].append({
+                        'geo_distance': {
+                            'distance': f'{dist_km}km',
+                            key: {'lat': lat, 'lon': lon},
+                        }
+                    })
                 else:
                     key, val = kv_pair.split(kv_separator)
+                    relation = 'annotation' if key in child_attrs else 'media'
                     if op == 'attribute_eq':
-                        must.append({'match': {key: val}})
+                        ret[relation]['must'].append({'match': {key: val}})
                     elif op == 'attribute_lt':
-                        must.append({'range': {key: {'lt': val}}})
+                        ret[relation]['must'].append({'range': {key: {'lt': val}}})
                     elif op == 'attribute_lte':
-                        must.append({'range': {key: {'lte': val}}})
+                        ret[relation]['must'].append({'range': {key: {'lte': val}}})
                     elif op == 'attribute_gt':
-                        must.append({'range': {key: {'gt': val}}})
+                        ret[relation]['must'].append({'range': {key: {'gt': val}}})
                     elif op == 'attribute_gte':
-                        must.append({'range': {key: {'gte': val}}})
+                        ret[relation]['must'].append({'range': {key: {'gte': val}}})
                     elif op == 'attribute_contains':
-                        must.append({'wildcard': {key: {'value': f'*{val}*'}}})
+                        ret[relation]['must'].append({'wildcard': {key: {'value': f'*{val}*'}}})
                     elif op == 'attribute_null':
                         check = {'exists': {'field': key}}
                         if val.lower() == 'false':
-                            must.append(check)
+                            ret[relation]['must'].append(check)
                         elif val.lower() == 'true':
-                            must_not.append(check)
+                            ret[relation]['must_not'].append(check)
                         else:
                             raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
-    return must, must_not, filt
+    return ret
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
@@ -1116,21 +1129,21 @@ def get_media_queryset(project, query_params, attr_filter):
     stop = query_params.get('stop', None)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['exact_name'] = 'asc'
+    query['sort']['_exact_name'] = 'asc'
     bools = []
-    entity_types = EntityTypeBase.objects.filter(project=project)
+    media_types = EntityTypeMediaBase.objects.filter(project=project)
 
     if mediaId != None:
         bools.append({'ids': {'values': mediaId.split(',')}})
 
     if filterType != None:
-        bools.append({'match': {'meta': {'query': int(filterType)}}})
+        bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
     if name != None:
-        bools.append({'match': {'name': {'query': name}}})
+        bools.append({'match': {'_name': {'query': name}}})
 
     if md5 != None:
-        bools.append({'match': {'md5': {'query': md5}}})
+        bools.append({'match': {'_md5': {'query': md5}}})
 
     if search != None:
         bools.append({'query_string': {'query': search}})
@@ -1144,19 +1157,25 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    must, must_not, filt = get_attribute_query(query_params)
-    bools += must
+    attr_query = get_attribute_query(query_params, project)
+    attr_query['media']['must'] += bools
 
-    if len(bools) > 0:
-        query['query']['bool']['must'] = bools
-    if len(must_not) > 0:
-        query['query']['bool']['must_not'] = must_not
-    if len(filt) > 0:
-        query['query']['bool']['filter'] = filt
+    has_child = False
+    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['annotation'][key]) > 0:
+            has_child = True
+            child_query['query']['bool'][key] = attr_query['annotation'][key]
+    if has_child:
+        child_query['type'] = 'annotation'
+        attr_query['media']['must'].append({'has_child': child_query})
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['media'][key]) > 0:
+            query['query']['bool'][key] = attr_query['media'][key]
 
-    media_ids, media_count = TatorSearch().search(entity_types, query)
+    media_ids, media_count = TatorSearch().search(media_types, query)
 
-    return media_ids, media_count, query, entity_types
+    return media_ids, media_count, query, media_types
 
 def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
@@ -1399,7 +1418,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         response = Response({})
         try:
             self.validate_attribute_filter(request.query_params)
-            media_ids, media_count, query, entity_types = get_media_queryset(
+            media_ids, media_count, query, media_types = get_media_queryset(
                 self.kwargs['project'],
                 self.request.query_params,
                 self
@@ -1408,7 +1427,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 raise ObjectDoesNotExist
             qs = EntityBase.objects.filter(pk__in=media_ids)
             delete_polymorphic_qs(qs)
-            TatorSearch().delete(entity_types, query)
+            TatorSearch().delete(media_types, query)
             response=Response({'message': 'Batch delete successful!'},
                               status=status.HTTP_204_NO_CONTENT)
         except ObjectDoesNotExist as dne:

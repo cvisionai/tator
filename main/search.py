@@ -81,8 +81,15 @@ class TatorSearch:
             dtype='date'
         elif attribute_type.dtype == 'geopos':
             dtype='geo_point'
+        entity_type = attribute_type.applies_to
+        if hasattr(entity_type, 'media'):
+            media_types = entity_type.media.all()
+            if media_types.exists():
+                media_type = media_types[0].pk
+        else:
+            media_type = entity_type.pk
         self.es.indices.put_mapping(
-            index=self.index_name(attribute_type.applies_to.pk),
+            index=self.index_name(media_type),
             body={'properties': {
                 attribute_type.name: {'type': dtype},
             }},
@@ -90,52 +97,55 @@ class TatorSearch:
 
     def create_document(self, entity, wait=False):
         aux = {}
+        aux['_meta'] = entity.meta.pk
         if entity.meta.dtype in ['image', 'video']:
-            aux['name'] = entity.name
-            aux['exact_name'] = entity.name
-            aux['md5'] = entity.md5
-            aux['meta'] = entity.meta.pk
+            aux['_media_relation'] = 'media'
+            aux['_name'] = entity.name
+            aux['_exact_name'] = entity.name
+            aux['_md5'] = entity.md5
             if entity.attributes is not None:
                 if 'tator_user_sections' in entity.attributes:
                     aux['tator_user_sections'] = entity.attributes['tator_user_sections']
-            aux['related_media'] = entity.pk
         elif entity.meta.dtype in ['box', 'line', 'dot']:
-            aux['related_media'] = entity.media.pk
-            aux['name'] = entity.media.name
-            aux['exact_name'] = entity.media.name
+            aux['_media_relation'] = {
+                'name': 'annotation',
+                'parent': entity.media.pk,
+            }
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
-                aux['related_media'] = media[0].pk
-                aux['name'] = media[0].name
-                aux['exact_name'] = media[0].name
+                aux['_media_relation'] = {
+                    'name': 'annotation',
+                    'parent': media[0].pk,
+                }
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
         self.es.index(
-            index=self.index_name(entity.meta.pk),
+            index=self.index_name(related_media_type(entity)),
             body={
                 **entity.attributes,
                 **aux,
             },
             id=entity.pk,
             refresh=wait,
+            routing=1,
         )
 
     def delete_document(self, entity):
-        index = self.index_name(entity.meta.pk)
+        index = self.index_name(related_media_type(entity))
         if self.es.exists(index=index, id=entity.pk):
             self.es.delete(index=index, id=entity.pk)
 
-    def search_raw(self, entity_types, query):
-        indices = [self.index_name(entity_type.pk) for entity_type in entity_types]
+    def search_raw(self, media_types, query):
+        indices = [self.index_name(media_type.pk) for media_type in media_types]
         return self.es.search(
             index=indices,
             body=query,
         )
 
-    def search(self, entity_types, query):
-        result = self.search_raw(entity_types, query)
+    def search(self, media_types, query):
+        result = self.search_raw(media_types, query)
         result = result['hits']
         data = result['hits']
         count = result['total']['value']
