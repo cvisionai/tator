@@ -1055,7 +1055,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query_params, project):
+def get_attribute_query(query_params, query, bools, project):
     attr_filter_params = {
         'attribute_eq': query_params.get('attribute', None),
         'attribute_lt': query_params.get('attribute_lt', None),
@@ -1068,7 +1068,7 @@ def get_attribute_query(query_params, project):
     }
     project_attrs = Project.objects.get(pk=project).attributetypebase_set.all()
     child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
-    ret = {
+    attr_query = {
         'media': {
             'must': [],
             'must_not': [],
@@ -1086,7 +1086,7 @@ def get_attribute_query(query_params, project):
                 if op == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(kv_separator)
                     relation = 'annotation' if key in child_attrs else 'media'
-                    ret[relation]['filter'].append({
+                    attr_query[relation]['filter'].append({
                         'geo_distance': {
                             'distance': f'{dist_km}km',
                             key: {'lat': lat, 'lon': lon},
@@ -1096,26 +1096,56 @@ def get_attribute_query(query_params, project):
                     key, val = kv_pair.split(kv_separator)
                     relation = 'annotation' if key in child_attrs else 'media'
                     if op == 'attribute_eq':
-                        ret[relation]['must'].append({'match': {key: val}})
+                        attr_query[relation]['must'].append({'match': {key: val}})
                     elif op == 'attribute_lt':
-                        ret[relation]['must'].append({'range': {key: {'lt': val}}})
+                        attr_query[relation]['must'].append({'range': {key: {'lt': val}}})
                     elif op == 'attribute_lte':
-                        ret[relation]['must'].append({'range': {key: {'lte': val}}})
+                        attr_query[relation]['must'].append({'range': {key: {'lte': val}}})
                     elif op == 'attribute_gt':
-                        ret[relation]['must'].append({'range': {key: {'gt': val}}})
+                        attr_query[relation]['must'].append({'range': {key: {'gt': val}}})
                     elif op == 'attribute_gte':
-                        ret[relation]['must'].append({'range': {key: {'gte': val}}})
+                        attr_query[relation]['must'].append({'range': {key: {'gte': val}}})
                     elif op == 'attribute_contains':
-                        ret[relation]['must'].append({'wildcard': {key: {'value': f'*{val}*'}}})
+                        attr_query[relation]['must'].append({'wildcard': {key: {'value': f'*{val}*'}}})
                     elif op == 'attribute_null':
                         check = {'exists': {'field': key}}
                         if val.lower() == 'false':
-                            ret[relation]['must'].append(check)
+                            attr_query[relation]['must'].append(check)
                         elif val.lower() == 'true':
-                            ret[relation]['must_not'].append(check)
+                            attr_query[relation]['must_not'].append(check)
                         else:
                             raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
-    return ret
+
+    attr_query['media']['must'] += bools
+    has_child = False
+    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['annotation'][key]) > 0:
+            has_child = True
+            child_query['query']['bool'][key] = attr_query['annotation'][key]
+
+    if has_child:
+        child_query['type'] = 'annotation'
+        attr_query['media']['must'].append({'has_child': child_query})
+
+    for key in ['must', 'must_not', 'filter']:
+        if len(attr_query['media'][key]) > 0:
+            query['query']['bool'][key] = attr_query['media'][key]
+
+    search = query_params.get('search', None)
+    if search != None:
+        query['query']['bool']['should'] = [
+            {'query_string': {'query': search}},
+            {'has_child': {
+                    'type': 'annotation',
+                    'query': {'query_string': {'query': search}},
+                },
+            },
+        ]
+        query['query']['bool']['minimum_should_match'] = 1
+
+    return query
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
@@ -1124,7 +1154,6 @@ def get_media_queryset(project, query_params, attr_filter):
     filterType = query_params.get('type', None)
     name = query_params.get('name', None)
     md5 = query_params.get('md5', None)
-    search = query_params.get('search', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
 
@@ -1145,9 +1174,6 @@ def get_media_queryset(project, query_params, attr_filter):
     if md5 != None:
         bools.append({'match': {'_md5': {'query': md5}}})
 
-    if search != None:
-        bools.append({'query_string': {'query': search}})
-
     if start != None:
         query['from'] = int(start)
 
@@ -1157,21 +1183,7 @@ def get_media_queryset(project, query_params, attr_filter):
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
 
-    attr_query = get_attribute_query(query_params, project)
-    attr_query['media']['must'] += bools
-
-    has_child = False
-    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    for key in ['must', 'must_not', 'filter']:
-        if len(attr_query['annotation'][key]) > 0:
-            has_child = True
-            child_query['query']['bool'][key] = attr_query['annotation'][key]
-    if has_child:
-        child_query['type'] = 'annotation'
-        attr_query['media']['must'].append({'has_child': child_query})
-    for key in ['must', 'must_not', 'filter']:
-        if len(attr_query['media'][key]) > 0:
-            query['query']['bool'][key] = attr_query['media'][key]
+    query = get_attribute_query(query_params, query, bools, project)
 
     media_ids, media_count = TatorSearch().search(media_types, query)
 
@@ -1191,30 +1203,17 @@ class MediaPrevAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
-        entity_types = EntityTypeBase.objects.filter(project=media.project)
+        media_types = EntityTypeMediaBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        query['sort']['exact_name'] = 'desc'
-        bools = [{'range': {'exact_name': {'lt': media.name}}}]
+        query['sort']['_exact_name'] = 'desc'
+        bools = [{'range': {'_exact_name': {'lt': media.name}}}]
         query['size'] = 1
 
-        if search != None:
-            bools.append({'query_string': {'query': search}})
+        query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        must, must_not, filt = get_attribute_query(request.query_params)
-        bools += must
-
-        if len(bools) > 0:
-            query['query']['bool']['must'] = bools
-        if len(must_not) > 0:
-            query['query']['bool']['must_not'] = must_not
-        if len(filt) > 0:
-            query['query']['bool']['filter'] = filt
-
-        media_ids, count = TatorSearch().search(entity_types, query)
+        media_ids, count = TatorSearch().search(media_types, query)
         if count > 0:
             response_data = {'prev': media_ids[0]}
         else:
@@ -1232,30 +1231,17 @@ class MediaNextAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-
         media_id = kwargs['pk']
         media = EntityMediaBase.objects.get(pk=media_id)
-        entity_types = EntityTypeBase.objects.filter(project=media.project)
+        media_types = EntityTypeMediaBase.objects.filter(project=media.project)
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        query['sort']['exact_name'] = 'asc'
-        bools = [{'range': {'exact_name': {'gt': media.name}}}]
+        query['sort']['_exact_name'] = 'asc'
+        bools = [{'range': {'_exact_name': {'gt': media.name}}}]
         query['size'] = 1
 
-        if search != None:
-            bools.append({'query_string': {'query': search}})
+        query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        must, must_not, filt = get_attribute_query(request.query_params)
-        bools += must
-
-        if len(bools) > 0:
-            query['query']['bool']['must'] = bools
-        if len(must_not) > 0:
-            query['query']['bool']['must_not'] = must_not
-        if len(filt) > 0:
-            query['query']['bool']['filter'] = filt
-
-        media_ids, count = TatorSearch().search(entity_types, query)
+        media_ids, count = TatorSearch().search(media_types, query)
         if count > 0:
             response_data = {'next': media_ids[0]}
         else:
@@ -1273,25 +1259,12 @@ class MediaSectionsAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['size'] = 0
         bools = []
 
-        if search != None:
-            bools.append({'query_string': {'query': search}})
-
-        must, must_not, filt = get_attribute_query(request.query_params)
-        bools += must
-
-        if len(bools) > 0:
-            query['query']['bool']['must'] = bools
-        if len(must_not) > 0:
-            query['query']['bool']['must_not'] = must_not
-        if len(filt) > 0:
-            query['query']['bool']['filter'] = filt
+        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
 
         response_data = defaultdict(dict)
 
