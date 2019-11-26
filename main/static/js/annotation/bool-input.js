@@ -114,9 +114,13 @@ class BoolInput extends TatorElement {
 
   setValue(val) {
     if (val) {
+      this._on.checked = true;
+      this._off.checked = false;
       this._on.setAttribute("checked", "");
       this._off.removeAttribute("checked");
     } else {
+      this._on.checked = false;
+      this._off.checked = true;
       this._on.removeAttribute("checked");
       this._off.setAttribute("checked", "");
     }
