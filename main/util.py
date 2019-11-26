@@ -233,11 +233,10 @@ def waitForMigrations():
 def buildSearchIndices():
     """ Builds search index for all data.
     """
-    """
     # Create indices
     logger.info("Building indices...")
-    for entity_type in progressbar(list(EntityTypeMediaBase.objects.all())):
-        TatorSearch().create_index(entity_type)
+    for project in progressbar(list(Project.objects.all())):
+        TatorSearch().create_index(project.pk)
     # Create mappings
     logger.info("Building mappings...")
     for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
@@ -246,7 +245,6 @@ def buildSearchIndices():
     logger.info("Building media documents...")
     for entity in progressbar(list(EntityMediaBase.objects.all())):
         TatorSearch().create_document(entity)
-    """
     # Create localization documents
     logger.info("Building localization documents...")
     for entity in progressbar(list(EntityLocalizationBase.objects.all())):
@@ -254,6 +252,10 @@ def buildSearchIndices():
     # Create state documents
     logger.info("Building state documents...")
     for entity in progressbar(list(EntityState.objects.all())):
+        TatorSearch().create_document(entity)
+    # Create treeleaf documents
+    logger.info("Building tree leaf documents...")
+    for entity in progressbar(list(TreeLeaf.objects.all())):
         TatorSearch().create_document(entity)
 
 def swapLatLon():

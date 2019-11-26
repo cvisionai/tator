@@ -5,18 +5,6 @@ from elasticsearch import Elasticsearch
 
 logger = logging.getLogger(__name__)
 
-def related_media_type(entity):
-    """Retrieves related media type from an entity
-    """
-    media_type = None
-    if entity.meta.dtype in ['image', 'video']:
-        media_type = entity.meta.pk
-    elif entity.meta.dtype in ['box', 'line', 'dot', 'state']:
-        media = entity.meta.media.all()
-        if media.exists():
-            media_type = media[0].pk
-    return media_type
-
 class TatorSearch:
     """ Interface for elasticsearch documents.
         There is one index per entity type.
@@ -30,11 +18,11 @@ class TatorSearch:
             cls.prefix = ''
         cls.es = Elasticsearch(host='elasticsearch-master')
 
-    def index_name(self, media_type_id):
-        return f'{self.prefix}media_type_{media_type_id}'
+    def index_name(self, project):
+        return f'{self.prefix}project_{project}'
 
-    def create_index(self, media_type):
-        index = self.index_name(media_type.pk)
+    def create_index(self, project):
+        index = self.index_name(project)
         if not self.es.indices.exists(index):
             self.es.indices.create(
                 index,
@@ -55,14 +43,15 @@ class TatorSearch:
                             '_exact_name': {'type': 'keyword'},
                             '_md5': {'type': 'text'},
                             '_meta': {'type': 'integer'},
+                            '_dtype': {'type': 'text'},
                             'tator_user_sections': {'type': 'keyword'},
                         }
                     },
                 },
             )
 
-    def delete_index(self, media_type):
-        index = self.index_name(media_type.pk)
+    def delete_index(self, project):
+        index = self.index_name(project)
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
 
@@ -81,15 +70,8 @@ class TatorSearch:
             dtype='date'
         elif attribute_type.dtype == 'geopos':
             dtype='geo_point'
-        entity_type = attribute_type.applies_to
-        if hasattr(entity_type, 'media'):
-            media_types = entity_type.media.all()
-            if media_types.exists():
-                media_type = media_types[0].pk
-        else:
-            media_type = entity_type.pk
         self.es.indices.put_mapping(
-            index=self.index_name(media_type),
+            index=self.index_name(attribute_type.project.pk),
             body={'properties': {
                 attribute_type.name: {'type': dtype},
             }},
@@ -98,6 +80,7 @@ class TatorSearch:
     def create_document(self, entity, wait=False):
         aux = {}
         aux['_meta'] = entity.meta.pk
+        aux['_dtype'] = entity.meta.dtype
         if entity.meta.dtype in ['image', 'video']:
             aux['_media_relation'] = 'media'
             aux['_name'] = entity.name
@@ -122,7 +105,7 @@ class TatorSearch:
             entity.attributes = {}
             entity.save()
         self.es.index(
-            index=self.index_name(related_media_type(entity)),
+            index=self.index_name(entity.project.pk),
             body={
                 **entity.attributes,
                 **aux,
@@ -133,42 +116,34 @@ class TatorSearch:
         )
 
     def delete_document(self, entity):
-        index = self.index_name(related_media_type(entity))
+        index = self.index_name(entity.project.pk)
         if self.es.exists(index=index, id=entity.pk):
             self.es.delete(index=index, id=entity.pk)
 
-    def search_raw(self, media_types, query):
-        indices = [self.index_name(media_type.pk) for media_type in media_types]
+    def search_raw(self, project, query):
         return self.es.search(
-            index=indices,
+            index=self.index_name(project),
             body=query,
         )
 
-    def search(self, media_types, query):
-        result = self.search_raw(media_types, query)
+    def search(self, project, query):
+        result = self.search_raw(project, query)
         result = result['hits']
         data = result['hits']
         count = result['total']['value']
-        if len(data) == 0:
-            ids = []
-        elif 'related_media' in data[0]['_source']:
-            ids = [int(obj['_source']['related_media']) for obj in data]
-        else:
-            ids = [int(obj['_id']) for obj in data]
+        ids = [int(obj['_id']) for obj in data]
         return ids, count
 
-    def refresh(self, media_types):
+    def refresh(self, project):
         """Force refresh on an index.
         """
-        indices = [self.index_name(media_type.pk) for media_type in media_types]
-        self.es.indices.refresh(index=indices)
+        self.es.indices.refresh(index=self.index_name(project))
 
-    def delete(self, media_types, query):
+    def delete(self, project, query):
         """Bulk delete on search results.
         """
-        indices = [self.index_name(media_type.pk) for media_type in media_types]
         self.es.delete_by_query(
-            index=indices,
+            index=self.index_name(project),
             body=query,
             conflicts='proceed',
         )
