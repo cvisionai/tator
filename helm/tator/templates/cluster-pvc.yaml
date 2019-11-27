@@ -126,6 +126,7 @@ spec:
     requests:
       storage: {{ .Values.pv.rawSize }}
 ---
+{{ if .Values.postgis.enabled }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -154,6 +155,7 @@ spec:
     requests:
       storage: {{ .Values.pv.postgisSize }}
 ---
+{{ end }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -218,3 +220,21 @@ spec:
     requests:
       storage: {{ .Values.pv.migrationsSize }}
 ---
+{{ if .Values.elasticsearch.enabled }}
+{{ if .Values.elasticsearch.persistence.enabled }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: elasticsearch-pv
+spec:
+  capacity:
+    storage: {{ $.Values.elasticsearch.volumeClaimTemplate.resources.requests.storage }}
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: default
+    name: elasticsearch-master-elasticsearch-master-0
+  hostPath:
+    path: {{ $.Values.elasticsearch.hostPath }}
+{{ end }}
+{{ end }}
