@@ -24,8 +24,17 @@ metrics-server:
 elasticsearch:
   enabled: true
   persistence:
-    enabled: false
+    enabled: true
   replicas: 1
+  clusterHealthCheckParams: wait_for_status=yellow&timeout=1s
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 30Gi
+  nodeSelector: 
+    dbServer: "yes"
+  hostPath: /media/ssd/elasticsearch
 filebeat:
   enabled: true
 kibana:
