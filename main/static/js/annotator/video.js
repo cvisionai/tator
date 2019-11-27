@@ -90,6 +90,7 @@ class VideoBufferDemux
     this._seekVideo = document.createElement("VIDEO");
     this._seekBuffer = null;
     this._seekSource = new MediaSource();
+    this._pendingSeeks = [];
 
     var mime_str='video/mp4; codecs="avc1.64001e"';
 
@@ -270,15 +271,36 @@ class VideoBufferDemux
     return promise;
   }
 
-  appendSeekBuffer(data, time)
+  appendSeekBuffer(data, time=undefined)
   {
-    this._seekBuffer.onupdateend = () => {
-      // Seek to the time requested now that it is loaded
-      this._seekBuffer.onupdateend = null;
-      this._seekVideo.currentTime = time;
-    };
-    this._seekBuffer.appendBuffer(data);
-    console.info("Loaded seek buffer");
+    // Add to the buffer directly else add to the pending
+    // seek to get it there next go around
+    if (this._seekBuffer.updating == false)
+    {
+      this._seekBuffer.onupdateend = () => {
+
+        // Remove this handler
+        this._seekBuffer.onupdateend = null;
+        // Seek to the time requested now that it is loaded
+        if (time != undefined)
+        {
+          this._seekVideo.currentTime = time;
+        }
+
+        if (this._pendingSeeks.length > 0)
+        {
+          var pending = this._pendingSeeks.shift();
+          this.appendSeekBuffer(pending.data, pending.time);
+        }
+      };
+
+      this._seekBuffer.appendBuffer(data);
+    }
+    else
+    {
+      this._pendingSeeks.push({'data': data,
+                               'time': time});
+    }
   }
 
   appendLatestBuffer(data, callback)
@@ -364,6 +386,15 @@ class VideoBufferDemux
     this._seekBuffer.onupdateend=() =>
       {
         this._seekBuffer.onupdateend = null;
+
+        // Handle any pending seeks
+        if (this._pendingSeeks.length > 0)
+        {
+          var pending = this._pendingSeeks.shift();
+          this.appendSeekBuffer(pending.data, pending.time);
+        }
+
+        // Now fill the rest of the buffers
         for (var idx = 0; idx < this._numBuffers; idx++)
         {
           this._sourceBuffers[idx].onupdateend=function()
