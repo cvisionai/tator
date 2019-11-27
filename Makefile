@@ -120,6 +120,7 @@ cluster-uninstall:
 	kubectl delete apiservice v1beta1.metrics.k8s.io
 	kubectl delete all --namespace kubernetes-dashboard --all
 	helm uninstall tator
+	kubectl delete pvc --all
 
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
