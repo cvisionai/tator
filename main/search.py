@@ -39,7 +39,7 @@ class TatorSearch:
                                     'media': 'annotation',
                                 }
                             },
-                            '_name': {'type': 'text'},
+                            'tator_media_name': {'type': 'text'},
                             '_exact_name': {'type': 'keyword'},
                             '_md5': {'type': 'keyword'},
                             '_meta': {'type': 'integer'},
@@ -83,7 +83,7 @@ class TatorSearch:
         aux['_dtype'] = entity.meta.dtype
         if entity.meta.dtype in ['image', 'video']:
             aux['_media_relation'] = 'media'
-            aux['_name'] = entity.name
+            aux['tator_media_name'] = entity.name
             aux['_exact_name'] = entity.name
             aux['_md5'] = entity.md5
             if entity.attributes is not None:
