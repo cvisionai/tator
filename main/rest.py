@@ -1076,12 +1076,10 @@ def get_attribute_query(query_params, query, bools, project):
     child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
     attr_query = {
         'media': {
-            'must': [],
             'must_not': [],
             'filter': [],
         },
         'annotation': {
-            'must': [],
             'must_not': [],
             'filter': [],
         },
@@ -1102,40 +1100,40 @@ def get_attribute_query(query_params, query, bools, project):
                     key, val = kv_pair.split(kv_separator)
                     relation = 'annotation' if key in child_attrs else 'media'
                     if op == 'attribute_eq':
-                        attr_query[relation]['must'].append({'match': {key: val}})
+                        attr_query[relation]['filter'].append({'match': {key: val}})
                     elif op == 'attribute_lt':
-                        attr_query[relation]['must'].append({'range': {key: {'lt': val}}})
+                        attr_query[relation]['filter'].append({'range': {key: {'lt': val}}})
                     elif op == 'attribute_lte':
-                        attr_query[relation]['must'].append({'range': {key: {'lte': val}}})
+                        attr_query[relation]['filter'].append({'range': {key: {'lte': val}}})
                     elif op == 'attribute_gt':
-                        attr_query[relation]['must'].append({'range': {key: {'gt': val}}})
+                        attr_query[relation]['filter'].append({'range': {key: {'gt': val}}})
                     elif op == 'attribute_gte':
-                        attr_query[relation]['must'].append({'range': {key: {'gte': val}}})
+                        attr_query[relation]['filter'].append({'range': {key: {'gte': val}}})
                     elif op == 'attribute_contains':
-                        attr_query[relation]['must'].append({'wildcard': {key: {'value': f'*{val}*'}}})
+                        attr_query[relation]['filter'].append({'wildcard': {key: {'value': f'*{val}*'}}})
                     elif op == 'attribute_null':
                         check = {'exists': {'field': key}}
                         if val.lower() == 'false':
-                            attr_query[relation]['must'].append(check)
+                            attr_query[relation]['filter'].append(check)
                         elif val.lower() == 'true':
                             attr_query[relation]['must_not'].append(check)
                         else:
                             raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
 
-    attr_query['media']['must'] += bools
+    attr_query['media']['filter'] += bools
     has_child = False
     child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
 
-    for key in ['must', 'must_not', 'filter']:
+    for key in ['must_not', 'filter']:
         if len(attr_query['annotation'][key]) > 0:
             has_child = True
             child_query['query']['bool'][key] = attr_query['annotation'][key]
 
     if has_child:
         child_query['type'] = 'annotation'
-        attr_query['media']['must'].append({'has_child': child_query})
+        attr_query['media']['filter'].append({'has_child': child_query})
 
-    for key in ['must', 'must_not', 'filter']:
+    for key in ['must_not', 'filter']:
         if len(attr_query['media'][key]) > 0:
             query['query']['bool'][key] = attr_query['media'][key]
 
