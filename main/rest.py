@@ -1174,7 +1174,7 @@ def get_media_queryset(project, query_params, attr_filter):
         bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
     if name != None:
-        bools.append({'match': {'_name': {'query': name}}})
+        bools.append({'match': {'_exact_name': {'query': name}}})
 
     if md5 != None:
         bools.append({'match': {'_md5': {'query': md5}}})

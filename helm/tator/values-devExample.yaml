@@ -34,7 +34,7 @@ elasticsearch:
         storage: 30Gi
   nodeSelector: 
     dbServer: "yes"
-  hostPath: /media/ssd/elasticsearch
+  hostPath: /media/kubernetes_share/elasticsearch
 filebeat:
   enabled: true
 kibana:

@@ -1,7 +1,7 @@
 # Backup and Restore of a database
 
 ## Backup Process
-The `make backup` command can be used to create a *.sql dump of the django
+The `make backup` command can be used to create a `*.sql` dump of the django
 application. This represents all annotations and metadata on media, *but not
 the media files themselves*. 
 
