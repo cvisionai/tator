@@ -124,6 +124,8 @@ class TatorSearch:
         return self.es.search(
             index=self.index_name(project),
             body=query,
+            _source=False,
+            stored_fields=[],
         )
 
     def search(self, project, query):
