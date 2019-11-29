@@ -150,4 +150,22 @@ class TatorSearch:
             conflicts='proceed',
         )
 
+    def update(self, project, query, attrs):
+        """Bulk update on search results.
+        """
+        query['script'] = ''
+        for key in attrs:
+            val = attrs[key]
+            if isinstance(val, bool):
+                if val:
+                    val = 'true'
+                else:
+                    val = 'false'
+            query['script'] += f"ctx._source.{key}='{val}';"
+        self.es.update_by_query(
+            index=self.index_name(project),
+            body=query,
+            conflicts='proceed',
+        )
+
 TatorSearch.setup_elasticsearch()
