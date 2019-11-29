@@ -230,32 +230,34 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices():
+def buildSearchIndices(project_number, skip_localizations=False):
     """ Builds search index for all data.
     """
     # Create indices
-    logger.info("Building indices...")
-    for project in progressbar(list(Project.objects.all())):
-        TatorSearch().create_index(project.pk)
+    logger.info("Building index...")
+    TatorSearch().create_index(project_number)
     # Create mappings
     logger.info("Building mappings...")
-    for attribute_type in progressbar(list(AttributeTypeBase.objects.all())):
+    for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
         TatorSearch().create_mapping(attribute_type)
     # Create media documents
     logger.info("Building media documents...")
-    for entity in progressbar(list(EntityMediaBase.objects.all())):
+    for entity in progressbar(list(EntityMediaBase.objects.filter(project=project_number))):
         TatorSearch().create_document(entity)
     # Create localization documents
-    logger.info("Building localization documents...")
-    for entity in progressbar(list(EntityLocalizationBase.objects.all())):
-        TatorSearch().create_document(entity)
+    if skip_localizations:
+        logger.info("Skipping localization documents...")
+    else:
+        logger.info("Building localization documents...")
+        for entity in progressbar(list(EntityLocalizationBase.objects.filter(project=project_number))):
+            TatorSearch().create_document(entity)
     # Create state documents
     logger.info("Building state documents...")
-    for entity in progressbar(list(EntityState.objects.all())):
+    for entity in progressbar(list(EntityState.objects.filter(project=project_number))):
         TatorSearch().create_document(entity)
     # Create treeleaf documents
     logger.info("Building tree leaf documents...")
-    for entity in progressbar(list(TreeLeaf.objects.all())):
+    for entity in progressbar(list(TreeLeaf.objects.filter(project=project_number))):
         TatorSearch().create_document(entity)
 
 def swapLatLon():
