@@ -1411,6 +1411,32 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         finally:
             return response;
 
+    def patch(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            media_ids, media_count, query = get_media_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(media_ids) == 0:
+                raise ObjectDoesNotExist
+            qs = EntityBase.objects.filter(pk__in=media_ids)
+            new_attrs = validate_attributes(request, qs[0])
+            bulk_patch_attributes(new_attrs, qs)
+            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+            response=Response({'message': 'Attribute patch successful!'},
+                              status=status.HTTP_200_OK)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path,method)
