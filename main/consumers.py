@@ -321,6 +321,8 @@ def run_transcoder(content):
 
         project_dir = os.path.join(settings.MEDIA_ROOT, f"{project_id}")
         os.makedirs(project_dir, exist_ok=True)
+        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project_id}")
+        os.makedirs(raw_project_dir, exist_ok=True)
         # Get path to file on server and new path in media.
         thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project_id}", str(uuid1()) + '.jpg')
         upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
