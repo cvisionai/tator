@@ -179,7 +179,7 @@ onmessage = function(e)
   // Download in 1 MB chunks
   if (type == 'start')
   {
-    ref = new VideoDownloader(msg['url'], 0.5*1024*1024);
+    ref = new VideoDownloader(msg['url'], 5*1024*1024);
   }
   else if (type == 'download')
   {
