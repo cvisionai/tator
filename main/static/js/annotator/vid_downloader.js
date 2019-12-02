@@ -149,7 +149,7 @@ class VideoDownloader
     this._currentPacket = idx;
     var percent_complete=idx/this._numPackets;
 
-    fetchRetry(this._url,
+    fetch(this._url,
           {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
          ).then(
            function(response)
