@@ -857,7 +857,7 @@ class VideoCanvas extends AnnotationCanvas {
     // This to catch FPS like 25.08 getting displayed incorrectly at a
     // 30fps interval
     // TODO: Add motion compensation logic to frame schedule
-    if (this._fps < guiFPS && guiFPS / (guiFPS - this._fps) > 0.10)
+    if (this._fps < guiFPS && (guiFPS - this._fps) / guiFPS > 0.10)
     {
       console.info("Detected odd frame rate, going into safe mode");
       that.dispatchEvent(new Event("safeMode"));
