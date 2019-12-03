@@ -40,9 +40,11 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_thumb(self, obj):
         url = ""
-        media = EntityMediaBase.objects.filter(project=obj)[0]
-        if media:
+        try: # Can fail if project has no media
+            media = EntityMediaBase.objects.filter(project=obj)[0]
             url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
+        except:
+            pass
         return url
 
     def get_usernames(self, obj):
