@@ -853,6 +853,16 @@ class VideoCanvas extends AnnotationCanvas {
 	    console.info("Playback rate exceeds guiFPS, skipping " + skipInterval + " frames per cycle");
 	  }
 
+    // Check for odd frame rate (force to compatibility mode for now)
+    // This to catch FPS like 25.08 getting displayed incorrectly at a
+    // 30fps interval
+    // TODO: Add motion compensation logic to frame schedule
+    if (this._fps < guiFPS && guiFPS / (guiFPS - this._fps) > 0.10)
+    {
+      console.info("Detected odd frame rate, going into safe mode");
+      that.dispatchEvent(new Event("safeMode"));
+    }
+
 	  // This is the time to wait to start playing when the buffer is dead empty.
 	  // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
 	  // This may end up being a tuneable thing, or we may want to calculate it
