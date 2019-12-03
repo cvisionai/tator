@@ -92,6 +92,7 @@ from .serializers import FastEntityLocalizationSerializer
 from .serializers import EntityMediaSerializer
 from .serializers import EntityStateSerializer
 from .serializers import EntityStateFrameSerializer
+from .serializers import EntityStateLocalizationSerializer
 from .serializers import EntityTypeMediaSerializer
 from .serializers import EntityTypeLocalizationAttrSerializer
 from .serializers import EntityTypeMediaAttrSerializer
