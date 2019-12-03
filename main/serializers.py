@@ -404,6 +404,7 @@ class EntityStateLocalizationSerializer():
                  {"media": datum['association_media'],
                   "segments": datum['association_segments'],
                   "color": datum['association_color'],
+                  "localizations": datum['association_localizations'],
                   "id": datum['association_id']},
                  "attributes": datum['attributes']
                 })

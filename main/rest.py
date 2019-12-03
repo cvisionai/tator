@@ -6,6 +6,7 @@ from django.db.models import Case
 from django.db.models import When
 from django.db.models import TextField
 from django.db.models.functions import Cast
+from django.db.models.expressions import Subquery,OuterRef
 from django.db.models import Q
 from django.db.models import F
 from django.conf import settings
@@ -139,6 +140,10 @@ logger = logging.getLogger(__name__)
 
 # Separator for key value pairs in attribute queries
 kv_separator = '::'
+
+class Array(Subquery):
+    """ Class to expose ARRAY SQL function to ORM """
+    template = 'ARRAY(%(subquery)s)'
 
 def reverse_queryArgs(viewname, kwargs=None, queryargs=None):
     """
@@ -580,7 +585,7 @@ class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.
     """
     allowed_types = {
-        'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat, 
+        'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat,
             AttributeTypeDatetime, AttributeTypeEnum, AttributeTypeString, str),
         'attribute_lt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
         'attribute_lte': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
@@ -1563,8 +1568,10 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                         allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
                         response = EntityStateFrameSerializer(allStates)
                     elif type_object.association == 'Localization':
+                        localquery=LocalizationAssociation.objects.filter(entitystate=OuterRef('pk'))
                         allStates = allStates.annotate(association_color=F('association__localizationassociation__color'),
                                                        association_segments=F('association__localizationassociation__segments'),
+                                                       association_localizations=Array(localquery.values('localizations')),
                                                        association_media=F('association__frameassociation__media'))
                         response = EntityStateLocalizationSerializer(allStates)
                     else:
