@@ -86,10 +86,12 @@ class AnnotationPage extends TatorPage {
           .then(data => {
             this._browser.mediaType = data;
             this._undo.mediaType = data;
+            this._player.mediaTypes = data['type'];
           });
           let player;
           if ("thumb_gif_url" in data) {
             player = document.createElement("annotation-player");
+            this._player = player;
             player.addDomParent({"object": this._headerDiv,
                                  "alignTo":  this._browser});
             player.mediaInfo = data;
@@ -104,6 +106,7 @@ class AnnotationPage extends TatorPage {
                 });
           } else {
             player = document.createElement("annotation-image");
+            this._player = player;
             player.style.minWidth="70%";
             player.addDomParent({"object": this._headerDiv,
                                  "alignTo":  this._browser});
@@ -232,17 +235,12 @@ class AnnotationPage extends TatorPage {
       });
     };
     Promise.all([
-      getMetadataType("EntityTypeMedias"),
       getMetadataType("LocalizationTypes"),
       getMetadataType("EntityStateTypes")
     ])
-    .then(([mediaResponse, localizationResponse, stateResponse]) => {
-      const mediaData = mediaResponse.json();
+    .then(([localizationResponse, stateResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
-      mediaData.then(mediaTypes => {
-        canvas.mediaTypes = mediaTypes;
-      });
       Promise.all([localizationData, stateData])
       .then(([localizationTypes, stateTypes]) => {
         const dataTypes = localizationTypes.concat(stateTypes)
