@@ -40,7 +40,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_thumb(self, obj):
         url = ""
-        media = EntityMediaBase.objects.filter(project=obj).order_by('id').first()
+        media = EntityMediaBase.objects.filter(project=obj)[0]
         if media:
             url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
         return url
