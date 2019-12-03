@@ -229,7 +229,7 @@ def extract_attribute(kv_pair, meta, filter_op):
         if meta is not None:
             attr_type_qs = AttributeTypeBase.objects.filter(
                 name=attr_name).filter(applies_to=meta)
-            if len(attr_type_qs) != 1:
+            if attr_type_qs.count() != 1:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {meta.name}")
             attr_type = attr_type_qs[0]
 
@@ -298,7 +298,7 @@ def annotate_attribute(qs, attr_type):
     annotation_name = attr_type.name + 'annotation'
 
     # If the annotation has been done already, don't do it again.
-    if len(qs) > 0:
+    if qs.count() > 0:
         if hasattr(qs[0], annotation_name):
             return (qs, annotation_name)
 
@@ -369,7 +369,7 @@ def validate_attributes(request, obj):
                 continue
             attr_type_qs = AttributeTypeBase.objects.filter(
                 name=attr_name).filter(applies_to=obj.meta)
-            if len(attr_type_qs) != 1:
+            if attr_type_qs.count() != 1:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
             attr_type = attr_type_qs[0]
             convert_attribute(attr_type, attributes[attr_name])
@@ -475,7 +475,7 @@ class ProjectPermissionBase(BasePermission):
             )
 
             # If user is not part of project, deny access
-            if len(membership) == 0:
+            if membership.count() == 0:
                 granted = False
             else:
                 # If user has insufficient permission, deny access
@@ -672,7 +672,7 @@ class AttributeFilterMixin:
         try:
             self.validate_attribute_filter(request.query_params)
             qs = self.get_queryset()
-            if len(qs) > 0:
+            if qs.count() > 0:
                 new_attrs = validate_attributes(request, qs[0])
                 bulk_patch_attributes(new_attrs, qs)
             response=Response({'message': 'Attribute patch successful!'},
@@ -1617,7 +1617,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
 
             mediaElements=EntityMediaBase.objects.filter(pk__in=media_ids)
 
-            if (len(mediaElements) == 0):
+            if mediaElements.count() == 0:
                 raise Exception('No matching media elements')
 
             project=mediaElements[0].project
@@ -2224,7 +2224,7 @@ class EntityTypeListAPIMixin(APIView):
                                                      'type' : entityType.id}
                         ))
 
-                    count=len(self.baseObj.selectOnMedia(media_id).filter(meta=entityType))
+                    count=self.baseObj.selectOnMedia(media_id).filter(meta=entityType).count()
                 results.append({"type": entityType,
                                 "columns": AttributeTypeBase.objects.filter(applies_to=entityType.id),
                                 "data" : dataurl,
@@ -3097,7 +3097,7 @@ class UserPermission(BasePermission):
         # find out if user is a cousin
         user_projects=Membership.objects.filter(user=user).values('project')
         cousins=Membership.objects.filter(project__in = user_projects).values('user').distinct()
-        is_cousin = (len(cousins.filter(user=finger_user)) > 0)
+        is_cousin = cousins.filter(user=finger_user).count() > 0
         if is_cousin and request.method == 'GET':
             # Cousins have read-only permission
             return True
