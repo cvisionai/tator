@@ -299,10 +299,13 @@ class AnnotationPage extends TatorPage {
         this._browser.addEventListener("select", evt => {
           if (evt.detail.byUser) {
             if ("goToFrame" in canvas) {
-              let frame;
+              let frame = undefined;
               if (evt.detail.dataType.isLocalization) {
                 frame = parseInt(evt.detail.data.frame);
-              } else {
+              } else if (evt.detail.dataType.isTrack) {
+                frame = undefined;
+              }
+              else {
                 frame = parseInt(evt.detail.data.association.frame);
               }
               // Only jump to a frame if it is known
