@@ -1521,14 +1521,14 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         filterType=self.request.query_params.get('type', None)
 
         mediaId=self.request.query_params.get('media_id', None)
-
+        allStates = EntityState.objects.all()
         if mediaId != None:
             mediaId = list(map(lambda x: int(x), mediaId.split(',')))
             allStates = allStates.filter(association__media__in=mediaId)
         if filterType != None:
             allStates = allStates.filter(meta=filterType)
         if filterType == None and mediaId == None:
-            allStates = EntityState.objects.filter(project=self.kwargs['project'])
+            allStates = allStates.filter(project=self.kwargs['project'])
 
         allStates = self.filter_by_attribute(allStates)
 
