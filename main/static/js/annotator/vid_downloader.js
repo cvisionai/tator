@@ -128,12 +128,12 @@ class VideoDownloader
       startByte = 0;
     }
 
-    // Use quarter blocks for the first 5% of the video.
+    // Use 1 Mb blocks if in the first 5 packets
     var iterBlockSize=this._blockSize;
-    //if (pts_start/duration < 0.05)
-    //{
-    //    var iterBlockSize=this._blockSize*0.25;
-    //}
+    if (idx < 5)
+    {
+        iterBlockSize=1024*1024;
+    }
     var offsets=[];
     while (currentSize < iterBlockSize && idx < this._numPackets)
     {
@@ -176,7 +176,7 @@ onmessage = function(e)
 {
   msg = e.data;
   var type = msg['type'];
-  // Download in 1 MB chunks
+  // Download in 5 MB chunks
   if (type == 'start')
   {
     ref = new VideoDownloader(msg['url'], 5*1024*1024);
