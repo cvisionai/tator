@@ -1562,6 +1562,11 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                         # This optomization only works for frame-based associations
                         allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
                         response = EntityStateFrameSerializer(allStates)
+                    elif type_object.association == 'Localization':
+                        allStates = allStates.annotate(association_color=F('association__localizationassociation__color'),
+                                                       association_segments=F('association__localizationassociation__segments'),
+                                                       association_media=F('association__frameassociation__media'))
+                        response = EntityStateLocalizationSerializer(allStates)
                     else:
                         logger.warning("Using generic/slow serializer")
                         response = EntityStateSerializer(allStates, many=True)
