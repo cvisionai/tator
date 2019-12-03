@@ -1518,8 +1518,6 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        allStates=EntityState.objects.filter(project=self.kwargs['project'])
-
         filterType=self.request.query_params.get('type', None)
 
         mediaId=self.request.query_params.get('media_id', None)
@@ -1527,9 +1525,10 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         if mediaId != None:
             mediaId = list(map(lambda x: int(x), mediaId.split(',')))
             allStates = allStates.filter(association__media__in=mediaId)
-
         if filterType != None:
             allStates = allStates.filter(meta=filterType)
+        if filterType == None and mediaId == None:
+            allStates = EntityState.objects.filter(project=self.kwargs['project'])
 
         allStates = self.filter_by_attribute(allStates)
 
