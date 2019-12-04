@@ -43,6 +43,28 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
+postgresql-ha:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+  postgresqlImage:
+    tag: 11.6.0
+  postgresql:
+    replicaCount: 1
+    username: postgres
+    password: postgres123
+    database: tator_online
+    repmgrUsername: repmgr
+    repmgrPassword: repmgr123
+    repmgrDatabase: repmgr
+    nodeSelector: 
+      dbServer: "yes"
+  pgpool:
+    replicaCount: 1
+    nodeSelector: 
+      dbServer: "yes"
+  hostPath: /media/ssd/postgresql-ha
 postgis:
   enabled: true
   hostPath: /media/kubernetes_share/postgis
