@@ -238,3 +238,22 @@ spec:
     path: {{ $.Values.elasticsearch.hostPath }}
 {{ end }}
 {{ end }}
+---
+{{ if index .Values "postgresql-ha" "enabled" }}
+{{ if index .Values "postgresql-ha" "persistence" "enabled" }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgresql-ha-pv
+spec:
+  capacity:
+    storage: {{ index $.Values "postgresql-ha" "persistence" "size" }}
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: default
+    name: data-tator-postgresql-ha-postgresql-0
+  hostPath:
+    path: {{ index $.Values "postgresql-ha" "hostPath" }}
+{{ end }}
+{{ end }}
