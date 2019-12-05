@@ -99,6 +99,14 @@ aws ecr get-login --region us-east-2 --no-include-email
 
 Call the resulting command to log into the registry.
 
+## Create repositories for tator images
+
+```
+aws ecr create-repository --repository-name tator_online
+aws ecr create-repository --repository-name tator_algo_marshal
+aws ecr create-repository --repository-name tator_tusd
+```
+
 ## Get an SSL certificate for your domain with LetsEncrypt
 
 If you already have an SSL certificate you can skip this, otherwise follow the instructions [here](doc/certbot.md)
