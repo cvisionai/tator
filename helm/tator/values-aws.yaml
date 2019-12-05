@@ -1,0 +1,98 @@
+loadBalancerIp: 192.168.1.221
+domain: www.yourdomain.com
+nginxReplicas: 5
+gunicornReplicas: 20
+transcoderReplicas: 6
+algorithmReplicas: 2
+djangoSecretKey: "<Your django secret key>"
+dockerUsername: "<Your docker username>"
+dockerPassword: "<Your docker password>"
+dockerRegistry: "https://<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
+sslBundle: |
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+sslKey: |
+  -----BEGIN PRIVATE KEY-----
+  <Insert private key here>
+  -----END PRIVATE KEY-----
+pv:
+  enabled: false
+pvc:
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  postgisSize: 10Gi
+  backupSize: 100Gi
+  migrationsSize: 1Gi
+metallb:
+  enabled: false
+redis:
+  enabled: true
+  master:
+    nodeSelector:
+      dbServer: "yes"
+    persistence:
+      enabled: false
+  slave:
+    persistence:
+      enabled: false
+  usePassword: false
+metrics-server:
+  enabled: true
+  args:
+    - --v=2
+    - --kubelet-insecure-tls=true
+    - --kubelet-preferred-address-types=InternalIP
+elasticsearch:
+  enabled: true
+  persistence:
+    enabled: true
+  replicas: 3
+  clusterHealthCheckParams: wait_for_status=yellow&timeout=1s
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 30Gi
+  nodeSelector: 
+    dbServer: "yes"
+filebeat:
+  enabled: true
+kibana:
+  enabled: true
+  kibanaConfig:
+    kibana.yml: |
+      server:
+        basePath: /logs
+postgresql-ha:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 8Gi
+  postgresqlImage:
+    registry: docker.io
+    repository: bitnami/postgresql-repmgr
+    tag: 11.6.0
+  postgresql:
+    replicaCount: 1
+    username: postgres
+    password: postgres123
+    database: tator_online
+    repmgrUsername: repmgr
+    repmgrPassword: repmgr123
+    repmgrDatabase: repmgr
+    nodeSelector: 
+      dbServer: "yes"
+  pgpool:
+    replicaCount: 1
+    nodeSelector: 
+      dbServer: "yes"
+efs-provisioner:
+  enabled: true
+cluster-autoscaler:
+  enabled: true
