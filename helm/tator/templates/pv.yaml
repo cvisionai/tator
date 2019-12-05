@@ -4,7 +4,7 @@ metadata:
   name: static-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.staticSize }}
+    storage: {{ .Values.pvc.staticSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -14,21 +14,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/static"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: static-pv-claim
-  labels:
-    app: static
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pv.staticSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -36,7 +23,7 @@ metadata:
   name: upload-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.uploadSize }}
+    storage: {{ .Values.pvc.uploadSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -46,21 +33,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/upload"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: upload-pv-claim
-  labels:
-    app: upload
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pv.uploadSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -68,7 +42,7 @@ metadata:
   name: media-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.mediaSize }}
+    storage: {{ .Values.pvc.mediaSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -78,21 +52,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/media"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: media-pv-claim
-  labels:
-    app: media
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pv.mediaSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -100,7 +61,7 @@ metadata:
   name: raw-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.rawSize }}
+    storage: {{ .Values.pvc.rawSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -110,21 +71,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/raw"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: raw-pv-claim
-  labels:
-    app: raw
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pv.rawSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -132,7 +80,7 @@ metadata:
   name: backup-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.backupSize }}
+    storage: {{ .Values.pvc.backupSize }}
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -142,21 +90,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/backup"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: backup-pv-claim
-  labels:
-    app: backup
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.pv.backupSize }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -164,7 +99,7 @@ metadata:
   name: migrations-pv
 spec:
   capacity:
-    storage: {{ .Values.pv.migrationsSize }}
+    storage: {{ .Values.pvc.migrationsSize }}
   accessModes:
     - ReadWriteMany
   claimRef:
@@ -174,21 +109,8 @@ spec:
     - nolock
     - nfsvers=3
   nfs:
-    server: {{ .Values.nfsServer }}
+    server: {{ .Values.pv.nfsServer }}
     path: "/media/kubernetes_share/migrations"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: migrations-pv-claim
-  labels:
-    app: migrations
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pv.migrationsSize }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
