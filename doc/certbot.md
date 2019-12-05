@@ -54,16 +54,12 @@ cd tator
 
 ## Real Secrets
 
-* Copy the example secrets file to the real secrets file.
+* Copy the example values.yaml.
 
 ```
-cp doc/example-secrets.yaml real-secrets.yaml
+cp helm/tator/values-devExample.yaml helm/tator/values.yaml
 ```
 
-* Update `TATOR_SECRET_POSTGRES_USER`
-* Update `TATOR_SECRET_POSTGRES_PASSWORD`
-* Update `TATOR_SECRET_DOCKER_USERNAME`: `<your Docker username>`
-* Update `TATOR_SECRET_DOCKER_PASSWORD`: `<your Docker password>`
-* Copy certificate information from the generated certificate files at `/etc/letsencrypt/live/<domain>` into the real-secrets.yaml file.
+* Copy certificate information from the generated certificate files at `/etc/letsencrypt/live/<domain>` into the values.yaml file.
 
 Next step: [Prepare nodes and install Docker](nodes.md)
