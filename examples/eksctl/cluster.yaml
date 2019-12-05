@@ -3,7 +3,7 @@ kind: ClusterConfig
 metadata:
   name: tator
   region: us-east-2
-managedNodeGroups:
+nodeGroups:
   - name: cpuWorkers
     instanceType: m5.xlarge
     labels:
@@ -17,6 +17,11 @@ managedNodeGroups:
     iam:
       withAddonPolicies:
         autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
   - name: dbServers
     instanceType: r5.xlarge
     labels:
@@ -30,6 +35,11 @@ managedNodeGroups:
     iam:
       withAddonPolicies:
         autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "yes"
   - name: gpuWorkers
     instanceType: p2.xlarge
     labels:
@@ -43,3 +53,8 @@ managedNodeGroups:
     iam:
       withAddonPolicies:
         autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
