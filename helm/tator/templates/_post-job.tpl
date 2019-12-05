@@ -39,7 +39,14 @@ spec:
                 name: tator-secrets
           env:
             - name: POSTGRES_HOST
-              value: pgbouncer-svc
+              value: tator-postgresql-ha-pgpool
+            - name: POSTGRES_USERNAME
+              value: {{ index .Values "postgresql-ha" "postgresql" "username" }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tator-postgresql-ha-postgresql
+                  key: postgresql-password
             - name: MAIN_HOST
               value: {{ .Values.domain }}
             - name: LOAD_BALANCER_IP

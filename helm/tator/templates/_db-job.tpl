@@ -30,19 +30,16 @@ spec:
         {{ .selector }}
       containers:
         - name: postgis
-          image: {{ .Values.dockerRegistry }}/tator_postgis:latest
+          image: {{ index .Values "postgresql-ha" "postgresqlImage" "registry" }}/{{ index .Values "postgresql-ha" "postgresqlImage" "repository" }}:{{ index .Values "postgresql-ha" "postgresqlImage" "tag" }}
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
           env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_USER
+            - name: POSTGRES_USERNAME
+              value: {{ index .Values "postgresql-ha" "postgresql" "username" }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_PASSWORD
+                  name: tator-postgresql-ha-postgresql
+                  key: postgresql-password
 {{ end }}
