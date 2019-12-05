@@ -39,6 +39,8 @@ redis:
   master:
     persistence:
       enabled: false
+    nodeSelector:
+      dbServer: "yes"
   slave:
     persistence:
       enabled: false
@@ -95,3 +97,7 @@ postgresql-ha:
     nodeSelector: 
       dbServer: "yes"
   hostPath: /media/kubernetes_share/postgresql-ha
+efs-provisioner:
+  enabled: false
+cluster-autoscaler:
+  enabled: false
