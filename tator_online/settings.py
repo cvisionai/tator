@@ -137,8 +137,8 @@ else:
         'default': {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'NAME': 'tator_online',
-            'USER': os.getenv('TATOR_SECRET_POSTGRES_USER'),
-            'PASSWORD': os.getenv('TATOR_SECRET_POSTGRES_PASSWORD'),
+            'USER': os.getenv('POSTGRES_USERNAME'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
             'HOST': os.getenv('POSTGRES_HOST'),
             'PORT': os.getenv('POSTGRES_PORT', 5432),
         }
