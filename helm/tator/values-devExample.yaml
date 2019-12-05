@@ -1,7 +1,21 @@
 dockerRegistry: localhost:5000
-nfsServer: 192.168.1.200
 loadBalancerIp: 192.168.1.221
 domain: debug.tatorapp.com
+nginxReplicas: 1
+gunicornReplicas: 1
+transcoderReplicas: 1
+algorithmReplicas: 1
+pv:
+  enabled: true
+  nfsServer: 192.168.1.200
+pvc:
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  postgisSize: 10Gi
+  backupSize: 100Gi
+  migrationsSize: 1Gi
 metallb:
   enabled: true
   ipRangeStart: 192.168.1.220
@@ -49,6 +63,8 @@ postgresql-ha:
     enabled: true
     size: 8Gi
   postgresqlImage:
+    registry: docker.io
+    repository: bitnami/postgresql-repmgr
     tag: 11.6.0
   postgresql:
     replicaCount: 1
@@ -64,20 +80,4 @@ postgresql-ha:
     replicaCount: 1
     nodeSelector: 
       dbServer: "yes"
-  hostPath: /media/ssd/postgresql-ha
-postgis:
-  enabled: true
-  hostPath: /media/kubernetes_share/postgis
-nginxReplicas: 1
-gunicornReplicas: 1
-transcoderReplicas: 1
-algorithmReplicas: 1
-pv:
-  staticSize: 1Gi
-  uploadSize: 1Ti
-  mediaSize: 4Ti
-  rawSize: 6Ti
-  postgisSize: 10Gi
-  backupSize: 100Gi
-  migrationsSize: 1Gi
-
+  hostPath: /media/kubernetes_share/postgresql-ha
