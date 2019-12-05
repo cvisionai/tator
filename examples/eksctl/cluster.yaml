@@ -3,7 +3,7 @@ kind: ClusterConfig
 metadata:
   name: tator
   region: us-east-2
-nodeGroups:
+managedNodeGroups:
   - name: cpuWorkers
     instanceType: m5.xlarge
     labels:
@@ -14,6 +14,9 @@ nodeGroups:
     minSize: 1
     maxSize: 10
     desiredCapacity: 3
+    iam:
+      withAddonPolicies:
+        autoScaler: true
   - name: dbServers
     instanceType: r5.xlarge
     labels:
@@ -24,6 +27,9 @@ nodeGroups:
     minSize: 1
     maxSize: 10
     desiredCapacity: 3
+    iam:
+      withAddonPolicies:
+        autoScaler: true
   - name: gpuWorkers
     instanceType: p2.xlarge
     labels:
@@ -34,3 +40,6 @@ nodeGroups:
     minSize: 0
     maxSize: 1
     desiredCapacity: 0
+    iam:
+      withAddonPolicies:
+        autoScaler: true
