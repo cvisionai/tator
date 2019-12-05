@@ -1,10 +1,10 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis transcoder packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
+CONTAINERS=pgbouncer redis transcoder packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=tator-image marshal-image tus-image postgis-image
+IMAGES=tator-image marshal-image tus-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -60,7 +60,6 @@ backup:
 # Example:
 #   make clean
 #   make cluster-pvc
-#   make postgis
 #   make restore SQL_FILE=backup_to_use.sql
 #   make cluster
 restore: check_restore
@@ -70,6 +69,9 @@ restore: check_restore
 .PHONY: check_restore
 check_restore:
 	@echo -n "This will replace database contents. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+
+postgis-bash:
+	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
 
 psql:
 	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USERNAME -d $$POSTGRES_DB'
@@ -163,12 +165,6 @@ marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-
 	docker push $(DOCKERHUB_USER)/tator_algo_marshal:latest
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_algo_marshal)" marshal-image
-
-postgis-image:  containers/postgis/Dockerfile.gen
-	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
-	docker push $(DOCKERHUB_USER)/tator_postgis:latest
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_postgis)" postgis-image
 
 tus-image: containers/tus/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:latest -f $< containers || exit 255
@@ -354,8 +350,8 @@ migrate:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
 
 testinit:
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION LTREE';
+	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USERNAME -d test_$$POSTGRES_DB -c "CREATE DATABASE test_tator_online"';
+	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USERNAME -d test_$$POSTGRES_DB -c "CREATE EXTENSION LTREE"';
 
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; es = Elasticsearch(host="elasticsearch-master").indices.delete("test*")'
@@ -397,7 +393,6 @@ imageQuery:
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-image
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_algo_marshal)" marshal-image
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_postgis)" postgis-image
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
