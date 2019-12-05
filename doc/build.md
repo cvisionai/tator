@@ -16,7 +16,7 @@ tar xzvf helm-v3.0.0-beta.5-linux-amd64.tar.gz
 * Add the executable to your PATH in bashrc:
 
 ```
-export PATH=$HOME/linux-amd64/helm:$PATH
+export PATH=$HOME/linux-amd64:$PATH
 ```
 
 ## Update the configuration file
