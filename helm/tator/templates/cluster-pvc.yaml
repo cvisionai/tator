@@ -126,36 +126,6 @@ spec:
     requests:
       storage: {{ .Values.pv.rawSize }}
 ---
-{{ if .Values.postgis.enabled }}
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: postgis-pv
-spec:
-  capacity:
-    storage: {{ .Values.pv.postgisSize }}
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    namespace: default
-    name: postgis-pv-claim
-  hostPath:
-    path: {{ .Values.postgis.hostPath }}
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: postgis-pv-claim
-  labels:
-    app: postgis
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.pv.postgisSize }}
----
-{{ end }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
