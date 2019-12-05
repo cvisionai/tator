@@ -67,7 +67,9 @@ metadata:
   annotations:
     metallb.universe.tf/address-pool: my-ip-space
 spec:
-  loadBalancerIP: {{ .Values.loadBalancerIp }}
+{{- if .Values.metallb.enabled }}
+  loadBalancerIP: {{ .Values.metallb.loadBalancerIp }}
+{{- end }}
   ports:
   - name: http
     port: 80
