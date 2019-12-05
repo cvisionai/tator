@@ -53,3 +53,77 @@ The process will take 10-15 minutes. When finished check that you have some node
 kubectl get nodes
 ```
 
+## Create an EFS filesystem
+
+For provisioning media volumes on AWS, tator uses Elastic File System (EFS). These are provisioned using the efs-provisioner helm chart. To use this, you must first create an EFS filesystem on your AWS account:
+
+```
+aws efs create-file-system --creation-token tator-efs --performance-mode generalPurpose --encrypted --throughput-mode bursting
+```
+
+Note the `FileSystemId` field, which is needed later for the values.yaml file.
+
+## Install Docker
+
+* Install docker on each node. Make sure it is version 18.09.8
+
+```
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+sudo apt-get update
+sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
+```
+
+* Add yourself to the docker group
+
+```
+sudo usermod -aG docker $USER
+sudo reboot
+```
+
+## Get a login for ECR registry
+
+```
+aws ecr get-login --region us-east-2 --no-include-email
+```
+
+Call the resulting command to log into the registry.
+
+## Get an SSL certificate for your domain with LetsEncrypt
+
+If you already have an SSL certificate you can skip this, otherwise follow the instructions [here](doc/certbot.md)
+
+## Copy the values.yaml file
+
+```
+cp helm/tator/values-aws.yaml helm/tator/values.yaml
+```
+
+## Edit values.yaml for your deployment
+
+* Set `loadBalancerIp` to the elastic IP address that was created with your EKS cluster.
+* Set `domain` to your domain.
+* Set `djangoSecretKey` to a django key. You can generate one with several online tools.
+* Set `dockerUsername` and `dockerPassword` to the values given from the `aws ecr` command above.
+* Set `dockerRegistry` to the appropriate values for your AWS account and region.
+* Set `sslBundle` to the contents of `/etc/letsencrypt/live/<your domain>/fullchain.pem`.
+* Set `sslKey` to the contents of `/etc/letsencrypt/live/<your domain>/privkey.pem`.
+* Set `efs-provisioner.efsProvisioner.efsFileSystemId` to the `FileSystemId` of the EFS filesystem created earlier.
+* Set `efs-provisioner.efsProvisioner.awsRegion` to your aws region.
+
+## Install tator
+
+```
+make cluster
+```
+
