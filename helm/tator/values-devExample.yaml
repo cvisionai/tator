@@ -1,4 +1,3 @@
-loadBalancerIp: 192.168.1.221
 domain: debug.tatorapp.com
 nginxReplicas: 1
 gunicornReplicas: 1
@@ -34,6 +33,7 @@ metallb:
   enabled: true
   ipRangeStart: 192.168.1.220
   ipRangeStop: 192.168.1.224
+  loadBalancerIp: 192.168.1.221
 redis:
   enabled: true
   master:
