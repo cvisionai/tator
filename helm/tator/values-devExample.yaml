@@ -1,10 +1,24 @@
-dockerRegistry: localhost:5000
 loadBalancerIp: 192.168.1.221
 domain: debug.tatorapp.com
 nginxReplicas: 1
 gunicornReplicas: 1
 transcoderReplicas: 1
 algorithmReplicas: 1
+djangoSecretKey: "<Your django secret key>"
+dockerUsername: "<Your docker username>"
+dockerPassword: "<Your docker password>"
+dockerRegistry: "https://index.docker.io/v2"
+sslBundle: |
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+sslKey: |
+  -----BEGIN PRIVATE KEY-----
+  <Insert private key here>
+  -----END PRIVATE KEY-----
 pv:
   enabled: true
   nfsServer: 192.168.1.200
