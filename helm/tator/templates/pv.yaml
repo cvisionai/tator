@@ -1,3 +1,4 @@
+{{ if .Values.pv.enabled }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -149,3 +150,4 @@ spec:
     path: {{ index $.Values "postgresql-ha" "hostPath" }}
 {{ end }}
 {{ end }}
+{{ end }} # .Values.pv.enabled 
