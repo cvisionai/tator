@@ -6,9 +6,9 @@ metadata:
 provisioner: kubernetes.io/aws-ebs
 reclaimPolicy: Retain
 allowVolumeExpansion: true
-encrypted: "true"
 parameters:
   type: {{ .Values.awsStorage.ebs.type }}
   iopsPerGB: {{ .Values.awsStorage.ebs.iopsPerGb | quote }}
   fsType: ext4
+  encrypted: "true"
 {{ end }}
