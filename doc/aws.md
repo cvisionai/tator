@@ -39,6 +39,27 @@ You can test the installation with:
 kubectl version
 ```
 
+## Create a key pair for SSH access
+
+To enable SSH access to EKS nodes, we need to create a key pair that can be used by eksctl:
+
+```
+aws ec2 create-key-pair --key-name tator-key-pair
+```
+
+* Copy the contents of KeyMaterial into a private key and store it somewhere safe.
+* Update permissions on the file:
+
+```
+sudo chmod 400 /path/to/privkey.pem
+```
+
+* Create a public key from the private key:
+
+```
+ssh-keygen -y -f /path/to/privkey.pem > /path/to/publickey.pem
+```
+
 ## Create the EKS cluster
 
 You can use the example eks configuration in `examples/eksctl/cluster.yaml` to create a cluster. Feel free to modify for your needs.
@@ -53,9 +74,15 @@ The process will take 10-15 minutes. When finished check that you have some node
 kubectl get nodes
 ```
 
+## Install the NVIDIA device plugin
+
+```
+kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
+```
+
 ## Create an EFS filesystem
 
-For provisioning media volumes on AWS, tator uses Elastic File System (EFS). These are provisioned using the efs-provisioner helm chart. To use this, you must first create an EFS filesystem *in the same VPC as the EKS cluster* and *with an NFS security policy*. Follow these steps:
+For provisioning media volumes on AWS, tator uses Elastic File System (EFS). Tator treats EFS as a normal NFS mount, just like the bare metal installation. To use this, you must first create an EFS filesystem *in the same VPC as the EKS cluster* and *with an NFS security policy*. Follow these steps:
 
 * Get the EKS VPC:
 
@@ -89,13 +116,45 @@ Output:
 * Choose **Create file system**
 * On **Configure file system access**, choose the VPC that EKS is using.
 * For **Security groups**, add the security group that you created in the previous step and choose **Next step**.
+* Select the desired **Lifecycle policy** and other settings.
 * Choose **Next step** and **Create file system**.
 
 Note the `FileSystemId` field, which is needed later for the values.yaml file.
 
+## Create directories for persistent volumes
+
+While it is possible to use a dynamic PV provisioner such as efs-provisioner or the AWS EFS CSI driver, we have found that decoupling EFS provisioning from Kubernetes is the surest way to persist data, even if the entire Tator helm chart is uninstalled. Therefore, we create directories for each persistent volume:
+
+* Navigate to `https://console.aws.amazon.com/ec2`
+* Click **Running instances**
+* Select one of the EKS nodes.
+* Click **Connect** and select **EC2 Instance Connect**, and set the username to `ec2-user`.
+* Click **Connect**.
+* Install the Amazon EFS utils and mount the EFS filesystem:
+
+```
+sudo yum install -y amazon-efs-utils
+mkdir efs
+sudo mount -t efs FILESYSTEM_ID:/ efs
+```
+
+where `FILESYSTEM_ID` is the EFS filesystem ID from the previous step.
+
+* Create the required subdirectories:
+
+```
+cd efs
+sudo mkdir static
+sudo mkdir media
+sudo mkdir raw
+sudo mkdir upload
+sudo mkdir backup
+sudo mkdir migrations
+```
+
 ## Delete the default storage class (gp2)
 
-EKS provides a default storage class which tator does not use. To prevent conflicts with the efs-provisioner, we remove this storage class.
+EKS provides a default storage class which tator does not use. To prevent conflicts, we remove this storage class.
 
 ```
 kubectl delete sc gp2
@@ -157,15 +216,12 @@ cp helm/tator/values-aws.yaml helm/tator/values.yaml
 
 ## Edit values.yaml for your deployment
 
-* Set `loadBalancerIp` to the elastic IP address that was created with your EKS cluster.
 * Set `domain` to your domain.
 * Set `djangoSecretKey` to a django key. You can generate one with several online tools.
 * Set `dockerUsername` and `dockerPassword` to the values given from the `aws ecr` command above.
 * Set `dockerRegistry` to the appropriate values for your AWS account and region.
 * Set `sslBundle` to the contents of `/etc/letsencrypt/live/<your domain>/fullchain.pem`.
 * Set `sslKey` to the contents of `/etc/letsencrypt/live/<your domain>/privkey.pem`.
-* Set `efs-provisioner.efsProvisioner.efsFileSystemId` to the `FileSystemId` of the EFS filesystem created earlier.
-* Set `efs-provisioner.efsProvisioner.awsRegion` to your aws region.
 
 ## Install tator
 
@@ -173,3 +229,10 @@ cp helm/tator/values-aws.yaml helm/tator/values.yaml
 make cluster
 ```
 
+## Get the load balancer external IP
+
+```
+kubectl get svc | grep nginx
+```
+
+Use your DNS to make a CNAME rule pointing your domain to the service given under `EXTERNAL_IP`.
