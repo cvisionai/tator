@@ -7,7 +7,7 @@ algorithmReplicas: 2
 djangoSecretKey: "<Your django secret key>"
 dockerUsername: "<Your docker username>"
 dockerPassword: "<Your docker password>"
-dockerRegistry: "https://<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
+dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
 sslBundle: |
   -----BEGIN CERTIFICATE-----
   <Insert certificate here>
