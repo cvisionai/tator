@@ -12,11 +12,12 @@ spec:
     namespace: default
     name: static-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/static"
+    path: {{ .Values.pv.staticPath }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -31,11 +32,12 @@ spec:
     namespace: default
     name: upload-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/upload"
+    path: {{ .Values.pv.uploadPath }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -50,11 +52,12 @@ spec:
     namespace: default
     name: media-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/media"
+    path: {{ .Values.pv.mediaPath }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -69,11 +72,12 @@ spec:
     namespace: default
     name: raw-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/raw"
+    path: {{ .Values.pv.rawPath }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -88,11 +92,12 @@ spec:
     namespace: default
     name: backup-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/backup"
+    path: {{ .Values.pv.backupPath }}
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -107,14 +112,16 @@ spec:
     namespace: default
     name: migrations-pv-claim
   mountOptions:
-    - nolock
-    - nfsvers=3
+    {{- range .Values.pv.nfsMountOptions }}
+    - {{ . }}
+    {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: "/media/kubernetes_share/migrations"
+    path: {{ .Values.pv.migrationsPath }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
+{{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -131,9 +138,11 @@ spec:
     path: {{ $.Values.elasticsearch.hostPath }}
 {{ end }}
 {{ end }}
+{{ end }}
 ---
 {{ if index .Values "postgresql-ha" "enabled" }}
 {{ if index .Values "postgresql-ha" "persistence" "enabled" }}
+{{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -148,6 +157,7 @@ spec:
     name: data-tator-postgresql-ha-postgresql-0
   hostPath:
     path: {{ index $.Values "postgresql-ha" "hostPath" }}
+{{ end }}
 {{ end }}
 {{ end }}
 {{ end }} # .Values.pv.enabled 
