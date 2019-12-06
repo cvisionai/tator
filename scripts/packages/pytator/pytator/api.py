@@ -196,12 +196,13 @@ class Media(APIElement):
                     if chunk:
                         f.write(chunk)
 
-    def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None):
+    def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None, fname=None):
         if md5==None:
             md5 = md5_sum(filePath)
         upload_uid = str(uuid1())
         upload_gid = str(uuid1())
-        fname=os.path.basename(filePath)
+        if fname is None:
+            fname=os.path.basename(filePath)
         if section is None:
             section="New Files"
 
