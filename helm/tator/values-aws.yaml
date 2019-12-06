@@ -1,4 +1,3 @@
-loadBalancerIp: 192.168.1.221
 domain: www.yourdomain.com
 nginxReplicas: 5
 gunicornReplicas: 20
@@ -20,13 +19,27 @@ sslKey: |
   <Insert private key here>
   -----END PRIVATE KEY-----
 pv:
-  enabled: false
+  enabled: true
+  nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+  nfsMountOptions:
+    - nfsvers=4.1
+    - rsize=1048576
+    - wsize=1048576
+    - hard
+    - timeo=600
+    - retrans=2
+    - noresvport
+  staticPath: "/static"
+  uploadPath: "/upload"
+  mediaPath: "/media"
+  rawPath: "/raw"
+  backupPath: "/backup"
+  migrationsPath: "/migrations"
 pvc:
   staticSize: 1Gi
   uploadSize: 1Ti
   mediaSize: 4Ti
   rawSize: 6Ti
-  postgisSize: 10Gi
   backupSize: 100Gi
   migrationsSize: 1Gi
 metallb:
@@ -74,12 +87,13 @@ postgresql-ha:
   persistence:
     enabled: true
     size: 8Gi
+    storageClass: ebs
   postgresqlImage:
     registry: docker.io
     repository: bitnami/postgresql-repmgr
     tag: 11.6.0
   postgresql:
-    replicaCount: 1
+    replicaCount: 3
     username: postgres
     password: postgres123
     database: tator_online
@@ -88,11 +102,44 @@ postgresql-ha:
     repmgrDatabase: repmgr
     nodeSelector: 
       dbServer: "yes"
+    pgHbaTrustAll: true
+    configuration:
+      listen_addresses: "'*'"
+      port: "'5432'"
+      wal_level: "'hot_standby'"
+      archive_mode: "'on'"
+      archive_command: "'/bin/true'"
+      max_wal_senders: "'10'"
+      max_replication_slots: "'10'"
+      hot_standby: "'on'"
+      logging_collector: "'on'"
+      log_directory: "'/opt/bitnami/postgresql/logs'"
+      log_filename: "'postgresql.log'"
+      shared_preload_libraries: "'repmgr'"
+      include_dir: "'conf.d'"
+      max_connections: "1000"
+      shared_buffers: "2GB"
+      effective_cache_size: "6GB"
+      maintenance_work_mem: "512GB"
+      checkpoint_completion_target: "0.7"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "1048kB"
+      min_wal_size: "1GB"
+      max_wal_size: "2GB"
+      max_worker_processes: "4"
+      max_parallel_workers_per_gather: "2"
+      max_parallel_workers: "4"
   pgpool:
-    replicaCount: 1
+    replicaCount: 2
     nodeSelector: 
       dbServer: "yes"
-efs-provisioner:
-  enabled: true
 cluster-autoscaler:
   enabled: true
+awsStorage:
+  enabled: true
+  ebs:
+    type: io1
+    iopsPerGb: "50"
