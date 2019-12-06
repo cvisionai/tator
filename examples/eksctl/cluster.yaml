@@ -22,6 +22,9 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem
   - name: dbServers
     instanceType: r5.xlarge
     labels:
@@ -40,6 +43,9 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "yes"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem
   - name: gpuWorkers
     instanceType: p2.xlarge
     labels:
@@ -58,3 +64,6 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "yes"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem
