@@ -30,16 +30,18 @@ spec:
         {{ .selector }}
       containers:
         - name: postgis
-          image: {{ index .Values "postgresql-ha" "postgresqlImage" "registry" }}/{{ index .Values "postgresql-ha" "postgresqlImage" "repository" }}:{{ index .Values "postgresql-ha" "postgresqlImage" "tag" }}
+          image: postgres:11.6
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
           env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.postgresHost }}
             - name: POSTGRES_USERNAME
-              value: {{ index .Values "postgresql-ha" "postgresql" "username" }}
+              value: {{ .Values.postgresUsername }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: tator-postgresql-ha-postgresql
-                  key: postgresql-password
+                  name: tator-secrets
+                  key: postgresPassword
 {{ end }}
