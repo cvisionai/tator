@@ -32,10 +32,6 @@ dependencies:
     version: 7.4.1
     repository: https://helm.elastic.co
     condition: kibana.enabled
-  - name: postgresql-ha
-    version: 1.1.0
-    repository: https://charts.bitnami.com/bitnami
-    condition: postgresql-ha.enabled
   - name: cluster-autoscaler
     version: 6.2.0
     repository: https://kubernetes-charts.storage.googleapis.com
