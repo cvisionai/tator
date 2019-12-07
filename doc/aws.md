@@ -80,42 +80,22 @@ kubectl get nodes
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
+## Delete the default storage class (gp2)
+
+EKS provides a default storage class which tator does not use. To prevent conflicts, we remove this storage class.
+
+```
+kubectl delete sc gp2
+```
+
 ## Create an EFS filesystem
 
-For provisioning media volumes on AWS, tator uses Elastic File System (EFS). Tator treats EFS as a normal NFS mount, just like the bare metal installation. To use this, you must first create an EFS filesystem *in the same VPC as the EKS cluster* and *with an NFS security policy*. Follow these steps:
+For provisioning media volumes on AWS, tator uses Elastic File System (EFS). Tator treats EFS as a normal NFS mount, just like the bare metal installation. To use this, you must first create an EFS filesystem *in the same VPC as the EKS cluster* and *with an NFS security policy* that allows inbound traffic on port 2049. Follow these steps:
 
-* Get the EKS VPC:
-
-```
-aws eks describe-cluster --name tator --query "cluster.resourcesVpcConfig.vpcId" --output text
-```
-
-Output:
-
-```
-vpc-exampledb76d3e813
-```
-
-* Locate the CIDR range for your cluster's VPC:
-
-```
-aws ec2 describe-vpcs --vpc-ids vpc-exampledb76d3e813 --query "Vpcs[].CidrBlock" --output text
-```
-
-Output:
-
-```
-192.168.0.0/16
-```
-
-* Create a security group that allows inbound traffic by navigating to `https://console.aws.amazon.com/vpc/`, Choose **Security Groups** and **Create security group**.
-* Enter a name and description, click **Create** and then **Close**.
-* Add a rule to the security group by selecting the one you created and choose the **Inbound rules** tab and choose **Edit rules**.
-* Choose **Add rule**, and fill in **Type: NFS**, **Source: Custom** (paste in the VPC CIDR range), **Description: Allows inbound NFS traffic**.
 * Create an EFS filesystem by navigating to `https://console.aws.amazon.com/efs/`.
 * Choose **Create file system**
 * On **Configure file system access**, choose the VPC that EKS is using.
-* For **Security groups**, add the security group that you created in the previous step and choose **Next step**.
+* For **Security groups**, add the security group created by EKS that contains the name `ClusterSharedNodeSecurityGroup`. This will allow inbound access from any node in the VPC.
 * Select the desired **Lifecycle policy** and other settings.
 * Choose **Next step** and **Create file system**.
 
@@ -150,14 +130,6 @@ sudo mkdir raw
 sudo mkdir upload
 sudo mkdir backup
 sudo mkdir migrations
-```
-
-## Delete the default storage class (gp2)
-
-EKS provides a default storage class which tator does not use. To prevent conflicts, we remove this storage class.
-
-```
-kubectl delete sc gp2
 ```
 
 ## Install Docker
