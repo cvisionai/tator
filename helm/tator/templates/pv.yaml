@@ -140,23 +140,23 @@ spec:
 {{ end }}
 {{ end }}
 ---
-{{ if index .Values "postgresql-ha" "enabled" }}
-{{ if index .Values "postgresql-ha" "persistence" "enabled" }}
+{{ if index .Values.postgresql.enabled }}
+{{ if index .Values.postgresql.persistence.enabled }}
 {{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: postgresql-ha-pv
+  name: postgresql-pv
 spec:
   capacity:
-    storage: {{ index $.Values "postgresql-ha" "persistence" "size" }}
+    storage: {{ index $.Values.postgresql.persistence.size }}
   accessModes:
     - ReadWriteOnce
   claimRef:
     namespace: default
-    name: data-tator-postgresql-ha-postgresql-0
+    name: data-tator-postgresql-0
   hostPath:
-    path: {{ index $.Values "postgresql-ha" "hostPath" }}
+    path: {{ index $.Values.postgresql.hostPath }}
 {{ end }}
 {{ end }}
 {{ end }}

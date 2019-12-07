@@ -2,6 +2,7 @@ import redis
 import datetime
 import time
 import json
+import os
 import logging
 from dateutil.parser import parse
 from collections import defaultdict
@@ -34,10 +35,14 @@ def upload_messages_by_swid(rds, grp):
 class Command(BaseCommand):
     help = "Prunes stored redis messages from dead service workers."
 
-    def handle(self, *args, **options):
-        # Set up redis.
-        rds = redis.Redis(host='tator-redis-master')
+    @classmethod
+    def setup_redis(cls):
+        cls.rds = redis.Redis(
+            host=os.getenv('REDIS_HOST'),
+            health_check_interval=30,
+        )
 
+    def handle(self, *args, **options):
         # Max time with no updates.
         max_time = datetime.timedelta(seconds=30)
 
@@ -46,9 +51,9 @@ class Command(BaseCommand):
         while True:
             for project in Project.objects.all():
                 latest_grp = 'upload_latest_' + str(project.id)
-                messages = upload_messages_by_swid(rds, latest_grp)
+                messages = upload_messages_by_swid(self.rds, latest_grp)
                 for swid in messages:
-                    last = parse(rds.hget('sw_latest', swid))
+                    last = parse(self.rds.hget('sw_latest', swid))
                     now = datetime.datetime.now(datetime.timezone.utc)
                     if (now - last) > max_time:
                         logger.info(
@@ -67,5 +72,7 @@ class Command(BaseCommand):
                             )
                             prog.failed("Timed out!")
                             time.sleep(0.01)
-                        rds.hdel('sw_latest', swid)
+                        self.rds.hdel('sw_latest', swid)
             time.sleep(5)
+
+Command.setup_redis()

@@ -65,7 +65,10 @@ class ProgressProducer:
     """
     @classmethod
     def setup_redis(cls):
-        cls.rds = redis.Redis(host='tator-redis-master', health_check_interval=30)
+        cls.rds = redis.Redis(
+            host=os.getenv('REDIS_HOST'),
+            health_check_interval=30,
+        )
 
     def __init__(self, prefix, project_id, gid, uid, name, user, aux={}):
         """Store uid, name, user in a dict. Store project id.
@@ -168,9 +171,15 @@ class ProgressConsumer(JsonWebsocketConsumer):
     """Consumer for all progress messages
     """
 
+    @classmethod
+    def setup_redis(cls):
+        cls.rds = redis.Redis(
+            host=os.getenv('REDIS_HOST'),
+            health_check_interval=30,
+        )
+
     def __init__(self, *args, **kwargs):
         log.info("Creating progress consumer.")
-        self.rds = redis.Redis(host='tator-redis-master')
         super().__init__(*args, **kwargs)
 
     def connect(self):
@@ -200,6 +209,9 @@ class ProgressConsumer(JsonWebsocketConsumer):
         # Get the latest updates from redis.
         for uid, msg in self.rds.hgetall(self.latest_grp).items():
             self.send_json(json.loads(msg))
+
+# Initialize global redis connection
+ProgressConsumer.setup_redis()
 
 def video_thumb(offset, name, new_path):
     """Creates a video thumbnail.
@@ -1151,11 +1163,11 @@ def run_algorithm(content):
         log.info("Creating registry credentials for marshal.")
         marshal_cred_name = 'marshal-creds-' + run_uid
         marshal_container_name = 'marshal-container'
-        marshal_container_image = f"{os.getenv('DOCKERHUB_USER')}/tator_algo_marshal"
+        marshal_container_image = f"{os.getenv('DOCKER_REGISTRY')}/tator_algo_marshal"
         create_creds(
-            username=os.getenv('TATOR_SECRET_DOCKER_USERNAME'),
-            password=os.getenv('TATOR_SECRET_DOCKER_PASSWORD'),
-            registry=os.getenv('TATOR_SECRET_DOCKER_REGISTRY'),
+            username=os.getenv('DOCKER_USERNAME'),
+            password=os.getenv('DOCKER_PASSWORD'),
+            registry=os.getenv('DOCKER_REGISTRY'),
             secret_name=marshal_cred_name,
             core_v1=core_v1,
         )

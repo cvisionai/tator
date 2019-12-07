@@ -341,7 +341,7 @@ testinit:
 	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USERNAME -d test_$$POSTGRES_DB -c "CREATE EXTENSION LTREE"';
 
 test:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; es = Elasticsearch(host="elasticsearch-master").indices.delete("test*")'
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; es = Elasticsearch(host=os.getenv("ELASTICSEARCH_HOST")).indices.delete("test*")'
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'ELASTICSEARCH_PREFIX=test python3 manage.py test --keep'
 
 mrclean:

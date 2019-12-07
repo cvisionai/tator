@@ -46,9 +46,9 @@ spec:
           secret:
             secretName: tator-secrets
             items:
-              - key: TATOR_SECRET_SSL_BUNDLE
+              - key: sslBundle
                 path: CertificateBundle1.pem
-              - key: TATOR_SECRET_SSL_KEY
+              - key: sslKey
                 path: tator.key
         - name: static-pv-claim
           persistentVolumeClaim:
@@ -64,8 +64,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nginx-svc
+{{- if .Values.metallb.enabled }}
   annotations:
     metallb.universe.tf/address-pool: my-ip-space
+{{- end }}
 spec:
 {{- if .Values.metallb.enabled }}
   loadBalancerIP: {{ .Values.metallb.loadBalancerIp }}

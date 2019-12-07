@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('TATOR_SECRET_SECRET_KEY')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -63,7 +63,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('tator-redis-master', 6379)],
+            'hosts': [(os.getenv('REDIS_HOST'), 6379)],
         },
     },
 }
@@ -128,7 +128,7 @@ if DEBUG:
             'NAME': 'tator_online',
             'USER': os.getenv('POSTGRES_USERNAME'),
             'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-            'HOST': 'tator-postgresql-ha-postgresql',
+            'HOST': 'postgis-svc',
             'PORT': os.getenv('POSTGRES_PORT', 5432),
         }
     }
