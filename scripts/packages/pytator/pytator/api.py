@@ -1,3 +1,4 @@
+""" API Implementation Details """
 import json
 import math
 import requests
@@ -16,6 +17,7 @@ from uuid import uuid1
 """ API Implementation details """
 
 class APIElement:
+    """ Parent API Element """
     def __init__(self, api, endpoint):
         self.endpoint = endpoint
         self.individual_endpoint = endpoint.rstrip('s')
