@@ -3,12 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pytator's documentation!
+PyTator Documentation
 ===================================
+
+PyTator is the python package to interface with the web services provided by
+tator. For more information on Tator, please see the `GitHub project page <https://github.com/cvisionai/tator>`_.
+
+The package is used to support writing algorithms that run within _Pipelines_
+in the Tator ecosystem or outside of that ecosystem and within another
+computing environment.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   api
 
 
 
@@ -20,17 +29,9 @@ Indices and tables
 * :ref:`search`
 
 
-Python Interface
-====================
+Installing
+==================
 
-The `pytator.tator` module is used to make a `Tator` object which allows
-access to the web services.
 
-.. automodule:: pytator.tator
-   :members:
-
-Each type of API endpoint (media, localization, state) is exposed as a
-unique API object.
-
-.. automodule:: pytator.api
-   :members:
+Known Issues
+==================
