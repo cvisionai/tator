@@ -6,7 +6,7 @@ from django.db.models import Case
 from django.db.models import When
 from django.db.models import TextField
 from django.db.models.functions import Cast
-from django.db.models.expressions import Subquery,OuterRef
+from django.db.models.expressions import Subquery,OuterRef,Func
 from django.db.models import Q
 from django.db.models import F
 from django.conf import settings
@@ -394,19 +394,39 @@ def patch_attributes(new_attrs, obj):
         # TODO We shouldn't save here (in higher order function instead)
         obj.save()
 
+class ReplaceValue(Func):
+    function = 'jsonb_set'
+    template = "%(function)s(%(expressions)s, '{\"%(keyname)s\"}','%(new_value)s', %(create_missing)s)"
+    arity = 1
+
+    def __init__(
+        self, expression: str, keyname: str, new_value: str,
+        create_missing: bool=False, **extra,
+    ):
+        super().__init__(
+            expression,
+            keyname=keyname,
+            new_value=new_value,
+            create_missing='true' if create_missing else 'false',
+            **extra,
+        )
+
 def bulk_patch_attributes(new_attrs, qs):
     """Updates attribute values.
     """
-    objs = list(qs)
-    for obj in objs:
-        if obj.attributes is None:
-            obj.attributes = new_attrs
+    for key in new_attrs:
+        if isinstance(new_attrs[key], str):
+            val = f"\"{new_attrs[key]}\""
+        elif isinstance(new_attrs[key], bool):
+            val = f"{str(new_attrs[key]).lower()}"
         else:
-            for attr_name in new_attrs:
-                obj.attributes[attr_name] = new_attrs[attr_name]
-    if len(objs) > 0:
-        objs[0].save() # Trigger the save signal to invalidate cache
-    qs.bulk_update(objs, ['attributes'])
+            val = new_attrs[key]
+        qs.update(attributes=ReplaceValue(
+            'attributes',
+            keyname=key,
+            new_value=val,
+            create_missing=True,
+        ))
 
 def paginate(query_params, queryset):
     start = query_params.get('start', None)
