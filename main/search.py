@@ -129,11 +129,34 @@ class TatorSearch:
         )
 
     def search(self, project, query):
-        result = self.search_raw(project, query)
-        result = result['hits']
-        data = result['hits']
-        count = result['total']['value']
-        ids = [int(obj['_id']) for obj in data]
+        if 'sort' not in query:
+            query['sort'] = {'_doc': 'asc'}
+        if 'size' not in query:
+            query['size'] = 10000
+            result = self.es.search(
+                index=self.index_name(project),
+                body=query,
+                scroll='1m',
+                _source=False,
+                stored_fields=[],
+            )
+            scroll_id = result['_scroll_id']
+            result = result['hits']
+            data = result['hits']
+            count = result['total']['value']
+            ids = [int(obj['_id']) for obj in data]
+            while len(ids) < count:
+                result = self.es.scroll(
+                    scroll_id=scroll_id,
+                    scroll='1m',
+                )
+                ids += [int(obj['_id']) for obj in result['hits']['hits']]
+        else:
+            result = self.search_raw(project, query)
+            result = result['hits']
+            data = result['hits']
+            count = result['total']['value']
+            ids = [int(obj['_id']) for obj in data]
         return ids, count
 
     def refresh(self, project):
