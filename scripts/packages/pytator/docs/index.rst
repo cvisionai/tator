@@ -18,6 +18,7 @@ computing environment.
    :caption: Contents:
 
    api
+   examples
 
 
 

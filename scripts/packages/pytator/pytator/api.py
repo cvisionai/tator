@@ -1,4 +1,16 @@
-""" API Implementation Details """
+""" API Implementation Module
+
+The implementation of each endpoint type is in this module. Each type derives
+off of APIElement, which provides basic functions such as APIElement.get() and 
+APIElement.new().
+
+Some endpoints classes have additional methods that are specific to it, such
+as Media which provides :class:`Media.uploadFile` and :class:`Media.downloadFile`
+
+These endpoints do not need to be manually constructed and instead can be
+accessed via :class:`pytator.Tator`.
+
+ """
 import json
 import math
 import requests
@@ -17,7 +29,13 @@ from uuid import uuid1
 """ API Implementation details """
 
 class APIElement:
-    """ Parent API Element """
+    """ Base API element that provides generic capability to any of the 
+        derived endpoint objects. Each Element is instantiated per project
+        so concepts of `all` refer to `all` within a project.
+
+    :param api: Tuple provided from :class:`pytator.Tator` object construction, represents the Tator webservice endpoint, authorization token, and project number.
+    :param str endpoint: Name of the endpoint provided from derived class. 
+    """
     def __init__(self, api, endpoint):
         self.endpoint = endpoint
         self.individual_endpoint = endpoint.rstrip('s')
@@ -31,8 +49,15 @@ class APIElement:
                       "Content-Type": "application/json",
                       "Accept-Encoding": "gzip"}
 
-    # Deprecate direct calling of this
     def getMany(self, endpoint, params):
+        """ 
+        Returns a list of elements at a given endpoint.
+ 
+        .. deprecated:: 0.2.0
+           Do not call this function directly,
+           use :func:`APIElement.filter` or :func:`APIElement.all` instead
+
+        """
         obj = None
         try:
             if self.project:
@@ -54,6 +79,10 @@ class APIElement:
             return obj
 
     def filter(self, params):
+        """ Given a filter object, return the matching elements (or None) 
+        
+        For an explanation on filtering, see the :ref:`Filtering` section
+        """
         return self.getMany(self.endpoint, params)
 
     def dataframe(self, params):
@@ -65,6 +94,11 @@ class APIElement:
             return None
 
     def all(self):
+        """ Get list of all the elements of an endpoint as a list 
+
+            :return: None if there are no elements, else a list
+
+        """
         return self.getMany(self.endpoint, None)
 
     def update(self, pk, patch):
@@ -133,16 +167,28 @@ class APIElement:
         return (response.status_code, response.json())
 
 class Algorithm(APIElement):
+    """ Endpoint for launching Algorithm pipelines on media elements 
+        `rest/Algorithms` endpoint. 
+    """
     def __init__(self, api):
         super().__init__(api, "Algorithms")
     def launch_on_media(self, algorithm_name, media_id):
-        """ Convenience function launch an algorithm on a particular media """
-        return self.launch({"algorithm_name": algorithm_name,
+        """ Launch a given algorithm on an individual media 
+        
+        :param str algorithm_name: Name of the algorithm
+        :param int media_id: id of the media to launch algorithm on
+        """
+        return self._launch({"algorithm_name": algorithm_name,
                             "media_query": f"?media_id={media_id}"})
     def launch_on_medias(self, algorithm_name, media_ids):
-        return self.launch({"algorithm_name": algorithm_name,
+        """ Launch a given algorithm on an individual media 
+        
+        :param str algorithm_name: Name of the algorithm
+        :param list media_ids: list of ids of the media to launch algorithm on
+        """
+        return self._launch({"algorithm_name": algorithm_name,
                             "media_ids": media_ids})
-    def launch(self, params):
+    def _launch(self, params):
         launch_endpoint="AlgorithmLaunch"
         response=requests.post(self.url + "/" + launch_endpoint  +"/"+self.project,
                                json=params,
@@ -157,13 +203,22 @@ class Algorithm(APIElement):
 
         return (response.status_code, response.json())
     def get(self, pk):
-        """ Not supported for algorithms """
+        """ .. warning:: Not supported for algorithm endpoint """
         pass
     def new(self, obj):
-        """ Not supported for algorithms """
+        """ .. warning:: Not supported for algorithm endpoint """
         pass
     def update(self, pk, patch):
-        """ Not supported for algorithms """
+        """ .. warning:: Not supported for algorithms endpoint """
+        pass
+    def filter(self, params):
+        """ .. warning:: Not supported for algorithms endpoint """
+        pass
+    def all(self):
+        """ .. warning:: Not supported for algorithms endpoint """
+        pass
+    def getMany(self, endpoint, params):
+        """ .. warning:: Not supported for algorithms endpoint """
         pass
 class MediaType(APIElement):
     def __init__(self, api):
@@ -178,12 +233,14 @@ class User(APIElement):
          super().__init__(api, "Users")
 
 class Media(APIElement):
+    """ Defines interactions to Media elements at `/rest/EntityMedias` """
     def __init__(self, api):
         super().__init__(api, "EntityMedias")
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
 
     def downloadFile(self, element, out_path):
+        """ Download a media file from Tator to an off-line location """
         #Use streaming mp4 unless original is present
         url=element['url']
         if 'original_url' in element:
@@ -199,6 +256,7 @@ class Media(APIElement):
                         f.write(chunk)
 
     def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None, fname=None):
+        """ Upload a new file to Tator """
         if md5==None:
             md5 = md5_sum(filePath)
         upload_uid = str(uuid1())

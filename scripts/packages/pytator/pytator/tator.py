@@ -5,7 +5,11 @@ import argparse
 import requests
 
 def cli_parser(parser=None):
-    """ Returns an argument parser with project required arguments """
+    """ Convenience function to return an argument parser with boiler-plate 
+        required arguments for initializing a pytator.Tator
+
+        :param argparse.ArgumentParser parser: A constructed parser (or None) 
+    """
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True)
