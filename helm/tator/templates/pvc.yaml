@@ -75,3 +75,18 @@ spec:
   resources:
     requests:
       storage: {{ .Values.pvc.migrationsSize }}
+{{ if .Values.postgis.enabled }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgis-pv-claim
+  labels:
+    app: postgis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgis.persistence.size }}
+{{ end }}

@@ -140,24 +140,22 @@ spec:
 {{ end }}
 {{ end }}
 ---
-{{ if index .Values.postgresql.enabled }}
-{{ if index .Values.postgresql.persistence.enabled }}
+{{ if .Values.postgis.enabled }}
 {{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: postgresql-pv
+  name: postgis-pv
 spec:
   capacity:
-    storage: {{ index $.Values.postgresql.persistence.size }}
+    storage: {{ $.Values.postgis.persistence.size }}
   accessModes:
     - ReadWriteOnce
   claimRef:
     namespace: default
-    name: data-tator-postgresql-0
+    name: postgis-pv-claim
   hostPath:
-    path: {{ index $.Values.postgresql.hostPath }}
-{{ end }}
+    path: {{ $.Values.postgis.hostPath }}
 {{ end }}
 {{ end }}
 {{ end }} # .Values.pv.enabled 
