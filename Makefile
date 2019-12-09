@@ -51,15 +51,11 @@ backup:
 #   make restore SQL_FILE=backup_to_use.sql
 #   make cluster
 restore: check_restore
-	kubectl cp $(SQL_FILE) $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///'):/tmp/restore_me.sql
-	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD pg_restore -C --no-owner --role=$$POSTGRES_USERNAME -U $$POSTGRES_USERNAME -d $$POSTGRES_DB /tmp/restore_me.sql --jobs 8'
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -C -U django -d tator_online /backup/$(SQL_FILE) --jobs 8
 
 .PHONY: check_restore
 check_restore:
 	@echo -n "This will replace database contents. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-
-psql:
-	kubectl exec -it $$(kubectl get pod -l "app.kubernetes.io/component=postgresql" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh -c 'PGPASSWORD=$$POSTGRES_PASSWORD psql -U $$POSTGRES_USERNAME -d $$POSTGRES_DB'
 
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
