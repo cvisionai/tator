@@ -953,7 +953,7 @@ def create_job(container_name, image_name, image_tag, cred_name, uid, metadata, 
                 name=cred_name,
             )],
         host_aliases=[kube_client.V1HostAlias(hostnames=[os.getenv("MAIN_HOST")],
-                                              ip=os.getenv("LOAD_BALANCER_IP"))]
+                                              ip=socket.gethostbyname('nginx-svc'))]
     )
     pod_template = kube_client.V1PodTemplateSpec(
         metadata=metadata,

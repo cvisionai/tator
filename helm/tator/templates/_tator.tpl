@@ -48,8 +48,6 @@ spec:
               value: {{ .Values.elasticsearchHost }}
             - name: MAIN_HOST
               value: {{ .Values.domain }}
-            - name: LOAD_BALANCER_IP
-              value: {{ .Values.loadBalancerIp }}
             - name: DOCKER_USERNAME
               value: {{ .Values.dockerUsername }}
             - name: DOCKER_PASSWORD
