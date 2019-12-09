@@ -1,0 +1,69 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: tator
+  region: us-east-2
+nodeGroups:
+  - name: cpuWorkers
+    instanceType: m5.xlarge
+    labels:
+      cpuWorker: "yes"
+      gpuWorker: "no"
+      webServer: "yes"
+      dbServer: "no"
+    minSize: 1
+    maxSize: 10
+    desiredCapacity: 3
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem
+  - name: dbServers
+    instanceType: r5.xlarge
+    labels:
+      cpuWorker: "no"
+      gpuWorker: "no"
+      webServer: "no"
+      dbServer: "yes"
+    minSize: 1
+    maxSize: 10
+    desiredCapacity: 3
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "yes"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem
+  - name: gpuWorkers
+    instanceType: p2.xlarge
+    labels:
+      cpuWorker: "no"
+      gpuWorker: "yes"
+      webServer: "no"
+      dbServer: "no"
+    minSize: 0
+    maxSize: 1
+    desiredCapacity: 0
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    ssh:
+      allow: true
+      publicKeyPath: /home/jon/sshpublickey.pem

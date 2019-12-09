@@ -8,13 +8,10 @@ Tator assumes a local registry is available for storing custom Docker images. We
 docker run -d -p 5000:5000 --restart=always --name registry registry:2
 ```
 
-## Set the `DOCKERHUB_USER` environment variable in bashrc
+## Set the docker values in values.yaml
 
-Be sure to replace `myserver` with the hostname of the node running the registry.
-
-```
-export DOCKERHUB_USER=myserver:5000
-```
+* Set `dockerRegistry` to the registry you plan to use.
+* Set `dockerUsername` and `dockerPassword` to the credentials for that registry.
 
 ## Configure the docker daemon
 

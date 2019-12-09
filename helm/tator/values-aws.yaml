@@ -1,0 +1,90 @@
+domain: www.yourdomain.com
+nginxReplicas: 5
+gunicornReplicas: 20
+transcoderReplicas: 6
+algorithmReplicas: 2
+djangoSecretKey: "<Your django secret key>"
+postgresHost: "<Your RDS DB identifier>.clsla2zlnxez.<Your aws region>.rds.amazonaws.com"
+postgresUsername: "<Your postgres username>"
+postgresPassword: "<Your postgres password>"
+redisHost: "<Your ElastiCache endpoint>"
+elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
+dockerUsername: "<Your ECR username>"
+dockerPassword: "<Your ECR password>"
+dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
+sslBundle: |
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+sslKey: |
+  -----BEGIN PRIVATE KEY-----
+  <Insert private key here>
+  -----END PRIVATE KEY-----
+pv:
+  enabled: true
+  nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+  nfsMountOptions:
+    - nfsvers=4.1
+    - rsize=1048576
+    - wsize=1048576
+    - hard
+    - timeo=600
+    - retrans=2
+    - noresvport
+  staticPath: "/static"
+  uploadPath: "/upload"
+  mediaPath: "/media"
+  rawPath: "/raw"
+  backupPath: "/backup"
+  migrationsPath: "/migrations"
+pvc:
+  # These are required to be valid values but will be ignored by AWS EFS.
+  # EFS will not limit the amount of storage you can use.
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  backupSize: 100Gi
+  migrationsSize: 1Gi
+metallb:
+  # A load balancer implementation is provided by AWS.
+  enabled: false
+postgis:
+  enabled: false
+redis:
+  # Enable this to use the Redis helm chart installed as a dependency
+  # instead of AWS Elasticache.
+  enabled: false
+metrics-server:
+  # AWS has its own metrics for monitoring but this is still needed for
+  # the horizontal pod autoscaler (HPA).
+  enabled: true
+  args:
+    - --v=2
+    - --kubelet-insecure-tls=true
+    - --kubelet-preferred-address-types=InternalIP
+elasticsearch:
+  # Enable this to use the Elasticsearch helm chart installed as a
+  # dependency instead of AWS Elasticsearch Service.
+  enabled: false
+filebeat:
+  enabled: true
+kibana:
+  enabled: true
+  kibanaConfig:
+    kibana.yml: |
+      server:
+        basePath: /logs
+cluster-autoscaler:
+  enabled: true
+awsStorage:
+  # Enable this if you are using helm charts instead of 
+  # AWS services for something needing a StatefulSet, and want to use
+  # provisioned IOPS.
+  enabled: false
+  ebs:
+    type: io1
+    iopsPerGb: "50"

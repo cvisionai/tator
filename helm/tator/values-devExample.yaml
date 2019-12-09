@@ -1,12 +1,61 @@
-dockerRegistry: localhost:5000
-nfsServer: 192.168.1.200
-loadBalancerIp: 192.168.1.221
-domain: debug.tatorapp.com
+domain: your.domain.com
+nginxReplicas: 1
+gunicornReplicas: 1 
+transcoderReplicas: 1
+algorithmReplicas: 1
+djangoSecretKey: "<Your django secret key>"
+postgresHost: "pgbouncer-svc"
+postgresUsername: "<Your postgres username>"
+postgresPassword: "<Your postgres password>"
+redisHost: "tator-redis-master"
+elasticsearchHost: "elasticsearch-master"
+dockerUsername: "test"
+dockerPassword: "test"
+dockerRegistry: "localhost:5000"
+sslBundle: |
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  <Insert certificate here>
+  -----END CERTIFICATE-----
+sslKey: |
+  -----BEGIN PRIVATE KEY-----
+  <Insert private key here>
+  -----END PRIVATE KEY-----
+pv:
+  enabled: true
+  nfsServer: "192.168.1.114"
+  nfsMountOptions:
+    - nfsvers=3
+    - nolock
+  staticPath: "/media/kubernetes_share/static"
+  uploadPath: "/media/kubernetes_share/upload"
+  mediaPath: "/media/kubernetes_share/media"
+  rawPath: "/media/kubernetes_share/raw"
+  backupPath: "/media/kubernetes_share/backup"
+  migrationsPath: "/media/kubernetes_share/migrations"
+pvc:
+  staticSize: 1Gi
+  uploadSize: 1Ti
+  mediaSize: 4Ti
+  rawSize: 6Ti
+  backupSize: 100Gi
+  migrationsSize: 1Gi
 metallb:
+  # Enable this to provide a load balancer implementation on bare metal.
   enabled: true
   ipRangeStart: 192.168.1.220
   ipRangeStop: 192.168.1.224
+  loadBalancerIp: 192.168.1.221
+postgis:
+  # Enable this if you want to use the postgis docker image.
+  enabled: true
+  persistence:
+    size: 10Gi
+  hostPath: /media/ssd/postgis
 redis:
+  # Enable this to install the redis helm chart.
   enabled: true
   master:
     persistence:
@@ -14,6 +63,8 @@ redis:
   slave:
     persistence:
       enabled: false
+  nodeSelector:
+    dbServer: "yes"
   usePassword: false
 metrics-server:
   enabled: true
@@ -22,6 +73,7 @@ metrics-server:
     - --kubelet-insecure-tls=true
     - --kubelet-preferred-address-types=InternalIP
 elasticsearch:
+  # Enable this to install the elasticsearch helm chart.
   enabled: true
   persistence:
     enabled: true
@@ -34,7 +86,7 @@ elasticsearch:
         storage: 30Gi
   nodeSelector: 
     dbServer: "yes"
-  hostPath: /media/kubernetes_share/elasticsearch
+  hostPath: /media/ssd/elasticsearch
 filebeat:
   enabled: true
 kibana:
@@ -43,19 +95,10 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
-postgis:
-  enabled: true
-  hostPath: /media/kubernetes_share/postgis
-nginxReplicas: 1
-gunicornReplicas: 1
-transcoderReplicas: 1
-algorithmReplicas: 1
-pv:
-  staticSize: 1Gi
-  uploadSize: 1Ti
-  mediaSize: 4Ti
-  rawSize: 6Ti
-  postgisSize: 10Gi
-  backupSize: 100Gi
-  migrationsSize: 1Gi
+cluster-autoscaler:
+  # Should be disabled for bare metal.
+  enabled: false
+awsStorage:
+  # Should be disabled for bare metal.
+  enabled: false
 

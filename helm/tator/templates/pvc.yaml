@@ -1,0 +1,92 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: static-pv-claim
+  labels:
+    app: static
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.staticSize }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: upload-pv-claim
+  labels:
+    app: upload
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.uploadSize }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: media-pv-claim
+  labels:
+    app: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.mediaSize }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: raw-pv-claim
+  labels:
+    app: raw
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.rawSize }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: backup-pv-claim
+  labels:
+    app: backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.pvc.backupSize }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: migrations-pv-claim
+  labels:
+    app: migrations
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.migrationsSize }}
+{{ if .Values.postgis.enabled }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgis-pv-claim
+  labels:
+    app: postgis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgis.persistence.size }}
+{{ end }}

@@ -1,5 +1,6 @@
 import redis
 import json
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,10 @@ class TatorCache:
     """
     @classmethod
     def setup_redis(cls):
-        cls.rds = redis.Redis(host='tator-redis-master', health_check_interval=30)
+        cls.rds = redis.Redis(
+            host=os.getenv('REDIS_HOST'),
+            health_check_interval=30,
+        )
 
     def get_media_list_cache(self, project_id, query_params):
         """Returns media list cache or None if it is not cached.

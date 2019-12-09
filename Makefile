@@ -8,6 +8,8 @@ IMAGES=tator-image marshal-image tus-image postgis-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
+DOCKERHUB_USER=$(shell grep 'dockerRegistry:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
+
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -31,21 +33,6 @@ help:
 	@echo "\t\t - imageQuery: Make sentinel files match docker registry"
 	@echo "\t\t - imageHold: Hold sentinel files to current time"
 	@echo "\t\t - imageClean: Delete sentinel files + generated dockerfiles"
-
-# Check for a valid secrets file
-.PHONY: valid_secrets
-valid_secrets:
-ifeq ("$(wildcard real-secrets.yaml)","")
-		$(error Need to provide a real-secrets file in 'real-secrets.yaml')
-endif
-
-.PHONY: production_check
-production_check:
-	chmod +x scripts/production_check.sh
-	@./scripts/production_check.sh
-ifeq ($(DOCKERHUB_USER),)
-	$(error Must set 'DOCKERHUB_USER' env variable)
-endif
 
 # Global reset:
 reset:
@@ -103,7 +90,7 @@ status:
 
 .ONESHELL:
 
-cluster: valid_secrets main/version.py production_check
+cluster: main/version.py
 	$(MAKE) tator-image images cluster-deps cluster-install
 
 cluster-deps:
@@ -113,7 +100,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: main/version.py production_check tator-image 
+cluster-upgrade: main/version.py tator-image 
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -354,7 +341,7 @@ testinit:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION LTREE';
 
 test:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; es = Elasticsearch(host="elasticsearch-master").indices.delete("test*")'
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; es = Elasticsearch(host=os.getenv("ELASTICSEARCH_HOST")).indices.delete("test*")'
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'ELASTICSEARCH_PREFIX=test python3 manage.py test --keep'
 
 mrclean:

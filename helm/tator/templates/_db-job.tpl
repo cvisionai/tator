@@ -30,19 +30,18 @@ spec:
         {{ .selector }}
       containers:
         - name: postgis
-          image: {{ .Values.dockerRegistry }}/tator_postgis:latest
+          image: postgres:11.6
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
           env:
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_USER
+            - name: POSTGRES_HOST
+              value: {{ .Values.postgresHost }}
+            - name: POSTGRES_USERNAME
+              value: {{ .Values.postgresUsername }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_PASSWORD
+                  key: postgresPassword
 {{ end }}

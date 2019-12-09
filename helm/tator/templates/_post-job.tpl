@@ -34,23 +34,42 @@ spec:
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
-          envFrom:
-            - secretRef:
-                name: tator-secrets
           env:
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tator-secrets
+                  key: djangoSecretKey
             - name: POSTGRES_HOST
-              value: pgbouncer-svc
+              value: {{ .Values.postgresHost }}
+            - name: POSTGRES_USERNAME
+              value: {{ .Values.postgresUsername }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tator-secrets
+                  key: postgresPassword
+            - name: REDIS_HOST
+              value: {{ .Values.redisHost }}
+            - name: ELASTICSEARCH_HOST
+              value: {{ .Values.elasticsearchHost }}
             - name: MAIN_HOST
               value: {{ .Values.domain }}
             - name: LOAD_BALANCER_IP
               value: {{ .Values.loadBalancerIp }}
-            - name: DOCKERHUB_USER
+            - name: DOCKER_USERNAME
+              value: {{ .Values.dockerUsername }}
+            - name: DOCKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tator-secrets
+                  key: dockerPassword
+            - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-
           ports:
             - containerPort: 8000
               name: gunicorn
