@@ -1,3 +1,4 @@
+{{ if .Values.postgis.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,20 +35,17 @@ spec:
               value: "5000"
             - name: DEFAULT_POOL_SIZE
               value: "1000"
+            - name: DB_HOST
+              value: {{ .Values.postgresHost }}
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_USER
+              value: {{ .Values.postgresUsername }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_PASSWORD
+                  key: postgresPassword
             - name: DB_NAME
               value: tator_online
-            - name: DB_HOST
-              value: postgis-svc
           livenessProbe:
             tcpSocket:
               port: 5432
@@ -78,3 +76,4 @@ spec:
       name: postgres
   selector:
     app: pgbouncer
+{{ end }}

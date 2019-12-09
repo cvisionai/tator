@@ -1,5 +1,4 @@
 {{ if .Values.postgis.enabled }}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,15 +23,12 @@ spec:
             - containerPort: 5432
           env:
             - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_USER
+              value: {{ .Values.postgresUsername }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tator-secrets
-                  key: TATOR_SECRET_POSTGRES_PASSWORD
+                  key: postgresPassword
             - name: POSTGRES_DB
               value: tator_online
             - name: PGDATA
@@ -66,5 +62,4 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
-
 {{ end }}
