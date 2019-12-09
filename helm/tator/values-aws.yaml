@@ -52,6 +52,8 @@ pvc:
 metallb:
   # A load balancer implementation is provided by AWS.
   enabled: false
+postgis:
+  enabled: false
 redis:
   # Enable this to use the Redis helm chart installed as a dependency
   # instead of AWS Elasticache.
