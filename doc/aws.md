@@ -176,6 +176,10 @@ aws ecr create-repository --repository-name tator_algo_marshal
 aws ecr create-repository --repository-name tator_tusd
 ```
 
+# Create RDS, ElastiCache, and Elasticsearch instances
+
+This step is optional since you can use helm charts for databases as is done in the bare metal deployment, but it is recommended to use managed services for this purpose. For each service you set up, make sure you create it in the same VPC that was created by EKS and that you include all nodes in the `ClusterSharedNodeSecurityGroup`.
+
 ## Get an SSL certificate for your domain with LetsEncrypt
 
 If you already have an SSL certificate you can skip this, otherwise follow the instructions [here](doc/certbot.md)
