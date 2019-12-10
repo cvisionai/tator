@@ -12,6 +12,8 @@ elasticsearchHost: "elasticsearch-master"
 dockerUsername: "test"
 dockerPassword: "test"
 dockerRegistry: "localhost:5000"
+slackToken: "<Your slack API token>" # Optional, for slack notifications
+slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
 sslBundle: |
   -----BEGIN CERTIFICATE-----
   <Insert certificate here>
