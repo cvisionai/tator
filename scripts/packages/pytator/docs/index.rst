@@ -33,6 +33,9 @@ Indices and tables
 Installing
 ==================
 
+.. code-block:: bash
+
+   pip3 install pytator
 
 Known Issues
 ==================

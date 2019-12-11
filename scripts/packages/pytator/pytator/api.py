@@ -53,7 +53,7 @@ class APIElement:
         """
         Returns a list of elements at a given endpoint.
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Do not call this function directly,
            use :func:`APIElement.filter` or :func:`APIElement.all` instead
 
@@ -176,7 +176,7 @@ class APIElement:
     def getSingleElement(self, endpoint, params):
         """ Shortcut method to get the first element from a list
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         listObj=self.getMany(endpoint, params)
@@ -188,7 +188,7 @@ class APIElement:
     def newSingleElement(self, endpoint, obj):
         """ Adds a new element to an arbitrary endpoint
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.new` instead
 
         """
@@ -374,7 +374,7 @@ class Media(APIElement):
     def byMd5(self, md5):
         """ Returns a media element with a matching md5
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         return self.getSingleElement("EntityMedias", {"md5": md5})
@@ -382,7 +382,7 @@ class Media(APIElement):
     def byName(self, name):
         """ Returns a media element with a matching name
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         return self.getSingleElement("EntityMedias", {"name": name})
@@ -390,7 +390,7 @@ class Media(APIElement):
     def byId(self, pk):
         """ Returns a media element with a given id
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.get` instead
         """
         return self.get(pk)
@@ -398,7 +398,7 @@ class Media(APIElement):
     def applyAttribute(self, media_id, attributes):
         """ Returns a media element with a matching md5
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.patch` instead
         """
 
@@ -435,7 +435,7 @@ class StateType(APIElement):
     def byTypeId(self, typeId):
         """ Returns a state type element with a matching type id
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.get` instead
         """
         return self.getSingleElement("EntityStateTypes", {"type": typeId})
@@ -447,7 +447,7 @@ class State(APIElement):
     def byAttr(self, key, value):
         """ Returns a state element with a matching name
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         lookup=f"{key}::{value}"
@@ -455,7 +455,7 @@ class State(APIElement):
     def add(self, typeId, medias, attrs, localizations=[]):
         """ Adds a new state element
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.new` instead
         """
         obj={}
@@ -543,7 +543,7 @@ class Localization(APIElement):
     def add(self, mediaId, typeId, attrs):
         """ Add a new localization to a media element.
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.new` instead
         """
         obj={"media_id" : mediaId,
@@ -584,7 +584,7 @@ class Localization(APIElement):
     def query(self, params):
         """ Queries for a list of localizations.
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead.
         """
         response=requests.get(self.url+"/Localizations/"+self.project,
@@ -609,7 +609,7 @@ class TreeLeaf(APIElement):
     def isPresent(self, name):
         """ Acquire a tree leaf element by its name
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         response=self.getSingleElement("TreeLeaves", {"name": name})
@@ -619,7 +619,7 @@ class TreeLeaf(APIElement):
     def tree(self, ancestor):
         """ Acquire a tree listing by an ancestor
 
-        .. deprecated:: 0.2.0
+        .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
         return self.getMany("TreeLeaves", {"ancestor": ancestor})
