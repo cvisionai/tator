@@ -57,6 +57,7 @@ spec:
                   key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
+{{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -67,6 +68,7 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: slackChannel
+{{- end }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
