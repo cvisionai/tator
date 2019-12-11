@@ -81,7 +81,9 @@ class APIElement:
     def filter(self, params):
         """ Given a filter object, return the matching elements (or None)
 
-        For an explanation on filtering, see the :ref:`Filtering <_filtering>` section
+        Filtering may require knowledge of the underlying user-defined type. See
+        `rest/EntityTypeSchema`.
+
         """
         return self.getMany(self.endpoint, params)
 

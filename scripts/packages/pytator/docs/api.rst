@@ -21,8 +21,8 @@ unique API object.
    :show-inheritance:
    :inherited-members:
 
-Filtering
-**********
+User-defined types
+******************
 
 The various endpoints each support filtering via the :func:`APIElement.filter`
 function. The *params* object is often type specific; and maps to the
