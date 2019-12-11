@@ -54,10 +54,10 @@ if __name__=="__main__":
     # https://cvision.tatorapp.com/rest/EntityMedias/<proj_id>?attribute_distance=Deployment%20Location::20::-9.68::47.48&type=<media_type_id>
     distance_query = "::".join([args.locationKeyname,
                                 args.radius,
-                                args.latitude,
-                                args.longitude])
+                                args.longitude,
+                                args.latitude])
     print(distance_query)
-    # Raw URL: https://cvision.tatorapp.com/rest/EntityMedias/args.project?attribute_distance={args.locationKeyName}::args.radius::args.latitude::args.longitude&type=args.mediaTypeId
+    # Raw URL: https://cvision.tatorapp.com/rest/EntityMedias/args.project?attribute_distance={args.locationKeyName}::args.radius::args.longitude::args.latitude&type=args.mediaTypeId
     media_in_radius = tator.Media.filter(
         {"attribute_distance": distance_query,
          "type": args.mediaTypeId})
