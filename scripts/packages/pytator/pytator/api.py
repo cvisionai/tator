@@ -1,7 +1,7 @@
 """ API Implementation Module
 
 The implementation of each endpoint type is in this module. Each type derives
-off of APIElement, which provides basic functions such as APIElement.get() and 
+off of APIElement, which provides basic functions such as APIElement.get() and
 APIElement.new().
 
 Some endpoints classes have additional methods that are specific to it, such
@@ -26,17 +26,17 @@ from urllib.parse import urljoin
 from urllib.parse import urlsplit
 from uuid import uuid1
 
-""" API Implementation details """
-
 class APIElement:
-    """ Base API element that provides generic capability to any of the 
+    """ Base API element that provides generic capability to any of the
         derived endpoint objects. Each Element is instantiated per project
         so concepts of `all` refer to `all` within a project.
 
     :param api: Tuple provided from :class:`pytator.Tator` object construction, represents the Tator webservice endpoint, authorization token, and project number.
-    :param str endpoint: Name of the endpoint provided from derived class. 
+    :param str endpoint: Name of the endpoint provided from derived class.
     """
     def __init__(self, api, endpoint):
+        """ Construct an API element. Constructed by :class:`pytator.Tator`
+        """
         self.endpoint = endpoint
         self.individual_endpoint = endpoint.rstrip('s')
         self.url = api[0].rstrip('/')
@@ -50,9 +50,9 @@ class APIElement:
                       "Accept-Encoding": "gzip"}
 
     def getMany(self, endpoint, params):
-        """ 
+        """
         Returns a list of elements at a given endpoint.
- 
+
         .. deprecated:: 0.2.0
            Do not call this function directly,
            use :func:`APIElement.filter` or :func:`APIElement.all` instead
@@ -79,22 +79,28 @@ class APIElement:
             return obj
 
     def filter(self, params):
-        """ Given a filter object, return the matching elements (or None) 
-        
-        For an explanation on filtering, see the :ref:`Filtering` section
+        """ Given a filter object, return the matching elements (or None)
+
+        For an explanation on filtering, see the :ref:`Filtering <_filtering>` section
         """
         return self.getMany(self.endpoint, params)
 
     def dataframe(self, params):
-        allObjects=self.filter(params)
-        if allObjects:
-            return pd.DataFrame(data=allObjects,
-                                columns=allObjects[0].keys())
-        else:
-            return None
+        """ Given a filter object, return the matching elements as a
+        pd.DataFrame or None.
 
+        This function is equivilant to the following: ::
+
+           allObjects=self.filter(params)
+           if allObjects:
+               return pd.DataFrame(data=allObjects,
+                                columns=allObjects[0].keys())
+           else:
+               return None
+
+        """
     def all(self):
-        """ Get list of all the elements of an endpoint as a list 
+        """ Get list of all the elements of an endpoint as a list
 
             :return: None if there are no elements, else a list
 
@@ -102,6 +108,14 @@ class APIElement:
         return self.getMany(self.endpoint, None)
 
     def update(self, pk, patch):
+        """ Update an element. To understand what fields apply to a given
+            object type, `rest/EntityTypeSchema/<type id>` can be used.
+
+            :param int pk: ID of element to update
+            :param dict patch: Object delta to apply
+
+            :return: A tuple of the status code and JSON response from server
+        """
         endpoint=self.url + "/" + self.individual_endpoint + "/" + str(pk)
         response=requests.patch(endpoint,
                                json=patch,
@@ -117,6 +131,11 @@ class APIElement:
         return (response.status_code, response.json())
 
     def get(self, pk):
+        """ Acquire an individual item from the database.
+
+        :param int pk: The id of the object to acquire
+        :return: A python dictionary representing the object
+        """
         endpoint=self.url + "/" + self.individual_endpoint + "/" + str(pk)
         response=requests.get(endpoint,
                               headers=self.headers)
@@ -132,6 +151,13 @@ class APIElement:
         return response.json()
 
     def new(self, obj):
+        """ Add a new object to the database.
+
+        To understand what fields apply to a given object type,
+        `rest/EntityTypeSchema/<type id>` can be used.
+
+        :param dict obj: The object to add to the database.
+        """
         response=requests.post(self.url + "/" + self.endpoint +"/"+self.project,
                                json=obj,
                                headers=self.headers)
@@ -146,6 +172,11 @@ class APIElement:
         return (response.status_code, response.json())
 
     def getSingleElement(self, endpoint, params):
+        """ Shortcut method to get the first element from a list
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         listObj=self.getMany(endpoint, params)
         if listObj != None and len(listObj) > 0:
             return listObj[0]
@@ -153,6 +184,12 @@ class APIElement:
             return None
 
     def newSingleElement(self, endpoint, obj):
+        """ Adds a new element to an arbitrary endpoint
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.new` instead
+
+        """
         response=requests.post(self.url + "/" + endpoint+"/"+self.project,
                                json=obj,
                                headers=self.headers)
@@ -167,22 +204,22 @@ class APIElement:
         return (response.status_code, response.json())
 
 class Algorithm(APIElement):
-    """ Endpoint for launching Algorithm pipelines on media elements 
-        `rest/Algorithms` endpoint. 
+    """ Endpoint for launching Algorithm pipelines on media elements
+        `rest/Algorithms` endpoint.
     """
     def __init__(self, api):
         super().__init__(api, "Algorithms")
     def launch_on_media(self, algorithm_name, media_id):
-        """ Launch a given algorithm on an individual media 
-        
+        """ Launch a given algorithm on an individual media
+
         :param str algorithm_name: Name of the algorithm
         :param int media_id: id of the media to launch algorithm on
         """
         return self._launch({"algorithm_name": algorithm_name,
                             "media_query": f"?media_id={media_id}"})
     def launch_on_medias(self, algorithm_name, media_ids):
-        """ Launch a given algorithm on an individual media 
-        
+        """ Launch a given algorithm on an individual media
+
         :param str algorithm_name: Name of the algorithm
         :param list media_ids: list of ids of the media to launch algorithm on
         """
@@ -221,14 +258,17 @@ class Algorithm(APIElement):
         """ .. warning:: Not supported for algorithms endpoint """
         pass
 class MediaType(APIElement):
+    """ Describes elements from `rest/EntityTypeMedias` """
     def __init__(self, api):
          super().__init__(api, "EntityTypeMedias")
 
 class Project(APIElement):
+    """ Describes elements from `rest/Projects` """
     def __init__(self, api):
          super().__init__(api, "Projects")
 
 class User(APIElement):
+    """ Describes elements from `rest/Users` """
     def __init__(self, api):
          super().__init__(api, "Users")
 
@@ -240,7 +280,11 @@ class Media(APIElement):
         self.tusURL=urljoin("https://"+split.netloc, "files/")
 
     def downloadFile(self, element, out_path):
-        """ Download a media file from Tator to an off-line location """
+        """ Download a media file from Tator to an off-line location
+
+        :param dict element: Dictionary from :func:`Media.filter`
+        :param path-like out_path: Path to where to download
+        """
         #Use streaming mp4 unless original is present
         url=element['url']
         if 'original_url' in element:
@@ -326,15 +370,36 @@ class Media(APIElement):
         return True
 
     def byMd5(self, md5):
+        """ Returns a media element with a matching md5
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         return self.getSingleElement("EntityMedias", {"md5": md5})
 
     def byName(self, name):
+        """ Returns a media element with a matching name
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         return self.getSingleElement("EntityMedias", {"name": name})
 
     def byId(self, pk):
+        """ Returns a media element with a given id
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.get` instead
+        """
         return self.get(pk)
 
     def applyAttribute(self, media_id, attributes):
+        """ Returns a media element with a matching md5
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.patch` instead
+        """
+
         patchUrl=f"EntityMedia/{media_id}"
         response = requests.patch(self.url+"/"+patchUrl,
                                   json={"attributes":attributes},
@@ -353,6 +418,7 @@ class Media(APIElement):
 
 
 class LocalizationType(APIElement):
+    """ Class to support operations to `rest/LocalizationTypes` """
     def __init__(self, api):
          super().__init__(api, "LocalizationTypes")
 
@@ -360,20 +426,36 @@ class LocalizationType(APIElement):
         return self.getSingleElement("LocalizationTypes", {"type": typeId})
 
 class StateType(APIElement):
+    """ Class to support operations to `rest/EntityStateTypes` """
     def __init__(self, api):
          super().__init__(api, "EntityStateTypes")
 
     def byTypeId(self, typeId):
+        """ Returns a state type element with a matching type id
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.get` instead
+        """
         return self.getSingleElement("EntityStateTypes", {"type": typeId})
 
 class State(APIElement):
+    """ Class to support operations to `rest/EntityStates` """
     def __init__(self, api):
         super().__init__(api,"EntityStates")
     def byAttr(self, key, value):
+        """ Returns a state element with a matching name
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         lookup=f"{key}::{value}"
         return self.getSingleElement("EntityStates", {"attribute": lookup})
     def add(self, typeId, medias, attrs, localizations=[]):
-        #Make it a list for uniformity
+        """ Adds a new state element
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.new` instead
+        """
         obj={}
         if type(medias) is list:
             obj["media_ids"] = medias
@@ -388,7 +470,9 @@ class State(APIElement):
         return code == 200
 
     def dataframe(self, params):
-        """ Flatten association sub-object to make queries possible """
+        """ State objects are nested, this function will flatten them prior to
+            conversion to a dataframe. Otherwise the same as the parent function
+         """
         allObjects=self.filter(params)
         if allObjects:
             columns = set(allObjects[0].keys())
@@ -404,10 +488,20 @@ class State(APIElement):
             return None
 
 class Track(State):
+    """ Object that deals with State objects that relate to Localizations.
+
+    These types of objects are referred to as tracks. One example is *tracking*
+    an object across multiple frames of a video.
+    """
     def __init__(self, api):
         super().__init__(api)
 
     def addLocalizations(self, trackObj, localizations):
+        """ Given a track state object, associate it with a list of
+            localizations
+            :param dict trackObj: Track object returned from API
+            :param iterable localizations: List or set of localization ids.
+        """
         associationId=trackObj["association"]["id"]
         newLocalSet=set(trackObj["association"]["localizations"])
         if type(localizations) is list:
@@ -436,10 +530,20 @@ class Track(State):
             return trackObj
 
 class Localization(APIElement):
+    """ Object to deal with Localizations in database `rest/Localizations`
+
+    Localizations are boxes, lines, or dots made by annotators on images or
+    videos.
+    """
     def __init__(self, api):
          super().__init__(api, "Localizations")
 
     def add(self, mediaId, typeId, attrs):
+        """ Add a new localization to a media element.
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.new` instead
+        """
         obj={"media_id" : mediaId,
              "type" : typeId}
         obj.update(attrs)
@@ -450,6 +554,13 @@ class Localization(APIElement):
             return None
 
     def addMany(self, listObj):
+        """ Add many localizations to a media element.
+
+        This is a shortcut function that allows to the bulk ingestion of
+        many annotations on a media element, without there having to be a
+        request for each box, line or dot. Each element of the list needs
+        to match the syntax for :func:`APIElement.new` for a localization
+        """
         response=requests.post(self.url+"/Localizations"+"/"+self.project,
                                json={"many":listObj},
                                headers=self.headers)
@@ -469,6 +580,11 @@ class Localization(APIElement):
         return (response.status_code, response.json())
 
     def query(self, params):
+        """ Queries for a list of localizations.
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead.
+        """
         response=requests.get(self.url+"/Localizations/"+self.project,
                                params=params,
                                headers=self.headers)
@@ -479,18 +595,41 @@ class Localization(APIElement):
         return (response.status_code, response.json())
 
 class TreeLeaf(APIElement):
+    """ Interfaces to tree leaf elements. `rest/TreeLeaves`
+
+        Treeleaves are used to support aribitrary leveled data types and
+        can be used to drive autocomplete/typeahead suggestions. An example
+        use of a TreeLeaf tree is a taxonomic structure.
+    """
     def __init__(self, api):
         super().__init__(api, "TreeLeaves")
 
     def isPresent(self, name):
+        """ Acquire a tree leaf element by its name
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         response=self.getSingleElement("TreeLeaves", {"name": name})
         #"project": self.project})
         return response != None
 
     def tree(self, ancestor):
+        """ Acquire a tree listing by an ancestor
+
+        .. deprecated:: 0.2.0
+           Use :func:`APIElement.filter` instead
+        """
         return self.getMany("TreeLeaves", {"ancestor": ancestor})
 
     def addIfNotPresent(self, name, parent, typeid, attr=None):
+        """ Add a tree leaf if not already present
+
+        :param str name: The name of the element
+        :param str parent: The name of the parent
+        :param int typeid: The type id of the tree leaf
+        :param dict attr: Attributes to apply to the element upon creation
+        """
         if self.isPresent(name):
             print(f"{name} found in DB, skipping")
             return True
