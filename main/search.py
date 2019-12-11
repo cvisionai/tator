@@ -151,6 +151,7 @@ class TatorSearch:
                     scroll='1m',
                 )
                 ids += [int(obj['_id']) for obj in result['hits']['hits']]
+            self.es.clear_scroll(scroll_id)
         else:
             result = self.search_raw(project, query)
             result = result['hits']
