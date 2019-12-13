@@ -1337,14 +1337,6 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
 
     def get(self, request, *args, **kwargs):
         try:
-            # Try grabbing data from cache
-            cache = TatorCache().get_media_list_cache(
-                self.kwargs['project'],
-                request.query_params,
-            )
-            if cache:
-                return Response(cache)
-
             self.validate_attribute_filter(request.query_params)
             media_ids, media_count, _ = get_media_queryset(
                 self.kwargs['project'],
@@ -1396,10 +1388,6 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
             return response;
-        TatorCache().set_media_list_cache(
-            self.kwargs['project'],
-            request.query_params,
-            responseData)
 
         return Response(responseData)
 
