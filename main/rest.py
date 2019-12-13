@@ -111,7 +111,6 @@ from .serializers import UserSerializerBasic
 
 from .consumers import ProgressProducer
 
-from .cache import TatorCache
 from .search import TatorSearch
 
 from django.contrib.gis.db.models import BooleanField
@@ -841,15 +840,6 @@ class LocalizationList(APIView, AttributeFilterMixin):
                     raise Exception('Media ID not in project')
 
             entityType = request.query_params.get('type', None)
-            if (mediaId is not None) and (entityType is not None):
-                cache = TatorCache().get_localization_list_cache(
-                    mediaId,
-                    entityType,
-                    request.query_params,
-                )
-                if cache:
-                    return Response(cache)
-
             self.validate_attribute_filter(request.query_params)
             self.request=request
             before=time.time()
@@ -896,12 +886,6 @@ class LocalizationList(APIView, AttributeFilterMixin):
                         element['media'] = filename_dict[media_id]
 
                     responseData = responseData
-            TatorCache().set_localization_list_cache(
-                mediaId,
-                entityType,
-                request.query_params,
-                responseData,
-            )
             after=time.time()
         except Exception as e:
             response=Response({'message' : str(e),
@@ -1737,13 +1721,6 @@ class SuggestionAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, format=None, **kwargs):
-        # Try grabbing data from cache
-        cache = TatorCache().get_treeleaf_list_cache(
-            kwargs['ancestor'],
-            request.query_params,
-        )
-        if cache:
-            return Response(cache)
         minLevel=int(self.request.query_params.get('minLevel', 1))
         startsWith=self.request.query_params.get('query', None)
         ancestor=None
@@ -1805,11 +1782,6 @@ class SuggestionAPI(APIView):
         resp = Response(suggestions)
         s4 = datetime.datetime.now()
         logger.info(f"Timing stage 0 = {s1-s0}, stage 1 = {s2-s1}, stage 2 = {s3-s2}, stage 3 = {s4-s3}, total={s4-s0}")
-        TatorCache().set_treeleaf_list_cache(
-            self.kwargs['ancestor'],
-            request.query_params,
-            suggestions,
-        )
         return resp
 
 class TreeLeafListSchema(AutoSchema, AttributeFilterSchemaMixin):
@@ -3028,15 +3000,10 @@ class ProjectDetailAPI(RetrieveUpdateDestroyAPIView):
 
     def get(self, request, format=None, **kwargs):
         # Try grabbing data from cache
-        cache = TatorCache().get_project_cache(self.kwargs['pk'])
         try:
-            if cache:
-                response=Response(cache)
-            else:
-                data=self.serializer_class(Project.objects.get(pk=self.kwargs['pk']),
+            data=self.serializer_class(Project.objects.get(pk=self.kwargs['pk']),
                                                context=self.get_renderer_context()).data
-                TatorCache().set_project_cache(self.kwargs['pk'], data)
-                response=Response(data)
+            response=Response(data)
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)

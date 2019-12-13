@@ -77,7 +77,7 @@ class AnnotationView(ProjectBase, TemplateView):
 
 def validate_project(user, project):
     # We only cache 'True' effectively with this logic
-    granted = None #TatorCache().get_cred_cache(user.id, project.id)
+    granted = TatorCache().get_cred_cache(user.id, project.id)
     if granted:
         return granted
 
