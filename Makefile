@@ -10,6 +10,9 @@ GIT_VERSION=$(shell git rev-parse HEAD)
 
 DOCKERHUB_USER=$(shell grep 'dockerRegistry:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
 
+POSTGRES_HOST=$(shell grep 'postgresHost:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
+POSTGRES_USERNAME=$(shell grep 'postgresUsername:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
+POSTGRES_PASSWORD=$(shell grep 'postgresPassword:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -42,6 +45,17 @@ reset:
 # Create backup with pg_dump
 backup:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
+
+psql_cloud:
+	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
+	kubectl exec -it $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///') -- psql -h $(POSTGRES_HOST) -U $(POSTGRES_USERNAME)
+	kubectl delete deployment.apps/psql
+
+restore_cloud: check_restore
+	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
+	kubectl cp $(SQL_FILE) $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///'):/.
+	kubectl exec -it $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -C -h $(POSTGRES_HOST) -U $(POSTGRES_USERNAME) -d tator_online --no-owner --role=$(POSTGRES_USERNAME) --jobs 8 /$(SQL_FILE)
+	kubectl delete deployment.apps/psql
 
 # Restore database from specified backup (base filename only)
 # Example:
