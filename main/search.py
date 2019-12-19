@@ -49,6 +49,16 @@ class TatorSearch:
                     },
                 },
             )
+        # Mappings that were added later
+        self.es.indices.put_mapping(
+            index=index,
+            body={'properties': {
+                '_exact_treeleaf_name': {'type': 'keyword'},
+                'tator_treeleaf_name': {'type': 'text'},
+                '_treeleaf_depth': {'type': 'integer'},
+                '_treeleaf_path': {'type': 'text'},
+            }},
+        )
 
     def delete_index(self, project):
         index = self.index_name(project)
@@ -101,6 +111,11 @@ class TatorSearch:
                     'name': 'annotation',
                     'parent': media[0].pk,
                 }
+        elif entity.meta.dtype in ['treeleaf']:
+            aux['_exact_treeleaf_name'] = entity.name
+            aux['tator_treeleaf_name'] = entity.name
+            aux['_treeleaf_depth'] = entity.depth()
+            aux['_treeleaf_path'] = entity.computePath()
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()

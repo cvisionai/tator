@@ -1721,43 +1721,31 @@ class SuggestionAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, format=None, **kwargs):
+        s0 = datetime.datetime.now()
         minLevel=int(self.request.query_params.get('minLevel', 1))
         startsWith=self.request.query_params.get('query', None)
-        ancestor=None
-        try:
-            ancestor=TreeLeaf.objects.get(path=kwargs['ancestor'])
-        except ObjectDoesNotExist as dne:
-            msg="Looking for '{}', ERROR={}".format(kwargs['ancestor'],str(dne))
-            return Response({'message' : msg},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        if startsWith is None:
-            return Response({'message' : "Must supply 'query' argument"},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        s0 = datetime.datetime.now()
-        canidates = ancestor.subcategories(minLevel)
-
-        queryset = canidates.select_related('parent').annotate(alias=Cast('attributes__alias', TextField()),
-                                                               catAlias=Cast('parent__attributes__alias', TextField())
-        )
-        spaceStart=f' {startsWith}'
-        jsonStart=f'"{startsWith}'
-        queryset = queryset.filter(Q(name__istartswith=startsWith) |
-                                   Q(name__icontains=spaceStart) |
-                                   Q(alias__icontains=jsonStart) |
-                                   Q(alias__icontains=spaceStart))
+        ancestor=kwargs['ancestor']
+        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        #query['size'] = 10
+        #query['sort']['_exact_treeleaf_name'] = 'asc'
+        query['query']['bool']['filter'] = [
+            {'match': {'_dtype': {'query': 'treeleaf'}}},
+            {'range': {'_treeleaf_depth': {'gte': minLevel}}},
+            {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
+        ]
+        ids, _ = TatorSearch().search(kwargs['project'], query)
+        queryset = list(TreeLeaf.objects.filter(pk__in=ids))
 
         suggestions=[]
         s1 = datetime.datetime.now()
         for idx,match in enumerate(queryset):
-            category = ancestor
+            group = kwargs['ancestor']
             if match.parent:
-                category = match.parent
+                group = match.parent.name
 
             suggestion={
                 "value": match.name,
-                "group": category.name,
+                "group": group,
                 "data": {}
             }
 
@@ -1765,10 +1753,11 @@ class SuggestionAPI(APIView):
                 suggestion["data"]["alias"] = match.attributes['alias']
 
             catAlias=None
-            if match.parent.attributes:
-                catAlias=match.parent.attributes.get("alias",None)
-            if catAlias != None:
-                suggestion["group"] = f'{suggestion["group"]} ({catAlias})'
+            if match.parent:
+                if match.parent.attributes:
+                    catAlias=match.parent.attributes.get("alias",None)
+                if catAlias != None:
+                    suggestion["group"] = f'{suggestion["group"]} ({catAlias})'
 
 
             suggestions.append(suggestion);
