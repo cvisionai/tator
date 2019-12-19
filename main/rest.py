@@ -1761,7 +1761,7 @@ class SuggestionAPI(APIView):
                 "data": {}
             }
 
-            if match.alias:
+            if 'alias' in match.attributes:
                 suggestion["data"]["alias"] = match.attributes['alias']
 
             catAlias=None
