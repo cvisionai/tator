@@ -1726,8 +1726,8 @@ class SuggestionAPI(APIView):
         startsWith=self.request.query_params.get('query', None)
         ancestor=kwargs['ancestor']
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        #query['size'] = 10
-        #query['sort']['_exact_treeleaf_name'] = 'asc'
+        query['size'] = 10
+        query['sort']['_exact_treeleaf_name'] = 'asc'
         query['query']['bool']['filter'] = [
             {'match': {'_dtype': {'query': 'treeleaf'}}},
             {'range': {'_treeleaf_depth': {'gte': minLevel}}},
