@@ -1308,29 +1308,33 @@ class SectionAnalysisAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
-        section = request.query_params.get('section', None)
         analyses = list(AnalysisCount.objects.filter(project=kwargs['project']))
         response_data = {}
         for analysis in analyses:
-            query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-            query['size'] = 0
-            query['query']['bool']['filter'] = []
+            media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            media_query = get_attribute_query(request.query_params, media_query, [], kwargs['project'])
             query_str = f'{analysis.data_query} AND _meta:{analysis.data_type.pk}'
-            if section:
-                if analysis.data_type.dtype in ['image', 'video']:
-                    query_str = f'{query_str} AND tator_user_sections:"{section}"'
-                else:
+            if analysis.data_type.dtype in ['image', 'video']:
+                query = media_query
+                if not query['query']['bool']['filter']:
+                    query['query']['bool']['filter'] = []
+                query['query']['bool']['filter'].append(
+                    {'query_string': {'query': query_str}},
+                )
+            else:
+                query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+                query['query']['bool']['filter'] = []
+                if media_query:
                     query['query']['bool']['filter'].append({
                         'has_parent': {
                             'parent_type': 'media',
-                            'query': {'query_string': {
-                                'query': f'tator_user_sections:"{section}"',
-                            }},
+                            **media_query,
                         }
                     })
-            query['query']['bool']['filter'].append({
-                'query_string': {'query': query_str}
-            })
+                query['query']['bool']['filter'].append({
+                    'query_string': {'query': query_str}
+                })
+            query['size'] = 0
             _, count = TatorSearch().search(kwargs['project'], query)
             response_data[analysis.name] = count
         return Response(response_data)
