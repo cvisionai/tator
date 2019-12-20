@@ -52,6 +52,7 @@ from .rest import UserDetailAPI
 from .rest import MediaPrevAPI
 from .rest import MediaNextAPI
 from .rest import MediaSectionsAPI
+from .rest import SectionAnalysisAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -218,5 +219,10 @@ urlpatterns += [
         'rest/MediaSections/<int:project>',
         MediaSectionsAPI.as_view(),
         name='MediaSections',
+    ),
+    path(
+        'rest/SectionAnalysis/<int:project>',
+        SectionAnalysisAPI.as_view(),
+        name='SectionAnalysis',
     ),
 ]
