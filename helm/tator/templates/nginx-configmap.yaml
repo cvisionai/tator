@@ -170,9 +170,9 @@ data:
           proxy_read_timeout 600;
           send_timeout 600;
 
-          # for now turn off routing to gunicorn (comment this to turn us back
-          # on)
-          # return 503;
+          {{- if .Values.maintenance }}
+          return 503;
+          {{- end }}
           proxy_pass http://gunicorn-svc:8000;
 
           proxy_redirect off;

@@ -3,6 +3,8 @@ domain: your.domain.com
 redirects:
   - other.domain.com
   - other.domain1.com
+# Enable this to turn on "down for maintenance" page.
+maintenance: false
 nginxReplicas: 1
 gunicornReplicas: 1 
 transcoderReplicas: 1
