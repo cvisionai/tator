@@ -15,6 +15,21 @@ data:
       server_names_hash_bucket_size 128;
       proxy_ignore_client_abort on;
 
+      {{- if hasKey .Values "redirects" }}
+      {{- range .Values.redirects }}
+
+      server {
+        listen 80;
+        listen 443;
+        server_name {{ . }};
+        ssl_certificate /ssl/CertificateBundle1.pem;
+        ssl_certificate_key /ssl/tator.key;
+        return 301 https://{{ $.Values.domain }}$request_uri;
+      }
+
+      {{- end }}
+      {{- end }}
+
       server {
         listen 80;
         server_name {{ .Values.domain }};
