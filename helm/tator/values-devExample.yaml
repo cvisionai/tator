@@ -1,4 +1,8 @@
 domain: your.domain.com
+# Requests for these domains will be redirected to the actual domain.
+redirects:
+  - other.domain.com
+  - other.domain1.com
 nginxReplicas: 1
 gunicornReplicas: 1 
 transcoderReplicas: 1
