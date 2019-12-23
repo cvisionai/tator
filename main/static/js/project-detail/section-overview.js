@@ -24,7 +24,6 @@ class SectionOverview extends TatorElement {
     this._stats.appendChild(this._numImages);
 
     this._analysisObjects = [];
-
   }
 
   static get observedAttributes() {
@@ -75,7 +74,7 @@ class SectionOverview extends TatorElement {
     this._header.textContent = "Section Overview";
     if (this._lastAllData)
     {
-      this._updateText(this._lastAllData);
+      this._updateText(...this._lastAllData);
     }
     else
     {
@@ -86,8 +85,8 @@ class SectionOverview extends TatorElement {
   updateForAll() {
     this._header.textContent = "Section Overview";
     const project = this.getAttribute("project-id");
-    const url = "/rest/MediaSections/" + project + this._mediaFilter();
-    fetch(url, {
+    const sectionUrl = "/rest/MediaSections/" + project + this._mediaFilter();
+    const sectionPromise = fetch(sectionUrl, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -95,21 +94,32 @@ class SectionOverview extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-    })
-    .then(response => response.json())
-    .then(data => {
-      
-      this._updateText(data);
-      this._lastAllData = data;
     });
+    const analysisUrl = "/rest/SectionAnalysis/" + project + this._mediaFilter();
+    const analysisPromise = fetch(analysisUrl, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    });
+    Promise.all([sectionPromise, analysisPromise])
+    .then(responses => Promise.all(responses.map(resp => resp.json())))
+    .then(([sectionData, analysisData]) => {
+      this._updateText(sectionData, analysisData);
+      this._lastAllData = [sectionData, analysisData];
+    })
+    .catch(err => console.error("Error updating section overview: " + err));
   }
 
-  _updateText(data, skipMedia) {
+  _updateText(sectionData, analysisData) {
 
     let numImages = 0;
     let numVideos = 0;
-    if (Object.keys(data).length > 0) {
-      const counts = data[Object.keys(data)[0]];
+    if (Object.keys(sectionData).length > 0) {
+      const counts = sectionData[Object.keys(sectionData)[0]];
       if (typeof counts.num_images !== "undefined") {
         numImages = counts.num_images;
       }
@@ -145,6 +155,17 @@ class SectionOverview extends TatorElement {
       imgLabel = " Image";
     }
     this._numImages.textContent = numImages + imgLabel;
+    
+    for (const [index, analysis] of Object.keys(analysisData).entries()) {
+      if (index == this._analysisObjects.length) {
+        const div = document.createElement("div");
+        div.setAttribute("class", "py-2");
+        this._stats.appendChild(div);
+        this._analysisObjects.push(div);
+      }
+      this._analysisObjects[index].textContent = analysisData[analysis] + " " + analysis;
+    }
+
   }
 }
 
