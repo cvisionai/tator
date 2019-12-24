@@ -1308,12 +1308,19 @@ class SectionAnalysisAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
+        mediaId = request.query_params.get('media_id', None)
         analyses = list(AnalysisCount.objects.filter(project=kwargs['project']))
         response_data = {}
         for analysis in analyses:
             media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
             media_query = get_attribute_query(request.query_params, media_query, [], kwargs['project'])
             query_str = f'{analysis.data_query} AND _meta:{analysis.data_type.pk}'
+            if mediaId is not None:
+                if not media_query['query']['bool']['filter']:
+                    media_query['query']['bool']['filter'] = []
+                media_query['query']['bool']['filter'].append(
+                    {'ids': {'values': mediaId.split(',')}}
+                )
             if analysis.data_type.dtype in ['image', 'video']:
                 query = media_query
                 if not query['query']['bool']['filter']:

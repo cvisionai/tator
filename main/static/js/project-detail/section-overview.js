@@ -45,7 +45,7 @@ class SectionOverview extends TatorElement {
     this._header.textContent = media.name;
     const project = this.getAttribute("project-id");
     const url = "/rest/EntityMedia/" + media.id;
-    fetch(url, {
+    const mediaPromise = fetch(url, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -53,19 +53,31 @@ class SectionOverview extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-    })
-    .then(response => response.json())
-    .then(data => {
+    });
+    const analysisUrl = "/rest/SectionAnalysis/" + project + "?media_id=" + media.id;
+    const analysisPromise = fetch(analysisUrl, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    });
+    Promise.all([mediaPromise, analysisPromise])
+    .then(responses => Promise.all(responses.map(resp => resp.json())))
+    .then(([data, analysisData]) => {
+      console.log("ANALYSIS DATA FOR SINGLE FILE: " + JSON.stringify(analysisData));
       if (typeof data.thumb_gif_url === "undefined") {
         this._updateText({'counts': {
           "num_videos": 0,
           "num_images": 1,
-        }});
+        }}, analysisData);
       } else {
         this._updateText({'counts': {
           "num_videos": 1,
           "num_images": 0,
-        }});
+        }}, analysisData);
       }
     });
   }
