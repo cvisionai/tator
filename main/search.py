@@ -146,7 +146,8 @@ class TatorSearch:
     def search(self, project, query):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
-        if 'size' not in query:
+        size = query.get('size', 10000)
+        if size >= 10000:
             query['size'] = 10000
             result = self.es.search(
                 index=self.index_name(project),
@@ -174,6 +175,10 @@ class TatorSearch:
             count = result['total']['value']
             ids = [int(obj['_id']) for obj in data]
         return ids, count
+
+    def count(self, project, query):
+        index = self.index_name(project)
+        return self.es.count(index=index, body=query)['count']
 
     def refresh(self, project):
         """Force refresh on an index.

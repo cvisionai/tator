@@ -1341,8 +1341,7 @@ class SectionAnalysisAPI(APIView):
                 query['query']['bool']['filter'].append({
                     'query_string': {'query': query_str}
                 })
-            query['size'] = 0
-            _, count = TatorSearch().search(kwargs['project'], query)
+            count = TatorSearch().count(kwargs['project'], query)
             response_data[analysis.name] = count
         return Response(response_data)
 
