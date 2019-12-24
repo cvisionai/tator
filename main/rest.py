@@ -1302,6 +1302,50 @@ def delete_polymorphic_qs(qs):
         qs = entity_type.objects.filter(pk__in=ids)
         qs.delete()
 
+class SectionAnalysisAPI(APIView):
+    """Endpoint for getting section analysis data.
+    """
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get(self, request, *args, **kwargs):
+        mediaId = request.query_params.get('media_id', None)
+        analyses = list(AnalysisCount.objects.filter(project=kwargs['project']))
+        response_data = {}
+        for analysis in analyses:
+            media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            media_query = get_attribute_query(request.query_params, media_query, [], kwargs['project'])
+            query_str = f'{analysis.data_query} AND _meta:{analysis.data_type.pk}'
+            if mediaId is not None:
+                if not media_query['query']['bool']['filter']:
+                    media_query['query']['bool']['filter'] = []
+                media_query['query']['bool']['filter'].append(
+                    {'ids': {'values': mediaId.split(',')}}
+                )
+            if analysis.data_type.dtype in ['image', 'video']:
+                query = media_query
+                if not query['query']['bool']['filter']:
+                    query['query']['bool']['filter'] = []
+                query['query']['bool']['filter'].append(
+                    {'query_string': {'query': query_str}},
+                )
+            else:
+                query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+                query['query']['bool']['filter'] = []
+                if media_query:
+                    query['query']['bool']['filter'].append({
+                        'has_parent': {
+                            'parent_type': 'media',
+                            **media_query,
+                        }
+                    })
+                query['query']['bool']['filter'].append({
+                    'query_string': {'query': query_str}
+                })
+            query['size'] = 0
+            _, count = TatorSearch().search(kwargs['project'], query)
+            response_data[analysis.name] = count
+        return Response(response_data)
+
 class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media

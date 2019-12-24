@@ -740,7 +740,7 @@ class AnalysisBase(PolymorphicModel):
 
 class AnalysisCount(AnalysisBase):
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)
-    data_filter = JSONField(null=True, blank=True)
+    data_query = CharField(max_length=1024, default='*')
 
 class AnalysisPercentage(AnalysisBase):
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)

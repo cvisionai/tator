@@ -32,9 +32,6 @@ USE_MIN_JS = True
 
 ALLOWED_HOSTS = [
     os.getenv('MAIN_HOST'),
-    'localhost',
-    '.tatorapp.com',
-    'cormorant.duckdns.org',
     socket.gethostbyname('nginx-svc'), # Allows internal cluster access
 ]
 
