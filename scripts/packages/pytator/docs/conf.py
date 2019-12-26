@@ -15,15 +15,16 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../pytator'))
+sys.path.insert(0, os.path.abspath('../../examples'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'pytator'
+project = 'PyTator'
 copyright = '2019, CVision AI'
 author = 'CVision AI'
 
 # The short X.Y version
-version = ''
+version = '0.0.3'
 # The full version, including alpha/beta/rc tags
 release = ''
 
@@ -176,5 +177,5 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-extensions = ['sphinx.ext.autodoc']
-html_theme = 'classic'
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx_rtd_theme']
+html_theme = 'sphinx_rtd_theme'

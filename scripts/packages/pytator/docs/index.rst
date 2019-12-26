@@ -18,6 +18,7 @@ computing environment.
    :caption: Contents:
 
    api
+   examples
 
 
 
@@ -32,6 +33,9 @@ Indices and tables
 Installing
 ==================
 
+.. code-block:: bash
+
+   pip3 install pytator
 
 Known Issues
 ==================
