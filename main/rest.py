@@ -2341,9 +2341,9 @@ class EntityTypeMediaDetailAPI(APIView):
     def get_queryset(self):
         return EntityTypeMediaBase.objects.all()
 
-class UploadProgressAPI(APIView):
+class ProgressAPI(APIView):
     """
-    Broadcast upload progress update. Body should be an array of objects each
+    Broadcast progress update. Body should be an array of objects each
     containing the fields documented below.
     """
     schema = AutoSchema(manual_fields=[
@@ -2351,22 +2351,26 @@ class UploadProgressAPI(APIView):
                       required=True,
                       location='path',
                       schema=coreschema.String(description='A unique integer value identifying a Project')),
+        coreapi.Field(name='job_type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='One of upload, download, algorithm.')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+                      schema=coreschema.String(description='A UUID generated for the group.')),
         coreapi.Field(name='uid',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload.')),
+                      schema=coreschema.String(description='A UUID generated for the job.')),
         coreapi.Field(name='swid',
-                      required=True,
+                      required=False,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the service worker that is doing the upload.')),
+                      schema=coreschema.String(description='A UUID generated for the service worker that is doing the upload, only required if this is an upload.')),
         coreapi.Field(name='state',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='One of failed or started.')),
+                      schema=coreschema.String(description='One of queued, failed or started.')),
         coreapi.Field(name='message',
                       required=True,
                       location='body',
@@ -2382,7 +2386,7 @@ class UploadProgressAPI(APIView):
         coreapi.Field(name='name',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='Name of the file being uploaded.')),
+                      schema=coreschema.String(description='Name of the job.')),
     ])
 
     def post(self, request, format=None, **kwargs):
@@ -2393,36 +2397,40 @@ class UploadProgressAPI(APIView):
 
                 ## Check for required fields first
                 if 'gid' not in reqObject:
-                    raise Exception('Missing required uuid for upload group')
+                    raise Exception('Missing required uuid for job group')
 
                 if 'uid' not in reqObject:
-                    raise Exception('Missing required uuid for upload')
+                    raise Exception('Missing required uuid for job')
 
-                if 'swid' not in reqObject:
-                    raise Exception('Missing required uuid for service worker')
+                if 'job_type' not in reqObject:
+                    raise Exception('Missing required job type for progress update')
 
                 if 'name' not in reqObject:
-                    raise Exception('Missing required name for upload')
+                    raise Exception('Missing required name for progress update')
 
                 if 'state' not in reqObject:
-                    raise Exception('Missing required state for upload')
+                    raise Exception('Missing required state for progress update')
 
                 if 'message' not in reqObject:
-                    raise Exception('Missing required message for upload')
+                    raise Exception('Missing required message for progress update')
 
                 if 'progress' not in reqObject:
-                    raise Exception('Missing required progress for upload')
+                    raise Exception('Missing required progress for progress update')
 
-                if 'section' not in reqObject:
-                    raise Exception('Missing required section for upload')
+                aux = {}
+                if reqObject['job_type'] == 'upload':
+                    if 'swid' not in reqObject:
+                        raise Exception('Missing required uuid for service worker')
 
-                aux = {
-                    'section': reqObject['section'],
-                    'swid': reqObject['swid'],
-                    'updated': str(datetime.datetime.now(datetime.timezone.utc)),
-                }
+                    if 'section' not in reqObject:
+                        raise Exception('Missing required section for upload')
+
+                    aux['section'] = reqObject['section']
+                    aux['swid'] = reqObject['swid']
+                    aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
+
                 prog = ProgressProducer(
-                    'upload',
+                    reqObject['job_type'],
                     self.kwargs['project'],
                     reqObject['gid'],
                     reqObject['uid'],

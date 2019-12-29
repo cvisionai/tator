@@ -47,7 +47,7 @@ self.setInterval(() => {
     const messages = Object.values(progressBuffer[key]);
     let start = 0;
     while (start < messages.length) {
-      fetchRetry("/rest/UploadProgress/" + projectId, {
+      fetchRetry("/rest/Progress/" + projectId, {
         method: "POST",
         headers: {
           "Authorization": "Token " + token,
@@ -266,6 +266,7 @@ class Upload {
   // Sends progress messages.
   progress(state, msg, pct) {
     bufferMessage(this.projectId, this.token, this.upload_uid, {
+      job_type: "upload",
       gid: this.gid,
       uid: this.upload_uid,
       swid: serviceWorkerId,

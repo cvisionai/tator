@@ -33,7 +33,7 @@ from .rest import TreeLeafListAPI;
 from .rest import TreeLeafDetailAPI;
 from .rest import TreeLeafTypeListAPI;
 from .rest import LocalizationAssociationDetailAPI;
-from .rest import UploadProgressAPI;
+from .rest import ProgressAPI;
 from .rest import TranscodeAPI;
 from .rest import PackageListAPI;
 from .rest import PackageDetailAPI;
@@ -142,8 +142,8 @@ urlpatterns += [
         LocalizationAssociationDetailAPI.as_view(),
     ),
     path(
-        'rest/UploadProgress/<int:project>',
-        UploadProgressAPI.as_view(),
+        'rest/Progress/<int:project>',
+        ProgressAPI.as_view(),
     ),
     path(
         'rest/Transcode/<int:project>',
