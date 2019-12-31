@@ -1272,6 +1272,7 @@ class MediaSectionsAPI(APIView):
     def get(self, request, *args, **kwargs):
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
+        query['aggs']['section_counts']['terms']['size'] = 1000 # Return up to 1000 sections
         query['size'] = 0
 
 
