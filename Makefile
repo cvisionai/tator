@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis transcoder packager tusd gunicorn daphne ngin
 
 OPERATIONS=reset logs bash
 
-IMAGES=tator-image marshal-image tus-image postgis-image
+IMAGES=tator-image marshal-image tus-image postgis-image transcoder-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -105,7 +105,7 @@ status:
 .ONESHELL:
 
 cluster: main/version.py
-	$(MAKE) tator-image images cluster-deps cluster-install
+	$(MAKE) images cluster-deps cluster-install
 
 cluster-deps:
 	helm dependency update helm/tator
@@ -172,6 +172,12 @@ tus-image: containers/tus/Dockerfile.gen
 	docker push $(DOCKERHUB_USER)/tator_tusd:latest
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
+
+transcoder-image: containers/tator_transcoder/Dockerfile.gen
+	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+	sleep 1
+	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-transcoder
 
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py
@@ -395,6 +401,7 @@ imageQuery:
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_algo_marshal)" marshal-image
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_postgis)" postgis-image
+	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_transcoder)" transcoder-image
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
