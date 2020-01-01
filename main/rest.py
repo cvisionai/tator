@@ -135,6 +135,7 @@ import traceback
 from uuid import uuid1
 from collections import defaultdict
 import slack
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -2562,6 +2563,433 @@ class TranscodeAPI(APIView):
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
+            return response;
+
+class SaveVideoAPI(APIView):
+    """
+    Saves a transcoded video.
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='project',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A unique integer value identifying a project')),
+        coreapi.Field(name='type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+        coreapi.Field(name='gid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+        coreapi.Field(name='uid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload.')),
+        coreapi.Field(name='original_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the file to be transcoded.')),
+        coreapi.Field(name='transcoded_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the transcoded file.')),
+        coreapi.Field(name='thumbnail_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the thumbnail.')),
+        coreapi.Field(name='thumbnail_gif_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the thumbnail gif.')),
+        coreapi.Field(name='segments_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the segments file.')),
+        coreapi.Field(name='section',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Media section name.')),
+        coreapi.Field(name='name',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Name of the file.')),
+        coreapi.Field(name='md5',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='MD5 sum of the media file')),
+        coreapi.Field(name='num_frames',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Number of frames in the video')),
+        coreapi.Field(name='fps',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Frame rate of the video')),
+        coreapi.Field(name='codec',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Codec of the original video')),
+        coreapi.Field(name='width',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Pixel width of the video')),
+        coreapi.Field(name='height',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Pixel height of the video')),
+    ])
+    permission_classes = [ProjectTransferPermission]
+
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            original_url = request.data.get('original_url', None)
+            transcoded_url = request.data.get('transcoded_url', None)
+            thumbnail_url = request.data.get('thumbnail_url', None)
+            thumbnail_gif_url = request.data.get('thumbnail_gif_url', None)
+            segments_url = request.data.get('segments_url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            num_frames = request.data.get('num_frames', None)
+            fps = request.data.get('fps', None)
+            codec = request.data.get('codec', None)
+            width = request.data.get('width', None)
+            height = request.data.get('height', None)
+            project = kwargs['project']
+
+            ## Check for required fields first
+            if entity_type is None:
+                raise Exception('Missing required entity type for upload')
+
+            if gid is None:
+                raise Exception('Missing required gid for upload')
+
+            if uid is None:
+                raise Exception('Missing required uuid for upload')
+
+            if original_url is None:
+                raise Exception('Missing required url of original file for upload')
+
+            if transcoded_url is None:
+                raise Exception('Missing required url of transcoded file for upload')
+
+            if thumbnail_url is None:
+                raise Exception('Missing required url of thumbnail file for upload')
+
+            if thumbnail_gif_url is None:
+                raise Exception('Missing required url of thumbnail gif file for upload')
+
+            if segments_url is None:
+                raise Exception('Missing required url of segments file for upload')
+
+            if section is None:
+                raise Exception('Missing required section for uploaded video')
+
+            if name is None:
+                raise Exception('Missing required name for uploaded video')
+
+            if md5 is None:
+                raise Exception('Missing md5 for uploaded video')
+
+            if num_frames is None:
+                raise Exception('Missing required number of frames for uploaded video')
+
+            if fps is None:
+                raise Exception('Missing required fps for uploaded video')
+
+            if codec is None:
+                raise Exception('Missing required codec for uploaded video')
+
+            if width is None:
+                raise Exception('Missing required width for uploaded video')
+
+            if height is None:
+                raise Exception('Missing required height for uploaded video')
+
+            # Set up interface for sending progress messages.
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
+            )
+
+            media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
+            if media_type.project.pk != project:
+                raise Exception('Media type is not part of project')
+
+            # Make sure project directories exist
+            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+            os.makedirs(project_dir, exist_ok=True)
+            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+            os.makedirs(raw_project_dir, exist_ok=True)
+
+            # Determine uploaded file paths
+            upload_uids = {
+                'original': original_url.split('/')[-1],
+                'transcoded': transcoded_url.split('/')[-1],
+                'thumbnail': thumbnail_url.split('/')[-1],
+                'thumbnail_gif': thumbnail_gif_url.split('/')[-1],
+                'segments': segments_url.split('/')[-1],
+            }
+            upload_paths = {
+                key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
+                for key, uid in upload_uids.items()
+            }
+
+            # Make sure upload paths exist
+            for key in upload_paths:
+                if not os.path.exists(upload_paths[key]):
+                    fail_msg = f"Failed to create video, unknown upload path {upload_paths[key]}"
+                    prog.failed(fail_msg)
+                    raise RuntimeError(fail_msg)
+
+            # Determine save paths
+            media_uid = str(uuid1())
+            save_paths = {
+                'original': os.path.join(raw_project_dir, media_uid + '.mp4'),
+                'transcoded': os.path.join(project_dir, media_uid + '.mp4'),
+                'thumbnail': os.path.join(project_dir, str(uuid1()) + '.jpg'),
+                'thumbnail_gif': os.path.join(project_dir, str(uuid1()) + '.gif'),
+                'segments': os.path.join(project_dir, f"{media_uid}_segments.json"),
+            }
+
+            # Create the video object.
+            media_obj = EntityMediaVideo(
+                project=project,
+                meta=entity_type,
+                name=name,
+                uploader=request.user,
+                upload_datetime=datetime.datetime.now(datetime.timezone.utc),
+                md5=md5,
+                attributes={'tator_user_sections': section},
+                num_frames=num_frames,
+                fps=fps,
+                codec=codec,
+                width=width,
+                height=height,
+            )
+
+            # Save the transcoded file.
+            media_base = os.path.relpath(save_paths['transcoded'], settings.MEDIA_ROOT)
+            with open(upload_paths['transcoded'], 'rb') as f:
+                media_obj.file.save(media_base, f, save=False)
+
+            # Save the thumbnail.
+            media_base = os.path.relpath(save_paths['thumbnail'], settings.MEDIA_ROOT)
+            with open(upload_paths['thumbnail'], 'rb') as f:
+                media_obj.thumbnail.save(media_base, f, save=False)
+
+            # Save the thumbnail gif.
+            media_base = os.path.relpath(save_paths['thumbnail_gif'], settings.MEDIA_ROOT)
+            with open(upload_paths['thumbnail_gif'], 'rb') as f:
+                media_obj.thumbnail_gif.save(media_base, f, save=False)
+            
+            # Save the raw file.
+            if media_type.keep_original == True:
+                shutil.copyfile(upload_paths['original'], save_paths['original'])
+                os.chmod(save_paths['original'], 0o644)
+                media_obj.original = save_paths['original']
+
+            # Save the segments file.
+            shutil.copyfile(upload_paths['segments'], save_paths['segments'])
+            os.chmod(save_paths['segments'], 0o644)
+            media_obj.segment_info = save_paths['segments']
+
+            response = Response({'message': "Video saved successfully!"},
+                                status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            # Delete files from the uploads directory.
+            if 'upload_paths' in locals():
+                for key in upload_paths:
+                    log.info(f"Removing uploaded file {upload_paths[key]}")
+                    if os.path.exists(upload_paths[key]):
+                        os.remove(upload_paths[key])
+                    info_path = os.path.splitext(upload_paths[key])[0] + '.info'
+                    if os.path.exists(info_path):
+                        os.remove(info_path)
+            return response;
+
+class SaveImageAPI(APIView):
+    """
+    Saves an uploaded image.
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='project',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A unique integer value identifying a project')),
+        coreapi.Field(name='type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+        coreapi.Field(name='gid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+        coreapi.Field(name='uid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload.')),
+        coreapi.Field(name='url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the image.')),
+        coreapi.Field(name='section',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Media section name.')),
+        coreapi.Field(name='name',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Name of the file used to create the database record after transcode.')),
+        coreapi.Field(name='md5',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='MD5 sum of the media file')),
+    ])
+    permission_classes = [ProjectTransferPermission]
+
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            url = request.data.get('url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            project = kwargs['project']
+
+            ## Check for required fields first
+            if 'type' is None:
+                raise Exception('Missing required entity type for upload')
+
+            if 'gid' is None:
+                raise Exception('Missing required gid for upload')
+
+            if 'uid' is None:
+                raise Exception('Missing required uid for upload')
+
+            if 'url' is None:
+                raise Exception('Missing required url for upload')
+
+            if 'section' is None:
+                raise Exception('Missing required section for uploaded image')
+
+            if 'name' is None:
+                raise Exception('Missing required name for uploaded image')
+
+            if 'md5' is None:
+                raise Exception('Missing md5 for uploaded image')
+
+            media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
+            if media_type.project.pk != project:
+                raise Exception('Media type is not part of project')
+
+            # Determine file paths
+            upload_uid = content['url'].split('/')[-1]
+            media_uid = str(uuid1())
+            ext = os.path.splitext(content['name'])[1]
+            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+            os.makedirs(project_dir, exist_ok=True)
+            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+            os.makedirs(raw_project_dir, exist_ok=True)
+            thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
+            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
+
+            # Set up interface for sending progress messages.
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
+            )
+
+            # Make sure uploaded file exists
+            if os.path.exists(upload_path):
+                media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
+            else:
+                fail_msg = f"Failed to create media, unknown upload path {upload_path}"
+                prog.failed(fail_msg)
+                raise RuntimeError(fail_msg)
+
+            # Create the media object.
+            media_obj = EntityMediaImage(
+                project=project,
+                meta=entity_type,
+                name=name,
+                uploader=request.user,
+                upload_datetime=datetime.datetime.now(datetime.timezone.utc),
+                md5=md5,
+                attributes={'tator_user_sections': section},
+            )
+
+            # Create the thumbnail.
+            thumb_size = (256, 256)
+            media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+            image = Image.open(upload_path)
+            media_obj.width, media_obj.height = image.size
+            image = image.convert('RGB') # Remove alpha channel for jpeg
+            image.thumbnail(thumb_size, Image.ANTIALIAS)
+            image.save(thumb_path)
+            image.close()
+
+            # Save the image.
+            media_base = os.path.relpath(media_path, settings.MEDIA_ROOT)
+            with open(upload_path, 'rb') as f:
+                media_obj.file.save(media_base, f, save=False)
+            media_obj.save()
+
+            # Send info to consumer.
+            info = {
+                "id": media_obj.id,
+                "url": media_obj.file.url,
+                "thumb_url": media_obj.thumbnail.url,
+                "name": media_obj.name,
+                "section": section,
+            }
+            prog.finished("Uploaded successfully!", {**info})
+
+            response = Response({'message': "Image saved successfully!"},
+                                status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            # Delete files from the uploads directory.
+            if 'upload_path' in locals():
+                log.info(f"Removing uploaded file {upload_paths[key]}")
+                if os.path.exists(upload_path):
+                    os.remove(upload_path)
+                info_path = os.path.splitext(upload_path)[0] + '.info'
+                if os.path.exists(info_path):
+                    os.remove(info_path)
             return response;
 
 class PackageListAPI(ListAPIView):

@@ -53,6 +53,8 @@ from .rest import MediaPrevAPI
 from .rest import MediaNextAPI
 from .rest import MediaSectionsAPI
 from .rest import SectionAnalysisAPI
+from .rest import SaveVideoAPI
+from .rest import SaveImageAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -224,5 +226,15 @@ urlpatterns += [
         'rest/SectionAnalysis/<int:project>',
         SectionAnalysisAPI.as_view(),
         name='SectionAnalysis',
+    ),
+    path(
+        'rest/SaveImage/<int:project>',
+        SaveImageAPI.as_view(),
+        name='SaveImage',
+    ),
+    path(
+        'rest/SaveVideo/<int:project>',
+        SaveVideoAPI.as_view(),
+        name='SaveVideo',
     ),
 ]
