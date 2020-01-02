@@ -42,7 +42,6 @@ def transcode(path, args, gid):
     # Get base filename.
     name = os.path.basename(paths['original'])
 
-    """
     # Transcode the video file.
     cmd = [
         'python3',
@@ -70,7 +69,6 @@ def transcode(path, args, gid):
         paths['transcoded'],
     ]
     subprocess.run(cmd, check=True)
-    """
 
     # Upload the results.
     cmd = [
