@@ -21,6 +21,7 @@ Getting started
 
 * [Create a development deployment](doc/deployment.md)
 * [Administer a deployment](doc/admin.md)
+* [Read The Docs](https://pytator.readthedocs.io/en/latest/)
 
 [kube]: https://kubernetes.io
 [redis]: https://redis.io
