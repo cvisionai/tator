@@ -259,7 +259,6 @@ class Upload {
         })
         .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
-        this.progress("started", "Uploaded...", 50);
       }
     });
 
