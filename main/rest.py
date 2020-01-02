@@ -2907,25 +2907,25 @@ class SaveImageAPI(APIView):
             project = kwargs['project']
 
             ## Check for required fields first
-            if 'type' is None:
+            if entity_type is None:
                 raise Exception('Missing required entity type for upload')
 
-            if 'gid' is None:
+            if gid is None:
                 raise Exception('Missing required gid for upload')
 
-            if 'uid' is None:
+            if uid is None:
                 raise Exception('Missing required uid for upload')
 
-            if 'url' is None:
+            if url is None:
                 raise Exception('Missing required url for upload')
 
-            if 'section' is None:
+            if section is None:
                 raise Exception('Missing required section for uploaded image')
 
-            if 'name' is None:
+            if name is None:
                 raise Exception('Missing required name for uploaded image')
 
-            if 'md5' is None:
+            if md5 is None:
                 raise Exception('Missing md5 for uploaded image')
 
             media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
@@ -2933,9 +2933,9 @@ class SaveImageAPI(APIView):
                 raise Exception('Media type is not part of project')
 
             # Determine file paths
-            upload_uid = content['url'].split('/')[-1]
+            upload_uid = url.split('/')[-1]
             media_uid = str(uuid1())
-            ext = os.path.splitext(content['name'])[1]
+            ext = os.path.splitext(name)[1]
             project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
             os.makedirs(project_dir, exist_ok=True)
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
