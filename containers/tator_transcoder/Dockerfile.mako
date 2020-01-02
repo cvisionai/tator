@@ -68,7 +68,13 @@ COPY --from=cvbento4_builder /working/Bento4/cmake/mp4info /usr/bin/
 
 # Install pip packages
 RUN pip3 --no-cache-dir install wheel
-RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1
+RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0
 
 # Copy over scripts
-COPY scripts/makeFragmentInfo.py /scripts/makeFragmentInfo.py
+COPY scripts /scripts
+
+# Build pytator
+WORKDIR /scripts/packages/pytator
+RUN python3 setup.py install
+
+WORKDIR /scripts
