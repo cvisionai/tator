@@ -77,6 +77,7 @@ const bufferMessage = (projectId, token, uid, msg) => {
 const removeQueued = index => {
   const record = uploadBuffer.splice(index, 1)[0];
   bufferMessage(record.projectId, record.token, record.uid, {
+    job_type: "upload",
     gid: record.gid,
     uid: record.uid,
     swid: serviceWorkerId,
@@ -96,6 +97,7 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     bufferMessage(msg.projectId, msg.token, upload_uid, {
+      job_type: "upload",
       gid: msg.gid,
       uid: upload_uid,
       swid: serviceWorkerId,
