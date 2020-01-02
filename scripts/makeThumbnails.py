@@ -12,6 +12,7 @@ import imageio
 from PIL import Image
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Makes thumbnails for a video.')

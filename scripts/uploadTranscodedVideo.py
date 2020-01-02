@@ -11,6 +11,7 @@ from progressbar import progressbar
 import requests
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Uploads transcoded video.')
