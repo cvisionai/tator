@@ -179,3 +179,5 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx_rtd_theme']
 html_theme = 'sphinx_rtd_theme'
+
+autodoc_mock_imports = ['django', 'progressbar2']
