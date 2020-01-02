@@ -12,6 +12,8 @@ from django.db.models import F
 from django.conf import settings
 from django.db import connection
 
+import os
+import shutil
 import datetime
 from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
@@ -2765,8 +2767,8 @@ class SaveVideoAPI(APIView):
 
             # Create the video object.
             media_obj = EntityMediaVideo(
-                project=project,
-                meta=entity_type,
+                project=Project.objects.get(pk=project),
+                meta=EntityTypeMediaVideo.objects.get(pk=entity_type),
                 name=name,
                 uploader=request.user,
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
@@ -2805,6 +2807,9 @@ class SaveVideoAPI(APIView):
             os.chmod(save_paths['segments'], 0o644)
             media_obj.segment_info = save_paths['segments']
 
+            # Save the database record.
+            media_obj.save()
+
             response = Response({'message': "Video saved successfully!"},
                                 status=status.HTTP_201_CREATED)
 
@@ -2818,7 +2823,7 @@ class SaveVideoAPI(APIView):
             # Delete files from the uploads directory.
             if 'upload_paths' in locals():
                 for key in upload_paths:
-                    log.info(f"Removing uploaded file {upload_paths[key]}")
+                    logger.info(f"Removing uploaded file {upload_paths[key]}")
                     if os.path.exists(upload_paths[key]):
                         os.remove(upload_paths[key])
                     info_path = os.path.splitext(upload_paths[key])[0] + '.info'
@@ -2937,8 +2942,8 @@ class SaveImageAPI(APIView):
 
             # Create the media object.
             media_obj = EntityMediaImage(
-                project=project,
-                meta=entity_type,
+                project=Project.objects.get(pk=project),
+                meta=EntityTypeMediaImage.objects.get(pk=entity_type),
                 name=name,
                 uploader=request.user,
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
@@ -2984,7 +2989,7 @@ class SaveImageAPI(APIView):
         finally:
             # Delete files from the uploads directory.
             if 'upload_path' in locals():
-                log.info(f"Removing uploaded file {upload_paths[key]}")
+                logger.info(f"Removing uploaded file {upload_paths[key]}")
                 if os.path.exists(upload_path):
                     os.remove(upload_path)
                 info_path = os.path.splitext(upload_path)[0] + '.info'
