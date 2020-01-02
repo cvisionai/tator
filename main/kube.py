@@ -41,11 +41,11 @@ class TatorTranscode:
         # Define paths for transcode outputs.
         base, _ = os.path.splitext(name)
         paths = {
-            'original': name,
-            'transcoded': base + '_transcoded.mp4',
-            'thumbnail': base + '_thumbnail.jpg',
-            'thumbnail_gif': base + '_thumbnail_gif.gif',
-            'segments': base + '_segments.json',
+            'original': '/work/' + name,
+            'transcoded': '/work/' + base + '_transcoded.mp4',
+            'thumbnail': '/work/' + base + '_thumbnail.jpg',
+            'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
+            'segments': '/work/' + base + '_segments.json',
         }
 
         # Define persistent volume claim.
@@ -57,7 +57,7 @@ class TatorTranscode:
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
-                        'storage': '30Gi',
+                        'storage': '10Gi',
                     }
                 }
             }
@@ -70,11 +70,10 @@ class TatorTranscode:
                 'image': 'byrnedo/alpine-curl:0.1.8',
                 'command': ['curl',],
                 'args': ['-o', paths['original'], url],
-                'workingDir': '/work',
-                'volumeMounts': {
+                'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
-                },
+                }],
                 'resources': {
                     'limits': {
                         'memory': '128Mi',
@@ -93,11 +92,11 @@ class TatorTranscode:
                     '--output', paths['transcoded'],
                     paths['original'],
                 ],
-                'workingDir': '/work',
-                'volumeMounts': {
+                'workingDir': '/scripts',
+                'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
-                },
+                }],
                 'resources': {
                     'limits': {
                         'memory': '2Gi',
@@ -117,11 +116,11 @@ class TatorTranscode:
                     '--gif', paths['thumbnail_gif'],
                     paths['original'],
                 ],
-                'workingDir': '/work',
-                'volumeMounts': {
+                'workingDir': '/scripts',
+                'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
-                },
+                }],
                 'resources': {
                     'limits': {
                         'memory': '500Mi',
@@ -140,11 +139,11 @@ class TatorTranscode:
                     '--output', paths['segments'],
                     paths['transcoded'],
                 ],
-                'workingDir': '/work',
-                'volumeMounts': {
+                'workingDir': '/scripts',
+                'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
-                },
+                }],
                 'resources': {
                     'limits': {
                         'memory': '500Mi',
@@ -167,7 +166,7 @@ class TatorTranscode:
                     '--segments_path', paths['segments'],
                     '--tus_url', f'https://{os.getenv("MAIN_HOST")}/files/',
                     '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
-                    '--token', token,
+                    '--token', str(token),
                     '--project', str(project),
                     '--type', str(entity_type),
                     '--gid', gid,
@@ -176,11 +175,11 @@ class TatorTranscode:
                     '--name', name,
                     '--md5', md5,
                 ],
-                'workingDir': '/work',
-                'volumeMounts': {
+                'workingDir': '/scripts',
+                'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
-                },
+                }],
                 'resources': {
                     'limits': {
                         'memory': '500Mi',
@@ -219,7 +218,7 @@ class TatorTranscode:
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
-                'generateName': 'transcode-',
+                'generateName': 'transcode-workflow-',
             },
             'spec': {
                 'entrypoint': 'transcode-pipeline',
