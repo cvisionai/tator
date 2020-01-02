@@ -2541,6 +2541,16 @@ class TranscodeAPI(APIView):
             if md5 is None:
                 raise Exception('Missing md5 for uploaded video')
 
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
+            )
+
             TatorTranscode().start_transcode(
                 project,
                 entity_type,
@@ -2552,6 +2562,7 @@ class TranscodeAPI(APIView):
                 gid,
                 uid,
             )
+
             prog.progress("Transcoding...", 60)
 
             response = Response({'message': "Transcode started successfully!"},
