@@ -68,6 +68,7 @@ class TatorTranscode:
             'name': 'download',
             'container': {
                 'image': 'byrnedo/alpine-curl:0.1.8',
+                'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-o', paths['original'], url],
                 'volumeMounts': [{
@@ -86,6 +87,7 @@ class TatorTranscode:
             'name': 'transcode',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
+                'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'transcode.py',
@@ -109,6 +111,7 @@ class TatorTranscode:
             'name': 'thumbnail',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
+                'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'makeThumbnails.py',
@@ -133,6 +136,7 @@ class TatorTranscode:
             'name': 'segments',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
+                'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'makeFragmentInfo.py',
@@ -156,6 +160,7 @@ class TatorTranscode:
             'name': 'upload',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
+                'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'uploadTranscodedVideo.py',
@@ -222,6 +227,7 @@ class TatorTranscode:
             },
             'spec': {
                 'entrypoint': 'transcode-pipeline',
+                'ttlSecondsAfterFinished': 300,
                 'volumeClaimTemplates': [pvc],
                 'templates': [
                     download_task,
