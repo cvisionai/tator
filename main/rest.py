@@ -79,6 +79,7 @@ from .models import AnalysisBase
 from .models import AnalysisCount
 from .models import User
 from .models import InterpolationMethods
+from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 
 #Association Types
@@ -114,6 +115,7 @@ from .serializers import UserSerializerBasic
 from .consumers import ProgressProducer
 
 from .search import TatorSearch
+from .kube import TatorTranscode
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -2457,6 +2459,7 @@ class ProgressAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.info(f"ERROR: {str(e)}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
@@ -2506,54 +2509,49 @@ class TranscodeAPI(APIView):
         response=Response({})
 
         try:
-            entityType=None
-            reqObject=request.data;
-            media_id=[]
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            url = request.data.get('url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            project = kwargs['project']
+            token, _ = Token.objects.get_or_create(user=request.user)
 
             ## Check for required fields first
-            if 'type' not in reqObject:
+            if entity_type is None:
                 raise Exception('Missing required field in request object "type"')
 
-            if 'gid' not in reqObject:
+            if gid is None:
                 raise Exception('Missing required gid for upload')
 
-            if 'uid' not in reqObject:
+            if uid is None:
                 raise Exception('Missing required uuid for upload')
 
-            if 'section' not in reqObject:
+            if url is None:
+                raise Exception('Missing required url for upload')
+
+            if section is None:
                 raise Exception('Missing required section for upload')
 
-            if 'name' not in reqObject:
+            if name is None:
                 raise Exception('Missing required name for uploaded video')
 
-            if 'md5' not in reqObject:
+            if md5 is None:
                 raise Exception('Missing md5 for uploaded video')
 
-            media_type = EntityTypeMediaBase.objects.get(pk=int(reqObject['type']))
-            if media_type.project.pk != self.kwargs['project']:
-                raise Exception('Media type is not part of project')
-
-            job = Job.objects.create(
-                name = reqObject['name'],
-                project = media_type.project,
-                channel = JobChannel.TRANSCODER,
-                message = {
-                    'type': 'transcode',
-                    'user_id': self.request.user.id,
-                    'media_type_id': reqObject['type'],
-                    'gid': reqObject['gid'],
-                    'uid': reqObject['uid'],
-                    'url': reqObject['url'],
-                    'section': reqObject['section'],
-                    'name': reqObject['name'],
-                    'md5': reqObject['md5'],
-                },
-                updated = datetime.datetime.now(datetime.timezone.utc),
-                status=JobStatus.QUEUED,
-                group_id=reqObject['gid'],
-                run_uid=reqObject['uid'],
+            TatorTranscode().start_transcode(
+                project,
+                entity_type,
+                token,
+                url,
+                name,
+                section,
+                md5,
+                gid,
+                uid,
             )
-            job.save()
 
             response = Response({'message': "Transcode started successfully!"},
                                 status=status.HTTP_201_CREATED)
@@ -2562,6 +2560,7 @@ class TranscodeAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.info(f"ERROR: {str(e)}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
