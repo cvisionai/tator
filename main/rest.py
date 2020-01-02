@@ -2552,6 +2552,7 @@ class TranscodeAPI(APIView):
                 gid,
                 uid,
             )
+            prog.progress("Transcoding...", 60)
 
             response = Response({'message': "Transcode started successfully!"},
                                 status=status.HTTP_201_CREATED)
@@ -2563,6 +2564,7 @@ class TranscodeAPI(APIView):
             logger.info(f"ERROR: {str(e)}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            prog.failed("Failed to initiate transcode!")
         finally:
             return response;
 
@@ -2809,6 +2811,17 @@ class SaveVideoAPI(APIView):
             # Save the database record.
             media_obj.save()
 
+            # Send a message saying upload successful.
+            info = {
+                "id": media_obj.id,
+                "url": media_obj.file.url,
+                "thumb_url": media_obj.thumbnail.url,
+                "thumb_gif_url": media_obj.thumbnail_gif.url,
+                "name": media_obj.name,
+                "section": section,
+            }
+            prog.finished("Uploaded successfully!", {**info})
+
             response = Response({'message': "Video saved successfully!"},
                                 status=status.HTTP_201_CREATED)
 
@@ -2818,6 +2831,7 @@ class SaveVideoAPI(APIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            prog.failed("Could not save video!")
         finally:
             # Delete files from the uploads directory.
             if 'upload_paths' in locals():
