@@ -2385,7 +2385,7 @@ class ProgressAPI(APIView):
                       location='body',
                       schema=coreschema.String(description='Progress percentage.')),
         coreapi.Field(name='section',
-                      required=True,
+                      required=False,
                       location='body',
                       schema=coreschema.String(description='Media section name.')),
         coreapi.Field(name='name',
@@ -2424,14 +2424,12 @@ class ProgressAPI(APIView):
 
                 aux = {}
                 if reqObject['job_type'] == 'upload':
-                    if 'swid' not in reqObject:
-                        raise Exception('Missing required uuid for service worker')
+                    if 'swid' in reqObject:
+                        aux['swid'] = reqObject['swid']
 
-                    if 'section' not in reqObject:
-                        raise Exception('Missing required section for upload')
+                    if 'section' in reqObject:
+                        aux['section'] = reqObject['section']
 
-                    aux['section'] = reqObject['section']
-                    aux['swid'] = reqObject['swid']
                     aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
 
                 prog = ProgressProducer(
