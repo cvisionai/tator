@@ -174,10 +174,10 @@ tus-image: containers/tus/Dockerfile.gen
 	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
 
 transcoder-image: containers/tator_transcoder/Dockerfile.gen
-	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION)
 	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-transcoder
+	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_transcoder)" tator-transcoder
 
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py
