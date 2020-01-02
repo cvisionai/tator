@@ -5,6 +5,8 @@ import time
 import subprocess
 import json
 import logging
+import os
+from uuid import uuid1
 
 import imageio
 from PIL import Image
@@ -23,6 +25,7 @@ def video_thumb(offset, name, new_path):
     """
     cmd = [
         "ffmpeg",
+        "-y",
         "-ss",
         time.strftime('%H:%M:%S', time.gmtime(offset)),
         "-i",
@@ -49,10 +52,11 @@ def make_thumbnails(video_path, thumb_path, thumb_gif_path):
         "-print_format", "json",
         "{}".format(video_path),
     ]
-    output = subprocess.run(cmd, capture_output=True, check=True)
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
 
-    logger.info("Got info = {}".format(output[0]))
-    video_info = json.loads(output[0])
+    logger.info("Got info = {}".format(output))
+    video_info = json.loads(output)
+    stream=video_info["streams"][0]
     seconds = float(stream["duration"]);
 
     # Compute evenly spaced intervals and filenames.
@@ -63,7 +67,7 @@ def make_thumbnails(video_path, thumb_path, thumb_gif_path):
 
     # Create thumbnail images for each offset.
     for offset, name in zip(offsets, names):
-        video_thumb(offset, name, media_path)
+        video_thumb(offset, name, video_path)
     images = [imageio.imread(name) for name in names]
     imageio.mimsave(thumb_gif_path, images, duration=0.5)
 

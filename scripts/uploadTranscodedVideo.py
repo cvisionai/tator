@@ -4,8 +4,10 @@ import argparse
 import logging
 import json
 import math
+import subprocess
 
 from tusclient.client import TusClient
+from progressbar import progressbar
 import requests
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ def parse_args():
     parser.add_argument('--thumbnail_path', type=str, help='Thumbnail file.')
     parser.add_argument('--thumbnail_gif_path', type=str, help='Thumbnail gif file.')
     parser.add_argument('--segments_path', type=str, help='Segment info file.')
-    parser.add_arguemnt('--tus_url', type=str, default='https://www.tatorapp.com/files/', help='TUS URL.')
+    parser.add_argument('--tus_url', type=str, default='https://www.tatorapp.com/files/', help='TUS URL.')
     parser.add_argument('--url', type=str, default='https://www.tatorapp.com/rest', help='REST API URL.')
     parser.add_argument('--token', type=str, help='REST API token.')
     parser.add_argument('--project', type=int, help='Unique integer specifying project ID.')
@@ -31,13 +33,13 @@ def parse_args():
     return parser.parse_args()
 
 def upload_file(path, tus_url):
-    logger.info(f"Uploading file {}...")
+    logger.info(f"Uploading file {path}...")
     tus = TusClient(tus_url)
     chunk_size = 1*1024*1024 # 1 Mb
     uploader = tus.uploader(path, chunk_size=chunk_size)
     num_chunks = math.ceil(uploader.file_size/chunk_size)
 
-    for _ in bar(range(num_chunks)):
+    for _ in progressbar(range(num_chunks)):
         uploader.upload_chunk()
     return uploader.url
 
@@ -47,14 +49,14 @@ def get_metadata(path):
         "-v","error",
         "-show_entries", "stream",
         "-print_format", "json",
-        "{}".format(media_path)
+        "{}".format(path)
     ]
-    output = subprocess.run(cmd, capture_output=True, check=True)
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
     
-    logger.info("Got info = {}".format(output[0]))
-    video_info = json.loads(output[0])
-    seconds = float(stream["duration"]);
+    logger.info("Got info = {}".format(output))
+    video_info = json.loads(output)
     stream = video_info["streams"][0]
+    seconds = float(stream["duration"]);
 
     # Fill in object information based on probe
     codec = stream["codec_name"]
@@ -98,7 +100,7 @@ if __name__ == '__main__':
             "Authorization": f"Token {args.token}",
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip",
-        }
+        },
         json={
             'type': args.type,
             'uid': args.uid,
@@ -116,6 +118,6 @@ if __name__ == '__main__':
             'codec': codec,
             'width': width,
             'height': height,
-        }
+        },
     )
     out.raise_for_status()

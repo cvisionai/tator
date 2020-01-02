@@ -3,6 +3,7 @@
 import argparse
 import logging
 import subprocess
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,8 @@ def determine_transcode(path):
         "-skip_frame", "nokey",
         path,
     ]
-    output = subprocess.run(cmd, capture_output=True, check=True)
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
     video_info = json.loads(output)
-    del proc
     stream_idx=0
     for idx, stream in enumerate(video_info["streams"]):
         if stream["codec_type"] == "video":
@@ -65,7 +65,7 @@ def transcode(path, outpath):
     logger.info(f"Transcoding {path} to {outpath}...")
 
     cmd = [
-        "ffmpeg","-y",
+        "ffmpeg", "-y",
         "-i", path,
         "-an",
         "-metadata:s", "handler_name=tator",
@@ -84,7 +84,7 @@ def transcode(path, outpath):
         cmd.extend(["-vf", "scale=-2:720"])
 
     cmd.append(outpath)
-    log.info('ffmpeg cmd = {}'.format(cmd))
+    logger.info('ffmpeg cmd = {}'.format(cmd))
     subprocess.run(cmd, check=True)
     logger.info("Transcoding finished!")
 
