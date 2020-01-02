@@ -6,6 +6,7 @@ import subprocess
 import json
 import logging
 import os
+import sys
 from uuid import uuid1
 
 import imageio
@@ -36,8 +37,12 @@ def video_thumb(offset, name, new_path):
         name,
     ]
     proc = subprocess.run(cmd, check=True)
+    elapsed = 0
     while not os.path.exists(name):
         time.sleep(0.2)
+        elapsed += 0.2
+        if elapsed > 5:
+            sys.exit(-1)
     time.sleep(1.0)
     image = Image.open(name)
     image.thumbnail((256, 256), Image.ANTIALIAS)
