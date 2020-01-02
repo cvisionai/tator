@@ -218,6 +218,47 @@ class TatorTranscode:
                 }],
             },
         }
+
+        # Define task to send progress message in case of failure.
+        progress_task = {
+            'name': 'progress',
+            'container': {
+                'image': 'cvisionai/tator_transcoder:latest',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': [
+                    'sendProgress.py',
+                    '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                    '--token', str(token),
+                    '--project', str(project),
+                    '--job_type', 'upload',
+                    '--gid', gid,
+                    '--uid', uid,
+                    '--state', 'failed',
+                    '--message', 'Transcode failed!',
+                    '--progress', '0',
+                    '--name', name,
+                    '--section', section,
+                ],
+                'workingDir': '/scripts',
+                'resources': {
+                    'limits': {
+                        'memory': '32Mi',
+                        'cpu': '100m',
+                    },
+                },
+            },
+        }
+
+        # Define a failure handler.
+        failure_handler = {
+            'name': 'failure-handler',
+            'steps': [[{
+                'name': 'send-fail',
+                'template': 'progress',
+                'when': '{{workflow.status}} != Succeeded',
+            }]],
+        }
             
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -227,6 +268,7 @@ class TatorTranscode:
             },
             'spec': {
                 'entrypoint': 'transcode-pipeline',
+                'onExit': 'failure-handler',
                 'ttlSecondsAfterFinished': 300,
                 'volumeClaimTemplates': [pvc],
                 'templates': [
@@ -236,6 +278,8 @@ class TatorTranscode:
                     segments_task,
                     upload_task,
                     pipeline_task,
+                    progress_task,
+                    failure_handler,
                 ],
             },
         }
