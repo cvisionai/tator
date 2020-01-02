@@ -5,9 +5,6 @@
 {{- $daphneSettings := dict "Values" .Values "name" "daphne-deployment" "app" "daphne" "selector" "webServer: \"yes\""  "command" "[daphne]" "args" "[\"-b\", \"0.0.0.0\", \"-p\", \"8001\", \"tator_online.asgi:application\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $daphneSettings }}
 ---
-{{- $transcoderSettings := dict "Values" .Values "name" "transcoder-deployment" "app" "transcoder" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"transcoder\"]" "init" "[echo]" "replicas" .Values.transcoderReplicas }}
-{{include "tator.template" $transcoderSettings }}
----
 {{- $packagerSettings := dict "Values" .Values "name" "packager-deployment" "app" "packager" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"packager\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $packagerSettings }}
 ---
