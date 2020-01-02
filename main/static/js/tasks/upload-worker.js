@@ -202,6 +202,7 @@ class Upload {
     this.token = uploadData.token;
     this.upload_uid = this.uploadUid(uploadData.file, null);
     this.uploadData = uploadData;
+    this.isImage = uploadData.isImage;
     this.aborted = false;
 
     // Create a list item with progress bar.
@@ -238,8 +239,14 @@ class Upload {
         }
       },
       onSuccess: () => {
+        let endpoint;
+        if (this.isImage) {
+          endpoint = "SaveImage";
+        } else {
+          endpoint = "Transcode";
+        }
         // REST call initiating transcode.
-        fetchRetry("/rest/Transcode/" + this.projectId, {
+        fetchRetry("/rest/" + endpoint + "/" + this.projectId, {
           method: "POST",
           headers: {
             "Authorization": "Token " + this.token,
