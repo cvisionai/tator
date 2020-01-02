@@ -7,7 +7,6 @@ redirects:
 maintenance: false
 nginxReplicas: 1
 gunicornReplicas: 1 
-transcoderReplicas: 1
 algorithmReplicas: 1
 djangoSecretKey: "<Your django secret key>"
 postgresHost: "pgbouncer-svc"

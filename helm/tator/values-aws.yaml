@@ -7,7 +7,6 @@ redirects:
 maintenance: false
 nginxReplicas: 5
 gunicornReplicas: 20
-transcoderReplicas: 6
 algorithmReplicas: 2
 djangoSecretKey: "<Your django secret key>"
 postgresHost: "<Your RDS DB identifier>.clsla2zlnxez.<Your aws region>.rds.amazonaws.com"
