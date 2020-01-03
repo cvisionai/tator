@@ -3017,7 +3017,7 @@ class SaveImageAPI(APIView):
         finally:
             # Delete files from the uploads directory.
             if 'upload_path' in locals():
-                logger.info(f"Removing uploaded file {upload_paths[key]}")
+                logger.info(f"Removing uploaded file {upload_path}")
                 if os.path.exists(upload_path):
                     os.remove(upload_path)
                 info_path = os.path.splitext(upload_path)[0] + '.info'
