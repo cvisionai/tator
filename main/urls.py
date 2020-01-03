@@ -33,7 +33,7 @@ from .rest import TreeLeafListAPI;
 from .rest import TreeLeafDetailAPI;
 from .rest import TreeLeafTypeListAPI;
 from .rest import LocalizationAssociationDetailAPI;
-from .rest import UploadProgressAPI;
+from .rest import ProgressAPI;
 from .rest import TranscodeAPI;
 from .rest import PackageListAPI;
 from .rest import PackageDetailAPI;
@@ -53,6 +53,8 @@ from .rest import MediaPrevAPI
 from .rest import MediaNextAPI
 from .rest import MediaSectionsAPI
 from .rest import SectionAnalysisAPI
+from .rest import SaveVideoAPI
+from .rest import SaveImageAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -142,8 +144,8 @@ urlpatterns += [
         LocalizationAssociationDetailAPI.as_view(),
     ),
     path(
-        'rest/UploadProgress/<int:project>',
-        UploadProgressAPI.as_view(),
+        'rest/Progress/<int:project>',
+        ProgressAPI.as_view(),
     ),
     path(
         'rest/Transcode/<int:project>',
@@ -224,5 +226,15 @@ urlpatterns += [
         'rest/SectionAnalysis/<int:project>',
         SectionAnalysisAPI.as_view(),
         name='SectionAnalysis',
+    ),
+    path(
+        'rest/SaveImage/<int:project>',
+        SaveImageAPI.as_view(),
+        name='SaveImage',
+    ),
+    path(
+        'rest/SaveVideo/<int:project>',
+        SaveVideoAPI.as_view(),
+        name='SaveVideo',
     ),
 ]

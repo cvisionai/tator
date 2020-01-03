@@ -95,7 +95,6 @@ class JobChannel(Enum):
     """
     ALGORITHM = 'algorithm'
     PACKAGER = 'packager'
-    TRANSCODER = 'transcoder'
 
 class Permission(Enum):
     VIEW_ONLY = 'r'

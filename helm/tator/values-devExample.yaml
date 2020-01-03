@@ -7,7 +7,6 @@ redirects:
 maintenance: false
 nginxReplicas: 1
 gunicornReplicas: 1 
-transcoderReplicas: 1
 algorithmReplicas: 1
 djangoSecretKey: "<Your django secret key>"
 postgresHost: "pgbouncer-svc"
@@ -109,4 +108,24 @@ cluster-autoscaler:
 awsStorage:
   # Should be disabled for bare metal.
   enabled: false
+remoteTranscodes:
+  # Typically for dev processing is done on the same machine.
+  enabled: false
+  # Host/port are obtained via the following (run on the transcode cluster):
+  #   echo $(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
+  host: "your.transcode.domain.org"
+  port: "6443"
+  # Token can be obtained via the following (run on the transcode cluster):
+  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+  #   TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
+  #   echo $TOKEN
+  token: "Bearer <Your token here>"
+  # Certificate can be obtained via the following (run on the transcode cluster):
+  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+  #   CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
+  #   echo $CERT | base64 --decode
+  cert: |
+    -----BEGIN CERTIFICATE-----
+    <Insert certificate here>
+    -----END CERTIFICATE-----
 

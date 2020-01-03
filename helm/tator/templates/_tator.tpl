@@ -57,7 +57,7 @@ spec:
                   key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
-{{- if hasKey .Values "slackToken" }}
+            {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -68,7 +68,20 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: slackChannel
-{{- end }}
+            {{- end }}
+            {{- if .Values.remoteTranscodes.enabled }}
+            - name: REMOTE_TRANSCODE_HOST
+              value: {{ .Values.remoteTranscodes.host }}
+            - name: REMOTE_TRANSCODE_PORT
+              value: {{ .Values.remoteTranscodes.port | quote }}
+            - name: REMOTE_TRANSCODE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tator-secrets
+                  key: remoteTranscodeToken
+            - name: REMOTE_TRANSCODE_CERT
+              value: /remote_transcodes/ca.crt
+            {{- end }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -89,6 +102,11 @@ spec:
               name: raw-pv-claim
             - mountPath: /tator_online/main/migrations
               name: migrations-pv-claim
+            {{- if .Values.remoteTranscodes.enabled }}
+            - mountPath: /remote_transcodes
+              name: remote-transcode-cert
+              readOnly: true
+            {{- end }}
       initContainers:
         - name: redis
           image: redis
@@ -111,4 +129,12 @@ spec:
         - name: migrations-pv-claim
           persistentVolumeClaim:
             claimName: migrations-pv-claim
+        {{- if .Values.remoteTranscodes.enabled }}
+        - name: remote-transcode-cert
+          secret:
+            secretName: tator-secrets
+            items:
+            - key: remoteTranscodeCert
+              path: ca.crt
+        {{- end }}
 {{ end }}

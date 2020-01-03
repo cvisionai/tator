@@ -12,6 +12,8 @@ from django.db.models import F
 from django.conf import settings
 from django.db import connection
 
+import os
+import shutil
 import datetime
 from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
@@ -77,6 +79,7 @@ from .models import AnalysisBase
 from .models import AnalysisCount
 from .models import User
 from .models import InterpolationMethods
+from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 
 #Association Types
@@ -112,6 +115,7 @@ from .serializers import UserSerializerBasic
 from .consumers import ProgressProducer
 
 from .search import TatorSearch
+from .kube import TatorTranscode
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -135,6 +139,7 @@ import traceback
 from uuid import uuid1
 from collections import defaultdict
 import slack
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -457,16 +462,20 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
-            qs = Job.objects.filter(run_uid=uid)
-            if not qs.exists():
-                raise Http404
-            project = self._project_from_object(qs[0])
+            project = TatorTranscode().find_project(f"uid={uid}")
+            if not project:
+                qs = Job.objects.filter(run_uid=uid)
+                if not qs.exists():
+                    raise Http404
+                project = self._project_from_object(qs[0])
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
-            qs = Job.objects.filter(group_id=uid)
-            if not qs.exists():
-                raise Http404
-            project = self._project_from_object(qs[0])
+            project = TatorTranscode().find_project(f"gid={uid}")
+            if not project:
+                qs = Job.objects.filter(group_id=uid)
+                if not qs.exists():
+                    raise Http404
+                project = self._project_from_object(qs[0])
         return self._validate_project(request, project)
 
     def has_object_permission(self, request, view, obj):
@@ -2342,9 +2351,9 @@ class EntityTypeMediaDetailAPI(APIView):
     def get_queryset(self):
         return EntityTypeMediaBase.objects.all()
 
-class UploadProgressAPI(APIView):
+class ProgressAPI(APIView):
     """
-    Broadcast upload progress update. Body should be an array of objects each
+    Broadcast progress update. Body should be an array of objects each
     containing the fields documented below.
     """
     schema = AutoSchema(manual_fields=[
@@ -2352,22 +2361,26 @@ class UploadProgressAPI(APIView):
                       required=True,
                       location='path',
                       schema=coreschema.String(description='A unique integer value identifying a Project')),
+        coreapi.Field(name='job_type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='One of upload, download, algorithm.')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+                      schema=coreschema.String(description='A UUID generated for the group.')),
         coreapi.Field(name='uid',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload.')),
+                      schema=coreschema.String(description='A UUID generated for the job.')),
         coreapi.Field(name='swid',
-                      required=True,
+                      required=False,
                       location='body',
-                      schema=coreschema.String(description='A UUID generated for the service worker that is doing the upload.')),
+                      schema=coreschema.String(description='A UUID generated for the service worker that is doing the upload, only required if this is an upload.')),
         coreapi.Field(name='state',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='One of failed or started.')),
+                      schema=coreschema.String(description='One of queued, failed or started.')),
         coreapi.Field(name='message',
                       required=True,
                       location='body',
@@ -2377,13 +2390,13 @@ class UploadProgressAPI(APIView):
                       location='body',
                       schema=coreschema.String(description='Progress percentage.')),
         coreapi.Field(name='section',
-                      required=True,
+                      required=False,
                       location='body',
                       schema=coreschema.String(description='Media section name.')),
         coreapi.Field(name='name',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='Name of the file being uploaded.')),
+                      schema=coreschema.String(description='Name of the job.')),
     ])
 
     def post(self, request, format=None, **kwargs):
@@ -2394,36 +2407,38 @@ class UploadProgressAPI(APIView):
 
                 ## Check for required fields first
                 if 'gid' not in reqObject:
-                    raise Exception('Missing required uuid for upload group')
+                    raise Exception('Missing required uuid for job group')
 
                 if 'uid' not in reqObject:
-                    raise Exception('Missing required uuid for upload')
+                    raise Exception('Missing required uuid for job')
 
-                if 'swid' not in reqObject:
-                    raise Exception('Missing required uuid for service worker')
+                if 'job_type' not in reqObject:
+                    raise Exception('Missing required job type for progress update')
 
                 if 'name' not in reqObject:
-                    raise Exception('Missing required name for upload')
+                    raise Exception('Missing required name for progress update')
 
                 if 'state' not in reqObject:
-                    raise Exception('Missing required state for upload')
+                    raise Exception('Missing required state for progress update')
 
                 if 'message' not in reqObject:
-                    raise Exception('Missing required message for upload')
+                    raise Exception('Missing required message for progress update')
 
                 if 'progress' not in reqObject:
-                    raise Exception('Missing required progress for upload')
+                    raise Exception('Missing required progress for progress update')
 
-                if 'section' not in reqObject:
-                    raise Exception('Missing required section for upload')
+                aux = {}
+                if reqObject['job_type'] == 'upload':
+                    if 'swid' in reqObject:
+                        aux['swid'] = reqObject['swid']
 
-                aux = {
-                    'section': reqObject['section'],
-                    'swid': reqObject['swid'],
-                    'updated': str(datetime.datetime.now(datetime.timezone.utc)),
-                }
+                    if 'section' in reqObject:
+                        aux['section'] = reqObject['section']
+
+                    aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
+
                 prog = ProgressProducer(
-                    'upload',
+                    reqObject['job_type'],
                     self.kwargs['project'],
                     reqObject['gid'],
                     reqObject['uid'],
@@ -2447,6 +2462,7 @@ class UploadProgressAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.info(f"ERROR: {str(e)}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
@@ -2496,56 +2512,501 @@ class TranscodeAPI(APIView):
         response=Response({})
 
         try:
-            entityType=None
-            reqObject=request.data;
-            media_id=[]
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            url = request.data.get('url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            project = kwargs['project']
+            token, _ = Token.objects.get_or_create(user=request.user)
 
             ## Check for required fields first
-            if 'type' not in reqObject:
+            if entity_type is None:
                 raise Exception('Missing required field in request object "type"')
 
-            if 'gid' not in reqObject:
+            if gid is None:
                 raise Exception('Missing required gid for upload')
 
-            if 'uid' not in reqObject:
+            if uid is None:
                 raise Exception('Missing required uuid for upload')
 
-            if 'section' not in reqObject:
+            if url is None:
+                raise Exception('Missing required url for upload')
+
+            if section is None:
                 raise Exception('Missing required section for upload')
 
-            if 'name' not in reqObject:
+            if name is None:
                 raise Exception('Missing required name for uploaded video')
 
-            if 'md5' not in reqObject:
+            if md5 is None:
                 raise Exception('Missing md5 for uploaded video')
 
-            media_type = EntityTypeMediaBase.objects.get(pk=int(reqObject['type']))
-            if media_type.project.pk != self.kwargs['project']:
-                raise Exception('Media type is not part of project')
-
-            job = Job.objects.create(
-                name = reqObject['name'],
-                project = media_type.project,
-                channel = JobChannel.TRANSCODER,
-                message = {
-                    'type': 'transcode',
-                    'user_id': self.request.user.id,
-                    'media_type_id': reqObject['type'],
-                    'gid': reqObject['gid'],
-                    'uid': reqObject['uid'],
-                    'url': reqObject['url'],
-                    'section': reqObject['section'],
-                    'name': reqObject['name'],
-                    'md5': reqObject['md5'],
-                },
-                updated = datetime.datetime.now(datetime.timezone.utc),
-                status=JobStatus.QUEUED,
-                group_id=reqObject['gid'],
-                run_uid=reqObject['uid'],
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
             )
-            job.save()
+
+            TatorTranscode().start_transcode(
+                project,
+                entity_type,
+                token,
+                url,
+                name,
+                section,
+                md5,
+                gid,
+                uid,
+                request.user.pk,
+            )
+
+            prog.progress("Transcoding...", 60)
 
             response = Response({'message': "Transcode started successfully!"},
+                                status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.info(f"ERROR: {str(e)}")
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            prog.failed("Failed to initiate transcode!")
+        finally:
+            return response;
+
+class SaveVideoAPI(APIView):
+    """
+    Saves a transcoded video.
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='project',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A unique integer value identifying a project')),
+        coreapi.Field(name='type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+        coreapi.Field(name='gid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+        coreapi.Field(name='uid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload.')),
+        coreapi.Field(name='original_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the file to be transcoded.')),
+        coreapi.Field(name='transcoded_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the transcoded file.')),
+        coreapi.Field(name='thumbnail_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the thumbnail.')),
+        coreapi.Field(name='thumbnail_gif_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the thumbnail gif.')),
+        coreapi.Field(name='segments_url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the segments file.')),
+        coreapi.Field(name='section',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Media section name.')),
+        coreapi.Field(name='name',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Name of the file.')),
+        coreapi.Field(name='md5',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='MD5 sum of the media file')),
+        coreapi.Field(name='num_frames',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Number of frames in the video')),
+        coreapi.Field(name='fps',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Frame rate of the video')),
+        coreapi.Field(name='codec',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Codec of the original video')),
+        coreapi.Field(name='width',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Pixel width of the video')),
+        coreapi.Field(name='height',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Pixel height of the video')),
+    ])
+    permission_classes = [ProjectTransferPermission]
+
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            original_url = request.data.get('original_url', None)
+            transcoded_url = request.data.get('transcoded_url', None)
+            thumbnail_url = request.data.get('thumbnail_url', None)
+            thumbnail_gif_url = request.data.get('thumbnail_gif_url', None)
+            segments_url = request.data.get('segments_url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            num_frames = request.data.get('num_frames', None)
+            fps = request.data.get('fps', None)
+            codec = request.data.get('codec', None)
+            width = request.data.get('width', None)
+            height = request.data.get('height', None)
+            project = kwargs['project']
+
+            ## Check for required fields first
+            if entity_type is None:
+                raise Exception('Missing required entity type for upload')
+
+            if gid is None:
+                raise Exception('Missing required gid for upload')
+
+            if uid is None:
+                raise Exception('Missing required uuid for upload')
+
+            if original_url is None:
+                raise Exception('Missing required url of original file for upload')
+
+            if transcoded_url is None:
+                raise Exception('Missing required url of transcoded file for upload')
+
+            if thumbnail_url is None:
+                raise Exception('Missing required url of thumbnail file for upload')
+
+            if thumbnail_gif_url is None:
+                raise Exception('Missing required url of thumbnail gif file for upload')
+
+            if segments_url is None:
+                raise Exception('Missing required url of segments file for upload')
+
+            if section is None:
+                raise Exception('Missing required section for uploaded video')
+
+            if name is None:
+                raise Exception('Missing required name for uploaded video')
+
+            if md5 is None:
+                raise Exception('Missing md5 for uploaded video')
+
+            if num_frames is None:
+                raise Exception('Missing required number of frames for uploaded video')
+
+            if fps is None:
+                raise Exception('Missing required fps for uploaded video')
+
+            if codec is None:
+                raise Exception('Missing required codec for uploaded video')
+
+            if width is None:
+                raise Exception('Missing required width for uploaded video')
+
+            if height is None:
+                raise Exception('Missing required height for uploaded video')
+
+            # Set up interface for sending progress messages.
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
+            )
+
+            media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
+            if media_type.project.pk != project:
+                raise Exception('Media type is not part of project')
+
+            # Make sure project directories exist
+            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+            os.makedirs(project_dir, exist_ok=True)
+            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+            os.makedirs(raw_project_dir, exist_ok=True)
+
+            # Determine uploaded file paths
+            upload_uids = {
+                'original': original_url.split('/')[-1],
+                'transcoded': transcoded_url.split('/')[-1],
+                'thumbnail': thumbnail_url.split('/')[-1],
+                'thumbnail_gif': thumbnail_gif_url.split('/')[-1],
+                'segments': segments_url.split('/')[-1],
+            }
+            upload_paths = {
+                key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
+                for key, uid in upload_uids.items()
+            }
+
+            # Make sure upload paths exist
+            for key in upload_paths:
+                if not os.path.exists(upload_paths[key]):
+                    fail_msg = f"Failed to create video, unknown upload path {upload_paths[key]}"
+                    prog.failed(fail_msg)
+                    raise RuntimeError(fail_msg)
+
+            # Determine save paths
+            media_uid = str(uuid1())
+            save_paths = {
+                'original': os.path.join(raw_project_dir, media_uid + '.mp4'),
+                'transcoded': os.path.join(project_dir, media_uid + '.mp4'),
+                'thumbnail': os.path.join(project_dir, str(uuid1()) + '.jpg'),
+                'thumbnail_gif': os.path.join(project_dir, str(uuid1()) + '.gif'),
+                'segments': os.path.join(project_dir, f"{media_uid}_segments.json"),
+            }
+
+            # Create the video object.
+            media_obj = EntityMediaVideo(
+                project=Project.objects.get(pk=project),
+                meta=EntityTypeMediaVideo.objects.get(pk=entity_type),
+                name=name,
+                uploader=request.user,
+                upload_datetime=datetime.datetime.now(datetime.timezone.utc),
+                md5=md5,
+                attributes={'tator_user_sections': section},
+                num_frames=num_frames,
+                fps=fps,
+                codec=codec,
+                width=width,
+                height=height,
+            )
+
+            # Save the transcoded file.
+            media_base = os.path.relpath(save_paths['transcoded'], settings.MEDIA_ROOT)
+            with open(upload_paths['transcoded'], 'rb') as f:
+                media_obj.file.save(media_base, f, save=False)
+
+            # Save the thumbnail.
+            media_base = os.path.relpath(save_paths['thumbnail'], settings.MEDIA_ROOT)
+            with open(upload_paths['thumbnail'], 'rb') as f:
+                media_obj.thumbnail.save(media_base, f, save=False)
+
+            # Save the thumbnail gif.
+            media_base = os.path.relpath(save_paths['thumbnail_gif'], settings.MEDIA_ROOT)
+            with open(upload_paths['thumbnail_gif'], 'rb') as f:
+                media_obj.thumbnail_gif.save(media_base, f, save=False)
+            
+            # Save the raw file.
+            if media_type.keep_original == True:
+                shutil.copyfile(upload_paths['original'], save_paths['original'])
+                os.chmod(save_paths['original'], 0o644)
+                media_obj.original = save_paths['original']
+
+            # Save the segments file.
+            shutil.copyfile(upload_paths['segments'], save_paths['segments'])
+            os.chmod(save_paths['segments'], 0o644)
+            media_obj.segment_info = save_paths['segments']
+
+            # Save the database record.
+            media_obj.save()
+
+            # Send a message saying upload successful.
+            info = {
+                "id": media_obj.id,
+                "url": media_obj.file.url,
+                "thumb_url": media_obj.thumbnail.url,
+                "thumb_gif_url": media_obj.thumbnail_gif.url,
+                "name": media_obj.name,
+                "section": section,
+            }
+            prog.finished("Uploaded successfully!", {**info})
+
+            response = Response({'message': "Video saved successfully!"},
+                                status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            prog.failed("Could not save video!")
+        finally:
+            # Delete files from the uploads directory.
+            if 'upload_paths' in locals():
+                for key in upload_paths:
+                    logger.info(f"Removing uploaded file {upload_paths[key]}")
+                    if os.path.exists(upload_paths[key]):
+                        logger.info(f"{upload_paths[key]} exists and is being removed!")
+                        os.remove(upload_paths[key])
+                    info_path = os.path.splitext(upload_paths[key])[0] + '.info'
+                    if os.path.exists(info_path):
+                        os.remove(info_path)
+            return response;
+
+class SaveImageAPI(APIView):
+    """
+    Saves an uploaded image.
+    """
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='project',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A unique integer value identifying a project')),
+        coreapi.Field(name='type',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+        coreapi.Field(name='gid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload group.')),
+        coreapi.Field(name='uid',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='A UUID generated for the upload.')),
+        coreapi.Field(name='url',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the image.')),
+        coreapi.Field(name='section',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Media section name.')),
+        coreapi.Field(name='name',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Name of the file used to create the database record after transcode.')),
+        coreapi.Field(name='md5',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='MD5 sum of the media file')),
+    ])
+    permission_classes = [ProjectTransferPermission]
+
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            entity_type = request.data.get('type', None)
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            url = request.data.get('url', None)
+            section = request.data.get('section', None)
+            name = request.data.get('name', None)
+            md5 = request.data.get('md5', None)
+            project = kwargs['project']
+
+            ## Check for required fields first
+            if entity_type is None:
+                raise Exception('Missing required entity type for upload')
+
+            if gid is None:
+                raise Exception('Missing required gid for upload')
+
+            if uid is None:
+                raise Exception('Missing required uid for upload')
+
+            if url is None:
+                raise Exception('Missing required url for upload')
+
+            if section is None:
+                raise Exception('Missing required section for uploaded image')
+
+            if name is None:
+                raise Exception('Missing required name for uploaded image')
+
+            if md5 is None:
+                raise Exception('Missing md5 for uploaded image')
+
+            media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
+            if media_type.project.pk != project:
+                raise Exception('Media type is not part of project')
+
+            # Determine file paths
+            upload_uid = url.split('/')[-1]
+            media_uid = str(uuid1())
+            ext = os.path.splitext(name)[1]
+            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+            os.makedirs(project_dir, exist_ok=True)
+            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+            os.makedirs(raw_project_dir, exist_ok=True)
+            thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
+            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
+
+            # Set up interface for sending progress messages.
+            prog = ProgressProducer(
+                'upload',
+                project,
+                gid,
+                uid,
+                name,
+                request.user,
+                {'section': section},
+            )
+
+            # Make sure uploaded file exists
+            if os.path.exists(upload_path):
+                media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
+            else:
+                fail_msg = f"Failed to create media, unknown upload path {upload_path}"
+                prog.failed(fail_msg)
+                raise RuntimeError(fail_msg)
+
+            # Create the media object.
+            media_obj = EntityMediaImage(
+                project=Project.objects.get(pk=project),
+                meta=EntityTypeMediaImage.objects.get(pk=entity_type),
+                name=name,
+                uploader=request.user,
+                upload_datetime=datetime.datetime.now(datetime.timezone.utc),
+                md5=md5,
+                attributes={'tator_user_sections': section},
+            )
+
+            # Create the thumbnail.
+            thumb_size = (256, 256)
+            media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+            image = Image.open(upload_path)
+            media_obj.width, media_obj.height = image.size
+            image = image.convert('RGB') # Remove alpha channel for jpeg
+            image.thumbnail(thumb_size, Image.ANTIALIAS)
+            image.save(thumb_path)
+            image.close()
+
+            # Save the image.
+            media_base = os.path.relpath(media_path, settings.MEDIA_ROOT)
+            with open(upload_path, 'rb') as f:
+                media_obj.file.save(media_base, f, save=False)
+            media_obj.save()
+
+            # Send info to consumer.
+            info = {
+                "id": media_obj.id,
+                "url": media_obj.file.url,
+                "thumb_url": media_obj.thumbnail.url,
+                "name": media_obj.name,
+                "section": section,
+            }
+            prog.finished("Uploaded successfully!", {**info})
+
+            response = Response({'message': "Image saved successfully!"},
                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:
@@ -2555,6 +3016,14 @@ class TranscodeAPI(APIView):
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
+            # Delete files from the uploads directory.
+            if 'upload_path' in locals():
+                logger.info(f"Removing uploaded file {upload_path}")
+                if os.path.exists(upload_path):
+                    os.remove(upload_path)
+                info_path = os.path.splitext(upload_path)[0] + '.info'
+                if os.path.exists(info_path):
+                    os.remove(info_path)
             return response;
 
 class PackageListAPI(ListAPIView):
@@ -2887,13 +3356,16 @@ class JobDetailAPI(APIView):
         response=Response({})
 
         try:
+            # Try finding the job via the kube api.
             # Find the job and delete it.
             run_uid = kwargs['run_uid']
-            job = Job.objects.filter(run_uid=run_uid)
-            if len(job) != 1:
-                raise Http404
-            job = job[0]
-            delete_job(job, self.request.user)
+            cancelled = TatorTranscode().cancel_transcodes(f'uid={run_uid}')
+            if not cancelled:
+                job = Job.objects.filter(run_uid=run_uid)
+                if len(job) != 1:
+                    raise Http404
+                job = job[0]
+                delete_job(job, self.request.user)
 
             response = Response({'message': f"Job with run UID {run_uid} deleted!"})
 
@@ -2924,11 +3396,13 @@ class JobGroupDetailAPI(APIView):
         try:
             # Find the job and delete it.
             group_id = kwargs['group_id']
-            jobs = Job.objects.filter(group_id=group_id)
-            if not jobs.exists():
-                raise Http404
-            for job in jobs:
-                delete_job(job, self.request.user)
+            cancelled = TatorTranscode().cancel_transcodes(f'gid={group_id}')
+            if not cancelled:
+                jobs = Job.objects.filter(group_id=group_id)
+                if not jobs.exists():
+                    raise Http404
+                for job in jobs:
+                    delete_job(job, self.request.user)
 
             response = Response({'message': f"Jobs with group ID {group_id} deleted!"})
 

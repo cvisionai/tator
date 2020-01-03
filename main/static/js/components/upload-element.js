@@ -88,6 +88,7 @@ class UploadElement extends TatorElement {
           "projectId": this.getAttribute("project-id"),
           "mediaTypeId": mediaType.id,
           "token": this._token,
+          "isImage": isImage,
         });
         return true;
       }

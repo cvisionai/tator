@@ -47,7 +47,7 @@ self.setInterval(() => {
     const messages = Object.values(progressBuffer[key]);
     let start = 0;
     while (start < messages.length) {
-      fetchRetry("/rest/UploadProgress/" + projectId, {
+      fetchRetry("/rest/Progress/" + projectId, {
         method: "POST",
         headers: {
           "Authorization": "Token " + token,
@@ -77,6 +77,7 @@ const bufferMessage = (projectId, token, uid, msg) => {
 const removeQueued = index => {
   const record = uploadBuffer.splice(index, 1)[0];
   bufferMessage(record.projectId, record.token, record.uid, {
+    job_type: "upload",
     gid: record.gid,
     uid: record.uid,
     swid: serviceWorkerId,
@@ -96,6 +97,7 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     bufferMessage(msg.projectId, msg.token, upload_uid, {
+      job_type: "upload",
       gid: msg.gid,
       uid: upload_uid,
       swid: serviceWorkerId,
@@ -200,6 +202,7 @@ class Upload {
     this.token = uploadData.token;
     this.upload_uid = this.uploadUid(uploadData.file, null);
     this.uploadData = uploadData;
+    this.isImage = uploadData.isImage;
     this.aborted = false;
 
     // Create a list item with progress bar.
@@ -236,8 +239,14 @@ class Upload {
         }
       },
       onSuccess: () => {
+        let endpoint;
+        if (this.isImage) {
+          endpoint = "SaveImage";
+        } else {
+          endpoint = "Transcode";
+        }
         // REST call initiating transcode.
-        fetchRetry("/rest/Transcode/" + this.projectId, {
+        fetchRetry("/rest/" + endpoint + "/" + this.projectId, {
           method: "POST",
           headers: {
             "Authorization": "Token " + this.token,
@@ -257,7 +266,6 @@ class Upload {
         })
         .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
-        this.progress("started", "Uploaded...", 50);
       }
     });
 
@@ -266,6 +274,7 @@ class Upload {
   // Sends progress messages.
   progress(state, msg, pct) {
     bufferMessage(this.projectId, this.token, this.upload_uid, {
+      job_type: "upload",
       gid: this.gid,
       uid: this.upload_uid,
       swid: serviceWorkerId,
