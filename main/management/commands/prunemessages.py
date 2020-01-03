@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Max time with no updates.
-        max_time = datetime.timedelta(seconds=30)
+        max_time = datetime.timedelta(seconds=300)
 
         waitForMigrations()
 
