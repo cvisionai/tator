@@ -24,7 +24,7 @@ class TatorTranscode:
         host = os.getenv('REMOTE_TRANSCODE_HOST')
         port = os.getenv('REMOTE_TRANSCODE_PORT')
         token = os.getenv('REMOTE_TRANSCODE_TOKEN')
-        cert = os.getenv('REMOTE_TRANSCODE_CERT_PATH')
+        cert = os.getenv('REMOTE_TRANSCODE_CERT')
        
         if host:
             conf = Configuration()
