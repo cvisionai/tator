@@ -1,10 +1,13 @@
 import os
+import logging
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.config import load_incluster_config
+
+logger = logging.getLogger(__name__)
 
 class TatorTranscode:
     """ Interface to kubernetes REST API for starting transcodes.
@@ -34,7 +37,7 @@ class TatorTranscode:
             cls.corev1 = CoreV1Api()
             cls.custom = CustomObjectsApi()
 
-    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid):
+    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
 
         """ Creates an argo workflow for performing a transcode.
         """
@@ -259,12 +262,24 @@ class TatorTranscode:
                 'when': '{{workflow.status}} != Succeeded',
             }]],
         }
-            
+
+        # Define the workflow spec.            
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
                 'generateName': 'transcode-workflow-',
+                'labels': {
+                    'job_type': 'upload',
+                    'project': str(project),
+                    'gid': gid,
+                    'uid': uid,
+                    'user': str(user),
+                },
+                'annotations': {
+                    'name': name,
+                    'section': section,
+                },
             },
             'spec': {
                 'entrypoint': 'transcode-pipeline',
@@ -283,7 +298,8 @@ class TatorTranscode:
                 ],
             },
         }
-        
+       
+        # Create the workflow 
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',

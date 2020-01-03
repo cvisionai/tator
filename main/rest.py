@@ -2559,6 +2559,7 @@ class TranscodeAPI(APIView):
                 md5,
                 gid,
                 uid,
+                request.user.pk,
             )
 
             prog.progress("Transcoding...", 60)
