@@ -312,21 +312,23 @@ class TatorTranscode:
             body=manifest,
         )
 
-    def find_project(self, uid):
-        """ Finds the project associated with a given uid.
+    def find_project(self, selector):
+        """ Finds the project associated with a given selector.
         """
+        project = None
         response = self.custom.list_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',
             namespace='default',
             plural='workflows',
-            label_selector=f'uid={uid}',
+            label_selector=selector,
         )
         if len(response['items']) > 0:
-            return int(response['items'][0]['metadata']['labels']['project'])
+            project = int(response['items'][0]['metadata']['labels']['project'])
+        return project
 
-    def cancel_job(self, uid):
-        """ Deletes an argo workflow with the given uid.
+    def cancel_transcodes(self, selector):
+        """ Deletes argo workflows by selector.
         """
         cancelled = False
 
@@ -336,40 +338,35 @@ class TatorTranscode:
             version='v1alpha1',
             namespace='default',
             plural='workflows',
-            label_selector=f'uid={uid}',
+            label_selector=selector,
         )
 
         # Delete the object.
         if len(response['items']) > 0:
-            job = response['items'][0]
-            name = job['metadata']['name']
-            response = self.custom.delete_namespaced_custom_object(
-                group='argoproj.io',
-                version='v1alpha1',
-                namespace='default',
-                plural='workflows',
-                name=name,
-                body={},
-                grace_period_seconds=0,
-            )
-            if response['status'] == 'Success':
-                cancelled = True
-                prog = ProgressProducer(
-                    'upload',
-                    int(job['metadata']['labels']['project']),
-                    job['metadata']['labels']['gid'],
-                    job['metadata']['labels']['uid'],
-                    job['metadata']['annotations']['name'],
-                    int(job['metadata']['labels']['user']),
-                    {'section': job['metadata']['annotations']['section']},
+            for job in response['items']:
+                name = job['metadata']['name']
+                response = self.custom.delete_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    name=name,
+                    body={},
+                    grace_period_seconds=0,
                 )
-                prog.failed("Transcode aborted!")
+                if response['status'] == 'Success':
+                    cancelled = True
+                    prog = ProgressProducer(
+                        'upload',
+                        int(job['metadata']['labels']['project']),
+                        job['metadata']['labels']['gid'],
+                        job['metadata']['labels']['uid'],
+                        job['metadata']['annotations']['name'],
+                        int(job['metadata']['labels']['user']),
+                        {'section': job['metadata']['annotations']['section']},
+                    )
+                    prog.failed("Transcode aborted!")
         return cancelled
 
-    def cancel_group(self, gid):
-        """ Deletes multiple argo workflows with the given gid.
-        """
-        pass
-        
 
 TatorTranscode.setup_kube()

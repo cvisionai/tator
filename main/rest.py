@@ -462,7 +462,7 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
-            project = TatorTranscode().find_project(uid)
+            project = TatorTranscode().find_project(f"uid={uid}")
             if not project:
                 qs = Job.objects.filter(run_uid=uid)
                 if not qs.exists():
@@ -470,10 +470,12 @@ class ProjectPermissionBase(BasePermission):
                 project = self._project_from_object(qs[0])
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
-            qs = Job.objects.filter(group_id=uid)
-            if not qs.exists():
-                raise Http404
-            project = self._project_from_object(qs[0])
+            project = TatorTranscode().find_project(f"gid={uid}")
+            if not project:
+                qs = Job.objects.filter(group_id=uid)
+                if not qs.exists():
+                    raise Http404
+                project = self._project_from_object(qs[0])
         return self._validate_project(request, project)
 
     def has_object_permission(self, request, view, obj):
@@ -3356,7 +3358,7 @@ class JobDetailAPI(APIView):
             # Try finding the job via the kube api.
             # Find the job and delete it.
             run_uid = kwargs['run_uid']
-            cancelled = TatorTranscode().cancel_job(run_uid)
+            cancelled = TatorTranscode().cancel_transcodes(f'uid={run_uid}')
             if not cancelled:
                 job = Job.objects.filter(run_uid=run_uid)
                 if len(job) != 1:
@@ -3393,11 +3395,13 @@ class JobGroupDetailAPI(APIView):
         try:
             # Find the job and delete it.
             group_id = kwargs['group_id']
-            jobs = Job.objects.filter(group_id=group_id)
-            if not jobs.exists():
-                raise Http404
-            for job in jobs:
-                delete_job(job, self.request.user)
+            cancelled = TatorTranscode().cancel_transcodes(f'gid={group_id}')
+            if not cancelled:
+                jobs = Job.objects.filter(group_id=group_id)
+                if not jobs.exists():
+                    raise Http404
+                for job in jobs:
+                    delete_job(job, self.request.user)
 
             response = Response({'message': f"Jobs with group ID {group_id} deleted!"})
 
