@@ -213,29 +213,6 @@ class ProgressConsumer(JsonWebsocketConsumer):
 # Initialize global redis connection
 ProgressConsumer.setup_redis()
 
-def video_thumb(offset, name, new_path):
-    """Creates a video thumbnail.
-    """
-    proc = subprocess.Popen([
-        "ffmpeg",
-        "-ss",
-        time.strftime('%H:%M:%S', time.gmtime(offset)),
-        "-i",
-        "{}".format(new_path),
-        "-vframes",
-        "1",
-        name,
-    ], stdout=subprocess.PIPE)
-    output = proc.communicate()
-    del proc
-    while not os.path.exists(name):
-        time.sleep(0.2)
-    time.sleep(1.0)
-    image = Image.open(name)
-    image.thumbnail((256, 256), Image.ANTIALIAS)
-    image.save(name)
-    image.close()
-
 def write_annotations(user, rest, project_id, media_id, out_name, f):
     # Set up parameters
     params = {"media_id": media_id, "format": "json"}
