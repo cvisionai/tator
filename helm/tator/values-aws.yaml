@@ -93,3 +93,9 @@ awsStorage:
   ebs:
     type: io1
     iopsPerGb: "50"
+remoteTranscodes:
+  # Enable this if you would like to do transcodes with a different
+  # Kubernetes cluster, such as an on-premises cluster. Follow instructions
+  # at doc/job-cluster.md to set up the cluster.
+  enabled: true
+  
