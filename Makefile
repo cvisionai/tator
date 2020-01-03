@@ -8,11 +8,12 @@ IMAGES=tator-image marshal-image tus-image postgis-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
-DOCKERHUB_USER=$(shell grep 'dockerRegistry:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
+DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["dockerRegistry"])')
 
-POSTGRES_HOST=$(shell grep 'postgresHost:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
-POSTGRES_USERNAME=$(shell grep 'postgresUsername:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
-POSTGRES_PASSWORD=$(shell grep 'postgresPassword:' helm/tator/values.yaml | tail -n1 | awk '{print $$2}')
+POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresHost"])')
+POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresUsername"])')
+POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresPassword"])')
+
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -45,6 +46,12 @@ reset:
 # Create backup with pg_dump
 backup:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
+
+ecr_update:
+	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
+	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
+	$(LOGIN)
+	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r")); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
 
 psql_cloud:
 	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
