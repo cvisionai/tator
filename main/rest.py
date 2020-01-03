@@ -462,10 +462,12 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
-            qs = Job.objects.filter(run_uid=uid)
-            if not qs.exists():
-                raise Http404
-            project = self._project_from_object(qs[0])
+            project = TatorTranscode().find_project(uid)
+            if not project:
+                qs = Job.objects.filter(run_uid=uid)
+                if not qs.exists():
+                    raise Http404
+                project = self._project_from_object(qs[0])
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
             qs = Job.objects.filter(group_id=uid)
@@ -2848,6 +2850,7 @@ class SaveVideoAPI(APIView):
                 for key in upload_paths:
                     logger.info(f"Removing uploaded file {upload_paths[key]}")
                     if os.path.exists(upload_paths[key]):
+                        logger.info(f"{upload_paths[key]} exists and is being removed!")
                         os.remove(upload_paths[key])
                     info_path = os.path.splitext(upload_paths[key])[0] + '.info'
                     if os.path.exists(info_path):
@@ -3350,13 +3353,16 @@ class JobDetailAPI(APIView):
         response=Response({})
 
         try:
+            # Try finding the job via the kube api.
             # Find the job and delete it.
             run_uid = kwargs['run_uid']
-            job = Job.objects.filter(run_uid=run_uid)
-            if len(job) != 1:
-                raise Http404
-            job = job[0]
-            delete_job(job, self.request.user)
+            cancelled = TatorTranscode().cancel_job(run_uid)
+            if not cancelled:
+                job = Job.objects.filter(run_uid=run_uid)
+                if len(job) != 1:
+                    raise Http404
+                job = job[0]
+                delete_job(job, self.request.user)
 
             response = Response({'message': f"Job with run UID {run_uid} deleted!"})
 
