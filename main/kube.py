@@ -168,6 +168,7 @@ class TatorTranscode:
                 'args': [
                     'uploadTranscodedVideo.py',
                     '--original_path', paths['original'],
+                    '--original_url', url,
                     '--transcoded_path', paths['transcoded'],
                     '--thumbnail_path', paths['thumbnail'],
                     '--thumbnail_gif_path', paths['thumbnail_gif'],
