@@ -695,12 +695,6 @@ class AlgorithmResult(Model):
     def __str__(self):
         return f"{self.algorithm.name}, {self.result}, started {self.started}"
 
-class Pipeline(Model):
-    name = CharField(max_length=128)
-    description = CharField(max_length=1024)
-    algorithms = ManyToManyField(Algorithm)
-    project = ForeignKey(Project, on_delete=CASCADE)
-
 class Job(Model):
     name = CharField(max_length=128)
     project = ForeignKey(Project, on_delete=CASCADE)
