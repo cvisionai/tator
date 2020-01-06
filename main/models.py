@@ -666,19 +666,8 @@ class Algorithm(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=PROTECT)
     description = CharField(max_length=1024, null=True, blank=True)
-    setup = FileField(upload_to=ProjectBasedFileLocation)
-    """ Script that uses api calls to set up algorithm.
-    """
-    teardown = FileField(upload_to=ProjectBasedFileLocation)
-    """ Script that uses api calls to write outputs to database.
-    """
-    image_name = CharField(max_length=128)
-    image_tag = CharField(max_length=32, default='latest')
-    registry = CharField(max_length=256, default='https://index.docker.io/v2/')
-    username = CharField(max_length=64)
-    password = CharField(max_length=64)
-    arguments = JSONField(null=True,blank=True)
-    needs_gpu = BooleanField()
+    manifest = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    cluster = ForeignKey(JobCluster, null=True, blank=True, on_delete=SET_NULL)
     files_per_job = PositiveIntegerField(
         default=1,
         validators=[MinValueValidator(1),]
