@@ -1486,14 +1486,18 @@ class AnnotationCanvas extends TatorElement
   {
     const frame = track.association.segments[0][0];
     this.gotoFrame(frame).then(() => {
+      // TODO: This lookup isn't very scalable; we shouldn't iterate over
+      // all localizations to find the track
       this._data._dataByType.forEach((value, key, map) => {
         if (key != track.meta) {
           for (const localization of value) {
-            const sameId = this._data._trackDb[localization.id].id == track.id;
-            const firstFrame = localization.frame == frame;
-            if (sameId && firstFrame) {
-              this.selectLocalization(localization, true);
-              return;
+            if (localization.id in this._data._trackDb) {
+              const sameId = this._data._trackDb[localization.id].id == track.id;
+              const firstFrame = localization.frame == frame;
+              if (sameId && firstFrame) {
+                this.selectLocalization(localization, true);
+                return;
+              }
             }
           }
         }
