@@ -4,6 +4,7 @@ metadata:
   generateName: find-edges-
 spec:
   entrypoint: pipeline
+  ttlSecondsAfterFinished: 30
   volumeClaimTemplates:
   - metadata:
       name: workdir
@@ -24,6 +25,10 @@ spec:
   - name: setup
     script:
       image: cvisionai/tator_algo_marshal
+      resources:
+        limits:
+          cpu: 250m
+          memory: 100Mi
       env:
       - name: TATOR_MEDIA_IDS
         value: "{{workflow.parameters.media_ids}}"
@@ -72,6 +77,10 @@ spec:
   - name: find-edges
     script:
       image: jrtcppv/find_edges
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 500Mi
       env:
       - name: TATOR_MEDIA_IDS
         value: "{{workflow.parameters.media_ids}}"
@@ -91,6 +100,10 @@ spec:
   - name: teardown
     script:
       image: cvisionai/tator_algo_marshal
+      resources:
+        limits:
+          cpu: 250m
+          memory: 100Mi
       env:
       - name: TATOR_MEDIA_IDS
         value: "{{workflow.parameters.media_ids}}"
