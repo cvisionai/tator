@@ -370,3 +370,62 @@ class TatorTranscode:
 
 
 TatorTranscode.setup_kube()
+
+class TatorAlgorithm:
+    """ Interface to kubernetes REST API for starting algorithms.
+    """
+
+    def __init__(self, alg):
+        """ Intializes the connection. If algorithm object includes
+            a remote cluster, use that. Otherwise, use this cluster.
+        """
+        if alg.cluster:
+            host = alg.cluster.host
+            port = alg.cluster.port
+            token = alg.cluster.token
+            self.cert_file =  tempfile.NamedTemporaryFile(mode='w')
+            cert = self.cert_file.name
+            self.cert_file.write(alg.cluster.cert)
+            conf = Configuration()
+            conf.api_key['authorization'] = token
+            conf.host = f'https://{host}:{port}'
+            conf.verify_ssl = True
+            conf.ssl_ca_cert = cert
+            api_client = ApiClient(conf)
+            self.corev1 = CoreV1Api(api_client)
+            self.custom = CustomObjectsApi(api_client)
+        else:
+            load_incluster_config()
+            self.corev1 = CoreV1Api()
+            self.custom = CustomObjectsApi()
+
+        # Read in the mainfest.
+        self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
+
+    def start_algorithm(self, media_ids, sections, gid, uid):
+        """ Starts an algorithm job, substituting in parameters in the
+            workflow spec.
+        """
+        manifest = dict(self.manifest)
+        manifest['spec']['arguments'] = {'parameters': [
+            {
+                'name': 'media_ids',
+                'value': media_ids,
+            }, {
+                'name': 'sections',
+                'value': sections,
+            }, {
+                'name': 'gid',
+                'value': gid,
+            }, {
+                'name': 'uid',
+                'value': uid,
+            },
+        ]}
+        response = self.custom.create_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            body=manifest,
+        )
