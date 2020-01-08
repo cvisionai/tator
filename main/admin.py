@@ -30,6 +30,7 @@ from .models import AttributeTypeString
 from .models import AttributeTypeDatetime
 from .models import AttributeTypeGeoposition
 from .models import Package
+from .models import JobCluster
 from .models import Algorithm
 from .models import AlgorithmResult
 from .models import TreeLeaf
@@ -66,6 +67,7 @@ admin.site.register(AttributeTypeString)
 admin.site.register(AttributeTypeDatetime)
 admin.site.register(AttributeTypeGeoposition)
 admin.site.register(Package)
+admin.site.register(JobCluster)
 admin.site.register(Algorithm)
 admin.site.register(AlgorithmResult, AlgorithmResultAdmin)
 admin.site.register(TreeLeaf)
