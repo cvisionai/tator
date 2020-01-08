@@ -658,7 +658,10 @@ class JobCluster(Model):
     host = CharField(max_length=1024)
     port = PositiveIntegerField()
     token = CharField(max_length=1024)
-    cert = TextField(max_length=1024)
+    cert = TextField(max_length=2048)
+
+    def __str__(self):
+        return self.name
 
 # Algorithm models
 
