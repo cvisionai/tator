@@ -116,6 +116,7 @@ from .consumers import ProgressProducer
 
 from .search import TatorSearch
 from .kube import TatorTranscode
+from .kube import TatorAlgorithm
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -3227,6 +3228,8 @@ class AlgorithmLaunchAPI(APIView):
 
             # Create algorithm jobs
             gid = str(uuid1())
+            submitter = TatorAlgorithm(alg_obj)
+            token, _ = Token.objects.get_or_create(user=request.user)
             for batch in media_batches(media_ids, files_per_job):
                 run_uid = str(uuid1())
                 batch_str = ','.join(batch)
@@ -3235,26 +3238,14 @@ class AlgorithmLaunchAPI(APIView):
                 qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
-                job = Job.objects.create(
-                    name=alg_name,
-                    project=Project.objects.get(pk=project_id),
-                    channel = JobChannel.ALGORITHM,
-                    message = {
-                        'type': 'start',
-                        'user_id': request.user.pk,
-                        'project_id': project_id,
-                        'media_list': batch_str,
-                        'section_list': sections,
-                        'algorithm_id': alg_obj.pk,
-                        'group_id': gid,
-                        'run_uid': run_uid,
-                    },
-                    updated = datetime.datetime.now(datetime.timezone.utc),
-                    status=JobStatus.QUEUED,
-                    group_id=gid,
-                    run_uid=run_uid,
+                submitter.start_algorithm(
+                    media_ids=batch_str,
+                    sections=sections,
+                    gid=gid,
+                    uid=run_uid,
+                    token=token,
+                    project_id=project_id,
                 )
-                job.save()
 
                 # Send out a progress message saying this launch is queued.
                 prog = ProgressProducer(
