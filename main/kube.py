@@ -402,7 +402,7 @@ class TatorAlgorithm:
         # Read in the mainfest.
         self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
-    def start_algorithm(self, media_ids, sections, gid, uid):
+    def start_algorithm(self, media_ids, sections, gid, uid, token, project_id):
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
         """
@@ -420,6 +420,18 @@ class TatorAlgorithm:
             }, {
                 'name': 'uid',
                 'value': uid,
+            }, {
+                'name': 'rest_url',
+                'value': f'https://{os.getenv("MAIN_HOST")}/rest',
+            }, {
+                'name': 'rest_token',
+                'value': token,
+            }, {
+                'name': 'tus_url',
+                'value': f'https://{os.getenv("MAIN_HOST")}/files/',
+            }, {
+                'name': 'project_id',
+                'value': str(project_id),
             },
         ]}
         response = self.custom.create_namespaced_custom_object(
