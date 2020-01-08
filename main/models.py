@@ -4,6 +4,7 @@ from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
 from django.contrib.gis.db.models import ManyToManyField
 from django.contrib.gis.db.models import CharField
+from django.contrib.gis.db.models import TextField
 from django.contrib.gis.db.models import URLField
 from django.contrib.gis.db.models import SlugField
 from django.contrib.gis.db.models import BooleanField
@@ -657,7 +658,7 @@ class JobCluster(Model):
     host = CharField(max_length=1024)
     port = PositiveIntegerField()
     token = CharField(max_length=1024)
-    cert = CharField(max_length=1024)
+    cert = TextField(max_length=1024)
 
 # Algorithm models
 
