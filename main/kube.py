@@ -6,6 +6,7 @@ from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.config import load_incluster_config
+import yaml
 
 from .consumers import ProgressProducer
 
@@ -425,7 +426,7 @@ class TatorAlgorithm:
                 'value': f'https://{os.getenv("MAIN_HOST")}/rest',
             }, {
                 'name': 'rest_token',
-                'value': token,
+                'value': str(token),
             }, {
                 'name': 'tus_url',
                 'value': f'https://{os.getenv("MAIN_HOST")}/files/',
