@@ -654,7 +654,7 @@ def package_delete(sender, instance, **kwargs):
 class JobCluster(Model):
     name = CharField(max_length=128)
     owner = ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
-    host = SlugField(max_length=1024)
+    host = CharField(max_length=1024)
     port = PositiveIntegerField()
     token = CharField(max_length=1024)
     cert = CharField(max_length=1024)
