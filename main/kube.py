@@ -1,6 +1,7 @@
 import os
 import logging
 import tempfile
+import copy
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -412,7 +413,7 @@ class TatorAlgorithm:
             workflow spec.
         """
         # Make a copy of the manifest from the database.
-        manifest = dict(self.manifest)
+        manifest = copy.deepcopy(self.manifest)
 
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
