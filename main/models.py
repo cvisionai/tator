@@ -94,7 +94,6 @@ class JobStatus(Enum):
 class JobChannel(Enum):
     """These correspond to availabe channel URLs
     """
-    ALGORITHM = 'algorithm'
     PACKAGER = 'packager'
 
 class Permission(Enum):
