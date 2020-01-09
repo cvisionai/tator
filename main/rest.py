@@ -469,6 +469,9 @@ class ProjectPermissionBase(BasePermission):
                 if not qs.exists():
                     raise Http404
                 project = self._project_from_object(qs[0])
+            if not project:
+                for alg in Algorithm.objects.all():
+                    project = TatorAlgorithm(alg).find_project(f"uid={uid}")
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
             project = TatorTranscode().find_project(f"gid={uid}")
@@ -477,6 +480,9 @@ class ProjectPermissionBase(BasePermission):
                 if not qs.exists():
                     raise Http404
                 project = self._project_from_object(qs[0])
+            if not project:
+                for alg in Algorithm.objects.all():
+                    project = TatorAlgorithm(alg).find_project(f"gid={uid}")
         return self._validate_project(request, project)
 
     def has_object_permission(self, request, view, obj):
@@ -3261,6 +3267,7 @@ class AlgorithmLaunchAPI(APIView):
                     uid=run_uid,
                     token=token,
                     project=project_id,
+                    user=request.user.pk,
                 )
 
                 # Send out a progress message saying this launch is queued.
@@ -3366,8 +3373,13 @@ class JobDetailAPI(APIView):
             # Try finding the job via the kube api.
             # Find the job and delete it.
             run_uid = kwargs['run_uid']
-            cancelled = TatorTranscode().cancel_transcodes(f'uid={run_uid}')
-            if not cancelled:
+            transcode_cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
+            if not transcode_cancelled:
+                for alg in Algorithm.objects.all():
+                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
+                    if algorithm_cancelled:
+                        break
+            if not (transcode_cancelled or algorithm_cancelled):
                 job = Job.objects.filter(run_uid=run_uid)
                 if len(job) != 1:
                     raise Http404
@@ -3403,8 +3415,13 @@ class JobGroupDetailAPI(APIView):
         try:
             # Find the job and delete it.
             group_id = kwargs['group_id']
-            cancelled = TatorTranscode().cancel_transcodes(f'gid={group_id}')
-            if not cancelled:
+            transcode_cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
+            if not transcode_cancelled:
+                for alg in Algorithm.objects.all():
+                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
+                    if algorithm_cancelled:
+                        break
+            if not (transcode_cancelled or algorithm_cancelled):
                 jobs = Job.objects.filter(group_id=group_id)
                 if not jobs.exists():
                     raise Http404
