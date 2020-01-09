@@ -3273,7 +3273,7 @@ class AlgorithmLaunchAPI(APIView):
                     self.request.user,
                     {'media_ids': batch_str, 'sections': sections},
                 )
-                prog.started("Algorithm started...")
+                prog.queued("Queued...")
 
             response = Response({'message': f"Algorithm {alg_name} started successfully!"},
                                 status=status.HTTP_201_CREATED)
