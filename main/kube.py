@@ -523,6 +523,26 @@ class TatorAlgorithm:
                 exit_handler
             ]
 
+        # Set labels and annotations for job management
+        if 'labels' not in manifest['metadata']:
+            manifest['metadata']['labels'] = {}
+        if 'annotations' not in manifest['metadata']:
+            manifest['metadata']['annotations'] = {}
+        manifest['metadata']['labels'] = {
+            **manifest['metadata']['labels'],
+            'job_type': 'algorithm',
+            'project': str(project),
+            'gid': gid,
+            'uid': uid,
+            'user': str(user),
+        }
+        manifest['metadata']['annotations'] = {
+            **manifest['metadata']['annotations'],
+            'name': self.name,
+            'sections': sections,
+            'media_ids': media_ids,
+        }
+
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',
