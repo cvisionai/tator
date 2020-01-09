@@ -15,7 +15,75 @@ from .consumers import ProgressProducer
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class TatorTranscode:
+class JobManagerMixin:
+    """ Defines functions for job management.
+    """
+    def _get_progress_aux(self, job):
+        raise NotImplementedError
+
+    def _cancel_message(self):
+        raise NotImplementedError
+
+    def _job_type(self):
+        raise NotImplementedError
+
+    def find_project(self, selector):
+        """ Finds the project associated with a given selector.
+        """
+        project = None
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=selector,
+        )
+        if len(response['items']) > 0:
+            project = int(response['items'][0]['metadata']['labels']['project'])
+        return project
+
+    def cancel_jobs(self, selector):
+        """ Deletes argo workflows by selector.
+        """
+        cancelled = False
+
+        # Get the object by selecting on uid label.
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=f'{selector},job_type={self._job_type()}',
+        )
+
+        # Delete the object.
+        if len(response['items']) > 0:
+            for job in response['items']:
+                name = job['metadata']['name']
+                response = self.custom.delete_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    name=name,
+                    body={},
+                    grace_period_seconds=0,
+                )
+                if response['status'] == 'Success':
+                    cancelled = True
+                    prog = ProgressProducer(
+                        self._job_type(),
+                        int(job['metadata']['labels']['project']),
+                        job['metadata']['labels']['gid'],
+                        job['metadata']['labels']['uid'],
+                        job['metadata']['annotations']['name'],
+                        int(job['metadata']['labels']['user']),
+                        self._get_progress_aux(job),
+                    )
+                    prog.failed(self._cancel_message())
+        return cancelled
+
+class TatorTranscode(JobManagerMixin):
     """ Interface to kubernetes REST API for starting transcodes.
     """
 
@@ -42,6 +110,15 @@ class TatorTranscode:
             load_incluster_config()
             cls.corev1 = CoreV1Api()
             cls.custom = CustomObjectsApi()
+
+    def _get_progress_aux(self, job):
+        return {'section': job['metadata']['annotations']['section']}
+
+    def _cancel_message(self):
+        return 'Transcode aborted!'
+
+    def _job_type(self):
+        return 'upload'
 
     def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
 
@@ -315,66 +392,9 @@ class TatorTranscode:
             body=manifest,
         )
 
-    def find_project(self, selector):
-        """ Finds the project associated with a given selector.
-        """
-        project = None
-        response = self.custom.list_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            label_selector=selector,
-        )
-        if len(response['items']) > 0:
-            project = int(response['items'][0]['metadata']['labels']['project'])
-        return project
-
-    def cancel_transcodes(self, selector):
-        """ Deletes argo workflows by selector.
-        """
-        cancelled = False
-
-        # Get the object by selecting on uid label.
-        response = self.custom.list_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            label_selector=selector,
-        )
-
-        # Delete the object.
-        if len(response['items']) > 0:
-            for job in response['items']:
-                name = job['metadata']['name']
-                response = self.custom.delete_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    name=name,
-                    body={},
-                    grace_period_seconds=0,
-                )
-                if response['status'] == 'Success':
-                    cancelled = True
-                    prog = ProgressProducer(
-                        'upload',
-                        int(job['metadata']['labels']['project']),
-                        job['metadata']['labels']['gid'],
-                        job['metadata']['labels']['uid'],
-                        job['metadata']['annotations']['name'],
-                        int(job['metadata']['labels']['user']),
-                        {'section': job['metadata']['annotations']['section']},
-                    )
-                    prog.failed("Transcode aborted!")
-        return cancelled
-
-
 TatorTranscode.setup_kube()
 
-class TatorAlgorithm:
+class TatorAlgorithm(JobManagerMixin):
     """ Interface to kubernetes REST API for starting algorithms.
     """
 
@@ -408,7 +428,19 @@ class TatorAlgorithm:
         # Save off the algorithm name.
         self.name = alg.name
 
-    def start_algorithm(self, media_ids, sections, gid, uid, token, project):
+    def _get_progress_aux(self, job):
+        return {
+            'sections': job['metadata']['annotations']['sections'],
+            'media_ids': job['metadata']['annotations']['media_ids'],
+        }
+
+    def _cancel_message(self):
+        return 'Algorithm aborted!'
+
+    def _job_type(self):
+        return 'algorithm'
+
+    def start_algorithm(self, media_ids, sections, gid, uid, token, project, user):
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
         """
@@ -550,3 +582,4 @@ class TatorAlgorithm:
             plural='workflows',
             body=manifest,
         )
+
