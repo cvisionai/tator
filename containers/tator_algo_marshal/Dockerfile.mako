@@ -21,3 +21,6 @@ RUN pip install --no-cache-dir /PyTator-${PYTATOR_VERSION}-py3-none-any.whl
 
 #Make symlink for compatibility to old setup/teardown scripts
 RUN ln -s /usr/local/bin/ingestor.py /ingestor.py
+
+#Make symlink for progress script
+RUN ln -s /usr/local/bin/sendProgress.py /sendProgress.py
