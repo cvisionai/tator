@@ -232,7 +232,7 @@ class TatorTranscode:
         progress_task = {
             'name': 'progress',
             'container': {
-                'image': 'cvisionai/tator_transcoder:latest',
+                'image': 'cvisionai/tator_algo_marshal:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -404,7 +404,10 @@ class TatorAlgorithm:
         # Read in the mainfest.
         self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
-    def start_algorithm(self, media_ids, sections, gid, uid, token, project_id):
+        # Save off the algorithm name.
+        self.name = alg.name
+
+    def start_algorithm(self, media_ids, sections, gid, uid, token, project):
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
         """
@@ -436,9 +439,89 @@ class TatorAlgorithm:
                 'value': f'https://{os.getenv("MAIN_HOST")}/files/',
             }, {
                 'name': 'project_id',
-                'value': str(project_id),
+                'value': str(project),
             },
         ]}
+
+        # If no exit process is defined, add one to close progress.
+        if 'onExit' not in manifest['spec']:
+            failed_task = {
+                'name': 'tator-failed',
+                'container': {
+                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'imagePullPolicy': 'Always',
+                    'command': ['python3',],
+                    'args': [
+                        'sendProgress.py',
+                        '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                        '--token', str(token),
+                        '--project', str(project),
+                        '--job_type', 'algorithm',
+                        '--gid', gid,
+                        '--uid', uid,
+                        '--state', 'failed',
+                        '--message', 'Algorithm failed!',
+                        '--progress', '0',
+                        '--name', self.name,
+                        '--sections', sections,
+                        '--media_ids', media_ids,
+                    ],
+                    'resources': {
+                        'limits': {
+                            'memory': '32Mi',
+                            'cpu': '100m',
+                        },
+                    },
+                },
+            }
+            succeeded_task = {
+                'name': 'tator-succeeded',
+                'container': {
+                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'imagePullPolicy': 'Always',
+                    'command': ['python3',],
+                    'args': [
+                        'sendProgress.py',
+                        '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                        '--token', str(token),
+                        '--project', str(project),
+                        '--job_type', 'algorithm',
+                        '--gid', gid,
+                        '--uid', uid,
+                        '--state', 'finished',
+                        '--message', 'Algorithm complete!',
+                        '--progress', '100',
+                        '--name', self.name,
+                        '--sections', sections,
+                        '--media_ids', media_ids,
+                    ],
+                    'resources': {
+                        'limits': {
+                            'memory': '32Mi',
+                            'cpu': '100m',
+                        },
+                    },
+                },
+            }
+            exit_handler = {
+                'name': 'tator-exit-handler',
+                'steps': [[{
+                    'name': 'send-fail',
+                    'template': 'tator-failed',
+                    'when': '{{workflow.status}} != Succeeded',
+                }, {
+                    'name': 'send-succeed',
+                    'template': 'tator-succeeded',
+                    'when': '{{workflow.status}} == Succeeded',
+                }]],
+            }
+            manifest['spec']['onExit'] = 'tator-exit-handler'
+            manifest['spec']['templates'] += [
+                failed_task,
+                succeeded_task,
+                exit_handler
+            ]
+
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',
