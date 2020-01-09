@@ -16,7 +16,6 @@ from main.util import waitForMigrations
 from main.models import Job
 from main.models import JobStatus
 from main.models import JobChannel
-from main.models import Algorithm
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +37,6 @@ def requeue_dead_jobs(started, pod_names):
 
 def next_job(job_type):
     queued = Job.objects.filter(status=JobStatus.QUEUED, channel=job_type)
-    if job_type == JobChannel.ALGORITHM:
-        started = Job.objects.filter(status=JobStatus.STARTED, channel=job_type)
-        field = 'message__algorithm_id'
-        count_by_alg = started.values(field).order_by(field).annotate(job_count=Count(field))
-        for alg_info in count_by_alg:
-            alg_id = alg_info['message__algorithm_id']
-            alg_count = alg_info['job_count']
-            alg = Algorithm.objects.get(pk=alg_id)
-            if alg_count >= alg.max_concurrent:
-                queued = queued.exclude(message__algorithm_id=alg_id)
     job = queued.earliest('submitted')
     return job
 
