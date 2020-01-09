@@ -8,9 +8,6 @@
 {{- $packagerSettings := dict "Values" .Values "name" "packager-deployment" "app" "packager" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"packager\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $packagerSettings }}
 ---
-{{- $algorithmSettings := dict "Values" .Values "name" "algorithm-deployment" "app" "algorithm" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"algorithm\"]" "init" "[echo]" "replicas" .Values.algorithmReplicas }}
-{{include "tator.template" $algorithmSettings }}
----
 {{- $submitterSettings := dict "Values" .Values "name" "submitter-deployment" "app" "submitter" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"submitjobs\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $submitterSettings }}
 ---
