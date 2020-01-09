@@ -1,5 +1,6 @@
 import os
 import logging
+import tempfile
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -384,9 +385,9 @@ class TatorAlgorithm:
             host = alg.cluster.host
             port = alg.cluster.port
             token = alg.cluster.token
-            self.cert_file =  tempfile.NamedTemporaryFile(mode='w')
-            cert = self.cert_file.name
-            self.cert_file.write(alg.cluster.cert)
+            fd, cert = tempfile.mkstemp(text=True)
+            with open(fd, 'w') as f:
+                f.write(alg.cluster.cert)
             conf = Configuration()
             conf.api_key['authorization'] = token
             conf.host = f'https://{host}:{port}'
@@ -407,7 +408,10 @@ class TatorAlgorithm:
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
         """
+        # Make a copy of the manifest from the database.
         manifest = dict(self.manifest)
+
+        # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
             {
                 'name': 'media_ids',
