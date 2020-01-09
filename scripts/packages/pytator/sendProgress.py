@@ -16,12 +16,18 @@ def parse_args():
     parser.add_argument('--progress', type=int, help='Progress (0-100).')
     parser.add_argument('--name', type=str, help='Name of the file.')
     parser.add_argument('--section', type=str, help='Media section, if this is for an upload.')
+    parser.add_argument('--sections', type=str, help='Comma-separated list of media sections, if this is for an algorithm.')
+    parser.add_argument('--media_ids', type=str, help='Comma-separated list of media IDs, if this is for an algorithm.')
     return parser.parse_args()
 
 def send_progress(args):
     aux = {}
     if args.section:
         aux['section'] = args.section
+    if args.sections:
+        aux['sections'] = args.sections
+    if args.media_ids:
+        aux['media_ids'] = args.media_ids
     out = requests.post(
         f'{args.url}/Progress/{args.project}',
         headers={
@@ -40,7 +46,6 @@ def send_progress(args):
             **aux,
         }],
     )
-    print('RESPONSE: ' + out.text)
     out.raise_for_status()
 
 if __name__ == '__main__':

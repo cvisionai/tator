@@ -11,7 +11,7 @@ setup(
     name="PyTator",
     version=VERSION_NUMBER,
     packages=find_packages(),
-    scripts=['ingestor.py', 'tator_testHarness.py'],
+    scripts=['ingestor.py', 'tator_testHarness.py', 'sendProgress.py'],
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine

@@ -1,18 +1,89 @@
 import os
 import logging
+import tempfile
+import copy
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.config import load_incluster_config
+import yaml
 
 from .consumers import ProgressProducer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class TatorTranscode:
+class JobManagerMixin:
+    """ Defines functions for job management.
+    """
+    def _get_progress_aux(self, job):
+        raise NotImplementedError
+
+    def _cancel_message(self):
+        raise NotImplementedError
+
+    def _job_type(self):
+        raise NotImplementedError
+
+    def find_project(self, selector):
+        """ Finds the project associated with a given selector.
+        """
+        project = None
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=selector,
+        )
+        if len(response['items']) > 0:
+            project = int(response['items'][0]['metadata']['labels']['project'])
+        return project
+
+    def cancel_jobs(self, selector):
+        """ Deletes argo workflows by selector.
+        """
+        cancelled = False
+
+        # Get the object by selecting on uid label.
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=f'{selector},job_type={self._job_type()}',
+        )
+
+        # Delete the object.
+        if len(response['items']) > 0:
+            for job in response['items']:
+                name = job['metadata']['name']
+                response = self.custom.delete_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    name=name,
+                    body={},
+                    grace_period_seconds=0,
+                )
+                if response['status'] == 'Success':
+                    cancelled = True
+                    prog = ProgressProducer(
+                        self._job_type(),
+                        int(job['metadata']['labels']['project']),
+                        job['metadata']['labels']['gid'],
+                        job['metadata']['labels']['uid'],
+                        job['metadata']['annotations']['name'],
+                        int(job['metadata']['labels']['user']),
+                        self._get_progress_aux(job),
+                    )
+                    prog.failed(self._cancel_message())
+        return cancelled
+
+class TatorTranscode(JobManagerMixin):
     """ Interface to kubernetes REST API for starting transcodes.
     """
 
@@ -39,6 +110,15 @@ class TatorTranscode:
             load_incluster_config()
             cls.corev1 = CoreV1Api()
             cls.custom = CustomObjectsApi()
+
+    def _get_progress_aux(self, job):
+        return {'section': job['metadata']['annotations']['section']}
+
+    def _cancel_message(self):
+        return 'Transcode aborted!'
+
+    def _job_type(self):
+        return 'upload'
 
     def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
 
@@ -230,7 +310,7 @@ class TatorTranscode:
         progress_task = {
             'name': 'progress',
             'container': {
-                'image': 'cvisionai/tator_transcoder:latest',
+                'image': 'cvisionai/tator_algo_marshal:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -312,61 +392,194 @@ class TatorTranscode:
             body=manifest,
         )
 
-    def find_project(self, selector):
-        """ Finds the project associated with a given selector.
-        """
-        project = None
-        response = self.custom.list_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            label_selector=selector,
-        )
-        if len(response['items']) > 0:
-            project = int(response['items'][0]['metadata']['labels']['project'])
-        return project
-
-    def cancel_transcodes(self, selector):
-        """ Deletes argo workflows by selector.
-        """
-        cancelled = False
-
-        # Get the object by selecting on uid label.
-        response = self.custom.list_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            label_selector=selector,
-        )
-
-        # Delete the object.
-        if len(response['items']) > 0:
-            for job in response['items']:
-                name = job['metadata']['name']
-                response = self.custom.delete_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    name=name,
-                    body={},
-                    grace_period_seconds=0,
-                )
-                if response['status'] == 'Success':
-                    cancelled = True
-                    prog = ProgressProducer(
-                        'upload',
-                        int(job['metadata']['labels']['project']),
-                        job['metadata']['labels']['gid'],
-                        job['metadata']['labels']['uid'],
-                        job['metadata']['annotations']['name'],
-                        int(job['metadata']['labels']['user']),
-                        {'section': job['metadata']['annotations']['section']},
-                    )
-                    prog.failed("Transcode aborted!")
-        return cancelled
-
-
 TatorTranscode.setup_kube()
+
+class TatorAlgorithm(JobManagerMixin):
+    """ Interface to kubernetes REST API for starting algorithms.
+    """
+
+    def __init__(self, alg):
+        """ Intializes the connection. If algorithm object includes
+            a remote cluster, use that. Otherwise, use this cluster.
+        """
+        if alg.cluster:
+            host = alg.cluster.host
+            port = alg.cluster.port
+            token = alg.cluster.token
+            fd, cert = tempfile.mkstemp(text=True)
+            with open(fd, 'w') as f:
+                f.write(alg.cluster.cert)
+            conf = Configuration()
+            conf.api_key['authorization'] = token
+            conf.host = f'https://{host}:{port}'
+            conf.verify_ssl = True
+            conf.ssl_ca_cert = cert
+            api_client = ApiClient(conf)
+            self.corev1 = CoreV1Api(api_client)
+            self.custom = CustomObjectsApi(api_client)
+        else:
+            load_incluster_config()
+            self.corev1 = CoreV1Api()
+            self.custom = CustomObjectsApi()
+
+        # Read in the mainfest.
+        self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
+
+        # Save off the algorithm name.
+        self.name = alg.name
+
+    def _get_progress_aux(self, job):
+        return {
+            'sections': job['metadata']['annotations']['sections'],
+            'media_ids': job['metadata']['annotations']['media_ids'],
+        }
+
+    def _cancel_message(self):
+        return 'Algorithm aborted!'
+
+    def _job_type(self):
+        return 'algorithm'
+
+    def start_algorithm(self, media_ids, sections, gid, uid, token, project, user):
+        """ Starts an algorithm job, substituting in parameters in the
+            workflow spec.
+        """
+        # Make a copy of the manifest from the database.
+        manifest = copy.deepcopy(self.manifest)
+
+        # Add in workflow parameters.
+        manifest['spec']['arguments'] = {'parameters': [
+            {
+                'name': 'media_ids',
+                'value': media_ids,
+            }, {
+                'name': 'sections',
+                'value': sections,
+            }, {
+                'name': 'gid',
+                'value': gid,
+            }, {
+                'name': 'uid',
+                'value': uid,
+            }, {
+                'name': 'rest_url',
+                'value': f'https://{os.getenv("MAIN_HOST")}/rest',
+            }, {
+                'name': 'rest_token',
+                'value': str(token),
+            }, {
+                'name': 'tus_url',
+                'value': f'https://{os.getenv("MAIN_HOST")}/files/',
+            }, {
+                'name': 'project_id',
+                'value': str(project),
+            },
+        ]}
+
+        # If no exit process is defined, add one to close progress.
+        if 'onExit' not in manifest['spec']:
+            failed_task = {
+                'name': 'tator-failed',
+                'container': {
+                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'imagePullPolicy': 'Always',
+                    'command': ['python3',],
+                    'args': [
+                        'sendProgress.py',
+                        '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                        '--token', str(token),
+                        '--project', str(project),
+                        '--job_type', 'algorithm',
+                        '--gid', gid,
+                        '--uid', uid,
+                        '--state', 'failed',
+                        '--message', 'Algorithm failed!',
+                        '--progress', '0',
+                        '--name', self.name,
+                        '--sections', sections,
+                        '--media_ids', media_ids,
+                    ],
+                    'resources': {
+                        'limits': {
+                            'memory': '32Mi',
+                            'cpu': '100m',
+                        },
+                    },
+                },
+            }
+            succeeded_task = {
+                'name': 'tator-succeeded',
+                'container': {
+                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'imagePullPolicy': 'Always',
+                    'command': ['python3',],
+                    'args': [
+                        'sendProgress.py',
+                        '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                        '--token', str(token),
+                        '--project', str(project),
+                        '--job_type', 'algorithm',
+                        '--gid', gid,
+                        '--uid', uid,
+                        '--state', 'finished',
+                        '--message', 'Algorithm complete!',
+                        '--progress', '100',
+                        '--name', self.name,
+                        '--sections', sections,
+                        '--media_ids', media_ids,
+                    ],
+                    'resources': {
+                        'limits': {
+                            'memory': '32Mi',
+                            'cpu': '100m',
+                        },
+                    },
+                },
+            }
+            exit_handler = {
+                'name': 'tator-exit-handler',
+                'steps': [[{
+                    'name': 'send-fail',
+                    'template': 'tator-failed',
+                    'when': '{{workflow.status}} != Succeeded',
+                }, {
+                    'name': 'send-succeed',
+                    'template': 'tator-succeeded',
+                    'when': '{{workflow.status}} == Succeeded',
+                }]],
+            }
+            manifest['spec']['onExit'] = 'tator-exit-handler'
+            manifest['spec']['templates'] += [
+                failed_task,
+                succeeded_task,
+                exit_handler
+            ]
+
+        # Set labels and annotations for job management
+        if 'labels' not in manifest['metadata']:
+            manifest['metadata']['labels'] = {}
+        if 'annotations' not in manifest['metadata']:
+            manifest['metadata']['annotations'] = {}
+        manifest['metadata']['labels'] = {
+            **manifest['metadata']['labels'],
+            'job_type': 'algorithm',
+            'project': str(project),
+            'gid': gid,
+            'uid': uid,
+            'user': str(user),
+        }
+        manifest['metadata']['annotations'] = {
+            **manifest['metadata']['annotations'],
+            'name': self.name,
+            'sections': sections,
+            'media_ids': media_ids,
+        }
+
+        response = self.custom.create_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            body=manifest,
+        )
+

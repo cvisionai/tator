@@ -159,12 +159,12 @@ EntityTypeMedia_BaseFields=['id', 'name', 'description', 'editTriggers']
 class EntityTypeMediaImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntityTypeMediaImage
-        fields = EntityTypeMedia_BaseFields + ['file_format']
+        fields = EntityTypeMedia_BaseFields + ['dtype', 'file_format']
 
 class EntityTypeMediaVideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntityTypeMediaVideo
-        fields = EntityTypeMedia_BaseFields + ['file_format']
+        fields = EntityTypeMedia_BaseFields + ['dtype', 'file_format']
 
 class EntityTypeMediaSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -472,7 +472,7 @@ class PackageSerializer(serializers.ModelSerializer):
 class AlgorithmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Algorithm
-        fields = ['name', 'description', 'image_name', 'image_tag', 'pk']
+        fields = ['name', 'description', 'pk']
 
 class AlgorithmResultSerializer(serializers.ModelSerializer):
     alg_name = serializers.SerializerMethodField()

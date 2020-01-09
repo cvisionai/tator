@@ -116,6 +116,7 @@ from .consumers import ProgressProducer
 
 from .search import TatorSearch
 from .kube import TatorTranscode
+from .kube import TatorAlgorithm
 
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -468,6 +469,9 @@ class ProjectPermissionBase(BasePermission):
                 if not qs.exists():
                     raise Http404
                 project = self._project_from_object(qs[0])
+            if not project:
+                for alg in Algorithm.objects.all():
+                    project = TatorAlgorithm(alg).find_project(f"uid={uid}")
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
             project = TatorTranscode().find_project(f"gid={uid}")
@@ -476,6 +480,9 @@ class ProjectPermissionBase(BasePermission):
                 if not qs.exists():
                     raise Http404
                 project = self._project_from_object(qs[0])
+            if not project:
+                for alg in Algorithm.objects.all():
+                    project = TatorAlgorithm(alg).find_project(f"gid={uid}")
         return self._validate_project(request, project)
 
     def has_object_permission(self, request, view, obj):
@@ -2392,7 +2399,15 @@ class ProgressAPI(APIView):
         coreapi.Field(name='section',
                       required=False,
                       location='body',
-                      schema=coreschema.String(description='Media section name.')),
+                      schema=coreschema.String(description='Media section name (upload progress only).')),
+        coreapi.Field(name='sections',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Comma-separated list of media sections (algorithm progress only).')),
+        coreapi.Field(name='media_ids',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Comma-separated list of media IDs (algorithm progress only).')),
         coreapi.Field(name='name',
                       required=True,
                       location='body',
@@ -2437,6 +2452,12 @@ class ProgressAPI(APIView):
 
                     aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
 
+                if reqObject['job_type'] == 'algorithm':
+                    if 'sections' in reqObject:
+                        aux['sections'] = reqObject['sections']
+                    if 'media_ids' in reqObject:
+                        aux['media_ids'] = reqObject['media_ids']
+
                 prog = ProgressProducer(
                     reqObject['job_type'],
                     self.kwargs['project'],
@@ -2453,10 +2474,12 @@ class ProgressAPI(APIView):
                     prog.queued(reqObject['message'])
                 elif reqObject['state'] == 'started':
                     prog.progress(reqObject['message'], float(reqObject['progress']))
+                elif reqObject['state'] == 'finished':
+                    prog.finished(reqObject['message'])
                 else:
                     raise Exception(f"Invalid progress state {reqObject['state']}")
 
-            response = Response({'message': "Upload progress sent successfully!"})
+            response = Response({'message': "Progress sent successfully!"})
 
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
@@ -3227,6 +3250,8 @@ class AlgorithmLaunchAPI(APIView):
 
             # Create algorithm jobs
             gid = str(uuid1())
+            submitter = TatorAlgorithm(alg_obj)
+            token, _ = Token.objects.get_or_create(user=request.user)
             for batch in media_batches(media_ids, files_per_job):
                 run_uid = str(uuid1())
                 batch_str = ','.join(batch)
@@ -3235,26 +3260,15 @@ class AlgorithmLaunchAPI(APIView):
                 qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
-                job = Job.objects.create(
-                    name=alg_name,
-                    project=Project.objects.get(pk=project_id),
-                    channel = JobChannel.ALGORITHM,
-                    message = {
-                        'type': 'start',
-                        'user_id': request.user.pk,
-                        'project_id': project_id,
-                        'media_list': batch_str,
-                        'section_list': sections,
-                        'algorithm_id': alg_obj.pk,
-                        'group_id': gid,
-                        'run_uid': run_uid,
-                    },
-                    updated = datetime.datetime.now(datetime.timezone.utc),
-                    status=JobStatus.QUEUED,
-                    group_id=gid,
-                    run_uid=run_uid,
+                submitter.start_algorithm(
+                    media_ids=batch_str,
+                    sections=sections,
+                    gid=gid,
+                    uid=run_uid,
+                    token=token,
+                    project=project_id,
+                    user=request.user.pk,
                 )
-                job.save()
 
                 # Send out a progress message saying this launch is queued.
                 prog = ProgressProducer(
@@ -3359,8 +3373,13 @@ class JobDetailAPI(APIView):
             # Try finding the job via the kube api.
             # Find the job and delete it.
             run_uid = kwargs['run_uid']
-            cancelled = TatorTranscode().cancel_transcodes(f'uid={run_uid}')
-            if not cancelled:
+            transcode_cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
+            if not transcode_cancelled:
+                for alg in Algorithm.objects.all():
+                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
+                    if algorithm_cancelled:
+                        break
+            if not (transcode_cancelled or algorithm_cancelled):
                 job = Job.objects.filter(run_uid=run_uid)
                 if len(job) != 1:
                     raise Http404
@@ -3396,8 +3415,13 @@ class JobGroupDetailAPI(APIView):
         try:
             # Find the job and delete it.
             group_id = kwargs['group_id']
-            cancelled = TatorTranscode().cancel_transcodes(f'gid={group_id}')
-            if not cancelled:
+            transcode_cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
+            if not transcode_cancelled:
+                for alg in Algorithm.objects.all():
+                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
+                    if algorithm_cancelled:
+                        break
+            if not (transcode_cancelled or algorithm_cancelled):
                 jobs = Job.objects.filter(group_id=group_id)
                 if not jobs.exists():
                     raise Http404

@@ -280,6 +280,7 @@ class Media(APIElement):
         super().__init__(api, "EntityMedias")
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
+        self.mediaTypeApi = MediaType(api)
 
     def downloadFile(self, element, out_path):
         """ Download a media file from Tator to an off-line location
@@ -329,8 +330,15 @@ class Media(APIElement):
         for _ in bar(range(num_chunks)):
             uploader.upload_chunk()
 
+        mediaType = self.mediaTypeApi.get(typeId)
+
+        if mediaType['type']['dtype'] == 'video':
+            endpoint = 'Transcode'
+        else:
+            endpoint = 'SaveImage'
+
         # Initiate transcode.
-        out = requests.post(self.url + '/Transcode'+"/"+self.project,
+        out = requests.post(f'{self.url}/{endpoint}/{self.project}',
                             headers=self.headers,
                             json={
                                 'type': typeId,
@@ -348,7 +356,7 @@ class Media(APIElement):
             print("Error: '{}'".format(out.text))
             return False
 
-        if waitForTranscode == True:
+        if (waitForTranscode == True) and (endpoint == 'Transcode'):
             # Poll for the media being created every 5 seconds
             if progressBars:
                 bar=progressbar.ProgressBar(prefix="Transcode",redirect_stdout=True)
