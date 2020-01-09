@@ -2393,7 +2393,15 @@ class ProgressAPI(APIView):
         coreapi.Field(name='section',
                       required=False,
                       location='body',
-                      schema=coreschema.String(description='Media section name.')),
+                      schema=coreschema.String(description='Media section name (upload progress only).')),
+        coreapi.Field(name='sections',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Comma-separated list of media sections (algorithm progress only).')),
+        coreapi.Field(name='media_ids',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Comma-separated list of media IDs (algorithm progress only).')),
         coreapi.Field(name='name',
                       required=True,
                       location='body',
@@ -2438,6 +2446,12 @@ class ProgressAPI(APIView):
 
                     aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
 
+                if reqObject['job_type'] == 'algorithm':
+                    if 'sections' in reqObject:
+                        aux['sections'] = reqObject['sections']
+                    if 'media_ids' in reqObject:
+                        aux['media_ids'] = reqObject['media_ids']
+
                 prog = ProgressProducer(
                     reqObject['job_type'],
                     self.kwargs['project'],
@@ -2454,10 +2468,12 @@ class ProgressAPI(APIView):
                     prog.queued(reqObject['message'])
                 elif reqObject['state'] == 'started':
                     prog.progress(reqObject['message'], float(reqObject['progress']))
+                elif reqObject['state'] == 'finished':
+                    prog.finished(reqObject['message'])
                 else:
                     raise Exception(f"Invalid progress state {reqObject['state']}")
 
-            response = Response({'message': "Upload progress sent successfully!"})
+            response = Response({'message': "Progress sent successfully!"})
 
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
@@ -3244,7 +3260,7 @@ class AlgorithmLaunchAPI(APIView):
                     gid=gid,
                     uid=run_uid,
                     token=token,
-                    project_id=project_id,
+                    project=project_id,
                 )
 
                 # Send out a progress message saying this launch is queued.
@@ -3257,7 +3273,7 @@ class AlgorithmLaunchAPI(APIView):
                     self.request.user,
                     {'media_ids': batch_str, 'sections': sections},
                 )
-                prog.queued("Queued...")
+                prog.started("Algorithm started...")
 
             response = Response({'message': f"Algorithm {alg_name} started successfully!"},
                                 status=status.HTTP_201_CREATED)
