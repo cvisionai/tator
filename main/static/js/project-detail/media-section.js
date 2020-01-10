@@ -204,7 +204,6 @@ class MediaSection extends TatorElement {
           let numQueued = 0;
           const headers = {
             "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
             "Content-Type": "application/json"
           };
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
@@ -257,6 +256,16 @@ class MediaSection extends TatorElement {
                         const name = basename + "__localizations__" + locName + ".json";
                         ctrl.enqueue({name, stream});
                       }));
+                      promises.push(fetch("/rest/Localizations/" + projectId + params + "&format=csv", {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__localizations__" + locName + ".csv";
+                        ctrl.enqueue({name, stream});
+                      }));
                     }
                     return Promise.all(promises);
                   });
@@ -290,6 +299,16 @@ class MediaSection extends TatorElement {
                       }
                       const params = "?media_id=" + media.id + "&type=" + typeId;
                       promises.push(fetch("/rest/EntityStates/" + projectId + params, {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__" + entityName + "__" + stateName + ".json";
+                        ctrl.enqueue({name, stream});
+                      }));
+                      promises.push(fetch("/rest/EntityStates/" + projectId + params + "&format=csv", {
                         method: "GET",
                         credentials: "same-origin",
                         headers: headers,
