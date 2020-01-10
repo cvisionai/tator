@@ -35,9 +35,6 @@ from .rest import TreeLeafTypeListAPI;
 from .rest import LocalizationAssociationDetailAPI;
 from .rest import ProgressAPI;
 from .rest import TranscodeAPI;
-from .rest import PackageListAPI;
-from .rest import PackageDetailAPI;
-from .rest import PackageCreateAPI;
 from .rest import AlgorithmListAPI;
 from .rest import AlgorithmLaunchAPI;
 from .rest import AlgorithmResultListAPI;
@@ -150,18 +147,6 @@ urlpatterns += [
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
-    ),
-    path(
-        'rest/Packages/<int:project>',
-        PackageListAPI.as_view(),
-    ),
-    path(
-        'rest/Package/<int:pk>',
-        PackageDetailAPI.as_view(),
-    ),
-    path(
-        'rest/PackageCreate/<int:project>',
-        PackageCreateAPI.as_view(),
     ),
     path(
         'rest/Algorithms/<int:project>',

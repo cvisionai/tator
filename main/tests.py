@@ -22,7 +22,6 @@ from .models import Permission
 from .models import Algorithm
 from .models import AlgorithmResult
 from .models import JobResult
-from .models import Package
 from .models import EntityTypeMediaVideo
 from .models import EntityTypeMediaImage
 from .models import EntityTypeLocalizationBox
@@ -100,16 +99,6 @@ def create_test_algorithm_result(user, name, project, algorithm):
         setup_log=SimpleUploadedFile(name='setup.log', content=b'asdfasdf'),
         algorithm_log=SimpleUploadedFile(name='algorithm.log', content=b'asdfasdf'),
         teardown_log=SimpleUploadedFile(name='teardown.log', content=b'asdfasdf'),
-    )
-
-def create_test_package(user, name, project):
-    return Package.objects.create(
-        name=name,
-        file=SimpleUploadedFile(name='asdf.zip', content=b'asdfasdf'),
-        use_originals=False,
-        creator=user,
-        created=datetime.datetime.now(datetime.timezone.utc),
-        project=project,
     )
 
 def create_test_image_file():
@@ -1477,52 +1466,6 @@ class MembershipTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.list_uri = 'Memberships'
-
-class PackageTestCase(
-        APITestCase,
-        PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.entities = [
-            create_test_package(self.user, f'asdf{idx}', self.project)
-            for idx in range(random.randint(6, 10))
-        ]
-        self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'asdfasdf'}
-        self.detail_uri = 'Package'
-
-class PackageCreateTestCase(
-        APITestCase,
-        PermissionCreateTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.list_uri = 'PackageCreate'
-        self.create_json = {
-            'package_name': 'asdf',
-            'media_query': '?media_id=1,2,3',
-        }
-        self.edit_permission = Permission.CAN_TRANSFER
-
-class PackagesTestCase(
-        APITestCase,
-        PermissionListMembershipTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.entities = [
-            create_test_package(self.user, f'asdf{idx}', self.project)
-            for idx in range(random.randint(6, 10))
-        ]
-        self.list_uri = 'Packages'
 
 class ProjectTestCase(APITestCase):
     def setUp(self):

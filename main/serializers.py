@@ -450,25 +450,6 @@ class TreeLeafSerializer(serializers.ModelSerializer):
         model=TreeLeaf
         fields=['id', 'project', 'parent', 'name', 'attributes', 'path']
 
-class PackageSerializer(serializers.ModelSerializer):
-
-    url = serializers.SerializerMethodField('get_file_url')
-    size = serializers.SerializerMethodField('get_file_size')
-    user_str = serializers.SerializerMethodField()
-
-    def get_file_url(self, obj):
-        return self.context['view'].request.build_absolute_uri(obj.file.url)
-
-    def get_file_size(self, obj):
-        return obj.file.size
-
-    def get_user_str(self, obj):
-        return str(obj.creator)
-
-    class Meta:
-        model = Package
-        fields=['name', 'description', 'user_str', 'created', 'url', 'size', 'pk']
-
 class AlgorithmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Algorithm

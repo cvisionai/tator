@@ -189,32 +189,189 @@ class MediaSection extends TatorElement {
 
       this._files.addEventListener("download", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/PackageCreate/" + projectId, {
-          method: "POST",
+        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter(), {
+          method: "GET",
           credentials: "same-origin",
           headers: {
             "X-CSRFToken": getCookie("csrftoken"),
             "Accept": "application/json",
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            "package_name": this._sectionName,
-            "media_query": this._sectionFilter(),
-            "use_originals": true,
-            "annotations": evt.detail.annotations,
-          }),
         })
-        .then(response => {
-          const page = document.querySelector("project-detail");
-          if (response.status == 201) {
-            page._progress.enableDownloads();
-            page._progress.notify("Creating zip file!", true);
+        .then(response => response.json())
+        .then(medias => {
+          let fileIndex = 0;
+          let numQueued = 0;
+          const headers = {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Content-Type": "application/json"
+          };
+          const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+          const readableZipStream = new ZIP({
+            async pull(ctrl) {
+              if (fileIndex < medias.length) {
+                const media = medias[fileIndex];
+                if (evt.detail.annotations) {
+                  console.log("Downloading metadata for " + media.name + "...");
+                  const basename = media.name.replace(/\.[^/.]+$/, "");
+
+                  // Download media metadata
+                  const p0 = fetch("/rest/EntityMedia/" + media.id, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const stream = () => response.body;
+                    const name = basename + "__media.json";
+                    ctrl.enqueue({name, stream});
+                  });
+
+                  // Download localizations
+                  const p1 = fetch("/rest/LocalizationTypes/" + projectId + "?media_id=" + media.id, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const clone = response.clone();
+                    const stream = () => response.body;
+                    const name = basename + "__localization_types.json";
+                    ctrl.enqueue({name, stream});
+                    return clone.json();
+                  })
+                  .then(locTypes => {
+                    const promises = [];
+                    for (const locType of locTypes) {
+                      const typeId = locType.type.id;
+                      const locName = locType.type.name.toLowerCase();
+                      const params = "?media_id=" + media.id + "&type=" + typeId;
+                      promises.push(fetch("/rest/Localizations/" + projectId + params, {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__localizations__" + locName + ".json";
+                        ctrl.enqueue({name, stream});
+                      }));
+                      promises.push(fetch("/rest/Localizations/" + projectId + params + "&format=csv", {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__localizations__" + locName + ".csv";
+                        ctrl.enqueue({name, stream});
+                      }));
+                    }
+                    return Promise.all(promises);
+                  });
+
+                  // Download states
+                  const p2 = fetch("/rest/EntityStateTypes/" + projectId + "?media_id=" + media.id, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const clone = response.clone();
+                    const stream = () => response.body;
+                    const name = basename + "__state_types.json";
+                    ctrl.enqueue({name, stream});
+                    return clone.json();
+                  })
+                  .then(stateTypes => {
+                    const promises = [];
+                    for (const stateType of stateTypes) {
+                      const typeId = stateType.type.id;
+                      const stateName = stateType.type.name.toLowerCase();
+                      const assoc = stateType.type.association;
+                      let entityName;
+                      if (assoc == "Localization") {
+                        entityName = "tracks";
+                      } else if (assoc == "Media") {
+                        entityName = "media";
+                      } else if (assoc == "Frame") {
+                        entityName = "events";
+                      }
+                      const params = "?media_id=" + media.id + "&type=" + typeId;
+                      promises.push(fetch("/rest/EntityStates/" + projectId + params, {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__" + entityName + "__" + stateName + ".json";
+                        ctrl.enqueue({name, stream});
+                      }));
+                      promises.push(fetch("/rest/EntityStates/" + projectId + params + "&format=csv", {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__" + entityName + "__" + stateName + ".json";
+                        ctrl.enqueue({name, stream});
+                      }));
+                    }
+                    return Promise.all(promises);
+                  });
+
+                  // Add to number of queued.
+                  Promise.all([p0, p1, p2])
+                  .then(() => {
+                    numQueued++;
+                    if (numQueued >= medias.length) {
+                      ctrl.close();
+                    }
+                  });
+
+                } else {
+
+                  // Download original file if available.
+                  let url;
+                  if (medias[fileIndex].original_url) {
+                    url = medias[fileIndex].original_url;
+                  } else {
+                    url = medias[fileIndex].url;
+                  }
+
+                  // Download media file.
+                  console.log("Downloading " + media.name + " from " + url + "...");
+                  fetch(url, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const stream = () => response.body;
+                    const name = media.name;
+                    ctrl.enqueue({name, stream});
+                    numQueued++;
+                    if (numQueued >= medias.length) {
+                      ctrl.close();
+                    }
+                  });
+                }
+                fileIndex++;
+              }
+            }
+          });
+          if (window.WritableStream && readableZipStream.pipeTo) {
+            readableZipStream.pipeTo(fileStream);
           } else {
-            //page._progress.error("Error launching algorithm!");
+            const writer = fileStream.getWriter();
+            const reader = readableZipStream.getReader();
+            const pump = () => reader.read()
+              .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+            pump();
           }
-          return response.json();
         })
-        .then(data => console.log(data));
       });
 
       this._files.addEventListener("rename", evt => {

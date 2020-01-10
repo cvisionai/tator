@@ -87,14 +87,11 @@ class JobResult(Enum):
     FINISHED = 'finished'
     FAILED = 'failed'
 
-class JobStatus(Enum):
-    QUEUED = 'queued'
-    STARTED = 'started'
+class JobStatus(Enum): # Keeping for migration compatiblity
+    pass
 
-class JobChannel(Enum):
-    """These correspond to availabe channel URLs
-    """
-    PACKAGER = 'packager'
+class JobChannel(Enum): # Keeping for migration compatiblity
+    pass
 
 class Permission(Enum):
     VIEW_ONLY = 'r'
@@ -638,19 +635,6 @@ def geopos_type_save(sender, instance, **kwargs):
 def ProjectBasedFileLocation(instance, filename):
     return os.path.join(f"{instance.project.id}", filename)
 
-class Package(Model):
-    name = CharField(max_length=128)
-    description = CharField(max_length=256, null=True, blank=True)
-    file = FileField(ProjectBasedFileLocation)
-    use_originals = BooleanField()
-    creator = ForeignKey(User, on_delete=PROTECT)
-    created = DateTimeField()
-    project = ForeignKey(Project, on_delete=CASCADE)
-
-@receiver(pre_delete, sender=Package)
-def package_delete(sender, instance, **kwargs):
-    instance.file.delete(False)
-
 class JobCluster(Model):
     name = CharField(max_length=128)
     owner = ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
@@ -697,18 +681,6 @@ class AlgorithmResult(Model):
 
     def __str__(self):
         return f"{self.algorithm.name}, {self.result}, started {self.started}"
-
-class Job(Model):
-    name = CharField(max_length=128)
-    project = ForeignKey(Project, on_delete=CASCADE)
-    channel = EnumField(JobChannel)
-    message = JSONField()
-    submitted = DateTimeField(auto_now_add=True)
-    updated = DateTimeField()
-    group_id = CharField(max_length=36, null=True, blank=True)
-    run_uid = CharField(max_length=36, null=True, blank=True)
-    pod_name = CharField(max_length=256, null=True, blank=True)
-    status = EnumField(JobStatus)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

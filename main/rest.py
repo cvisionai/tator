@@ -66,12 +66,8 @@ from .models import EntityTypeTreeLeaf
 from .models import EntityTypeMediaVideo
 from .models import type_to_obj
 from .models import TreeLeaf
-from .models import Package
 from .models import Algorithm
 from .models import AlgorithmResult
-from .models import Job
-from .models import JobStatus
-from .models import JobChannel
 from .models import Permission
 from .models import Membership
 from .models import Project
@@ -103,7 +99,6 @@ from .serializers import EntityTypeStateSerializer
 from .serializers import EntityTypeStateAttrSerializer
 from .serializers import EntityTypeTreeLeafAttrSerializer
 from .serializers import TreeLeafSerializer
-from .serializers import PackageSerializer
 from .serializers import AlgorithmSerializer
 from .serializers import AlgorithmResultSerializer
 from .serializers import LocalizationAssociationSerializer
@@ -3047,129 +3042,6 @@ class SaveImageAPI(APIView):
                 info_path = os.path.splitext(upload_path)[0] + '.info'
                 if os.path.exists(info_path):
                     os.remove(info_path)
-            return response;
-
-class PackageListAPI(ListAPIView):
-    serializer_class = PackageSerializer
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-    ])
-    permission_classes = [ProjectViewOnlyPermission]
-
-    def get_queryset(self):
-        project_id = self.kwargs['project']
-        qs = Package.objects.filter(project__id=project_id)
-        return qs
-
-class PackageDetailAPI(RetrieveUpdateDestroyAPIView):
-    serializer_class = PackageSerializer
-    queryset = Package.objects.all()
-    permission_classes = [ProjectEditPermission]
-
-class PackageCreateAPI(APIView):
-    """
-    Start a package job.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-        coreapi.Field(name='package_name',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Name of the package.')),
-        coreapi.Field(name='package_desc',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='Description of the package.')),
-        coreapi.Field(name='use_originals',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='Set to true to use original files (if available).')),
-        coreapi.Field(name='annotations',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='Set to true to download annotations rather than media.')),
-        coreapi.Field(name='media_query',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Query string used to filter media IDs.')),
-    ])
-    permission_classes = [ProjectTransferPermission]
-
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
-
-        try:
-            entityType=None
-            reqObject=request.data;
-
-            ## Check for required fields first
-            if 'package_name' not in reqObject:
-                raise Exception('Missing required field in request object "package_name"')
-
-            if 'media_query' not in reqObject:
-                raise Exception('Missing required field in request object "media_query"')
-
-            project_id = self.kwargs['project']
-            media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
-            media_ids = ','.join([str(media_id) for media_id in media_ids])
-            package_name = reqObject['package_name']
-            package_desc = reqObject.get('package_desc', '')
-            use_originals = reqObject.get('use_originals', False)
-            annotations = reqObject.get('annotations', False)
-
-            # Generate a UID for the job.
-            group_id = str(uuid1())
-            run_uid = str(uuid1())
-            job = Job.objects.create(
-                name = package_name,
-                project = Project.objects.get(pk=project_id),
-                channel = JobChannel.PACKAGER,
-                message = {
-                    'type': 'start',
-                    'user_id': request.user.pk,
-                    'project_id': project_id,
-                    'media_list': media_ids,
-                    'package_name': package_name,
-                    'package_desc': package_desc,
-                    'use_originals': use_originals,
-                    'annotations': annotations,
-                    'group_id': group_id,
-                    'run_uid': run_uid,
-                },
-                updated = datetime.datetime.now(datetime.timezone.utc),
-                status=JobStatus.QUEUED,
-                group_id=group_id,
-                run_uid=run_uid,
-            )
-            job.save()
-
-            # Send out a progress message indicating this job is queued.
-            prog = ProgressProducer(
-                'download',
-                project_id,
-                group_id,
-                run_uid,
-                package_name,
-                self.request.user
-            )
-            prog.queued("Download queued...")
-
-            response = Response({'message': f"Package {package_name} started successfully!"},
-                                status=status.HTTP_201_CREATED)
-
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
             return response;
 
 class AlgorithmListAPI(ListAPIView):
