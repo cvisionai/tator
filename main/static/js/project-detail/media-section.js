@@ -228,8 +228,41 @@ class MediaSection extends TatorElement {
                     ctrl.enqueue({name, stream});
                   });
 
+                  // Download localizations
+                  const p1 = fetch("/rest/LocalizationTypes/" + projectId + "?media_id=" + media.id, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const clone = response.clone();
+                    const stream = () => response.body;
+                    const name = basename + "__localization_types.json";
+                    ctrl.enqueue({name, stream});
+                    return clone.json();
+                  })
+                  .then(locTypes => {
+                    const promises = [];
+                    for (const locType of locTypes) {
+                      const typeId = locType.type.id;
+                      const locName = locType.type.name.toLowerCase();
+                      const params = "?media_id=" + media.id + "&type=" + typeId;
+                      promises.push(fetch("/rest/Localizations/" + projectId + params, {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: headers,
+                      })
+                      .then(response => {
+                        const stream = () => response.body;
+                        const name = basename + "__localizations__" + locName + ".json";
+                        ctrl.enqueue({name, stream});
+                      }));
+                    }
+                    return Promise.all(promises);
+                  });
+
                   // Add to number of queued.
-                  Promise.all([p0/*, p1*/])
+                  Promise.all([p0, p1])
                   .then(() => {
                     numQueued++;
                     if (numQueued >= medias.length) {
