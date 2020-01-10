@@ -87,6 +87,12 @@ class JobResult(Enum):
     FINISHED = 'finished'
     FAILED = 'failed'
 
+class JobStatus(Enum): # Keeping for migration compatiblity
+    pass
+
+class JobChannel(Enum): # Keeping for migration compatiblity
+    pass
+
 class Permission(Enum):
     VIEW_ONLY = 'r'
     CAN_EDIT = 'w'
