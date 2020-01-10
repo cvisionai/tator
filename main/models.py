@@ -331,7 +331,10 @@ class EntityMediaVideo(EntityMediaBase):
                             "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
+                                  "resolution": <vertical pixel count, e.g. 720>
                                   # Example: 'video/mp4; codecs="avc1.64001e"'
+                                  # Only relevant for straming files, will assume
+                                  # example above if not present.
                                   ["codec-mime": <mime for MSE decode>]
                                   ["description": <description other than codec>]}
 
@@ -347,7 +350,7 @@ class EntityMediaVideo(EntityMediaBase):
     height=IntegerField(null=True)
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
                                  blank=True)
-    media_files = JsonField(null=True, blank=True)
+    media_files = JSONField(null=True, blank=True)
 
 @receiver(post_save, sender=EntityMediaVideo)
 def video_save(sender, instance, created, **kwargs):
