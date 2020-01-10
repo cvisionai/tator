@@ -202,30 +202,60 @@ class MediaSection extends TatorElement {
         .then(medias => {
           let fileIndex = 0;
           let numQueued = 0;
+          const headers = {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          };
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
           const readableZipStream = new ZIP({
             async pull(ctrl) {
               if (fileIndex < medias.length) {
                 const media = medias[fileIndex];
-                console.log("Gonna download " + media.url + "...");
-                fetch(medias[fileIndex].url, {
-                  method: "GET",
-                  credentials: "same-origin",
-                  headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                  },
-                })
-                .then(response => {
-                  const stream = () => response.body;
-                  const name = media.name;
-                  ctrl.enqueue({name, stream});
-                  numQueued++;
-                  if (numQueued >= medias.length) {
-                    ctrl.close();
-                  }
-                });
+                if (evt.detail.annotations) {
+                  console.log("Downloading metadata for " + media.name + "...");
+                  const basename = media.name.replace(/\.[^/.]+$/, "");
+
+                  // Download media metadata
+                  const p0 = fetch("/rest/EntityMedia/" + media.id, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const stream = () => response.body;
+                    const name = basename + "__media.json";
+                    ctrl.enqueue({name, stream});
+                  });
+
+                  // Add to number of queued.
+                  Promise.all([p0/*, p1*/])
+                  .then(() => {
+                    numQueued++;
+                    if (numQueued >= medias.length) {
+                      ctrl.close();
+                    }
+                  });
+
+                } else {
+
+                  // Download media file
+                  console.log("Downloading " + media.name + " from " + media.url + "...");
+                  fetch(medias[fileIndex].url, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: headers,
+                  })
+                  .then(response => {
+                    const stream = () => response.body;
+                    const name = media.name;
+                    ctrl.enqueue({name, stream});
+                    numQueued++;
+                    if (numQueued >= medias.length) {
+                      ctrl.close();
+                    }
+                  });
+                }
                 fileIndex++;
               }
             }
