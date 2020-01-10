@@ -333,9 +333,17 @@ class MediaSection extends TatorElement {
 
                 } else {
 
-                  // Download media file
-                  console.log("Downloading " + media.name + " from " + media.url + "...");
-                  fetch(medias[fileIndex].url, {
+                  // Download original file if available.
+                  let url;
+                  if (medias[fileIndex].original_url) {
+                    url = medias[fileIndex].original_url;
+                  } else {
+                    url = medias[fileIndex].url;
+                  }
+
+                  // Download media file.
+                  console.log("Downloading " + media.name + " from " + url + "...");
+                  fetch(url, {
                     method: "GET",
                     credentials: "same-origin",
                     headers: headers,
@@ -364,35 +372,6 @@ class MediaSection extends TatorElement {
             pump();
           }
         })
-        /*
-        const projectId = this.getAttribute("project-id");
-        fetch("/rest/PackageCreate/" + projectId, {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            "package_name": this._sectionName,
-            "media_query": this._sectionFilter(),
-            "use_originals": true,
-            "annotations": evt.detail.annotations,
-          }),
-        })
-        .then(response => {
-          const page = document.querySelector("project-detail");
-          if (response.status == 201) {
-            page._progress.enableDownloads();
-            page._progress.notify("Creating zip file!", true);
-          } else {
-            //page._progress.error("Error launching algorithm!");
-          }
-          return response.json();
-        })
-        .then(data => console.log(data));
-        */
       });
 
       this._files.addEventListener("rename", evt => {
