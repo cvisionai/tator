@@ -354,13 +354,17 @@ endef
 $(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
 
 
+USE_MIN_JS=$(shell cat tator_online/settings.py | grep USE_MIN_JS | grep True | wc -l)
+ifeq ($(USE_MIN_JS),1)
 min-js:
-	if kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from tator_online.settings import USE_MIN_JS;import sys;sys.exit(0) if USE_MIN_JS else sys.exit(1)'; then 
-	mkdir -p $(OUTDIR)
-	rm $(OUTDIR)/tator.min.js
+	@echo "Building min-js file, because USE_MIN_JS is true"
+	rm -f $(OUTDIR)/tator.min.js
 	mkdir -p .min_js
 	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator.min.js;)
-	fi
+else
+min-js:
+	@echo "Skipping min-js, because USE_MIN_JS is false"
+endif
 
 migrate:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
