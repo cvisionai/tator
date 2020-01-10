@@ -279,16 +279,18 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
     def get_media_files(self, obj):
         if obj.media_files != None:
             media_files = {}
+            logger.info(f"INFO = {obj.media_files}")
             if 'archival' in obj.media_files:
                 media_files['archival'] = []
-                for media_def in media_files['archival']:
+                for media_def in obj.media_files['archival']:
                     media_def['path'] = self.context['view'].request.build_absolute_uri(media_def['path'])
                     media_files['archival'].append(media_def)
             if 'streaming' in obj.media_files:
                 media_files['streaming'] = []
-                for media_def in media_files['streaming']:
+                for media_def in obj.media_files['streaming']:
                     media_def['path'] = self.context['view'].request.build_absolute_uri(media_def['path'])
                     media_files['streaming'].append(media_def)
+            return media_files
         else:
             return None
     class Meta:

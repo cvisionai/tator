@@ -1403,6 +1403,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
                 new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
                 new_selections += f', NULLIF(CONCAT(\'{root_url}\',"main_entitymediavideo"."original"),\'{root_url}\') AS original_url'
+                new_selections += f', "main_entitymediavideo"."media_files" AS media_files'
                 original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
 
                 #Add new joins
@@ -2097,6 +2098,13 @@ class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
                         patch_attributes(new_attrs, localization)
 
                 del request.data['attributes']
+            if 'media_files' in request.data:
+                # TODO: for now just pass through, eventually check URL
+                media_object = EntityMediaBase.objects.get(pk=self.kwargs['pk'])
+                media_object.media_files = request.data['media_files']
+                media_object.save()
+                logger.info(f"Media files = {media_object.media_files}")
+
             if bool(request.data):
                 super().patch(request, **kwargs)
         except PermissionDenied as err:
@@ -2829,7 +2837,7 @@ class SaveVideoAPI(APIView):
             media_base = os.path.relpath(save_paths['thumbnail_gif'], settings.MEDIA_ROOT)
             with open(upload_paths['thumbnail_gif'], 'rb') as f:
                 media_obj.thumbnail_gif.save(media_base, f, save=False)
-            
+
             # Save the raw file.
             if media_type.keep_original == True:
                 shutil.copyfile(upload_paths['original'], save_paths['original'])
