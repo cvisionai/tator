@@ -189,6 +189,59 @@ class MediaSection extends TatorElement {
 
       this._files.addEventListener("download", evt => {
         const projectId = this.getAttribute("project-id");
+        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter(), {
+          method: "GET",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+        })
+        .then(response => response.json())
+        .then(medias => {
+          let fileIndex = 0;
+          let numQueued = 0;
+          const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+          const readableZipStream = new ZIP({
+            async pull(ctrl) {
+              if (fileIndex < medias.length) {
+                const media = medias[fileIndex];
+                console.log("Gonna download " + media.url + "...");
+                fetch(medias[fileIndex].url, {
+                  method: "GET",
+                  credentials: "same-origin",
+                  headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                  },
+                })
+                .then(response => {
+                  const stream = () => response.body;
+                  const name = media.name;
+                  ctrl.enqueue({name, stream});
+                  numQueued++;
+                  if (numQueued >= medias.length) {
+                    ctrl.close();
+                  }
+                });
+                fileIndex++;
+              }
+            }
+          });
+          if (window.WritableStream && readableZipStream.pipeTo) {
+            readableZipStream.pipeTo(fileStream);
+          } else {
+            const writer = fileStream.getWriter();
+            const reader = readableZipStream.getReader();
+            const pump = () => reader.read()
+              .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+            pump();
+          }
+        })
+        /*
+        const projectId = this.getAttribute("project-id");
         fetch("/rest/PackageCreate/" + projectId, {
           method: "POST",
           credentials: "same-origin",
@@ -215,6 +268,7 @@ class MediaSection extends TatorElement {
           return response.json();
         })
         .then(data => console.log(data));
+        */
       });
 
       this._files.addEventListener("rename", evt => {
