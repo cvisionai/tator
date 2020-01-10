@@ -5,12 +5,6 @@
 {{- $daphneSettings := dict "Values" .Values "name" "daphne-deployment" "app" "daphne" "selector" "webServer: \"yes\""  "command" "[daphne]" "args" "[\"-b\", \"0.0.0.0\", \"-p\", \"8001\", \"tator_online.asgi:application\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $daphneSettings }}
 ---
-{{- $packagerSettings := dict "Values" .Values "name" "packager-deployment" "app" "packager" "selector" "cpuWorker: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"runworker\", \"packager\"]" "init" "[echo]" "replicas" "1" }}
-{{include "tator.template" $packagerSettings }}
----
-{{- $submitterSettings := dict "Values" .Values "name" "submitter-deployment" "app" "submitter" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"submitjobs\"]" "init" "[echo]" "replicas" "1" }}
-{{include "tator.template" $submitterSettings }}
----
 {{- $prunerSettings := dict "Values" .Values "name" "pruner-deployment" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $prunerSettings }}
 ---
