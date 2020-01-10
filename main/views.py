@@ -124,9 +124,14 @@ class AuthProjectView(View):
                 return HttpResponse(status=403)
 
         filename = os.path.basename(original_url)
-        project_id = os.path.basename(os.path.dirname(original_url))
+
         project = None
         try:
+            comps = original_url.split('/')
+            #logger.info(f"COMPONENTS = {comps}")
+            project_id = comps[2]
+            if project_id.isdigit() is False:
+                project_id = comps[3]
             project = Project.objects.get(pk=project_id)
             authorized = validate_project(user, project)
         except Exception as e:
