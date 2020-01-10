@@ -156,11 +156,37 @@ class SectionFiles extends TatorElement {
     if ("id" in media) {
       card.sections = this._sections;
       card.setAttribute("media-id", media.id);
-      if (media.original_url) {
-        card.setAttribute("media-url", media.original_url);
-      } else {
-        card.setAttribute("media-url", media.url);
+      let url;
+      var media_files = media.media_files;
+      if (media_files)
+      {
+        var hostname = window.location.protocol + "//" + window.location.hostname;
+        if (media_files.archival)
+        {
+          url = hostname + media_files.archival[0].path;
+        }
+        else if (media_files.streaming)
+        {
+          url = hostname + media_files.streaming[0].path;
+        }
+        else
+        {
+          console.error(`Can't find suitable download for ${media.name}`)
+        }
       }
+      else
+      {
+        // TODO: Remove this                                                                                                                    
+        // Deprecated behavior                                                                                                                  
+        if (media.original_url) {
+          url = media.original_url;
+        } else {
+          url = media.url;
+        }
+      }
+
+      card.setAttribute("media-url", url);
+
       if (media.video_thumbnail) {
         card.setAttribute("thumb", media.video_thumbnail);
       } else if (media.image_thumbnail) {
