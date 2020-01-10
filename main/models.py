@@ -314,9 +314,30 @@ def image_delete(sender, instance, **kwargs):
     instance.thumbnail.delete(False)
 
 class EntityMediaVideo(EntityMediaBase):
+    """
+    Fields:
+
+    original: Originally uploaded file. Users cannot interact with it except
+              by downloading it.
+              .. deprecated :: Use media_files object
+    segment_info: File for segment files to support MSE playback.
+                  .. deprecated :: Use meda_files instead
+    media_files: Dictionary to contain a map of all files for this media.
+                 The schema looks like this:
+
+                 .. code-block ::
+
+                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                     video_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>,
+                                  # Example: 'video/mp4; codecs="avc1.64001e"'
+                                  ["codec-mime": <mime for MSE decode>]
+                                  ["description": <description other than codec>]}
+
+
+    """
     original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    """ Originally uploaded file. Users cannot interact with it except
-        by downloading it. """
     thumbnail = ImageField()
     thumbnail_gif = ImageField()
     num_frames = IntegerField(null=True)
@@ -326,7 +347,7 @@ class EntityMediaVideo(EntityMediaBase):
     height=IntegerField(null=True)
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
                                  blank=True)
-    """ Segment info file to support MSE-based playback """
+    media_files = JsonField(null=True, blank=True)
 
 @receiver(post_save, sender=EntityMediaVideo)
 def video_save(sender, instance, created, **kwargs):
