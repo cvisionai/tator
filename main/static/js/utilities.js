@@ -15,7 +15,7 @@ class Utilities
   {
     // Download original file if available.
     let url;
-    let http_authentication;
+    let http_authorization;
     let hostname;
     let path;
     var media_files = media_element.media_files;
@@ -24,13 +24,13 @@ class Utilities
       if (media_files.archival)
       {
         path = media_files.archival[0].path;
-        http_authentication = media_files.archival[0].http_auth;
+        http_authorization = media_files.archival[0].http_auth;
         hostname = media_files.archival[0].host;
       }
       else if (media_files.streaming)
       {
         path = media_files.streaming[0].path;
-        http_authentication = media_files.archival[1].http_auth;
+        http_authorization = media_files.archival[1].http_auth;
         hostname = media_files.archival[0].host;
       }
       else
@@ -77,7 +77,7 @@ class Utilities
       {
         // Don't leak CSRF or session to cross-domain resources
         let crossOriginHeaders = {};
-        if (http_authentication)
+        if (http_authorization)
         {
           crossOriginHeaders["authorization"] = http_authorization;
         }
