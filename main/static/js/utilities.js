@@ -79,7 +79,7 @@ class Utilities
         let crossOriginHeaders = {};
         if (http_authorization)
         {
-          crossOriginHeaders["authorization"] = http_authorization;
+          crossOriginHeaders["Authorization"] = http_authorization;
         }
         request = new Request(url,
                               {method: "GET",
