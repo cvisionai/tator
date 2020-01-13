@@ -10,6 +10,94 @@ function getCookie(name) {
 
 class Utilities
 {
+  // Get the download request object
+  static getDownloadRequest(media_element, session_headers)
+  {
+    // Download original file if available.
+    let url;
+    let http_authentication;
+    let hostname;
+    let path;
+    var media_files = medias[fileIndex].media_files;
+    if (media_files)
+    {
+      if (media_files.archival)
+      {
+        path = media_files.archival[0].path;
+        http_authentication = media_files.archival[0].http_auth;
+      }
+      else if (media_files.streaming)
+      {
+        path = media_files.streaming[0].path;
+        http_authentication = media_files.archival[1].http_auth;
+      }
+      else
+      {
+        let fname = medias[fileIndex].name;
+        console.error(`Can't find suitable download for ${fname}`)
+      }
+    }
+    else
+    {
+      // TODO: Remove this
+      // Deprecated behavior
+      if (medias[fileIndex].original_url) {
+        url = medias[fileIndex].original_url;
+      } else {
+        url = medias[fileIndex].url;
+      }
+    }
+
+    // We either have a url set (old way) or a path and potentially host
+    // and http_auth
+    
+    let request;
+    if (url == undefined)
+    {
+      let sameOrigin = false;
+      // Default to self if hostname
+      if (hostname == undefined)
+      {
+        hostname = window.location.protocol + "//" + window.location.hostname;
+        sameOrigin = true;
+      }
+      url = hostname + "/" + path;
+      
+      if (sameOrigin == true)
+      {
+        request = Request(url,
+                          {method: "GET",
+                           credentials: "same-origin",
+                           headers: session_headers
+                          });
+      }
+      else
+      {
+        // Don't leak CSRF or session to cross-domain resources
+        let crossOriginHeaders = {};
+        if (http_authentication)
+        {
+          crossOriginHeaders["authorization"] = http_authorization;
+        }
+        request = Request(url,
+                          {method: "GET",
+                           headers: crossOriginHeaders
+                          });
+      }
+    }
+    else
+    {
+      // Deprecated behavior
+      request = Request(url,
+                        {method: "GET",
+                         credentials: "same-origin",
+                         headers: headers
+                        });
+    }
+    
+    return request;
+  }
+  
   // Returns a promise with the clients IP
   static getClientIP()
   {
