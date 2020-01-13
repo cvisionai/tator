@@ -25,11 +25,13 @@ class Utilities
       {
         path = media_files.archival[0].path;
         http_authentication = media_files.archival[0].http_auth;
+        hostname = media_files.archival[0].host;
       }
       else if (media_files.streaming)
       {
         path = media_files.streaming[0].path;
         http_authentication = media_files.archival[1].http_auth;
+        hostname = media_files.archival[0].host;
       }
       else
       {
@@ -65,11 +67,11 @@ class Utilities
       
       if (sameOrigin == true)
       {
-        request = Request(url,
-                          {method: "GET",
-                           credentials: "same-origin",
-                           headers: session_headers
-                          });
+        request = new Request(url,
+                              {method: "GET",
+                               credentials: "same-origin",
+                               headers: session_headers
+                              });
       }
       else
       {
@@ -79,20 +81,20 @@ class Utilities
         {
           crossOriginHeaders["authorization"] = http_authorization;
         }
-        request = Request(url,
-                          {method: "GET",
-                           headers: crossOriginHeaders
-                          });
+        request = new Request(url,
+                              {method: "GET",
+                               headers: crossOriginHeaders
+                              });
       }
     }
     else
     {
       // Deprecated behavior
-      request = Request(url,
-                        {method: "GET",
-                         credentials: "same-origin",
-                         headers: headers
-                        });
+      request = new Request(url,
+                            {method: "GET",
+                             credentials: "same-origin",
+                             headers: session_headers
+                            });
     }
     
     return request;
