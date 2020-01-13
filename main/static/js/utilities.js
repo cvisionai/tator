@@ -18,7 +18,7 @@ class Utilities
     let http_authentication;
     let hostname;
     let path;
-    var media_files = medias[fileIndex].media_files;
+    var media_files = media_element.media_files;
     if (media_files)
     {
       if (media_files.archival)
@@ -33,7 +33,7 @@ class Utilities
       }
       else
       {
-        let fname = medias[fileIndex].name;
+        let fname = media_element.name;
         console.error(`Can't find suitable download for ${fname}`)
       }
     }
@@ -41,10 +41,10 @@ class Utilities
     {
       // TODO: Remove this
       // Deprecated behavior
-      if (medias[fileIndex].original_url) {
-        url = medias[fileIndex].original_url;
+      if (media_element.original_url) {
+        url = media_element.original_url;
       } else {
-        url = medias[fileIndex].url;
+        url = media_element.url;
       }
     }
 
