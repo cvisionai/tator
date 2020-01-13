@@ -333,7 +333,7 @@ class MediaSection extends TatorElement {
 
                 } else {
 
-                  request = Utilities.getDownloadRequest(media, headers);
+                  var request = Utilities.getDownloadRequest(media, headers);
 
                   // Download media file.
                   console.log("Downloading " + media.name + " from " + url + "...");
