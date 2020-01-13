@@ -319,9 +319,13 @@ class EntityMediaVideo(EntityMediaBase):
 
     original: Originally uploaded file. Users cannot interact with it except
               by downloading it.
+
               .. deprecated :: Use media_files object
+
     segment_info: File for segment files to support MSE playback.
+
                   .. deprecated :: Use meda_files instead
+
     media_files: Dictionary to contain a map of all files for this media.
                  The schema looks like this:
 
@@ -332,11 +336,30 @@ class EntityMediaVideo(EntityMediaBase):
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
                                   "resolution": <vertical pixel count, e.g. 720>
-                                  # Example: 'video/mp4; codecs="avc1.64001e"'
+
+
+                                  ###################
+                                  # Optional Fields #
+                                  ###################
+
+                                  # Path to the segments.json file for streaming files.
+                                  # not expected/required for archival. Required for
+                                  # MSE playback with seek support for streaming files.
+                                  segment_info = <path_to_json>
+
+                                  # If supplied will use this instead of currently
+                                  # connected host. e.g. https://example.com
+                                  "host": <host url>
+                                  # If specified will be used for HTTP authorization
+                                  # in the request for media. I.e. "bearer <token>"
+                                  "http_auth": <http auth header>
+
+                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
                                   # Only relevant for straming files, will assume
                                   # example above if not present.
-                                  ["codec-mime": <mime for MSE decode>]
-                                  ["description": <description other than codec>]}
+                                  "codec-mime": <mime for MSE decode>
+
+                                  "description": <description other than codec>}
 
 
     """
