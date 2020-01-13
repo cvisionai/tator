@@ -119,8 +119,9 @@ class AuthProjectView(View):
                 (user,token) = TokenAuthentication().authenticate(request)
             except Exception as e:
                 msg = "*Security Alert:* "
-                msg += f"Bad credentials presented for '{original_url}'"
+                msg += f"Bad credentials presented for '{original_url}' ({user})"
                 Notify.notify_admin_msg(msg)
+                logger.warn(msg)
                 return HttpResponse(status=403)
 
         filename = os.path.basename(original_url)
@@ -128,7 +129,6 @@ class AuthProjectView(View):
         project = None
         try:
             comps = original_url.split('/')
-            #logger.info(f"COMPONENTS = {comps}")
             project_id = comps[2]
             if project_id.isdigit() is False:
                 project_id = comps[3]
