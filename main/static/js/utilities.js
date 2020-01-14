@@ -76,20 +76,14 @@ class Utilities
       else
       {
         // Don't leak CSRF or session to cross-domain resources
-        let crossOriginHeaders = {};
-        if (http_authorization)
-        {
-          crossOriginHeaders["Authorization"] = http_authorization;
-        }
         request = new Request(url,
-                              {method: "GET",
-                               headers: crossOriginHeaders
-                              });
+                              {method: "GET"});
+        request.headers = {"Authorization" : http_authorization};
       }
     }
     else
     {
-      // Deprecated behavior
+      // Deprecated behavior (this is the same host)
       request = new Request(url,
                             {method: "GET",
                              credentials: "same-origin",
