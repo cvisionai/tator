@@ -198,11 +198,6 @@ class MediaCard extends TatorElement {
     }
   }
 
-  set media(val)
-  {
-    this._more.media = val;
-  }
-
   set permission(val) {
     if (!hasPermission(val, "Can Edit")) {
       this._more.style.display = "none";

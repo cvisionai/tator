@@ -157,9 +157,6 @@ class SectionFiles extends TatorElement {
       card.sections = this._sections;
       card.setAttribute("media-id", media.id);
 
-      // Send the whole media object over
-      card.media = media;
-
       // TODO: clean up this as we can send the whole object over
       // to reduct the amount of code here
       if (media.video_thumbnail) {
