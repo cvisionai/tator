@@ -98,7 +98,7 @@ class MediaMore extends TatorElement {
     switch (name) {
       case "media":
         let request = Utilities.getDownloadRequest(newValue);
-        this._download.setAttribute("request", request);
+        this._download.request = request;
         break;
       case "name":
         this._download.setAttribute("name", newValue);
