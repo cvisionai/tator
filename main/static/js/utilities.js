@@ -64,7 +64,7 @@ class Utilities
         sameOrigin = true;
       }
       url = hostname + "/" + path;
-      
+
       if (sameOrigin == true)
       {
         request = new Request(url,
@@ -75,10 +75,14 @@ class Utilities
       }
       else
       {
+        let cross_origin = new Headers();
+        cross_origin.append("Authorization", http_authorization);
         // Don't leak CSRF or session to cross-domain resources
         request = new Request(url,
-                              {method: "GET"});
-        request.headers = {"Authorization" : http_authorization};
+                              {method: "GET",
+                               credentials: "omit",
+                               headers: cross_origin
+                              });
       }
     }
     else
