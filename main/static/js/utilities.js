@@ -81,8 +81,7 @@ class Utilities
         request = new Request(url,
                               {method: "GET",
                                credentials: "omit",
-                               headers: cross_origin,
-                               mode: "no-cors"
+                               headers: cross_origin
                               });
       }
     }
