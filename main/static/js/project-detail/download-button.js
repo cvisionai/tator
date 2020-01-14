@@ -22,10 +22,30 @@ class DownloadButton extends TatorElement {
     this._button.appendChild(this._span);
 
     this._button.addEventListener("click", () => {
-
       if (this.request)
       {
-        fetch(this.request);
+        const name = this.getAttribute("name");
+        const fileStream = streamSaver.createWriteStream(name);
+        fetch(this.request)
+          .then(res  => {
+            // https://github.com/jimmywarting/StreamSaver.js/blob/master/examples/fetch.html
+            const readableStream = res.body;
+
+            if (window.WritableStream && readableStream.pipeTo) {
+              return readableStream.pipeTo(fileStream)
+                .then(() => console.log('done writing'))
+            }
+
+            window.writer = fileStream.getWriter()
+
+            const reader = res.body.getReader()
+            const pump = () => reader.read()
+                  .then(res => res.done
+                        ? writer.close()
+                        : writer.write(res.value).then(pump))
+
+            pump()
+          });
       }
       else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");
