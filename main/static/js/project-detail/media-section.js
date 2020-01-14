@@ -315,7 +315,7 @@ class MediaSection extends TatorElement {
                       })
                       .then(response => {
                         const stream = () => response.body;
-                        const name = basename + "__" + entityName + "__" + stateName + ".json";
+                        const name = basename + "__" + entityName + "__" + stateName + ".csv";
                         ctrl.enqueue({name, stream});
                       }));
                     }
