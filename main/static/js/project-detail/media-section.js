@@ -301,7 +301,7 @@ class MediaSection extends TatorElement {
                       } else if (assoc == "Frame") {
                         entityName = "events";
                       }
-                      const params = "?media_id=" + media.id + "&type=" + typeId;
+                      const params = "?media_id=" + media.id;
                       promises.push(fetch("/rest/EntityStates/" + projectId + params, {
                         method: "GET",
                         credentials: "same-origin",
