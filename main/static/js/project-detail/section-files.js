@@ -158,7 +158,7 @@ class SectionFiles extends TatorElement {
       card.setAttribute("media-id", media.id);
 
       // Send the whole media object over
-      card.setAttribute("media", media);
+      card.media = media;
 
       // TODO: clean up this as we can send the whole object over
       // to reduct the amount of code here

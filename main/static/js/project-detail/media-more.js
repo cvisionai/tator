@@ -91,15 +91,16 @@ class MediaMore extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["media", "name", "processing"];
+    return ["name", "processing"];
   }
 
+  set media(val)
+  {
+    let request = Utilities.getDownloadRequest(val);
+    this._download.request = request;
+  }
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
-      case "media":
-        let request = Utilities.getDownloadRequest(newValue);
-        this._download.request = request;
-        break;
       case "name":
         this._download.setAttribute("name", newValue);
         break;
