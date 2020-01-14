@@ -22,7 +22,12 @@ class DownloadButton extends TatorElement {
     this._button.appendChild(this._span);
 
     this._button.addEventListener("click", () => {
-      if (this.hasAttribute("url") && this.hasAttribute("name")) {
+
+      if (this.hasAttribute("request"))
+      {
+        fetch(request);
+      }
+      else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");
         link.style.display = "none";
         link.setAttribute("href", this.getAttribute("url"));
@@ -35,7 +40,7 @@ class DownloadButton extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["text", "url", "name"];
+    return ["text", "url", "name", "request"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
