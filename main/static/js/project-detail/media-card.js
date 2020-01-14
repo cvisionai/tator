@@ -152,7 +152,7 @@ class MediaCard extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["thumb", "thumb-gif", "name", "media-url", "processing"];
+    return ["thumb", "thumb-gif", "name", "processing"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -188,9 +188,6 @@ class MediaCard extends TatorElement {
         this._description.setAttribute("extension", ext.toUpperCase());
         this._more.setAttribute("name", newValue);
         break;
-      case "media-url":
-        this._more.setAttribute("media-url", newValue);
-        break;
       case "processing":
         if (newValue === null) {
           this._more.removeAttribute("processing");
@@ -222,6 +219,7 @@ class MediaCard extends TatorElement {
 
   set media(val) {
     this._media = val;
+    this._more.media = val;
     var uri = encodeURI(`/${val.project}/annotation/${val.id}${this._mediaFilter()}`);
     this._link.setAttribute("href", uri);
   }

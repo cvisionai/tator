@@ -333,43 +333,11 @@ class MediaSection extends TatorElement {
 
                 } else {
 
-                  // Download original file if available.
-                  let url;
-                  var media_files = medias[fileIndex].media_files;
-                  if (media_files)
-                  {
-                    var hostname = window.location.protocol + "//" + window.location.hostname;
-                    if (media_files.archival)
-                    {
-                      url = hostname + media_files.archival[0].path;
-                    }
-                    else if (media_files.streaming)
-                    {
-                      url = hostname + media_files.streaming[0].path;
-                    }
-                    else
-                    {
-                      console.error(`Can't find suitable download for ${medias[fileIndex].name}`)
-                    }
-                  }
-                  else
-                  {
-                    // TODO: Remove this
-                    // Deprecated behavior
-                    if (medias[fileIndex].original_url) {
-                      url = medias[fileIndex].original_url;
-                    } else {
-                      url = medias[fileIndex].url;
-                    }
-                  }
+                  let request = Utilities.getDownloadRequest(media, headers);
 
                   // Download media file.
-                  console.log("Downloading " + media.name + " from " + url + "...");
-                  fetch(url, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
+                  console.log("Downloading " + media.name + " from " + request.url + "...");
+                  fetch(request)
                   .then(response => {
                     const stream = () => response.body;
                     const name = media.name;

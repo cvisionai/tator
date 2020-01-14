@@ -279,7 +279,6 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
     def get_media_files(self, obj):
         if obj.media_files != None:
             media_files = {}
-            logger.info(f"INFO = {obj.media_files}")
             if 'archival' in obj.media_files:
                 media_files['archival'] = []
                 for media_def in obj.media_files['archival']:
