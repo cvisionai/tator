@@ -219,6 +219,7 @@ class MediaCard extends TatorElement {
 
   set media(val) {
     this._media = val;
+    this._more.media = val;
     var uri = encodeURI(`/${val.project}/annotation/${val.id}${this._mediaFilter()}`);
     this._link.setAttribute("href", uri);
   }
