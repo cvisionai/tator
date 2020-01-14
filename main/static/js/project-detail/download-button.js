@@ -25,7 +25,7 @@ class DownloadButton extends TatorElement {
 
       if (this.hasAttribute("request"))
       {
-        fetch(request);
+        fetch(this.getAttribute("request"));
       }
       else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");
