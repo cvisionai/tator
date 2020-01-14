@@ -189,7 +189,11 @@ class MediaSection extends TatorElement {
 
       this._files.addEventListener("download", evt => {
         const projectId = this.getAttribute("project-id");
-        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter(), {
+        let mediaFilter = "";
+        if (evt.detail.mediaIds) {
+          mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        }
+        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter() + mediaFilter, {
           method: "GET",
           credentials: "same-origin",
           headers: {
