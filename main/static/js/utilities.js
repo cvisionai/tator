@@ -63,7 +63,7 @@ class Utilities
         hostname = window.location.protocol + "//" + window.location.hostname;
         sameOrigin = true;
       }
-      url = hostname + "/" + path;
+      url = hostname + path;
 
       if (sameOrigin == true)
       {
