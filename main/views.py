@@ -203,7 +203,10 @@ def ErrorNotifierView(request, code,message,details=None):
         if details:
             Notify.notify_admin_file(msg, msg + '\n' + details)
         else:
-            Notify.notify_admin_msg(msg)
+            if code == 404 and isinstance(request.user, AnonymousUser):
+                logger.warn(msg)
+            else:
+                Notify.notify_admin_msg(msg)
 
     return response
 
