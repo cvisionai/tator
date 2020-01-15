@@ -1637,7 +1637,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                         type_object=EntityTypeState.objects.get(pk=filterType)
                         if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
                             for idx,el in enumerate(responseData):
-                                mediaEl=EntityMediaBase.objects.get(pk=el['association']['media'][0])
+                                mediaEl=EntityMediaBase.objects.get(pk=el['association']['media'])
                                 endFrame=0
                                 if idx + 1 < len(responseData):
                                     next_element=responseData[idx+1]
