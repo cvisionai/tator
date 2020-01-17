@@ -52,7 +52,7 @@ git clone https://github.com/cvisionai/tator.git
 cd tator
 ```
 
-## Real Secrets
+## Values file
 
 * Copy the example values.yaml.
 
