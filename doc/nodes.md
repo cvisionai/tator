@@ -43,9 +43,8 @@ sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09
 
 ```
 sudo usermod -aG docker $USER
-sudo reboot
 ```
-
+* Restart terminal or reboot to update groups
 * Log in to dockerhub
 
 ```
