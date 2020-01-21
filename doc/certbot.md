@@ -24,9 +24,10 @@ sudo apt-get install certbot python-certbot-nginx
 sudo certbot -d <domain> --manual --preferred-challenges dns certonly
 ```
 
-* ‘Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>’ displays
+* ï¿½Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>ï¿½ displays
 * Open a new browser window and enter the following into the address bar:
-    * https://www.duckdns.org/update?domains=<domain_name_only>&token=<your_token_value>&txt=<DNS_TXT_value>
+    * Your token can be found on the duckdns.org account page
+    * https://www.duckdns.org/update?domains=<sub_domain_only>&token=<your_token_value>&txt=<DNS_TXT_value>
     * OK should appear in your browser
 * Navigate back to the terminal, hit enter
 * Certificate has been issued. Note the location of the certificate files.
