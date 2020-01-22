@@ -9,8 +9,8 @@ To build Tator you will need Helm 3 somewhere on your path.
 * Download and extract helm:
 
 ```
-wget https://get.helm.sh/helm-v3.0.0-beta.5-linux-amd64.tar.gz
-tar xzvf helm-v3.0.0-beta.5-linux-amd64.tar.gz
+wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
+tar xzvf helm-v3.0.2-linux-amd64.tar.gz
 ```
 
 * Add the executable to your PATH in bashrc:

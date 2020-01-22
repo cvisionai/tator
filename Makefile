@@ -358,6 +358,7 @@ USE_MIN_JS=$(shell cat tator_online/settings.py | grep USE_MIN_JS | grep True | 
 ifeq ($(USE_MIN_JS),1)
 min-js:
 	@echo "Building min-js file, because USE_MIN_JS is true"
+	mkdir -p $(OUTDIR)
 	rm -f $(OUTDIR)/tator.min.js
 	mkdir -p .min_js
 	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator.min.js;)
