@@ -1489,7 +1489,8 @@ class AnnotationCanvas extends TatorElement
     {
       frame = track.association.segments[0][0];
     }
-    this.gotoFrame(frame).then(() => {
+
+    let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
       this._data._dataByType.forEach((value, key, map) => {
@@ -1500,13 +1501,23 @@ class AnnotationCanvas extends TatorElement
               const firstFrame = localization.frame == frame;
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
+                this._activeTrack = track;
                 return;
               }
             }
           }
         }
       });
-    });
+    };
+
+    if (frame != this.currentFrame())
+    {
+      this.gotoFrame(frame).then(trackSelectFunctor);
+    }
+    else
+    {
+      trackSelectFunctor();
+    }
   }
 
   emphasizeMultiLocalizations(listOfLocalizations, muteOthers)
@@ -2326,6 +2337,30 @@ class AnnotationCanvas extends TatorElement
         this._mouseMode = MouseMode.QUERY;
       } else {
         this.selectLocalization(this.activeLocalization);
+      }
+    }
+    if (this._activeTrack)
+    {
+      let numSegments = this._activeTrack.association.segments.length;
+      let trackStillValid = false;
+      let currentFrame = this.currentFrame();
+      for (let idx = 0; idx < numSegments; idx++)
+      {
+        if (currentFrame >= this._activeTrack.association.segments[idx][0] &&
+            currentFrame <= this._activeTrack.association.segments[idx][1])
+        {
+          trackStillValid = true;
+          break;
+        }
+      }
+
+      if (trackStillValid)
+      {
+        this.selectTrack(this._activeTrack, currentFrame);
+      }
+      else
+      {
+        this._activeTrack = null;
       }
     }
   }
