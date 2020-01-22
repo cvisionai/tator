@@ -1371,6 +1371,7 @@ class AnnotationCanvas extends TatorElement
           clearTimeout(this._animator);
         }
         this.activeLocalization = null;
+        this._activeTrack = null;
         this.refresh();
         this._mouseMode = MouseMode.QUERY;
       }
