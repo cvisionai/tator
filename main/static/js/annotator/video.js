@@ -1071,7 +1071,9 @@ class VideoCanvas extends AnnotationCanvas {
 	  var newFrame=this._dispFrame-1;
 	  if (newFrame >= 0)
 	  {
-	    this.seekFrame(newFrame, this.drawFrame);
+	    this.seekFrame(newFrame, this.drawFrame).then(() => {
+      this._pauseCb.forEach(cb => {cb();});
+      });
 	  }
   }
 
@@ -1080,7 +1082,9 @@ class VideoCanvas extends AnnotationCanvas {
 	  var newFrame=this._dispFrame+1;
 	  if (newFrame < this._numFrames)
 	  {
-	    this.seekFrame(newFrame, this.drawFrame);
+	    this.seekFrame(newFrame, this.drawFrame).then(() => {
+        this._pauseCb.forEach(cb => {cb();});
+      });
 	  }
   }
 

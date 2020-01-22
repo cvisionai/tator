@@ -344,7 +344,14 @@ class AnnotationPage extends TatorPage {
           canvas.selectNone();
         });
         this._browser.addEventListener("frameChange", evt => {
-          canvas.goToFrame(evt.detail.frame);
+          if ('track' in evt.detail)
+          {
+            canvas.selectTrack(evt.detail.track, evt.detail.frame);
+          }
+          else
+          {
+            canvas.goToFrame(evt.detail.frame);
+          }
         });
         this._saves = {};
 

@@ -303,8 +303,8 @@ class AnnotationPlayer extends TatorElement {
     this._video.selectLocalization(loc);
   }
 
-  selectTrack(track) {
-    this._video.selectTrack(track);
+  selectTrack(track, frameHint) {
+    this._video.selectTrack(track, frameHint);
   }
 
   safeMode() {

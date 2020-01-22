@@ -1371,6 +1371,7 @@ class AnnotationCanvas extends TatorElement
           clearTimeout(this._animator);
         }
         this.activeLocalization = null;
+        this._activeTrack = null;
         this.refresh();
         this._mouseMode = MouseMode.QUERY;
       }
@@ -1482,10 +1483,15 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
-  selectTrack(track)
+  selectTrack(track, frameHint)
   {
-    const frame = track.association.segments[0][0];
-    this.gotoFrame(frame).then(() => {
+    let frame = frameHint;
+    if (frame == undefined)
+    {
+      frame = track.association.segments[0][0];
+    }
+
+    let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
       this._data._dataByType.forEach((value, key, map) => {
@@ -1496,13 +1502,23 @@ class AnnotationCanvas extends TatorElement
               const firstFrame = localization.frame == frame;
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
+                this._activeTrack = track;
                 return;
               }
             }
           }
         }
       });
-    });
+    };
+
+    if (frame != this.currentFrame())
+    {
+      this.gotoFrame(frame).then(trackSelectFunctor);
+    }
+    else
+    {
+      trackSelectFunctor();
+    }
   }
 
   emphasizeMultiLocalizations(listOfLocalizations, muteOthers)
@@ -2248,10 +2264,19 @@ class AnnotationCanvas extends TatorElement
           var drawColor = color.BLUE;
           var meta = this.getObjectDescription(localization).type;
           var trackColor = null;
+          var alpha = annotation_alpha;
+
           if (localization.id in this._data._trackDb)
           {
-            trackColor = this._data._trackDb[localization.id].association.color;
-
+            if (this._activeTrack && this._activeTrack.association.localizations.includes(localization.id))
+            {
+              alpha = 1.0*255;
+              trackColor = "FFFFFF";
+            }
+            else
+            {
+              trackColor = this._data._trackDb[localization.id].association.color;
+            }
             if (trackColor)
             {
               drawColor = color.hexToRgb(trackColor);
@@ -2275,17 +2300,17 @@ class AnnotationCanvas extends TatorElement
           if (type=='box')
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
-            drawContext.drawPolygon(poly, localization.color, width, annotation_alpha);
+            drawContext.drawPolygon(poly, localization.color, width, alpha);
           }
           else if (type == 'line')
           {
             var line = this.localizationToLine(localization, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, width, annotation_alpha);
+            drawContext.drawLine(line[0], line[1], localization.color, width, alpha);
           }
           else if (type == 'dot')
           {
             var line = this.localizationToDot(localization, defaultDotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, defaultDotWidth, annotation_alpha);
+            drawContext.drawLine(line[0], line[1], localization.color, defaultDotWidth, alpha);
           }
           else
           {
@@ -2322,6 +2347,48 @@ class AnnotationCanvas extends TatorElement
         this._mouseMode = MouseMode.QUERY;
       } else {
         this.selectLocalization(this.activeLocalization);
+      }
+    }
+    if (this._activeTrack)
+    {
+      let numSegments = this._activeTrack.association.segments.length;
+      let trackStillValid = false;
+      let currentFrame = this.currentFrame();
+      let minFrame = Number.MAX_SAFE_INTEGER;
+      let maxFrame = 0;
+      for (let idx = 0; idx < numSegments; idx++)
+      {
+        let segStart = this._activeTrack.association.segments[idx][0];
+        let segEnd = this._activeTrack.association.segments[idx][1];
+        if (segStart < minFrame)
+        {
+          minFrame = segStart;
+        }
+        if (segEnd > maxFrame)
+        {
+          maxFrame = segEnd;
+        }
+        if (currentFrame >= segStart &&
+            currentFrame <= segEnd)
+        {
+          trackStillValid = true;
+          break;
+        }
+      }
+
+      // Don't de-select the track if it is non-continious
+      if (currentFrame >= minFrame && currentFrame <= maxFrame)
+      {
+        trackStillValid = true;
+      }
+
+      if (trackStillValid)
+      {
+        this.selectTrack(this._activeTrack, currentFrame);
+      }
+      else
+      {
+        this._activeTrack = null;
       }
     }
   }
