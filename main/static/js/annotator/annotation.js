@@ -2354,14 +2354,32 @@ class AnnotationCanvas extends TatorElement
       let numSegments = this._activeTrack.association.segments.length;
       let trackStillValid = false;
       let currentFrame = this.currentFrame();
+      let minFrame = Number.MAX_SAFE_INTEGER;
+      let maxFrame = 0;
       for (let idx = 0; idx < numSegments; idx++)
       {
-        if (currentFrame >= this._activeTrack.association.segments[idx][0] &&
-            currentFrame <= this._activeTrack.association.segments[idx][1])
+        let segStart = this._activeTrack.association.segments[idx][0];
+        let segEnd = this._activeTrack.association.segments[idx][1];
+        if (segStart < minFrame)
+        {
+          minFrame = segStart;
+        }
+        if (segEnd > maxFrame)
+        {
+          maxFrame = segEnd;
+        }
+        if (currentFrame >= segStart &&
+            currentFrame <= segEnd)
         {
           trackStillValid = true;
           break;
         }
+      }
+
+      // Don't de-select the track if it is non-continious
+      if (currentFrame >= minFrame && currentFrame <= maxFrame)
+      {
+        trackStillValid = true;
       }
 
       if (trackStillValid)
