@@ -69,7 +69,7 @@ helm install nfs-server-provisioner stable/nfs-server-provisioner -f nfs-config.
 
 ### Test the provisioner
 
-Create a pvc with the following spec:
+Create a file called nfs-test.yaml with the following spec:
 
 ```
 kind: PersistentVolumeClaim
@@ -82,6 +82,11 @@ spec:
   resources:
     requests:
       storage: 1Mi
+```
+then apply it:
+
+```
+kubectl apply -f nfs-test.yaml
 ```
 
 then check that the PVC has the status of `Bound`:
