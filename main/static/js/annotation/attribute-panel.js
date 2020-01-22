@@ -42,7 +42,8 @@ class AttributePanel extends TatorElement {
       this._slider.addEventListener("input", () => {
         if (this._emitChanges) {
           this.dispatchEvent(new CustomEvent("frameChange", {
-            detail: {frame: this._frames[this._slider.value]},
+            detail: {frame: this._frames[this._slider.value],
+                     track: this._track},
             composed: true
           }));
         }
@@ -110,7 +111,14 @@ class AttributePanel extends TatorElement {
   }
 
   setValues(values) {
+    // Skip resetting slider if we already display this track
+    if (this._track && this._track.id == values.id)
+    {
+      return;
+    }
+
     this._emitChanges = false;
+    this._track = values;
     if (this._slider) {
       this._frames = [];
       for (const [start, end] of values.association.segments) {

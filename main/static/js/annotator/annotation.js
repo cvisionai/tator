@@ -1482,9 +1482,13 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
-  selectTrack(track)
+  selectTrack(track, frameHint)
   {
-    const frame = track.association.segments[0][0];
+    let frame = frameHint;
+    if (frame == undefined)
+    {
+      frame = track.association.segments[0][0];
+    }
     this.gotoFrame(frame).then(() => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
