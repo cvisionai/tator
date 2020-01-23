@@ -152,6 +152,15 @@ class TatorTranscode(JobManagerMixin):
         # Define each task in the pipeline.
         download_task = {
             'name': 'download',
+            'retryStrategy': {
+                'limit': 3,
+                'retryOn': "Always",
+                'backoff': {
+                    'duration': 1,
+                    'factor': 2,
+                    'maxDuration': "1m",
+                },
+            },
             'container': {
                 'image': 'byrnedo/alpine-curl:0.1.8',
                 'imagePullPolicy': 'IfNotPresent',
@@ -170,7 +179,7 @@ class TatorTranscode(JobManagerMixin):
             },
         }
         transcode_task = {
-            'name': 'transcode',
+            'name': 'transcode',    
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
