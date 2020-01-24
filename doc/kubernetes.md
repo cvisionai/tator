@@ -14,6 +14,7 @@ deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update
 apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
+apt-mark hold kubelet kubectl kubeadm kubernetes-cni
 sysctl net.bridge.bridge-nf-call-iptables=1
 exit
 sudo iptables -P FORWARD ACCEPT
@@ -24,6 +25,7 @@ sudo iptables -P FORWARD ACCEPT
 * If something goes wrong during Kubernetes cluster setup, you can reset each of your nodes with the following commands:
 
 ```
+sudo apt-mark unhold kubelet kubectl kubeadm kubernetes-cni
 sudo kubeadm reset
 sudo apt-get purge kubeadm kubectl kubelet kubernetes-cni kube*   
 sudo apt-get autoremove  
