@@ -4,7 +4,6 @@ from django.utils.http import urlencode
 from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
-from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models.expressions import Subquery,OuterRef,Func
 from django.db.models import Q
@@ -67,7 +66,6 @@ from .models import EntityTypeMediaVideo
 from .models import type_to_obj
 from .models import TreeLeaf
 from .models import Algorithm
-from .models import AlgorithmResult
 from .models import Permission
 from .models import Membership
 from .models import Project
@@ -100,7 +98,6 @@ from .serializers import EntityTypeStateAttrSerializer
 from .serializers import EntityTypeTreeLeafAttrSerializer
 from .serializers import TreeLeafSerializer
 from .serializers import AlgorithmSerializer
-from .serializers import AlgorithmResultSerializer
 from .serializers import LocalizationAssociationSerializer
 from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
@@ -3173,23 +3170,6 @@ class AlgorithmLaunchAPI(APIView):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
-
-class AlgorithmResultListAPI(ListAPIView):
-    serializer_class = AlgorithmResultSerializer
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')
-        ),
-    ])
-    permission_classes = [ProjectViewOnlyPermission]
-
-    def get_queryset(self):
-        project_id = self.kwargs['project']
-        algorithms = Algorithm.objects.filter(project__id=project_id)
-        qs = AlgorithmResult.objects.filter(algorithm__in=algorithms)
-        return qs
 
 class JobDetailAPI(APIView):
     """

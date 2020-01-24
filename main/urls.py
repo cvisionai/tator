@@ -37,7 +37,6 @@ from .rest import ProgressAPI;
 from .rest import TranscodeAPI;
 from .rest import AlgorithmListAPI;
 from .rest import AlgorithmLaunchAPI;
-from .rest import AlgorithmResultListAPI;
 from .rest import JobDetailAPI
 from .rest import JobGroupDetailAPI
 from .rest import MembershipListAPI;
@@ -155,10 +154,6 @@ urlpatterns += [
     path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),
-    ),
-    path(
-        'rest/AlgorithmResults/<int:project>',
-        AlgorithmResultListAPI.as_view(),
     ),
     path(
         'rest/Job/<str:run_uid>',

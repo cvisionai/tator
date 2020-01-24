@@ -714,20 +714,6 @@ class Algorithm(Model):
     def __str__(self):
         return self.name
 
-class AlgorithmResult(Model):
-    algorithm = ForeignKey(Algorithm, on_delete=CASCADE)
-    user = ForeignKey(User, on_delete=CASCADE)
-    media = ManyToManyField(EntityMediaBase)
-    started = DateTimeField()
-    stopped = DateTimeField()
-    result = EnumField(JobResult)
-    message = CharField(max_length=128)
-    setup_log = FileField(null=True, blank=True)
-    algorithm_log = FileField(null=True, blank=True)
-    teardown_log = FileField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.algorithm.name}, {self.result}, started {self.started}"
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
