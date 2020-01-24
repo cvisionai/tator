@@ -714,6 +714,12 @@ class Algorithm(Model):
     def __str__(self):
         return self.name
 
+class Version(Model):
+    name = CharField(max_length=128)
+    description = CharField(max_length=1024)
+    number = PositiveIntegerField()
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

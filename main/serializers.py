@@ -497,7 +497,7 @@ class AnalysisHistogramSerializer(serializers.ModelSerializer):
 class Analysis2DSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analysis2D
-        field = ['data_url', 'attribute_x', 'attribute_y', 'plot_type'] + Analysis_baseFields
+        fields = ['data_url', 'attribute_x', 'attribute_y', 'plot_type'] + Analysis_baseFields
 
 class AnalysisSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -507,3 +507,9 @@ class AnalysisSerializer(PolymorphicSerializer):
         AnalysisHistogram : AnalysisHistogramSerializer,
         Analysis2D : Analysis2DSerializer,
     }
+
+class VersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Version
+        fields = ['name', 'description', 'number', 'project', 'media']
+

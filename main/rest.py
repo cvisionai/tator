@@ -72,6 +72,7 @@ from .models import Project
 from .models import AnalysisBase
 from .models import AnalysisCount
 from .models import User
+from .models import Version
 from .models import InterpolationMethods
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
@@ -103,6 +104,7 @@ from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
 from .serializers import AnalysisSerializer
 from .serializers import UserSerializerBasic
+from .serializers import VersionSerializer
 
 from .consumers import ProgressProducer
 
@@ -3441,3 +3443,9 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     serializer_class = UserSerializerBasic
     queryset = User.objects.all()
     permission_classes = [UserPermission]
+
+class VersionAPI(ModelViewSet):
+    """ View or update a version """
+    serializer_class = VersionSerializer
+    queryset = Version.objects.all()
+    permission_classes = [ProjectViewOnlyPermission]
