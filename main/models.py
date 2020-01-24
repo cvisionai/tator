@@ -388,6 +388,13 @@ def video_delete(sender, instance, **kwargs):
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
+class Version(Model):
+    name = CharField(max_length=128)
+    description = CharField(max_length=1024)
+    number = PositiveIntegerField()
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
@@ -395,6 +402,7 @@ class EntityLocalizationBase(EntityBase):
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
                                  null=True,blank=True,
                                  related_name='thumbnail_image')
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
 
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
@@ -530,6 +538,7 @@ class EntityState(EntityBase):
     elements. If a frame is supplied it was collected at that time point.
     """
     association = ForeignKey(AssociationType, on_delete=CASCADE)
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
 
     def selectOnMedia(media_id):
         return AssociationType.states(media_id)
@@ -713,13 +722,6 @@ class Algorithm(Model):
 
     def __str__(self):
         return self.name
-
-class Version(Model):
-    name = CharField(max_length=128)
-    description = CharField(max_length=1024)
-    number = PositiveIntegerField()
-    project = ForeignKey(Project, on_delete=CASCADE)
-    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
