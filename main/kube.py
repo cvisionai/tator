@@ -583,3 +583,5 @@ class TatorAlgorithm(JobManagerMixin):
             body=manifest,
         )
 
+        return response
+

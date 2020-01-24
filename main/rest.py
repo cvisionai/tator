@@ -3137,7 +3137,7 @@ class AlgorithmLaunchAPI(APIView):
                 qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
-                submitter.start_algorithm(
+                response = submitter.start_algorithm(
                     media_ids=batch_str,
                     sections=sections,
                     gid=gid,
