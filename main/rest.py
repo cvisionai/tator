@@ -3448,4 +3448,45 @@ class VersionAPI(ModelViewSet):
     """ View or update a version """
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
-    permission_classes = [ProjectViewOnlyPermission]
+    permission_classes = [ProjectEditPermission]
+
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            name = request.data.get('name', None)
+            description = request.data.get('description', None)
+            media = request.data.get('media', None)
+            project = kwargs['project']
+            
+            if name is None:
+                raise Exception('Missing version name!')
+
+            if media is None:
+                raise Exception('Missing media ID!')
+
+            if project is None:
+                raise Exception('Missing project ID!')
+
+            number = max([obj.number for obj in Version.objects.filter(media=media)]) + 1
+
+            obj = Version(
+                name=name,
+                description=description,
+                number=number,
+                media=EntityMediaBase.objects.get(pk=media),
+                project=Project.objects.get(pk=project),
+            )
+            obj.save()
+
+            response=Response({'id': obj.id},
+                              status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
