@@ -9,6 +9,7 @@ from uuid import uuid1
 from math import sin, cos, sqrt, atan2, radians
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.base import ContentFile
 
 from rest_framework import status
 from rest_framework.test import APITestCase
