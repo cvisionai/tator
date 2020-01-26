@@ -3450,7 +3450,7 @@ class VersionAPI(ModelViewSet):
     queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
 
-    def post(self, request, format=None, **kwargs):
+    def create(self, request, format=None, **kwargs):
         response=Response({})
 
         try:

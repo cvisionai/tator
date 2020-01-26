@@ -246,6 +246,15 @@ def create_test_attribute_types(entity_type, project):
         ),
     }
 
+def create_test_version(name, description, number, project, media):
+    return Version.objects.create(
+        name=name,
+        description=description,
+        number=number,
+        project=project,
+        media=media,
+    )
+
 def random_datetime(start, end):
     """Generate a random datetime between `start` and `end`"""
     return start + datetime.timedelta(
@@ -1617,8 +1626,9 @@ class VersionTestCase(
             uploadable=False,
             keep_original=False,
         )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
-            create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
+            create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
             for idx in range(random.randint(3, 10))
         ]
         self.list_uri = 'Versions'
@@ -1626,7 +1636,10 @@ class VersionTestCase(
         self.create_json = {
             'project': self.project.pk,
             'name': 'version_create_test',
-            'media': self.entities[0].pk,
+            'media': self.media.pk,
             'description': 'asdf',
         }
-        self.edit_permission = Permission.CAN_TRANSFER
+        self.patch_json = {
+            'description': 'asdf123',
+        }
+        self.edit_permission = Permission.CAN_EDIT
