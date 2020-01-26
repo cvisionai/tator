@@ -1560,7 +1560,7 @@ class AnalysisCountTestCase(
             project=self.project,
             name="count_test",
             data_type=self.entity_type,
-            data_filter={'attributes__enum_test': 'enum_val1'},
+            data_query='enum_test:enum_val1',
         )
         self.attribute_type = AttributeTypeEnum.objects.create(
             name='enum_test',
@@ -1574,6 +1574,6 @@ class AnalysisCountTestCase(
             'project': self.project.pk,
             'name': 'count_create_test',
             'data_type': self.entity_type.pk,
-            'data_filter': {'attributes__enum_test': 'enum_val2'},
+            'data_query': 'enum_test:enum_val2',
         }
         self.edit_permission = Permission.FULL_CONTROL
