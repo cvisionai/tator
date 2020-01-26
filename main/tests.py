@@ -75,18 +75,38 @@ def create_test_membership(user, project):
     )
 
 def create_test_algorithm(user, name, project):
-    return Algorithm.objects.create(
+    obj = Algorithm.objects.create(
         name=name,
         project=project,
         user=user,
-        setup=SimpleUploadedFile(name='setup.py', content=b'asdfasdf'),
-        teardown=SimpleUploadedFile(name='teardown.py', content=b'asdfasdf'),
-        image_name='asdf',
-        username='jsnow',
-        password='asdf',
-        needs_gpu=False,
+        files_per_job=1,
+        max_concurrent=1,
     )
+    obj.manifest.save(
+        name='asdf.yaml',
+        content=ContentFile(
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: hello-world-    # name of the workflow spec
+spec:
+  entrypoint: whalesay          # invoke the whalesay template
+  templates:
+  - name: whalesay              # name of the template
+    container:
+      image: docker/whalesay
+      command: [cowsay]
+      args: ["hello world"]
+      resources:                # limit the resources
+        limits:
+          memory: 32Mi
+          cpu: 100m
+""",
+        ),
     )
+    return obj
+
 
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
