@@ -20,7 +20,6 @@ from .models import Project
 from .models import Membership
 from .models import Permission
 from .models import Algorithm
-from .models import AlgorithmResult
 from .models import JobResult
 from .models import EntityTypeMediaVideo
 from .models import EntityTypeMediaImage
@@ -87,18 +86,6 @@ def create_test_algorithm(user, name, project):
         password='asdf',
         needs_gpu=False,
     )
-
-def create_test_algorithm_result(user, name, project, algorithm):
-    return AlgorithmResult.objects.create(
-        algorithm=algorithm,
-        user=user,
-        started=datetime.datetime.now(datetime.timezone.utc),
-        stopped=datetime.datetime.now(datetime.timezone.utc),
-        result=JobResult.FINISHED,
-        message="",
-        setup_log=SimpleUploadedFile(name='setup.log', content=b'asdfasdf'),
-        algorithm_log=SimpleUploadedFile(name='algorithm.log', content=b'asdfasdf'),
-        teardown_log=SimpleUploadedFile(name='teardown.log', content=b'asdfasdf'),
     )
 
 def create_test_image_file():
@@ -920,22 +907,6 @@ class AlgorithmLaunchTestCase(
             'media_ids': '1,2,3',
         }
         self.edit_permission = Permission.CAN_EXECUTE
-
-class AlgorithmResultTestCase(
-        APITestCase,
-        PermissionListMembershipTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.algorithm = create_test_algorithm(self.user, 'algtest', self.project)
-        self.list_uri = 'AlgorithmResults'
-        self.entities = [
-            create_test_algorithm_result(
-                self.user, 'result1', self.project, self.algorithm
-            ) for _ in range(random.randint(6, 10))
-        ]
 
 class AlgorithmTestCase(
         APITestCase,
