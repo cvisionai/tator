@@ -482,7 +482,7 @@ class AnalysisBaseSerializer(serializers.ModelSerializer):
 class AnalysisCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalysisCount
-        fields = ['data_type', 'data_filter'] + Analysis_baseFields
+        fields = ['data_type', 'data_query'] + Analysis_baseFields
 
 class AnalysisPercentageSerializer(serializers.ModelSerializer):
     class Meta:
