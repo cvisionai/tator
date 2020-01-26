@@ -87,8 +87,7 @@ class TatorTranscode(JobManagerMixin):
     """ Interface to kubernetes REST API for starting transcodes.
     """
 
-    @classmethod
-    def setup_kube(cls):
+    def __init__(self):
         """ Intializes the connection. If environment variables for
             remote transcode are defined, connect to that cluster.
         """
@@ -104,12 +103,12 @@ class TatorTranscode(JobManagerMixin):
             conf.verify_ssl = True
             conf.ssl_ca_cert = cert
             api_client = ApiClient(conf)
-            cls.corev1 = CoreV1Api(api_client)
-            cls.custom = CustomObjectsApi(api_client)
+            self.corev1 = CoreV1Api(api_client)
+            self.custom = CustomObjectsApi(api_client)
         else:
             load_incluster_config()
-            cls.corev1 = CoreV1Api()
-            cls.custom = CustomObjectsApi()
+            self.corev1 = CoreV1Api()
+            self.custom = CustomObjectsApi()
 
     def _get_progress_aux(self, job):
         return {'section': job['metadata']['annotations']['section']}
@@ -391,8 +390,6 @@ class TatorTranscode(JobManagerMixin):
             plural='workflows',
             body=manifest,
         )
-
-TatorTranscode.setup_kube()
 
 class TatorAlgorithm(JobManagerMixin):
     """ Interface to kubernetes REST API for starting algorithms.
