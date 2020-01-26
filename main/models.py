@@ -403,6 +403,12 @@ class EntityLocalizationBase(EntityBase):
                                  null=True,blank=True,
                                  related_name='thumbnail_image')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
 
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
