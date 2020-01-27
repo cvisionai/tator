@@ -495,6 +495,13 @@ function updateSection(sectionCounts, sectionFilter) {
 function loadSections() {
   const maxSections = 4;
   let numLoaded = 0;
+
+  // This function gets called multiple times, and section order
+  // may not be known yet.
+  if (self.sectionOrder == undefined || self.sectionOrder == null)
+  {
+    return;
+  }
   for (const sectionName of self.sectionOrder) {
     if (self.sections.has(sectionName)) {
       const section = self.sections.get(sectionName);
