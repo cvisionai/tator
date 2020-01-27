@@ -274,17 +274,20 @@ def swapLatLon():
                 entity.save()
     logger.info("Updating entities...")
 
-def associateExtractions(project, section_name):
-    videos = EntityMediaVideo.objects.filter(attributes__contains={"tator_user_sections": section_name}).filter(project=project)
-    events = FrameAssociation.objects.filter(media__in=videos)
-    for video in progressbar(videos):
-        events = FrameAssociation.objects.filter(media__in=[video.id])
-        for event in events:
-            extracted_name = f"{video.id}_{video.name}_{event.frame}.png"
-            image = EntityMediaImage.objects.filter(project=project,
+def associateExtractions(project, section_names):
+    if type(section_names) == str:
+        section_names=[section_names]
+    for section_name in section_names:
+        videos = EntityMediaVideo.objects.filter(attributes__contains={"tator_user_sections": section_name}).filter(project=project)
+        events = FrameAssociation.objects.filter(media__in=videos)
+        for video in progressbar(videos):
+            events = FrameAssociation.objects.filter(media__in=[video.id])
+            for event in events:
+                extracted_name = f"{video.id}_{video.name}_{event.frame}.png"
+                image = EntityMediaImage.objects.filter(project=project,
                                                     name=extracted_name)
-            if image.count() == 1:
-                event.extracted = image[0]
-                event.save()
-            else:
-                print(f"Couldn't find {extracted_name}")
+                if image.count() == 1:
+                    event.extracted = image[0]
+                    event.save()
+                else:
+                    print(f"Couldn't find {extracted_name}")
