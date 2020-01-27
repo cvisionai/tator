@@ -388,6 +388,13 @@ def video_delete(sender, instance, **kwargs):
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
+class Version(Model):
+    name = CharField(max_length=128)
+    description = CharField(max_length=1024)
+    number = PositiveIntegerField()
+    project = ForeignKey(Project, on_delete=CASCADE)
+    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
@@ -395,6 +402,13 @@ class EntityLocalizationBase(EntityBase):
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
                                  null=True,blank=True,
                                  related_name='thumbnail_image')
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
 
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
@@ -530,6 +544,13 @@ class EntityState(EntityBase):
     elements. If a frame is supplied it was collected at that time point.
     """
     association = ForeignKey(AssociationType, on_delete=CASCADE)
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
 
     def selectOnMedia(media_id):
         return AssociationType.states(media_id)
@@ -713,21 +734,6 @@ class Algorithm(Model):
 
     def __str__(self):
         return self.name
-
-class AlgorithmResult(Model):
-    algorithm = ForeignKey(Algorithm, on_delete=CASCADE)
-    user = ForeignKey(User, on_delete=CASCADE)
-    media = ManyToManyField(EntityMediaBase)
-    started = DateTimeField()
-    stopped = DateTimeField()
-    result = EnumField(JobResult)
-    message = CharField(max_length=128)
-    setup_log = FileField(null=True, blank=True)
-    algorithm_log = FileField(null=True, blank=True)
-    teardown_log = FileField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.algorithm.name}, {self.result}, started {self.started}"
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

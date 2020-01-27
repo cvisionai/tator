@@ -37,7 +37,6 @@ from .rest import ProgressAPI;
 from .rest import TranscodeAPI;
 from .rest import AlgorithmListAPI;
 from .rest import AlgorithmLaunchAPI;
-from .rest import AlgorithmResultListAPI;
 from .rest import JobDetailAPI
 from .rest import JobGroupDetailAPI
 from .rest import MembershipListAPI;
@@ -52,6 +51,7 @@ from .rest import MediaSectionsAPI
 from .rest import SectionAnalysisAPI
 from .rest import SaveVideoAPI
 from .rest import SaveImageAPI
+from .rest import VersionAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -157,10 +157,6 @@ urlpatterns += [
         AlgorithmLaunchAPI.as_view(),
     ),
     path(
-        'rest/AlgorithmResults/<int:project>',
-        AlgorithmResultListAPI.as_view(),
-    ),
-    path(
         'rest/Job/<str:run_uid>',
         JobDetailAPI.as_view(),
     ),
@@ -221,5 +217,20 @@ urlpatterns += [
         'rest/SaveVideo/<int:project>',
         SaveVideoAPI.as_view(),
         name='SaveVideo',
+    ),
+    path(
+        'rest/Versions/<int:project>',
+        VersionAPI.as_view({'get': 'list', 'post': 'create'}),
+        name='Versions',
+    ),
+    path(
+        'rest/Version/<int:pk>',
+        VersionAPI.as_view({
+            'get': 'retrieve',
+            'put': 'update',
+            'patch': 'partial_update',
+            'delete': 'destroy',
+        }),
+        name='Version',
     ),
 ]

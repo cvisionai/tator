@@ -4,7 +4,6 @@ from django.utils.http import urlencode
 from django.db.models import Count
 from django.db.models import Case
 from django.db.models import When
-from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models.expressions import Subquery,OuterRef,Func
 from django.db.models import Q
@@ -67,13 +66,13 @@ from .models import EntityTypeMediaVideo
 from .models import type_to_obj
 from .models import TreeLeaf
 from .models import Algorithm
-from .models import AlgorithmResult
 from .models import Permission
 from .models import Membership
 from .models import Project
 from .models import AnalysisBase
 from .models import AnalysisCount
 from .models import User
+from .models import Version
 from .models import InterpolationMethods
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
@@ -100,12 +99,12 @@ from .serializers import EntityTypeStateAttrSerializer
 from .serializers import EntityTypeTreeLeafAttrSerializer
 from .serializers import TreeLeafSerializer
 from .serializers import AlgorithmSerializer
-from .serializers import AlgorithmResultSerializer
 from .serializers import LocalizationAssociationSerializer
 from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
 from .serializers import AnalysisSerializer
 from .serializers import UserSerializerBasic
+from .serializers import VersionSerializer
 
 from .consumers import ProgressProducer
 
@@ -3140,7 +3139,7 @@ class AlgorithmLaunchAPI(APIView):
                 qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
-                submitter.start_algorithm(
+                response = submitter.start_algorithm(
                     media_ids=batch_str,
                     sections=sections,
                     gid=gid,
@@ -3173,23 +3172,6 @@ class AlgorithmLaunchAPI(APIView):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
-
-class AlgorithmResultListAPI(ListAPIView):
-    serializer_class = AlgorithmResultSerializer
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')
-        ),
-    ])
-    permission_classes = [ProjectViewOnlyPermission]
-
-    def get_queryset(self):
-        project_id = self.kwargs['project']
-        algorithms = Algorithm.objects.filter(project__id=project_id)
-        qs = AlgorithmResult.objects.filter(algorithm__in=algorithms)
-        return qs
 
 class JobDetailAPI(APIView):
     """
@@ -3461,3 +3443,50 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     serializer_class = UserSerializerBasic
     queryset = User.objects.all()
     permission_classes = [UserPermission]
+
+class VersionAPI(ModelViewSet):
+    """ View or update a version """
+    serializer_class = VersionSerializer
+    queryset = Version.objects.all()
+    permission_classes = [ProjectEditPermission]
+
+    def create(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            name = request.data.get('name', None)
+            description = request.data.get('description', None)
+            media = request.data.get('media', None)
+            project = kwargs['project']
+            
+            if name is None:
+                raise Exception('Missing version name!')
+
+            if media is None:
+                raise Exception('Missing media ID!')
+
+            if project is None:
+                raise Exception('Missing project ID!')
+
+            number = max([obj.number for obj in Version.objects.filter(media=media)]) + 1
+
+            obj = Version(
+                name=name,
+                description=description,
+                number=number,
+                media=EntityMediaBase.objects.get(pk=media),
+                project=Project.objects.get(pk=project),
+            )
+            obj.save()
+
+            response=Response({'id': obj.id},
+                              status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;

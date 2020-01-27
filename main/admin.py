@@ -31,15 +31,11 @@ from .models import AttributeTypeDatetime
 from .models import AttributeTypeGeoposition
 from .models import JobCluster
 from .models import Algorithm
-from .models import AlgorithmResult
 from .models import TreeLeaf
 from .models import LocalizationAssociation
 from .models import MediaAssociation
 from .models import FrameAssociation
 from .models import AnalysisCount
-
-class AlgorithmResultAdmin(admin.ModelAdmin):
-    exclude = ('media',)
 
 admin.site.register(Organization)
 admin.site.register(User, UserAdmin)
@@ -67,7 +63,6 @@ admin.site.register(AttributeTypeDatetime)
 admin.site.register(AttributeTypeGeoposition)
 admin.site.register(JobCluster)
 admin.site.register(Algorithm)
-admin.site.register(AlgorithmResult, AlgorithmResultAdmin)
 admin.site.register(TreeLeaf)
 admin.site.register(LocalizationAssociation)
 admin.site.register(MediaAssociation)

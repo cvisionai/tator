@@ -9,6 +9,7 @@ from uuid import uuid1
 from math import sin, cos, sqrt, atan2, radians
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.base import ContentFile
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -20,7 +21,6 @@ from .models import Project
 from .models import Membership
 from .models import Permission
 from .models import Algorithm
-from .models import AlgorithmResult
 from .models import JobResult
 from .models import EntityTypeMediaVideo
 from .models import EntityTypeMediaImage
@@ -46,6 +46,7 @@ from .models import AttributeTypeString
 from .models import AttributeTypeDatetime
 from .models import AttributeTypeGeoposition
 from .models import AnalysisCount
+from .models import Version
 
 from .search import TatorSearch
 
@@ -76,30 +77,38 @@ def create_test_membership(user, project):
     )
 
 def create_test_algorithm(user, name, project):
-    return Algorithm.objects.create(
+    obj = Algorithm.objects.create(
         name=name,
         project=project,
         user=user,
-        setup=SimpleUploadedFile(name='setup.py', content=b'asdfasdf'),
-        teardown=SimpleUploadedFile(name='teardown.py', content=b'asdfasdf'),
-        image_name='asdf',
-        username='jsnow',
-        password='asdf',
-        needs_gpu=False,
+        files_per_job=1,
+        max_concurrent=1,
     )
+    obj.manifest.save(
+        name='asdf.yaml',
+        content=ContentFile(
+"""
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: hello-world-    # name of the workflow spec
+spec:
+  entrypoint: whalesay          # invoke the whalesay template
+  templates:
+  - name: whalesay              # name of the template
+    container:
+      image: docker/whalesay
+      command: [cowsay]
+      args: ["hello world"]
+      resources:                # limit the resources
+        limits:
+          memory: 32Mi
+          cpu: 100m
+""",
+        ),
+    )
+    return obj
 
-def create_test_algorithm_result(user, name, project, algorithm):
-    return AlgorithmResult.objects.create(
-        algorithm=algorithm,
-        user=user,
-        started=datetime.datetime.now(datetime.timezone.utc),
-        stopped=datetime.datetime.now(datetime.timezone.utc),
-        result=JobResult.FINISHED,
-        message="",
-        setup_log=SimpleUploadedFile(name='setup.log', content=b'asdfasdf'),
-        algorithm_log=SimpleUploadedFile(name='algorithm.log', content=b'asdfasdf'),
-        teardown_log=SimpleUploadedFile(name='teardown.log', content=b'asdfasdf'),
-    )
 
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -236,6 +245,15 @@ def create_test_attribute_types(entity_type, project):
             project=project
         ),
     }
+
+def create_test_version(name, description, number, project, media):
+    return Version.objects.create(
+        name=name,
+        description=description,
+        number=number,
+        project=project,
+        media=media,
+    )
 
 def random_datetime(start, end):
     """Generate a random datetime between `start` and `end`"""
@@ -921,22 +939,6 @@ class AlgorithmLaunchTestCase(
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
-class AlgorithmResultTestCase(
-        APITestCase,
-        PermissionListMembershipTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.algorithm = create_test_algorithm(self.user, 'algtest', self.project)
-        self.list_uri = 'AlgorithmResults'
-        self.entities = [
-            create_test_algorithm_result(
-                self.user, 'result1', self.project, self.algorithm
-            ) for _ in range(random.randint(6, 10))
-        ]
-
 class AlgorithmTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
@@ -1589,7 +1591,7 @@ class AnalysisCountTestCase(
             project=self.project,
             name="count_test",
             data_type=self.entity_type,
-            data_filter={'attributes__enum_test': 'enum_val1'},
+            data_query='enum_test:enum_val1',
         )
         self.attribute_type = AttributeTypeEnum.objects.create(
             name='enum_test',
@@ -1603,6 +1605,41 @@ class AnalysisCountTestCase(
             'project': self.project.pk,
             'name': 'count_create_test',
             'data_type': self.entity_type.pk,
-            'data_filter': {'attributes__enum_test': 'enum_val2'},
+            'data_query': 'enum_test:enum_val2',
         }
         self.edit_permission = Permission.FULL_CONTROL
+
+class VersionTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.entities = [
+            create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
+            for idx in range(random.randint(3, 10))
+        ]
+        self.list_uri = 'Versions'
+        self.detail_uri = 'Version'
+        self.create_json = {
+            'project': self.project.pk,
+            'name': 'version_create_test',
+            'media': self.media.pk,
+            'description': 'asdf',
+        }
+        self.patch_json = {
+            'description': 'asdf123',
+        }
+        self.edit_permission = Permission.CAN_EDIT

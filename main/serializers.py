@@ -473,56 +473,6 @@ class AlgorithmSerializer(serializers.ModelSerializer):
         model = Algorithm
         fields = ['name', 'description', 'pk']
 
-class AlgorithmResultSerializer(serializers.ModelSerializer):
-    alg_name = serializers.SerializerMethodField()
-    user_str = serializers.SerializerMethodField()
-    result_str = serializers.SerializerMethodField()
-    setup_log_url = serializers.SerializerMethodField()
-    algorithm_log_url = serializers.SerializerMethodField()
-    teardown_log_url = serializers.SerializerMethodField()
-
-    def get_alg_name(self, obj):
-        return obj.algorithm.name
-
-    def get_user_str(self, obj):
-        return str(obj.user)
-
-    def get_result_str(self, obj):
-        return obj.result.value
-
-    def get_setup_log_url(self, obj):
-        try:
-            return self.context['view'].request.build_absolute_uri(obj.setup_log.url)
-        except ValueError:
-            return ""
-
-    def get_algorithm_log_url(self, obj):
-        try:
-            return self.context['view'].request.build_absolute_uri(obj.algorithm_log.url)
-        except ValueError:
-            return ""
-
-    def get_teardown_log_url(self, obj):
-        try:
-            return self.context['view'].request.build_absolute_uri(obj.teardown_log.url)
-        except ValueError:
-            return ""
-
-    class Meta:
-        model = AlgorithmResult
-        fields = [
-            'alg_name',
-            'result_str',
-            'message',
-            'started',
-            'stopped',
-            'user_str',
-            'setup_log_url',
-            'algorithm_log_url',
-            'teardown_log_url',
-            'pk'
-        ]
-
 Analysis_baseFields=[ 'project', 'name' ]
 class AnalysisBaseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -532,7 +482,7 @@ class AnalysisBaseSerializer(serializers.ModelSerializer):
 class AnalysisCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalysisCount
-        fields = ['data_type', 'data_filter'] + Analysis_baseFields
+        fields = ['data_type', 'data_query'] + Analysis_baseFields
 
 class AnalysisPercentageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -547,7 +497,7 @@ class AnalysisHistogramSerializer(serializers.ModelSerializer):
 class Analysis2DSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analysis2D
-        field = ['data_url', 'attribute_x', 'attribute_y', 'plot_type'] + Analysis_baseFields
+        fields = ['data_url', 'attribute_x', 'attribute_y', 'plot_type'] + Analysis_baseFields
 
 class AnalysisSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -557,3 +507,9 @@ class AnalysisSerializer(PolymorphicSerializer):
         AnalysisHistogram : AnalysisHistogramSerializer,
         Analysis2D : Analysis2DSerializer,
     }
+
+class VersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Version
+        fields = ['name', 'description', 'number', 'project', 'media']
+
