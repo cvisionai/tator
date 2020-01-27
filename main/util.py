@@ -277,13 +277,14 @@ def swapLatLon():
 def associateExtractions(project, section_name):
     videos = EntityMediaVideo.objects.filter(attributes__contains={"tator_user_sections": section_name}).filter(project=project)
     events = FrameAssociation.objects.filter(media__in=videos)
-    for event in progressbar(events):
-        media = event.media.all()[0]
-        extracted_name = f"{media.id}_{media.name}_{event.frame}.png"
-        image = EntityMediaImage.objects.filter(project=project,
-                                                name=extracted_name)
-        if image.count() == 1:
-            event.extracted = image
-            event.save()
-        else:
-            print(f"Couldn't find {extracted_name}")
+    for video in progressbar(videos):
+        events = FrameAssociation.objects.filter(media__in=[video.id])
+        for event in events:
+            extracted_name = f"{video.id}_{video.name}_{event.frame}.png"
+            image = EntityMediaImage.objects.filter(project=project,
+                                                    name=extracted_name)
+            if image.count() == 1:
+                event.extracted = image[0]
+                event.save()
+            else:
+                print(f"Couldn't find {extracted_name}")
