@@ -1579,6 +1579,8 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         if mediaId != None:
             mediaId = list(map(lambda x: int(x), mediaId.split(',')))
             allStates = allStates.filter(association__media__in=mediaId)
+            allStates = allStates.union(EntityState.objects.filter(
+                association__frameassociation__extracted__in=mediaId))
         if filterType != None:
             allStates = allStates.filter(meta=filterType)
         if filterType == None and mediaId == None:
