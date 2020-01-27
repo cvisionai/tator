@@ -220,7 +220,6 @@ class MediaCard extends TatorElement {
   set media(val) {
     this._media = val;
     this._more.media = val;
-    console.log("val=" + JSON.stringify(val));
     let project = val.project;
     if(typeof(val.project) == "undefined") {
       project = val.project_id;
