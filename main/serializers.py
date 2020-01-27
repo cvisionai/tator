@@ -380,7 +380,7 @@ class LocalizationAssociationSerializer(serializers.ModelSerializer):
 class FrameAssociationSerializer(serializers.ModelSerializer):
     class Meta:
         model = FrameAssociation
-        fields = ['id', 'media', 'frame']
+        fields = ['id', 'media', 'frame', 'extracted']
 
 class AssociationSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
@@ -402,7 +402,8 @@ class EntityStateFrameSerializer():
                  "association" :
                  {"frame": datum['frame'],
                   "media": datum['association_media'],
-                  "id": datum['association_id']},
+                  "id": datum['association_id'],
+                  "extracted": datum['extracted']},
                  "attributes": datum['attributes']
                 })
 
