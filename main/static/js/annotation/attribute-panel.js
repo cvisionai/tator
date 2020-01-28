@@ -118,7 +118,14 @@ class AttributePanel extends TatorElement {
     }
 
     this._emitChanges = false;
-    this._track = values;
+
+    // only relevant if we are dealing with objects
+    // with ids
+    if ('id' in values)
+    {
+      this._track = values;
+    }
+    
     if (this._slider) {
       this._frames = [];
       for (const [start, end] of values.association.segments) {
