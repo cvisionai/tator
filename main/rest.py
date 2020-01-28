@@ -100,6 +100,7 @@ from .serializers import EntityTypeTreeLeafAttrSerializer
 from .serializers import TreeLeafSerializer
 from .serializers import AlgorithmSerializer
 from .serializers import LocalizationAssociationSerializer
+from .serializers import FrameAssociationSerializer
 from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
 from .serializers import AnalysisSerializer
@@ -491,10 +492,13 @@ class ProjectPermissionBase(BasePermission):
         # Object is a project
         elif isinstance(obj, Project):
             project = obj
-        elif isinstance(obj, LocalizationAssociation):
+        elif isinstance(obj, FrameAssociation) or isinstance(obj, LocalizationAssociation):
             project = None
-            if obj.entitystate_set.count() > 0:
-                project = obj.entitystate_set.all()[0].project
+            try:
+                parent = EntityState.objects.get(association=obj)
+                project = parent.project
+            except:
+                pass
         return project
 
     def _validate_project(self, request, project):
@@ -2021,6 +2025,41 @@ class LocalizationAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
             if color:
                 associationObject.color = color
 
+            associationObject.save()
+
+        except PermissionDenied as err:
+            raise
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ Modifiy a Frame Association Object
+    """
+    serializer_class = FrameAssociationSerializer
+    queryset = FrameAssociation.objects.all()
+    permission_classes = [ProjectEditPermission]
+
+    def patch(self, request, format=None, **kwargs):
+        response=Response({})
+        try:
+            reqObject=request.data
+            associationObject=FrameAssociation.objects.get(pk=self.kwargs['pk'])
+            self.check_object_permissions(request, associationObject)
+
+            frame = reqObject.get("frame", None)
+            if frame:
+                associationObject.frame = frame
+
+            extracted_id = reqObject.get("extracted", None)
+            if extracted_id:
+                image = EntityMediaImage.objects.get(pk=extracted_id)
+                associationObjecte.extracted = image
             associationObject.save()
 
         except PermissionDenied as err:
