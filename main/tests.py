@@ -94,6 +94,7 @@ metadata:
   generateName: hello-world-    # name of the workflow spec
 spec:
   entrypoint: whalesay          # invoke the whalesay template
+  ttlSecondsAfterFinished: 30
   templates:
   - name: whalesay              # name of the template
     container:
