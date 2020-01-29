@@ -1,9 +1,13 @@
 import logging
 import os
-
+from copy import deepcopy
 from elasticsearch import Elasticsearch
 
 logger = logging.getLogger(__name__)
+
+# Used for duplicate ID storage
+id_bits=448
+id_mask=(1 << id_bits) - 1
 
 class TatorSearch:
     """ Interface for elasticsearch documents.
@@ -91,6 +95,7 @@ class TatorSearch:
         aux = {}
         aux['_meta'] = entity.meta.pk
         aux['_dtype'] = entity.meta.dtype
+        duplicates = []
         if entity.meta.dtype in ['image', 'video']:
             aux['_media_relation'] = 'media'
             aux['tator_media_name'] = entity.name
@@ -111,6 +116,26 @@ class TatorSearch:
                     'name': 'annotation',
                     'parent': media[0].pk,
                 }
+                for media_idx in range(1, media.count()):
+                    duplicate = deepcopy(aux)
+                    duplicate['_media_relation'] = {
+                        'name': 'annotation',
+                        'parent': media[media_idx].pk,
+                        }
+                    duplicates.push(duplicate)
+            try:
+                # If the state has an extracted image, its a
+                # duplicated entry in ES.
+                extracted_image = entity.association.extracted
+                if extracted_image:
+                    duplicate = deepcopy(aux)
+                    duplicate['_media_relation'] = {
+                        'name': 'annotation',
+                        'parent': extracted_image.pk,
+                        }
+                    duplicates.push(duplicate)
+            except:
+                pass
         elif entity.meta.dtype in ['treeleaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
@@ -129,6 +154,26 @@ class TatorSearch:
             refresh=wait,
             routing=1,
         )
+
+        # Load in duplicates, if any
+        for idx,duplicate in enumerate(duplicates):
+            # duplicate_id needs to be unique we use the upper
+            # 8 bits of the id field to indicate which duplicate
+            # it is. This won't create collisions until there are
+            # more than 2^256 elements in the database or more than
+            # 256 duplicates for a given type
+            duplicate_id = entity.pk + ((idx + 1) << id_bits)
+            self.es.index(
+            index=self.index_name(entity.project.pk),
+            body={
+                **entity.attributes,
+                **duplicate,
+            },
+            id = duplicate_id,
+            refresh=wait,
+            routing=1,
+            )
+
 
     def delete_document(self, entity):
         index = self.index_name(entity.project.pk)
