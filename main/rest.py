@@ -1667,13 +1667,15 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         filterType=self.request.query_params.get('type', None)
         try:
             self.validate_attribute_filter(request.query_params)
-            allStates = self.get_queryset()
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            allStates = EntityState.objects.filter(pk__in=annotation_ids).order_by('id')
             if self.operation:
                 if self.operation == 'count':
                     return Response({'count': allStates.count()})
-                elif self.operation.startswith('attribute_count'):
-                    _, attr_name = self.operation.split('::')
-                    return Response(count_by_attribute(allStates, attr_name))
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
@@ -1697,10 +1699,8 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                     logger.info(allStates.query)
                 else:
                     response = EntityStateSerializer(allStates, many=True)
-                if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request.query_params, response.data)
-                else:
-                    responseData=response.data
+                responseData = response.data
+                if request.accepted_renderer.format == 'csv':
                     if filterType:
                         type_object=EntityTypeState.objects.get(pk=filterType)
                         if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
