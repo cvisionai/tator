@@ -1672,7 +1672,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 self.request.query_params,
                 self
             )
-            allStates = EntityState.objects.filter(pk__in=annotation_ids).order_by('id')
+            allStates = EntityState.objects.filter(pk__in=annotation_ids)
             if self.operation:
                 if self.operation == 'count':
                     return Response({'count': allStates.count()})
@@ -1683,6 +1683,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                     type_object = EntityTypeState.objects.get(pk=filterType)
                     if type_object.association == 'Frame':
                         # Add frame association media to SELECT columns (frame is there from frame sort operation)
+                        allStates = allStates.annotate(frame=F('association__frameassociation__frame')).order_by('frame')
                         # This optomization only works for frame-based associations
                         allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
                         response = EntityStateFrameSerializer(allStates)
@@ -1692,12 +1693,15 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                                                        association_segments=F('association__localizationassociation__segments'),
                                                        association_localizations=Array(localquery.values('localizations')),
                                                        association_media=F('association__frameassociation__media'))
+                        allStates = allStates.order_by('id')
                         response = EntityStateLocalizationSerializer(allStates)
                     else:
                         logger.warning("Using generic/slow serializer")
+                        allStates = allStates.order_by('id')
                         response = EntityStateSerializer(allStates, many=True)
                     logger.info(allStates.query)
                 else:
+                    allStates = allStates.order_by('id')
                     response = EntityStateSerializer(allStates, many=True)
                 responseData = response.data
                 if request.accepted_renderer.format == 'csv':
