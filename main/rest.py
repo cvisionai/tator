@@ -1183,7 +1183,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
         for key in ['must_not', 'filter']:
             if len(attr_query['media'][key]) > 0:
                 has_parent = True
-                parent_query['query']['bool'][key] = copy.deepcopy(attr_query['annotation'][key])
+                parent_query['query']['bool'][key] = copy.deepcopy(attr_query['media'][key])
 
         if has_parent:
             parent_query['parent_type'] = 'media'
