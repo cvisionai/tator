@@ -1198,7 +1198,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
             query['query']['bool']['should'] = [
                 {'query_string': {'query': search}},
                 {'has_parent': {
-                        'type': 'media',
+                        'parent_type': 'media',
                         'query': {'query_string': {'query': search}},
                     },
                 },
