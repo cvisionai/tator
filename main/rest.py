@@ -14,6 +14,7 @@ from django.db import connection
 import os
 import shutil
 import datetime
+import copy
 from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
 from django.core.exceptions import ObjectDoesNotExist
@@ -1077,11 +1078,13 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
                 coreapi.Field(name='operation',
                               required=False,
                               location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name\nattribute_ids: Return a list of IDs split by a given attribute name\nadjacent: Return the media IDs that are adjacent to the given id (example: &operation=adjacent::3 finds adjacent media to media ID 3)\nids: Only return a list of IDs\noverview: Return an overview of the media list')),
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements')),
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query_params, query, bools, project):
+def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[]):
+
+    # Construct query for media and annotations
     attr_filter_params = {
         'attribute_eq': query_params.get('attribute', None),
         'attribute_lt': query_params.get('attribute_lt', None),
@@ -1141,33 +1144,66 @@ def get_attribute_query(query_params, query, bools, project):
                             raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
 
     attr_query['media']['filter'] += bools
-    has_child = False
-    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    attr_query['annotation']['filter'] += annotation_bools
+   
+    if is_media:
+        # Construct query for media
+        has_child = False
+        child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
 
-    for key in ['must_not', 'filter']:
-        if len(attr_query['annotation'][key]) > 0:
-            has_child = True
-            child_query['query']['bool'][key] = attr_query['annotation'][key]
+        for key in ['must_not', 'filter']:
+            if len(attr_query['annotation'][key]) > 0:
+                has_child = True
+                child_query['query']['bool'][key] = copy.deepcopy(attr_query['annotation'][key])
 
-    if has_child:
-        child_query['type'] = 'annotation'
-        attr_query['media']['filter'].append({'has_child': child_query})
+        if has_child:
+            child_query['type'] = 'annotation'
+            attr_query['media']['filter'].append({'has_child': child_query})
 
-    for key in ['must_not', 'filter']:
-        if len(attr_query['media'][key]) > 0:
-            query['query']['bool'][key] = attr_query['media'][key]
+        for key in ['must_not', 'filter']:
+            if len(attr_query['media'][key]) > 0:
+                query['query']['bool'][key] = attr_query['media'][key]
 
-    search = query_params.get('search', None)
-    if search != None:
-        query['query']['bool']['should'] = [
-            {'query_string': {'query': search}},
-            {'has_child': {
-                    'type': 'annotation',
-                    'query': {'query_string': {'query': search}},
+        search = query_params.get('search', None)
+        if search != None:
+            query['query']['bool']['should'] = [
+                {'query_string': {'query': search}},
+                {'has_child': {
+                        'type': 'annotation',
+                        'query': {'query_string': {'query': search}},
+                    },
                 },
-            },
-        ]
-        query['query']['bool']['minimum_should_match'] = 1
+            ]
+            query['query']['bool']['minimum_should_match'] = 1
+    else:
+        # Construct query for annotations
+        has_parent = False
+        parent_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+
+        for key in ['must_not', 'filter']:
+            if len(attr_query['media'][key]) > 0:
+                has_parent = True
+                parent_query['query']['bool'][key] = copy.deepcopy(attr_query['annotation'][key])
+
+        if has_parent:
+            parent_query['parent_type'] = 'media'
+            attr_query['annotation']['filter'].append({'has_parent': parent_query})
+
+        for key in ['must_not', 'filter']:
+            if len(attr_query['annotation'][key]) > 0:
+                query['query']['bool'][key] = attr_query['annotation'][key]
+
+        search = query_params.get('search', None)
+        if search != None:
+            query['query']['bool']['should'] = [
+                {'query_string': {'query': search}},
+                {'has_parent': {
+                        'type': 'media',
+                        'query': {'query_string': {'query': search}},
+                    },
+                },
+            ]
+            query['query']['bool']['minimum_should_match'] = 1
 
     return query
 
