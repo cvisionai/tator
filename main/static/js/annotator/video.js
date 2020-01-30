@@ -477,11 +477,9 @@ class MotionComp {
     this._updatesAt = [0,
                        regularSize,
                        regularSize + largeSize];
-    this._targetFPS = 3000 / (this._lengthOfSchedule * this._interval) 
     console.info("Playback schedule = " + this._schedule);
     console.info("Updates @ " + this._updatesAt);
     console.info("Frame Increment = " + this.frameIncrement(videoFps));
-    console.info("Target FPS = " + this._targetFPS);
   }
 
   /// Given an animation idx, return true if it is an update cycle
@@ -493,11 +491,6 @@ class MotionComp {
   frameIncrement(fps)
   {
     return Math.ceil(fps / guiFPS);
-  }
-
-  get targetFPS()
-  {
-    return this._targetFPS;
   }
 }
 class VideoCanvas extends AnnotationCanvas {
@@ -1036,7 +1029,7 @@ class VideoCanvas extends AnnotationCanvas {
         var diagInterval = Date.now()-last;
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
-        var targetFPS = that._motionComp.targetFPS;
+        var targetFPS = Math.min(that._fps * that._playbackRate, guiFPS);
 		    console.info(`FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`);
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;
