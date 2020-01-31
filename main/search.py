@@ -205,20 +205,20 @@ class TatorSearch:
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = [int(obj['_id']) for obj in data]
+            ids = set(int(obj['_id']) & id_mask for obj in data)
             while len(ids) < count:
                 result = self.es.scroll(
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += [int(obj['_id']) for obj in result['hits']['hits']]
+                ids += set(int(obj['_id']) & id_mask for obj in result['hits']['hits'])
             self.es.clear_scroll(scroll_id)
         else:
             result = self.search_raw(project, query)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = [int(obj['_id']) for obj in data]
+            ids = set(int(obj['_id']) & id_mask for obj in data)
         return ids, count
 
     def count(self, project, query):
