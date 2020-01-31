@@ -122,7 +122,7 @@ class TatorSearch:
                         'name': 'annotation',
                         'parent': media[media_idx].pk,
                         }
-                    duplicates.push(duplicate)
+                    duplicates.append(duplicate)
             try:
                 # If the state has an extracted image, its a
                 # duplicated entry in ES.
@@ -133,7 +133,7 @@ class TatorSearch:
                         'name': 'annotation',
                         'parent': extracted_image.pk,
                         }
-                    duplicates.push(duplicate)
+                    duplicates.append(duplicate)
             except:
                 pass
         elif entity.meta.dtype in ['treeleaf']:
