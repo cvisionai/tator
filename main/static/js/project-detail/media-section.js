@@ -327,7 +327,7 @@ class MediaSection extends TatorElement {
                   });
 
                   // Add to number of queued.
-                  Promise.all([p0, p1, p2])
+                  await Promise.all([p0, p1, p2])
                   .then(() => {
                     numQueued++;
                     if (numQueued >= medias.length) {
@@ -341,7 +341,7 @@ class MediaSection extends TatorElement {
 
                   // Download media file.
                   console.log("Downloading " + media.name + " from " + request.url + "...");
-                  fetch(request)
+                  await fetch(request)
                   .then(response => {
                     const stream = () => response.body;
                     const name = media.name;
