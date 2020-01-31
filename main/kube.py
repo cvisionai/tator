@@ -335,7 +335,6 @@ class TatorTranscode(JobManagerMixin):
                     '--name', name,
                     '--section', section,
                 ],
-                'workingDir': '/scripts',
                 'resources': {
                     'limits': {
                         'memory': '32Mi',
