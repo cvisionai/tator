@@ -344,7 +344,7 @@ class MediaSection extends TatorElement {
                       ctrl.close();
                     }
                   });
-                  if (numQueued % 10 == 0) {
+                  if (numQueued % 5 == 0) {
                     await p3;
                   }
 
