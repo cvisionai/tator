@@ -233,7 +233,7 @@ class TatorSearch:
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += set(int(obj['_id']) & id_mask for obj in result['hits']['hits'])
+                ids.union(set(int(obj['_id']) & id_mask for obj in result['hits']['hits']))
             self.es.clear_scroll(scroll_id)
         else:
             result = self.search_raw(project, query)
