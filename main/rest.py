@@ -1407,31 +1407,23 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
     def get(self, request, format=None, **kwargs):
         try:
-            mediaId = request.query_params.get('media_id', None)
-
-            if mediaId is not None:
-                media_el = EntityMediaBase.objects.get(pk=mediaId)
-                if media_el.project.id != self.kwargs['project']:
-                    raise Exception('Media ID not in project')
-
-            entityType = request.query_params.get('type', None)
             self.validate_attribute_filter(request.query_params)
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self,
+            )
             self.request=request
             before=time.time()
-            qs=self.get_queryset()
+            qs = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
             if self.operation:
                 if self.operation == 'count':
                     responseData = {'count': qs.count()}
-                elif self.operation.startswith('attribute_count'):
-                    _, attr_name = self.operation.split('::')
-                    responseData = count_by_attribute(qs, attr_name)
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
                 responseData=FastEntityLocalizationSerializer(qs)
-                if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request.query_params, responseData)
-                else:
+                if request.accepted_renderer.format == 'csv':
                     # CSV creation requires a bit more
                     user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
                     users=list(User.objects.filter(id__in=user_ids).values('id','email'))
@@ -1668,8 +1660,8 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         try:
             self.validate_attribute_filter(request.query_params)
             annotation_ids, annotation_count, _ = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
+                kwargs['project'],
+                request.query_params,
                 self
             )
             allStates = EntityState.objects.filter(pk__in=annotation_ids)
