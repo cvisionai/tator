@@ -107,7 +107,7 @@ _logs:
 #####################################
 .PHONY: status
 status:
-	kubectl get pods -o wide --sort-by="{.spec.nodeName}"
+	kubectl get --watch pods -o wide --sort-by="{.spec.nodeName}"
 
 .ONESHELL:
 
@@ -163,10 +163,10 @@ containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
 	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
 marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_algo_marshal:latest -f $< containers || exit 255
-	docker push $(DOCKERHUB_USER)/tator_algo_marshal:latest
+	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t cvisionai/tator_algo_marshal:latest -f $< containers || exit 255
+	docker push cvisionai/tator_algo_marshal:latest
 	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_algo_marshal)" marshal-image
+	touch -d "$(shell docker inspect -f '{{ .Created }}' cvisionai/tator_algo_marshal)" marshal-image
 
 postgis-image:  containers/postgis/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
