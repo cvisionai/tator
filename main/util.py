@@ -230,35 +230,58 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices(project_number, skip_localizations=False):
+def buildSearchIndices(project_number, sections):
     """ Builds search index for all data.
+        param can be a combination of valid sections in a list
+        or a single string. 'all' will rebuild everything.
+        all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
     """
-    # Create indices
-    logger.info("Building index...")
-    TatorSearch().create_index(project_number)
-    # Create mappings
-    logger.info("Building mappings...")
-    for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
-        TatorSearch().create_mapping(attribute_type)
-    # Create media documents
-    logger.info("Building media documents...")
-    for entity in progressbar(list(EntityMediaBase.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
-    # Create localization documents
-    if skip_localizations:
-        logger.info("Skipping localization documents...")
-    else:
-        logger.info("Building localization documents...")
+    to_process=[]
+    all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
+    if type(sections) == str:
+        if sections == 'all':
+            to_process=all_sections
+        elif sections in all_sections:
+            to_process.append(sections)
+        else:
+            print(f"ERROR: Unknown section {sections}")
+            return
+    elif type(sections) == list:
+        to_process.extend(sections)
+
+    if 'index' in to_process:
+        # Create indices
+        logger.info("Building index...")
+        TatorSearch().create_index(project_number)
+
+    if 'mappings' in to_process:
+        # Create mappings
+        logger.info("Building mappings...")
+        for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(attribute_type)
+
+    if 'media' in to_process:
+        # Create media documents
+        logger.info("Building media documents...")
+        for entity in progressbar(list(EntityMediaBase.objects.filter(project=project_number))):
+            TatorSearch().create_document(entity)
+            # Create localization documents
+    if 'localizations' in to_process:
+        logger.info("Building localization documents")
         for entity in progressbar(list(EntityLocalizationBase.objects.filter(project=project_number))):
             TatorSearch().create_document(entity)
-    # Create state documents
-    logger.info("Building state documents...")
-    for entity in progressbar(list(EntityState.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
-    # Create treeleaf documents
-    logger.info("Building tree leaf documents...")
-    for entity in progressbar(list(TreeLeaf.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
+
+    if 'states' in to_process:
+        # Create state documents
+        logger.info("Building state documents...")
+        for entity in progressbar(list(EntityState.objects.filter(project=project_number))):
+            TatorSearch().create_document(entity)
+
+    if 'treeleaves' in to_process:
+        # Create treeleaf documents
+        logger.info("Building tree leaf documents...")
+        for entity in progressbar(list(TreeLeaf.objects.filter(project=project_number))):
+            TatorSearch().create_document(entity)
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.
