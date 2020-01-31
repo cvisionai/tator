@@ -337,16 +337,13 @@ class MediaSection extends TatorElement {
                   });
 
                   // Add to number of queued.
-                  const p3 = Promise.all([p0, p1, p2])
+                  await Promise.all([p0, p1, p2])
                   .then(() => {
                     numQueued++;
                     if (numQueued >= medias.length) {
                       ctrl.close();
                     }
                   });
-                  if (numQueued % 5 == 0) {
-                    await p3;
-                  }
 
                 } else {
 
