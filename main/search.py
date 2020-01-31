@@ -92,6 +92,22 @@ class TatorSearch:
         )
 
     def create_document(self, entity, wait=False):
+        """ Indicies an element into ES """
+        docs = self.build_document(entity, 'single')
+        for doc in docs:
+            self.es.index(index=self.index_name(entity.project.pk),
+                          id=doc['_id'],
+                          refresh=wait,
+                          routing=1,
+                          **doc['doc'])
+
+
+    def build_document(self, entity, mode='create'):
+        """ Returns a list of documents representing the entity to be
+            used with the es.helpers.bulk functions
+            if mode is 'single', then one can use the 'doc' member
+            as the parameters to the es.index function.
+        """
         aux = {}
         aux['_meta'] = entity.meta.pk
         aux['_dtype'] = entity.meta.dtype
@@ -144,16 +160,23 @@ class TatorSearch:
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
-        self.es.index(
-            index=self.index_name(entity.project.pk),
-            body={
-                **entity.attributes,
-                **aux,
-            },
-            id=entity.pk,
-            refresh=wait,
-            routing=1,
-        )
+
+        corrected_attributes={**entity.attributes}
+        if mode != 'single':
+            for key in corrected_attributes:
+                value=corrected_attributes[key]
+                # Store django lat/lon as a string
+                if type(value) == list:
+                    corrected_attributes[key] = f"{value[0]},{value[1]}"
+        results=[]
+        results.append({
+            '_index':self.index_name(entity.project.pk),
+            '_op_type': mode,
+            'doc': {**corrected_attributes,
+                    **aux},
+            '_id': entity.pk,
+            '_routing': 1,
+        })
 
         # Load in duplicates, if any
         for idx,duplicate in enumerate(duplicates):
@@ -163,16 +186,15 @@ class TatorSearch:
             # more than 2^256 elements in the database or more than
             # 256 duplicates for a given type
             duplicate_id = entity.pk + ((idx + 1) << id_bits)
-            self.es.index(
-            index=self.index_name(entity.project.pk),
-            body={
-                **entity.attributes,
-                **duplicate,
-            },
-            id = duplicate_id,
-            refresh=wait,
-            routing=1,
-            )
+            results.append({
+            '_index':self.index_name(entity.project.pk),
+            '_op_type': mode,
+            'doc': {**corrected_attributes,
+                    **aux},
+            '_id': duplicate_id,
+            '_routing': 1,
+            })
+        return results
 
 
     def delete_document(self, entity):
