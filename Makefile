@@ -328,6 +328,7 @@ FILES = \
     annotation/entity-button.js \
     annotation/media-panel.js \
     annotation/frame-panel.js \
+    annotation/annotation-search.js \
     annotation/entity-browser.js \
     annotation/entity-prev-button.js \
     annotation/entity-next-button.js \
