@@ -17,6 +17,14 @@ class AnnotationSearch extends TatorElement {
         detail: {"query": input.value}
       }));
     });
+
+    input.addEventListener("focus", () => {
+      document.body.classList.add("shortcuts-disabled");
+    });
+
+    input.addEventListener("blur", () => {
+      document.body.classList.remove("shortcuts-disabled");
+    });
   }
 }
 

@@ -42,8 +42,8 @@ class EntityBrowser extends TatorElement {
     searchDiv.setAttribute("class", "annotation__panel-group py-3");
     spacer.appendChild(searchDiv);
 
-    const search = document.createElement("annotation-search");
-    searchDiv.appendChild(search);
+    this._search = document.createElement("annotation-search");
+    searchDiv.appendChild(this._search);
 
     this._ul = document.createElement("ul");
     this._ul.setAttribute("class", "annotation__entities f2");
@@ -197,6 +197,9 @@ class EntityBrowser extends TatorElement {
           }
         }
       }
+    });
+    this._search.addEventListener("filterAnnotations", evt => {
+      this._data.updateType(this._dataType, null, evt.detail.query);
     });
   }
 

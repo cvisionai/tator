@@ -136,15 +136,21 @@ class AnnotationData extends HTMLElement {
     }));
   }
 
-  updateType(typeObj, callback) {
+  updateType(typeObj, callback, query) {
     const typeId = typeObj.type.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
     }
 
+    let url = this._updateUrls.get(typeId);
+    if (query) {
+      url += "&search=";
+      url += query;
+    }
+
     // Fetch new ones from server
-    fetchRetry(this._updateUrls.get(typeId))
+    fetchRetry(url)
     .then(response => {
       if (response.ok) {
         return response.json();
