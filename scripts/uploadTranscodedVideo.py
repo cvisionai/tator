@@ -66,7 +66,7 @@ def get_metadata(path):
     if "nb_frames" in stream:
         num_frames = stream["nb_frames"]
     else:
-        num_frames = int(media_obj.fps * seconds)
+        num_frames = round(fps * seconds)
     width = stream["width"]
     height = stream["height"]
 
