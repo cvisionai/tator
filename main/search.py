@@ -57,6 +57,8 @@ class TatorSearch:
                 'tator_treeleaf_name': {'type': 'text'},
                 '_treeleaf_depth': {'type': 'integer'},
                 '_treeleaf_path': {'type': 'text'},
+                '_annotation_version': {'type': 'integer'},
+                '_modified': {'type': 'boolean'},
             }},
         )
 
@@ -104,6 +106,8 @@ class TatorSearch:
                 'name': 'annotation',
                 'parent': entity.media.pk,
             }
+            aux['_annotation_version'] = entity.version
+            aux['_modified'] = entity.modified
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
@@ -111,6 +115,8 @@ class TatorSearch:
                     'name': 'annotation',
                     'parent': media[0].pk,
                 }
+            aux['_annotation_version'] = entity.version
+            aux['_modified'] = entity.modified
         elif entity.meta.dtype in ['treeleaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
