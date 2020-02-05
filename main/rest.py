@@ -831,7 +831,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[]):
+def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[], modified=None):
 
     # Construct query for media and annotations
     attr_filter_params = {
@@ -953,6 +953,26 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
                 },
             ]
             query['query']['bool']['minimum_should_match'] = 1
+
+        if modified != None:
+            # Get modified + null or not modified + null
+            modified_query = [{
+                'bool': {
+                    'must_not': [{
+                        'exists': {'field': '_modified'},
+                    }],
+                }, 
+            }, {
+                'match': {
+                    '_modified': modified,
+                },
+            }]
+            if search != None:
+                query['query']['bool']['should'] += modified_query
+                query['query']['bool']['minimum_should_match'] += 1
+            else:
+                query['query']['bool']['should'] = modified_query
+                query['query']['bool']['minimum_should_match'] = 1
 
     return query
 
@@ -1280,6 +1300,8 @@ def get_annotation_queryset(project, query_params, attr_filter):
     """
     mediaId = query_params.get('media_id', None)
     filterType = query_params.get('type', None)
+    version = query_params.get('version', None)
+    modified = query_params.get('modified', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
 
@@ -1294,6 +1316,9 @@ def get_annotation_queryset(project, query_params, attr_filter):
     if filterType != None:
         annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
+    if version != None:
+        annotation_bools.append({'match': {'_version': {'query': int(version)}}})
+
     if start != None:
         query['from'] = int(start)
 
@@ -1302,7 +1327,7 @@ def get_annotation_queryset(project, query_params, attr_filter):
 
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
-    query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools)
+    query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools, modified)
 
     annotation_ids, annotation_count = TatorSearch().search(project, query)
 
@@ -1333,6 +1358,14 @@ class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='query',
                               schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
+                coreapi.Field(name='version',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a Version')),
+                coreapi.Field(name='modified',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
             ] + self.attribute_fields()
         if (method=='POST'):
              postOnly_fields = [
@@ -1375,9 +1408,9 @@ class LocalizationList(APIView, AttributeFilterMixin):
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        mediaId=self.request.query_params.get('media_id', None)
-        filterType=self.request.query_params.get('type', None)
-        attribute=self.request.query_params.get('attribute', None)
+        mediaId = self.request.query_params.get('media_id', None)
+        filterType = self.request.query_params.get('type', None)
+        attribute = self.request.query_params.get('attribute', None)
         # Figure out what object we are dealing with
         obj=EntityLocalizationBase
         if filterType != None:
@@ -1598,6 +1631,14 @@ class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='query',
                               schema=coreschema.String(description='A unique integer value identifying an entity type.')),
+                coreapi.Field(name='version',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a Version')),
+                coreapi.Field(name='modified',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
                 coreapi.Field(name='operation',
                               required=False,
                               location='query',
