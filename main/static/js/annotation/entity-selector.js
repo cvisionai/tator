@@ -36,7 +36,7 @@ class EntitySelector extends TatorElement {
 
     this._current = document.createElement("span");
     this._current.setAttribute("class", "px-1 text-gray");
-    this._current.textContent = "0";
+    this._current.textContent = "1";
     summary.appendChild(this._current);
 
     const styleDiv = document.createElement("div");
