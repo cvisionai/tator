@@ -95,12 +95,12 @@ class TatorSearch:
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
         for doc in docs:
-            self.es.index(index=self.index_name(entity.project.pk),
-                          id=doc['_id'],
-                          refresh=wait,
-                          routing=1,
-                          **doc['doc'])
-
+            logger.info(f"Making Doc={doc}")
+            res = self.es.index(index=self.index_name(entity.project.pk),
+                                id=doc['_id'],
+                                refresh=wait,
+                                routing=1,
+                                body={**doc['doc']})
 
     def build_document(self, entity, mode='create'):
         """ Returns a list of documents representing the entity to be
@@ -190,7 +190,7 @@ class TatorSearch:
             '_index':self.index_name(entity.project.pk),
             '_op_type': mode,
             'doc': {**corrected_attributes,
-                    **aux},
+                    **duplicate},
             '_id': duplicate_id,
             '_routing': 1,
             })
