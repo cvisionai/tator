@@ -273,6 +273,10 @@ class EntityBase(PolymorphicModel):
     """ The attributes related to this entity, see `meta` for column
         definitions """
     related_media = ForeignKey('EntityBase', on_delete=SET_NULL, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)

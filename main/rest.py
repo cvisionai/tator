@@ -1542,7 +1542,9 @@ class LocalizationList(APIView, AttributeFilterMixin):
                          meta=entityType,
                          media=mediaElement,
                          user=self.request.user,
-                         attributes=attrs)
+                         attributes=attrs,
+                         created_by=self.request.user,
+                         modified_by=self.request.user)
 
         for field, value in localizationFields.items():
             setattr(obj, field, value)
@@ -1811,7 +1813,9 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
 
             obj = EntityState(project=project,
                               meta=entityType,
-                              attributes=attrs)
+                              attributes=attrs,
+                              created_by=request.user,
+                              modified_by=request.user)
 
             association=None
             if entityType.association == "Media":
@@ -2926,6 +2930,8 @@ class SaveVideoAPI(APIView):
                 codec=codec,
                 width=width,
                 height=height,
+                created_by=self.request.user,
+                modified_by=self.request.user)
             )
 
             # Save the transcoded file.
@@ -3109,6 +3115,8 @@ class SaveImageAPI(APIView):
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
                 md5=md5,
                 attributes={'tator_user_sections': section},
+                created_by=self.request.user,
+                modified_by=self.request.user)
             )
 
             # Create the thumbnail.
