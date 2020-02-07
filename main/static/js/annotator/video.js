@@ -934,6 +934,10 @@ class VideoCanvas extends AnnotationCanvas {
   rateChange(newRate)
   {
 	  this._playbackRate=newRate;
+    if (this._direction != Direction.STOPPED)
+    {
+      this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    }
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
       composed: true,
@@ -1045,6 +1049,8 @@ class VideoCanvas extends AnnotationCanvas {
 		    that._loaderTimeout=setTimeout(loader, fpsInterval*4);
 		    return;
 	    }
+
+      frameIncrement = that._motionComp.frameIncrement(that._fps,that._playbackRate);
 
 	    // Canidate next frame
 	    var nextFrame=currentFrame+(direction * frameIncrement);
