@@ -418,7 +418,7 @@ class MotionComp {
     this._monitorFps = null;
     this._times = [];
 
-    // This takes ~1/4 sec
+    // This takes ~1/3 sec
     const TRIALS = 20;
 
     // First we need to do a couple of trials to figure out what the
@@ -453,7 +453,15 @@ class MotionComp {
             this._monitorFps = canidate;
           }
         }
-        console.info(`FPS ModeMap ${mode}`);
+
+        if (Math.abs(this._montitorFps-60) < 5)
+        {
+          this._monitorFps = 60;
+        }
+        else if (Math.abs(this._montitorFps-30) < 5)
+        {
+          this._monitorFps = 30;
+        }
 
         this._interval = 1000.0 / this._monitorFps;
         console.info(`Calculated FPS interval = ${this._interval} (${this._monitorFps})`);
