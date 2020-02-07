@@ -93,6 +93,7 @@ class AnnotationPlayer extends TatorElement {
       const waitOk = now - this._lastScrub > this._scrubInterval;
       if (waitOk) {
         play.setAttribute("is-paused","");
+        this._video.stopPlayerThread();
         this._video.seekFrame(frame, this._video.drawFrame)
         .then(this._lastScrub = Date.now());
       }
@@ -101,6 +102,7 @@ class AnnotationPlayer extends TatorElement {
     this._slider.addEventListener("change", evt => {
       play.setAttribute("is-paused","");
       const frame = Number(evt.target.value);
+      this._video.stopPlayerThread();
       this._video.seekFrame(frame, this._video.drawFrame)
       .then(this._lastScrub = Date.now());
     });

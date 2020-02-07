@@ -1159,17 +1159,10 @@ class VideoCanvas extends AnnotationCanvas {
 	  this._playGeneric(Direction.BACKWARDS);
   }
 
-  pause()
+  // If running will clear player context
+  stopPlayerThread()
   {
-	  // If we weren't already paused send the event
-	  if (this._direction != Direction.STOPPED)
-	  {
-	    this._pauseCb.forEach(cb => {cb();});
-	  }
-
-	  this._direction=Direction.STOPPED;
-	  this._videoElement.pause();
-	  if (this._playerTimeout)
+    if (this._playerTimeout)
 	  {
 	    clearTimeout(this._playerTimeout);
 	    this._playerTimeout=null;
@@ -1185,6 +1178,19 @@ class VideoCanvas extends AnnotationCanvas {
 	    clearTimeout(this._diagTimeout);
 	    this._diagTimeout=null;
 	  }
+  }
+
+  pause()
+  {
+	  // If we weren't already paused send the event
+	  if (this._direction != Direction.STOPPED)
+	  {
+	    this._pauseCb.forEach(cb => {cb();});
+	  }
+
+	  this._direction=Direction.STOPPED;
+	  this._videoElement.pause();
+	  this.stopPlayerThread();
 
 	  this.seekFrame(this._dispFrame, this.drawFrame);
   }
