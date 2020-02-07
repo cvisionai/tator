@@ -14,8 +14,16 @@ class AnnotationPage extends TatorPage {
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-items-center");
+    header.appendChild(div);
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
-    header.appendChild(this._breadcrumbs);
+    div.appendChild(this._breadcrumbs);
+
+    this._versionButton = document.createElement("version-button");
+    this._versionButton.setAttribute("class", "px-2");
+    div.appendChild(this._versionButton);
 
     this._settings = document.createElement("annotation-settings");
     header.appendChild(this._settings);
@@ -23,6 +31,9 @@ class AnnotationPage extends TatorPage {
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
     this._shadow.appendChild(this._main);
+
+    this._versionDialog = document.createElement("version-dialog");
+    this._main.appendChild(this._versionDialog);
 
     this._sidebar = document.createElement("annotation-sidebar");
     this._main.appendChild(this._sidebar);
@@ -136,6 +147,27 @@ class AnnotationPage extends TatorPage {
             this._browser.permission = data.permission;
             this._sidebar.permission = data.permission;
           });
+          fetch("/rest/Versions/" + data.project + "?media_id=" + newValue, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          })
+          .then(response => response.json())
+          .then(versions => {
+            this._versions = versions;
+            this._versionDialog.init(versions);
+            if (versions.length == 0) {
+              this._versionButton.setAttribute("display", "none");
+            } else {
+              this._versionIndex = versions.length - 1;
+              this._versionButton.text = versions[this._versionIndex].name;
+            }
+          })
+            
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
