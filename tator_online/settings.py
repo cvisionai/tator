@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = False
 
 # Control whether minified JS is used
-USE_MIN_JS = False
+USE_MIN_JS = True
 
 ALLOWED_HOSTS = [
     os.getenv('MAIN_HOST'),
