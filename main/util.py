@@ -2,10 +2,12 @@ import logging
 import os
 import time
 
-from progressbar import progressbar
+from progressbar import progressbar,ProgressBar
 
 from main.models import *
 from main.search import TatorSearch
+
+from elasticsearch.helpers import streaming_bulk
 
 logger = logging.getLogger(__name__)
 
@@ -230,35 +232,75 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices(project_number, skip_localizations=False):
+def buildSearchIndices(project_number, sections, mode='create'):
     """ Builds search index for all data.
+        param can be a combination of valid sections in a list
+        or a single string. 'all' will rebuild everything.
+        all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
     """
-    # Create indices
-    logger.info("Building index...")
-    TatorSearch().create_index(project_number)
-    # Create mappings
-    logger.info("Building mappings...")
-    for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
-        TatorSearch().create_mapping(attribute_type)
-    # Create media documents
-    logger.info("Building media documents...")
-    for entity in progressbar(list(EntityMediaBase.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
-    # Create localization documents
-    if skip_localizations:
-        logger.info("Skipping localization documents...")
-    else:
-        logger.info("Building localization documents...")
-        for entity in progressbar(list(EntityLocalizationBase.objects.filter(project=project_number))):
-            TatorSearch().create_document(entity)
-    # Create state documents
-    logger.info("Building state documents...")
-    for entity in progressbar(list(EntityState.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
-    # Create treeleaf documents
-    logger.info("Building tree leaf documents...")
-    for entity in progressbar(list(TreeLeaf.objects.filter(project=project_number))):
-        TatorSearch().create_document(entity)
+    to_process=[]
+    all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
+    if type(sections) == str:
+        if sections == 'all':
+            to_process=all_sections
+        elif sections in all_sections:
+            to_process.append(sections)
+        else:
+            print(f"ERROR: Unknown section {sections}")
+            return
+    elif type(sections) == list:
+        to_process.extend(sections)
+
+    if 'index' in to_process:
+        # Create indices
+        logger.info("Building index...")
+        TatorSearch().create_index(project_number)
+
+    if 'mappings' in to_process:
+        # Create mappings
+        logger.info("Building mappings...")
+        for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(attribute_type)
+
+    class DeferredCall:
+        def __init__(self, elements):
+            self._elements = elements
+        def __call__(self):
+            for entity in self._elements:
+                for doc in TatorSearch().build_document(entity, mode):
+                    yield doc
+    elements = []
+    if 'media' in to_process:
+        # Create media documents
+        logger.info("Building media documents...")
+        elements.extend(list(EntityMediaBase.objects.filter(project=project_number)))
+
+    if 'localizations' in to_process:
+        logger.info("Building localization documents")
+        elements.extend(list(EntityLocalizationBase.objects.filter(project=project_number)))
+
+    if 'states' in to_process:
+        # Create state documents
+        logger.info("Building state documents...")
+        elements.extend(list(EntityState.objects.filter(project=project_number)))
+
+    if 'treeleaves' in to_process:
+        # Create treeleaf documents
+        logger.info("Building tree leaf documents...")
+        elements.extend(list(TreeLeaf.objects.filter(project=project_number)))
+
+    batch_size = 2000
+    count = 0
+    bar = ProgressBar(redirect_stderr=True, redirect_stdout=True)
+    dc = DeferredCall(elements)
+    total = len(elements)
+    bar.start(max_value=total)
+    for ok, result in streaming_bulk(TatorSearch().es, dc(),chunk_size=batch_size, raise_on_error=False):
+        count += 1
+        action, result = result.popitem()
+        if not ok:
+            print(f"Failed to {action} document! {result}")
+        bar.update(count)
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.

@@ -1241,7 +1241,7 @@ class MediaPrevAPI(APIView):
 
         media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
-            response_data = {'prev': media_ids[0]}
+            response_data = {'prev': media_ids.pop()}
         else:
             response_data = {'prev': -1}
 
@@ -1268,7 +1268,7 @@ class MediaNextAPI(APIView):
 
         media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
-            response_data = {'next': media_ids[0]}
+            response_data = {'next': media_ids.pop()}
         else:
             response_data = {'next': -1}
 
