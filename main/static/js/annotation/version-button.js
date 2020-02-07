@@ -2,7 +2,7 @@ class VersionButton extends TatorElement {
   constructor() {
     super();
 
-    const button = document.creatElement("button");
+    const button = document.createElement("button");
     button.setAttribute("class", "btn btn-outline btn-small d-flex");
     this._shadow.appendChild(button);
 

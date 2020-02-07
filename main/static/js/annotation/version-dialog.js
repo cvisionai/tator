@@ -7,8 +7,6 @@ class VersionDialog extends ModalDialog {
     const table = document.createElement("table");
     table.setAttribute("class", "table col-12");
     this._main.appendChild(table);
-
-    const 
   }
 
   init(versions) {
