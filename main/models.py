@@ -270,12 +270,10 @@ class EntityBase(PolymorphicModel):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
-    """ The attributes related to this entity, see `meta` for column
-        definitions """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)

@@ -2931,7 +2931,7 @@ class SaveVideoAPI(APIView):
                 width=width,
                 height=height,
                 created_by=self.request.user,
-                modified_by=self.request.user)
+                modified_by=self.request.user,
             )
 
             # Save the transcoded file.
@@ -3116,7 +3116,7 @@ class SaveImageAPI(APIView):
                 md5=md5,
                 attributes={'tator_user_sections': section},
                 created_by=self.request.user,
-                modified_by=self.request.user)
+                modified_by=self.request.user,
             )
 
             # Create the thumbnail.
