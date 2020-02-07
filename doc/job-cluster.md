@@ -35,6 +35,12 @@ nodeSelector:
 
 where `nfs-node-name` is the name of the node that you want to use for storing provisioned nfs shares.
 
+* Create a namespace for the provisioner
+
+```
+kubectl create namespace provisioner
+```
+
 * Create a file called `nfs-config-pv.yaml` and populate with the following:
 
 ```
@@ -50,7 +56,7 @@ spec:
   hostPath:
     path: /media/kubernetes_share/scratch
   claimRef:
-    namespace: default
+    namespace: provisioner
     name: data-nfs-server-provisioner-0
 ```
 
@@ -64,7 +70,7 @@ kubectl apply -f nfs-config-pv.yaml
 
 ```
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
-helm install nfs-server-provisioner stable/nfs-server-provisioner -f nfs-config.yaml
+helm install -n provisioner nfs-server-provisioner stable/nfs-server-provisioner -f nfs-config.yaml
 ```
 
 ### Test the provisioner
