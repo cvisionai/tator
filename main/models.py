@@ -403,7 +403,7 @@ class EntityLocalizationBase(EntityBase):
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
                                  null=True,blank=True,
                                  related_name='thumbnail_image')
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -545,7 +545,7 @@ class EntityState(EntityBase):
     elements. If a frame is supplied it was collected at that time point.
     """
     association = ForeignKey(AssociationType, on_delete=CASCADE)
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
