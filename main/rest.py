@@ -3570,7 +3570,7 @@ class VersionAPI(ModelViewSet):
         try:
             name = request.data.get('name', None)
             description = request.data.get('description', None)
-            media = request.data.get('media', None)
+            media = request.data.get('media_id', None)
             project = kwargs['project']
             
             if name is None:
@@ -3604,3 +3604,30 @@ class VersionAPI(ModelViewSet):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
+
+    def list(self, request, format=None, **kwargs):
+        response = Response({})
+        try:
+            media = request.query_params.get('media_id', None)
+            project = kwargs['project']
+
+            if media is None:
+                raise Exception('Missing required query parameter media_id!')
+            
+            data = self.serializer_class(
+                Version.objects.filter(media=media).order_by('number'),
+                context=self.get_renderer_context(),
+            ).data
+            response = Response(data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist as dne:
+            response = Response(
+                {'message': str(dne)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            response = Response({
+                'message': str(e),
+                'details': traceback.format_exc(),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response
