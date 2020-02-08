@@ -454,7 +454,17 @@ class MotionComp {
           }
         }
 
-        if (Math.abs(this._montitorFps-60) < 5)
+        console.info("Raw FPS observed at " + this._monitorFps);
+
+        if (Math.abs(this._monitorFps-240) < 10)
+        {
+          this._monitorFps = 240;
+        }
+        else if (Math.abs(this._monitorFps-120) < 10)
+        {
+          this._monitorFps = 120;
+        }
+        else if (Math.abs(this._montitorFps-60) < 5)
         {
           this._monitorFps = 60;
         }
