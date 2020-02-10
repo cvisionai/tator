@@ -610,6 +610,7 @@ class VideoCanvas extends AnnotationCanvas {
       let debug = gl.getExtension("WEBGL_debug_renderer_info");
       msg += "==== Browser Information ====\n";
       msg += `\tappVersion = ${navigator.appVersion}\n`;
+      msg += `\turl = ${window.location.href}\n`;
       msg += "===== OpenGL Information ====\n";
       msg += `\tVENDOR = ${gl.getParameter(gl.VENDOR)}\n`;
       msg += `\tRENDERER = ${gl.getParameter(gl.RENDERER)}\n`;
