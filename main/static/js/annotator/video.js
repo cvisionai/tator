@@ -1155,7 +1155,7 @@ class VideoCanvas extends AnnotationCanvas {
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;
 
-        if ((that._networkUpdate % 3) == 0)
+        if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
         {
           Utilities.sendNotification(fps_msg)
         }
