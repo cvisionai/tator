@@ -396,6 +396,12 @@ class Version(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
 
+    def __str__(self):
+        out = f"{self.name}"
+        if self.description:
+            out += f" | {self.description}"
+        return out
+
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
