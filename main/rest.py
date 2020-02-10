@@ -3445,7 +3445,7 @@ class NotifyAPI(APIView):
             if send_as_file:
                 response = Notify.notify_admin_file(f"Message from {request.user}", reqObject['message'])
             else:
-                response = Notify.notify_admin_msg(reqObject['message'])
+                response = Notify.notify_admin_msg(f"_{request.user}_ : {reqObject['message']}")
 
             if response == True:
                 response=Response({'message' : "Processed"},
