@@ -161,7 +161,7 @@ class AnnotationPage extends TatorPage {
             this._versions = versions;
             this._versionDialog.init(versions);
             if (versions.length == 0) {
-              this._versionButton.setAttribute("display", "none");
+              this._versionButton.style.display = "none";
             } else {
               this._versionIndex = versions.length - 1;
               this._versionButton.text = versions[this._versionIndex].name;
@@ -247,6 +247,15 @@ class AnnotationPage extends TatorPage {
       if ("zoomMinus" in canvas) {
         canvas.zoomMinus();
       }
+    });
+
+    this._versionDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._versionButton.addEventListener("click", () => {
+      this._versionDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
   }
 
