@@ -3617,6 +3617,7 @@ class VersionAPI(ModelViewSet):
             data = self.serializer_class(
                 Version.objects.filter(media=media).order_by('number'),
                 context=self.get_renderer_context(),
+                many=True,
             ).data
             response = Response(data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
