@@ -505,8 +505,6 @@ class MotionComp {
   ///
   computePlaybackSchedule(videoFps, factor)
   {
-    console.info("video FPS = " + videoFps);
-    console.info("factor = " + factor);
     let displayFps = videoFps;
     if (factor < 1)
     {
@@ -526,10 +524,17 @@ class MotionComp {
                        regularSize,
                        regularSize + largeSize];
     this._targetFPS = 3000 / (this._lengthOfSchedule * this._interval)
-    console.info("Playback schedule = " + this._schedule);
-    console.info("Updates @ " + this._updatesAt);
-    console.info("Frame Increment = " + this.frameIncrement(videoFps, factor));
-    console.info("Target FPS = " + this._targetFPS);
+    let msg = "Playback schedule = " + this._schedule + "\n";
+    msg += "Updates @ " + this._updatesAt + "\n";
+    msg += "Frame Increment = " + this.frameIncrement(videoFps, factor) + "\n";
+    msg += "Target FPS = " + this._targetFPS + "\n";
+    msg += "video FPS = " + videoFps + "\n";
+    msg += "factor = " + factor + "\n";
+    console.info(msg);
+    if (this._diagnosticMode == true)
+    {
+      Utilities.sendNotification(msg, true);
+    }
   }
 
   /// Given an animation idx, return true if it is an update cycle
@@ -572,9 +577,18 @@ class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
     var that = this;
+    this._diagnosticMode = false;
+
+    let parameters = new URLSearchParams(window.location.search);
+    if (parameters.has('diagnostic'))
+    {
+      console.info("Diagnostic Mode Enabled")
+      this._diagnosticMode = true;
+    }
     // Make a new off-screen video reference
     this._videoElement=new VideoBufferDemux();
     this._motionComp = new MotionComp();
+    this._motionComp._diagnosticMode = this._diagnosticMode;
     this._playbackRate=1.0;
     this._dispFrame=0; //represents the currently displayed frame
     this._direction=Direction.STOPPED;
@@ -588,6 +602,22 @@ class VideoCanvas extends AnnotationCanvas {
     this._dirty = true;
 
     this._startBias = 0.0;
+
+    if (this._diagnosticMode == true)
+    {
+      let msg = "Startup Diagnostic\n";
+      let gl = this._draw.gl;
+      let debug = gl.getExtension("WEBGL_debug_renderer_info");
+      msg += "==== Browser Information ====\n";
+      msg += `\tappVersion = ${navigator.appVersion}\n`;
+      msg += "===== OpenGL Information ====\n";
+      msg += `\tVENDOR = ${gl.getParameter(gl.VENDOR)}\n`;
+      msg += `\tRENDERER = ${gl.getParameter(gl.RENDERER)}\n`;
+      msg += `\tVERSION = ${gl.getParameter(gl.VERSION)}\n`;
+      msg += `\tUNMASKED VENDOR = ${gl.getParameter(debug.UNMASKED_VENDOR_WEBGL)}\n`;
+      msg += `\tUNMASKED RENDERER = ${gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)}\n`;
+      Utilities.sendNotification(msg, true);
+    }
   }
 
   refresh()
@@ -1111,6 +1141,7 @@ class VideoCanvas extends AnnotationCanvas {
 	    this._fpsDiag=0;
 	    this._fpsLoadDiag=0;
       this._fpsScore=3;
+      this._networkUpdate = 0;
 
 	    var diagRoutine=function(last)
 	    {
@@ -1118,9 +1149,16 @@ class VideoCanvas extends AnnotationCanvas {
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
-		    console.info(`FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`);
+        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`; 
+		    console.info(fps_msg);
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;
+
+        if ((that._networkUpdate % 3) == 0)
+        {
+          Utilities.sendNotification(fps_msg)
+        }
+        that._networkUpdate += 1;
 
         if (that._fpsScore)
         {
