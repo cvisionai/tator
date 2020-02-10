@@ -112,11 +112,16 @@ class Utilities
   }
 
   // Send a notifiation to admins
-  static sendNotification(msg)
+  static sendNotification(msg, sendAsFile)
   {
+    let request_body = {"message": msg};
+    if (sendAsFile == true)
+    {
+      request_body["sendAsFile"] = true;
+    }
     return fetch("/rest/Notify",
                  {method: "POST",
-                  body: JSON.stringify({"message": msg}),
+                  body: JSON.stringify(request_body),
                   credentials: "same-origin",
                   headers: {
                     "X-CSRFToken": getCookie("csrftoken"),

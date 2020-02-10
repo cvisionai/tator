@@ -562,6 +562,14 @@ class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
     var that = this;
+    this._diagnosticMode = false;
+
+    let parameters = new URLSearchParams(window.location.search);
+    if (parameters.has('diagnostic'))
+    {
+      console.info("Diagnostic Mode Enabled")
+      this._diagnosticMode = true;
+    }
     // Make a new off-screen video reference
     this._videoElement=new VideoBufferDemux();
     this._motionComp = new MotionComp();
@@ -578,6 +586,22 @@ class VideoCanvas extends AnnotationCanvas {
     this._dirty = true;
 
     this._startBias = 0.0;
+
+    if (this._diagnosticMode == true)
+    {
+      let msg = "Startup Diagnostic\n";
+      let gl = this._draw.gl;
+      let debug = gl.getExtension("WEBGL_debug_renderer_info");
+      msg += "==== Browser Information ====\n";
+      msg += `\tappVersion = ${navigator.appVersion}\n`;
+      msg += "===== OpenGL Information ====\n";
+      msg += `\tVENDOR = ${gl.getParameter(gl.VENDOR)}\n`;
+      msg += `\tRENDERER = ${gl.getParameter(gl.RENDERER)}\n`;
+      msg += `\tVERSION = ${gl.getParameter(gl.VERSION)}\n`;
+      msg += `\tUNMASKED VENDOR = ${gl.getParameter(debug.UNMASKED_VENDOR_WEBGL)}\n`;
+      msg += `\tUNMASKED RENDERER = ${gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)}\n`;
+      Utilities.sendNotification(msg, true);
+    }
   }
 
   refresh()

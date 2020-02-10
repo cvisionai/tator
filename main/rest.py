@@ -109,6 +109,8 @@ from .serializers import VersionSerializer
 
 from .consumers import ProgressProducer
 
+from .notify import Notify
+
 from .search import TatorSearch
 from .kube import TatorTranscode
 from .kube import TatorAlgorithm
@@ -3423,6 +3425,10 @@ class NotifyAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='A message to send to administrators')),
+        coreapi.Field(name='sendAsFile',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Send message as file'))
     ])
     def post(self, request, format=None, **kwargs):
         response=Response({'message' : str("Not Found")},
@@ -3433,17 +3439,20 @@ class NotifyAPI(APIView):
             if 'message' not in reqObject:
                 raise Exception("Missing 'message' argument.")
 
-            if settings.TATOR_SLACK_TOKEN and settings.TATOR_SLACK_CHANNEL:
-                client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
-                slack_response=client.chat_postMessage(
-                    channel=settings.TATOR_SLACK_CHANNEL,
-                    text=reqObject['message'])
-                if slack_response["ok"]:
-                    response=Response({'message' : "Processed"},
-                                      status=status.HTTP_200_OK)
-                else:
-                    response=Response({'message': "Not Processed"},
-                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            send_as_file = reqObject.get('sendAsFile', False)
+
+            response = None
+            if send_as_file:
+                response = Notify.notify_admin_file(f"Message from {request.user}", reqObject['message'])
+            else:
+                response = Notify.notify_admin_msg(reqObject['message'])
+
+            if response == True:
+                response=Response({'message' : "Processed"},
+                                  status=status.HTTP_200_OK)
+            else:
+                response=Response({'message': "Not Processed"},
+                                  status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -3498,7 +3507,7 @@ class VersionAPI(ModelViewSet):
             description = request.data.get('description', None)
             media = request.data.get('media', None)
             project = kwargs['project']
-            
+
             if name is None:
                 raise Exception('Missing version name!')
 
