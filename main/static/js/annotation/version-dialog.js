@@ -66,6 +66,15 @@ class VersionDialog extends ModalDialog {
 
       const tdUpdated = document.createElement("td");
       tdUpdated.setAttribute("class", "f3 text-gray");
+      const created = new Date(version.created_datetime);
+      const created_str = created.toDateString().slice(4);
+      tdUpdated.textContent = created_str + " by " + version.created_name;
+      tbody.appendChild(tdUpdated);
+
+      const tdDesc = document.createElement("td");
+      tdDesc.setAttribute("class", "f3 text-gray");
+      tdDesc.textContent = version.description;
+      tbody.appendChild(tdDesc);
     }
   }
 }
