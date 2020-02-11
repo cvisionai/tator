@@ -27,7 +27,7 @@ class VersionButton extends TatorElement {
 
     this._text = document.createElement("span");
     this._text.setAttribute("class", "px-2 text-white");
-    this._text.textContent = "Default";
+    this._text.textContent = "Baseline";
     span.appendChild(this._text);
 
     const chevron = document.createElementNS(svgNamespace, "svg");
