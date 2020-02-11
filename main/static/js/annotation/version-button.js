@@ -2,9 +2,13 @@ class VersionButton extends TatorElement {
   constructor() {
     super();
 
+    const styleDiv = document.createElement("div");
+    styleDiv.setAttribute("class", "annotation__breadcrumbs");
+    this._shadow.appendChild(styleDiv);
+
     const button = document.createElement("button");
     button.setAttribute("class", "btn btn-outline btn-small d-flex");
-    this._shadow.appendChild(button);
+    styleDiv.appendChild(button);
 
     const span = document.createElement("span");
     span.setAttribute("class", "d-flex flex-items-center");
