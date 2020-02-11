@@ -31,7 +31,6 @@ from rest_framework.schemas import AutoSchema
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.exceptions import *
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
 
@@ -3558,13 +3557,13 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
 
-class VersionAPI(ModelViewSet):
+class VersionListAPI(APIView):
     """ View or update a version """
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
 
-    def create(self, request, format=None, **kwargs):
+    def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
@@ -3590,6 +3589,7 @@ class VersionAPI(ModelViewSet):
                 number=number,
                 media=EntityMediaBase.objects.get(pk=media),
                 project=Project.objects.get(pk=project),
+                created_by=request.user,
             )
             obj.save()
 
@@ -3605,17 +3605,19 @@ class VersionAPI(ModelViewSet):
         finally:
             return response;
 
-    def list(self, request, format=None, **kwargs):
+    def get(self, request, format=None, **kwargs):
         response = Response({})
         try:
             media = request.query_params.get('media_id', None)
             project = kwargs['project']
 
-            if media is None:
-                raise Exception('Missing required query parameter media_id!')
+            qs = Version.objects.filter(project=project)
+            if media:
+                qs = qs.filter(media=media)
+            qs = qs.order_by('number')
             
             data = self.serializer_class(
-                Version.objects.filter(media=media).order_by('number'),
+                qs,
                 context=self.get_renderer_context(),
                 many=True,
             ).data
@@ -3632,3 +3634,9 @@ class VersionAPI(ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response
+
+class VersionDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ View or update a version """
+    serializer_class = VersionSerializer
+    queryset = Version.objects.all()
+    permission_classes = [ProjectEditPermission]
