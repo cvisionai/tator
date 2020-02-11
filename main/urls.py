@@ -51,7 +51,8 @@ from .rest import MediaSectionsAPI
 from .rest import SectionAnalysisAPI
 from .rest import SaveVideoAPI
 from .rest import SaveImageAPI
-from .rest import VersionAPI
+from .rest import VersionListAPI
+from .rest import VersionDetailAPI
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -220,17 +221,12 @@ urlpatterns += [
     ),
     path(
         'rest/Versions/<int:project>',
-        VersionAPI.as_view({'get': 'list', 'post': 'create'}),
+        VersionListAPI.as_view(),
         name='Versions',
     ),
     path(
         'rest/Version/<int:pk>',
-        VersionAPI.as_view({
-            'get': 'retrieve',
-            'put': 'update',
-            'patch': 'partial_update',
-            'delete': 'destroy',
-        }),
+        VersionDetailAPI.as_view(),
         name='Version',
     ),
 ]
