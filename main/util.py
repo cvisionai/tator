@@ -273,3 +273,20 @@ def swapLatLon():
                 entity.attributes[attr] = entity.attributes[attr][::-1]
                 entity.save()
     logger.info("Updating entities...")
+
+def makeDefaultVersions(project_number):
+    """ For all states and localizations with null version, creates a new version
+        with name "Default".
+    """
+    for entity in progressbar(list(EntityMediaBase.objects.filter(project=project_number))):
+        versions = Version.objects.filter(media=entity, name="Default", number=0)
+        if not versions.exists():
+            version = make_default_version(entity)
+            localizations = EntityLocalizationBase.objects.filter(media=entity)
+            for localization in list(localizations):
+                localization.version = version
+                localization.save()
+            states = EntityState.objects.filter(media=entity)
+            for state in states:
+                state.version = version
+                state.save()
