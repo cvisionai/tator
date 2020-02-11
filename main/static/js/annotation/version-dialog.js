@@ -62,19 +62,43 @@ class VersionDialog extends ModalDialog {
 
       const tdName = document.createElement("td");
       tdName.textContent = version.name;
-      tbody.appendChild(tdName);
+      tr.appendChild(tdName);
 
       const tdUpdated = document.createElement("td");
       tdUpdated.setAttribute("class", "f3 text-gray");
       const created = new Date(version.created_datetime);
       const created_str = created.toDateString().slice(4);
       tdUpdated.textContent = created_str + " by " + version.created_name;
-      tbody.appendChild(tdUpdated);
+      tr.appendChild(tdUpdated);
 
       const tdDesc = document.createElement("td");
       tdDesc.setAttribute("class", "f3 text-gray");
       tdDesc.textContent = version.description;
-      tbody.appendChild(tdDesc);
+      tr.appendChild(tdDesc);
+
+      if (version.created_datetime != version.modified_datetime) {
+        console.log("CREATED: " + version.created_datetime);
+        console.log("MODDED:  " + version.modified_datetime);
+        const trEdited = document.createElement("tr");
+        tbody.appendChild(trEdited);
+
+        const tdNameEdited = document.createElement("td");
+        tdNameEdited.setAttribute("class", "f3 text-gray text-uppercase text-semibold");
+        tdNameEdited.textContent = "Edited";
+        trEdited.appendChild(tdNameEdited);
+
+        const tdModified = document.createElement("td");
+        tdModified.setAttribute("class", "f3 text-gray");
+        const modified = new Date(version.modified_datetime);
+        const modified_str = modified.toDateString().slice(4);
+        tdModified.textContent = created_str + " by " + version.modified_name;
+        trEdited.appendChild(tdModified);
+
+        const tdDescEdited = document.createElement("td");
+        tdDescEdited.setAttribute("class", "f3 text-gray");
+        tdDescEdited.textContent = version.description;
+        trEdited.appendChild(tdDescEdited);
+      }
     }
   }
 }
