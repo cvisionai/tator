@@ -6,16 +6,16 @@ class ModalDialog extends TatorElement {
     this._div.setAttribute("class", "modal-wrap d-flex");
     this._shadow.appendChild(this._div);
 
-    const modal = document.createElement("div");
-    modal.setAttribute("class", "modal d-flex flex-items-center flex-justify-center flex-column rounded-2");
-    this._div.appendChild(modal);
+    this._modal = document.createElement("div");
+    this._modal.setAttribute("class", "modal d-flex flex-items-center flex-justify-center flex-column rounded-2");
+    this._div.appendChild(this._modal);
 
     const close = document.createElement("modal-close");
-    modal.appendChild(close);
+    this._modal.appendChild(close);
 
     this._header = document.createElement("div");
     this._header.setAttribute("class", "modal__header py-6 px-6 lh-default text-center");
-    modal.appendChild(this._header);
+    this._modal.appendChild(this._header);
 
     this._titleDiv = document.createElement("div");
     this._titleDiv.setAttribute("class", "h2 px-6");
@@ -26,11 +26,11 @@ class ModalDialog extends TatorElement {
 
     this._main = document.createElement("div");
     this._main.setAttribute("class", "modal__main px-6 py-4");
-    modal.appendChild(this._main);
+    this._modal.appendChild(this._main);
 
     this._footer = document.createElement("div");
     this._footer.setAttribute("class", "modal__footer d-flex");
-    modal.appendChild(this._footer);
+    this._modal.appendChild(this._footer);
 
     this._closeCallback = evt => {
       this.dispatchEvent(new Event("close"));
