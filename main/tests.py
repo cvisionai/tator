@@ -1695,7 +1695,7 @@ class VersionTestCase(
         self.create_json = {
             'project': self.project.pk,
             'name': 'version_create_test',
-            'media': self.media.pk,
+            'media_id': self.media.pk,
             'description': 'asdf',
         }
         self.patch_json = {
