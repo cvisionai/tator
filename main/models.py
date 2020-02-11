@@ -395,12 +395,21 @@ class Version(Model):
     number = PositiveIntegerField()
     project = ForeignKey(Project, on_delete=CASCADE)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+    created_datetime = DateTimeField(auto_now_add=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
+    modified_datetime = DateTimeField(auto_now=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_modified_by')
 
     def __str__(self):
         out = f"{self.name}"
         if self.description:
             out += f" | {self.description}"
         return out
+
+def update_version(instance):
+    if instance.version and instance.modified:
+        instance.version.modified_by = instance.modified_by
+        instance.version.save()
 
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
@@ -423,6 +432,7 @@ class EntityLocalizationBase(EntityBase):
 @receiver(post_save, sender=EntityLocalizationBase)
 def localization_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
+    update_version(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
@@ -430,6 +440,7 @@ def localization_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
+    update_version(instance)
 
 class EntityLocalizationDot(EntityLocalizationBase):
     x = FloatField()
@@ -439,11 +450,13 @@ class EntityLocalizationDot(EntityLocalizationBase):
 def dot_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
+    update_version(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
+    update_version(instance)
 
 class EntityLocalizationLine(EntityLocalizationBase):
     x0 = FloatField()
@@ -455,11 +468,13 @@ class EntityLocalizationLine(EntityLocalizationBase):
 def line_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
+    update_version(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
 def line_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
+    update_version(instance)
 
 class EntityLocalizationBox(EntityLocalizationBase):
     x = FloatField()
@@ -471,11 +486,13 @@ class EntityLocalizationBox(EntityLocalizationBase):
 def box_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
+    update_version(instance)
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
+    update_version(instance)
 
 class AssociationType(PolymorphicModel):
     media = ManyToManyField(EntityMediaBase)
@@ -565,10 +582,12 @@ class EntityState(EntityBase):
 @receiver(post_save, sender=EntityState)
 def state_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
+    update_version(instance)
 
 @receiver(pre_delete, sender=EntityState)
 def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
+    update_version(instance)
 
 # Tree data type
 class TreeLeaf(EntityBase):
