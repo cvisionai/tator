@@ -160,7 +160,8 @@ class Project(Model):
 
     def delete(self, *args, **kwargs):
         # Delete attribute types
-        AttributeTypeBase.objects.filter(project=self).delete()
+        qs = AttributeTypeBase.objects.filter(project=self)
+        delete_polymorphic_qs(qs)
         # Delete entities
         qs = EntityBase.objects.filter(project=self)
         delete_polymorphic_qs(qs)
