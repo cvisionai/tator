@@ -509,7 +509,20 @@ class AnalysisSerializer(PolymorphicSerializer):
     }
 
 class VersionSerializer(serializers.ModelSerializer):
+    created_name = serializers.SerializerMethodField()
+    modified_name = serializers.SerializerMethodField()
+
+    def get_created_name(self, obj):
+        return str(obj.created_by)
+
+    def get_modified_name(self, obj):
+        return str(obj.modified_by)
+
     class Meta:
         model = Version
-        fields = ['name', 'description', 'number', 'project', 'media', 'created_datetime', 'created_by']
+        fields = [
+            'name', 'description', 'number', 'project', 'media',
+            'created_datetime', 'created_by', 'created_name',
+            'modified_datetime', 'modified_by', 'modified_name',
+        ]
 
