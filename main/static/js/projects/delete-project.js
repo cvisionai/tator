@@ -53,7 +53,6 @@ class DeleteProject extends ModalDialog {
 
     this._accept.addEventListener("click", evt => {
       const projectId = this.getAttribute("project-id");
-      console.log("PROJECT ID: " + projectId);
       fetch("/rest/Project/" + projectId, {
         method: 'DELETE',
         credentials: 'same-origin',
