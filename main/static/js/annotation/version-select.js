@@ -4,6 +4,7 @@ class VersionSelect extends TatorElement {
 
     this._button = document.createElement("a");
     this._button.setAttribute("class", "btn btn-outline btn-small f2");
+    this._button.style.width = "initial";
     this._button.textContent = "View version";
     this._shadow.appendChild(this._button);
 
@@ -41,7 +42,7 @@ class VersionSelect extends TatorElement {
   }
 
   select() {
-    this._icon.style.display = "block";
+    this._icon.style.display = "flex";
     this._button.style.display = "none";
     this.dispatchEvent(new CustomEvent("select", {
       detail: {
@@ -53,7 +54,7 @@ class VersionSelect extends TatorElement {
 
   deselect() {
     this._icon.style.display = "none";
-    this._button.style.display = "block";
+    this._button.style.display = "flex";
   }
 }
 
