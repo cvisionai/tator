@@ -464,11 +464,11 @@ class MotionComp {
         {
           this._monitorFps = 120;
         }
-        else if (Math.abs(this._montitorFps-60) < 5)
+        else if (Math.abs(this._monitorFps-60) < 5)
         {
           this._monitorFps = 60;
         }
-        else if (Math.abs(this._montitorFps-30) < 5)
+        else if (Math.abs(this._monitorFps-30) < 5)
         {
           this._monitorFps = 30;
         }
@@ -513,6 +513,11 @@ class MotionComp {
 
     // Compute a 3-slot schedule for playback
     let animationCyclesPerFrame = (this._monitorFps / displayFps);
+    if (this._safeMode)
+    {
+      // Safe mode slows things down by 2x
+      animationCyclesPerFrame *= 2;
+    }
     let regularSize = Math.floor(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
     let largeSize = regularSize + Math.round(fractional*3)
@@ -550,7 +555,19 @@ class MotionComp {
     {
       clicks *= factor;
     }
+
+    // We skip every other frame in safe mode
+    if (this._safeMode)
+    {
+      clicks *= 2;
+    }
     return clicks;
+  }
+
+  safeMode()
+  {
+    guiFPS = 15;
+    this._safeMode = true;
   }
 
   // Returns the number of ticks that have occured since the last
@@ -1177,6 +1194,8 @@ class VideoCanvas extends AnnotationCanvas {
           {
             console.warn("Detected slow performance, entering safe mode.");
             that.dispatchEvent(new Event("safeMode"));
+            that._motionComp.safeMode();
+            that.rateChange(that._playbackRate);
           }
         }
 

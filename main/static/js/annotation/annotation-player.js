@@ -312,8 +312,6 @@ class AnnotationPlayer extends TatorElement {
   }
 
   safeMode() {
-    guiFPS=15;
-    this._video.rateChange(this._fps/guiFPS);
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");
     return 0;
