@@ -300,6 +300,7 @@ class Version(Model):
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
     modified_datetime = DateTimeField(auto_now=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_modified_by')
+    num_annotations = PositiveIntegerField(default=0)
 
     def __str__(self):
         out = f"{self.name}"
@@ -424,9 +425,11 @@ def video_delete(sender, instance, **kwargs):
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
-def update_version(instance):
-    if instance.version and instance.modified:
-        instance.version.modified_by = instance.modified_by
+def update_version(instance, delta):
+    if instance.version:
+        if instance.modified:
+            instance.version.modified_by = instance.modified_by
+        instance.version.num_annotations += delta
         instance.version.save()
 
 class EntityLocalizationBase(EntityBase):
@@ -450,7 +453,7 @@ class EntityLocalizationBase(EntityBase):
 @receiver(post_save, sender=EntityLocalizationBase)
 def localization_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    update_version(instance)
+    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
@@ -458,7 +461,7 @@ def localization_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
-    update_version(instance)
+    update_version(instance, -1)
 
 class EntityLocalizationDot(EntityLocalizationBase):
     x = FloatField()
@@ -468,13 +471,13 @@ class EntityLocalizationDot(EntityLocalizationBase):
 def dot_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance)
+    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance)
+    update_version(instance, -1)
 
 class EntityLocalizationLine(EntityLocalizationBase):
     x0 = FloatField()
@@ -486,13 +489,13 @@ class EntityLocalizationLine(EntityLocalizationBase):
 def line_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance)
+    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
 def line_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance)
+    update_version(instance, -1)
 
 class EntityLocalizationBox(EntityLocalizationBase):
     x = FloatField()
@@ -504,13 +507,13 @@ class EntityLocalizationBox(EntityLocalizationBase):
 def box_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance)
+    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance)
+    update_version(instance, -1)
 
 class AssociationType(PolymorphicModel):
     media = ManyToManyField(EntityMediaBase)
@@ -600,12 +603,12 @@ class EntityState(EntityBase):
 @receiver(post_save, sender=EntityState)
 def state_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    update_version(instance)
+    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityState)
 def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
-    update_version(instance)
+    update_version(instance, -1)
 
 # Tree data type
 class TreeLeaf(EntityBase):
