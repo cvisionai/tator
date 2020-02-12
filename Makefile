@@ -341,6 +341,7 @@ FILES = \
     annotation/annotation-page.js \
     annotation/seek-bar.js \
     annotation/version-button.js \
+    annotation/version-select.js \
     annotation/version-dialog.js \
     third_party/autocomplete.js \
     utilities.js
