@@ -566,7 +566,7 @@ class MotionComp {
 
   safeMode()
   {
-    Utilities.sendNotification(`Entered safe mode on ${location.href}`, true);
+    Utilities.sendNotification(`Entered safe mode on ${location.href}`);
     guiFPS = 15;
     this._safeMode = true;
   }
