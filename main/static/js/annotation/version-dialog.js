@@ -37,7 +37,7 @@ class VersionDialog extends ModalDialog {
     tr.appendChild(thUpdated);
 
     const thDesc = document.createElement("th");
-    thDesc.setAttribute("class", "col-4");
+    thDesc.setAttribute("class", "col-3");
     thDesc.textContent = "Description";
     tr.appendChild(thDesc);
 
@@ -48,6 +48,8 @@ class VersionDialog extends ModalDialog {
     spanView.setAttribute("class", "sr-only");
     spanView.textContent = "View version";
     thView.appendChild(spanView);
+
+    this._buttons = [];
   }
 
   init(versions) {
@@ -76,9 +78,16 @@ class VersionDialog extends ModalDialog {
       tdDesc.textContent = version.description;
       tr.appendChild(tdDesc);
 
+      const tdSelect = document.createElement("td");
+      tr.appendChild(tdSelect);
+
+      const select = document.createElement("version-select");
+      select.addEventListener("select", this._handleSelect.bind(this));
+      select.init(version, false);
+      tdSelect.appendChild(select);
+      this._buttons.push(select);
+
       if (version.created_datetime != version.modified_datetime) {
-        console.log("CREATED: " + version.created_datetime);
-        console.log("MODDED:  " + version.modified_datetime);
         const trEdited = document.createElement("tr");
         tbody.appendChild(trEdited);
 
@@ -98,6 +107,27 @@ class VersionDialog extends ModalDialog {
         tdDescEdited.setAttribute("class", "f3 text-gray");
         tdDescEdited.textContent = version.description;
         trEdited.appendChild(tdDescEdited);
+
+        const tdSelectEdited = document.createElement("td");
+        trEdited.appendChild(tdSelectEdited);
+
+        const selectEdited = document.createElement("version-select");
+        selectEdited.addEventListener("select", this._handleSelect.bind(this));
+        selectEdited.init(version, true);
+        tdSelectEdited.appendChild(selectEdited);
+        this._buttons.push(selectEdited);
+      }
+    }
+  }
+
+  _handleSelect(evt) {
+    const version = evt.detail.version;
+    const edited = evt.detail.edited;
+    for (const button of this._buttons) {
+      const sameVersion = button._version.number == version.number;
+      const sameEdited = button._edited == edited;
+      if (!(sameVersion && sameEdited)) {
+        button.deselect();
       }
     }
   }
