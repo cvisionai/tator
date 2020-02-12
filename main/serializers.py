@@ -524,5 +524,6 @@ class VersionSerializer(serializers.ModelSerializer):
             'name', 'description', 'number', 'project', 'media',
             'created_datetime', 'created_by', 'created_name',
             'modified_datetime', 'modified_by', 'modified_name',
+            'num_annotations',
         ]
 
