@@ -36,10 +36,10 @@ class VersionDialog extends ModalDialog {
     thUpdated.textContent = "Updated";
     tr.appendChild(thUpdated);
 
-    const thDesc = document.createElement("th");
-    thDesc.setAttribute("class", "col-3");
-    thDesc.textContent = "Description";
-    tr.appendChild(thDesc);
+    const thAnnotations = document.createElement("th");
+    thAnnotations.setAttribute("class", "col-3");
+    thAnnotations.textContent = "Annotations";
+    tr.appendChild(thAnnotations);
 
     const thView = document.createElement("th");
     tr.appendChild(thView);
@@ -63,6 +63,7 @@ class VersionDialog extends ModalDialog {
       tbody.appendChild(tr);
 
       const tdName = document.createElement("td");
+      tdName.setAttribute("title", version.description);
       tdName.textContent = version.name;
       tr.appendChild(tdName);
 
@@ -73,10 +74,10 @@ class VersionDialog extends ModalDialog {
       tdUpdated.textContent = created_str + " by " + version.created_name;
       tr.appendChild(tdUpdated);
 
-      const tdDesc = document.createElement("td");
-      tdDesc.setAttribute("class", "f3 text-gray");
-      tdDesc.textContent = version.description;
-      tr.appendChild(tdDesc);
+      const tdAnnotations = document.createElement("td");
+      tdAnnotations.setAttribute("class", "f3 text-gray");
+      tdAnnotations.textContent = version.num_annotations;
+      tr.appendChild(tdAnnotations);
 
       const tdSelect = document.createElement("td");
       tr.appendChild(tdSelect);
@@ -103,10 +104,10 @@ class VersionDialog extends ModalDialog {
         tdModified.textContent = created_str + " by " + version.modified_name;
         trEdited.appendChild(tdModified);
 
-        const tdDescEdited = document.createElement("td");
-        tdDescEdited.setAttribute("class", "f3 text-gray");
-        tdDescEdited.textContent = version.description;
-        trEdited.appendChild(tdDescEdited);
+        const tdAnnotationsEdited = document.createElement("td");
+        tdAnnotationsEdited.setAttribute("class", "f3 text-gray");
+        tdAnnotationsEdited.textContent = version.num_annotations;
+        trEdited.appendChild(tdAnnotationsEdited);
 
         const tdSelectEdited = document.createElement("td");
         trEdited.appendChild(tdSelectEdited);
