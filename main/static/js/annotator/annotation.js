@@ -448,8 +448,15 @@ class AnnotationCanvas extends TatorElement
     this._domParents = [];
     this._metaMode = false;
 
-    this._offscreen = new OffscreenCanvas(100, 100);
-    this._offscreenDraw = new DrawGL(this._offscreen);
+    try
+    {
+      this._offscreen = new OffscreenCanvas(100, 100);
+      this._offscreenDraw = new DrawGL(this._offscreen);
+    }
+    catch
+    {
+      console.warn("No offscreen canvas capability.");
+    }
   }
 
   set permission(val) {
@@ -2458,6 +2465,10 @@ class AnnotationCanvas extends TatorElement
       roi = this._roi;
     }
 
+    if (this._offscreen == undefined)
+    {
+      return;
+    }
     this._offscreenDraw.setPushCallback(
         (frameData) => {return this.drawAnnotations(frameData,
                                                     this._offscreenDraw,
