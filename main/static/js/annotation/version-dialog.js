@@ -131,12 +131,10 @@ class VersionDialog extends ModalDialog {
   }
 
   _handleSelect(evt) {
-    const version = evt.detail.version;
-    const edited = evt.detail.edited;
+    const id = evt.detail.version.id;
     for (const button of this._buttons) {
-      const sameVersion = button._version.number == version.number;
-      const sameEdited = button._edited == edited;
-      if (!(sameVersion && sameEdited)) {
+      const sameVersion = button._version.id == id;
+      if (!sameVersion) {
         button.deselect();
       }
     }
