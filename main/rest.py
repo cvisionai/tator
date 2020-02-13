@@ -1520,17 +1520,14 @@ class LocalizationList(APIView, AttributeFilterMixin):
             version = Version.objects.get(pk=reqObject['version'])
         else:
             # If no version is given, assign the localization to version 0 (baseline)
-            version = Version.objects.filter(media=media_id, number=0)
+            version = Version.objects.filter(project=project, number=0)
             if not version.exists():
                 # If version 0 does not exist, create it.
                 version = Version.objects.create(
                     name="Baseline",
                     description="Initial version",
                     project=project,
-                    media=mediaElement,
                     number=0,
-                    created_by=self.request.user,
-                    modified_by=self.request.user,
                 )
 
         newObjType=type_to_obj(type(entityType))
@@ -1811,23 +1808,19 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
             # If this state applies to one media, we create a version. Otherwise
             # version is left null.
             version = None
-            if len(media_ids) == 1:
-                if 'version' in reqObject:
-                    version = Version.objects.get(pk=reqObject['version'])
-                else:
-                    # If no version is given, assign the localization to version 0 (baseline)
-                    version = Version.objects.filter(media=media_ids[0], number=0)
-                    if not version.exists():
-                        # If version 0 does not exist, create it.
-                        version = Version.objects.create(
-                            name="Baseline",
-                            description="Initial version",
-                            project=project,
-                            media=mediaElements[0],
-                            number=0,
-                            created_by=self.request.user,
-                            modified_by=self.request.user,
-                        )
+            if 'version' in reqObject:
+                version = Version.objects.get(pk=reqObject['version'])
+            else:
+                # If no version is given, assign the localization to version 0 (baseline)
+                version = Version.objects.filter(project=project, number=0)
+                if not version.exists():
+                    # If version 0 does not exist, create it.
+                    version = Version.objects.create(
+                        name="Baseline",
+                        description="Initial version",
+                        project=project,
+                        number=0,
+                    )
 
             if 'type' in reqObject:
                 entityTypeId=reqObject['type']
@@ -3608,14 +3601,10 @@ class VersionListAPI(APIView):
         try:
             name = request.data.get('name', None)
             description = request.data.get('description', None)
-            media = request.data.get('media_id', None)
             project = kwargs['project']
             
             if name is None:
                 raise Exception('Missing version name!')
-
-            if media is None:
-                raise Exception('Missing media ID!')
 
             if project is None:
                 raise Exception('Missing project ID!')
@@ -3626,7 +3615,6 @@ class VersionListAPI(APIView):
                 name=name,
                 description=description,
                 number=number,
-                media=EntityMediaBase.objects.get(pk=media),
                 project=Project.objects.get(pk=project),
                 created_by=request.user,
             )
@@ -3650,17 +3638,84 @@ class VersionListAPI(APIView):
             media = request.query_params.get('media_id', None)
             project = kwargs['project']
 
-            qs = Version.objects.filter(project=project)
-            if media:
-                qs = qs.filter(media=media)
-            qs = qs.order_by('number')
-            
+            qs = Version.objects.filter(project=project).order_by('number')
             data = self.serializer_class(
                 qs,
                 context=self.get_renderer_context(),
                 many=True,
             ).data
-            response = Response(data, status=status.HTTP_200_OK)
+
+            # Use elasticsearch to find annotation stats and last modification date/user
+            query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            if media:
+                query['query']['bool']['filter'] = []
+                query['query']['bool']['filter'].append({
+                    'has_parent': {
+                        'parent_type': 'media',
+                        'query': {'ids': {'values': [media,]}},
+                    },
+                })
+            query['query']['bool']['should'] = []
+            query['query']['bool']['should'].append({
+                'match': {'_modified': False},
+            })
+            query['query']['bool']['should'].append({
+                'bool': {
+                    'must_not': [{'exists': {'field': '_modified'}}],
+                },
+            })
+            query['query']['bool']['minimum_should_match'] = 1
+            query['aggs']['versions']['terms']['field'] = '_annotation_version'
+            query['aggs']['versions']['aggs']['latest']['top_hits'] = {
+                'sort': [{'_modified_datetime': {'order': 'asc'}}],
+                '_source': {'includes': ['_modified_datetime', '_modified_by']},
+                'size': 1,
+            }
+            created_aggs = TatorSearch().search_raw(project, query)
+            created_aggs = created_aggs['aggregations']['versions']['buckets']
+            query['query']['bool']['should'][0]['match']['_modified'] = True
+            modified_aggs = TatorSearch().search_raw(project, query)
+            modified_aggs = modified_aggs['aggregations']['versions']['buckets']
+
+            # Convert to dictionary with id as keys
+            data = {i['id']: i for i in data}
+            created_aggs = {i['key']: i for i in created_aggs}
+            modified_aggs = {i['key']: i for i in modified_aggs}
+
+            # Copy annotation stats and modification dates into objects.
+            for key in data:
+                if key in created_aggs:
+                    created_latest = created_aggs[key]['latest']['hits']['hits'][0]['_source']
+                    data[key] = {
+                        **data[key],
+                        'num_created': created_aggs[key]['doc_count'],
+                        'created_datetime': created_latest['_modified_datetime'],
+                        'created_by': created_latest['_modified_by'],
+                    }
+                else:
+                    data[key] = {
+                        **data[key],
+                        'num_created': 0,
+                        'created_datetime': '---',
+                        'created_by': '---',
+                    }
+                if key in modified_aggs:
+                    modified_latest = modified_aggs[key]['latest']['hits']['hits'][0]['_source']
+                    data[key] = {
+                        **data[key],
+                        'num_modified': modified_aggs[key]['doc_count'],
+                        'modified_datetime': modified_latest['_modified_datetime'],
+                        'modified_by': modified_latest['_modified_by'],
+                    }
+                else:
+                    data[key] = {
+                        **data[key],
+                        'num_modified': 0,
+                        'modified_datetime': '---',
+                        'modified_by': '---',
+                    }
+
+            response = Response(list(data.values()), status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
             response = Response(
                 {'message': str(dne)},
