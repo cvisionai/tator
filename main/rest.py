@@ -1516,6 +1516,22 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
         project=mediaElement.project
 
+        if 'version' in reqObject:
+            version = Version.objects.get(pk=reqObject['version'])
+        else:
+            # If no version is given, assign the localization to version 0 (baseline)
+            version = Version.objects.filter(media=media_id, number=0)
+            if not version.exists():
+                # If version 0 does not exist, create it.
+                version = Version.objects.create(
+                    name="Baseline",
+                    description="Initial version",
+                    project=project,
+                    media=mediaElement,
+                    number=0,
+                    created_by=self.request.user,
+                    modified_by=self.request.user,
+                )
 
         newObjType=type_to_obj(type(entityType))
 
@@ -1543,7 +1559,8 @@ class LocalizationList(APIView, AttributeFilterMixin):
                          user=self.request.user,
                          attributes=attrs,
                          created_by=self.request.user,
-                         modified_by=self.request.user)
+                         modified_by=self.request.user,
+                         version=version)
 
         for field, value in localizationFields.items():
             setattr(obj, field, value)
@@ -1791,6 +1808,27 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 if video.project != project:
                     raise Exception('Videos cross projects')
 
+            # If this state applies to one media, we create a version. Otherwise
+            # version is left null.
+            version = None
+            if len(media_ids) == 1:
+                if 'version' in reqObject:
+                    version = Version.objects.get(pk=reqObject['version'])
+                else:
+                    # If no version is given, assign the localization to version 0 (baseline)
+                    version = Version.objects.filter(media=media_ids[0], number=0)
+                    if not version.exists():
+                        # If version 0 does not exist, create it.
+                        version = Version.objects.create(
+                            name="Baseline",
+                            description="Initial version",
+                            project=project,
+                            media=mediaElements[0],
+                            number=0,
+                            created_by=self.request.user,
+                            modified_by=self.request.user,
+                        )
+
             if 'type' in reqObject:
                 entityTypeId=reqObject['type']
             else:
@@ -1814,7 +1852,8 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                               meta=entityType,
                               attributes=attrs,
                               created_by=request.user,
-                              modified_by=request.user)
+                              modified_by=request.user,
+                              version=version)
 
             association=None
             if entityType.association == "Media":
