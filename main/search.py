@@ -59,6 +59,8 @@ class TatorSearch:
                 '_treeleaf_path': {'type': 'text'},
                 '_annotation_version': {'type': 'integer'},
                 '_modified': {'type': 'boolean'},
+                '_modified_datetime': {'type': 'date'},
+                '_modified_by': {'type': 'keyword'},
             }},
         )
 
@@ -106,8 +108,10 @@ class TatorSearch:
                 'name': 'annotation',
                 'parent': entity.media.pk,
             }
-            aux['_annotation_version'] = entity.version
+            aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
+            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
@@ -117,6 +121,8 @@ class TatorSearch:
                 }
             aux['_annotation_version'] = entity.version
             aux['_modified'] = entity.modified
+            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['treeleaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
