@@ -457,6 +457,9 @@ class TatorAlgorithm(JobManagerMixin):
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
             {
+                'name': 'name',
+                'value': self.name,
+            }, {
                 'name': 'media_ids',
                 'value': media_ids,
             }, {
