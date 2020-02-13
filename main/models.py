@@ -170,10 +170,34 @@ class Project(Model):
         delete_polymorphic_qs(qs)
         super().delete(*args, **kwargs)
 
+class Version(Model):
+    name = CharField(max_length=128)
+    description = CharField(max_length=1024)
+    number = PositiveIntegerField()
+    project = ForeignKey(Project, on_delete=CASCADE)
+    created_datetime = DateTimeField(auto_now_add=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
+
+    def __str__(self):
+        out = f"{self.name}"
+        if self.description:
+            out += f" | {self.description}"
+        return out
+
+def make_default_version(instance):
+    return Version.objects.create(
+        name="Baseline",
+        description="Initial version",
+        project=instance,
+        number=0,
+    )
+
 @receiver(post_save, sender=Project)
-def project_save(sender, instance, **kwargs):
+def project_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_project_cache(instance.pk)
     TatorSearch().create_index(instance.pk)
+    if created:
+        make_default_version(instance)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
@@ -290,41 +314,9 @@ class EntityMediaBase(EntityBase):
     """ End datetime of a session in which the media's annotations were edited.
     """
 
-class Version(Model):
-    name = CharField(max_length=128)
-    description = CharField(max_length=1024)
-    number = PositiveIntegerField()
-    project = ForeignKey(Project, on_delete=CASCADE)
-    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
-    created_datetime = DateTimeField(auto_now_add=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
-    modified_datetime = DateTimeField(auto_now=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_modified_by')
-    num_modified = PositiveIntegerField(default=0)
-    num_unmodified = PositiveIntegerField(default=0)
-
-    def __str__(self):
-        out = f"{self.name}"
-        if self.description:
-            out += f" | {self.description}"
-        return out
-
-def make_default_version(instance):
-    return Version.objects.create(
-        name="Baseline",
-        description="Initial version",
-        project=instance.project,
-        media=instance,
-        number=0,
-        created_by=instance.uploader,
-        modified_by=instance.uploader,
-    )
-
 @receiver(post_save, sender=EntityMediaBase)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    if created:
-        make_default_version(instance)
 
 @receiver(pre_delete, sender=EntityMediaBase)
 def media_delete(sender, instance, **kwargs):
@@ -339,8 +331,6 @@ class EntityMediaImage(EntityMediaBase):
 def image_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
-    if created:
-        make_default_version(instance)
 
 @receiver(pre_delete, sender=EntityMediaImage)
 def image_delete(sender, instance, **kwargs):
@@ -415,8 +405,6 @@ class EntityMediaVideo(EntityMediaBase):
 def video_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
-    if created:
-        make_default_version(instance)
 
 @receiver(pre_delete, sender=EntityMediaVideo)
 def video_delete(sender, instance, **kwargs):
@@ -425,18 +413,6 @@ def video_delete(sender, instance, **kwargs):
     instance.file.delete(False)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
-
-def update_version(instance, delta):
-    if instance.version:
-        if instance.modified:
-            instance.version.modified_by = instance.modified_by
-            instance.version.num_modified += delta
-        elif instance.modified is None:
-            instance.version.num_modified += delta
-            instance.version.num_unmodified += delta
-        elif instance.modified == False:
-            instance.version.num_unmodified += delta
-        instance.version.save()
 
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
@@ -459,7 +435,6 @@ class EntityLocalizationBase(EntityBase):
 @receiver(post_save, sender=EntityLocalizationBase)
 def localization_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
@@ -467,7 +442,6 @@ def localization_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
-    update_version(instance, -1)
 
 class EntityLocalizationDot(EntityLocalizationBase):
     x = FloatField()
@@ -477,13 +451,11 @@ class EntityLocalizationDot(EntityLocalizationBase):
 def dot_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance, -1)
 
 class EntityLocalizationLine(EntityLocalizationBase):
     x0 = FloatField()
@@ -495,13 +467,11 @@ class EntityLocalizationLine(EntityLocalizationBase):
 def line_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
 def line_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance, -1)
 
 class EntityLocalizationBox(EntityLocalizationBase):
     x = FloatField()
@@ -513,13 +483,11 @@ class EntityLocalizationBox(EntityLocalizationBase):
 def box_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().create_document(instance)
-    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
-    update_version(instance, -1)
 
 class AssociationType(PolymorphicModel):
     media = ManyToManyField(EntityMediaBase)
@@ -609,12 +577,10 @@ class EntityState(EntityBase):
 @receiver(post_save, sender=EntityState)
 def state_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    update_version(instance, int(created))
 
 @receiver(pre_delete, sender=EntityState)
 def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
-    update_version(instance, -1)
 
 # Tree data type
 class TreeLeaf(EntityBase):
