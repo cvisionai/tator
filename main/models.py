@@ -300,7 +300,8 @@ class Version(Model):
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
     modified_datetime = DateTimeField(auto_now=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_modified_by')
-    num_annotations = PositiveIntegerField(default=0)
+    num_modified = PositiveIntegerField(default=0)
+    num_unmodified = PositiveIntegerField(default=0)
 
     def __str__(self):
         out = f"{self.name}"
@@ -429,7 +430,12 @@ def update_version(instance, delta):
     if instance.version:
         if instance.modified:
             instance.version.modified_by = instance.modified_by
-        instance.version.num_annotations += delta
+            instance.version.num_modified += delta
+        elif instance.modified is None:
+            instance.version.num_modified += delta
+            instance.version.num_unmodified += delta
+        elif instance.modified == False:
+            instance.version.num_unmodified += delta
         instance.version.save()
 
 class EntityLocalizationBase(EntityBase):

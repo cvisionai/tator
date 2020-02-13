@@ -76,7 +76,7 @@ class VersionDialog extends ModalDialog {
 
       const tdAnnotations = document.createElement("td");
       tdAnnotations.setAttribute("class", "f3 text-gray");
-      tdAnnotations.textContent = version.num_annotations;
+      tdAnnotations.textContent = version.num_unmodified;
       tr.appendChild(tdAnnotations);
 
       const tdSelect = document.createElement("td");
@@ -106,7 +106,7 @@ class VersionDialog extends ModalDialog {
 
         const tdAnnotationsEdited = document.createElement("td");
         tdAnnotationsEdited.setAttribute("class", "f3 text-gray");
-        tdAnnotationsEdited.textContent = version.num_annotations;
+        tdAnnotationsEdited.textContent = version.num_modified;
         trEdited.appendChild(tdAnnotationsEdited);
 
         const tdSelectEdited = document.createElement("td");
