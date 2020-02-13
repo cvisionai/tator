@@ -70,13 +70,17 @@ class VersionDialog extends ModalDialog {
       const tdUpdated = document.createElement("td");
       tdUpdated.setAttribute("class", "f3 text-gray");
       const created = new Date(version.created_datetime);
-      const created_str = created.toDateString().slice(4);
-      tdUpdated.textContent = created_str + " by " + version.created_name;
+      if (!isNaN(created)) {
+        const created_str = created.toDateString().slice(4);
+        tdUpdated.textContent = created_str + " by " + version.created_by;
+      } else {
+        tdUpdated.textContent = "---";
+      }
       tr.appendChild(tdUpdated);
 
       const tdAnnotations = document.createElement("td");
       tdAnnotations.setAttribute("class", "f3 text-gray");
-      tdAnnotations.textContent = version.num_unmodified;
+      tdAnnotations.textContent = version.num_created;
       tr.appendChild(tdAnnotations);
 
       const tdSelect = document.createElement("td");
@@ -100,8 +104,12 @@ class VersionDialog extends ModalDialog {
         const tdModified = document.createElement("td");
         tdModified.setAttribute("class", "f3 text-gray");
         const modified = new Date(version.modified_datetime);
-        const modified_str = modified.toDateString().slice(4);
-        tdModified.textContent = created_str + " by " + version.modified_name;
+        if (!isNaN(modified)) {
+          const modified_str = modified.toDateString().slice(4);
+          tdModified.textContent = modified_str + " by " + version.modified_by;
+        } else {
+          tdModified.textContent = "---";
+        }
         trEdited.appendChild(tdModified);
 
         const tdAnnotationsEdited = document.createElement("td");
