@@ -1316,7 +1316,7 @@ def get_annotation_queryset(project, query_params, attr_filter):
         annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
     if version != None:
-        annotation_bools.append({'match': {'_version': {'query': int(version)}}})
+        annotation_bools.append({'match': {'_annotation_version': {'query': int(version)}}})
 
     if start != None:
         query['from'] = int(start)
