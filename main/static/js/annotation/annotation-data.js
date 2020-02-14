@@ -9,7 +9,28 @@ class AnnotationData extends HTMLElement {
   }
 
   init(dataTypes, version) {
+    this._dataTypesRaw = dataTypes;
     this._version = version;
+
+    this.updateAll(dataTypes, version)
+    .then(() => {
+      this.dispatchEvent(new Event("initialized"));
+    });
+
+    // Convert datatypes array to a map for faster access
+    this._dataTypes={}
+    for (const dataType of dataTypes) {
+      this._dataTypes[dataType.type.id] = dataType;
+    }
+  }
+
+  setVersion(version, edited) {
+    this._version = version;
+    this._edited = edited;
+    this.updateAll(this._dataTypesRaw, version);
+  }
+
+  updateAll(dataTypes, version) {
     const trackTypeIds=[];
     const localTypeIds=[];
     for (const [idx, dataType] of dataTypes.entries()) {
@@ -78,20 +99,7 @@ class AnnotationData extends HTMLElement {
       });
     });
 
-    initDone.then(() => {
-      this.dispatchEvent(new Event("initialized"));
-    });
-
-    // Convert datatypes array to a map for faster access
-    this._dataTypes={}
-    for (const dataType of dataTypes) {
-      this._dataTypes[dataType.type.id] = dataType;
-    }
-  }
-
-  setVersion(version, edited) {
-    this._version = version;
-    this._edited = edited;
+    return initDone;
   }
 
   updateTypeLocal(method, id, body, typeObj) {
