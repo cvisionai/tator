@@ -253,6 +253,11 @@ class AnnotationPage extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    this._versionDialog.addEventListener("versionSelect", evt => {
+      this._data.setVersion(evt.detail.version, evt.detail.modified);
+      this._versionButton.text = version.name;
+    }));
+
     this._versionButton.addEventListener("click", () => {
       this._versionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");

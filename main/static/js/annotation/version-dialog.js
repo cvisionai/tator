@@ -138,6 +138,7 @@ class VersionDialog extends ModalDialog {
         button.deselect();
       }
     }
+    this._version = evt.detail.version;
   }
 }
 

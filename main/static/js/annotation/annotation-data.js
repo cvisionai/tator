@@ -87,6 +87,11 @@ class AnnotationData extends HTMLElement {
     }
   }
 
+  setVersion(version, modified) {
+    this._version = version;
+    this._modified = modified;
+  }
+
   updateTypeLocal(method, id, body, typeObj) {
     const typeId = typeObj.type.id;
     if (this._updateUrls.has(typeId) == false) {
