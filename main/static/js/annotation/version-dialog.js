@@ -138,7 +138,12 @@ class VersionDialog extends ModalDialog {
         button.deselect();
       }
     }
-    this._version = evt.detail.version;
+    this.dispatchEvent(new CustomEvent("versionSelect", {
+      "detail": {
+        "version": evt.detail.version,
+        "edited": evt.detail.edited,
+      }
+    }));
   }
 }
 
