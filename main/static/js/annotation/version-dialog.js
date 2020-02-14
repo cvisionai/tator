@@ -92,40 +92,38 @@ class VersionDialog extends ModalDialog {
       tdSelect.appendChild(select);
       this._buttons.push(select);
 
-      if (version.created_datetime != version.modified_datetime) {
-        const trEdited = document.createElement("tr");
-        tbody.appendChild(trEdited);
+      const trEdited = document.createElement("tr");
+      tbody.appendChild(trEdited);
 
-        const tdNameEdited = document.createElement("td");
-        tdNameEdited.setAttribute("class", "f3 text-gray text-uppercase text-semibold");
-        tdNameEdited.textContent = "Edited";
-        trEdited.appendChild(tdNameEdited);
+      const tdNameEdited = document.createElement("td");
+      tdNameEdited.setAttribute("class", "f3 text-gray text-uppercase text-semibold");
+      tdNameEdited.textContent = "Edited";
+      trEdited.appendChild(tdNameEdited);
 
-        const tdModified = document.createElement("td");
-        tdModified.setAttribute("class", "f3 text-gray");
-        const modified = new Date(version.modified_datetime);
-        if (!isNaN(modified)) {
-          const modified_str = modified.toDateString().slice(4);
-          tdModified.textContent = modified_str + " by " + version.modified_by;
-        } else {
-          tdModified.textContent = "---";
-        }
-        trEdited.appendChild(tdModified);
-
-        const tdAnnotationsEdited = document.createElement("td");
-        tdAnnotationsEdited.setAttribute("class", "f3 text-gray");
-        tdAnnotationsEdited.textContent = version.num_modified;
-        trEdited.appendChild(tdAnnotationsEdited);
-
-        const tdSelectEdited = document.createElement("td");
-        trEdited.appendChild(tdSelectEdited);
-
-        const selectEdited = document.createElement("version-select");
-        selectEdited.addEventListener("select", this._handleSelect.bind(this));
-        selectEdited.init(version, true);
-        tdSelectEdited.appendChild(selectEdited);
-        this._buttons.push(selectEdited);
+      const tdModified = document.createElement("td");
+      tdModified.setAttribute("class", "f3 text-gray");
+      const modified = new Date(version.modified_datetime);
+      if (!isNaN(modified)) {
+        const modified_str = modified.toDateString().slice(4);
+        tdModified.textContent = modified_str + " by " + version.modified_by;
+      } else {
+        tdModified.textContent = "---";
       }
+      trEdited.appendChild(tdModified);
+
+      const tdAnnotationsEdited = document.createElement("td");
+      tdAnnotationsEdited.setAttribute("class", "f3 text-gray");
+      tdAnnotationsEdited.textContent = version.num_modified;
+      trEdited.appendChild(tdAnnotationsEdited);
+
+      const tdSelectEdited = document.createElement("td");
+      trEdited.appendChild(tdSelectEdited);
+
+      const selectEdited = document.createElement("version-select");
+      selectEdited.addEventListener("select", this._handleSelect.bind(this));
+      selectEdited.init(version, true);
+      tdSelectEdited.appendChild(selectEdited);
+      this._buttons.push(selectEdited);
     }
     this._buttons[this._buttons.length - 1].select(true);
   }
@@ -134,7 +132,8 @@ class VersionDialog extends ModalDialog {
     const id = evt.detail.version.id;
     for (const button of this._buttons) {
       const sameVersion = button._version.id == id;
-      if (!sameVersion) {
+      const sameEdited = button._edited == evt.detail.edited;
+      if (!(sameVersion && sameEdited)) {
         button.deselect();
       }
     }
