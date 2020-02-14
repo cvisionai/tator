@@ -963,7 +963,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
                 }, 
             }, {
                 'match': {
-                    '_modified': modified,
+                    '_modified': bool(int(modified)),
                 },
             }]
             if search != None:
