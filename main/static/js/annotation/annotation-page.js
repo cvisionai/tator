@@ -281,14 +281,14 @@ class AnnotationPage extends TatorPage {
       Promise.all([localizationData, stateData, versionData])
       .then(([localizationTypes, stateTypes, versions]) => {
         this._versionDialog.init(versions);
-        const version = versions[versions.length - 1];
+        this._version = versions[versions.length - 1];
         if (versions.length == 0) {
           this._versionButton.style.display = "none";
         } else {
-          this._versionButton.text = version.name;
+          this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.init(dataTypes, version);
+        this._data.init(dataTypes, this._version);
         this._browser.dataTypes = dataTypes;
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
@@ -401,10 +401,7 @@ class AnnotationPage extends TatorPage {
 
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
-          save.setAttribute("project-id", projectId);
-          save.setAttribute("media-id", mediaId);
-          save.dataType = dataType;
-          save.undoBuffer = this._undo;
+          save.init(projectId, mediaId, dataType, this._undo, this._version);
           this._main.appendChild(save);
           this._saves[dataType.type.id] = save;
 
