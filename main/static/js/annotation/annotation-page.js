@@ -236,6 +236,10 @@ class AnnotationPage extends TatorPage {
     this._versionDialog.addEventListener("versionSelect", evt => {
       this._data.setVersion(evt.detail.version, evt.detail.edited);
       this._versionButton.text = evt.detail.version.name;
+      this._version = evt.detail.version;
+      for (const key in this._saves) {
+        this._saves[key].version = this._version;
+      }
     });
 
     this._versionButton.addEventListener("click", () => {

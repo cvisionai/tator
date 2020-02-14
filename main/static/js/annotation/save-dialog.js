@@ -103,6 +103,10 @@ class SaveDialog extends TatorElement {
     this._undo.post("Localizations", body, this._dataType);
   }
 
+  set version(val) {
+    this._version = val;
+  }
+
   set canvasPosition(val) {
     this._canvasPosition = val;
     this._updatePosition();
