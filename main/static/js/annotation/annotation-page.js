@@ -240,6 +240,7 @@ class AnnotationPage extends TatorPage {
       for (const key in this._saves) {
         this._saves[key].version = this._version;
       }
+    
     });
 
     this._versionButton.addEventListener("click", () => {
@@ -293,7 +294,7 @@ class AnnotationPage extends TatorPage {
         }
         const dataTypes = localizationTypes.concat(stateTypes)
         this._data.init(dataTypes, this._version);
-        this._browser.dataTypes = dataTypes;
+        this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
