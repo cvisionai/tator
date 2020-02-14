@@ -30,7 +30,7 @@ class VersionSelect extends TatorElement {
     this._icon.appendChild(span);
 
     this._button.addEventListener("click", () => {
-      this.select();
+      this.select(false);
     });
   }
 
@@ -41,15 +41,17 @@ class VersionSelect extends TatorElement {
     this._edited = edited;
   }
 
-  select() {
+  select(suppressEvent) {
     this._icon.style.display = "flex";
     this._button.style.display = "none";
-    this.dispatchEvent(new CustomEvent("select", {
-      detail: {
-        "version": this._version,
-        "edited": this._edited,
-      },
-    }));
+    if (!suppressEvent) {
+      this.dispatchEvent(new CustomEvent("select", {
+        detail: {
+          "version": this._version,
+          "edited": this._edited,
+        },
+      }));
+    }
   }
 
   deselect() {
