@@ -1820,7 +1820,9 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
             else:
                 # If no version is given, assign the localization to version 0 (baseline)
                 version = Version.objects.filter(project=project, number=0)
-                if not version.exists():
+                if version.exists():
+                    version = version[0]
+                else:
                     # If version 0 does not exist, create it.
                     version = Version.objects.create(
                         name="Baseline",

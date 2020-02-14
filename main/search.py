@@ -119,7 +119,7 @@ class TatorSearch:
                     'name': 'annotation',
                     'parent': media[0].pk,
                 }
-            aux['_annotation_version'] = entity.version
+            aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
             aux['_modified_datetime'] = entity.modified_datetime.isoformat()
             aux['_modified_by'] = str(entity.modified_by)
