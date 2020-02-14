@@ -1516,12 +1516,18 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
         project=mediaElement.project
 
+        modified = None
+        if 'modified' in reqObject:
+            modified = bool(reqObject['modified'])
+
         if 'version' in reqObject:
             version = Version.objects.get(pk=reqObject['version'])
         else:
             # If no version is given, assign the localization to version 0 (baseline)
             version = Version.objects.filter(project=project, number=0)
-            if not version.exists():
+            if version.exists():
+                version = version[0]
+            else:
                 # If version 0 does not exist, create it.
                 version = Version.objects.create(
                     name="Baseline",
@@ -1555,6 +1561,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
                          media=mediaElement,
                          user=self.request.user,
                          attributes=attrs,
+                         modified=modified,
                          created_by=self.request.user,
                          modified_by=self.request.user,
                          version=version)
