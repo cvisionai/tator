@@ -147,26 +147,6 @@ class AnnotationPage extends TatorPage {
             this._browser.permission = data.permission;
             this._sidebar.permission = data.permission;
           });
-          fetch("/rest/Versions/" + data.project + "?media_id=" + newValue, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          })
-          .then(response => response.json())
-          .then(versions => {
-            this._versions = versions;
-            this._versionDialog.init(versions);
-            if (versions.length == 0) {
-              this._versionButton.style.display = "none";
-            } else {
-              this._versionIndex = versions.length - 1;
-              this._versionButton.text = versions[this._versionIndex].name;
-            }
-          })
             
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
@@ -268,6 +248,15 @@ class AnnotationPage extends TatorPage {
     const projectId = this.getAttribute("project-id");
     const mediaId = this.getAttribute("media-id");
     const query = "?media_id=" + mediaId;
+    const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetch(url, {
@@ -282,15 +271,24 @@ class AnnotationPage extends TatorPage {
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
-      getMetadataType("EntityStateTypes")
+      getMetadataType("EntityStateTypes"),
+      versionPromise,
     ])
-    .then(([localizationResponse, stateResponse]) => {
+    .then(([localizationResponse, stateResponse, versionResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
-      Promise.all([localizationData, stateData])
-      .then(([localizationTypes, stateTypes]) => {
+      const versionData = versionResponse.json();
+      Promise.all([localizationData, stateData, versionData])
+      .then(([localizationTypes, stateTypes, versions]) => {
+        this._versionDialog.init(versions);
+        const version = versions[versions.length - 1];
+        if (versions.length == 0) {
+          this._versionButton.style.display = "none";
+        } else {
+          this._versionButton.text = version.name;
+        }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.dataTypes = dataTypes;
+        this._data.init(dataTypes, version);
         this._browser.dataTypes = dataTypes;
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
