@@ -3674,7 +3674,7 @@ class VersionListAPI(APIView):
             query['query']['bool']['minimum_should_match'] = 1
             query['aggs']['versions']['terms']['field'] = '_annotation_version'
             query['aggs']['versions']['aggs']['latest']['top_hits'] = {
-                'sort': [{'_modified_datetime': {'order': 'asc'}}],
+                'sort': [{'_modified_datetime': {'order': 'desc'}}],
                 '_source': {'includes': ['_modified_datetime', '_modified_by']},
                 'size': 1,
             }
