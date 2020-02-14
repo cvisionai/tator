@@ -84,14 +84,14 @@ class AnnotationData extends HTMLElement {
 
     // Convert datatypes array to a map for faster access
     this._dataTypes={}
-    for (const dataType of val) {
+    for (const dataType of dataTypes) {
       this._dataTypes[dataType.type.id] = dataType;
     }
   }
 
-  setVersion(version, modified) {
+  setVersion(version, edited) {
     this._version = version;
-    this._modified = modified;
+    this._edited = edited;
   }
 
   updateTypeLocal(method, id, body, typeObj) {
@@ -155,6 +155,10 @@ class AnnotationData extends HTMLElement {
       url += "&search=";
       url += query;
     }
+    url += "&version=";
+    url += this._version.id;
+    url += "&modified=";
+    url += Number(this._edited);
 
     // Fetch new ones from server
     fetchRetry(url)
