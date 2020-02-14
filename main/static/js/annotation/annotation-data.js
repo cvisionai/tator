@@ -5,12 +5,14 @@ class AnnotationData extends HTMLElement {
     this._trackDb = new Map();
     this._updateUrls = new Map();
     this._dataByType = new Map();
+    this._edited = true;
   }
 
-  set dataTypes(val) {
+  init(dataTypes, version) {
+    this._version = version;
     const trackTypeIds=[];
     const localTypeIds=[];
-    for (const [idx, dataType] of val.entries()) {
+    for (const [idx, dataType] of dataTypes.entries()) {
       let isLocalization=false;
       let isTrack=false;
       let isTLState=false;
@@ -50,8 +52,8 @@ class AnnotationData extends HTMLElement {
       };
 
       trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(val[typeIdx].type.id, val[typeIdx].data);
-        this.updateType(val[typeIdx], semaphore);
+        this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+        this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
 
@@ -70,8 +72,8 @@ class AnnotationData extends HTMLElement {
       //Update localizations after
       tracksDone.then(() => {
         localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(val[typeIdx].type.id, val[typeIdx].data);
-          this.updateType(val[typeIdx], semaphore);
+          this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+          this.updateType(dataTypes[typeIdx], semaphore);
         });
       });
     });
