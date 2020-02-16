@@ -9,6 +9,13 @@ logger = logging.getLogger(__name__)
 id_bits=448
 id_mask=(1 << id_bits) - 1
 
+def drop_dupes(ids):
+    """ Drops duplicates in a list without changing the order.
+    """
+    seen = set()
+    seen_add = seen.add
+    return [x for x in ids if not (x in seen or seen_add(x))]
+
 class TatorSearch:
     """ Interface for elasticsearch documents.
         There is one index per entity type.
@@ -229,20 +236,23 @@ class TatorSearch:
             count = result['total']['value']
             if size:
                 count = size
-            ids = set(int(obj['_id']) & id_mask for obj in data)
+            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
             while len(ids) < count:
                 result = self.es.scroll(
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids.union(set(int(obj['_id']) & id_mask for obj in result['hits']['hits']))
+                ids += drop_dupes([int(obj['_id']) & id_mask for obj in result['hits']['hits']])
+            ids = ids[:count]
             self.es.clear_scroll(scroll_id)
         else:
+            # TODO: This will NOT return the requested number of results if there are
+            # duplicates in the dataset.
             result = self.search_raw(project, query)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = set(int(obj['_id']) & id_mask for obj in data)
+            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
         return ids, count
 
     def count(self, project, query):
