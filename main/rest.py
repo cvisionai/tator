@@ -1812,9 +1812,6 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 if video.project != project:
                     raise Exception('Videos cross projects')
 
-            # If this state applies to one media, we create a version. Otherwise
-            # version is left null.
-            version = None
             if 'version' in reqObject:
                 version = Version.objects.get(pk=reqObject['version'])
             else:
@@ -2339,6 +2336,11 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             # Patch the thumbnail attributes
             if localization_object.thumbnail_image:
                 patch_attributes(new_attrs, localization_object.thumbnail_image)
+
+            # Patch modified field
+            if "modified" in request.data:
+                localization_object.modified = request.data["modified"]
+                localization_object.save()
 
         except PermissionDenied as err:
             raise
