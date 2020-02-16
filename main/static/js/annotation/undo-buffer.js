@@ -157,7 +157,6 @@ class UndoBuffer extends HTMLElement {
           type: data.meta.id,
           name: data.meta.name,
           version: data.version,
-          modified: data.modified,
           ...other,
           ...data,
           ...data.attributes,
@@ -167,12 +166,12 @@ class UndoBuffer extends HTMLElement {
         this._resetFromNow();
         if (data.modified == null) {
           // This was an "original" annotation, patch the original.
-          this._forwardOps.push(["PATCH", detailUri, id, {modified: false}]);
-          this._backwardOps.push(["PATCH", detailUri, id, {modified: null}]);
+          this._forwardOps.push(["PATCH", detailUri, id, {...body, modified: false}]);
+          this._backwardOps.push(["PATCH", detailUri, id, {...body, modified: null}]);
         } else if (data.modified == true) {
           // This was an annotation created via web interface, actually delete it.
           this._forwardOps.push(["DELETE", detailUri, id, null]);
-          this._backwardOps.push(["POST", listUri, projectId, body]); 
+          this._backwardOps.push(["POST", listUri, projectId, {...body, modified: true}]); 
         } else if (data.modified == false) {
           console.error("Attempted to delete an original version!");
           return null;
