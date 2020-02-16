@@ -428,7 +428,8 @@ class TatorAlgorithm(JobManagerMixin):
             self.custom = CustomObjectsApi()
 
         # Read in the mainfest.
-        self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
+        if alg.manifest:
+            self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
         # Save off the algorithm name.
         self.name = alg.name

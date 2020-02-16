@@ -161,6 +161,7 @@ def create_test_box(user, entity_type, project, media, frame):
         user=user,
         meta=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x,
@@ -1227,6 +1228,7 @@ class StateTestCase(
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
+        self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
@@ -1256,13 +1258,18 @@ class StateTestCase(
                     meta=self.entity_type,
                     project=self.project,
                     association=media_association,
+                    version=self.version,
                 )
             )
         self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'EntityStates'
         self.detail_uri = 'EntityState'
         self.create_entity = functools.partial(EntityState.objects.create,
-            meta=self.entity_type, project=self.project, association=media_association)
+            meta=self.entity_type,
+            project=self.project,
+            association=media_association,
+            version=self.version
+        )
         self.create_json = {
             'type': self.entity_type.pk,
             'name': 'asdf',
