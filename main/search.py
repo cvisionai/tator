@@ -213,8 +213,8 @@ class TatorSearch:
     def search(self, project, query):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
-        size = query.get('size', 10000)
-        if size >= 10000:
+        size = query.get('size', None)
+        if (size is None) or (size >= 10000):
             query['size'] = 10000
             result = self.es.search(
                 index=self.index_name(project),
@@ -227,6 +227,8 @@ class TatorSearch:
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
+            if size:
+                count = size
             ids = set(int(obj['_id']) & id_mask for obj in data)
             while len(ids) < count:
                 result = self.es.scroll(
