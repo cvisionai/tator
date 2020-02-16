@@ -173,7 +173,8 @@ class EntityTypeMediaSerializer(PolymorphicSerializer):
         }
 
 EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media',
-                                'attributes', 'thumbnail_image']
+                                'attributes', 'thumbnail_image',
+                                'modified', 'version' ]
 class EntityLocalizationBaseSerializer(serializers.Serializer):
     meta = EntityTypeLocalizationLWSerializer()
 
