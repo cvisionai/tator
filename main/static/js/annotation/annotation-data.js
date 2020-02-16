@@ -108,6 +108,16 @@ class AnnotationData extends HTMLElement {
       console.error("Unregistered type " + typeId);
       return;
     }
+
+    // Patching the modified field is treated as post/delete
+    if (method == "PATCH" && "modified" in body) {
+      if (body.modified == null) {
+        method = "POST";
+      } else if (body.modified == false) {
+        method = "DELETE";
+      }
+    }
+    
     const attributeNames = typeObj.columns.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
