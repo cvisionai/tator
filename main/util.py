@@ -275,8 +275,9 @@ def swapLatLon():
     logger.info("Updating entities...")
 
 def makeDefaultVersion(project_number):
-    """ For all states and localizations with null version, creates a new version
-        with name "Default".
+    """ Creates a default version for a project and sets all localizations
+        and states to that version. Meant for usage on projects that were
+        not previously using versions.
     """
     project = Project.objects.get(pk=project_number)
     version = Version.objects.filter(project=project, number=0)
@@ -285,14 +286,6 @@ def makeDefaultVersion(project_number):
     else:
         version = make_default_version(project)
     logger.info("Updating localizations...")
-    localizations = EntityLocalizationBase.objects.filter(project=project)
-    for localization in progressbar(list(localizations)):
-        if not localization.version:
-            localization.version = version
-            localization.save()
+    EntityLocalizationBase.objects.filter(project=project).update({'version': version})
     logger.info("Updating states...")
-    states = EntityState.objects.filter(project=project)
-    for state in progressbar(list(states)):
-        if not state.version:
-            state.version = version
-            state.save()
+    EntityState.objects.filter(project=project).update({'version': version})
