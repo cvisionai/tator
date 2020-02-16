@@ -398,6 +398,10 @@ clean:
 cache-clear:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
 
+.PHONY: cleanup-evicted
+cleanup-evicted:
+	kubectl get pods | grep Evicted | awk '{print $1}' | xargs kubectl delete pod
+
 .PHONY: clean_js
 clean_js:
 	rm -rf .min_js
