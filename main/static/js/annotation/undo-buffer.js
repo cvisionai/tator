@@ -137,10 +137,10 @@ class UndoBuffer extends HTMLElement {
           // This was an original annotation, patch the original and post
           // an edited one.
           this._forwardOps.push([
-            ["PATCH", detailUri, id, {...original, modified: false}],
             ["POST", listUri, projectId, {
-              ...data, ...data.attributes, ...body, ...other, modified: true,
+              ...data, ...data.attributes, ...original, ...other, modified: false,
             }],
+            ["PATCH", detailUri, id, {...body, modified: true}],
           ]);
           this._backwardOps.push([
             ["PATCH", detailUri, id, {...original, modified: null}],
@@ -264,8 +264,8 @@ class UndoBuffer extends HTMLElement {
         } else {
           this._emitUpdate(method, id, body, dataType);
         }
-        this._index++;
       }
+      this._index++;
     }
   }
 

@@ -109,7 +109,15 @@ class AnnotationData extends HTMLElement {
       return;
     }
 
-    // Patching the modified field is treated as post/delete
+    // Posting with modified field set to false is ignored.
+    if (method == "POST" && "modified" in body) {
+      if (body.modified == false) {
+        return;
+      }
+    }
+
+    // Patching the modified field may be treated as post/delete as it could 
+    // change versions.
     if (method == "PATCH" && "modified" in body) {
       if (body.modified == null) {
         method = "POST";
@@ -151,6 +159,10 @@ class AnnotationData extends HTMLElement {
     } else if (method == "DELETE") {
       const ids = this._dataByType.get(typeId).map(elem => elem.id);
       const index = ids.indexOf(id);
+      // It is possible for the ID to not exist if it is part of a different version/layer.
+      if (index == -1) {
+        return;
+      }
       this._dataByType.get(typeId).splice(index, 1);
     }
     this.dispatchEvent(new CustomEvent("freshData", {
