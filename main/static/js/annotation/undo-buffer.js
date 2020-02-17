@@ -92,21 +92,12 @@ class UndoBuffer extends HTMLElement {
 
   post(listUri, body, dataType) {
     const projectId = this.getAttribute("project-id");
-    const op = [["POST", listUri, projectId, body]];
-    const promise = this._fetch(op[0], dataType);
-    if (promise) {
-      promise
-      .then(response => response.json())
-      .then(data => {
-        this._emitUpdate("POST", data.id, body, dataType);
-        const detailUri = UndoBuffer.listToDetail[listUri];
-        this._resetFromNow();
-        this._forwardOps.push(op);
-        this._backwardOps.push([["DELETE", detailUri, data.id, null]]);
-        this._dataTypes.push(dataType);
-        this._index++;
-      });
-    }
+    const detailUri = UndoBuffer.listToDetail[listUri];
+    this._resetFromNow();
+    this._forwardOps.push([["POST", listUri, projectId, body]]);
+    this._backwardOps.push([["DELETE", detailUri, null, null]]);
+    this._dataTypes.push(dataType);
+    return this.redo();
   }
 
   patch(detailUri, id, body, dataType) {
@@ -130,35 +121,24 @@ class UndoBuffer extends HTMLElement {
         const listUri = UndoBuffer.detailToList[detailUri];
         if (data.modified == null) {
           // This was an original annotation, patch the original and post
-          // an edited one. Because this is a post we do the operation here
-          // and store the id for undo/redo.
-          const patchOp = ["PATCH", detailUri, id, {...body, modified: false}];
-          const postOp = ["POST", listUri, projectId, {...body, modified: true}];
-          const patchPromise = this._fetch(patchOp, dataType);
-          const postPromise = this._fetch(postOp, dataType);
-          const promise = Promise.all([patchPromise, postPromise]);
-          if (promise) {
-            promise
-            .then(([patchResponse, postResponse]) => postResponse.json())
-            .then(data => {
-              this._emitUpdate("PATCH", id, patchOp[3], dataType);
-              this._emitUpdate("POST", data.id, postOp[3], dataType);
-              this._resetFromNow();
-              this._forwardOps.push([patchOp, postOp]);
-              this._backwardOps.push([
-                ["PATCH", detailUri, id, {...body, modified: null}],
-                ["DELETE", detailUri, data.id, null],
-              ]);
-              this._dataTypes.push(dataType);
-              this._index++;
-            });
-          }
+          // an edited one.
+          this._forwardOps.push([
+            ["PATCH", detailUri, id, {...original, modified: false}],
+            ["POST", listUri, projectId, {
+              ...data, ...data.attributes, ...body, ...other, modified: true,
+            }],
+          ]);
+          this._backwardOps.push([
+            ["PATCH", detailUri, id, {...original, modified: null}],
+            ["DELETE", detailUri, null, null],
+          ]);
+          this._dataTypes.push(dataType);
         } else {
           this._forwardOps.push([["PATCH", detailUri, id, body]]);
           this._backwardOps.push([["PATCH", detailUri, id, original]]);
           this._dataTypes.push(dataType);
-          return this.redo();
         }
+        return this.redo();
       });
     } else {
       return null;
