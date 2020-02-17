@@ -146,6 +146,8 @@ class EntitySelector extends TatorElement {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {
           this._del.style.display = "block";
+        } else {
+          this._del.style.display = "none";
         }
         // Enable snapshots for boxes
         if (this._dataType.isLocalization &&

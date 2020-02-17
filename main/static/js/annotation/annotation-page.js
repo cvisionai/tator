@@ -143,9 +143,8 @@ class AnnotationPage extends TatorPage {
           })
           .then(response => response.json())
           .then(data => {
-            player.permission = data.permission;
-            this._browser.permission = data.permission;
-            this._sidebar.permission = data.permission;
+            this._permission = data.permission;
+            this.enableEditing(true);
           });
             
         })
@@ -240,7 +239,7 @@ class AnnotationPage extends TatorPage {
       for (const key in this._saves) {
         this._saves[key].version = this._version;
       }
-    
+      this.enableEditing(evt.detail.edited);
     });
 
     this._versionButton.addEventListener("click", () => {
@@ -512,6 +511,20 @@ class AnnotationPage extends TatorPage {
     img.style.height = canvasPosition.height + "px";
     this._preview.appendChild(img);
   };
+
+  enableEditing(enable) {
+    let permission;
+    if (enable) {
+      // Set privileges to user's level.
+      permission = this._permission;
+    } else {
+      // Turn off editing.
+      permission = "View Only";
+    }
+    this._player.permission = permission;
+    this._browser.permission = permission;
+    this._sidebar.permission = permission;
+  }
 }
 
 customElements.define("annotation-page", AnnotationPage);

@@ -83,7 +83,16 @@ class BoolInput extends TatorElement {
   }
 
   set permission(val) {
-    if (!hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit")) {
+      this._on.removeAttribute("readonly");
+      this._off.removeAttribute("readonly");
+      this._onLabel.removeEventListener("click", evt => {
+        evt.preventDefault();
+      });
+      this._offLabel.removeEventListener("click", evt => {
+        evt.preventDefault();
+      });
+    } else {
       this._on.setAttribute("readonly", "");
       this._off.setAttribute("readonly", "");
       this._onLabel.addEventListener("click", evt => {
