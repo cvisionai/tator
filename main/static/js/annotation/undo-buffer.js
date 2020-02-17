@@ -105,6 +105,20 @@ class UndoBuffer extends HTMLElement {
     const promise = this._get(detailUri, id, dataType.id);
     if (promise) {
       return promise.then(data => {
+        let other;
+        if (detailUri == "Localization") {
+          other = {
+            media_id: data.media,
+            frame: data.frame,
+            type: data.meta.id,
+          };
+        } else {
+          other = {
+            media_ids: data.association.media,
+            frame: data.association.frame,
+            type: data.meta,
+          };
+        }
         const original = {};
         for (const key in body) {
           if (key in data) {
