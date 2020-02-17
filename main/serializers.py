@@ -512,5 +512,5 @@ class AnalysisSerializer(PolymorphicSerializer):
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
-        fields = ['id', 'name', 'description', 'number', 'project']
+        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty']
 

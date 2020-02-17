@@ -177,6 +177,10 @@ class Version(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     created_datetime = DateTimeField(auto_now_add=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
+    show_empty = BooleanField(default=False)
+    """ Tells the UI to show this version even if the current media does not 
+        have any annotations.
+    """
 
     def __str__(self):
         out = f"{self.name}"

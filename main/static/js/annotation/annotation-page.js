@@ -284,6 +284,20 @@ class AnnotationPage extends TatorPage {
       const versionData = versionResponse.json();
       Promise.all([localizationData, stateData, versionData])
       .then(([localizationTypes, stateTypes, versions]) => {
+        // Skip version if number of annotations is zero and show_empty is false.
+        const dispVersions = versions.filter(version => {
+          return !(
+            version.num_created == 0 &&
+            version.num_modified == 0 &&
+            version.show_empty == false
+          );
+        });
+        if (dispVersions.length > 0) {
+          versions = dispVersions;
+        } else {
+          versions = [versions[0]];
+        }
+
         this._versionDialog.init(versions);
         this._version = versions[versions.length - 1];
         if (versions.length == 0) {
