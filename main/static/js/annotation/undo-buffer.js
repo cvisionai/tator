@@ -223,7 +223,7 @@ class UndoBuffer extends HTMLElement {
             const newId = data.id;
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
-                if (op[2] == delId) {
+                if (op[2] == delId || op[2] == null) {
                   ops[opIndex][2] = newId;
                 }
               }
@@ -249,7 +249,7 @@ class UndoBuffer extends HTMLElement {
           .then(response => response.json())
           .then(data => {
             this._emitUpdate(method, data.id, body, dataType);
-            const delId = this._backwardOps[this._index - 1][2];
+            const delId = this._backwardOps[this._index - 1][opIndex][2];
             const newId = data.id;
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
