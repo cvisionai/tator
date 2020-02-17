@@ -215,8 +215,8 @@ class UndoBuffer extends HTMLElement {
 
   undo() {
     if (this._index > 0) {
-      for (const op of this._backwardOps[this._index]) {
-        this._index--;
+      this._index--;
+      for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
         const [method, uri, id, body] = op;
         const dataType = this._dataTypes[this._index];
         const promise = this._fetch(op, dataType)
@@ -225,11 +225,13 @@ class UndoBuffer extends HTMLElement {
           .then(response => response.json())
           .then(data => {
             this._emitUpdate(method, data.id, body, dataType);
-            const delId = this._forwardOps[this._index][2];
+            const delId = this._forwardOps[this._index][opIndex][2];
             const newId = data.id;
-            const replace = op => {
-              if (op[2] == delId) {
-                op[2] = newId;
+            const replace = ops => {
+              for (const [opIndex, op] of ops.entries()) {
+                if (op[2] == delId) {
+                  ops[opIndex][2] = newId;
+                }
               }
             };
             this._forwardOps.forEach(replace);
@@ -244,7 +246,7 @@ class UndoBuffer extends HTMLElement {
 
   redo() {
     if (this._index < this._forwardOps.length) {
-      for (const op of this._forwardOps[this._index]) {
+      for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
         const [method, uri, id, body] = op;
         const dataType = this._dataTypes[this._index];
         const promise = this._fetch(op, dataType);
@@ -255,9 +257,11 @@ class UndoBuffer extends HTMLElement {
             this._emitUpdate(method, data.id, body, dataType);
             const delId = this._backwardOps[this._index - 1][2];
             const newId = data.id;
-            const replace = op => {
-              if (op[2] == delId) {
-                op[2] = newId;
+            const replace = ops => {
+              for (const [opIndex, op] of ops.entries()) {
+                if (op[2] == delId || op[2] == null) {
+                  ops[opIndex][2] = newId;
+                }
               }
             };
             this._forwardOps.forEach(replace);
