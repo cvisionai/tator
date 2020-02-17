@@ -92,8 +92,8 @@ class UndoBuffer extends HTMLElement {
 
   post(listUri, body, dataType) {
     const projectId = this.getAttribute("project-id");
-    const op = ["POST", listUri, projectId, body];
-    const promise = this._fetch(op, dataType);
+    const op = [["POST", listUri, projectId, body]];
+    const promise = this._fetch(op[0], dataType);
     if (promise) {
       promise
       .then(response => response.json())
@@ -102,7 +102,7 @@ class UndoBuffer extends HTMLElement {
         const detailUri = UndoBuffer.listToDetail[listUri];
         this._resetFromNow();
         this._forwardOps.push(op);
-        this._backwardOps.push(["DELETE", detailUri, data.id, null]);
+        this._backwardOps.push([["DELETE", detailUri, data.id, null]]);
         this._dataTypes.push(dataType);
         this._index++;
       });
@@ -110,6 +110,7 @@ class UndoBuffer extends HTMLElement {
   }
 
   patch(detailUri, id, body, dataType) {
+    const projectId = this.getAttribute("project-id");
     const promise = this._get(detailUri, id, dataType.id);
     if (promise) {
       return promise.then(data => {
@@ -126,10 +127,38 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        this._forwardOps.push(["PATCH", detailUri, id, body]);
-        this._backwardOps.push(["PATCH", detailUri, id, original]);
-        this._dataTypes.push(dataType);
-        return this.redo();
+        const listUri = UndoBuffer.detailToList[detailUri];
+        if (data.modified == null) {
+          // This was an original annotation, patch the original and post
+          // an edited one. Because this is a post we do the operation here
+          // and store the id for undo/redo.
+          const patchOp = ["PATCH", detailUri, id, {...body, modified: false}];
+          const postOp = ["POST", listUri, projectId, {...body, modified: true}];
+          const patchPromise = this._fetch(patchOp, dataType);
+          const postPromise = this._fetch(postOp, dataType);
+          const promise = Promise.all([patchPromise, postPromise]);
+          if (promise) {
+            promise
+            .then(([patchResponse, postResponse]) => postResponse.json())
+            .then(data => {
+              this._emitUpdate("PATCH", id, patchOp[3], dataType);
+              this._emitUpdate("POST", data.id, postOp[3], dataType);
+              this._resetFromNow();
+              this._forwardOps.push([patchOp, postOp]);
+              this._backwardOps.push([
+                ["PATCH", detailUri, id, {...body, modified: null}],
+                ["DELETE", detailUri, data.id, null],
+              ]);
+              this._dataTypes.push(dataType);
+              this._index++;
+            });
+          }
+        } else {
+          this._forwardOps.push([["PATCH", detailUri, id, body]]);
+          this._backwardOps.push([["PATCH", detailUri, id, original]]);
+          this._dataTypes.push(dataType);
+          return this.redo();
+        }
       });
     } else {
       return null;
@@ -166,12 +195,12 @@ class UndoBuffer extends HTMLElement {
         this._resetFromNow();
         if (data.modified == null) {
           // This was an "original" annotation, patch the original.
-          this._forwardOps.push(["PATCH", detailUri, id, {...body, modified: false}]);
-          this._backwardOps.push(["PATCH", detailUri, id, {...body, modified: null}]);
+          this._forwardOps.push([["PATCH", detailUri, id, {...body, modified: false}]]);
+          this._backwardOps.push([["PATCH", detailUri, id, {...body, modified: null}]]);
         } else if (data.modified == true) {
           // This was an annotation created via web interface, actually delete it.
-          this._forwardOps.push(["DELETE", detailUri, id, null]);
-          this._backwardOps.push(["POST", listUri, projectId, {...body, modified: true}]); 
+          this._forwardOps.push([["DELETE", detailUri, id, null]]);
+          this._backwardOps.push([["POST", listUri, projectId, {...body, modified: true}]]); 
         } else if (data.modified == false) {
           console.error("Attempted to delete an original version!");
           return null;
@@ -186,57 +215,59 @@ class UndoBuffer extends HTMLElement {
 
   undo() {
     if (this._index > 0) {
-      this._index--;
-      const op = this._backwardOps[this._index];
-      const [method, uri, id, body] = op;
-      const dataType = this._dataTypes[this._index];
-      const promise = this._fetch(op, dataType)
-      if (method == "POST") {
-        promise
-        .then(response => response.json())
-        .then(data => {
-          this._emitUpdate(method, data.id, body, dataType);
-          const delId = this._forwardOps[this._index][2];
-          const newId = data.id;
-          const replace = op => {
-            if (op[2] == delId) {
-              op[2] = newId;
-            }
-          };
-          this._forwardOps.forEach(replace);
-          this._backwardOps.forEach(replace);
-        });
-      } else {
-        this._emitUpdate(method, id, body, dataType);
+      for (const op of this._backwardOps[this._index]) {
+        this._index--;
+        const [method, uri, id, body] = op;
+        const dataType = this._dataTypes[this._index];
+        const promise = this._fetch(op, dataType)
+        if (method == "POST") {
+          promise
+          .then(response => response.json())
+          .then(data => {
+            this._emitUpdate(method, data.id, body, dataType);
+            const delId = this._forwardOps[this._index][2];
+            const newId = data.id;
+            const replace = op => {
+              if (op[2] == delId) {
+                op[2] = newId;
+              }
+            };
+            this._forwardOps.forEach(replace);
+            this._backwardOps.forEach(replace);
+          });
+        } else {
+          this._emitUpdate(method, id, body, dataType);
+        }
       }
     }
   }
 
   redo() {
     if (this._index < this._forwardOps.length) {
-      const op = this._forwardOps[this._index];
-      const [method, uri, id, body] = op;
-      const dataType = this._dataTypes[this._index];
-      const promise = this._fetch(op, dataType);
-      if (method == "POST") {
-        promise
-        .then(response => response.json())
-        .then(data => {
-          this._emitUpdate(method, data.id, body, dataType);
-          const delId = this._backwardOps[this._index - 1][2];
-          const newId = data.id;
-          const replace = op => {
-            if (op[2] == delId) {
-              op[2] = newId;
-            }
-          };
-          this._forwardOps.forEach(replace);
-          this._backwardOps.forEach(replace);
-        });
-      } else {
-        this._emitUpdate(method, id, body, dataType);
+      for (const op of this._forwardOps[this._index]) {
+        const [method, uri, id, body] = op;
+        const dataType = this._dataTypes[this._index];
+        const promise = this._fetch(op, dataType);
+        if (method == "POST") {
+          promise
+          .then(response => response.json())
+          .then(data => {
+            this._emitUpdate(method, data.id, body, dataType);
+            const delId = this._backwardOps[this._index - 1][2];
+            const newId = data.id;
+            const replace = op => {
+              if (op[2] == delId) {
+                op[2] = newId;
+              }
+            };
+            this._forwardOps.forEach(replace);
+            this._backwardOps.forEach(replace);
+          });
+        } else {
+          this._emitUpdate(method, id, body, dataType);
+        }
+        this._index++;
       }
-      this._index++;
     }
   }
 
