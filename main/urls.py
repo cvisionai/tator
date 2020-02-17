@@ -56,7 +56,8 @@ from .rest import SaveImageAPI
 from .rest import VersionAPI
 
 class CustomDocs(DocumentationRenderer):
-    languages = ['python']
+    template = '/tator_online/main/templates/browser.html'
+    languages = ['javascript']
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
