@@ -171,7 +171,7 @@ class UndoBuffer extends HTMLElement {
           };
         } else {
           other = {
-            media_ids: data.association.media[0],
+            media_ids: data.association.media,
             frame: data.association.frame,
             type: data.meta,
           };
