@@ -62,6 +62,9 @@ Example:
     parser.add_argument("--shiftY",
                         help="Shift localizations in y (before scale)",
                         type=float)
+    parser.add_argument("--frameRateScale",
+                        help="Scale localizations frame rate due to transcoding",
+                        type=float)
 
     parser.add_argument("--map",nargs="*",
                         help="Map an old attribute to a new attribute (old:new)")
@@ -176,6 +179,9 @@ def _ingestLocalizationsFromFile(args):
                 for dim in dimsToScale:
                     detection[dim] = args.scale * float(detection[dim])
                     detection[dim] = int(round(detection[dim]))
+
+            if args.frameRateScale:
+                detection['frame'] = int(round(args.frameRateScale * float(detection['frame'])))
 
             # By default we normalize, not no == true
             if not args.no_normalize:

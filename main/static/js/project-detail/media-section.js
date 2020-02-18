@@ -206,6 +206,8 @@ class MediaSection extends TatorElement {
         .then(medias => {
           let fileIndex = 0;
           let numQueued = 0;
+          const filenames = new Set();
+          const re = /(?:\.([^.]+))?$/;
           const headers = {
             "X-CSRFToken": getCookie("csrftoken"),
             "Content-Type": "application/json"
@@ -215,9 +217,17 @@ class MediaSection extends TatorElement {
             async pull(ctrl) {
               if (fileIndex < medias.length) {
                 const media = medias[fileIndex];
+                const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+                const ext = re.exec(media.name)[0];
+                let basename = basenameOrig;
+                let vers = 1;
+                while (filenames.has(basename)) {
+                  basename = basenameOrig + " (" + vers + ")";
+                  vers++;
+                }
+                filenames.add(basename);
                 if (evt.detail.annotations) {
                   console.log("Downloading metadata for " + media.name + "...");
-                  const basename = media.name.replace(/\.[^/.]+$/, "");
 
                   // Download media metadata
                   const p0 = fetch("/rest/EntityMedia/" + media.id, {
@@ -327,7 +337,7 @@ class MediaSection extends TatorElement {
                   });
 
                   // Add to number of queued.
-                  Promise.all([p0, p1, p2])
+                  await Promise.all([p0, p1, p2])
                   .then(() => {
                     numQueued++;
                     if (numQueued >= medias.length) {
@@ -341,10 +351,10 @@ class MediaSection extends TatorElement {
 
                   // Download media file.
                   console.log("Downloading " + media.name + " from " + request.url + "...");
-                  fetch(request)
+                  await fetch(request)
                   .then(response => {
                     const stream = () => response.body;
-                    const name = media.name;
+                    const name = basename + ext;
                     ctrl.enqueue({name, stream});
                     numQueued++;
                     if (numQueued >= medias.length) {

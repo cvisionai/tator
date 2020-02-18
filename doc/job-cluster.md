@@ -106,3 +106,5 @@ If it does, the provisioner is working and you can delete the pvc:
 ```
 kubectl delete pvc nfs-test
 ```
+
+Next step: [Build Tator on the cluster](build.md)

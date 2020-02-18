@@ -118,6 +118,7 @@ cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
+	kubectl apply -f k8s/network_fix.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
@@ -401,6 +402,10 @@ clean:
 .PHONY: cache_clear
 cache-clear:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from main.cache import TatorCache;TatorCache().invalidate_all()'
+
+.PHONY: cleanup-evicted
+cleanup-evicted:
+	kubectl get pods | grep Evicted | awk '{print $1}' | xargs kubectl delete pod
 
 .PHONY: clean_js
 clean_js:

@@ -118,4 +118,4 @@ The admin console is the primary means of configuring Tator users and projects. 
 
 Use the admin console to configure your user account, projects, media types, annotations, and attributes.
 
-Next steps: [Administer the deployment](doc/admin.md)
+Next steps: [Administer the deployment](admin.md)

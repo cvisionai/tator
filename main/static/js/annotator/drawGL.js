@@ -198,9 +198,11 @@ class DrawGL
   debugGL()
   {
     var gl = this.gl;
+    var debug_info = gl.getExtension('WEBGL_debug_renderer_info');
     var msg = "OpenGL Info: ";
-    msg += "\n\tGL Renderer: " + gl.getParameter(gl.VENDOR);
+    msg += "\n\tGL Vendor: " + gl.getParameter(gl.VENDOR);
     msg += "\n\tGL Version: " + gl.getParameter(gl.VERSION);
+    msg += "\n\tGL Renderer: " + gl.getParameter(debug_info.UNMASKED_RENDERER_WEBGL);
     msg += "\n\tMax Texture Units: " + gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
     console.info(msg);
   }

@@ -1,9 +1,20 @@
 import logging
 import os
-
+from copy import deepcopy
 from elasticsearch import Elasticsearch
 
 logger = logging.getLogger(__name__)
+
+# Used for duplicate ID storage
+id_bits=448
+id_mask=(1 << id_bits) - 1
+
+def drop_dupes(ids):
+    """ Drops duplicates in a list without changing the order.
+    """
+    seen = set()
+    seen_add = seen.add
+    return [x for x in ids if not (x in seen or seen_add(x))]
 
 class TatorSearch:
     """ Interface for elasticsearch documents.
@@ -92,9 +103,26 @@ class TatorSearch:
         )
 
     def create_document(self, entity, wait=False):
+        """ Indicies an element into ES """
+        docs = self.build_document(entity, 'single')
+        for doc in docs:
+            logger.info(f"Making Doc={doc}")
+            res = self.es.index(index=self.index_name(entity.project.pk),
+                                id=doc['_id'],
+                                refresh=wait,
+                                routing=1,
+                                body={**doc['doc']})
+
+    def build_document(self, entity, mode='create'):
+        """ Returns a list of documents representing the entity to be
+            used with the es.helpers.bulk functions
+            if mode is 'single', then one can use the 'doc' member
+            as the parameters to the es.index function.
+        """
         aux = {}
         aux['_meta'] = entity.meta.pk
         aux['_dtype'] = entity.meta.dtype
+        duplicates = []
         if entity.meta.dtype in ['image', 'video']:
             aux['_media_relation'] = 'media'
             aux['tator_media_name'] = entity.name
@@ -120,6 +148,26 @@ class TatorSearch:
                     'name': 'annotation',
                     'parent': media[0].pk,
                 }
+                for media_idx in range(1, media.count()):
+                    duplicate = deepcopy(aux)
+                    duplicate['_media_relation'] = {
+                        'name': 'annotation',
+                        'parent': media[media_idx].pk,
+                        }
+                    duplicates.append(duplicate)
+            try:
+                # If the state has an extracted image, its a
+                # duplicated entry in ES.
+                extracted_image = entity.association.extracted
+                if extracted_image:
+                    duplicate = deepcopy(aux)
+                    duplicate['_media_relation'] = {
+                        'name': 'annotation',
+                        'parent': extracted_image.pk,
+                        }
+                    duplicates.append(duplicate)
+            except:
+                pass
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
@@ -133,16 +181,42 @@ class TatorSearch:
         if entity.attributes is None:
             entity.attributes = {}
             entity.save()
-        self.es.index(
-            index=self.index_name(entity.project.pk),
-            body={
-                **entity.attributes,
-                **aux,
-            },
-            id=entity.pk,
-            refresh=wait,
-            routing=1,
-        )
+
+        corrected_attributes={**entity.attributes}
+        if mode != 'single':
+            for key in corrected_attributes:
+                value=corrected_attributes[key]
+                # Store django lat/lon as a string
+                if type(value) == list:
+                    corrected_attributes[key] = f"{value[0]},{value[1]}"
+        results=[]
+        results.append({
+            '_index':self.index_name(entity.project.pk),
+            '_op_type': mode,
+            'doc': {**corrected_attributes,
+                    **aux},
+            '_id': entity.pk,
+            '_routing': 1,
+        })
+
+        # Load in duplicates, if any
+        for idx,duplicate in enumerate(duplicates):
+            # duplicate_id needs to be unique we use the upper
+            # 8 bits of the id field to indicate which duplicate
+            # it is. This won't create collisions until there are
+            # more than 2^256 elements in the database or more than
+            # 256 duplicates for a given type
+            duplicate_id = entity.pk + ((idx + 1) << id_bits)
+            results.append({
+            '_index':self.index_name(entity.project.pk),
+            '_op_type': mode,
+            'doc': {**corrected_attributes,
+                    **duplicate},
+            '_id': duplicate_id,
+            '_routing': 1,
+            })
+        return results
+
 
     def delete_document(self, entity):
         index = self.index_name(entity.project.pk)
@@ -160,8 +234,8 @@ class TatorSearch:
     def search(self, project, query):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
-        size = query.get('size', 10000)
-        if size >= 10000:
+        size = query.get('size', None)
+        if (size is None) or (size >= 10000):
             query['size'] = 10000
             result = self.es.search(
                 index=self.index_name(project),
@@ -174,20 +248,25 @@ class TatorSearch:
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = [int(obj['_id']) for obj in data]
+            if size:
+                count = size
+            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
             while len(ids) < count:
                 result = self.es.scroll(
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += [int(obj['_id']) for obj in result['hits']['hits']]
+                ids += drop_dupes([int(obj['_id']) & id_mask for obj in result['hits']['hits']])
+            ids = ids[:count]
             self.es.clear_scroll(scroll_id)
         else:
+            # TODO: This will NOT return the requested number of results if there are
+            # duplicates in the dataset.
             result = self.search_raw(project, query)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = [int(obj['_id']) for obj in data]
+            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
         return ids, count
 
     def count(self, project, query):

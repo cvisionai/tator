@@ -100,6 +100,7 @@ from .serializers import EntityTypeTreeLeafAttrSerializer
 from .serializers import TreeLeafSerializer
 from .serializers import AlgorithmSerializer
 from .serializers import LocalizationAssociationSerializer
+from .serializers import FrameAssociationSerializer
 from .serializers import MembershipSerializer
 from .serializers import ProjectSerializer
 from .serializers import AnalysisSerializer
@@ -107,6 +108,8 @@ from .serializers import UserSerializerBasic
 from .serializers import VersionSerializer
 
 from .consumers import ProgressProducer
+
+from .notify import Notify
 
 from .search import TatorSearch
 from .kube import TatorTranscode
@@ -491,10 +494,13 @@ class ProjectPermissionBase(BasePermission):
         # Object is a project
         elif isinstance(obj, Project):
             project = obj
-        elif isinstance(obj, LocalizationAssociation):
+        elif isinstance(obj, FrameAssociation) or isinstance(obj, LocalizationAssociation):
             project = None
-            if obj.entitystate_set.count() > 0:
-                project = obj.entitystate_set.all()[0].project
+            try:
+                parent = EntityState.objects.get(association=obj)
+                project = parent.project
+            except:
+                pass
         return project
 
     def _validate_project(self, request, project):
@@ -987,7 +993,10 @@ def get_media_queryset(project, query_params, attr_filter):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
-    bools = []
+    bools = [{'bool': {'should': [
+        {'match': {'_dtype': 'image'}},
+        {'match': {'_dtype': 'video'}},
+    ]}}]
 
     if mediaId != None:
         bools.append({'ids': {'values': mediaId.split(',')}})
@@ -1041,7 +1050,7 @@ class MediaPrevAPI(APIView):
 
         media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
-            response_data = {'prev': media_ids[0]}
+            response_data = {'prev': media_ids.pop()}
         else:
             response_data = {'prev': -1}
 
@@ -1068,7 +1077,7 @@ class MediaNextAPI(APIView):
 
         media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
-            response_data = {'next': media_ids[0]}
+            response_data = {'next': media_ids.pop()}
         else:
             response_data = {'next': -1}
 
@@ -1701,7 +1710,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         allStates = EntityState.objects.all()
         if mediaId != None:
             mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-            allStates = allStates.filter(association__media__in=mediaId)
+            allStates = allStates.filter(Q(association__media__in=mediaId) | Q(association__frameassociation__extracted__in=mediaId))
         if filterType != None:
             allStates = allStates.filter(meta=filterType)
         if filterType == None and mediaId == None:
@@ -1741,6 +1750,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                         allStates = allStates.annotate(frame=F('association__frameassociation__frame')).order_by('frame')
                         # This optomization only works for frame-based associations
                         allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
+                        allStates = allStates.annotate(extracted=F('association__frameassociation__extracted'))
                         response = EntityStateFrameSerializer(allStates)
                     elif type_object.association == 'Localization':
                         localquery=LocalizationAssociation.objects.filter(entitystate=OuterRef('pk'))
@@ -2167,6 +2177,41 @@ class LocalizationAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
             if color:
                 associationObject.color = color
 
+            associationObject.save()
+
+        except PermissionDenied as err:
+            raise
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ Modifiy a Frame Association Object
+    """
+    serializer_class = FrameAssociationSerializer
+    queryset = FrameAssociation.objects.all()
+    permission_classes = [ProjectEditPermission]
+
+    def patch(self, request, format=None, **kwargs):
+        response=Response({})
+        try:
+            reqObject=request.data
+            associationObject=FrameAssociation.objects.get(pk=self.kwargs['pk'])
+            self.check_object_permissions(request, associationObject)
+
+            frame = reqObject.get("frame", None)
+            if frame:
+                associationObject.frame = frame
+
+            extracted_id = reqObject.get("extracted", None)
+            if extracted_id:
+                image = EntityMediaImage.objects.get(pk=extracted_id)
+                associationObjecte.extracted = image
             associationObject.save()
 
         except PermissionDenied as err:
@@ -3539,6 +3584,10 @@ class NotifyAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='A message to send to administrators')),
+        coreapi.Field(name='sendAsFile',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Send message as file'))
     ])
     def post(self, request, format=None, **kwargs):
         response=Response({'message' : str("Not Found")},
@@ -3549,17 +3598,20 @@ class NotifyAPI(APIView):
             if 'message' not in reqObject:
                 raise Exception("Missing 'message' argument.")
 
-            if settings.TATOR_SLACK_TOKEN and settings.TATOR_SLACK_CHANNEL:
-                client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
-                slack_response=client.chat_postMessage(
-                    channel=settings.TATOR_SLACK_CHANNEL,
-                    text=reqObject['message'])
-                if slack_response["ok"]:
-                    response=Response({'message' : "Processed"},
-                                      status=status.HTTP_200_OK)
-                else:
-                    response=Response({'message': "Not Processed"},
-                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            send_as_file = reqObject.get('sendAsFile', False)
+
+            response = None
+            if send_as_file:
+                response = Notify.notify_admin_file(f"Message from {request.user}", reqObject['message'])
+            else:
+                response = Notify.notify_admin_msg(f"_{request.user}_ : {reqObject['message']}")
+
+            if response == True:
+                response=Response({'message' : "Processed"},
+                                  status=status.HTTP_200_OK)
+            else:
+                response=Response({'message': "Not Processed"},
+                                  status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -3613,7 +3665,7 @@ class VersionListAPI(APIView):
             name = request.data.get('name', None)
             description = request.data.get('description', None)
             project = kwargs['project']
-            
+
             if name is None:
                 raise Exception('Missing version name!')
 

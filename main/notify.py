@@ -15,12 +15,24 @@ class Notify:
         """ Sends a given message to administrators """
         if Notify.notification_enabled():
             client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
-            client.chat_postMessage(channel=settings.TATOR_SLACK_CHANNEL,
-                                    text=msg)
+            response = client.chat_postMessage(channel=settings.TATOR_SLACK_CHANNEL,
+                                               text=msg)
+            if response['ok']:
+                return True
+            else:
+                return False
+        else:
+            return False
     def notify_admin_file(title, content):
         """ Send a given file to administrators """
         if Notify.notification_enabled():
             client = slack.WebClient(token=settings.TATOR_SLACK_TOKEN)
-            client.files_upload(channels=settings.TATOR_SLACK_CHANNEL,
-                                content=content,
-                                title=title)
+            response = client.files_upload(channels=settings.TATOR_SLACK_CHANNEL,
+                                           content=content,
+                                           title=title)
+            if response['ok']:
+                return True
+            else:
+                return False
+        else:
+            return False

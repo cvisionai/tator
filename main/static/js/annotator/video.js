@@ -409,13 +409,204 @@ class VideoBufferDemux
     this._seekBuffer.appendBuffer(data);
   }
 }
+
+/// Used to determine system fps and calculate playback
+/// schedules based on a given video fps
+class MotionComp {
+  constructor() {
+    this._interval = null;
+    this._monitorFps = null;
+    this._times = [];
+
+    // This takes ~1/3 sec
+    const TRIALS = 20;
+
+    // First we need to do a couple of trials to figure out what the
+    // interval of the system is.
+    let calcTimes = (now) => {
+      this._times.push(now);
+      if (this._times.length > TRIALS)
+      {
+        let mode = new Map();
+        // Calculate the mode of the delta over the calls ignoring the first few.
+        for (let idx = 2; idx < TRIALS-1; idx++)
+        {
+          let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
+          if (mode.has(fps))
+          {
+            mode.set(fps, mode.get(fps) + 1);
+          }
+          else
+          {
+            mode.set(fps, 1);
+          }
+        }
+
+        let maxOccurance = 0;
+
+        for (const canidate of mode.keys())
+        {
+          let occurance = mode.get(canidate)
+          if (occurance > maxOccurance)
+          {
+            maxOccurance = occurance;
+            this._monitorFps = canidate;
+          }
+        }
+
+        console.info("Raw FPS observed at " + this._monitorFps);
+
+        if (Math.abs(this._monitorFps-240) < 10)
+        {
+          this._monitorFps = 240;
+        }
+        else if (Math.abs(this._monitorFps-120) < 10)
+        {
+          this._monitorFps = 120;
+        }
+        else if (Math.abs(this._monitorFps-60) < 5)
+        {
+          this._monitorFps = 60;
+        }
+        else if (Math.abs(this._monitorFps-30) < 5)
+        {
+          this._monitorFps = 30;
+        }
+
+        this._interval = 1000.0 / this._monitorFps;
+        console.info(`Calculated FPS interval = ${this._interval} (${this._monitorFps})`);
+      }
+      else
+      {
+        window.requestAnimationFrame(calcTimes);
+      }
+    };
+    window.requestAnimationFrame(calcTimes);
+  }
+
+  /// Given a video at a frame rate calculate the frame update
+  /// schedule:
+  ///
+  /// Example:
+  ///
+  ///  Animations  *       *       *       *       * ....
+  ///  60 fps :    |   0   |   1   |   2   |   3   | ....
+  ///  48 fps :    |   0      |    1      |     2     | ...
+  ///  30 fps :    |   0   |   0   |   1   |   1   | ....
+  ///  15 fps :    |   0   |   0   |   0   |   0   | ....
+  ///
+  /// Fractional fps are displayed at best effort based on the
+  /// monitor's actual display rate (likely 60 fps)
+  ///
+  /// In the example above, 48fps is actually displayed at
+  /// 60fps but interpolated to be as close to 48 fps
+  /// Animations  *       *       *       *       * ....
+  /// 48 fps :    |   0   |   1   |   1   |   2   | .... (effective 45 fps)
+  ///
+  computePlaybackSchedule(videoFps, factor)
+  {
+    let displayFps = videoFps;
+    if (factor < 1)
+    {
+      displayFps *= factor;
+    }
+
+    // Compute a 3-slot schedule for playback
+    let animationCyclesPerFrame = (this._monitorFps / displayFps);
+    if (this._safeMode)
+    {
+      // Safe mode slows things down by 2x
+      animationCyclesPerFrame *= 2;
+    }
+    let regularSize = Math.floor(animationCyclesPerFrame);
+    let fractional = animationCyclesPerFrame - regularSize;
+    let largeSize = regularSize + Math.round(fractional*3)
+    this._schedule = [ regularSize,
+                       largeSize,
+                       regularSize];
+    this._lengthOfSchedule = regularSize * 2 + largeSize;
+    this._updatesAt = [0,
+                       regularSize,
+                       regularSize + largeSize];
+    this._targetFPS = 3000 / (this._lengthOfSchedule * this._interval)
+    let msg = "Playback schedule = " + this._schedule + "\n";
+    msg += "Updates @ " + this._updatesAt + "\n";
+    msg += "Frame Increment = " + this.frameIncrement(videoFps, factor) + "\n";
+    msg += "Target FPS = " + this._targetFPS + "\n";
+    msg += "video FPS = " + videoFps + "\n";
+    msg += "factor = " + factor + "\n";
+    console.info(msg);
+    if (this._diagnosticMode == true)
+    {
+      Utilities.sendNotification(msg, true);
+    }
+  }
+
+  /// Given an animation idx, return true if it is an update cycle
+  timeToUpdate(animationIdx)
+  {
+    let relIdx = animationIdx % this._lengthOfSchedule;
+    return this._updatesAt.includes(relIdx);
+  }
+  frameIncrement(fps, factor)
+  {
+    let clicks = Math.ceil(fps / this._monitorFps);
+    if (factor > 1)
+    {
+      clicks *= factor;
+    }
+
+    // We skip every other frame in safe mode
+    if (this._safeMode)
+    {
+      clicks *= 2;
+    }
+    return clicks;
+  }
+
+  safeMode()
+  {
+    Utilities.sendNotification(`Entered safe mode on ${location.href}`);
+    guiFPS = 15;
+    this._safeMode = true;
+  }
+
+  // Returns the number of ticks that have occured since the last
+  // report
+  animationIncrement(now, last)
+  {
+    let difference = now-last;
+    let increment = Math.round(difference/this._interval);
+    // Handle start up burst
+    if (isNaN(increment))
+    {
+      increment = 0;
+    }
+    increment = Math.min(increment,2);
+    return increment;
+  }
+
+  get targetFPS()
+  {
+    return this._targetFPS;
+  }
+}
 class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
     var that = this;
+    this._diagnosticMode = false;
+
+    let parameters = new URLSearchParams(window.location.search);
+    if (parameters.has('diagnostic'))
+    {
+      console.info("Diagnostic Mode Enabled")
+      this._diagnosticMode = true;
+    }
     // Make a new off-screen video reference
     this._videoElement=new VideoBufferDemux();
-
+    this._motionComp = new MotionComp();
+    this._motionComp._diagnosticMode = this._diagnosticMode;
     this._playbackRate=1.0;
     this._dispFrame=0; //represents the currently displayed frame
     this._direction=Direction.STOPPED;
@@ -429,6 +620,23 @@ class VideoCanvas extends AnnotationCanvas {
     this._dirty = true;
 
     this._startBias = 0.0;
+
+    if (this._diagnosticMode == true)
+    {
+      let msg = "Startup Diagnostic\n";
+      let gl = this._draw.gl;
+      let debug = gl.getExtension("WEBGL_debug_renderer_info");
+      msg += "==== Browser Information ====\n";
+      msg += `\tappVersion = ${navigator.appVersion}\n`;
+      msg += `\turl = ${window.location.href}\n`;
+      msg += "===== OpenGL Information ====\n";
+      msg += `\tVENDOR = ${gl.getParameter(gl.VENDOR)}\n`;
+      msg += `\tRENDERER = ${gl.getParameter(gl.RENDERER)}\n`;
+      msg += `\tVERSION = ${gl.getParameter(gl.VERSION)}\n`;
+      msg += `\tUNMASKED VENDOR = ${gl.getParameter(debug.UNMASKED_VENDOR_WEBGL)}\n`;
+      msg += `\tUNMASKED RENDERER = ${gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)}\n`;
+      Utilities.sendNotification(msg, true);
+    }
   }
 
   refresh()
@@ -547,6 +755,8 @@ class VideoCanvas extends AnnotationCanvas {
         that._dlWorker.postMessage({"type": "download"});
         that._startBias = e.data["startBias"];
         console.info(`Video has start bias of ${that._startBias}`);
+        console.info("Setting hi performance mode");
+        guiFPS = 60;
       }
       else if (type == "error")
       {
@@ -791,6 +1001,10 @@ class VideoCanvas extends AnnotationCanvas {
   rateChange(newRate)
   {
 	  this._playbackRate=newRate;
+    if (this._direction != Direction.STOPPED)
+    {
+      this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    }
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
       composed: true,
@@ -843,37 +1057,18 @@ class VideoCanvas extends AnnotationCanvas {
 	  // set the current frame based on what is displayed
 	  var currentFrame=this._dispFrame;
 
-	  // Interval is either the frame rate interval of the playback/fps
-	  // or the underlying GUI frame rate interval
-	  var videoInterval=(1000/this._fps)*(1/this._playbackRate);
-	  var fpsInterval=Math.max(videoInterval, (1000/guiFPS));
-	  var skipInterval=Math.round((fpsInterval/videoInterval));
-	  if (skipInterval >  1)
-	  {
-	    console.info("Playback rate exceeds guiFPS, skipping " + skipInterval + " frames per cycle");
-	  }
-
-    // Check for odd frame rate (force to compatibility mode for now)
-    // This to catch FPS like 25.08 getting displayed incorrectly at a
-    // 30fps interval
-    // TODO: Add motion compensation logic to frame schedule
-    if (this._fps < guiFPS && (guiFPS - this._fps) / guiFPS > 0.10)
-    {
-      console.info("Detected odd frame rate, going into safe mode");
-      that.dispatchEvent(new Event("safeMode"));
-    }
-
+    this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    let fpsInterval = 1000.0 / (this._fps);
+    let frameIncrement = this._motionComp.frameIncrement(this._fps,this._playbackRate);
 	  // This is the time to wait to start playing when the buffer is dead empty.
 	  // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
 	  // This may end up being a tuneable thing, or we may want to calculate it
 	  // more intelligently.
 	  var bufferWaitTime=fpsInterval*4;
 
-	  // Update to the next frame because current is already loaded.
-	  // (This is kind of like a do-while loop)
-	  currentFrame=currentFrame+(direction * Math.floor((fpsInterval/videoInterval)));
+    var lastTime=performance.now();
+    var animationIdx = 0;
 
-	  var lastTime=performance.now();
 	  var player=function(domtime){
 
 	    // Start the FPS monitor once we start playing
@@ -882,24 +1077,22 @@ class VideoCanvas extends AnnotationCanvas {
 		    that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
 	    }
 
-	    //Recalculate interval
-	    videoInterval=(1000/that._fps)*(1/that._playbackRate);
-	    fpsInterval=Math.max(videoInterval, (1000/guiFPS));
-	    var tolerance = fpsInterval * 0.05;
-
-	    // Browser animates at 60 fps, if we land within 5% of a
-	    // scheduled frame, display it.
-	    if (Math.abs((domtime-lastTime)-fpsInterval) < tolerance)
-	    {
-		    that.displayLatest();
-		    lastTime=domtime;
-	    }
-	    else if ((domtime-lastTime) > fpsInterval)
-	    {
-		    // If we missed our tolerance goal
-		    that.displayLatest();
-		    lastTime=domtime;
-	    }
+      let increment = that._motionComp.animationIncrement(domtime, lastTime);
+      if (increment > 0)
+      {
+        lastTime=domtime;
+        // Based on how many clocks happened we may actually
+        // have to update late
+        for (let tempIdx = increment; tempIdx > 0; tempIdx--)
+        {
+          if (that._motionComp.timeToUpdate(animationIdx+increment))
+	        {
+		        that.displayLatest();
+            break;
+	        }
+        }
+        animationIdx = animationIdx + increment;
+      }
 
 	    if (that._draw.canPlay())
 	    {
@@ -920,17 +1113,14 @@ class VideoCanvas extends AnnotationCanvas {
 	    // If the load buffer is full try again in the load interval
 	    if (that._draw.canLoad() == false)
 	    {
-		    // This represents half the buffer
-		    that._loaderTimeout=setTimeout(loader, fpsInterval*30);
+		    that._loaderTimeout=setTimeout(loader, fpsInterval*4);
 		    return;
 	    }
 
-	    //Recalculate interval
-	    videoInterval=(1000/that._fps)*(1/that._playbackRate);
-	    fpsInterval=Math.max(videoInterval, (1000/guiFPS));
+      frameIncrement = that._motionComp.frameIncrement(that._fps,that._playbackRate);
 
 	    // Canidate next frame
-	    var nextFrame=currentFrame+(direction * Math.round((fpsInterval/videoInterval)));
+	    var nextFrame=currentFrame+(direction * frameIncrement);
 
 	    //Schedule the next load if we are done loading
 	    var pushAndGoToNextFrame=function(frameIdx, source, width, height)
@@ -970,16 +1160,24 @@ class VideoCanvas extends AnnotationCanvas {
 	    this._fpsDiag=0;
 	    this._fpsLoadDiag=0;
       this._fpsScore=3;
+      this._networkUpdate = 0;
 
 	    var diagRoutine=function(last)
 	    {
         var diagInterval = Date.now()-last;
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
-        var targetFPS = Math.min(that._fps * that._playbackRate, guiFPS);
-		    console.info(`FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`);
+        var targetFPS = that._motionComp.targetFPS;
+        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`; 
+		    console.info(fps_msg);
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;
+
+        if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+        {
+          Utilities.sendNotification(fps_msg)
+        }
+        that._networkUpdate += 1;
 
         if (that._fpsScore)
         {
@@ -997,6 +1195,8 @@ class VideoCanvas extends AnnotationCanvas {
           {
             console.warn("Detected slow performance, entering safe mode.");
             that.dispatchEvent(new Event("safeMode"));
+            that._motionComp.safeMode();
+            that.rateChange(that._playbackRate);
           }
         }
 
@@ -1036,17 +1236,10 @@ class VideoCanvas extends AnnotationCanvas {
 	  this._playGeneric(Direction.BACKWARDS);
   }
 
-  pause()
+  // If running will clear player context
+  stopPlayerThread()
   {
-	  // If we weren't already paused send the event
-	  if (this._direction != Direction.STOPPED)
-	  {
-	    this._pauseCb.forEach(cb => {cb();});
-	  }
-
-	  this._direction=Direction.STOPPED;
-	  this._videoElement.pause();
-	  if (this._playerTimeout)
+    if (this._playerTimeout)
 	  {
 	    clearTimeout(this._playerTimeout);
 	    this._playerTimeout=null;
@@ -1062,6 +1255,19 @@ class VideoCanvas extends AnnotationCanvas {
 	    clearTimeout(this._diagTimeout);
 	    this._diagTimeout=null;
 	  }
+  }
+
+  pause()
+  {
+	  // If we weren't already paused send the event
+	  if (this._direction != Direction.STOPPED)
+	  {
+	    this._pauseCb.forEach(cb => {cb();});
+	  }
+
+	  this._direction=Direction.STOPPED;
+	  this._videoElement.pause();
+	  this.stopPlayerThread();
 
 	  this.seekFrame(this._dispFrame, this.drawFrame);
   }

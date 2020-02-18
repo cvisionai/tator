@@ -335,6 +335,7 @@ class TatorTranscode(JobManagerMixin):
                     '--name', name,
                     '--section', section,
                 ],
+                'workingDir': '/',
                 'resources': {
                     'limits': {
                         'memory': '32Mi',
@@ -456,6 +457,9 @@ class TatorAlgorithm(JobManagerMixin):
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
             {
+                'name': 'name',
+                'value': self.name,
+            }, {
                 'name': 'media_ids',
                 'value': media_ids,
             }, {

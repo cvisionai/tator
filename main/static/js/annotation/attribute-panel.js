@@ -27,6 +27,7 @@ class AttributePanel extends TatorElement {
   }
 
   set dataType(val) {
+    this._dataType = val;
     if (val.isTrack) {
       const div = document.createElement("div");
       div.setAttribute("class", "d-flex annotation__panel-group px-4 py-3 text-gray f2");
@@ -118,7 +119,14 @@ class AttributePanel extends TatorElement {
     }
 
     this._emitChanges = false;
-    this._track = values;
+
+    // only relevant if we are dealing with objects
+    // with ids
+    if (this._dataType.isTrack)
+    {
+      this._track = values;
+    }
+    
     if (this._slider) {
       this._frames = [];
       for (const [start, end] of values.association.segments) {

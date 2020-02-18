@@ -92,13 +92,17 @@ class AnnotationPlayer extends TatorElement {
       const frame = Number(evt.target.value);
       const waitOk = now - this._lastScrub > this._scrubInterval;
       if (waitOk) {
+        play.setAttribute("is-paused","");
+        this._video.stopPlayerThread();
         this._video.seekFrame(frame, this._video.drawFrame)
         .then(this._lastScrub = Date.now());
       }
     });
 
     this._slider.addEventListener("change", evt => {
+      play.setAttribute("is-paused","");
       const frame = Number(evt.target.value);
+      this._video.stopPlayerThread();
       this._video.seekFrame(frame, this._video.drawFrame)
       .then(this._lastScrub = Date.now());
     });
@@ -308,8 +312,6 @@ class AnnotationPlayer extends TatorElement {
   }
 
   safeMode() {
-    guiFPS=15;
-    this._video.rateChange(this._fps/guiFPS);
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");
     return 0;

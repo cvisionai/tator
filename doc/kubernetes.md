@@ -27,8 +27,8 @@ sudo iptables -P FORWARD ACCEPT
 ```
 sudo apt-mark unhold kubelet kubectl kubeadm kubernetes-cni
 sudo kubeadm reset
-sudo apt-get purge kubeadm kubectl kubelet kubernetes-cni kube*   
-sudo apt-get autoremove  
+sudo apt-get purge kubeadm kubectl kubelet kubernetes-cni kube*
+sudo apt-get autoremove
 sudo rm -rf ~/.kube
 sudo reboot
 ```
@@ -115,7 +115,7 @@ Tator uses three node labels to select which node a pod can be scheduled on. The
 * **dbServer: [yes/no]** Should be used to label a specific node that has high speed storage for serving the database.
 
 For example, for a single node without a GPU we could use the following labels:
- 
+
 ```
 kubectl label nodes <node-name> gpuWorker=no
 kubectl label nodes <node-name> cpuWorker=yes
@@ -127,4 +127,10 @@ Make sure you apply labels for all nodes in the Kubernetes cluster.
 
 The Kubernetes cluster is now configured and you are ready to build Tator.
 
-Next step: [Build Tator on the cluster](build.md)
+## Netowk instability
+
+A startup daemon set is provided in `k8s/network_fix.yaml` to apply a fix for k8s networking in versions equal to or
+older than 1.14.X --- this is applied during the `cluster_install` makefile step. It can be manually applied to
+clusters that are already setup.
+
+Next step: [Set up a job cluster](job-cluster.md)

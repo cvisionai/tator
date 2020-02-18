@@ -555,6 +555,10 @@ def calcSegments(sender, **kwargs):
 
 class FrameAssociation(AssociationType):
     frame = PositiveIntegerField()
+    extracted = ForeignKey(EntityMediaImage,
+                           on_delete=SET_NULL,
+                           null=True,
+                           blank=True)
 
     def states(media_id):
         frameAssociations=FrameAssociation.objects.filter(media__in=media_id)
