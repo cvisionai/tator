@@ -1609,7 +1609,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
                     documents.extend(ts.build_document(new_obj))
                 ts.bulk_add_documents(documents)
             else:
-                new_obj = self.addNewLocalization(obj, False)
+                new_obj = self.addNewLocalization(reqObject, False)
                 obj_ids.append(new_obj.id)
             response=Response({'id': obj_ids},
                               status=status.HTTP_201_CREATED)
