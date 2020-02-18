@@ -187,8 +187,10 @@ class TatorSearch:
             for key in corrected_attributes:
                 value=corrected_attributes[key]
                 # Store django lat/lon as a string
+                # Special note: in ES, array representations are lon/lat, but
+                # strings are lat/lon, therefore we intentionally swap order here.
                 if type(value) == list:
-                    corrected_attributes[key] = f"{value[0]},{value[1]}"
+                    corrected_attributes[key] = f"{value[1]},{value[0]}"
         results=[]
         results.append({
             '_index':self.index_name(entity.project.pk),
