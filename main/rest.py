@@ -1822,6 +1822,11 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 if video.project != project:
                     raise Exception('Videos cross projects')
 
+
+            modified = None
+            if 'modified' in reqObject:
+                modified = bool(reqObject['modified'])
+
             if 'version' in reqObject:
                 version = Version.objects.get(pk=reqObject['version'])
             else:
@@ -1862,6 +1867,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                               attributes=attrs,
                               created_by=request.user,
                               modified_by=request.user,
+                              modified=modified,
                               version=version)
 
             association=None
@@ -2255,8 +2261,13 @@ class EntityStateDetailAPI(RetrieveUpdateDestroyAPIView):
         try:
             state_object = EntityState.objects.get(pk=self.kwargs['pk'])
             self.check_object_permissions(request, state_object)
+            # Patch modified field
+            if "modified" in request.data:
+                state_object.modified = request.data["modified"]
+                state_object.save()
             new_attrs = validate_attributes(request, state_object)
             patch_attributes(new_attrs, state_object)
+
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -2375,17 +2386,18 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             else:
                 # TODO: Handle lines and dots (and circles too someday.)
                 pass
+
+            # Patch modified field
+            if "modified" in request.data:
+                localization_object.modified = request.data["modified"]
+                localization_object.save()
+
             new_attrs = validate_attributes(request, localization_object)
             patch_attributes(new_attrs, localization_object)
 
             # Patch the thumbnail attributes
             if localization_object.thumbnail_image:
                 patch_attributes(new_attrs, localization_object.thumbnail_image)
-
-            # Patch modified field
-            if "modified" in request.data:
-                localization_object.modified = request.data["modified"]
-                localization_object.save()
 
         except PermissionDenied as err:
             raise
