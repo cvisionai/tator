@@ -254,7 +254,6 @@ def create_test_version(name, description, number, project, media):
         description=description,
         number=number,
         project=project,
-        media=media,
     )
 
 def random_datetime(start, end):
