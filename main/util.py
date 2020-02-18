@@ -301,6 +301,7 @@ def buildSearchIndices(project_number, sections, mode='create'):
         if not ok:
             print(f"Failed to {action} document! {result}")
         bar.update(count)
+    bar.finish()
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.
