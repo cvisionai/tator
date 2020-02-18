@@ -328,9 +328,11 @@ def makeDefaultVersion(project_number):
     else:
         version = make_default_version(project)
     logger.info("Updating localizations...")
-    EntityLocalizationBase.objects.filter(project=project).update({'version': version})
+    qs = EntityLocalizationBase.objects.filter(project=project)
+    qs.update(version=version)
     logger.info("Updating states...")
-    EntityState.objects.filter(project=project).update({'version': version})
+    qs = EntityState.objects.filter(project=project)
+    qs.update(version=version)
 
 def associateExtractions(project, section_names):
     if type(section_names) == str:
