@@ -439,7 +439,7 @@ class EntityStateSerializer(serializers.ModelSerializer):
     """ Slower generic serializer """
     class Meta:
         model=EntityState
-        fields=['id', 'meta', 'association', 'attributes']
+        fields=['id', 'meta', 'association', 'attributes', 'version', 'modified']
     association=AssociationSerializer()
 
 # Serializers for associating entity types to attribute data.
