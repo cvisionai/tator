@@ -909,7 +909,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
             return response;
         return Response(responseData)
 
-    def addNewLocalization(self, reqObject):
+    def addNewLocalization(self, reqObject, inhibit_signal):
         media_id=[]
 
         ## Check for required fields first
@@ -973,8 +973,10 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
         # Set temporary bridge flag for relative coordinates
         obj.relativeCoords=True
+        if inhibit_signal:
+            obj._inhibit = True
         obj.save()
-        return obj.id
+        return obj
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
@@ -983,11 +985,17 @@ class LocalizationList(APIView, AttributeFilterMixin):
             reqObject=request.data;
             many=reqObject.get('many', None)
             obj_ids = []
+            ts=TatorSearch()
             if many:
+                documents=[]
                 for obj in many:
-                    obj_ids.append(self.addNewLocalization(obj))
+                    new_obj = self.addNewLocalization(obj, True)
+                    obj_ids.append(new_obj.id)
+                    documents.extend(ts.build_document(new_obj))
+                ts.bulk_add_documents(documents)
             else:
-                obj_ids.append(self.addNewLocalization(reqObject))
+                new_obj = self.addNewLocalization(obj, False)
+                obj_ids.append(new_obj.id)
             response=Response({'id': obj_ids},
                               status=status.HTTP_201_CREATED)
 

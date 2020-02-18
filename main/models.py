@@ -415,7 +415,10 @@ class EntityLocalizationBase(EntityBase):
 
 @receiver(post_save, sender=EntityLocalizationBase)
 def localization_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        logger.info("Inhibited ES insertion")
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
@@ -431,7 +434,10 @@ class EntityLocalizationDot(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationDot)
 def dot_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().create_document(instance)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        logger.info("Inhibited ES insertion")
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
@@ -447,7 +453,10 @@ class EntityLocalizationLine(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationLine)
 def line_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().create_document(instance)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        logger.info("Inhibited ES insertion")
 
 @receiver(pre_delete, sender=EntityLocalizationLine)
 def line_delete(sender, instance, **kwargs):
@@ -463,7 +472,10 @@ class EntityLocalizationBox(EntityLocalizationBase):
 @receiver(post_save, sender=EntityLocalizationBox)
 def box_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().create_document(instance)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        logger.info("Inhibited ES insertion")
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):

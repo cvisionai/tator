@@ -2,6 +2,7 @@ import logging
 import os
 from copy import deepcopy
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,8 @@ class TatorSearch:
             }},
         )
 
+    def bulk_add_documents(self, listOfDocs):
+        bulk(self.es, listOfDocs, raise_on_error=False)
     def create_document(self, entity, wait=False):
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
