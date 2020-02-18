@@ -3684,7 +3684,7 @@ class VersionListAPI(APIView):
             if project is None:
                 raise Exception('Missing project ID!')
 
-            number = max([obj.number for obj in Version.objects.filter(media=media)]) + 1
+            number = max([obj.number for obj in Version.objects.filter(project=project)]) + 1
 
             obj = Version(
                 name=name,
