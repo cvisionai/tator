@@ -36,6 +36,7 @@ from .models import LocalizationAssociation
 from .models import MediaAssociation
 from .models import FrameAssociation
 from .models import AnalysisCount
+from .models import Version
 
 admin.site.register(Organization)
 admin.site.register(User, UserAdmin)
@@ -68,5 +69,6 @@ admin.site.register(LocalizationAssociation)
 admin.site.register(MediaAssociation)
 admin.site.register(FrameAssociation)
 admin.site.register(AnalysisCount)
+admin.site.register(Version)
 
 TokenAdmin.raw_id_fields = ('user',)

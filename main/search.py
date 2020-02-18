@@ -69,6 +69,10 @@ class TatorSearch:
                 'tator_treeleaf_name': {'type': 'text'},
                 '_treeleaf_depth': {'type': 'integer'},
                 '_treeleaf_path': {'type': 'text'},
+                '_annotation_version': {'type': 'integer'},
+                '_modified': {'type': 'boolean'},
+                '_modified_datetime': {'type': 'date'},
+                '_modified_by': {'type': 'keyword'},
             }},
         )
 
@@ -135,6 +139,11 @@ class TatorSearch:
                 'name': 'annotation',
                 'parent': entity.media.pk,
             }
+            if entity.version:
+                aux['_annotation_version'] = entity.version.pk
+            aux['_modified'] = entity.modified
+            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
@@ -162,6 +171,11 @@ class TatorSearch:
                     duplicates.append(duplicate)
             except:
                 pass
+            if entity.version:
+                aux['_annotation_version'] = entity.version.pk
+            aux['_modified'] = entity.modified
+            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['treeleaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
@@ -176,8 +190,10 @@ class TatorSearch:
             for key in corrected_attributes:
                 value=corrected_attributes[key]
                 # Store django lat/lon as a string
+                # Special note: in ES, array representations are lon/lat, but
+                # strings are lat/lon, therefore we intentionally swap order here.
                 if type(value) == list:
-                    corrected_attributes[key] = f"{value[0]},{value[1]}"
+                    corrected_attributes[key] = f"{value[1]},{value[0]}"
         results=[]
         results.append({
             '_index':self.index_name(entity.project.pk),

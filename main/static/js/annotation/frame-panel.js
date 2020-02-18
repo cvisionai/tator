@@ -26,6 +26,10 @@ class FramePanel extends TatorElement {
     this._data = val;
   }
 
+  set version(val) {
+    this._version = val;
+  }
+
   set dataType(val) {
     this._name.textContent = val.type.name;
     this._typeId = val.type.id;
@@ -47,6 +51,8 @@ class FramePanel extends TatorElement {
             name: val.type.name,
             media_ids: mediaId,
             frame: this._frame,
+            modified: 1,
+            version: this._version.id,
             ...values,
           };
           this._undo.post("EntityStates", body, val);
@@ -69,6 +75,8 @@ class FramePanel extends TatorElement {
             name: val.type.name,
             media_ids: mediaId,
             frame: 0,
+            modified: 1,
+            version: this._version.id,
           }
           for (const column of val.columns) {
             let defaultValue;

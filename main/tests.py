@@ -94,6 +94,7 @@ metadata:
   generateName: hello-world-    # name of the workflow spec
 spec:
   entrypoint: whalesay          # invoke the whalesay template
+  ttlSecondsAfterFinished: 30
   templates:
   - name: whalesay              # name of the template
     container:
@@ -160,6 +161,7 @@ def create_test_box(user, entity_type, project, media, frame):
         user=user,
         meta=entity_type,
         project=project,
+        version=project.version_set.all()[0],
         media=media,
         frame=frame,
         x=x,
@@ -252,7 +254,6 @@ def create_test_version(name, description, number, project, media):
         description=description,
         number=number,
         project=project,
-        media=media,
     )
 
 def random_datetime(start, end):
@@ -939,6 +940,9 @@ class AlgorithmLaunchTestCase(
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
+    def tearDown(self):
+        self.project.delete()
+
 class AlgorithmTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
@@ -953,6 +957,9 @@ class AlgorithmTestCase(
             create_test_algorithm(self.user, f'result{idx}', self.project)
             for idx in range(random.randint(6, 10))
         ]
+
+    def tearDown(self):
+        self.project.delete()
 
 class VideoTestCase(
         APITestCase,
@@ -986,6 +993,9 @@ class VideoTestCase(
         self.patch_json = {'name': 'video1', 'resourcetype': 'EntityMediaVideo'}
         TatorSearch().refresh(self.project.pk)
 
+    def tearDown(self):
+        self.project.delete()
+
 class ImageTestCase(
         APITestCase,
         AttributeTestMixin,
@@ -1016,6 +1026,9 @@ class ImageTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'image1', 'resourcetype': 'EntityMediaImage'}
         TatorSearch().refresh(self.project.pk)
+
+    def tearDown(self):
+        self.project.delete()
 
 class LocalizationBoxTestCase(
         APITestCase,
@@ -1076,6 +1089,9 @@ class LocalizationBoxTestCase(
         self.patch_json = {'name': 'box1', 'resourcetype': 'EntityLocalizationBox'}
         TatorSearch().refresh(self.project.pk)
 
+    def tearDown(self):
+        self.project.delete()
+
 class LocalizationLineTestCase(
         APITestCase,
         AttributeTestMixin,
@@ -1135,6 +1151,9 @@ class LocalizationLineTestCase(
         self.patch_json = {'name': 'line1', 'resourcetype': 'EntityLocalizationLine'}
         TatorSearch().refresh(self.project.pk)
 
+    def tearDown(self):
+        self.project.delete()
+
 class LocalizationDotTestCase(
         APITestCase,
         AttributeTestMixin,
@@ -1192,6 +1211,9 @@ class LocalizationDotTestCase(
         self.patch_json = {'name': 'dot1', 'resourcetype': 'EntityLocalizationDot'}
         TatorSearch().refresh(self.project.pk)
 
+    def tearDown(self):
+        self.project.delete()
+
 class StateTestCase(
         APITestCase,
         AttributeTestMixin,
@@ -1205,6 +1227,7 @@ class StateTestCase(
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
+        self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
@@ -1234,13 +1257,18 @@ class StateTestCase(
                     meta=self.entity_type,
                     project=self.project,
                     association=media_association,
+                    version=self.version,
                 )
             )
         self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'EntityStates'
         self.detail_uri = 'EntityState'
         self.create_entity = functools.partial(EntityState.objects.create,
-            meta=self.entity_type, project=self.project, association=media_association)
+            meta=self.entity_type,
+            project=self.project,
+            association=media_association,
+            version=self.version
+        )
         self.create_json = {
             'type': self.entity_type.pk,
             'name': 'asdf',
@@ -1256,6 +1284,9 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1', 'resourcetype': 'EntityState'}
         TatorSearch().refresh(self.project.pk)
+
+    def tearDown(self):
+        self.project.delete()
 
 class TreeLeafTestCase(
         APITestCase,
@@ -1298,6 +1329,9 @@ class TreeLeafTestCase(
         self.patch_json = {'name': 'leaf1', 'resourcetype': 'TreeLeaf'}
         TatorSearch().refresh(self.project.pk)
 
+    def tearDown(self):
+        self.project.delete()
+
 class TreeLeafTypeTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
@@ -1311,6 +1345,9 @@ class TreeLeafTypeTestCase(
             for _ in range(random.randint(6, 10))
         ]
         self.list_uri = 'TreeLeafTypes'
+
+    def tearDown(self):
+        self.project.delete()
 
 class EntityStateTypesTestCase(
         APITestCase,
@@ -1331,6 +1368,9 @@ class EntityStateTypesTestCase(
                 project=self.project,
             ),
         ]
+
+    def tearDown(self):
+        self.project.delete()
         
 class EntityTypeMediaTestCase(
         APITestCase,
@@ -1357,6 +1397,9 @@ class EntityTypeMediaTestCase(
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
 
+    def tearDown(self):
+        self.project.delete()
+
 class EntityTypeSchemaTestCase(
         APITestCase,
         PermissionDetailMembershipTestMixin):
@@ -1381,6 +1424,9 @@ class EntityTypeSchemaTestCase(
         ]
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
+
+    def tearDown(self):
+        self.project.delete()
 
 class LocalizationAssociationTestCase(
         APITestCase,
@@ -1433,6 +1479,9 @@ class LocalizationAssociationTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'color': 'asdf'}
 
+    def tearDown(self):
+        self.project.delete()
+
 class LocalizationTypesTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
@@ -1459,6 +1508,9 @@ class LocalizationTypesTestCase(
             create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'LocalizationTypes'
 
+    def tearDown(self):
+        self.project.delete()
+
 class MembershipTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
@@ -1468,6 +1520,9 @@ class MembershipTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.list_uri = 'Memberships'
+
+    def tearDown(self):
+        self.project.delete()
 
 class ProjectTestCase(APITestCase):
     def setUp(self):
@@ -1541,6 +1596,10 @@ class ProjectTestCase(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def tearDown(self):
+        for project in self.entities:
+            project.delete()
         
 class TranscodeTestCase(
         APITestCase,
@@ -1567,6 +1626,9 @@ class TranscodeTestCase(
             'md5': '',
         }
         self.edit_permission = Permission.CAN_TRANSFER
+
+    def tearDown(self):
+        self.project.delete()
 
 class AnalysisCountTestCase(
         APITestCase,
@@ -1609,6 +1671,9 @@ class AnalysisCountTestCase(
         }
         self.edit_permission = Permission.FULL_CONTROL
 
+    def tearDown(self):
+        self.project.delete()
+
 class VersionTestCase(
         APITestCase,
         PermissionCreateTestMixin,
@@ -1636,10 +1701,13 @@ class VersionTestCase(
         self.create_json = {
             'project': self.project.pk,
             'name': 'version_create_test',
-            'media': self.media.pk,
+            'media_id': self.media.pk,
             'description': 'asdf',
         }
         self.patch_json = {
             'description': 'asdf123',
         }
         self.edit_permission = Permission.CAN_EDIT
+
+    def tearDown(self):
+        self.project.delete()

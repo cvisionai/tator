@@ -160,7 +160,8 @@ class Project(Model):
 
     def delete(self, *args, **kwargs):
         # Delete attribute types
-        AttributeTypeBase.objects.filter(project=self).delete()
+        qs = AttributeTypeBase.objects.filter(project=self)
+        delete_polymorphic_qs(qs)
         # Delete entities
         qs = EntityBase.objects.filter(project=self)
         delete_polymorphic_qs(qs)
@@ -169,10 +170,38 @@ class Project(Model):
         delete_polymorphic_qs(qs)
         super().delete(*args, **kwargs)
 
+class Version(Model):
+    name = CharField(max_length=128)
+    description = CharField(max_length=1024, blank=True)
+    number = PositiveIntegerField()
+    project = ForeignKey(Project, on_delete=CASCADE)
+    created_datetime = DateTimeField(auto_now_add=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
+    show_empty = BooleanField(default=False)
+    """ Tells the UI to show this version even if the current media does not 
+        have any annotations.
+    """
+
+    def __str__(self):
+        out = f"{self.name}"
+        if self.description:
+            out += f" | {self.description}"
+        return out
+
+def make_default_version(instance):
+    return Version.objects.create(
+        name="Baseline",
+        description="Initial version",
+        project=instance,
+        number=0,
+    )
+
 @receiver(post_save, sender=Project)
-def project_save(sender, instance, **kwargs):
+def project_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_project_cache(instance.pk)
     TatorSearch().create_index(instance.pk)
+    if created:
+        make_default_version(instance)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
@@ -270,9 +299,10 @@ class EntityBase(PolymorphicModel):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
-    """ The attributes related to this entity, see `meta` for column
-        definitions """
-    related_media = ForeignKey('EntityBase', on_delete=SET_NULL, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
 
 class EntityMediaBase(EntityBase):
     name = CharField(max_length=256)
@@ -289,7 +319,7 @@ class EntityMediaBase(EntityBase):
     """
 
 @receiver(post_save, sender=EntityMediaBase)
-def media_save(sender, instance, **kwargs):
+def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=EntityMediaBase)
@@ -302,7 +332,7 @@ class EntityMediaImage(EntityMediaBase):
     height=IntegerField(null=True)
 
 @receiver(post_save, sender=EntityMediaImage)
-def image_save(sender, instance, **kwargs):
+def image_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
 
@@ -388,13 +418,6 @@ def video_delete(sender, instance, **kwargs):
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
-class Version(Model):
-    name = CharField(max_length=128)
-    description = CharField(max_length=1024)
-    number = PositiveIntegerField()
-    project = ForeignKey(Project, on_delete=CASCADE)
-    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
-
 class EntityLocalizationBase(EntityBase):
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
@@ -402,7 +425,7 @@ class EntityLocalizationBase(EntityBase):
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
                                  null=True,blank=True,
                                  related_name='thumbnail_image')
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -560,7 +583,7 @@ class EntityState(EntityBase):
     elements. If a frame is supplied it was collected at that time point.
     """
     association = ForeignKey(AssociationType, on_delete=CASCADE)
-    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.

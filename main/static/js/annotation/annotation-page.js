@@ -14,8 +14,16 @@ class AnnotationPage extends TatorPage {
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-items-center");
+    header.appendChild(div);
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
-    header.appendChild(this._breadcrumbs);
+    div.appendChild(this._breadcrumbs);
+
+    this._versionButton = document.createElement("version-button");
+    this._versionButton.setAttribute("class", "px-2");
+    div.appendChild(this._versionButton);
 
     this._settings = document.createElement("annotation-settings");
     header.appendChild(this._settings);
@@ -23,6 +31,9 @@ class AnnotationPage extends TatorPage {
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
     this._shadow.appendChild(this._main);
+
+    this._versionDialog = document.createElement("version-dialog");
+    this._main.appendChild(this._versionDialog);
 
     this._sidebar = document.createElement("annotation-sidebar");
     this._main.appendChild(this._sidebar);
@@ -132,10 +143,10 @@ class AnnotationPage extends TatorPage {
           })
           .then(response => response.json())
           .then(data => {
-            player.permission = data.permission;
-            this._browser.permission = data.permission;
-            this._sidebar.permission = data.permission;
+            this._permission = data.permission;
+            this.enableEditing(true);
           });
+            
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
@@ -216,12 +227,40 @@ class AnnotationPage extends TatorPage {
         canvas.zoomMinus();
       }
     });
+
+    this._versionDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._versionDialog.addEventListener("versionSelect", evt => {
+      this._data.setVersion(evt.detail.version, evt.detail.edited);
+      this._versionButton.text = evt.detail.version.name;
+      this._version = evt.detail.version;
+      for (const key in this._saves) {
+        this._saves[key].version = this._version;
+      }
+      this.enableEditing(evt.detail.edited);
+    });
+
+    this._versionButton.addEventListener("click", () => {
+      this._versionDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
   }
 
   _getMetadataTypes(canvas, canvasElement) {
     const projectId = this.getAttribute("project-id");
     const mediaId = this.getAttribute("media-id");
     const query = "?media_id=" + mediaId;
+    const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetch(url, {
@@ -236,16 +275,39 @@ class AnnotationPage extends TatorPage {
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
-      getMetadataType("EntityStateTypes")
+      getMetadataType("EntityStateTypes"),
+      versionPromise,
     ])
-    .then(([localizationResponse, stateResponse]) => {
+    .then(([localizationResponse, stateResponse, versionResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
-      Promise.all([localizationData, stateData])
-      .then(([localizationTypes, stateTypes]) => {
+      const versionData = versionResponse.json();
+      Promise.all([localizationData, stateData, versionData])
+      .then(([localizationTypes, stateTypes, versions]) => {
+        // Skip version if number of annotations is zero and show_empty is false.
+        const dispVersions = versions.filter(version => {
+          return !(
+            version.num_created == 0 &&
+            version.num_modified == 0 &&
+            version.show_empty == false
+          );
+        });
+        if (dispVersions.length > 0) {
+          versions = dispVersions;
+        } else {
+          versions = [versions[0]];
+        }
+
+        this._versionDialog.init(versions);
+        this._version = versions[versions.length - 1];
+        if (versions.length == 0) {
+          this._versionButton.style.display = "none";
+        } else {
+          this._versionButton.text = this._version.name;
+        }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.dataTypes = dataTypes;
-        this._browser.dataTypes = dataTypes;
+        this._data.init(dataTypes, this._version);
+        this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
@@ -357,10 +419,7 @@ class AnnotationPage extends TatorPage {
 
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
-          save.setAttribute("project-id", projectId);
-          save.setAttribute("media-id", mediaId);
-          save.dataType = dataType;
-          save.undoBuffer = this._undo;
+          save.init(projectId, mediaId, dataType, this._undo, this._version);
           this._main.appendChild(save);
           this._saves[dataType.type.id] = save;
 
@@ -466,6 +525,20 @@ class AnnotationPage extends TatorPage {
     img.style.height = canvasPosition.height + "px";
     this._preview.appendChild(img);
   };
+
+  enableEditing(enable) {
+    let permission;
+    if (enable) {
+      // Set privileges to user's level.
+      permission = this._permission;
+    } else {
+      // Turn off editing.
+      permission = "View Only";
+    }
+    this._player.permission = permission;
+    this._browser.permission = permission;
+    this._sidebar.permission = permission;
+  }
 }
 
 customElements.define("annotation-page", AnnotationPage);

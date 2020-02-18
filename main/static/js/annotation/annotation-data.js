@@ -5,12 +5,35 @@ class AnnotationData extends HTMLElement {
     this._trackDb = new Map();
     this._updateUrls = new Map();
     this._dataByType = new Map();
+    this._edited = true;
   }
 
-  set dataTypes(val) {
+  init(dataTypes, version) {
+    this._dataTypesRaw = dataTypes;
+    this._version = version;
+
+    this.updateAll(dataTypes, version)
+    .then(() => {
+      this.dispatchEvent(new Event("initialized"));
+    });
+
+    // Convert datatypes array to a map for faster access
+    this._dataTypes={}
+    for (const dataType of dataTypes) {
+      this._dataTypes[dataType.type.id] = dataType;
+    }
+  }
+
+  setVersion(version, edited) {
+    this._version = version;
+    this._edited = edited;
+    this.updateAll(this._dataTypesRaw, version);
+  }
+
+  updateAll(dataTypes, version) {
     const trackTypeIds=[];
     const localTypeIds=[];
-    for (const [idx, dataType] of val.entries()) {
+    for (const [idx, dataType] of dataTypes.entries()) {
       let isLocalization=false;
       let isTrack=false;
       let isTLState=false;
@@ -50,8 +73,8 @@ class AnnotationData extends HTMLElement {
       };
 
       trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(val[typeIdx].type.id, val[typeIdx].data);
-        this.updateType(val[typeIdx], semaphore);
+        this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+        this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
 
@@ -70,21 +93,13 @@ class AnnotationData extends HTMLElement {
       //Update localizations after
       tracksDone.then(() => {
         localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(val[typeIdx].type.id, val[typeIdx].data);
-          this.updateType(val[typeIdx], semaphore);
+          this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+          this.updateType(dataTypes[typeIdx], semaphore);
         });
       });
     });
 
-    initDone.then(() => {
-      this.dispatchEvent(new Event("initialized"));
-    });
-
-    // Convert datatypes array to a map for faster access
-    this._dataTypes={}
-    for (const dataType of val) {
-      this._dataTypes[dataType.type.id] = dataType;
-    }
+    return initDone;
   }
 
   updateTypeLocal(method, id, body, typeObj) {
@@ -93,6 +108,24 @@ class AnnotationData extends HTMLElement {
       console.error("Unregistered type " + typeId);
       return;
     }
+
+    // Posting with modified field set to false is ignored.
+    if (method == "POST" && "modified" in body) {
+      if (body.modified == false) {
+        return;
+      }
+    }
+
+    // Patching the modified field may be treated as post/delete as it could 
+    // change versions.
+    if (method == "PATCH" && "modified" in body) {
+      if (body.modified == null) {
+        method = "POST";
+      } else if (body.modified == false) {
+        method = "DELETE";
+      }
+    }
+    
     const attributeNames = typeObj.columns.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
@@ -126,6 +159,10 @@ class AnnotationData extends HTMLElement {
     } else if (method == "DELETE") {
       const ids = this._dataByType.get(typeId).map(elem => elem.id);
       const index = ids.indexOf(id);
+      // It is possible for the ID to not exist if it is part of a different version/layer.
+      if (index == -1) {
+        return;
+      }
       this._dataByType.get(typeId).splice(index, 1);
     }
     this.dispatchEvent(new CustomEvent("freshData", {
@@ -136,15 +173,25 @@ class AnnotationData extends HTMLElement {
     }));
   }
 
-  updateType(typeObj, callback) {
+  updateType(typeObj, callback, query) {
     const typeId = typeObj.type.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
     }
 
+    let url = this._updateUrls.get(typeId);
+    if (query) {
+      url += "&search=";
+      url += query;
+    }
+    url += "&version=";
+    url += this._version.id;
+    url += "&modified=";
+    url += Number(this._edited);
+
     // Fetch new ones from server
-    fetchRetry(this._updateUrls.get(typeId))
+    fetchRetry(url)
     .then(response => {
       if (response.ok) {
         return response.json();

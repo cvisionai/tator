@@ -14,6 +14,7 @@ from django.db import connection
 import os
 import shutil
 import datetime
+import copy
 from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
 from django.core.exceptions import ObjectDoesNotExist
@@ -30,7 +31,6 @@ from rest_framework.schemas import AutoSchema
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.exceptions import *
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
 
@@ -749,265 +749,6 @@ class AttributeFilterMixin:
         finally:
             return response;
 
-class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        postOnly_fields = []
-
-        manual_fields += [
-            coreapi.Field(
-                name='project',
-                required=True,
-                location='path',
-                schema=coreschema.String(description='A unique integer identifying a project')
-            ),
-        ]
-
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-            ] + self.attribute_fields()
-        if (method=='POST'):
-             postOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-                coreapi.Field(name='<details>',
-                              required=False,
-                              location='body',
-                              schema=coreschema.String(description='Various depending on `type`. See `/EntityTypeSchema` service.')),
-                coreapi.Field(name='operation',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
-
-            ]
-
-        return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
-
-class LocalizationList(APIView, AttributeFilterMixin):
-    """
-    Endpoint for getting + adding localizations
-
-    Example:
-
-    #all types all videos
-    GET /localizations
-
-    #only lines for media_id=3 of type 1
-    GET /localizations?type=1&media=id=3
-
-    """
-    serializer_class = EntityLocalizationSerializer
-    schema=LocalizationListSchema()
-    permission_classes = [ProjectEditPermission]
-
-    def get_queryset(self):
-        mediaId=self.request.query_params.get('media_id', None)
-        filterType=self.request.query_params.get('type', None)
-        attribute=self.request.query_params.get('attribute', None)
-        # Figure out what object we are dealing with
-        obj=EntityLocalizationBase
-        if filterType != None:
-            typeObj=EntityTypeLocalizationBase.objects.get(pk=filterType)
-            if type(typeObj) == EntityTypeLocalizationBox:
-                obj=EntityLocalizationBox
-            elif type(typeObj) == EntityTypeLocalizationLine:
-                obj=EntityLocalizationLine
-            elif type(typeObj) == EntityTypeLocalizationDot:
-                obj=EntityLocalizationDot
-            else:
-                raise Exception('Unknown localization type')
-        else:
-            raise Exception('Missing type parameter!')
-
-        if mediaId != None:
-            queryset = obj.objects.filter(media=mediaId)
-        else:
-            queryset = obj.objects.filter(project=self.kwargs['project'])
-
-        if filterType != None:
-            queryset = queryset.filter(meta=filterType)
-
-        queryset = self.filter_by_attribute(queryset)
-
-        return queryset
-
-    def get(self, request, format=None, **kwargs):
-        try:
-            mediaId = request.query_params.get('media_id', None)
-
-            if mediaId is not None:
-                media_el = EntityMediaBase.objects.get(pk=mediaId)
-                if media_el.project.id != self.kwargs['project']:
-                    raise Exception('Media ID not in project')
-
-            entityType = request.query_params.get('type', None)
-            self.validate_attribute_filter(request.query_params)
-            self.request=request
-            before=time.time()
-            qs=self.get_queryset()
-            if self.operation:
-                if self.operation == 'count':
-                    responseData = {'count': qs.count()}
-                elif self.operation.startswith('attribute_count'):
-                    _, attr_name = self.operation.split('::')
-                    responseData = count_by_attribute(qs, attr_name)
-                else:
-                    raise Exception('Invalid operation parameter!')
-            else:
-                responseData=FastEntityLocalizationSerializer(qs)
-                if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request.query_params, responseData)
-                else:
-                    # CSV creation requires a bit more
-                    user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
-                    users=list(User.objects.filter(id__in=user_ids).values('id','email'))
-                    email_dict={}
-                    for user in users:
-                        email_dict[user['id']] = user['email']
-
-                    media_ids=list(qs.values('media').distinct().values_list('media', flat=True))
-                    medias=list(EntityMediaBase.objects.filter(id__in=media_ids).values('id','name'))
-                    filename_dict={}
-                    for media in medias:
-                        filename_dict[media['id']] = media['name']
-
-                    filter_type=self.request.query_params.get('type', None)
-                    type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
-                    for element in responseData:
-                        del element['meta']
-
-                        oldAttributes = element['attributes']
-                        del element['attributes']
-                        element.update(oldAttributes)
-
-                        user_id = element['user']
-                        media_id = element['media']
-
-                        element['user'] = email_dict[user_id]
-                        element['media'] = filename_dict[media_id]
-
-                    responseData = responseData
-            after=time.time()
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-            return response;
-        return Response(responseData)
-
-    def addNewLocalization(self, reqObject, inhibit_signal):
-        media_id=[]
-
-        ## Check for required fields first
-        if 'media_id' in reqObject:
-            media_id = reqObject['media_id'];
-        else:
-            raise Exception('Missing required field in request Object "media_id", got={}'.format(reqObject))
-
-        if 'type' in reqObject:
-            entityTypeId=reqObject['type']
-        else:
-            raise Exception('Missing required field in request object "type"')
-
-        entityType = EntityTypeLocalizationBase.objects.get(id=entityTypeId)
-
-        if type(entityType) == EntityTypeMediaVideo:
-            if 'frame' not in reqObject:
-                raise Exception('Missing required frame identifier')
-
-        mediaElement=EntityMediaBase.objects.get(pk=media_id)
-
-        project=mediaElement.project
-
-
-        newObjType=type_to_obj(type(entityType))
-
-        requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
-
-        for field in {**requiredFields,**reqAttributes}:
-            if field not in reqObject:
-                raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
-
-        # Build required keys based on object type (box, line, etc.)
-        # Query the model object and get the names we look for (x,y,etc.)
-        localizationFields={}
-        for field in requiredFields:
-            localizationFields[field] = reqObject[field]
-
-        attrs={}
-        for field, attrType in zip(reqAttributes, attrTypes):
-            convert_attribute(attrType, reqObject[field]) # Validates the attribute value
-            attrs[field] = reqObject[field];
-
-        # Finally make the object, filling in all the info we've collected
-        obj = newObjType(project=project,
-                         meta=entityType,
-                         media=mediaElement,
-                         user=self.request.user,
-                         attributes=attrs)
-
-        for field, value in localizationFields.items():
-            setattr(obj, field, value)
-
-        if 'frame' in reqObject:
-            obj.frame = reqObject['frame']
-        else:
-            obj.frame = 0
-
-        if 'sequence' in reqObject:
-            obj.state = reqObject['state']
-
-        # Set temporary bridge flag for relative coordinates
-        obj.relativeCoords=True
-        if inhibit_signal:
-            obj._inhibit = True
-        obj.save()
-        return obj
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
-
-        try:
-            entityType=None
-            reqObject=request.data;
-            many=reqObject.get('many', None)
-            obj_ids = []
-            ts=TatorSearch()
-            if many:
-                documents=[]
-                for obj in many:
-                    new_obj = self.addNewLocalization(obj, True)
-                    obj_ids.append(new_obj.id)
-                    documents.extend(ts.build_document(new_obj))
-                ts.bulk_add_documents(documents)
-            else:
-                new_obj = self.addNewLocalization(obj, False)
-                obj_ids.append(new_obj.id)
-            response=Response({'id': obj_ids},
-                              status=status.HTTP_201_CREATED)
-
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
 class EntityTypeDetailSchema(AutoSchema):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path,method)
@@ -1091,11 +832,13 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
                 coreapi.Field(name='operation',
                               required=False,
                               location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name\nattribute_ids: Return a list of IDs split by a given attribute name\nadjacent: Return the media IDs that are adjacent to the given id (example: &operation=adjacent::3 finds adjacent media to media ID 3)\nids: Only return a list of IDs\noverview: Return an overview of the media list')),
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements')),
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-def get_attribute_query(query_params, query, bools, project):
+def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[], modified=None):
+
+    # Construct query for media and annotations
     attr_filter_params = {
         'attribute_eq': query_params.get('attribute', None),
         'attribute_lt': query_params.get('attribute_lt', None),
@@ -1155,33 +898,86 @@ def get_attribute_query(query_params, query, bools, project):
                             raise Exception("Invalid value for attribute_null operation, must be <field>::<value> where <value> is true or false.")
 
     attr_query['media']['filter'] += bools
-    has_child = False
-    child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    attr_query['annotation']['filter'] += annotation_bools
+   
+    if is_media:
+        # Construct query for media
+        has_child = False
+        child_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
 
-    for key in ['must_not', 'filter']:
-        if len(attr_query['annotation'][key]) > 0:
-            has_child = True
-            child_query['query']['bool'][key] = attr_query['annotation'][key]
+        for key in ['must_not', 'filter']:
+            if len(attr_query['annotation'][key]) > 0:
+                has_child = True
+                child_query['query']['bool'][key] = copy.deepcopy(attr_query['annotation'][key])
 
-    if has_child:
-        child_query['type'] = 'annotation'
-        attr_query['media']['filter'].append({'has_child': child_query})
+        if has_child:
+            child_query['type'] = 'annotation'
+            attr_query['media']['filter'].append({'has_child': child_query})
 
-    for key in ['must_not', 'filter']:
-        if len(attr_query['media'][key]) > 0:
-            query['query']['bool'][key] = attr_query['media'][key]
+        for key in ['must_not', 'filter']:
+            if len(attr_query['media'][key]) > 0:
+                query['query']['bool'][key] = attr_query['media'][key]
 
-    search = query_params.get('search', None)
-    if search != None:
-        query['query']['bool']['should'] = [
-            {'query_string': {'query': search}},
-            {'has_child': {
-                    'type': 'annotation',
-                    'query': {'query_string': {'query': search}},
+        search = query_params.get('search', None)
+        if search != None:
+            query['query']['bool']['should'] = [
+                {'query_string': {'query': search}},
+                {'has_child': {
+                        'type': 'annotation',
+                        'query': {'query_string': {'query': search}},
+                    },
                 },
-            },
-        ]
-        query['query']['bool']['minimum_should_match'] = 1
+            ]
+            query['query']['bool']['minimum_should_match'] = 1
+    else:
+        # Construct query for annotations
+        has_parent = False
+        parent_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+
+        for key in ['must_not', 'filter']:
+            if len(attr_query['media'][key]) > 0:
+                has_parent = True
+                parent_query['query']['bool'][key] = copy.deepcopy(attr_query['media'][key])
+
+        if has_parent:
+            parent_query['parent_type'] = 'media'
+            attr_query['annotation']['filter'].append({'has_parent': parent_query})
+
+        for key in ['must_not', 'filter']:
+            if len(attr_query['annotation'][key]) > 0:
+                query['query']['bool'][key] = attr_query['annotation'][key]
+
+        search = query_params.get('search', None)
+        if search != None:
+            query['query']['bool']['should'] = [
+                {'query_string': {'query': search}},
+                {'has_parent': {
+                        'parent_type': 'media',
+                        'query': {'query_string': {'query': search}},
+                    },
+                },
+            ]
+            query['query']['bool']['minimum_should_match'] = 1
+
+        if modified != None:
+            # Get modified + null or not modified + null
+            modified_query = [{
+                'bool': {
+                    'must_not': [{
+                        'exists': {'field': '_modified'},
+                    }],
+                }, 
+            }, {
+                'match': {
+                    '_modified': bool(int(modified)),
+                },
+            }]
+            if search != None:
+                query['query']['bool']['should'] += modified_query
+                query['query']['bool']['minimum_should_match'] += 1
+            else:
+                query['query']['bool']['should'] = modified_query
+                query['query']['bool']['minimum_should_match'] = 1
 
     return query
 
@@ -1507,6 +1303,326 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         finally:
             return response;
 
+def get_annotation_queryset(project, query_params, attr_filter):
+    """Converts annotation query string into a list of IDs and a count.
+    """
+    mediaId = query_params.get('media_id', None)
+    filterType = query_params.get('type', None)
+    version = query_params.get('version', None)
+    modified = query_params.get('modified', None)
+    start = query_params.get('start', None)
+    stop = query_params.get('stop', None)
+
+    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    query['sort']['_exact_name'] = 'asc'
+    media_bools = []
+    annotation_bools = []
+
+    if mediaId != None:
+        media_bools.append({'ids': {'values': mediaId.split(',')}})
+
+    if filterType != None:
+        annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})
+
+    if version != None:
+        annotation_bools.append({'match': {'_annotation_version': {'query': int(version)}}})
+
+    if start != None:
+        query['from'] = int(start)
+
+    if start == None and stop != None:
+        query['size'] = int(stop)
+
+    if start != None and stop != None:
+        query['size'] = int(stop) - int(start)
+    query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools, modified)
+
+    annotation_ids, annotation_count = TatorSearch().search(project, query)
+
+    return annotation_ids, annotation_count, query
+
+class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
+    def get_manual_fields(self, path, method):
+        manual_fields = super().get_manual_fields(path,method)
+        getOnly_fields = []
+        postOnly_fields = []
+
+        manual_fields += [
+            coreapi.Field(
+                name='project',
+                required=True,
+                location='path',
+                schema=coreschema.String(description='A unique integer identifying a project')
+            ),
+        ]
+
+        if (method=='GET'):
+            getOnly_fields = [
+                coreapi.Field(name='media_id',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
+                coreapi.Field(name='type',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
+                coreapi.Field(name='version',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a Version')),
+                coreapi.Field(name='modified',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
+            ] + self.attribute_fields()
+        if (method=='POST'):
+             postOnly_fields = [
+                coreapi.Field(name='media_id',
+                              required=True,
+                              location='body',
+                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
+                coreapi.Field(name='type',
+                              required=True,
+                              location='body',
+                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
+                coreapi.Field(name='<details>',
+                              required=False,
+                              location='body',
+                              schema=coreschema.String(description='Various depending on `type`. See `/EntityTypeSchema` service.')),
+                coreapi.Field(name='operation',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
+
+            ]
+
+        return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
+
+class LocalizationList(APIView, AttributeFilterMixin):
+    """
+    Endpoint for getting + adding localizations
+
+    Example:
+
+    #all types all videos
+    GET /localizations
+
+    #only lines for media_id=3 of type 1
+    GET /localizations?type=1&media=id=3
+
+    """
+    serializer_class = EntityLocalizationSerializer
+    schema=LocalizationListSchema()
+    permission_classes = [ProjectEditPermission]
+
+    def get_queryset(self):
+        mediaId = self.request.query_params.get('media_id', None)
+        filterType = self.request.query_params.get('type', None)
+        attribute = self.request.query_params.get('attribute', None)
+        # Figure out what object we are dealing with
+        obj=EntityLocalizationBase
+        if filterType != None:
+            typeObj=EntityTypeLocalizationBase.objects.get(pk=filterType)
+            if type(typeObj) == EntityTypeLocalizationBox:
+                obj=EntityLocalizationBox
+            elif type(typeObj) == EntityTypeLocalizationLine:
+                obj=EntityLocalizationLine
+            elif type(typeObj) == EntityTypeLocalizationDot:
+                obj=EntityLocalizationDot
+            else:
+                raise Exception('Unknown localization type')
+        else:
+            raise Exception('Missing type parameter!')
+
+        if mediaId != None:
+            queryset = obj.objects.filter(media=mediaId)
+        else:
+            queryset = obj.objects.filter(project=self.kwargs['project'])
+
+        if filterType != None:
+            queryset = queryset.filter(meta=filterType)
+
+        queryset = self.filter_by_attribute(queryset)
+
+        return queryset
+
+    def get(self, request, format=None, **kwargs):
+        try:
+            self.validate_attribute_filter(request.query_params)
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self,
+            )
+            self.request=request
+            before=time.time()
+            qs = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
+            if self.operation:
+                if self.operation == 'count':
+                    responseData = {'count': qs.count()}
+                else:
+                    raise Exception('Invalid operation parameter!')
+            else:
+                responseData=FastEntityLocalizationSerializer(qs)
+                if request.accepted_renderer.format == 'csv':
+                    # CSV creation requires a bit more
+                    user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
+                    users=list(User.objects.filter(id__in=user_ids).values('id','email'))
+                    email_dict={}
+                    for user in users:
+                        email_dict[user['id']] = user['email']
+
+                    media_ids=list(qs.values('media').distinct().values_list('media', flat=True))
+                    medias=list(EntityMediaBase.objects.filter(id__in=media_ids).values('id','name'))
+                    filename_dict={}
+                    for media in medias:
+                        filename_dict[media['id']] = media['name']
+
+                    filter_type=self.request.query_params.get('type', None)
+                    type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
+                    for element in responseData:
+                        del element['meta']
+
+                        oldAttributes = element['attributes']
+                        del element['attributes']
+                        element.update(oldAttributes)
+
+                        user_id = element['user']
+                        media_id = element['media']
+
+                        element['user'] = email_dict[user_id]
+                        element['media'] = filename_dict[media_id]
+
+                    responseData = responseData
+            after=time.time()
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            return response;
+        return Response(responseData)
+
+    def addNewLocalization(self, reqObject, inhibit_signal):
+        media_id=[]
+
+        ## Check for required fields first
+        if 'media_id' in reqObject:
+            media_id = reqObject['media_id'];
+        else:
+            raise Exception('Missing required field in request Object "media_id", got={}'.format(reqObject))
+
+        if 'type' in reqObject:
+            entityTypeId=reqObject['type']
+        else:
+            raise Exception('Missing required field in request object "type"')
+
+        entityType = EntityTypeLocalizationBase.objects.get(id=entityTypeId)
+
+        if type(entityType) == EntityTypeMediaVideo:
+            if 'frame' not in reqObject:
+                raise Exception('Missing required frame identifier')
+
+        mediaElement=EntityMediaBase.objects.get(pk=media_id)
+
+        project=mediaElement.project
+
+        modified = None
+        if 'modified' in reqObject:
+            modified = bool(reqObject['modified'])
+
+        if 'version' in reqObject:
+            version = Version.objects.get(pk=reqObject['version'])
+        else:
+            # If no version is given, assign the localization to version 0 (baseline)
+            version = Version.objects.filter(project=project, number=0)
+            if version.exists():
+                version = version[0]
+            else:
+                # If version 0 does not exist, create it.
+                version = Version.objects.create(
+                    name="Baseline",
+                    description="Initial version",
+                    project=project,
+                    number=0,
+                )
+
+        newObjType=type_to_obj(type(entityType))
+
+        requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
+
+        for field in {**requiredFields,**reqAttributes}:
+            if field not in reqObject:
+                raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
+
+        # Build required keys based on object type (box, line, etc.)
+        # Query the model object and get the names we look for (x,y,etc.)
+        localizationFields={}
+        for field in requiredFields:
+            localizationFields[field] = reqObject[field]
+
+        attrs={}
+        for field, attrType in zip(reqAttributes, attrTypes):
+            convert_attribute(attrType, reqObject[field]) # Validates the attribute value
+            attrs[field] = reqObject[field];
+
+        # Finally make the object, filling in all the info we've collected
+        obj = newObjType(project=project,
+                         meta=entityType,
+                         media=mediaElement,
+                         user=self.request.user,
+                         attributes=attrs,
+                         modified=modified,
+                         created_by=self.request.user,
+                         modified_by=self.request.user,
+                         version=version)
+
+        for field, value in localizationFields.items():
+            setattr(obj, field, value)
+
+        if 'frame' in reqObject:
+            obj.frame = reqObject['frame']
+        else:
+            obj.frame = 0
+
+        if 'sequence' in reqObject:
+            obj.state = reqObject['state']
+
+        # Set temporary bridge flag for relative coordinates
+        obj.relativeCoords=True
+        if inhibit_signal:
+            obj._inhibit = True
+        obj.save()
+        return obj
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            entityType=None
+            reqObject=request.data;
+            many=reqObject.get('many', None)
+            obj_ids = []
+            ts = TatorSearch()
+            if many:
+                documents = []
+                for obj in many:
+                    new_obj = self.addNewLocalization(obj, True)
+                    obj_ids.append(new_obj.id)
+                    documents.extend(ts.build_document(new_obj))
+                ts.bulk_add_documents(documents)
+            else:
+                new_obj = self.addNewLocalization(obj, False)
+                obj_ids.append(new_obj.id)
+            response=Response({'id': obj_ids},
+                              status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path,method)
@@ -1554,6 +1670,14 @@ class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               required=False,
                               location='query',
                               schema=coreschema.String(description='A unique integer value identifying an entity type.')),
+                coreapi.Field(name='version',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='A unique integer value identifying a Version')),
+                coreapi.Field(name='modified',
+                              required=False,
+                              location='query',
+                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
                 coreapi.Field(name='operation',
                               required=False,
                               location='query',
@@ -1615,13 +1739,15 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         filterType=self.request.query_params.get('type', None)
         try:
             self.validate_attribute_filter(request.query_params)
-            allStates = self.get_queryset()
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                kwargs['project'],
+                request.query_params,
+                self
+            )
+            allStates = EntityState.objects.filter(pk__in=annotation_ids)
             if self.operation:
                 if self.operation == 'count':
                     return Response({'count': allStates.count()})
-                elif self.operation.startswith('attribute_count'):
-                    _, attr_name = self.operation.split('::')
-                    return Response(count_by_attribute(allStates, attr_name))
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
@@ -1629,6 +1755,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                     type_object = EntityTypeState.objects.get(pk=filterType)
                     if type_object.association == 'Frame':
                         # Add frame association media to SELECT columns (frame is there from frame sort operation)
+                        allStates = allStates.annotate(frame=F('association__frameassociation__frame')).order_by('frame')
                         # This optomization only works for frame-based associations
                         allStates = allStates.annotate(association_media=F('association__frameassociation__media'))
                         allStates = allStates.annotate(extracted=F('association__frameassociation__extracted'))
@@ -1639,17 +1766,18 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                                                        association_segments=F('association__localizationassociation__segments'),
                                                        association_localizations=Array(localquery.values('localizations')),
                                                        association_media=F('association__frameassociation__media'))
+                        allStates = allStates.order_by('id')
                         response = EntityStateLocalizationSerializer(allStates)
                     else:
                         logger.warning("Using generic/slow serializer")
+                        allStates = allStates.order_by('id')
                         response = EntityStateSerializer(allStates, many=True)
                     logger.info(allStates.query)
                 else:
+                    allStates = allStates.order_by('id')
                     response = EntityStateSerializer(allStates, many=True)
-                if request.accepted_renderer.format != 'csv':
-                    responseData = paginate(self.request.query_params, response.data)
-                else:
-                    responseData=response.data
+                responseData = response.data
+                if request.accepted_renderer.format == 'csv':
                     if filterType:
                         type_object=EntityTypeState.objects.get(pk=filterType)
                         if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
@@ -1702,6 +1830,27 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
                 if video.project != project:
                     raise Exception('Videos cross projects')
 
+
+            modified = None
+            if 'modified' in reqObject:
+                modified = bool(reqObject['modified'])
+
+            if 'version' in reqObject:
+                version = Version.objects.get(pk=reqObject['version'])
+            else:
+                # If no version is given, assign the localization to version 0 (baseline)
+                version = Version.objects.filter(project=project, number=0)
+                if version.exists():
+                    version = version[0]
+                else:
+                    # If version 0 does not exist, create it.
+                    version = Version.objects.create(
+                        name="Baseline",
+                        description="Initial version",
+                        project=project,
+                        number=0,
+                    )
+
             if 'type' in reqObject:
                 entityTypeId=reqObject['type']
             else:
@@ -1723,7 +1872,11 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
 
             obj = EntityState(project=project,
                               meta=entityType,
-                              attributes=attrs)
+                              attributes=attrs,
+                              created_by=request.user,
+                              modified_by=request.user,
+                              modified=modified,
+                              version=version)
 
             association=None
             if entityType.association == "Media":
@@ -2116,8 +2269,13 @@ class EntityStateDetailAPI(RetrieveUpdateDestroyAPIView):
         try:
             state_object = EntityState.objects.get(pk=self.kwargs['pk'])
             self.check_object_permissions(request, state_object)
+            # Patch modified field
+            if "modified" in request.data:
+                state_object.modified = request.data["modified"]
+                state_object.save()
             new_attrs = validate_attributes(request, state_object)
             patch_attributes(new_attrs, state_object)
+
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -2236,6 +2394,12 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             else:
                 # TODO: Handle lines and dots (and circles too someday.)
                 pass
+
+            # Patch modified field
+            if "modified" in request.data:
+                localization_object.modified = request.data["modified"]
+                localization_object.save()
+
             new_attrs = validate_attributes(request, localization_object)
             patch_attributes(new_attrs, localization_object)
 
@@ -2873,6 +3037,8 @@ class SaveVideoAPI(APIView):
                 codec=codec,
                 width=width,
                 height=height,
+                created_by=self.request.user,
+                modified_by=self.request.user,
             )
 
             # Save the transcoded file.
@@ -3056,6 +3222,8 @@ class SaveImageAPI(APIView):
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
                 md5=md5,
                 attributes={'tator_user_sections': section},
+                created_by=self.request.user,
+                modified_by=self.request.user,
             )
 
             # Create the thumbnail.
@@ -3504,38 +3672,34 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
 
-class VersionAPI(ModelViewSet):
+class VersionListAPI(APIView):
     """ View or update a version """
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
 
-    def create(self, request, format=None, **kwargs):
+    def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
             name = request.data.get('name', None)
             description = request.data.get('description', None)
-            media = request.data.get('media', None)
             project = kwargs['project']
 
             if name is None:
                 raise Exception('Missing version name!')
 
-            if media is None:
-                raise Exception('Missing media ID!')
-
             if project is None:
                 raise Exception('Missing project ID!')
 
-            number = max([obj.number for obj in Version.objects.filter(media=media)]) + 1
+            number = max([obj.number for obj in Version.objects.filter(project=project)]) + 1
 
             obj = Version(
                 name=name,
                 description=description,
                 number=number,
-                media=EntityMediaBase.objects.get(pk=media),
                 project=Project.objects.get(pk=project),
+                created_by=request.user,
             )
             obj.save()
 
@@ -3550,3 +3714,106 @@ class VersionAPI(ModelViewSet):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
+
+    def get(self, request, format=None, **kwargs):
+        response = Response({})
+        try:
+            media = request.query_params.get('media_id', None)
+            project = kwargs['project']
+
+            qs = Version.objects.filter(project=project).order_by('number')
+            data = self.serializer_class(
+                qs,
+                context=self.get_renderer_context(),
+                many=True,
+            ).data
+
+            # Use elasticsearch to find annotation stats and last modification date/user
+            query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            if media:
+                query['query']['bool']['filter'] = []
+                query['query']['bool']['filter'].append({
+                    'has_parent': {
+                        'parent_type': 'media',
+                        'query': {'ids': {'values': [media,]}},
+                    },
+                })
+            query['query']['bool']['should'] = []
+            query['query']['bool']['should'].append({
+                'match': {'_modified': False},
+            })
+            query['query']['bool']['should'].append({
+                'bool': {
+                    'must_not': [{'exists': {'field': '_modified'}}],
+                },
+            })
+            query['query']['bool']['minimum_should_match'] = 1
+            query['aggs']['versions']['terms']['field'] = '_annotation_version'
+            query['aggs']['versions']['aggs']['latest']['top_hits'] = {
+                'sort': [{'_modified_datetime': {'order': 'desc'}}],
+                '_source': {'includes': ['_modified_datetime', '_modified_by']},
+                'size': 1,
+            }
+            created_aggs = TatorSearch().search_raw(project, query)
+            created_aggs = created_aggs['aggregations']['versions']['buckets']
+            query['query']['bool']['should'][0]['match']['_modified'] = True
+            modified_aggs = TatorSearch().search_raw(project, query)
+            modified_aggs = modified_aggs['aggregations']['versions']['buckets']
+
+            # Convert to dictionary with id as keys
+            data = {i['id']: i for i in data}
+            created_aggs = {i['key']: i for i in created_aggs}
+            modified_aggs = {i['key']: i for i in modified_aggs}
+
+            # Copy annotation stats and modification dates into objects.
+            for key in data:
+                if key in created_aggs:
+                    created_latest = created_aggs[key]['latest']['hits']['hits'][0]['_source']
+                    data[key] = {
+                        **data[key],
+                        'num_created': created_aggs[key]['doc_count'],
+                        'created_datetime': created_latest['_modified_datetime'],
+                        'created_by': created_latest['_modified_by'],
+                    }
+                else:
+                    data[key] = {
+                        **data[key],
+                        'num_created': 0,
+                        'created_datetime': '---',
+                        'created_by': '---',
+                    }
+                if key in modified_aggs:
+                    modified_latest = modified_aggs[key]['latest']['hits']['hits'][0]['_source']
+                    data[key] = {
+                        **data[key],
+                        'num_modified': modified_aggs[key]['doc_count'],
+                        'modified_datetime': modified_latest['_modified_datetime'],
+                        'modified_by': modified_latest['_modified_by'],
+                    }
+                else:
+                    data[key] = {
+                        **data[key],
+                        'num_modified': 0,
+                        'modified_datetime': '---',
+                        'modified_by': '---',
+                    }
+
+            response = Response(list(data.values()), status=status.HTTP_200_OK)
+        except ObjectDoesNotExist as dne:
+            response = Response(
+                {'message': str(dne)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            response = Response({
+                'message': str(e),
+                'details': traceback.format_exc(),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response
+
+class VersionDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ View or update a version """
+    serializer_class = VersionSerializer
+    queryset = Version.objects.all()
+    permission_classes = [ProjectEditPermission]

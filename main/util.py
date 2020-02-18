@@ -301,6 +301,7 @@ def buildSearchIndices(project_number, sections, mode='create'):
         if not ok:
             print(f"Failed to {action} document! {result}")
         bar.update(count)
+    bar.finish()
 
 def swapLatLon():
     """ Swaps lat/lon stored in geoposition attributes.
@@ -315,6 +316,24 @@ def swapLatLon():
                 entity.attributes[attr] = entity.attributes[attr][::-1]
                 entity.save()
     logger.info("Updating entities...")
+
+def makeDefaultVersion(project_number):
+    """ Creates a default version for a project and sets all localizations
+        and states to that version. Meant for usage on projects that were
+        not previously using versions.
+    """
+    project = Project.objects.get(pk=project_number)
+    version = Version.objects.filter(project=project, number=0)
+    if version.exists():
+        version = version[0]
+    else:
+        version = make_default_version(project)
+    logger.info("Updating localizations...")
+    qs = EntityLocalizationBase.objects.filter(project=project)
+    qs.update(version=version)
+    logger.info("Updating states...")
+    qs = EntityState.objects.filter(project=project)
+    qs.update(version=version)
 
 def associateExtractions(project, section_names):
     if type(section_names) == str:

@@ -18,6 +18,48 @@ class AnnotationBrowser extends TatorElement {
     });
   }
 
+  init(dataTypes, version) {
+    this._version = version;
+    this._media.dataTypes = dataTypes;
+    for (const dataType of dataTypes) {
+      if (dataType.type.visible) {
+        const entity = document.createElement("entity-browser");
+        entity.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          entity.permission = this._permission;
+        }
+        entity.undoBuffer = this._undo;
+        entity.annotationData = this._data;
+        entity.style.display = "none";
+        this._panels.appendChild(entity);
+        this._entityPanels[dataType.type.id] = entity;
+        entity.addEventListener("close", evt => {
+          this._media.style.display = "block";
+          for (const typeId in this._framePanels) {
+            this._framePanels[typeId].style.display = "block";
+          }
+        });
+      }
+    }
+    for (const dataType of dataTypes) {
+      const isFrameState = dataType.type.association == "Frame";
+      const isInterpolated = dataType.type.interpolation !== "none";
+      if (isFrameState && isInterpolated) {
+        const frame = document.createElement("frame-panel");
+        frame.setAttribute("media-id", this._mediaId);
+        frame.undoBuffer = this._undo;
+        frame.annotationData = this._data;
+        frame.version = this._version;
+        frame.dataType = dataType;
+        if (typeof this._permission !== "undefined") {
+          frame.permission = this._permission;
+        }
+        this._panels.appendChild(frame);
+        this._framePanels[dataType.type.id] = frame;
+      }
+    }
+  }
+
   set permission(val) {
     this._permission = val;
     for (const key in this._framePanels) {
@@ -48,43 +90,10 @@ class AnnotationBrowser extends TatorElement {
     this._media.annotationData = val;
   }
 
-  set dataTypes(val) {
-    this._media.dataTypes = val;
-    for (const dataType of val) {
-      if (dataType.type.visible) {
-        const entity = document.createElement("entity-browser");
-        entity.dataType = dataType;
-        if (typeof this._permission !== "undefined") {
-          entity.permission = this._permission;
-        }
-        entity.undoBuffer = this._undo;
-        entity.annotationData = this._data;
-        entity.style.display = "none";
-        this._panels.appendChild(entity);
-        this._entityPanels[dataType.type.id] = entity;
-        entity.addEventListener("close", evt => {
-          this._media.style.display = "block";
-          for (const typeId in this._framePanels) {
-            this._framePanels[typeId].style.display = "block";
-          }
-        });
-      }
-    }
-    for (const dataType of val) {
-      const isFrameState = dataType.type.association == "Frame";
-      const isInterpolated = dataType.type.interpolation !== "none";
-      if (isFrameState && isInterpolated) {
-        const frame = document.createElement("frame-panel");
-        frame.setAttribute("media-id", this._mediaId);
-        frame.undoBuffer = this._undo;
-        frame.annotationData = this._data;
-        frame.dataType = dataType;
-        if (typeof this._permission !== "undefined") {
-          frame.permission = this._permission;
-        }
-        this._panels.appendChild(frame);
-        this._framePanels[dataType.type.id] = frame;
-      }
+  set version(val) {
+    this._version = val;
+    for (const key in this._framePanels) {
+      this._framePanels[key].version = val;
     }
   }
 

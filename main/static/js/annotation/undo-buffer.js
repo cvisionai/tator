@@ -92,27 +92,33 @@ class UndoBuffer extends HTMLElement {
 
   post(listUri, body, dataType) {
     const projectId = this.getAttribute("project-id");
-    const op = ["POST", listUri, projectId, body];
-    const promise = this._fetch(op, dataType);
-    if (promise) {
-      promise
-      .then(response => response.json())
-      .then(data => {
-        this._emitUpdate("POST", data.id, body, dataType);
-        const detailUri = UndoBuffer.listToDetail[listUri];
-        this._resetFromNow();
-        this._forwardOps.push(op);
-        this._backwardOps.push(["DELETE", detailUri, data.id, null]);
-        this._dataTypes.push(dataType);
-        this._index++;
-      });
-    }
+    const detailUri = UndoBuffer.listToDetail[listUri];
+    this._resetFromNow();
+    this._forwardOps.push([["POST", listUri, projectId, body]]);
+    this._backwardOps.push([["DELETE", detailUri, null, null]]);
+    this._dataTypes.push(dataType);
+    return this.redo();
   }
 
   patch(detailUri, id, body, dataType) {
+    const projectId = this.getAttribute("project-id");
     const promise = this._get(detailUri, id, dataType.id);
     if (promise) {
       return promise.then(data => {
+        let other;
+        if (detailUri == "Localization") {
+          other = {
+            media_id: data.media,
+            frame: data.frame,
+            type: data.meta.id,
+          };
+        } else {
+          other = {
+            media_ids: data.association.media,
+            frame: data.association.frame,
+            type: data.meta,
+          };
+        }
         const original = {};
         for (const key in body) {
           if (key in data) {
@@ -126,9 +132,26 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        this._forwardOps.push(["PATCH", detailUri, id, body]);
-        this._backwardOps.push(["PATCH", detailUri, id, original]);
-        this._dataTypes.push(dataType);
+        const listUri = UndoBuffer.detailToList[detailUri];
+        if (data.modified == null) {
+          // This was an original annotation, patch the original and post
+          // an edited one.
+          this._forwardOps.push([
+            ["POST", listUri, projectId, {
+              ...data, ...data.attributes, ...original, ...other, modified: false,
+            }],
+            ["PATCH", detailUri, id, {...body, modified: true}],
+          ]);
+          this._backwardOps.push([
+            ["PATCH", detailUri, id, {...original, modified: null}],
+            ["DELETE", detailUri, null, null],
+          ]);
+          this._dataTypes.push(dataType);
+        } else {
+          this._forwardOps.push([["PATCH", detailUri, id, body]]);
+          this._backwardOps.push([["PATCH", detailUri, id, original]]);
+          this._dataTypes.push(dataType);
+        }
         return this.redo();
       });
     } else {
@@ -148,7 +171,7 @@ class UndoBuffer extends HTMLElement {
           };
         } else {
           other = {
-            media_ids: data.association.media[0],
+            media_ids: data.association.media,
             frame: data.association.frame,
             type: data.meta,
           };
@@ -156,6 +179,7 @@ class UndoBuffer extends HTMLElement {
         const body = {
           type: data.meta.id,
           name: data.meta.name,
+          version: data.version,
           ...other,
           ...data,
           ...data.attributes,
@@ -163,8 +187,18 @@ class UndoBuffer extends HTMLElement {
         const projectId = this.getAttribute("project-id");
         const listUri = UndoBuffer.detailToList[detailUri];
         this._resetFromNow();
-        this._forwardOps.push(["DELETE", detailUri, id, null]);
-        this._backwardOps.push(["POST", listUri, projectId, body]); 
+        if (data.modified == null) {
+          // This was an "original" annotation, patch the original.
+          this._forwardOps.push([["PATCH", detailUri, id, {...body, modified: false}]]);
+          this._backwardOps.push([["PATCH", detailUri, id, {...body, modified: null}]]);
+        } else if (data.modified == true) {
+          // This was an annotation created via web interface, actually delete it.
+          this._forwardOps.push([["DELETE", detailUri, id, null]]);
+          this._backwardOps.push([["POST", listUri, projectId, {...body, modified: true}]]); 
+        } else if (data.modified == false) {
+          console.error("Attempted to delete an original version!");
+          return null;
+        }
         this._dataTypes.push(dataType);
         return this.redo();
       });
@@ -176,54 +210,60 @@ class UndoBuffer extends HTMLElement {
   undo() {
     if (this._index > 0) {
       this._index--;
-      const op = this._backwardOps[this._index];
-      const [method, uri, id, body] = op;
-      const dataType = this._dataTypes[this._index];
-      const promise = this._fetch(op, dataType)
-      if (method == "POST") {
-        promise
-        .then(response => response.json())
-        .then(data => {
-          this._emitUpdate(method, data.id, body, dataType);
-          const delId = this._forwardOps[this._index][2];
-          const newId = data.id;
-          const replace = op => {
-            if (op[2] == delId) {
-              op[2] = newId;
-            }
-          };
-          this._forwardOps.forEach(replace);
-          this._backwardOps.forEach(replace);
-        });
-      } else {
-        this._emitUpdate(method, id, body, dataType);
+      for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
+        const [method, uri, id, body] = op;
+        const dataType = this._dataTypes[this._index];
+        const promise = this._fetch(op, dataType)
+        if (method == "POST") {
+          promise
+          .then(response => response.json())
+          .then(data => {
+            this._emitUpdate(method, data.id, body, dataType);
+            const delId = this._forwardOps[this._index][opIndex][2];
+            const newId = data.id;
+            const replace = ops => {
+              for (const [opIndex, op] of ops.entries()) {
+                if (op[2] == delId || op[2] == null) {
+                  ops[opIndex][2] = newId;
+                }
+              }
+            };
+            this._forwardOps.forEach(replace);
+            this._backwardOps.forEach(replace);
+          });
+        } else {
+          this._emitUpdate(method, id, body, dataType);
+        }
       }
     }
   }
 
   redo() {
     if (this._index < this._forwardOps.length) {
-      const op = this._forwardOps[this._index];
-      const [method, uri, id, body] = op;
-      const dataType = this._dataTypes[this._index];
-      const promise = this._fetch(op, dataType);
-      if (method == "POST") {
-        promise
-        .then(response => response.json())
-        .then(data => {
-          this._emitUpdate(method, data.id, body, dataType);
-          const delId = this._backwardOps[this._index - 1][2];
-          const newId = data.id;
-          const replace = op => {
-            if (op[2] == delId) {
-              op[2] = newId;
-            }
-          };
-          this._forwardOps.forEach(replace);
-          this._backwardOps.forEach(replace);
-        });
-      } else {
-        this._emitUpdate(method, id, body, dataType);
+      for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
+        const [method, uri, id, body] = op;
+        const dataType = this._dataTypes[this._index];
+        const promise = this._fetch(op, dataType);
+        if (method == "POST") {
+          promise
+          .then(response => response.json())
+          .then(data => {
+            this._emitUpdate(method, data.id, body, dataType);
+            const delId = this._backwardOps[this._index - 1][opIndex][2];
+            const newId = data.id;
+            const replace = ops => {
+              for (const [opIndex, op] of ops.entries()) {
+                if (op[2] == delId || op[2] == null) {
+                  ops[opIndex][2] = newId;
+                }
+              }
+            };
+            this._forwardOps.forEach(replace);
+            this._backwardOps.forEach(replace);
+          });
+        } else {
+          this._emitUpdate(method, id, body, dataType);
+        }
       }
       this._index++;
     }

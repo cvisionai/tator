@@ -173,7 +173,8 @@ class EntityTypeMediaSerializer(PolymorphicSerializer):
         }
 
 EntityLocalization_baseFields=[ 'id', 'meta', 'user', 'frame', 'media',
-                                'attributes', 'thumbnail_image']
+                                'attributes', 'thumbnail_image',
+                                'modified', 'version' ]
 class EntityLocalizationBaseSerializer(serializers.Serializer):
     meta = EntityTypeLocalizationLWSerializer()
 
@@ -438,7 +439,7 @@ class EntityStateSerializer(serializers.ModelSerializer):
     """ Slower generic serializer """
     class Meta:
         model=EntityState
-        fields=['id', 'meta', 'association', 'attributes']
+        fields=['id', 'meta', 'association', 'attributes', 'version', 'modified']
     association=AssociationSerializer()
 
 # Serializers for associating entity types to attribute data.
@@ -512,5 +513,5 @@ class AnalysisSerializer(PolymorphicSerializer):
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
-        fields = ['name', 'description', 'number', 'project', 'media']
+        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty']
 

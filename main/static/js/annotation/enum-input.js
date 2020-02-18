@@ -48,7 +48,9 @@ class EnumInput extends TatorElement {
   }
 
   set permission(val) {
-    if (!hasPermission(val, "Can Edit")) {
+    if (hasPermission(val, "Can Edit")) {
+      this._select.removeAttribute("disabled");
+    } else {
       this._select.setAttribute("disabled", "");
     }
   }

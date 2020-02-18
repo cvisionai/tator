@@ -65,6 +65,18 @@ class SaveDialog extends TatorElement {
     });
   }
 
+  init(projectId, mediaId, dataType, undo, version) {
+    this._projectId = projectId;
+    this._mediaId = mediaId;
+    this._dataType = dataType;
+    this._undo = undo;
+    this._version = version;
+    this._span.textContent = dataType.type.name;
+    this._attributes.dataType = dataType;
+    this._recents.dataType = dataType;
+    this._attributes.dispatchEvent(new Event("change"));
+  }
+
   // Save the underlying object to the database
   saveObject(requestObj, values)
   {
@@ -78,11 +90,12 @@ class SaveDialog extends TatorElement {
       detail: values
     }));
     this._recents.store(this._values);
-    const mediaId = this.getAttribute("media-id");
     const body = {
       type: this._dataType.type.id,
       name: this._dataType.type.name,
-      media_id: mediaId,
+      media_id: this._mediaId,
+      modified: 1,
+      version: this._version.id,
       ...requestObj,
       ...values,
     };
@@ -90,16 +103,8 @@ class SaveDialog extends TatorElement {
     this._undo.post("Localizations", body, this._dataType);
   }
 
-  set undoBuffer(val) {
-    this._undo = val;
-  }
-
-  set dataType(val) {
-    this._span.textContent = val.type.name;
-    this._attributes.dataType = val;
-    this._recents.dataType = val;
-    this._dataType = val;
-    this._attributes.dispatchEvent(new Event("change"));
+  set version(val) {
+    this._version = val;
   }
 
   set canvasPosition(val) {
