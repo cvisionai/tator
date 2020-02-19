@@ -296,11 +296,11 @@ def buildSearchIndices(project_number, sections, mode='create'):
     total = len(elements)
     bar.start(max_value=total)
     for ok, result in streaming_bulk(TatorSearch().es, dc(),chunk_size=batch_size, raise_on_error=False):
-        count += 1
         action, result = result.popitem()
         if not ok:
             print(f"Failed to {action} document! {result}")
         bar.update(count)
+        count += 1
     bar.finish()
 
 def swapLatLon():
