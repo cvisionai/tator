@@ -114,7 +114,7 @@ class TatorSearch:
                                 id=doc['_id'],
                                 refresh=wait,
                                 routing=1,
-                                body={**doc['doc']})
+                                body={**doc['_source']})
 
     def build_document(self, entity, mode='create'):
         """ Returns a list of documents representing the entity to be
@@ -198,8 +198,10 @@ class TatorSearch:
         results.append({
             '_index':self.index_name(entity.project.pk),
             '_op_type': mode,
-            'doc': {**corrected_attributes,
-                    **aux},
+            '_source': {
+                **corrected_attributes,
+                **aux,
+            },
             '_id': entity.pk,
             '_routing': 1,
         })
@@ -215,8 +217,10 @@ class TatorSearch:
             results.append({
             '_index':self.index_name(entity.project.pk),
             '_op_type': mode,
-            'doc': {**corrected_attributes,
-                    **duplicate},
+            '_source': {
+                **corrected_attributes,
+                **duplicate,
+            },
             '_id': duplicate_id,
             '_routing': 1,
             })
