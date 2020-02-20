@@ -11,20 +11,10 @@ Tator Documentation
 Tator is maintained and supported by `CVision AI <https://www.cvisionai.com>`_.
 
 .. toctree::
-   :maxdepth: 1
-   :numbered:
-   :titlesonly:
-   :caption: Setting up Tator:
+   :maxdepth: 2
+   :caption: Tator Documentation
 
-   Overview <start_here>
-   duckdns
-   certbot
-   nodes
-   registry
-   nfs
-   kubernetes
-   job-cluster
-   build
+   Setup a cluster <setup_tator/cluster.rst>
 
 Python API
 ++++++++++
