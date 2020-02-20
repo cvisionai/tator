@@ -14,19 +14,20 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../pytator'))
-sys.path.insert(0, os.path.abspath('../../examples'))
+sys.path.insert(0, os.path.abspath('../scripts/packages/pytator/pytator'))
+sys.path.insert(0, os.path.abspath('../scripts/packages/pytator/examples'))
+sys.path.insert(0, os.path.abspath('../scripts/packages/pytator/docs'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'PyTator'
-copyright = '2019, CVision AI'
+project = 'Tator'
+copyright = '2020, CVision AI'
 author = 'CVision AI'
 
 # The short X.Y version
-version = '0.0.3'
+version = '0.0.4'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = 'beta'
 
 
 # -- General configuration ---------------------------------------------------
@@ -51,7 +52,7 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst','.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -177,7 +178,7 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx_rtd_theme']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx_rtd_theme', 'recommonmark']
 html_theme = 'sphinx_rtd_theme'
 
 autodoc_mock_imports = ['django', 'progressbar', 'tusclient']
