@@ -3,4 +3,4 @@ from main.models import Project
 
 class Command(BaseCommand):
 		def handle(self, **options):
-				print(','.join(map(str, list(Project.objects.all().values_list('id', flat=True)))))
+				print(list(Project.objects.all().values_list('id', flat=True)))
