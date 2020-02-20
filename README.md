@@ -19,7 +19,7 @@ Tator is maintained and supported by [CVision AI](https://www.cvisionai.com).
 Getting started
 ===============
 
-* [Create a development deployment](doc/deployment.md)
+* [Create a development deployment](doc/start_here.md)
 * [Administer a deployment](doc/admin.md)
 * [Read The Docs](https://pytator.readthedocs.io/en/latest/)
 
