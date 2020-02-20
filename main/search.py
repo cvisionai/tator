@@ -121,7 +121,7 @@ class TatorSearch:
                                 routing=1,
                                 body={**doc['_source']})
 
-    def build_document(self, entity, mode='create'):
+    def build_document(self, entity, mode='index'):
         """ Returns a list of documents representing the entity to be
             used with the es.helpers.bulk functions
             if mode is 'single', then one can use the 'doc' member

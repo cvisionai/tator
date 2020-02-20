@@ -232,7 +232,7 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices(project_number, sections, mode='create'):
+def buildSearchIndices(project_number, sections, mode='index'):
     """ Builds search index for all data.
         param can be a combination of valid sections in a list
         or a single string. 'all' will rebuild everything.
