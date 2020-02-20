@@ -407,6 +407,10 @@ cache-clear:
 cleanup-evicted:
 	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
 
+.PHONY: build-search-indices
+build-search-indices:
+	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+
 .PHONY: clean_js
 clean_js:
 	rm -rf .min_js
