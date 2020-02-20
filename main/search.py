@@ -28,7 +28,12 @@ class TatorSearch:
         cls.prefix = os.getenv('ELASTICSEARCH_PREFIX')
         if cls.prefix is None:
             cls.prefix = ''
-        cls.es = Elasticsearch([os.getenv('ELASTICSEARCH_HOST')], timeout=60)
+        cls.es = Elasticsearch(
+            [os.getenv('ELASTICSEARCH_HOST')],
+            timeout=60,
+            max_retries=10,
+            retry_on_timeout=True,
+        )
 
     def index_name(self, project):
         return f'{self.prefix}project_{project}'
