@@ -289,7 +289,7 @@ def buildSearchIndices(project_number, sections, mode='index'):
         logger.info("Building tree leaf documents...")
         elements.extend(list(TreeLeaf.objects.filter(project=project_number)))
 
-    batch_size = 2000
+    batch_size = 500
     count = 0
     bar = ProgressBar(redirect_stderr=True, redirect_stdout=True)
     dc = DeferredCall(elements)
