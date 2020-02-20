@@ -15,7 +15,7 @@ kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/
 ## Installing Argo CLI
 
 ```
-sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.4.3/argo-linux-amd64
+sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.0/argo-linux-amd64
 sudo chmod +x /usr/local/bin/argo
 ```
 
