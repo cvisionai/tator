@@ -238,6 +238,8 @@ def buildSearchIndices(project_number, sections, mode='index'):
         or a single string. 'all' will rebuild everything.
         all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
     """
+    project_name = Project.objects.get(pk=project_number).name
+    logger.info(f"Building search indices for project {project_number}: {project_name}")
     to_process=[]
     all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
     if type(sections) == str:
