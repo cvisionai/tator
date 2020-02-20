@@ -299,8 +299,10 @@ def buildSearchIndices(project_number, sections, mode='index'):
         action, result = result.popitem()
         if not ok:
             print(f"Failed to {action} document! {result}")
-        bar.update(count)
+        bar.update(min(count, total))
         count += 1
+        if count > total:
+            print(f"Count exceeds list size by {total - count}")
     bar.finish()
 
 def swapLatLon():
