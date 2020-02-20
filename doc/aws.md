@@ -1,18 +1,24 @@
-# Setting up a deployment on AWS
+# AWS Deployment
 
-## Install awscli
+AWS provides a k8s environment through AWS services. This documentation shows
+the steps required to install a tator instance utilizing those paid services
+from Amazon.
+
+## Setting up a deployment on AWS
+
+### Install awscli
 
 ```
 pip install awscli --upgrade --user
 ```
 
-## Enter AWS CLI credentials
+### Enter AWS CLI credentials
 
 ```
 aws configure
 ```
 
-## Install eksctl
+### Install eksctl
 
 ```
 curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
@@ -25,7 +31,7 @@ You can test the installation with:
 eksctl version
 ```
 
-## Install kubectl
+### Install kubectl
 
 ```
 curl -L0 https://storage.googleapis.com/kubernetes-release/release/v1.14.8/bin/linux/amd64/kubectl --output kubectl
@@ -39,7 +45,7 @@ You can test the installation with:
 kubectl version
 ```
 
-## Create a key pair for SSH access
+### Create a key pair for SSH access
 
 To enable SSH access to EKS nodes, we need to create a key pair that can be used by eksctl:
 
@@ -60,7 +66,7 @@ sudo chmod 400 /path/to/privkey.pem
 ssh-keygen -y -f /path/to/privkey.pem > /path/to/publickey.pem
 ```
 
-## Create the EKS cluster
+### Create the EKS cluster
 
 You can use the example eks configuration in `examples/eksctl/cluster.yaml` to create a cluster. Feel free to modify for your needs.
 
@@ -74,13 +80,13 @@ The process will take 10-15 minutes. When finished check that you have some node
 kubectl get nodes
 ```
 
-## Install the NVIDIA device plugin
+### Install the NVIDIA device plugin
 
 ```
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-## Delete the default storage class (gp2)
+### Delete the default storage class (gp2)
 
 EKS provides a default storage class which tator does not use. To prevent conflicts, we remove this storage class.
 
@@ -88,7 +94,7 @@ EKS provides a default storage class which tator does not use. To prevent confli
 kubectl delete sc gp2
 ```
 
-## Create an EFS filesystem
+### Create an EFS filesystem
 
 For provisioning media volumes on AWS, tator uses Elastic File System (EFS). Tator treats EFS as a normal NFS mount, just like the bare metal installation. To use this, you must first create an EFS filesystem *in the same VPC as the EKS cluster* and *with an NFS security policy* that allows inbound traffic on port 2049. Follow these steps:
 
@@ -101,7 +107,7 @@ For provisioning media volumes on AWS, tator uses Elastic File System (EFS). Tat
 
 Note the `FileSystemId` field, which is needed later for the values.yaml file.
 
-## Create directories for persistent volumes
+### Create directories for persistent volumes
 
 While it is possible to use a dynamic PV provisioner such as efs-provisioner or the AWS EFS CSI driver, we have found that decoupling EFS provisioning from Kubernetes is the surest way to persist data, even if the entire Tator helm chart is uninstalled. Therefore, we create directories for each persistent volume:
 
@@ -132,7 +138,7 @@ sudo mkdir backup
 sudo mkdir migrations
 ```
 
-## Install Docker
+### Install Docker
 
 * Install docker on each node. Make sure it is version 18.09.8
 
@@ -160,7 +166,7 @@ sudo usermod -aG docker $USER
 sudo reboot
 ```
 
-## Get a login for ECR registry
+### Get a login for ECR registry
 
 ```
 aws ecr get-login --region us-east-2 --no-include-email
@@ -168,7 +174,7 @@ aws ecr get-login --region us-east-2 --no-include-email
 
 Call the resulting command to log into the registry.
 
-## Create repositories for tator images
+### Create repositories for tator images
 
 ```
 aws ecr create-repository --repository-name tator_online
@@ -176,21 +182,21 @@ aws ecr create-repository --repository-name tator_algo_marshal
 aws ecr create-repository --repository-name tator_tusd
 ```
 
-# Create RDS, ElastiCache, and Elasticsearch instances
+## Create RDS, ElastiCache, and Elasticsearch instances
 
 This step is optional since you can use helm charts for databases as is done in the bare metal deployment, but it is recommended to use managed services for this purpose. For each service you set up, make sure you create it in the same VPC that was created by EKS and that you include all nodes in the `ClusterSharedNodeSecurityGroup`.
 
-## Get an SSL certificate for your domain with LetsEncrypt
+### Get an SSL certificate for your domain with LetsEncrypt
 
 If you already have an SSL certificate you can skip this, otherwise follow the instructions [here](doc/certbot.md)
 
-## Copy the values.yaml file
+### Copy the values.yaml file
 
 ```
 cp helm/tator/values-aws.yaml helm/tator/values.yaml
 ```
 
-## Edit values.yaml for your deployment
+### Edit values.yaml for your deployment
 
 * Set `domain` to your domain.
 * Set `djangoSecretKey` to a django key. You can generate one with several online tools.
@@ -199,13 +205,13 @@ cp helm/tator/values-aws.yaml helm/tator/values.yaml
 * Set `sslBundle` to the contents of `/etc/letsencrypt/live/<your domain>/fullchain.pem`.
 * Set `sslKey` to the contents of `/etc/letsencrypt/live/<your domain>/privkey.pem`.
 
-## Install tator
+### Install tator
 
 ```
 make cluster
 ```
 
-## Get the load balancer external IP
+### Get the load balancer external IP
 
 ```
 kubectl get svc | grep nginx

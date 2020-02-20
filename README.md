@@ -19,9 +19,9 @@ Tator is maintained and supported by [CVision AI](https://www.cvisionai.com).
 Getting started
 ===============
 
-* [Create a development deployment](doc/deployment.md)
+* [Create a development deployment](https://tator.readthedocs.io/en/latest/setup_tator/cluster.html)
 * [Administer a deployment](doc/admin.md)
-* [Read The Docs](https://pytator.readthedocs.io/en/latest/)
+* [Read The Docs](https://tator.readthedocs.io/en/latest/)
 
 [kube]: https://kubernetes.io
 [redis]: https://redis.io

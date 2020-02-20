@@ -44,13 +44,13 @@ The following are full scripts used for various analysis using PyTator.
 Example query for media near a location
 ****************************************
 
-.. literalinclude:: ../examples/location_query.py
+.. literalinclude:: ../../scripts/packages/pytator/examples/location_query.py
    :language: python
    :linenos:
 
 Generate file summary data across a section
 *******************************************
 
-.. literalinclude:: ../examples/makeFileSummary.py
+.. literalinclude:: ../../scripts/packages/pytator/examples/makeFileSummary.py
    :language: python
    :linenos:

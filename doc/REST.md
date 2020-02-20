@@ -58,12 +58,7 @@ is to provide a URL to the detail view of a given object.
 
 `/rest/ObjectType/<int:pk>` is a standard API for a _detail_ view of a
 given object. The Django Rest Framework has a default base class handler that
-for exposes a ModelObject to `DELETE`, `PUT`, `PATCH`, or `GET`. 
-
-## 3 Utilizing the API
-
-By default, the Django REST API can supply a browseable API. In our project, it's located at
-<http://eagle/tator/rest/>. Each endpoint also serves a graphical end point 
+for exposes a ModelObject to `DELETE`, `PUT`, `PATCH`, or `GET`.  
 
 
 
