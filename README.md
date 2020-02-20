@@ -1,6 +1,13 @@
 Tator
 =====
 
+Getting started
+===============
+
+* [Create a development deployment](https://tator.readthedocs.io/en/latest/setup_tator/cluster.html)
+* [Administer a deployment](doc/admin.md)
+* [Read The Docs](https://tator.readthedocs.io/en/latest/)
+
 Introduction
 ============
 
@@ -15,13 +22,6 @@ Tator is maintained and supported by [CVision AI](https://www.cvisionai.com).
 ![project-detail](https://user-images.githubusercontent.com/7937658/65167420-865bb600-da10-11e9-86b0-2e5d64a12885.png)
 
 ![annotation](https://user-images.githubusercontent.com/7937658/65167423-878ce300-da10-11e9-88e8-8c8926f45c6b.png)
-
-Getting started
-===============
-
-* [Create a development deployment](https://tator.readthedocs.io/en/latest/setup_tator/cluster.html)
-* [Administer a deployment](doc/admin.md)
-* [Read The Docs](https://tator.readthedocs.io/en/latest/)
 
 [kube]: https://kubernetes.io
 [redis]: https://redis.io
