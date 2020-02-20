@@ -19,8 +19,8 @@ spec:
   - name: get-projects
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
-      command: ["python3"]
-      args: ["manage.py", "getprojects", ">", "/tmp/projects.txt"]
+      command: [sh, -c]
+      args: ["python3 manage.py getprojects > /projects.txt"]
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -46,7 +46,7 @@ spec:
       parameters:
       - name: projects
         valueFrom:
-          path: /tmp/projects.txt
+          path: /projects.txt
   - name: build-indices
     inputs:
       parameters:
@@ -55,3 +55,24 @@ spec:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: ["python3"]
       args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "index"]
+      env:
+      - name: DJANGO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: tator-secrets
+            key: djangoSecretKey
+      - name: POSTGRES_HOST
+        value: "{{workflow.parameters.postgresHost}}"
+      - name: POSTGRES_USERNAME
+        value: "{{workflow.parameters.postgresUsername}}"
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: tator-secrets
+            key: postgresPassword
+      - name: REDIS_HOST
+        value: "{{workflow.parameters.redisHost}}"
+      - name: ELASTICSEARCH_HOST
+        value: "{{workflow.parameters.elasticsearchHost}}"
+      - name: MAIN_HOST
+        value: "{{workflow.parameters.domain}}"
