@@ -151,8 +151,6 @@ For GPU nodes, install nvidia-docker
 
 ``sudo apt-get install nvidia-docker2``
 
-We will configure nvidia-docker as the default runtime after [setting up the docker registry](registry.md).
-
 Configuring a local docker registry
 ===================================
 
