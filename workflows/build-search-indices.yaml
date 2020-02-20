@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: build-search-indices-
+spec:
+  entrypoint: build-all
+  templates:
+  - name: build-all
+    steps:
+    - - name: getprojects
+        template: get-projects
+    - - name: build-indices
+        template: build-indices
+        arguments:
+          parameters:
+          - name: project
+            value: "{{item}}"
+        withParam: "{{steps.getprojects.outputs.parameters.projects}}"
+  - name: get-projects
+    container:
+      image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
+      command: ["python3"]
+      args: ["manage.py", "getprojects", ">", "/tmp/projects.txt"]
+      env:
+      - name: DJANGO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: tator-secrets
+            key: djangoSecretKey
+      - name: POSTGRES_HOST
+        value: "{{workflow.parameters.postgresHost}}"
+      - name: POSTGRES_USERNAME
+        value: "{{workflow.parameters.postgresUsername}}"
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: tator-secrets
+            key: postgresPassword
+      - name: REDIS_HOST
+        value: "{{workflow.parameters.redisHost}}"
+      - name: ELASTICSEARCH_HOST
+        value: "{{workflow.parameters.elasticsearchHost}}"
+      - name: MAIN_HOST
+        value: "{{workflow.parameters.domain}}"
+    outputs:
+      parameters:
+      - name: projects
+        valueFrom:
+          path: /tmp/projects.txt
+  - name: build-indices
+    inputs:
+      parameters:
+      - name: project
+    container:
+      image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
+      command: ["python3"]
+      args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "index"]
