@@ -441,7 +441,7 @@ def localization_save(sender, instance, created, **kwargs):
     if getattr(instance,'_inhibit', False) == False:
         TatorSearch().create_document(instance)
     else:
-        logger.info("Inhibited ES insertion")
+        pass
 
 @receiver(pre_delete, sender=EntityLocalizationBase)
 def localization_delete(sender, instance, **kwargs):
@@ -460,7 +460,7 @@ def dot_save(sender, instance, created, **kwargs):
     if getattr(instance,'_inhibit', False) == False:
         TatorSearch().create_document(instance)
     else:
-        logger.info("Inhibited ES insertion")
+        pass
 
 @receiver(pre_delete, sender=EntityLocalizationDot)
 def dot_delete(sender, instance, **kwargs):
@@ -498,7 +498,7 @@ def box_save(sender, instance, created, **kwargs):
     if getattr(instance,'_inhibit', False) == False:
         TatorSearch().create_document(instance)
     else:
-        logger.info("Inhibited ES insertion")
+        pass
 
 @receiver(pre_delete, sender=EntityLocalizationBox)
 def box_delete(sender, instance, **kwargs):
