@@ -117,6 +117,7 @@ class UndoBuffer extends HTMLElement {
             media_ids: data.association.media,
             frame: data.association.frame,
             type: data.meta,
+            localization_ids: data.association.localizations,
           };
         }
         const original = {};
