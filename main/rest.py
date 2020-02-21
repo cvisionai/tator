@@ -19,6 +19,7 @@ from dateutil.parser import parse as dateutil_parse
 from polymorphic.managers import PolymorphicQuerySet
 from django.core.exceptions import ObjectDoesNotExist
 from urllib import parse as urllib_parse
+import time
 
 from rest_framework.compat import coreschema,coreapi
 from rest_framework.generics import ListAPIView
@@ -899,7 +900,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
 
     attr_query['media']['filter'] += bools
     attr_query['annotation']['filter'] += annotation_bools
-   
+
     if is_media:
         # Construct query for media
         has_child = False
@@ -966,7 +967,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
                     'must_not': [{
                         'exists': {'field': '_modified'},
                     }],
-                }, 
+                },
             }, {
                 'match': {
                     '_modified': bool(int(modified)),
@@ -1501,9 +1502,11 @@ class LocalizationList(APIView, AttributeFilterMixin):
             return response;
         return Response(responseData)
 
-    def addNewLocalization(self, reqObject, inhibit_signal):
+    def addNewLocalization(self, reqObject, inhibit_signal, cache=None):
         media_id=[]
 
+        stage = {}
+        stage[0] = time.time()
         ## Check for required fields first
         if 'media_id' in reqObject:
             media_id = reqObject['media_id'];
@@ -1515,15 +1518,22 @@ class LocalizationList(APIView, AttributeFilterMixin):
         else:
             raise Exception('Missing required field in request object "type"')
 
-        entityType = EntityTypeLocalizationBase.objects.get(id=entityTypeId)
+        stage[1] = time.time()
+        if cache:
+            entityType = cache['type']
+        else:
+            entityType = EntityTypeLocalizationBase.objects.get(id=entityTypeId)
 
         if type(entityType) == EntityTypeMediaVideo:
             if 'frame' not in reqObject:
                 raise Exception('Missing required frame identifier')
 
-        mediaElement=EntityMediaBase.objects.get(pk=media_id)
-
-        project=mediaElement.project
+        project = entityType.project
+        if cache:
+            mediaElement=cache['media']
+        else:
+            mediaElement = EntityMediaBase.objects.get(pk=media_id)
+        stage[2] = time.time()
 
         modified = None
         if 'modified' in reqObject:
@@ -1546,13 +1556,18 @@ class LocalizationList(APIView, AttributeFilterMixin):
                 )
 
         newObjType=type_to_obj(type(entityType))
+        stage[3] = time.time()
 
-        requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
+        if cache:
+            requiredFields, reqAttributes, attrTypes=cache['required']
+        else:
+            requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
 
         for field in {**requiredFields,**reqAttributes}:
             if field not in reqObject:
                 raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
 
+        stage[4] = time.time()
         # Build required keys based on object type (box, line, etc.)
         # Query the model object and get the names we look for (x,y,etc.)
         localizationFields={}
@@ -1564,6 +1579,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
             convert_attribute(attrType, reqObject[field]) # Validates the attribute value
             attrs[field] = reqObject[field];
 
+        stage[5] = time.time()
         # Finally make the object, filling in all the info we've collected
         obj = newObjType(project=project,
                          meta=entityType,
@@ -1577,7 +1593,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
         for field, value in localizationFields.items():
             setattr(obj, field, value)
-
+        stage[6] = time.time()
         if 'frame' in reqObject:
             obj.frame = reqObject['frame']
         else:
@@ -1586,11 +1602,15 @@ class LocalizationList(APIView, AttributeFilterMixin):
         if 'sequence' in reqObject:
             obj.state = reqObject['state']
 
+        stage[7] = time.time()
         # Set temporary bridge flag for relative coordinates
         obj.relativeCoords=True
         if inhibit_signal:
             obj._inhibit = True
         obj.save()
+        stage[8] = time.time()
+        #for x in range(8):
+        #    logger.info(f"stage {x}: {stage[x+1]-stage[x]}")
         return obj
     def post(self, request, format=None, **kwargs):
         response=Response({})
@@ -1603,11 +1623,32 @@ class LocalizationList(APIView, AttributeFilterMixin):
             ts = TatorSearch()
             if many:
                 documents = []
+                group_by_media = {}
+                begin = time.time()
                 for obj in many:
-                    new_obj = self.addNewLocalization(obj, True)
-                    obj_ids.append(new_obj.id)
-                    documents.extend(ts.build_document(new_obj))
+                    media_id = obj['media_id']
+                    if media_id in group_by_media:
+                        group_by_media[media_id].append(obj)
+                    else:
+                        group_by_media[media_id] = [obj]
+
+                for media_id in group_by_media:
+                    cache={}
+                    cache['media'] = EntityMediaBase.objects.get(pk=media_id)
+                    cache['type'] = None
+                    for obj in group_by_media[media_id]:
+                        if cache['type'] is None or cache['type'].id != obj['type']:
+                            cache['type'] = EntityTypeLocalizationBase.objects.get(id=obj['type'])
+                            cache['required'] = computeRequiredFields(cache['type'])
+                        new_obj = self.addNewLocalization(obj, True, cache)
+                        obj_ids.append(new_obj.id)
+                        documents.extend(ts.build_document(new_obj))
+                after = time.time()
+                logger.info(f"Total Add Duration = {after-begin}")
+                begin = time.time()
                 ts.bulk_add_documents(documents)
+                after = time.time()
+                logger.info(f"Total Index Duration = {after-begin}")
             else:
                 new_obj = self.addNewLocalization(reqObject, False)
                 obj_ids.append(new_obj.id)
