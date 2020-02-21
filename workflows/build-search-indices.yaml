@@ -111,7 +111,7 @@ spec:
           memory: 500Mi
         limits:
           cpu: 1000m
-          memory: 8Gi
+          memory: 32Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
