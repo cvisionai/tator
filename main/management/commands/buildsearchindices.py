@@ -4,7 +4,7 @@ from main.util import buildSearchIndices
 class Command(BaseCommand):
 		def add_arguments(self, parser):
 				parser.add_argument('project_id', type=int)
-				parser.add_argument('sections', nargs='+', type=str)
+				parser.add_argument('section', type=str)
 
 		def handle(self, **options):
-				buildSearchIndices(options['project_id'], options['sections'], 'index')
+				buildSearchIndices(options['project_id'], options['section'], 'index')

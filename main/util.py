@@ -232,70 +232,67 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices(project_number, sections, mode='index'):
-    """ Builds search index for all data.
-        param can be a combination of valid sections in a list
-        or a single string. 'all' will rebuild everything.
-        all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
+def buildSearchIndices(project_number, section, mode='index'):
+    """ Builds search index for a project.
+        section must be one of:
+        'index' - create the index for the project if it does not exist
+        'mappings' - create mappings for the project if they do not exist
+        'media' - create documents for media
+        'states' - create documents for states
+        'localizations' - create documents for localizations
+        'treeleaves' - create documents for treeleaves
     """
     project_name = Project.objects.get(pk=project_number).name
     logger.info(f"Building search indices for project {project_number}: {project_name}")
-    to_process=[]
-    all_sections=['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves']
-    if type(sections) == str:
-        if sections == 'all':
-            to_process=all_sections
-        elif sections in all_sections:
-            to_process.append(sections)
-        else:
-            print(f"ERROR: Unknown section {sections}")
-            return
-    elif type(sections) == list:
-        to_process.extend(sections)
 
-    if 'index' in to_process:
+    if section == 'index':
         # Create indices
         logger.info("Building index...")
         TatorSearch().create_index(project_number)
+        logger.info("Build index complete!")
+        return
 
-    if 'mappings' in to_process:
+    if section == 'mappings':
         # Create mappings
         logger.info("Building mappings...")
         for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
             TatorSearch().create_mapping(attribute_type)
+        logger.info("Build mappings complete!")
+        return
 
     class DeferredCall:
-        def __init__(self, elements):
-            self._elements = elements
+        def __init__(self, qs):
+            self._qs = qs
         def __call__(self):
-            for entity in self._elements:
+            for entity in self._qs.iterator():
                 for doc in TatorSearch().build_document(entity, mode):
                     yield doc
-    elements = []
-    if 'media' in to_process:
+
+    if section == 'media':
         # Create media documents
         logger.info("Building media documents...")
-        elements.extend(list(EntityMediaBase.objects.filter(project=project_number)))
+        qs = EntityMediaBase.objects.filter(project=project_number)
 
-    if 'localizations' in to_process:
+    if section == 'localizations':
+        # Create localization documents
         logger.info("Building localization documents")
-        elements.extend(list(EntityLocalizationBase.objects.filter(project=project_number)))
+        qs = EntityLocalizationBase.objects.filter(project=project_number)
 
-    if 'states' in to_process:
+    if section == 'states':
         # Create state documents
         logger.info("Building state documents...")
-        elements.extend(list(EntityState.objects.filter(project=project_number)))
+        qs = EntityState.objects.filter(project=project_number)
 
-    if 'treeleaves' in to_process:
+    if section == 'treeleaves':
         # Create treeleaf documents
         logger.info("Building tree leaf documents...")
-        elements.extend(list(TreeLeaf.objects.filter(project=project_number)))
+        qs = TreeLeaf.objects.filter(project=project_number)
 
     batch_size = 500
     count = 0
     bar = ProgressBar(redirect_stderr=True, redirect_stdout=True)
-    dc = DeferredCall(elements)
-    total = len(elements)
+    dc = DeferredCall(qs)
+    total = qs.count()
     bar.start(max_value=total)
     for ok, result in streaming_bulk(TatorSearch().es, dc(),chunk_size=batch_size, raise_on_error=False):
         action, result = result.popitem()
