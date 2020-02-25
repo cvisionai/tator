@@ -360,7 +360,7 @@ def ingestTracks(args):
             track=useRealTypes(track)
             if len(mediaIds):
                 tracksAPI.add(args.trackTypeId, list(mediaIds),track,
-                              localizationIds)
+                              localizationIds, args.version)
             else:
                 print("ERROR: Can't find localizations for {}".format(track[args.trackField]))
                 sys.exit(-1)

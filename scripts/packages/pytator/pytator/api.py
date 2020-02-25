@@ -460,7 +460,7 @@ class State(APIElement):
         """
         lookup=f"{key}::{value}"
         return self.getSingleElement("EntityStates", {"attribute": lookup})
-    def add(self, typeId, medias, attrs, localizations=[]):
+    def add(self, typeId, medias, attrs, localizations=[], version=None):
         """ Adds a new state element
 
         .. deprecated:: 0.0.2
@@ -474,6 +474,8 @@ class State(APIElement):
 
         obj["type"]=typeId
         obj["localization_ids"]=localizations
+        if version:
+            obj["version"] = version
         obj.update(attrs)
         (code, json) = self.newSingleElement("EntityStates", obj)
         # TODO: Should we return something more than 200 back from serfver?
