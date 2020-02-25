@@ -79,6 +79,8 @@ Example:
                         help="Only upload detections with this track ID.")
     parser.add_argument("--saveIds",
                         help="If given, save database IDs to this path.")
+    parser.add_argument("--version",
+                        help="If given, save localizations with this version ID.")
 
     args=parser.parse_args(args)
 
@@ -215,6 +217,9 @@ def _ingestLocalizationsFromFile(args):
             detection['media_id'] = mediaId
             detection['type']=args.localizationTypeId
 
+            if args.version:
+                detection['version'] = args.version
+
             detection = useRealTypes(detection)
 
         existing=localizations.filter({"media_id": mediaId,
@@ -273,6 +278,8 @@ def ingestTracks(args):
                         help="Only upload a specific track ID.")
     parser.add_argument("--localizationIds",
                         help="Path to file containing localization IDs for this track.")
+    parser.add_argument("--version",
+                        help="If given, save tracks with this version ID.")
 
     args=parser.parse_args(args)
     tator=pytator.Tator(args.url.rstrip('/'), args.token, args.project)
@@ -315,11 +322,12 @@ def ingestTracks(args):
         count=0
         if args.trackId:
             tracks = [track for track in tracks if track["id"] == args.trackId]
-        all_localizations=tator.Localization.filter(
-            {"type": args.localizationTypeId,
-             "media_id": mediaId})
-        print("All localizations = {}".format(len(all_localizations)))
-
+        filt = {
+            "type": args.localizationTypeId,
+            "media_id": mediaId,
+        }
+        if args.version:
+            filt = {**filt, "version": args.version}
         for track in tracks:
             # 0.) Transform the json object to match what the
             # server wants
@@ -341,11 +349,13 @@ def ingestTracks(args):
                 trackIds=set()
                 #1.) Get all the localizations for this track id
                 queryString=f"{args.trackField}::{track[args.trackField]}"
-                localizationsInTrack=[]
-                for localization in all_localizations:
-                    if localization['attributes'][args.trackField] == int(track[args.trackField]):
-                        localizationIds.append(localization["id"])
-                        mediaIds.add(localization['media'])
+                localizationsInTrack = tator.Localization.filter({
+                    **filt,
+                    "search": f"{args.trackField}:{track[args.trackField]}",
+                })
+                for localization in localizationsInTrack:
+                    localizationIds.append(localization["id"])
+                    mediaIds.add(localization['media'])
 
             track=useRealTypes(track)
             if len(mediaIds):
@@ -354,6 +364,8 @@ def ingestTracks(args):
             else:
                 print("ERROR: Can't find localizations for {}".format(track[args.trackField]))
                 sys.exit(-1)
+            if args.version:
+                track['version'] = args.version
             count=count+1
             print(f"Track {count}/{len(tracks)}", end="\r")
 
