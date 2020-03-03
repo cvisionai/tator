@@ -139,6 +139,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': 'transcode-scratch',
             },
             'spec': {
+                'storageClassName': 'nfs-client',
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
