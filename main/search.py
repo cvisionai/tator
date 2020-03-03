@@ -149,6 +149,27 @@ class TatorSearch:
             aux['_modified'] = entity.modified
             aux['_modified_datetime'] = entity.modified_datetime.isoformat()
             aux['_modified_by'] = str(entity.modified_by)
+            aux['_user'] = entity.user.pk
+            aux['_email'] = entity.user.email
+            aux['_meta'] = entity.meta.pk
+            aux['_frame'] = entity.frame
+            if entity.thumbnail_image:
+                aux['_thumbnail_image'] = entity.thumbnail_image.pk
+            else:
+                aux['_thumbnail_image'] = None
+            if entity.meta.dtype is 'box':
+                aux['_x'] = entity.x
+                aux['_y'] = entity.y
+                aux['_width'] = entity.width
+                aux['_height'] = entity.height
+            elif entity.meta.dtype is 'line':
+                aux['_x0'] = entity.x0
+                aux['_y0'] = entity.y0
+                aux['_y1'] = entity.x1
+                aux['_y2'] = entity.y1
+            elif entity.meta.dtype is 'dot':
+                aux['_x'] = entity.x
+                aux['_y'] = entity.y
         elif entity.meta.dtype in ['state']:
             media = entity.association.media.all()
             if media.exists():
@@ -237,51 +258,57 @@ class TatorSearch:
         if self.es.exists(index=index, id=entity.pk):
             self.es.delete(index=index, id=entity.pk)
 
-    def search_raw(self, project, query):
+    def search_raw(self, project, query, getSource=False):
         return self.es.search(
             index=self.index_name(project),
             body=query,
-            _source=False,
+            _source=getSource,
             stored_fields=[],
         )
 
-    def search(self, project, query):
+    def search(self, project, query, getSource=False):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
         size = query.get('size', None)
+        documents = []
         if (size is None) or (size >= 10000):
             query['size'] = 10000
             result = self.es.search(
                 index=self.index_name(project),
                 body=query,
                 scroll='1m',
-                _source=False,
+                _source=getSource,
                 stored_fields=[],
             )
             scroll_id = result['_scroll_id']
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
+
             if size:
                 count = size
             ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
+            documents.extend(data)
+
             while len(ids) < count:
                 result = self.es.scroll(
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
                 ids += drop_dupes([int(obj['_id']) & id_mask for obj in result['hits']['hits']])
+                documents.extend(result['hits']['hits'])
             ids = ids[:count]
             self.es.clear_scroll(scroll_id)
         else:
             # TODO: This will NOT return the requested number of results if there are
             # duplicates in the dataset.
-            result = self.search_raw(project, query)
+            result = self.search_raw(project, query, getSource)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
             ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
-        return ids, count
+            documents.extend(data)
+        return ids, count, documents
 
     def count(self, project, query):
         index = self.index_name(project)
