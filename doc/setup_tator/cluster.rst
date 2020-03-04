@@ -247,7 +247,7 @@ Create a file called *exports* that we will use for defining the NFS shares and 
    /media/kubernetes_share/raw 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/backup 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/migrations 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-
+   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 
 Preparing NFS server node
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -264,7 +264,7 @@ Preparing NFS server node
    mkdir /media/kubernetes_share/raw
    mkdir /media/kubernetes_share/upload
    mkdir /media/kubernetes_share/migrations
-
+   mkdir /media/kubernetes_share/scratch
 
 * Set NFS permissions:
 
@@ -503,53 +503,7 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-server-provisioner helm chart
 *********************************************
 
-* Create a file called ``nfs-config.yaml`` and populate with the following:
-
-.. code-block:: yaml
-   :linenos:
-
-   persistence:
-     enabled: true
-     storageClass: "-"
-     size: 200Gi
-
-   storageClass:
-     defaultClass: true
-
-   nodeSelector:
-     kubernetes.io/hostname: {nfs-node-name}
-
-
-where ``nfs-node-name`` is the name of the node that you want to use for storing provisioned nfs shares.
-
-* Create a namespace for the provisioner
-
-``kubectl create namespace provisioner``
-
-* Create a file called ``nfs-config-pv.yaml`` and populate with the following:
-
-.. code-block:: yaml
-   :linenos:
-
-   apiVersion: v1
-   kind: PersistentVolume
-   metadata:
-     name: data-nfs-server-provisioner-0
-   spec:
-     capacity:
-       storage: 200Gi
-     accessModes:
-       - ReadWriteOnce
-     hostPath:
-       path: /media/kubernetes_share/scratch
-     claimRef:
-       namespace: provisioner
-       name: data-nfs-server-provisioner-0
-
-
-* Create the persistent volume for storing configuration:
-
-``kubectl apply -f nfs-config-pv.yaml``
+* From the NFS setup, there should be a folder exported called `/media/kubernetes/scratch`. 
 
 * Install the helm chart:
 
@@ -557,8 +511,10 @@ where ``nfs-node-name`` is the name of the node that you want to use for storing
    :linenos:
 
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
-   helm install -n provisioner nfs-server-provisioner stable/nfs-server-provisioner -f nfs-config.yaml
+   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
+* This sets up a new storage class called `nfs-client` any pvc request needs to
+  specify this as a storage class to use this provisioner.
 
 Test the provisioner
 ********************
@@ -575,6 +531,7 @@ Create a file called nfs-test.yaml with the following spec:
    spec:
      accessModes:
        - ReadWriteMany
+     storageClassName: nfs-client
      resources:
        requests:
          storage: 1Mi
