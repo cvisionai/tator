@@ -10,6 +10,11 @@ class TatorAutoComplete {
     {
       minChars = config.minChars;
     }
+    var mode="tator";
+    if (config.mode)
+    {
+      mode = config.mode;
+    }
     var extraParams=new Map();
     if (config.params)
     {
@@ -17,6 +22,44 @@ class TatorAutoComplete {
         extraParams.set(key, Object.getOwnPropertyDescriptor(config.params,
                                                              key).value);
       });
+    }
+
+    let tator_style_fetch = (text,callback) => {
+      if (text == "")
+      {
+        return;
+      }
+      document.body.style.cursor="progress";
+      // Build up URL
+      var url=`${config.serviceUrl}?query=${text}`;
+      extraParams.forEach((value, key) =>
+                          {
+                            url += `&${key}=${value}`
+                          });
+      fetch(url, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+        .then(response => {
+          document.body.style.cursor="default";
+          return response.json()
+        })
+        .then(callback)
+    }
+
+    let worms_fetch = (text,callback) => {
+      console.warn("Not implemented!");
+    }
+
+    let fetch_method = tator_style_fetch;
+    if (mode == "worms")
+    {
+      fetch_method = worms_fetch;
     }
     
     autocomplete(
@@ -48,34 +91,7 @@ class TatorAutoComplete {
             div.innerHTML = text;
             return div;
           },
-        fetch: (text, callback) =>
-          {
-            if (text == "")
-            {
-              return;
-            }
-            document.body.style.cursor="progress";
-            // Build up URL
-            var url=`${config.serviceUrl}?query=${text}`;
-            extraParams.forEach((value, key) =>
-                                {
-                                  url += `&${key}=${value}`
-                                });
-            fetch(url, {
-              method: "GET",
-              credentials: "same-origin",
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
-            })
-              .then(response => {
-                document.body.style.cursor="default";
-                return response.json()
-              })
-              .then(callback)
-          },
+        fetch: fetch_method,
         // Show suggestions on focus of element (i.e. click)
         showOnFocus: true
       });
