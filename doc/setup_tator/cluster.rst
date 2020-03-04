@@ -500,7 +500,7 @@ Setting up dynamic PV provisioner
 
 Managed Kubernetes solutions typically come with a dynamic PV provisioner included, so these steps are only required for bare metal installations. These steps are for the NFS volume provisioner, but other options are valid.
 
-Install the nfs-server-provisioner helm chart
+Install the nfs-client-provisioner helm chart
 *********************************************
 
 * From the NFS setup, there should be a folder exported called `/media/kubernetes/scratch`. 
