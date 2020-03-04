@@ -5,21 +5,14 @@ class WormsAutoComplete {
   /// for the levels (hint: 220 is species)
   constructor(minimumRank)
   {
-    WormsAutoComplete.compute_heirarchy();
+    this.compute_heirarchy();
     this._minLevel = minimumRank;
   }
 
-  static WORMS_HEIRARCHY = null;
-
   // Compute level heirarchy, for now only support Animalia kingdom
-  static compute_heirarchy()
+  compute_heirarchy()
   {
-    if (WormsAutoComplete.WORMS_HEIRARCHY != null)
-    {
-      return;
-    }
-
-    TatorAutoComplete.WORMS_HEIRARCHY = {}
+    this._WORMS_HEIRARCHY = {}
     const animalia_ranks_url = "https://www.marinespecies.org/rest/AphiaTaxonRanksByID/-1?AphiaID=2";
     fetch(new Request(animalia_ranks_url))
       .then((response) => {
@@ -30,14 +23,14 @@ class WormsAutoComplete {
         for (let rank of json)
         {
           let name = rank['taxonRank'].toLowerCase();
-          TatorAutoComplete.WORMS_HEIRARCHY[name] = {"rankId": rank['taxonRankID']};
+          this._WORMS_HEIRARCHY[name] = {"rankId": rank['taxonRankID']};
           if (count > 0)
           {
-            TatorAutoComplete.WORMS_HEIRARCHY[name]['parent']  = json[count-1]['taxonRank'].toLowerCase();
+            this._WORMS_HEIRARCHY[name]['parent']  = json[count-1]['taxonRank'].toLowerCase();
           }
           else
           {
-            TatorAutoComplete.WORMS_HEIRARCHY[name]['parent']  = null;
+            this._WORMS_HEIRARCHY[name]['parent']  = null;
           }
           count += 1;
         }
@@ -47,7 +40,7 @@ class WormsAutoComplete {
   /// Implementation to process results from WoRMs marine database.
   /// This routine calls the autocomplete callback with a list of formatted
   /// suggestions per the API requirements (https://github.com/kraaden/autocomplete)
-  worms_fetch(text,callback)
+  worms_fetch(config, text,callback)
   {
     text = text.trim();
     if (text == "")
@@ -124,14 +117,14 @@ class WormsAutoComplete {
 
             if (topLevel_responses[1].status == 204)
             {
-              WormsAutoComplete.finalize_worms_result(text, callback, [], vernacular_matches);
+              this.finalize_worms_result(text, callback, [], vernacular_matches);
             }
             else
             {
               // Finally have all the vernaculars loaded up, we can get the scientific match
               // and call the finalize function
               topLevel_responses[1].json().then((scientific_matches) => {
-                WormsAutoComplete.finalize_worms_result(text, callback, scientific_matches, vernacular_matches);
+                this.finalize_worms_result(text, callback, scientific_matches, vernacular_matches);
               });
             }
             });
@@ -141,11 +134,11 @@ class WormsAutoComplete {
     return true;
   }
 
-  static compute_parent(aphiaRecord)
+  compute_parent(aphiaRecord)
   {
     const rank = aphiaRecord['rank'].toLowerCase();
-    let parent = TatorAutoComplete.WORMS_HEIRARCHY[rank]['parent'];
-    while (parent in TatorAutoComplete.WORMS_HEIRARCHY)
+    let parent = this._WORMS_HEIRARCHY[rank]['parent'];
+    while (parent in this._WORMS_HEIRARCHY)
     {
       if (parent in aphiaRecord)
       {
@@ -153,7 +146,7 @@ class WormsAutoComplete {
       }
       else
       {
-        parent = TatorAutoComplete.WORMS_HEIRARCHY[parent]['parent'];
+        parent = this._WORMS_HEIRARCHY[parent]['parent'];
       }
     }
     console.error("Could not determine parent for " + aphiaRecord);
@@ -192,7 +185,7 @@ class WormsAutoComplete {
     }
   }
 
-  static finalize_worms_result(text, callback, scientificName_matches, vernacular_matches)
+  finalize_worms_result(text, callback, scientificName_matches, vernacular_matches)
   {
     /// First merge the two match sets
 
@@ -225,7 +218,7 @@ class WormsAutoComplete {
     {
       let obj = {};
       obj['value'] = result[1]['scientificname'];
-      obj['group'] = WormsAutoComplete.compute_parent(result[1]);
+      obj['group'] = this.compute_parent(result[1]);
       obj['data'] = {};
       let alias = WormsAutoComplete.compute_alias(text, result[1]);
       if (alias)
@@ -279,12 +272,22 @@ class TatorAutoComplete {
   }
 
   /// Implementation to process results from built-in Tator Suggestion Service
-  static tator_fetch(text,callback)
+  static tator_fetch(config, text,callback)
   {
     if (text == "")
     {
       return false;
     }
+
+    var extraParams=new Map();
+    if (config.params)
+    {
+      Object.keys(config.params).forEach(key => {
+        extraParams.set(key, Object.getOwnPropertyDescriptor(config.params,
+                                                             key).value);
+      });
+    }
+
     // Build up URL
     var url=`${config.serviceUrl}?query=${text}`;
     extraParams.forEach((value, key) =>
@@ -322,14 +325,6 @@ class TatorAutoComplete {
     if (config.mode)
     {
       mode = config.mode;
-    }
-    var extraParams=new Map();
-    if (config.params)
-    {
-      Object.keys(config.params).forEach(key => {
-        extraParams.set(key, Object.getOwnPropertyDescriptor(config.params,
-                                                             key).value);
-      });
     }
 
     let fetch_method = TatorAutoComplete.tator_fetch;
@@ -384,7 +379,7 @@ class TatorAutoComplete {
         fetch: (text, callback) => {
           input_element.style.cursor="progress";
           document.body.style.cursor="progress";
-          if (fetch_method(text, callback) == false)
+          if (fetch_method(config, text, callback) == false)
           {
              input_element.style.cursor="auto";
             document.body.style.cursor="default";
