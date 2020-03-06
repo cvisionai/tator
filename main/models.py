@@ -703,7 +703,7 @@ def float_type_save(sender, instance, **kwargs):
 class AttributeTypeEnum(AttributeTypeBase):
     attr_name = "Enum"
     dtype = "enum"
-    choices = ArrayField(CharField(max_length=64))
+    choices = ArrayField(CharField(max_length=64, blank=True))
     default = CharField(max_length=64, null=True, blank=True)
 
 @receiver(post_save, sender=AttributeTypeEnum)
