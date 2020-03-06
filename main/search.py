@@ -308,7 +308,7 @@ class TatorSearch:
             count = result['total']['value']
             ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
             documents.extend(data)
-        return ids, count, documents
+        return ids, count
 
     def count(self, project, query):
         index = self.index_name(project)
