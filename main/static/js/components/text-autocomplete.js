@@ -80,6 +80,7 @@ class WormsAutoComplete {
         let vernacular_requests=[]
         let vernacular_matches=[]
 
+        let common_matches = 0;
         // Process the JSON of the vernacular response to build a match list
         for (const aphiaRecord of vernacular_response)
         {
@@ -87,6 +88,14 @@ class WormsAutoComplete {
           {
             vernacular_matches.push(aphiaRecord)
             vernacular_requests.push(fetch(new Request(vernacular_detail_url+aphiaRecord["AphiaID"])));
+            common_matches += 1;
+          }
+
+          // Limit common matches to 5 for performance
+          // reasons.
+          if (common_matches >= 5)
+          {
+            break;
           }
         }
 
