@@ -76,6 +76,17 @@ class WormsAutoComplete {
         callback([]);
         return false;
       }
+
+      // response 0 is empty, so we just have scientific matches
+      if (topLevel_responses[0].status == 204)
+      {
+        topLevel_responses[1].json().then((scientific_matches) => {
+          this.finalize_worms_result(text, callback,
+                                     scientific_matches,
+                                     []);
+        });
+        return true;
+      }
       topLevel_responses[0].json().then((vernacular_response) => {
         let vernacular_requests=[]
         let vernacular_matches=[]
@@ -206,7 +217,7 @@ class WormsAutoComplete {
 
     for (let result of scientificName_matches)
     {
-      if (preresults.has(result['AphiaID'] == false))
+      if (preresults.has(result['AphiaID']) == false)
       {
         preresults.set(result['AphiaID'], result);
       }
