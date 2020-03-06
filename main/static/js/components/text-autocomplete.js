@@ -217,9 +217,12 @@ class WormsAutoComplete {
 
     for (let result of scientificName_matches)
     {
-      if (preresults.has(result['AphiaID']) == false)
+      if (result['taxonRankID'] >= this._minLevel)
       {
-        preresults.set(result['AphiaID'], result);
+        if (preresults.has(result['AphiaID']) == false)
+        {
+          preresults.set(result['AphiaID'], result);
+        }
       }
     }
 
