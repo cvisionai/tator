@@ -346,6 +346,9 @@ class TatorTranscode(JobManagerMixin):
     def _job_type(self):
         return 'upload'
 
+    def start_tar_import(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
+        raise Exception("Tar Import is Not Supported")
+
     def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
 
         """ Creates an argo workflow for performing a transcode.

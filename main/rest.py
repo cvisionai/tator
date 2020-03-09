@@ -2763,7 +2763,7 @@ class TranscodeAPI(APIView):
         coreapi.Field(name='type',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType; if -1 means tar-based import')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
@@ -2837,7 +2837,20 @@ class TranscodeAPI(APIView):
                 {'section': section},
             )
 
-            TatorTranscode().start_transcode(
+            if entity_type == -1:
+                TatorTranscode().start_tar_import(
+                    project,
+                    entity_type,
+                    token,
+                    url,
+                    name,
+                    section,
+                    md5,
+                    gid,
+                    uid,
+                    request.user.pk)
+            else:
+                TatorTranscode().start_transcode(
                 project,
                 entity_type,
                 token,
@@ -2847,8 +2860,7 @@ class TranscodeAPI(APIView):
                 md5,
                 gid,
                 uid,
-                request.user.pk,
-            )
+                request.user.pk)
 
             prog.progress("Transcoding...", 60)
 
