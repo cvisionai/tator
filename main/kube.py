@@ -95,7 +95,7 @@ class TatorTranscode(JobManagerMixin):
         port = os.getenv('REMOTE_TRANSCODE_PORT')
         token = os.getenv('REMOTE_TRANSCODE_TOKEN')
         cert = os.getenv('REMOTE_TRANSCODE_CERT')
-       
+
         if host:
             conf = Configuration()
             conf.api_key['authorization'] = token
@@ -110,31 +110,10 @@ class TatorTranscode(JobManagerMixin):
             self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
 
-    def _get_progress_aux(self, job):
-        return {'section': job['metadata']['annotations']['section']}
-
-    def _cancel_message(self):
-        return 'Transcode aborted!'
-
-    def _job_type(self):
-        return 'upload'
-
-    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
-
-        """ Creates an argo workflow for performing a transcode.
-        """
-        # Define paths for transcode outputs.
-        base, _ = os.path.splitext(name)
-        paths = {
-            'original': '/work/' + name,
-            'transcoded': '/work/' + base + '_transcoded.mp4',
-            'thumbnail': '/work/' + base + '_thumbnail.jpg',
-            'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
-            'segments': '/work/' + base + '_segments.json',
-        }
-
+    def setup_common_steps(self, paths, project, entity_type, token, url, name, section, md5, gid, uid, user):
+        # Setup common pipeline steps
         # Define persistent volume claim.
-        pvc = {
+        self.pvc = {
             'metadata': {
                 'name': 'transcode-scratch',
             },
@@ -150,7 +129,7 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Define each task in the pipeline.
-        download_task = {
+        self.download_task = {
             'name': 'download',
             'retryStrategy': {
                 'limit': 3,
@@ -178,8 +157,8 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        transcode_task = {
-            'name': 'transcode',    
+        self.transcode_task = {
+            'name': 'transcode',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
@@ -202,7 +181,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        thumbnail_task = {
+        self.thumbnail_task = {
             'name': 'thumbnail',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
@@ -227,7 +206,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        segments_task = {
+        self.segments_task = {
             'name': 'segments',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
@@ -251,7 +230,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        upload_task = {
+        self.upload_task = {
             'name': 'upload',
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
@@ -289,7 +268,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        pipeline_task = {
+        self.pipeline_task = {
             'name': 'transcode-pipeline',
             'dag': {
                 'tasks': [{
@@ -316,7 +295,7 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Define task to send progress message in case of failure.
-        progress_task = {
+        self.progress_task = {
             'name': 'progress',
             'container': {
                 'image': 'cvisionai/tator_algo_marshal:latest',
@@ -347,7 +326,7 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Define a failure handler.
-        failure_handler = {
+        self.failure_handler = {
             'name': 'failure-handler',
             'steps': [[{
                 'name': 'send-fail',
@@ -356,7 +335,44 @@ class TatorTranscode(JobManagerMixin):
             }]],
         }
 
-        # Define the workflow spec.            
+
+
+    def _get_progress_aux(self, job):
+        return {'section': job['metadata']['annotations']['section']}
+
+    def _cancel_message(self):
+        return 'Transcode aborted!'
+
+    def _job_type(self):
+        return 'upload'
+
+    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
+
+        """ Creates an argo workflow for performing a transcode.
+        """
+        # Define paths for transcode outputs.
+        base, _ = os.path.splitext(name)
+        paths = {
+            'original': '/work/' + name,
+            'transcoded': '/work/' + base + '_transcoded.mp4',
+            'thumbnail': '/work/' + base + '_thumbnail.jpg',
+            'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
+            'segments': '/work/' + base + '_segments.json',
+        }
+
+        self.setup_common_steps(paths,
+                                project,
+                                entity_type,
+                                token,
+                                url,
+                                name,
+                                section,
+                                md5,
+                                gid,
+                                uid,
+                                user)
+
+        # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
@@ -378,21 +394,21 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'transcode-pipeline',
                 'onExit': 'failure-handler',
                 'ttlSecondsAfterFinished': 300,
-                'volumeClaimTemplates': [pvc],
+                'volumeClaimTemplates': [self.pvc],
                 'templates': [
-                    download_task,
-                    transcode_task,
-                    thumbnail_task,
-                    segments_task,
-                    upload_task,
-                    pipeline_task,
-                    progress_task,
-                    failure_handler,
+                    self.download_task,
+                    self.transcode_task,
+                    self.thumbnail_task,
+                    self.segments_task,
+                    self.upload_task,
+                    self.pipeline_task,
+                    self.progress_task,
+                    self.failure_handler,
                 ],
             },
         }
-       
-        # Create the workflow 
+
+        # Create the workflow
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',
@@ -595,4 +611,3 @@ class TatorAlgorithm(JobManagerMixin):
         )
 
         return response
-
