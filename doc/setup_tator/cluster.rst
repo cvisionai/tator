@@ -342,6 +342,8 @@ Create a file called *exports* in your node home directory that we will use for 
    /media/kubernetes_share/migrations 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 
+.. _NFS Setup:
+
 Preparing NFS server node
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -550,7 +552,7 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-client-provisioner helm chart
 *********************************************
 
-* :ref:`From the NFS setup<Preparing NFS server node>`, there should be a folder exported called `/media/kubernetes/scratch`. 
+* :ref:`From the NFS setup<NFS Setup>`, there should be a folder exported called `/media/kubernetes/scratch`. 
 
 * Install the helm chart:
 
