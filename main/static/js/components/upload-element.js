@@ -61,10 +61,14 @@ class UploadElement extends TatorElement {
   }
 
   _checkFile(file, gid) {
-    let ext = file.name.split(".").pop();
+    // File extension can have multiple components in archives
+    let comps = file.name.split(".");
+    comps.shift() // Remove filename proper
+    let ext = comps.join('.'); // rejoin extension
+
     const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif)$/i);
     const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov)$/i);
-    const isArchive = ext.match(/(zip|tar)$/i);
+    const isArchive = ext.match(/^(zip|tar)/i);
     for (let idx = 0; idx < this._mediaTypes.length; idx++) {
       // TODO: It is possible for users to define two media types with
       // the same extension, in which case we might be uploading to the
