@@ -113,7 +113,21 @@ class TatorTranscode(JobManagerMixin):
             self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
 
-    def setup_common_steps(self, paths, project, entity_type, token, url, name, section, md5, gid, uid, user):
+    def setup_common_steps(self,
+                           project,
+                           entity_type,
+                           token,
+                           url,
+                           name,
+                           section,
+                           md5,
+                           gid,
+                           uid,
+                           user):
+        """ Sets up the basic steps for a transcode pipeline.
+
+            TODO: Would be nice if this was just in a yaml file.
+        """
         # Setup common pipeline steps
         # Define persistent volume claim.
         self.pvc = {
@@ -131,6 +145,8 @@ class TatorTranscode(JobManagerMixin):
             }
         }
 
+        all_parameters = ['original', 'url', 'transcoded', 'thumbnail', 'thumbnail_gif', 'segments']
+        yaml_params = [{"name": x} for x in all_parameters]
         # Define each task in the pipeline.
         self.download_task = {
             'name': 'download',
@@ -143,11 +159,12 @@ class TatorTranscode(JobManagerMixin):
                     'maxDuration': "1m",
                 },
             },
+            'inputs': {'parameters' : yaml_params},
             'container': {
                 'image': 'byrnedo/alpine-curl:0.1.8',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
-                'args': ['-o', paths['original'], url],
+                'args': ['-o', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
@@ -160,16 +177,18 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
+
         self.transcode_task = {
             'name': 'transcode',
+            'inputs': {'parameters' : yaml_params},
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'transcode.py',
-                    '--output', paths['transcoded'],
-                    paths['original'],
+                    '--output', '{{inputs.parameters.transcoded}}',
+                    '{{inputs.parameters.original}}'
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -186,15 +205,16 @@ class TatorTranscode(JobManagerMixin):
         }
         self.thumbnail_task = {
             'name': 'thumbnail',
+            'inputs': {'parameters' : yaml_params},
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'makeThumbnails.py',
-                    '--output', paths['thumbnail'],
-                    '--gif', paths['thumbnail_gif'],
-                    paths['original'],
+                    '--output', '{{inputs.parameters.thumbnail}}',
+                    '--gif', '{{inputs.parameters.thumbnail_gif}}',
+                    '{{inputs.parameters.original}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -211,14 +231,15 @@ class TatorTranscode(JobManagerMixin):
         }
         self.segments_task = {
             'name': 'segments',
+            'inputs': {'parameters' : yaml_params},
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'makeFragmentInfo.py',
-                    '--output', paths['segments'],
-                    paths['transcoded'],
+                    '--output', '{{inputs.parameters.segments}}',
+                    '{{inputs.parameters.transcoded}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -235,18 +256,19 @@ class TatorTranscode(JobManagerMixin):
         }
         self.upload_task = {
             'name': 'upload',
+            'inputs': {'parameters' : yaml_params},
             'container': {
                 'image': 'cvisionai/tator_transcoder:latest',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
                     'uploadTranscodedVideo.py',
-                    '--original_path', paths['original'],
+                    '--original_path', '{{inputs.parameters.original}}',
                     '--original_url', url,
-                    '--transcoded_path', paths['transcoded'],
-                    '--thumbnail_path', paths['thumbnail'],
-                    '--thumbnail_gif_path', paths['thumbnail_gif'],
-                    '--segments_path', paths['segments'],
+                    '--transcoded_path', '{{inputs.parameters.transcoded}}',
+                    '--thumbnail_path', '{{inputs.parameters.thumbnail}}',
+                    '--thumbnail_gif_path', '{{inputs.parameters.thumbnail_gif}}',
+                    '--segments_path', '{{inputs.parameters.segments}}',
                     '--tus_url', f'https://{os.getenv("MAIN_HOST")}/files/',
                     '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
                     '--token', str(token),
@@ -269,31 +291,6 @@ class TatorTranscode(JobManagerMixin):
                         'cpu': '1000m',
                     },
                 },
-            },
-        }
-        self.pipeline_task = {
-            'name': 'transcode-pipeline',
-            'dag': {
-                'tasks': [{
-                    'name': 'download-task',
-                    'template': 'download',
-                }, {
-                    'name': 'transcode-task',
-                    'template': 'transcode',
-                    'dependencies': ['download-task',],
-                }, {
-                    'name': 'thumbnail-task',
-                    'template': 'thumbnail',
-                    'dependencies': ['download-task',],
-                }, {
-                    'name': 'segments-task',
-                    'template': 'segments',
-                    'dependencies': ['transcode-task',],
-                }, {
-                    'name': 'upload-task',
-                    'template': 'upload',
-                    'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
-                }],
             },
         }
 
@@ -339,6 +336,44 @@ class TatorTranscode(JobManagerMixin):
         }
 
 
+    def get_pipeline_task(self, paths, url):
+        """ Generate a task object describing the dependencies of a transcode """
+        # Generate an args structure for the DAG
+        args = [{'name': 'url', 'value': url}]
+        for key in paths:
+            args.append({'name': key, 'value': paths[key]})
+        parameters = {"parameters" : args}
+        pipeline_task = {
+            'name': 'transcode-pipeline',
+            'dag': {
+                'tasks': [{
+                    'name': 'download-task',
+                    'template': 'download',
+                    'arguments': parameters
+                }, {
+                    'name': 'transcode-task',
+                    'template': 'transcode',
+                    'dependencies': ['download-task',],
+                    'arguments': parameters
+                }, {
+                    'name': 'thumbnail-task',
+                    'template': 'thumbnail',
+                    'dependencies': ['download-task',],
+                    'arguments': parameters
+                }, {
+                    'name': 'segments-task',
+                    'template': 'segments',
+                    'dependencies': ['transcode-task',],
+                    'arguments': parameters
+                }, {
+                    'name': 'upload-task',
+                    'template': 'upload',
+                    'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
+                    'arguments': parameters
+                }],
+            },
+        }
+        return pipeline_task
 
     def _get_progress_aux(self, job):
         return {'section': job['metadata']['annotations']['section']}
@@ -374,8 +409,7 @@ class TatorTranscode(JobManagerMixin):
             basename = os.path.basename(url) + ".bin"
             tar_fp = os.path.join(settings.UPLOAD_ROOT, basename)
             tar_file = tarfile.open(tar_fp)
-            if 'config.json' not in tar_file.getnames():
-                raise Exception("`config.json` missing from tarball")
+
             raise Exception("TAR mode not supported")
         elif ext.find("zip") >= 0:
             raise Exception("ZIP mode not supported")
@@ -407,8 +441,7 @@ class TatorTranscode(JobManagerMixin):
             'segments': '/work/' + base + '_segments.json',
         }
 
-        self.setup_common_steps(paths,
-                                project,
+        self.setup_common_steps(project,
                                 entity_type,
                                 token,
                                 url,
@@ -419,6 +452,7 @@ class TatorTranscode(JobManagerMixin):
                                 uid,
                                 user)
 
+        pipeline_task = self.get_pipeline_task(paths, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -448,7 +482,7 @@ class TatorTranscode(JobManagerMixin):
                     self.thumbnail_task,
                     self.segments_task,
                     self.upload_task,
-                    self.pipeline_task,
+                    pipeline_task,
                     self.progress_task,
                     self.failure_handler,
                 ],
