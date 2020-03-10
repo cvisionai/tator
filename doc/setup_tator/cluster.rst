@@ -537,7 +537,7 @@ The Kubernetes cluster is now configured and you are ready to build Tator.
 Job cluster setup
 =================
 
-Tator uses [Argo](https://argoproj.github.io/argo/) to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
+Tator uses `Argo <https://argoproj.github.io/argo/>`_ to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
 
 - It must have the Argo custom resource definitions (CRD) installed.
 - It must have a dynamic persistent volume (PV) provisioner. Steps are provided to install the `nfs-client-provisioner`.
@@ -550,7 +550,7 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-client-provisioner helm chart
 *********************************************
 
-* :ref:`Preparing NFS server node<From the NFS setup>`, there should be a folder exported called `/media/kubernetes/scratch`. 
+* :ref:`From the NFS setup<Preparing NFS server node>`, there should be a folder exported called `/media/kubernetes/scratch`. 
 
 * Install the helm chart:
 
