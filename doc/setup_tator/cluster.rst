@@ -1,9 +1,144 @@
 Setting up a deployment
 #######################
 
-The steps below will guide you through setup of a Tator deployment. By the end you should be able to open Tator in your browser. We will use `DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app. You may set the IP address for this domain to a local address or something accessible via the web. Tator only works over https, so we will use `LetsEncrypt <https://letsencrypt.org>`_ for getting an SSL certificate. For hardware, you can use a single virtual machine, a single node, or a cluster of nodes in a local area network. The machines must be running Ubuntu 18.04 LTS.
+The steps below will guide you through setup of a Tator deployment. By the end
+you should be able to open Tator in your browser. The tutorial is assuming you
+are starting with a fresh (or near fresh) install of Ubuntu Linux 18.04. Other
+distributions may also work, but steps are literal to the Ubuntu platform.
 
-We recommend going through the full tutorial at least once using a single node or VM. After that, feel free to skip some steps if you already have a domain, SSL certificate, NFS server, or Kubernetes cluster. The full tutorial assumes you are starting with just bare metal.
+To serve the web application to the world wide web, the tutorial  will use
+`DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app.
+Tator is configured to work over https, so a TLS certificate is required.
+`LetsEncrypt <https://letsencrypt.org>`_ will be used to get a TLS certificate.
+
+For hardware, you can use a single virtual machine, a single node,
+or a cluster of nodes in a local area network. Other CAs can also be used
+to provide TLS certificates. For LAN-only deployments, the DuckDNS subdomain
+can be configured to point to a LAN-local address via its DNS entry.
+
+We recommend going through the full tutorial at least once using a single node
+or VM. After that, feel free to skip some steps if you already have a domain,
+SSL certificate, NFS server, or Kubernetes cluster. The full tutorial assumes
+you are starting with just bare metal.
+
+Architectural Pieces
+====================
+
+Before diving into steps, this section describes the various components that
+make up a Tator deployment.
+
+TODO-DOC: Insert picture
+
+TODO-DOC: Insert caption or paragraph that defines each component.
+
+Installation of Prerequisites 
+==================
+
+NFS and other standard packages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get install nfs-common
+
+Install Docker
+^^^^^^^^^^^^^^
+
+* Install docker on each node. Make sure it is version 18.09.8
+
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get remove docker docker-engine docker.io containerd runc
+   sudo apt-get install \
+       apt-transport-https \
+       ca-certificates \
+       curl \
+       gnupg-agent \
+       software-properties-common
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+   sudo add-apt-repository \
+      "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) \
+      stable"
+   sudo apt-get update
+   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
+
+
+* Add yourself to the docker group
+
+``sudo usermod -aG docker $USER``
+
+* Restart terminal or reboot to update groups
+* Log in to dockerhub
+
+``docker login``
+
+Enter your credentials for dockerhub.com.
+
+For GPU nodes, install nvidia-docker
+************************************
+
+* Make sure your node has the latest PPA provided graphics driver.
+
+.. code-block:: bash
+   :linenos:
+
+    sudo add-apt-repository ppa:graphics-drivers/ppa
+    sudo apt-get update
+    sudo apt-get install nvidia-430
+    sudo apt-get install nvidia-docker2``
+
+Install Kubernetes
+^^^^^^^^^^^^^^^^^^
+
+* Install Kubernetes 1.14.3 on all cluster nodes.
+
+.. code-block:: bash
+   :linenos:
+
+   sudo su
+   apt-get update
+   apt-get install -y apt-transport-https curl
+   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+   deb https://apt.kubernetes.io/ kubernetes-xenial main
+   EOF
+   apt-get update
+   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
+   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
+   sysctl net.bridge.bridge-nf-call-iptables=1
+   exit
+   sudo iptables -P FORWARD ACCEPT
+
+Installing Argo
+^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+   :linenos:
+
+   kubectl create namespace argo
+   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.4.3/argo-linux-amd64
+   sudo chmod +x /usr/local/bin/argo
+
+Install helm
+^^^^^^^^^^^^
+
+To build Tator you will need Helm 3 somewhere on your path.
+
+* Download and extract helm:
+
+.. code-block:: bash
+   :linenos:
+
+   wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
+   tar xzvf helm-v3.0.2-linux-amd64.tar.gz
+
+
+* Add the executable to your PATH in bashrc:
+
+``export PATH=$HOME/linux-amd64:$PATH``
 
 DuckDNS Domain Setup
 ====================
@@ -55,7 +190,7 @@ In order to deploy this DNS TXT record open a new browser window and enter the f
 
 The certificate has been issued. Note the location of the certificate files.
 
-**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto and repeat step 4.**
+**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto**
 
 Certbot-auto installation steps:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,66 +238,18 @@ Kubernetes Pre-flight Setup
 
 * Modify /etc/fstab and comment out the swap volume.
 
-Install NFS client package
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-``sudo apt-get install nfs-common``
+Network instability
+^^^^^^^^^^^^^^^^^^^
 
-Install Docker
-^^^^^^^^^^^^^^
-
-* Install docker on each node. Make sure it is version 18.09.8
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get remove docker docker-engine docker.io containerd runc
-   sudo apt-get install \
-       apt-transport-https \
-       ca-certificates \
-       curl \
-       gnupg-agent \
-       software-properties-common
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-   sudo add-apt-repository \
-      "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) \
-      stable"
-   sudo apt-get update
-   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
-
-
-* Add yourself to the docker group
-
-``sudo usermod -aG docker $USER``
-
-* Restart terminal or reboot to update groups
-* Log in to dockerhub
-
-``docker login``
-
-Enter your credentials for dockerhub.com.
-
-For GPU nodes, install nvidia-docker
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Make sure your node has the latest PPA provided graphics driver.
-
-.. code-block:: bash
-   :linenos:
-
-    sudo add-apt-repository ppa:graphics-drivers/ppa
-    sudo apt-get update
-    sudo apt-get install nvidia-430
-
-
-* Install nvidia-docker
-
-``sudo apt-get install nvidia-docker2``
+A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
+older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
+clusters that are already setup.
 
 Configuring a local docker registry
 ===================================
 
-Tator assumes a local registry is available for storing custom Docker images. We will set up a docker registry using the registry docker container.
+Depending on your `values.yaml` configuration, Tator requires a local registry is available for storing custom Docker images.
+We will set up a docker registry using the registry docker container.
 
 Start the docker registry
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -177,7 +264,8 @@ Set the docker values in values.yaml
 Configure the docker daemon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each node must be configured to accept this registry as insecure.
+Unless the local registry is setup to use authentication, the docker client on each node needs to add it to its list of
+insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
 
 * Open /etc/docker/daemon.json
 * If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'myserver':
@@ -237,10 +325,7 @@ Tator creates all Kubernetes persistent volumes using NFS shares. Its build syst
 * The **raw** share is for storing raw media.
 * The **backup** share is for storing database backups.
 * The **migrations** share is for storing migrations.
-
-Make sure the nfs client package is installed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``sudo apt-get install nfs-common``
+* The **scratch** share is for temporary storage of artifacts used by workflows
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -286,7 +371,8 @@ Preparing NFS server node
 NFS version
 ^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for development/evaluation.
+We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for
+development/evaluation.
 
 Using NFS3
 **********
@@ -345,29 +431,6 @@ Database performance is dependent on high speed storage. Tator currently runs da
 
 Kubernetes Cluster Setup
 ========================
-
-Install Kubernetes
-^^^^^^^^^^^^^^^^^^
-
-* Install Kubernetes 1.14.3 on all cluster nodes.
-
-.. code-block:: bash
-   :linenos:
-
-   sudo su
-   apt-get update
-   apt-get install -y apt-transport-https curl
-   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-   deb https://apt.kubernetes.io/ kubernetes-xenial main
-   EOF
-   apt-get update
-   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
-   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
-   sysctl net.bridge.bridge-nf-call-iptables=1
-   exit
-   sudo iptables -P FORWARD ACCEPT
-
 
 Resetting kubernetes configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -470,12 +533,6 @@ Make sure you apply labels for all nodes in the Kubernetes cluster.
 
 The Kubernetes cluster is now configured and you are ready to build Tator.
 
-Network instability
-^^^^^^^^^^^^^^^^^^^
-
-A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
-older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
-clusters that are already setup.
 
 Job cluster setup
 =================
@@ -483,25 +540,7 @@ Job cluster setup
 Tator uses [Argo](https://argoproj.github.io/argo/) to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
 
 - It must have the Argo custom resource definitions (CRD) installed.
-- It must have a dynamic persistent volume (PV) provisioner.
-
-Installing Argo
-^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   kubectl create namespace argo
-   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
-
-Installing Argo CLI
-^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.4.3/argo-linux-amd64
-   sudo chmod +x /usr/local/bin/argo
+- It must have a dynamic persistent volume (PV) provisioner. Steps are provided to install the `nfs-client-provisioner`.
 
 Setting up dynamic PV provisioner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -511,7 +550,7 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-client-provisioner helm chart
 *********************************************
 
-* From the NFS setup, there should be a folder exported called `/media/kubernetes/scratch`. 
+* :ref:`Preparing NFS server node<From the NFS setup>`, there should be a folder exported called `/media/kubernetes/scratch`. 
 
 * Install the helm chart:
 
@@ -528,11 +567,12 @@ Install the nfs-client-provisioner helm chart
 Test the provisioner
 ********************
 
-Create a file called nfs-test.yaml with the following spec:
+Create a file called nfs-test.yaml with the following spec (Note the storage class requested):
 
 .. code-block:: yaml
    :linenos:
-
+   :emphasize-lines: 8
+      
    kind: PersistentVolumeClaim
    apiVersion: v1
    metadata:
@@ -562,24 +602,6 @@ Tator build system
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
 
-Install helm
-^^^^^^^^^^^^
-
-To build Tator you will need Helm 3 somewhere on your path.
-
-* Download and extract helm:
-
-.. code-block:: bash
-   :linenos:
-
-   wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
-   tar xzvf helm-v3.0.2-linux-amd64.tar.gz
-
-
-* Add the executable to your PATH in bashrc:
-
-``export PATH=$HOME/linux-amd64:$PATH``
-
 Update the configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -604,7 +626,9 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tator will be accessed via the `loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally, simply update your domain to point to this IP address. If you are setting up a website, you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
+Tator will be accessed via the `loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally,
+simply update your domain to point to this IP address. If you are setting up a website,
+you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
 
 Building Tator
 ==============
