@@ -2871,7 +2871,7 @@ class TranscodeAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            logger.info(f"ERROR: {str(e)}")
+            logger.info(f"ERROR: {str(e)}\nTRACEBACK: {traceback.format_exc()}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
             prog.failed("Failed to initiate transcode!")
