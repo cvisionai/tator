@@ -2,6 +2,9 @@ import os
 import logging
 import tempfile
 import copy
+import tarfile
+
+from django.conf import settings
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -346,8 +349,49 @@ class TatorTranscode(JobManagerMixin):
     def _job_type(self):
         return 'upload'
 
-    def start_tar_import(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
-        raise Exception("Tar Import is Not Supported")
+    def start_tar_import(self,
+                         project,
+                         entity_type,
+                         token,
+                         url,
+                         name,
+                         section,
+                         md5,
+                         gid,
+                         uid,
+                         user):
+        """ Initiate a transcode based on the contents on an archive """
+        comps = name.split('.')
+        base = comps[0]
+        ext = '.'.join(comps[1:])
+
+        if entity_type != -1:
+            raise Exception("entity type is not -1!")
+
+        if ext.find("tar") >= 0:
+            # the URL specifies the public address to download, we can access
+            # it directly from upload root.
+            basename = os.path.basename(url) + ".bin"
+            tar_fp = os.path.join(settings.UPLOAD_ROOT, basename)
+            tar_file = tarfile.open(tar_fp)
+            if 'config.json' not in tar_file.getnames():
+                raise Exception("`config.json` missing from tarball")
+            raise Exception("TAR mode not supported")
+        elif ext.find("zip") >= 0:
+            raise Exception("ZIP mode not supported")
+        else:
+            raise Exception(f"Unknown Extension {ext}")
+
+        # In the tarball there needs to be config.json to specify the file(s)
+        # to import
+
+        paths = {
+            'original': '/work/' + name,
+            'transcoded': '/work/' + base + '_transcoded.mp4',
+            'thumbnail': '/work/' + base + '_thumbnail.jpg',
+            'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
+            'segments': '/work/' + base + '_segments.json',
+        }
 
     def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
 
