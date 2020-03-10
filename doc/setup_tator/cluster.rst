@@ -39,13 +39,21 @@ Get the certificate
 ^^^^^^^^^^^^^^^^^^^
 ``sudo certbot -d <domain> --manual --preferred-challenges dns certonly``
 
-* Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE> displays
-* Open a new browser window and enter the following into the address bar:
-    * Your token can be found on the duckdns.org account page
-    * https://www.duckdns.org/update?domains=<sub_domain_only>&token=<your_token_value>&txt=<DNS_TXT_value>
-    * OK should appear in your browser
+The following message will display:
+
+.. code-block:: bash
+
+   Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>
+
+For the next step you will need to get your token from your `<duckdns.org>`_ account page. 
+
+In order to deploy this DNS TXT record open a new browser window and enter the following into the address bar:
+   `https://www.duckdns.org/update?domains=<sub\_domain\_only>&token=<your\_token\_value>&txt=<DNS\_TXT\_value>`
+
+* ``OK`` should appear in your browser
 * Navigate back to the terminal, hit enter
-* Certificate has been issued. Note the location of the certificate files.
+
+The certificate has been issued. Note the location of the certificate files.
 
 **Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto and repeat step 4.**
 
@@ -163,8 +171,8 @@ Start the docker registry
 Set the docker values in values.yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Set ``dockerRegistry`` to the registry you plan to use.
-* Set ``dockerUsername`` and ``dockerPassword`` to the credentials for that registry.
+* Set ``dockerRegistry`` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
+* Set ``dockerUsername`` and ``dockerPassword`` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
 
 Configure the docker daemon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -236,7 +244,7 @@ Make sure the nfs client package is installed
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
-Create a file called *exports* that we will use for defining the NFS shares and put the following content into it (change the subnet if necessary):
+Create a file called *exports* in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
 
 .. code-block:: text
    :linenos:
@@ -510,6 +518,7 @@ Install the nfs-client-provisioner helm chart
 .. code-block:: bash
    :linenos:
 
+   kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
    helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
@@ -574,14 +583,17 @@ To build Tator you will need Helm 3 somewhere on your path.
 Update the configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of each field:
+The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of important fields:
 
 * `dockerRegistry` is the host and port of the cluster's local docker registry that was set up earlier in this tutorial.
+* `djangoSecretKey` is a required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
+* `postgresUsername` is an optional field that allows you to give your postgres db a user name (or if you are accessing an existing one, provide a user name)
+* `postgresPassword` is an optional field that allows you to set your postgres db password (or if you are accessing an existing one, provide a password)
 * `nfsServer` is the IP address of the host serving the NFS shares.
-* `loadBalancerIp` is the external IP address of the load balancer. This is where NGINX will receive requests.
+* `loadBalancerIp` is the external IP address of the load balancer. This is where NGINX will receive requests. TODO-DOC
 * `domain` is the domain name that was set up earlier in this tutorial.
 * `metallb.enabled` is a boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud providers as in these cases a load balancer implementation is provided.
-* `metallb.ipRangeStart` and `metallb.ipRangeStop` indicate the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of any DHCP servers on your network (such as a router).
+* `metallb.ipRangeStart` and `metallb.ipRangeStop` indicate the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of any DHCP servers on your network (such as a router). TODO-DOC
 * `redis.enabled` is a boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service, in which case this should be set to false.
 * Other redis settings should not be modified at this time.
 * `postgis.enabled` is a boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed postgresql service, in which case this should be set to false.
@@ -622,6 +634,7 @@ Building Tator
 
 * Install npm packages
 
+``sudo apt install npm``
 ``npm install``
 
 
@@ -642,6 +655,15 @@ It will take a little while for all the services, pods, and volumes to come up. 
 ``make collect-static``
 
 * Open the site. Open your browser and navigate to mydomain.duckdns.org (or whatever your domain is). If you get a login page, congrats! You have completed the Tator build process.
+
+If something goes wrong (and it probably will the first time), there are a few steps to clear away a broken/incomplete install and start over at make cluster:
+
+.. code-block:: bash
+
+   helm ls -a
+   helm delete tator
+   make clean
+
 
 Setting up a root user
 ^^^^^^^^^^^^^^^^^^^^^^
