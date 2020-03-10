@@ -641,7 +641,7 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   metallb.ipRangeStart
   metallb.ipRangeStop
     Indicates the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of
-    any DHCP servers on your network. Verify the selected `loadBalancerIp` falls into this range
+    any DHCP servers on your network. Verify the selected :term:`loadBalancerIp` falls into this range
 
   redis.enabled
      A boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service,
@@ -681,7 +681,7 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tator will be accessed via the `loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally,
+Tator will be accessed via the :term:`loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally,
 simply update your domain to point to this IP address. If you are setting up a website,
 you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
 
