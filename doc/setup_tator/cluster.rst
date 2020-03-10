@@ -681,8 +681,8 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tator will be accessed via the :term:`loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally,
-simply update your domain to point to this IP address. If you are setting up a website,
+Tator will be accessed via the :term:`loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally, update
+your domain to point to this IP address. If you are setting up a website,
 you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
 
 Building Tator
