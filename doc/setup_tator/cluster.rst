@@ -609,21 +609,74 @@ Update the configuration file
 
 The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of important fields:
 
-* `dockerRegistry` is the host and port of the cluster's local docker registry that was set up earlier in this tutorial.
-* `djangoSecretKey` is a required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
-* `postgresUsername` is an optional field that allows you to give your postgres db a user name (or if you are accessing an existing one, provide a user name)
-* `postgresPassword` is an optional field that allows you to set your postgres db password (or if you are accessing an existing one, provide a password)
-* `nfsServer` is the IP address of the host serving the NFS shares.
-* `loadBalancerIp` is the external IP address of the load balancer. This is where NGINX will receive requests. TODO-DOC
-* `domain` is the domain name that was set up earlier in this tutorial.
-* `metallb.enabled` is a boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud providers as in these cases a load balancer implementation is provided.
-* `metallb.ipRangeStart` and `metallb.ipRangeStop` indicate the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of any DHCP servers on your network (such as a router). TODO-DOC
-* `redis.enabled` is a boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service, in which case this should be set to false.
-* Other redis settings should not be modified at this time.
-* `postgis.enabled` is a boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed postgresql service, in which case this should be set to false.
-* `postgis.hostPath` specifies the host path for the postgres data directory. This should be a path to high speed storage (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes setup step via the dbServer node label.
-* `gunicornReplicas`, `transcoderReplicas`, and `algorithmReplicas` indicate the number of pod replicas for each of these services.
-* `pv` variables indicate the size of the persistent volumes corresponding to the NFS shares. These can be modified according to available space on your NFS shares.
+.. glossary::
+   
+  dockerRegistry
+    The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
+   
+  djangoSecretKey
+    A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
+   
+  postgresUsername
+    Field that allows you to give your postgres db a user name (or if you are accessing an existing db, make sure credentials match)
+ 
+  postgresPassword
+    Field that allows you to set your postgres db password (or if you are accessing an existing one, provide the password here)
+
+  nfsServer
+    The IP address of the host serving the NFS shares.
+
+  loadBalancerIp
+    The external IP address of the load balancer. This is where NGINX will receive requests. For single node deployments this
+    can be the same as the IP address of the node on the LAN (e.g. 192.168.1.100). It is ideal if this is a static IP address. This
+    ip address should be within the inclusive range of :term:`metallb.ipRangeStart` and :term:`metallb.ipRangeStop`.
+
+  domain
+    The domain name that was set up earlier in this tutorial. (e.g. mysite.duckdns.org)
+   
+  metallb.enabled
+    A boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud
+    providers as in these cases a load balancer implementation is provided.
+ 
+  metallb.ipRangeStart
+  metallb.ipRangeStop
+    Indicates the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of
+    any DHCP servers on your network. Verify the selected `loadBalancerIp` falls into this range
+
+  redis.enabled
+     A boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service,
+     in which case this should be set to false.
+     
+  postgis.enabled
+     A boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed
+     postgresql service, in which case this should be set to false.
+     
+  postgis.hostPath
+     Specifies the host path for the postgres data directory. This should be a path to high speed storage
+     (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes
+     setup step via the dbServer node label.
+  
+  gunicornReplicas
+  transcoderReplicas
+  algorithmReplicas
+     Indicates the number of pod replicas for each of these services.
+
+  pv.staticPath
+  pv.uploadPath
+  pv.mediaPath
+  pv.rawPath
+  pv.backupPath
+  pv.migrationsPath
+     Indicates the location of each persistent volume.
+     
+  pvc.staticSize
+  pvc.uploadSize
+  pvc.mediaSize
+  pvc.rawSize
+  pvc.backupSize
+  pvc.migrationsSize
+     Indicates the size of the persistent volumes corresponding to the NFS shares. These can be modified according to
+     available space on your NFS shares.
 
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
