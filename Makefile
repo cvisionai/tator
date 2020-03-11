@@ -414,6 +414,8 @@ build-search-indices:
 .PHONY: clean_js
 clean_js:
 	rm -rf .min_js
+
+.PHONY: images
 images:
 	make ${IMAGES}
 
