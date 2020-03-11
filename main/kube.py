@@ -193,6 +193,7 @@ class TatorTranscode(JobManagerMixin):
         self.unpack_task = {
             'name': 'unpack',
             'inputs': {'parameters' : spell_out_params(['original'])},
+            'outputs': {'parameters' : [{'name': 'work', 'valueFrom': {'path': '/work/work.json'}}]},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
@@ -381,16 +382,57 @@ class TatorTranscode(JobManagerMixin):
             args.append({'name': key, 'value': paths[key]})
         parameters = {"parameters" : args}
 
+        def make_item_arg(name):
+            return {'name': name,
+                    'value': f'{{{{item.{name}}}}}'}
+
+        def make_passthrough_arg(name):
+            return {'name': name,
+                    'value': f'{{{{inputs.parameters.{name}}}}}'}
+
+        item_parameters = {"parameters" :
+                           [make_item_arg(x) for x in ['original',
+                                                  'transcoded',
+                                                  'thumbnail',
+                                                  'thumbnail_gif',
+                                                  'segments']]
+                       }
+
+        passthrough_parameters = {"parameters" :
+                           [make_passthrough_arg(x) for x in ['original',
+                                                  'transcoded',
+                                                  'thumbnail',
+                                                  'thumbnail_gif',
+                                                  'segments']]
+                       }
+
+
+        logger.info(f"item_params = {item_parameters}")
         unpack_task = {
             'name': 'unpack-pipeline',
             'dag': {
                 'tasks' : [{'name': 'download-task',
                             'template': 'download',
                             'arguments': parameters},
-                        ]}
+                           {'name': 'unpack-task',
+                            'template': 'unpack',
+                            'arguments': parameters,
+                            'dependencies' : ['download-task']},
+                           # Loop over
+                           {'name': 'transcode-task',
+                            'template': 'transcode-pipeline',
+                            'arguments' : item_parameters,
+                            'withParam' : '{{tasks.unpack-task.outputs.parameters.work}}',
+                            'dependencies' : ['unpack-task']}
+                           ]}
         }
 
         transcode_task = self.get_transcode_dag(False)
+        transcode_task['inputs'] = passthrough_parameters
+
+        # pass through the arguments
+        for task in transcode_task['dag']['tasks']:
+            task['arguments'] = passthrough_parameters
 
         return [unpack_task, transcode_task]
 
@@ -527,6 +569,7 @@ class TatorTranscode(JobManagerMixin):
                     self.thumbnail_task,
                     self.segments_task,
                     self.upload_task,
+                    self.unpack_task,
                     *pipeline_tasks,
                     self.progress_task,
                     self.failure_handler,
