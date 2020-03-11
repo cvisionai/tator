@@ -10,9 +10,6 @@ spec:
       protocol: TCP
       targetPort: 8000
       name: gunicorn-port
-  env:
-    - name: DOCKER_REGISTRY
-      value: {{ .Values.dockerRegistry }}
   selector:
     app: gunicorn
     type: web
