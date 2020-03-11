@@ -10,6 +10,13 @@ GIT_VERSION=$(shell git rev-parse HEAD)
 
 DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["dockerRegistry"])')
 
+SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("systemImageRepo"))')
+
+# default to dockerhub cvisionai organization
+ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
+SYSTEM_IMAGE_REGISTRY=cvisionai
+endif
+
 POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresHost"])')
 POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresUsername"])')
 POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresPassword"])')
@@ -122,7 +129,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: main/version.py tator-image 
+cluster-upgrade: main/version.py images
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -151,12 +158,13 @@ containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dock
 	echo $@ $<
 	./externals/build_tools/makocc.py -o $@ $<
 
+
 tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-image
+	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online:$(GIT_VERSION))" tator-image
 
 PYTATOR_VERSION=$(shell cat scripts/packages/pytator/version)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
@@ -183,8 +191,8 @@ tus-image: containers/tus/Dockerfile.gen
 
 # Publish transcoder image to dockerhub so it can be used cross-cluster
 transcoder-image: containers/tator_transcoder/Dockerfile.gen
-	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION)
+	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' $(DOCKERHUB_USER)/tator_transcoder)" tator-transcoder
 

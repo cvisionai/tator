@@ -131,7 +131,7 @@ class TatorTranscode(JobManagerMixin):
         """
 
 
-        docker_registry = os.getenv('DOCKER_REGISTRY')
+        docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         transcoder_image = f"{docker_registry}/tator_transcoder:{Git.sha}"
         # Setup common pipeline steps
         # Define persistent volume claim.

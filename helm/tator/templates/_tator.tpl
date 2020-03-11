@@ -57,6 +57,8 @@ spec:
                   key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
+            - name: SYSTEM_IMAGES_REGISTRY
+              value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
