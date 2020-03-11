@@ -359,4 +359,4 @@ def clearStaleProgress(project, ptype):
     if ptype not in ['upload', 'algorithm', 'transcode']:
         print("Unknown progress type")
 
-    Redis(host='tator-redis-master').delete(f'{ptype}_latest_{project}')
+    Redis(host=os.getenv('REDIS_HOST')).delete(f'{ptype}_latest_{project}')
