@@ -484,7 +484,7 @@ Installing Argo
    :linenos:
 
    kubectl create namespace argo
-   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
+   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.4.3/manifests/install.yaml
 
 Installing Argo CLI
 ^^^^^^^^^^^^^^^^^^^
@@ -492,7 +492,7 @@ Installing Argo CLI
 .. code-block:: bash
    :linenos:
 
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.4.3/argo-linux-amd64
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.1/argo-linux-amd64
    sudo chmod +x /usr/local/bin/argo
 
 Setting up dynamic PV provisioner
