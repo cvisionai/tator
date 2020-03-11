@@ -183,8 +183,8 @@ tus-image: containers/tus/Dockerfile.gen
 
 # Publish transcoder image to dockerhub so it can be used cross-cluster
 transcoder-image: containers/tator_transcoder/Dockerfile.gen
-	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_transcoder:latest -f $< . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_transcoder:latest
+	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_transcoder:$(GIT_VERSION)
 	sleep 1
 	touch -d "$(shell docker inspect -f '{{ .Created }}' $(DOCKERHUB_USER)/tator_transcoder)" tator-transcoder
 
