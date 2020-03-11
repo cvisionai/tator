@@ -19,6 +19,11 @@ from .version import Git
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+def get_marshal_image_name():
+    """ Returns the location and version of the marshal image to use """
+    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+    return f"{registry}/tator_algo_marshal:{Git.sha}"
+
 class JobManagerMixin:
     """ Defines functions for job management.
     """
@@ -330,7 +335,7 @@ class TatorTranscode(JobManagerMixin):
         self.progress_task = {
             'name': 'progress',
             'container': {
-                'image': 'cvisionai/tator_algo_marshal:latest',
+                'image': get_marshal_image_name(),
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -699,7 +704,7 @@ class TatorAlgorithm(JobManagerMixin):
             failed_task = {
                 'name': 'tator-failed',
                 'container': {
-                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'image': get_marshal_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -728,7 +733,7 @@ class TatorAlgorithm(JobManagerMixin):
             succeeded_task = {
                 'name': 'tator-succeeded',
                 'container': {
-                    'image': 'cvisionai/tator_algo_marshal:latest',
+                    'image': get_marshal_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [

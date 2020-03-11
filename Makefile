@@ -172,10 +172,10 @@ containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
 	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
 marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t cvisionai/tator_algo_marshal:latest -f $< containers || exit 255
-	docker push cvisionai/tator_algo_marshal:latest
+	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) -f $< containers || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION)
 	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' cvisionai/tator_algo_marshal)" marshal-image
+	touch -d "$(shell docker inspect -f '{{ .Created }}' $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION))" marshal-image
 
 postgis-image:  containers/postgis/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
@@ -216,7 +216,7 @@ collect-static: min-css min-js
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/css/tator/tator.min.css
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- python3 manage.py collectstatic --noinput
 
-dev-push: main/version.py
+dev-push:
 	@scripts/dev-push.sh
 
 min-css:
