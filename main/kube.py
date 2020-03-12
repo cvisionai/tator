@@ -123,9 +123,7 @@ class TatorTranscode(JobManagerMixin):
                            project,
                            token,
                            url,
-                           name,
                            section,
-                           md5,
                            gid,
                            uid,
                            user):
@@ -159,6 +157,9 @@ class TatorTranscode(JobManagerMixin):
             return yaml_params
 
         # Define each task in the pipeline.
+
+        # Download task exports the human readable filename a
+        # workflow global to support the onExit handler
         self.download_task = {
             'name': 'download',
             'retryStrategy': {
@@ -170,7 +171,10 @@ class TatorTranscode(JobManagerMixin):
                     'maxDuration': "1m",
                 },
             },
-            'inputs': {'parameters' : spell_out_params(['original','url'])},
+            'inputs': {'parameters' : spell_out_params(['original','url', 'name'])},
+            'outputs': {'parameters' : [{'name': 'name',
+                                         'value': '{{inputs.parameters.name}}',
+                                         'globalName': 'upload_name'}]},
             'container': {
                 'image': 'byrnedo/alpine-curl:0.1.8',
                 'imagePullPolicy': 'IfNotPresent',
@@ -294,7 +298,9 @@ class TatorTranscode(JobManagerMixin):
                                                         'thumbnail',
                                                         'thumbnail_gif',
                                                         'segments',
-                                                        'entity_type'])},
+                                                        'entity_type',
+                                                        'name',
+                                                        'md5'])},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
@@ -314,9 +320,11 @@ class TatorTranscode(JobManagerMixin):
                     '--type', '{{inputs.parameters.entity_type}}',
                     '--gid', gid,
                     '--uid', uid,
+                    # TODO: If we made section a DAG argument, we could
+                    # conceviably import a tar across multiple sections
                     '--section', section,
-                    '--name', name,
-                    '--md5', md5,
+                    '--name', '{{inputs.parameters.name}}',
+                    '--md5', '{{inputs.parameters.md5}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -350,7 +358,8 @@ class TatorTranscode(JobManagerMixin):
                     '--state', 'failed',
                     '--message', 'Transcode failed!',
                     '--progress', '0',
-                    '--name', name,
+                    # Pull the name from the upload parameter
+                    '--name', '{{workflow.outputs.parameters.upload_name}}',
                     '--section', section,
                 ],
                 'workingDir': '/',
@@ -488,12 +497,12 @@ class TatorTranscode(JobManagerMixin):
             }
 
         return pipeline_task
-    def get_transcode_task(self, paths, url):
+    def get_transcode_task(self, item, url):
         """ Generate a task object describing the dependencies of a transcode """
         # Generate an args structure for the DAG
         args = [{'name': 'url', 'value': url}]
-        for key in paths:
-            args.append({'name': key, 'value': paths[key]})
+        for key in item:
+            args.append({'name': key, 'value': item[key]})
         parameters = {"parameters" : args}
         pipeline = self.get_transcode_dag()
         for task in pipeline['dag']['tasks']:
@@ -532,15 +541,13 @@ class TatorTranscode(JobManagerMixin):
         self.setup_common_steps(project,
                                 token,
                                 url,
-                                name,
                                 section,
-                                md5,
                                 gid,
                                 uid,
                                 user)
 
-        paths = {'original': '/work/' + name}
-        pipeline_tasks = self.get_unpack_and_transcode_tasks(paths, url)
+        args = {'original': '/work/' + name, 'name': name}
+        pipeline_tasks = self.get_unpack_and_transcode_tasks(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -598,15 +605,15 @@ class TatorTranscode(JobManagerMixin):
             'thumbnail': '/work/' + base + '_thumbnail.jpg',
             'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
             'segments': '/work/' + base + '_segments.json',
-            'entity_type': str(entity_type)
+            'entity_type': str(entity_type),
+            'md5' : md5,
+            'name': name
         }
 
         self.setup_common_steps(project,
                                 token,
                                 url,
-                                name,
                                 section,
-                                md5,
                                 gid,
                                 uid,
                                 user)
