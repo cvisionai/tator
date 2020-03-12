@@ -12,6 +12,9 @@ if __name__=="__main__":
     # This actually gets images + videos
     videos = []
     images = []
+    state_files = []
+    localization_files = []
+
     for root, dirs, files in os.walk(args.directory):
         for fp in files:
             path = os.path.join(root,fp)
@@ -44,11 +47,11 @@ if __name__=="__main__":
             except:
                 pass
 
+    md5_lookup={}
+
     def make_workflow_video(video):
         # Calculate md5
-        with open(video,'rb') as fp:
-            data = fp.read()
-            md5 = hashlib.md5(data).hexdigest()
+        md5 = md5_lookup[video]
 
         base = os.path.splitext(video)[0]
         # This is the arguments for each iteration of the transcode DAG
@@ -64,6 +67,39 @@ if __name__=="__main__":
         }
         return paths
 
+    def states_for_media(media):
+        base = os.path.splitext(media)[0]
+        l = []
+        for root, dirs, files in os.walk(os.path.join(args.directory,
+                                                      base,
+                                                      "states")):
+            for fp in files:
+                if os.path.splitext(fp)[-1].lower() == ".csv":
+                    state_files.append({"md5": md5_lookup[media],
+                                        "input_file": fp})
+        return l
+
+    def localizations_for_media(media):
+        base = os.path.splitext(media)[0]
+        l=[]
+        for root, dirs, files in os.walk(os.path.join(args.directory,
+                                                      base,
+                                                      "localizations")):
+            for fp in files:
+                if os.path.splitext(fp)[-1].lower() == ".csv":
+                    l.append({"md5": md5_lookup[media],
+                              "file": fp})
+        return l
+
+
+    # Pre-calculate hash of videos + images
+    for media in [*videos, *images]:
+        with open(media,'rb') as fp:
+            data = fp.read()
+            md5_lookup[media] = hashlib.md5(data).hexdigest()
+            state_files.extend(states_for_media(media))
+            localization_files.extend(localizations_for_media(media))
+
     with open(os.path.join(args.directory, "videos.json"), 'w') as work_file:
         work=[make_workflow_video(video) for video in videos]
         json.dump(work, work_file)
@@ -73,9 +109,7 @@ if __name__=="__main__":
         json.dump(work, work_file)
 
     with open(os.path.join(args.directory, "localizations.json"), 'w') as work_file:
-        work=[]
-        json.dump(work, work_file)
+        json.dump(localization_files, work_file)
 
     with open(os.path.join(args.directory, "states.json"), 'w') as work_file:
-        work=[]
-        json.dump(work, work_file)
+        json.dump(state_files, work_file)
