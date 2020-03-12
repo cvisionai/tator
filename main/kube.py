@@ -121,7 +121,6 @@ class TatorTranscode(JobManagerMixin):
 
     def setup_common_steps(self,
                            project,
-                           entity_type,
                            token,
                            url,
                            name,
@@ -294,7 +293,8 @@ class TatorTranscode(JobManagerMixin):
                                                         'transcoded',
                                                         'thumbnail',
                                                         'thumbnail_gif',
-                                                        'segments'])},
+                                                        'segments',
+                                                        'entity_type'])},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
@@ -311,7 +311,7 @@ class TatorTranscode(JobManagerMixin):
                     '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
                     '--token', str(token),
                     '--project', str(project),
-                    '--type', str(entity_type),
+                    '--type', '{{inputs.parameters.entity_type}}',
                     '--gid', gid,
                     '--uid', uid,
                     '--section', section,
@@ -392,18 +392,20 @@ class TatorTranscode(JobManagerMixin):
 
         item_parameters = {"parameters" :
                            [make_item_arg(x) for x in ['original',
-                                                  'transcoded',
-                                                  'thumbnail',
-                                                  'thumbnail_gif',
-                                                  'segments']]
+                                                       'transcoded',
+                                                       'thumbnail',
+                                                       'thumbnail_gif',
+                                                       'segments',
+                                                       'entity_type']]
                        }
 
         passthrough_parameters = {"parameters" :
                            [make_passthrough_arg(x) for x in ['original',
-                                                  'transcoded',
-                                                  'thumbnail',
-                                                  'thumbnail_gif',
-                                                  'segments']]
+                                                              'transcoded',
+                                                              'thumbnail',
+                                                              'thumbnail_gif',
+                                                              'segments',
+                                                              'entity_type']]
                        }
 
 
@@ -528,7 +530,6 @@ class TatorTranscode(JobManagerMixin):
             raise Exception("entity type is not -1!")
 
         self.setup_common_steps(project,
-                                entity_type,
                                 token,
                                 url,
                                 name,
@@ -591,16 +592,16 @@ class TatorTranscode(JobManagerMixin):
         """
         # Define paths for transcode outputs.
         base, _ = os.path.splitext(name)
-        paths = {
+        args = {
             'original': '/work/' + name,
             'transcoded': '/work/' + base + '_transcoded.mp4',
             'thumbnail': '/work/' + base + '_thumbnail.jpg',
             'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
             'segments': '/work/' + base + '_segments.json',
+            'entity_type': str(entity_type)
         }
 
         self.setup_common_steps(project,
-                                entity_type,
                                 token,
                                 url,
                                 name,
@@ -610,7 +611,7 @@ class TatorTranscode(JobManagerMixin):
                                 uid,
                                 user)
 
-        pipeline_task = self.get_transcode_task(paths, url)
+        pipeline_task = self.get_transcode_task(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
