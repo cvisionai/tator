@@ -71,7 +71,8 @@ RUN pip3 --no-cache-dir install wheel
 RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0
 
 # Copy over scripts
-COPY scripts /scripts
+COPY scripts/transcoder /scripts
+COPY scripts/packages /scripts/packages
 
 # Build pytator
 WORKDIR /scripts/packages/pytator
