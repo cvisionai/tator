@@ -7,7 +7,6 @@ import hashlib
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("directory")
-    parser.add_argument("work_output")
     args = parser.parse_args()
 
     # This actually gets images + videos
@@ -65,6 +64,18 @@ if __name__=="__main__":
         }
         return paths
 
-    with open(args.work_output, 'w') as output_file:
-        args=[make_workflow_video(video) for video in videos]
-        json.dump(args, output_file)
+    with open(os.path.join(args.directory, "videos.json"), 'w') as work_file:
+        work=[make_workflow_video(video) for video in videos]
+        json.dump(work, work_file)
+
+    with open(os.path.join(args.directory, "images.json"), 'w') as work_file:
+        work=[]
+        json.dump(work, work_file)
+
+    with open(os.path.join(args.directory, "localizations.json"), 'w') as work_file:
+        work=[]
+        json.dump(work, work_file)
+
+    with open(os.path.join(args.directory, "states.json"), 'w') as work_file:
+        work=[]
+        json.dump(work, work_file)

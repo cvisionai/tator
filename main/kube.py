@@ -196,7 +196,7 @@ class TatorTranscode(JobManagerMixin):
         self.unpack_task = {
             'name': 'unpack',
             'inputs': {'parameters' : spell_out_params(['original'])},
-            'outputs': {'parameters' : [{'name': 'work', 'valueFrom': {'path': '/work/work.json'}}]},
+            'outputs': {'parameters' : [{'name': 'videos', 'valueFrom': {'path': '/work/videos.json'}}]},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
@@ -431,7 +431,7 @@ class TatorTranscode(JobManagerMixin):
                            {'name': 'transcode-task',
                             'template': 'transcode-pipeline',
                             'arguments' : item_parameters,
-                            'withParam' : '{{tasks.unpack-task.outputs.parameters.work}}',
+                            'withParam' : '{{tasks.unpack-task.outputs.parameters.videos}}',
                             'dependencies' : ['unpack-task']}
                            ]}
         }

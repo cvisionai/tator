@@ -8,4 +8,4 @@ fi
 
 rm -f $1
 
-python3 makeWorkList.py $2 $2/work.json
+python3 makeWorkList.py $2
