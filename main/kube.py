@@ -193,15 +193,53 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+
+        # Unpacks a tarball and sets up the work products for follow up
+        # dags or steps
         self.unpack_task = {
             'name': 'unpack',
             'inputs': {'parameters' : spell_out_params(['original'])},
-            'outputs': {'parameters' : [{'name': 'videos', 'valueFrom': {'path': '/work/videos.json'}}]},
+            'outputs': {'parameters' : [{'name': 'videos',
+                                         'valueFrom': {'path': '/work/videos.json'}},
+                                        {'name': 'images',
+                                         'valueFrom': {'path': '/work/images.json'}},
+                                        {'name': 'localizations',
+                                         'valueFrom': {'path': '/work/localizations.json'}},
+                                        {'name': 'states',
+                                         'valueFrom': {'path': '/work/states.json'}},
+            ]},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '512Mi',
+                        'cpu': '1000m',
+                    },
+                },
+            },
+        }
+
+        self.state_import = {
+            'name': 'state-import',
+            'inputs': {'parameters' : spell_out_params(['md5', 'file'])},
+            'container': {
+                'image': transcoder_image,
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': ['importDataFromCsv.py',
+                         '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
+                         '--token', str(token),
+                         '--project', str(project),
+                         '--mode', 'state',
+                         '--media-md5', '{{inputs.parameters.md5}}',
+                         '{{inputs.parameters.file}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
@@ -407,13 +445,9 @@ class TatorTranscode(JobManagerMixin):
                     'entity_type',
                     'name',
                     'md5']
-        item_parameters = {"parameters" :
-                           [make_item_arg(x) for x in all_args]
-                       }
-
-        passthrough_parameters = {"parameters" :
-                           [make_passthrough_arg(x) for x in all_args]
-                       }
+        item_parameters = {"parameters" : [make_item_arg(x) for x in all_args]}
+        state_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
+        passthrough_parameters = {"parameters" : [make_passthrough_arg(x) for x in all_args]}
 
 
         logger.info(f"item_params = {item_parameters}")
@@ -432,8 +466,15 @@ class TatorTranscode(JobManagerMixin):
                             'template': 'transcode-pipeline',
                             'arguments' : item_parameters,
                             'withParam' : '{{tasks.unpack-task.outputs.parameters.videos}}',
-                            'dependencies' : ['unpack-task']}
-                           ]}
+                            'dependencies' : ['unpack-task']},
+                           {'name': 'state-import-task',
+                            'template': 'state-import',
+                            'arguments' : state_import_parameters,
+                            'dependencies' : ['transcode-task'],
+                            'withParam': '{{tasks.unpack-task.outputs.parameters.states}}'}
+                           ]
+
+            } # end of dag
         }
 
         transcode_task = self.get_transcode_dag(False)
@@ -579,6 +620,7 @@ class TatorTranscode(JobManagerMixin):
                     *pipeline_tasks,
                     self.progress_task,
                     self.failure_handler,
+                    self.state_import
                 ],
             },
         }
