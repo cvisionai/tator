@@ -399,22 +399,20 @@ class TatorTranscode(JobManagerMixin):
             return {'name': name,
                     'value': f'{{{{inputs.parameters.{name}}}}}'}
 
+        all_args = ['original',
+                    'transcoded',
+                    'thumbnail',
+                    'thumbnail_gif',
+                    'segments',
+                    'entity_type',
+                    'name',
+                    'md5']
         item_parameters = {"parameters" :
-                           [make_item_arg(x) for x in ['original',
-                                                       'transcoded',
-                                                       'thumbnail',
-                                                       'thumbnail_gif',
-                                                       'segments',
-                                                       'entity_type']]
+                           [make_item_arg(x) for x in all_args]
                        }
 
         passthrough_parameters = {"parameters" :
-                           [make_passthrough_arg(x) for x in ['original',
-                                                              'transcoded',
-                                                              'thumbnail',
-                                                              'thumbnail_gif',
-                                                              'segments',
-                                                              'entity_type']]
+                           [make_passthrough_arg(x) for x in all_args]
                        }
 
 
