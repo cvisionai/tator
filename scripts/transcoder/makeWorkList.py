@@ -76,7 +76,7 @@ if __name__=="__main__":
             for fp in files:
                 if os.path.splitext(fp)[-1].lower() == ".csv":
                     state_files.append({"md5": md5_lookup[media],
-                                        "input_file": fp})
+                                        "file": fp})
         return l
 
     def localizations_for_media(media):
