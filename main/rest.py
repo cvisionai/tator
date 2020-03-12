@@ -2890,7 +2890,7 @@ class SaveVideoAPI(APIView):
         coreapi.Field(name='type',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType (-1 means auto, first for project)')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
@@ -3036,7 +3036,18 @@ class SaveVideoAPI(APIView):
                 {'section': section},
             )
 
-            media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
+            # If entity_type is -1, figure it out on the server
+            # Use the first video type available
+            if int(entity_type) == -1:
+                media_types = EntityTypeMediaVideo.objects.filter(
+                    project=project)
+                if media_types.count() > 0:
+                    media_type = media_types[0]
+                    entity_type = media_type.pk
+                else:
+                    raise Exception('No Video types for project')
+            else:
+                media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
@@ -3140,6 +3151,7 @@ class SaveVideoAPI(APIView):
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
