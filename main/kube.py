@@ -381,6 +381,7 @@ class TatorTranscode(JobManagerMixin):
         # Define task to send progress message in case of failure.
         self.progress_task = {
             'name': 'progress',
+            'inputs': {'parameters' : spell_out_params(['state','message', 'progress'])},
             'container': {
                 'image': get_marshal_image_name(),
                 'imagePullPolicy': 'IfNotPresent',
@@ -393,9 +394,9 @@ class TatorTranscode(JobManagerMixin):
                     '--job_type', 'upload',
                     '--gid', gid,
                     '--uid', uid,
-                    '--state', 'failed',
-                    '--message', 'Transcode failed!',
-                    '--progress', '0',
+                    '--state', '{{inputs.parameters.state}}',
+                    '--message', '{{inputs.parameters.message}}',
+                    '--progress', '{{inputs.parameters.progress}}',
                     # Pull the name from the upload parameter
                     '--name', '{{workflow.outputs.parameters.upload_name}}',
                     '--section', section,
@@ -410,14 +411,35 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        # Define a failure handler.
-        self.failure_handler = {
-            'name': 'failure-handler',
-            'steps': [[{
-                'name': 'send-fail',
-                'template': 'progress',
-                'when': '{{workflow.status}} != Succeeded',
-            }]],
+        # Define a exit handler.
+        self.exit_handler = {
+            'name': 'exit-handler',
+            'steps': [[
+                {
+                    'name': 'send-fail',
+                    'template': 'progress',
+                    'when': '{{workflow.status}} != Succeeded',
+                    'arguments' : {'parameters':
+                                   [
+                                       {'name': 'state', 'value': 'failed'},
+                                       {'name': 'message', 'value': 'Media Import Failed'},
+                                       {'name': 'progress', 'value': '0'},
+                                   ]
+                    }
+                },
+                {
+                    'name': 'send-success',
+                    'template': 'progress',
+                    'when': '{{workflow.status}} == Succeeded',
+                    'arguments' : {'parameters':
+                                   [
+                                       {'name': 'state', 'value': 'finished'},
+                                       {'name': 'message', 'value': 'Media Import Complete'},
+                                       {'name': 'progress', 'value': '100'},
+                                   ]
+                    }
+                }
+            ]],
         }
 
     def get_unpack_and_transcode_tasks(self, paths, url):
@@ -607,7 +629,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'unpack-pipeline',
-                'onExit': 'failure-handler',
+                'onExit': 'exit-handler',
                 'ttlSecondsAfterFinished': 300,
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
@@ -619,7 +641,7 @@ class TatorTranscode(JobManagerMixin):
                     self.unpack_task,
                     *pipeline_tasks,
                     self.progress_task,
-                    self.failure_handler,
+                    self.exit_handler,
                     self.state_import
                 ],
             },
@@ -678,7 +700,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'transcode-pipeline',
-                'onExit': 'failure-handler',
+                'onExit': 'exit-handler',
                 'ttlSecondsAfterFinished': 300,
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
@@ -689,7 +711,7 @@ class TatorTranscode(JobManagerMixin):
                     self.upload_task,
                     pipeline_task,
                     self.progress_task,
-                    self.failure_handler,
+                    self.exit_handler,
                 ],
             },
         }
