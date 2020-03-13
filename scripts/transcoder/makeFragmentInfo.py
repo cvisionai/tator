@@ -13,12 +13,22 @@ if __name__=="__main__":
     parser.add_argument("-o", "--output");
     args=parser.parse_args()
 
-    cmd=f"mp4dump --format json {args.input}"
-    proc=subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    cmd=["mp4dump",
+         "--format",
+         "json",
+         args.input]
+    proc=subprocess.Popen(cmd, stdout=subprocess.PIPE)
     mp4_data,error=proc.communicate()
 
-    cmd=f"ffprobe -v error -show_entries stream -print_format json {args.input}"
-    proc=subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    cmd=["ffprobe",
+         "-v",
+         "error",
+         "-show_entries",
+         "stream",
+         "-print_format",
+         "json",
+         args.input]
+    proc=subprocess.Popen(cmd, stdout=subprocess.PIPE)
     ffprobe_output,error=proc.communicate()
 
     ffprobe_data=json.loads(ffprobe_output)
