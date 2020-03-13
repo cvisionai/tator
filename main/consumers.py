@@ -99,10 +99,10 @@ class ProgressProducer:
         self.rds.hset(self.gid + ':started', self.uid, self.uid)
         self._summary()
 
-    def progress(self, msg, progress):
+    def progress(self, msg, progress, aux=None):
         """Broadcast a progress message.
         """
-        self._broadcast('started', msg, progress)
+        self._broadcast('started', msg, progress,aux)
 
     def failed(self, msg):
         """Broadcast a failure message.

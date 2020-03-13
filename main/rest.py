@@ -3143,7 +3143,9 @@ class SaveVideoAPI(APIView):
                 "name": media_obj.name,
                 "section": section,
             }
-            prog.finished("Uploaded successfully!", {**info})
+
+            # Send progress as finalized or complete based on REST parameter
+            prog.progress("File Import Success", 75, {**info})
 
             response = Response({'message': "Video saved successfully!"},
                                 status=status.HTTP_201_CREATED)
