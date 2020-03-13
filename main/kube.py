@@ -175,7 +175,7 @@ class TatorTranscode(JobManagerMixin):
                                          'value': '{{inputs.parameters.name}}',
                                          'globalName': 'upload_name'}]},
             'container': {
-                'image': 'byrnedo/alpine-curl:0.1.8',
+                'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-o', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
