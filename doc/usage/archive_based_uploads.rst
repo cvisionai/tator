@@ -9,7 +9,7 @@ Example archive
 ^^^^^^^^^^^^^^^
 
 .. code-block:: text
-     :caption: Archive format example
+     :caption: Archive format example (sample.zip)
      :name: sample.zip
 
      .
@@ -26,7 +26,7 @@ Example archive
      │       └── 5.csv
      └── video_2.mov
 
-The `sample.zip` contains 2 media *video_1.mp4* and *video_2.mp4*. The first
+The `sample.zip` contains 2 media *video_1.mp4* and *video_2.mov*. The first
 file imports 1 set of localizations (typeid=3) and 2 sets of state metadata
 (typeid=4 and typeid=5). The format of the the CSVs are dependent on their
 type and required fields.
@@ -38,8 +38,7 @@ Given a typeid, one should visit the `/rest/EntityTypeSchema/<typeid>` URL to
 verify the required fields for input. An example return is:
 
 .. code-block:: json
-   :caption: Example type schema from server
-   :name: /rest/EntityTypeSchema/<typeid>
+   :caption: Example type schema from server (JSON)
    :linenos:
    :emphasize-lines: 5-9
 
@@ -63,8 +62,9 @@ verify the required fields for input. An example return is:
 
    Absolute pixel coordinates are used for size coordinates.
 
-.. code-block:: csv
+.. code-block:: text
    :linenos:
+   :caption: CSV Sample
 
       frame,x,y,width,height,Name
       30,400,20,40,40,Street Sign
@@ -77,10 +77,9 @@ Given a typeid, one should visit the `/rest/EntityTypeSchema/<typeid>` URL to
 verify the required fields for input. An example return is:
 
 .. code-block:: json
-   :caption: Example type schema from server
-   :name: /rest/EntityTypeSchema/<typeid>
+   :caption: Example type schema from server (JSON)
    :linenos:
-   :emphasize-lines: 5-9
+   :emphasize-lines: 5
 
         {
         "name": "StateName",
@@ -94,17 +93,17 @@ verify the required fields for input. An example return is:
 
    If `StateName` relates to a specific frame, then `frame` is a required column.
 
-.. code-block:: csv
+.. code-block:: text
    :linenos:
-   :caption: Example of a framed state
+   :caption: Example of a framed state (CSV)
 
       frame,Name
       30,Street Sign
 
 
-.. code-block:: csv
+.. code-block:: text
    :linenos:
-   :caption: Example of media-level state
+   :caption: Example of media-level state (CSV)
 
       Name
       Street Sign
@@ -124,7 +123,7 @@ Uploading via pytator
 *********************
 
 A special media type of `-1` is used to indicate archive on upload. This can
-be used as the `typeId` parameter of :ref:`pytator.api.media.uploadFile`
+be used as the `typeId` parameter of :meth:`pytator.api.Media.uploadFile`
 
 .. code-block:: python
    :linenos:
