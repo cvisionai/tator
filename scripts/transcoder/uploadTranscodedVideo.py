@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--section', type=str, help='Media section name.')
     parser.add_argument('--name', type=str, help='Name of the file.')
     parser.add_argument('--md5', type=str, help='MD5 sum of the media file.')
+    parser.add_argument('--progressName', type=str, help='Name to use for progress update')
     return parser.parse_args()
 
 def upload_file(path, tus_url):
@@ -74,6 +75,11 @@ def get_metadata(path):
 
 if __name__ == '__main__':
     args = parse_args()
+
+    if args.progressName is None:
+        progress_name = args.name
+    else:
+        progress_name = args.progressName
 
     # Upload files
     if args.original_url is None or args.original_url == "None":
@@ -121,6 +127,7 @@ if __name__ == '__main__':
             'codec': codec,
             'width': width,
             'height': height,
+            'progressName': progress_name
         },
     )
     out.raise_for_status()

@@ -2951,6 +2951,11 @@ class SaveVideoAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='Pixel height of the video')),
+        coreapi.Field(name='progressName',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Name to use for progress update.')),
+
     ])
     permission_classes = [ProjectTransferPermission]
 
@@ -2975,6 +2980,7 @@ class SaveVideoAPI(APIView):
             width = request.data.get('width', None)
             height = request.data.get('height', None)
             project = kwargs['project']
+            progress_name = request.data.get('progressName', name)
 
             ## Check for required fields first
             if entity_type is None:
@@ -3140,12 +3146,15 @@ class SaveVideoAPI(APIView):
                 "url": media_obj.file.url,
                 "thumb_url": media_obj.thumbnail.url,
                 "thumb_gif_url": media_obj.thumbnail_gif.url,
-                "name": media_obj.name,
+                "name": progress_name,
                 "section": section,
             }
 
+            if progress_name != name:
+                del info["id"]
+
             # Send progress as finalized or complete based on REST parameter
-            prog.progress("File Import Success", 75, {**info})
+            prog.progress(f"Imported {name}", 75, {**info})
 
             response = Response({'message': "Video saved successfully!"},
                                 status=status.HTTP_201_CREATED)

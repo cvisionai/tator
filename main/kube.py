@@ -363,6 +363,7 @@ class TatorTranscode(JobManagerMixin):
                     '--section', section,
                     '--name', '{{inputs.parameters.name}}',
                     '--md5', '{{inputs.parameters.md5}}',
+                    '--progressName', '{{workflow.outputs.parameters.upload_name}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
