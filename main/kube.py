@@ -122,7 +122,6 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self,
                            project,
                            token,
-                           url,
                            section,
                            gid,
                            uid,
@@ -331,7 +330,8 @@ class TatorTranscode(JobManagerMixin):
         }
         self.upload_task = {
             'name': 'upload',
-            'inputs': {'parameters' : spell_out_params(['original',
+            'inputs': {'parameters' : spell_out_params(['url',
+                                                        'original',
                                                         'transcoded',
                                                         'thumbnail',
                                                         'thumbnail_gif',
@@ -346,7 +346,7 @@ class TatorTranscode(JobManagerMixin):
                 'args': [
                     'uploadTranscodedVideo.py',
                     '--original_path', '{{inputs.parameters.original}}',
-                    '--original_url', url,
+                    '--original_url', '{{inputs.parameters.url}}',
                     '--transcoded_path', '{{inputs.parameters.transcoded}}',
                     '--thumbnail_path', '{{inputs.parameters.thumbnail}}',
                     '--thumbnail_gif_path', '{{inputs.parameters.thumbnail_gif}}',
@@ -437,7 +437,8 @@ class TatorTranscode(JobManagerMixin):
             return {'name': name,
                     'value': f'{{{{inputs.parameters.{name}}}}}'}
 
-        all_args = ['original',
+        all_args = ['url',
+                    'original',
                     'transcoded',
                     'thumbnail',
                     'thumbnail_gif',
@@ -579,7 +580,6 @@ class TatorTranscode(JobManagerMixin):
 
         self.setup_common_steps(project,
                                 token,
-                                url,
                                 section,
                                 gid,
                                 uid,
@@ -652,7 +652,6 @@ class TatorTranscode(JobManagerMixin):
 
         self.setup_common_steps(project,
                                 token,
-                                url,
                                 section,
                                 gid,
                                 uid,

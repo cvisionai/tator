@@ -56,6 +56,7 @@ if __name__=="__main__":
         base = os.path.splitext(video)[0]
         # This is the arguments for each iteration of the transcode DAG
         paths = {
+            'url': 'None',
             'original': video,
             'transcoded': base + '_transcoded.mp4',
             'thumbnail': base + '_thumbnail.jpg',
