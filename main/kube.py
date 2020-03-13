@@ -243,9 +243,9 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        self.state_import = {
-            'name': 'state-import',
-            'inputs': {'parameters' : spell_out_params(['md5', 'file'])},
+        self.data_import = {
+            'name': 'data-import',
+            'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
             'container': {
                 'image': transcoder_image,
                 'imagePullPolicy': 'IfNotPresent',
@@ -254,7 +254,7 @@ class TatorTranscode(JobManagerMixin):
                          '--url', f'https://{os.getenv("MAIN_HOST")}/rest',
                          '--token', str(token),
                          '--project', str(project),
-                         '--mode', 'state',
+                         '--mode', '{{inputs.parameters.mode}}',
                          '--media-md5', '{{inputs.parameters.md5}}',
                          '{{inputs.parameters.file}}'],
                 'volumeMounts': [{
@@ -489,8 +489,11 @@ class TatorTranscode(JobManagerMixin):
                     'md5']
         item_parameters = {"parameters" : [make_item_arg(x) for x in all_args]}
         state_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
+        localization_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
         passthrough_parameters = {"parameters" : [make_passthrough_arg(x) for x in all_args]}
 
+        state_import_parameters["parameters"].append({"name": "mode", "value": "state"})
+        localization_import_parameters["parameters"].append({"name": "mode", "value": "localizations"})
 
         logger.info(f"item_params = {item_parameters}")
         unpack_task = {
@@ -516,10 +519,15 @@ class TatorTranscode(JobManagerMixin):
                             'withParam' : '{{tasks.unpack-task.outputs.parameters.videos}}',
                             'dependencies' : ['unpack-task']},
                            {'name': 'state-import-task',
-                            'template': 'state-import',
+                            'template': 'data-import',
                             'arguments' : state_import_parameters,
                             'dependencies' : ['transcode-task'],
-                            'withParam': '{{tasks.unpack-task.outputs.parameters.states}}'}
+                            'withParam': '{{tasks.unpack-task.outputs.parameters.states}}'},
+                           {'name': 'localization-import-task',
+                            'template': 'data-import',
+                            'arguments' : localization_import_parameters,
+                            'dependencies' : ['transcode-task'],
+                            'withParam': '{{tasks.unpack-task.outputs.parameters.localizations}}'}
                            ]
 
             } # end of dag
@@ -668,7 +676,7 @@ class TatorTranscode(JobManagerMixin):
                     *pipeline_tasks,
                     self.progress_task,
                     self.exit_handler,
-                    self.state_import
+                    self.data_import
                 ],
             },
         }

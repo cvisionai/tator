@@ -4,8 +4,11 @@ import copy
 import pandas as pd
 import pytator
 
+import math
 import os
 import sys
+import time
+import traceback
 
 def make_default_object(type_definition):
     default={"type": type_definition["type"]["id"]}
@@ -13,6 +16,23 @@ def make_default_object(type_definition):
         if column['default']:
             default[column['name']] = column['default']
     return default
+
+def formatLocalization(row, media, default_object):
+    """ Given a localization row format it for uploading to the tator system """
+    new_obj = copy.copy(default_object)
+    new_obj.update(row.to_dict())
+    new_obj["media_id"] = media["id"]
+
+    # Normalize coordinates
+    for width_comp in ['x', 'width', 'x0', 'x1']:
+        if width_comp in new_obj:
+            new_obj[width_comp] /= media["width"]
+
+    for height_comp in ['y', 'height', 'y0', 'y1']:
+        if height_comp in new_obj:
+            new_obj[height_comp] /= media["height"]
+    print(new_obj)
+    return new_obj
 
 def uploadStateData(row, media, endpoint, default_object):
     new_obj = copy.copy(default_object)
@@ -44,7 +64,7 @@ if __name__=="__main__":
         print(f"Got {matching_media_elements} for {args.media_md5}")
         sys.exit(-1)
 
-    media_element = matching_media_elements[0]
+    media_element = tator.Media.get(matching_media_elements[0]["id"])
 
     if args.mode == "state":
         type_endpoint = tator.StateType
@@ -63,12 +83,27 @@ if __name__=="__main__":
 
     default_object = make_default_object(type_description)
 
+    data_df = pd.read_csv(args.data_csv)
     if args.mode == "state":
-        data_df = pd.read_csv(args.data_csv)
         data_df.apply(uploadStateData, axis=1, args=(media_element, endpoint, default_object))
     else:
-        print("Localizations not supported yet")
-    
+        localizations_df = data_df.apply(formatLocalization, axis=1, args=(media_element, default_object))
+        localizations = list(localizations_df)
+
+        # Upload in batches no larger than 25
+        upload_count = 0
+        upload_batch = 25
+        batch_count = math.ceil(len(localizations) / 25)
+        for idx in range(batch_count):
+            start_idx = 0+(idx*upload_batch)
+            current_batch=list(localizations[start_idx:start_idx+upload_batch])
+            try:
+                before=time.time()
+                tator.Localization.addMany(current_batch)
+                after=time.time()
+                print(f"Duration={(after-before)*1000}ms")
+            except:
+                traceback.print_exc(file=sys.stdout)
 
     
     
