@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--section', type=str, help='Media section name.')
     parser.add_argument('--name', type=str, help='Name of the file.')
     parser.add_argument('--md5', type=str, help='MD5 sum of the media file.')
+    parser.add_argument('--progressName', type=str, help='Name to use for progress update')
     return parser.parse_args()
 
 def upload_file(path, tus_url):
@@ -53,7 +54,7 @@ def get_metadata(path):
         "{}".format(path)
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
-    
+
     logger.info("Got info = {}".format(output))
     video_info = json.loads(output)
     stream = video_info["streams"][0]
@@ -75,13 +76,20 @@ def get_metadata(path):
 if __name__ == '__main__':
     args = parse_args()
 
-    # Upload files
-    if args.original_url is not None:
-        logger.info("Skipping original file upload...")
-        original_url = args.original_url
+    if args.progressName is None:
+        progress_name = args.name
     else:
+        progress_name = args.progressName
+
+    # Upload files
+    if args.original_url is None or args.original_url == "None":
         logger.info("Uploading original file...")
         original_url = upload_file(args.original_path, args.tus_url)
+    else:
+        logger.info("Skipping original file upload...")
+        original_url = args.original_url
+
+
     logger.info("Uploading transcoded file...")
     transcoded_url = upload_file(args.transcoded_path, args.tus_url)
     logger.info("Uploading thumbnail...")
@@ -90,7 +98,7 @@ if __name__ == '__main__':
     thumbnail_gif_url = upload_file(args.thumbnail_gif_path, args.tus_url)
     logger.info("Uploading segments file...")
     segments_url = upload_file(args.segments_path, args.tus_url)
-    
+
     # Get metadata for the original file
     codec, fps, num_frames, width, height = get_metadata(args.original_path)
 
@@ -119,6 +127,7 @@ if __name__ == '__main__':
             'codec': codec,
             'width': width,
             'height': height,
+            'progressName': progress_name
         },
     )
     out.raise_for_status()

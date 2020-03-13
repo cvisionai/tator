@@ -8,7 +8,7 @@ class UploadElement extends TatorElement {
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
   }
-      
+
   static get observedAttributes() {
     return ["project-id", "username", "token"];
   }
@@ -61,9 +61,14 @@ class UploadElement extends TatorElement {
   }
 
   _checkFile(file, gid) {
-    let ext = file.name.split(".").pop();
+    // File extension can have multiple components in archives
+    let comps = file.name.split(".");
+    comps.shift() // Remove filename proper
+    let ext = comps.join('.'); // rejoin extension
+
     const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif)$/i);
     const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov)$/i);
+    const isArchive = ext.match(/^(zip|tar)/i);
     for (let idx = 0; idx < this._mediaTypes.length; idx++) {
       // TODO: It is possible for users to define two media types with
       // the same extension, in which case we might be uploading to the
@@ -78,7 +83,12 @@ class UploadElement extends TatorElement {
         }
       } else {
         fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
+        if (isArchive)
+        {
+          fileOk = true;
+        }
       }
+
       if (fileOk) {
         this._messages.push({
           "command": "addUpload",
@@ -86,9 +96,10 @@ class UploadElement extends TatorElement {
           "gid": gid,
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
-          "mediaTypeId": mediaType.id,
+          "mediaTypeId": (isArchive ? -1 : mediaType.id),
           "token": this._token,
           "isImage": isImage,
+          "isArchive": isArchive
         });
         return true;
       }
@@ -96,7 +107,7 @@ class UploadElement extends TatorElement {
     return false;
   }
 
-  // Iterates through items from drag and drop or file select 
+  // Iterates through items from drag and drop or file select
   // event and sends them to the upload worker.
   async _fileSelectCallback(ev) {
     // Prevent browser default behavior.
@@ -202,4 +213,3 @@ async function readEntriesPromise(directoryReader) {
     console.log(err);
   }
 }
-

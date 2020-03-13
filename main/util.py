@@ -353,3 +353,10 @@ def associateExtractions(project, section_names):
                     event.save()
                 else:
                     print(f"Couldn't find {extracted_name}")
+
+def clearStaleProgress(project, ptype):
+    from redis import Redis
+    if ptype not in ['upload', 'algorithm', 'transcode']:
+        print("Unknown progress type")
+
+    Redis(host=os.getenv('REDIS_HOST')).delete(f'{ptype}_latest_{project}')

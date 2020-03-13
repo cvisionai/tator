@@ -288,6 +288,12 @@ class Upload {
 
   // Calculates md5 hash.
   computeMd5() {
+    if (this.mediaTypeId == -1)
+    {
+      // if this is a tarball, short circuit and always allow the upload
+      this.tus.start();
+      return;
+    }
     let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
     const chunkSize = 2097152; // 2MB
     const chunks = Math.ceil(this.file.size / chunkSize);

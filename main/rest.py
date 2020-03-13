@@ -2763,7 +2763,7 @@ class TranscodeAPI(APIView):
         coreapi.Field(name='type',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType; if -1 means tar-based import')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
@@ -2837,7 +2837,20 @@ class TranscodeAPI(APIView):
                 {'section': section},
             )
 
-            TatorTranscode().start_transcode(
+            if entity_type == -1:
+                TatorTranscode().start_tar_import(
+                    project,
+                    entity_type,
+                    token,
+                    url,
+                    name,
+                    section,
+                    md5,
+                    gid,
+                    uid,
+                    request.user.pk)
+            else:
+                TatorTranscode().start_transcode(
                 project,
                 entity_type,
                 token,
@@ -2847,8 +2860,7 @@ class TranscodeAPI(APIView):
                 md5,
                 gid,
                 uid,
-                request.user.pk,
-            )
+                request.user.pk)
 
             prog.progress("Transcoding...", 60)
 
@@ -2859,7 +2871,7 @@ class TranscodeAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            logger.info(f"ERROR: {str(e)}")
+            logger.info(f"ERROR: {str(e)}\nTRACEBACK: {traceback.format_exc()}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
             prog.failed("Failed to initiate transcode!")
@@ -2878,7 +2890,7 @@ class SaveVideoAPI(APIView):
         coreapi.Field(name='type',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+                      schema=coreschema.String(description='A unique integer value identifying a MediaType (-1 means auto, first for project)')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
@@ -2939,6 +2951,11 @@ class SaveVideoAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='Pixel height of the video')),
+        coreapi.Field(name='progressName',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='Name to use for progress update.')),
+
     ])
     permission_classes = [ProjectTransferPermission]
 
@@ -2963,6 +2980,7 @@ class SaveVideoAPI(APIView):
             width = request.data.get('width', None)
             height = request.data.get('height', None)
             project = kwargs['project']
+            progress_name = request.data.get('progressName', name)
 
             ## Check for required fields first
             if entity_type is None:
@@ -3024,7 +3042,18 @@ class SaveVideoAPI(APIView):
                 {'section': section},
             )
 
-            media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
+            # If entity_type is -1, figure it out on the server
+            # Use the first video type available
+            if int(entity_type) == -1:
+                media_types = EntityTypeMediaVideo.objects.filter(
+                    project=project)
+                if media_types.count() > 0:
+                    media_type = media_types[0]
+                    entity_type = media_type.pk
+                else:
+                    raise Exception('No Video types for project')
+            else:
+                media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
@@ -3117,10 +3146,15 @@ class SaveVideoAPI(APIView):
                 "url": media_obj.file.url,
                 "thumb_url": media_obj.thumbnail.url,
                 "thumb_gif_url": media_obj.thumbnail_gif.url,
-                "name": media_obj.name,
+                "name": progress_name,
                 "section": section,
             }
-            prog.finished("Uploaded successfully!", {**info})
+
+            if progress_name != name:
+                del info["id"]
+
+            # Send progress as finalized or complete based on REST parameter
+            prog.progress(f"Imported {name}", 75, {**info})
 
             response = Response({'message': "Video saved successfully!"},
                                 status=status.HTTP_201_CREATED)
@@ -3128,9 +3162,11 @@ class SaveVideoAPI(APIView):
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
             prog.failed("Could not save video!")
         finally:
             # Delete files from the uploads directory.

@@ -70,8 +70,11 @@ COPY --from=cvbento4_builder /working/Bento4/cmake/mp4info /usr/bin/
 RUN pip3 --no-cache-dir install wheel
 RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0
 
+RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists
+
 # Copy over scripts
-COPY scripts /scripts
+COPY scripts/transcoder /scripts
+COPY scripts/packages /scripts/packages
 
 # Build pytator
 WORKDIR /scripts/packages/pytator
