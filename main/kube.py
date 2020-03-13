@@ -192,6 +192,24 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+        # Deletes the remote TUS file
+        self.delete_task = {
+            'name': 'delete',
+            'inputs': {'parameters' : spell_out_params(['url'])},
+            'container': {
+                'image': transcoder_image,
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['curl',],
+                'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
+                'resources': {
+                    'limits': {
+                        'memory': '128Mi',
+                        'cpu': '500m',
+                    },
+                },
+            },
+        }
+
 
         # Unpacks a tarball and sets up the work products for follow up
         # dags or steps
@@ -478,6 +496,8 @@ class TatorTranscode(JobManagerMixin):
         unpack_task = {
             'name': 'unpack-pipeline',
             'dag': {
+                # First download, unpack and delete archive. Then Iterate over each video and upload
+                # Lastly iterate over all localization and state files.
                 'tasks' : [{'name': 'download-task',
                             'template': 'download',
                             'arguments': parameters},
@@ -485,7 +505,11 @@ class TatorTranscode(JobManagerMixin):
                             'template': 'unpack',
                             'arguments': parameters,
                             'dependencies' : ['download-task']},
-                           # Loop over
+                           {'name': 'delete-task',
+                            'template': 'delete',
+                            'arguments': parameters,
+                            'dependencies' : ['unpack-task']},
+                           # Loop over unpacked archive
                            {'name': 'transcode-task',
                             'template': 'transcode-pipeline',
                             'arguments' : item_parameters,
@@ -635,6 +659,7 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
                     self.download_task,
+                    self.delete_task,
                     self.transcode_task,
                     self.thumbnail_task,
                     self.segments_task,
