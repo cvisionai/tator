@@ -3155,6 +3155,7 @@ class SaveVideoAPI(APIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
             prog.failed("Could not save video!")
         finally:
             # Delete files from the uploads directory.
