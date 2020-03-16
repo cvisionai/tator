@@ -35,6 +35,8 @@ def parse_args():
     return parser.parse_args()
 
 def upload_file(path, tus_url):
+    if not tus_url.endswith('/'):
+        tus_url += '/'
     logger.info(f"Uploading file {path}...")
     tus = TusClient(tus_url)
     chunk_size = 1*1024*1024 # 1 Mb
