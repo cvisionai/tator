@@ -126,10 +126,6 @@ class TatorTranscode(JobManagerMixin):
 
             TODO: Would be nice if this was just in a yaml file.
         """
-
-
-        docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        transcoder_image = f"{docker_registry}/tator_transcoder:{Git.sha}"
         # Setup common pipeline steps
         # Define persistent volume claim.
         self.pvc = {
@@ -170,7 +166,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'url',
                                                         'name'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-o', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
@@ -192,7 +188,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'delete',
             'inputs': {'parameters' : spell_out_params(['url'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
@@ -221,7 +217,7 @@ class TatorTranscode(JobManagerMixin):
                                          'valueFrom': {'path': '/work/states.json'}},
             ]},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
@@ -242,7 +238,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['importDataFromCsv.py',
@@ -269,7 +265,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'transcode',
             'inputs': {'parameters' : spell_out_params(['original','transcoded'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -294,7 +290,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'thumbnail',
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -320,7 +316,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'segments',
             'inputs': {'parameters' : spell_out_params(['transcoded','segments'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -353,7 +349,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'name',
                                                         'md5'])},
             'container': {
-                'image': transcoder_image,
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -399,7 +395,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'message',
                                                         'progress'])},
             'container': {
-                'image': get_marshal_image_name(),
+                'image': '{{workflow.parameters.marshal_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -632,7 +628,7 @@ class TatorTranscode(JobManagerMixin):
 
         args = {'original': '/work/' + name,
                 'name': name}
-
+        docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
                        'rest_url': f'https://{os.getenv("MAIN_HOST")}/rest',
                        'tus_url' : f'https://{os.getenv("MAIN_HOST")}/files/',
@@ -641,7 +637,9 @@ class TatorTranscode(JobManagerMixin):
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
-                       'user': str(user)}
+                       'user': str(user),
+                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}",
+                       'marshal_image': get_marshal_image_name()}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_tasks = self.get_unpack_and_transcode_tasks(args, url)
@@ -710,6 +708,7 @@ class TatorTranscode(JobManagerMixin):
             'name': name,
         }
 
+        docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
                        'rest_url': f'https://{os.getenv("MAIN_HOST")}/rest',
                        # WARNING: This trailing slash is required
@@ -719,7 +718,9 @@ class TatorTranscode(JobManagerMixin):
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
-                       'user': str(user)}
+                       'user': str(user),
+                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}",
+                       'marshal_image': get_marshal_image_name()}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
