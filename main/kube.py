@@ -163,8 +163,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
             'inputs': {'parameters' : spell_out_params(['original',
-                                                        'url',
-                                                        'name'])},
+                                                        'url'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -467,10 +466,6 @@ class TatorTranscode(JobManagerMixin):
             return {'name': name,
                     'value': f'{{{{item.{name}}}}}'}
 
-        def make_passthrough_arg(name):
-            return {'name': name,
-                    'value': f'{{{{inputs.parameters.{name}}}}}'}
-
         instance_args = ['url',
                          'original',
                          'transcoded',
@@ -484,7 +479,6 @@ class TatorTranscode(JobManagerMixin):
         item_parameters = {"parameters" : [make_item_arg(x) for x in instance_args]}
         state_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
         localization_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
-        passthrough_parameters = {"parameters" : [make_passthrough_arg(x) for x in instance_args]}
 
         state_import_parameters["parameters"].append({"name": "mode", "value": "state"})
         localization_import_parameters["parameters"].append({"name": "mode", "value": "localizations"})
@@ -526,63 +520,52 @@ class TatorTranscode(JobManagerMixin):
             } # end of dag
         }
 
-        transcode_task = self.get_transcode_dag(False)
-        transcode_task['inputs'] = passthrough_parameters
-
-        # pass through the arguments
-        for task in transcode_task['dag']['tasks']:
-            task['arguments'] = passthrough_parameters
+        transcode_task = self.get_transcode_dag()
 
         return [unpack_task, transcode_task]
 
-    def get_transcode_dag(self, include_download=True):
-        if include_download == True:
-            pipeline_task = {
-                'name': 'transcode-pipeline',
-                'dag': {
-                    'tasks': [{
-                        'name': 'download-task',
-                        'template': 'download',
-                    }, {
-                        'name': 'transcode-task',
-                        'template': 'transcode',
-                        'dependencies': ['download-task',],
-                    }, {
-                        'name': 'thumbnail-task',
-                        'template': 'thumbnail',
-                        'dependencies': ['download-task',],
-                    }, {
-                        'name': 'segments-task',
-                        'template': 'segments',
-                        'dependencies': ['transcode-task',],
-                    }, {
-                        'name': 'upload-task',
-                        'template': 'upload',
-                        'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
-                    }],
-                },
-            }
-        else:
-            pipeline_task = {
-                'name': 'transcode-pipeline',
-                'dag': {
-                    'tasks': [{
-                        'name': 'transcode-task',
-                        'template': 'transcode',
-                    }, {
-                        'name': 'thumbnail-task',
-                        'template': 'thumbnail',
-                    }, {
-                        'name': 'segments-task',
-                        'template': 'segments',
-                        'dependencies': ['transcode-task',],
-                    }, {
-                        'name': 'upload-task',
-                        'template': 'upload',
-                        'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
-                    }],
-                },
-            }
+    def get_transcode_dag(self):
+        """ Return the DAG that describes transcoding a single media file """
+        def make_passthrough_arg(name):
+            return {'name': name,
+                    'value': f'{{{{inputs.parameters.{name}}}}}'}
+
+        instance_args = ['url',
+                         'original',
+                         'transcoded',
+                         'thumbnail',
+                         'thumbnail_gif',
+                         'segments',
+                         'entity_type',
+                         'name',
+                         'md5']
+        passthrough_parameters = {"parameters" : [make_passthrough_arg(x) for x in instance_args]}
+
+        pipeline_task = {
+            'name': 'transcode-pipeline',
+            'inputs': passthrough_parameters,
+            'dag': {
+                'tasks': [{
+                    'name': 'transcode-task',
+                    'template': 'transcode',
+                    'arguments': passthrough_parameters
+                }, {
+                    'name': 'thumbnail-task',
+                    'template': 'thumbnail',
+                    'arguments': passthrough_parameters
+                }, {
+                    'name': 'segments-task',
+                    'template': 'segments',
+                    'arguments': passthrough_parameters,
+                    'dependencies': ['transcode-task',],
+                }, {
+                    'name': 'upload-task',
+                    'template': 'upload',
+                    'arguments': passthrough_parameters,
+                    'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
+                }],
+            },
+        }
 
         return pipeline_task
     def get_transcode_task(self, item, url):
@@ -592,9 +575,22 @@ class TatorTranscode(JobManagerMixin):
         for key in item:
             args.append({'name': key, 'value': item[key]})
         parameters = {"parameters" : args}
-        pipeline = self.get_transcode_dag()
-        for task in pipeline['dag']['tasks']:
-            task['arguments'] = parameters
+
+        pipeline = {
+            'name': 'single-file-pipeline',
+            'dag': {
+                # First download, unpack and delete archive. Then Iterate over each video and upload
+                # Lastly iterate over all localization and state files.
+                'tasks' : [{'name': 'download-task',
+                            'template': 'download',
+                            'arguments': parameters},
+                            {'name': 'transcode-task',
+                            'template': 'transcode-pipeline',
+                            'arguments' : parameters,
+                            'dependencies' : ['download-task']}]
+                }
+            }
+
         return pipeline
 
 
@@ -743,7 +739,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
             'spec': {
-                'entrypoint': 'transcode-pipeline',
+                'entrypoint': 'single-file-pipeline',
                 'onExit': 'exit-handler',
                 'arguments': {'parameters' : global_parameters},
                 'ttlSecondsAfterFinished': 300,
@@ -754,6 +750,7 @@ class TatorTranscode(JobManagerMixin):
                     self.thumbnail_task,
                     self.segments_task,
                     self.upload_task,
+                    self.get_transcode_dag(),
                     pipeline_task,
                     self.progress_task,
                     self.exit_handler,
