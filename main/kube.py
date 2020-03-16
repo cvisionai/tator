@@ -520,9 +520,7 @@ class TatorTranscode(JobManagerMixin):
             } # end of dag
         }
 
-        transcode_task = self.get_transcode_dag()
-
-        return [unpack_task, transcode_task]
+        return unpack_task
 
     def get_transcode_dag(self):
         """ Return the DAG that describes transcoding a single media file """
@@ -638,7 +636,7 @@ class TatorTranscode(JobManagerMixin):
                        'marshal_image': get_marshal_image_name()}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
-        pipeline_tasks = self.get_unpack_and_transcode_tasks(args, url)
+        pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -671,7 +669,8 @@ class TatorTranscode(JobManagerMixin):
                     self.segments_task,
                     self.upload_task,
                     self.unpack_task,
-                    *pipeline_tasks,
+                    self.get_transcode_dag(),
+                    pipeline_task,
                     self.progress_task,
                     self.exit_handler,
                     self.data_import
