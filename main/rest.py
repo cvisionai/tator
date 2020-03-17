@@ -3193,7 +3193,7 @@ class SaveImageAPI(APIView):
         coreapi.Field(name='type',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType')),
+                      schema=coreschema.String(description='A unique integer value identifying a ImageType (-1 means auto)')),
         coreapi.Field(name='gid',
                       required=True,
                       location='body',
@@ -3206,6 +3206,10 @@ class SaveImageAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='The upload url for the image.')),
+        coreapi.Field(name='thumbnail_url',
+                      required=False,
+                      location='body',
+                      schema=coreschema.String(description='The upload url for the thumbnail if already generated')),
         coreapi.Field(name='section',
                       required=True,
                       location='body',
@@ -3229,6 +3233,7 @@ class SaveImageAPI(APIView):
             gid = request.data.get('gid', None)
             uid = request.data.get('uid', None)
             url = request.data.get('url', None)
+            thumbnail_url = request.data.get('thumbnail_url', None)
             section = request.data.get('section', None)
             name = request.data.get('name', None)
             md5 = request.data.get('md5', None)
@@ -3256,9 +3261,17 @@ class SaveImageAPI(APIView):
             if md5 is None:
                 raise Exception('Missing md5 for uploaded image')
 
-            media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
-            if media_type.project.pk != project:
-                raise Exception('Media type is not part of project')
+            if int(entity_type) == -1:
+                media_types = EntityTypeMediaImage.objects.filter(project=project)
+                if media_types.count() > 0:
+                    media_type = media_types[0]
+                    entity_type = media_type.pk
+                else:
+                    raise Exception('No image types for project')
+            else:
+                media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
+                if media_type.project.pk != project:
+                    raise Exception('Media type is not part of project')
 
             # Determine file paths
             upload_uid = url.split('/')[-1]
@@ -3303,15 +3316,25 @@ class SaveImageAPI(APIView):
                 modified_by=self.request.user,
             )
 
-            # Create the thumbnail.
-            thumb_size = (256, 256)
-            media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-            image = Image.open(upload_path)
-            media_obj.width, media_obj.height = image.size
-            image = image.convert('RGB') # Remove alpha channel for jpeg
-            image.thumbnail(thumb_size, Image.ANTIALIAS)
-            image.save(thumb_path)
-            image.close()
+            if thumbnail_url is None:
+                # Create the thumbnail.
+                thumb_size = (256, 256)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+                image = Image.open(upload_path)
+                media_obj.width, media_obj.height = image.size
+                image = image.convert('RGB') # Remove alpha channel for jpeg
+                image.thumbnail(thumb_size, Image.ANTIALIAS)
+                image.save(thumb_path)
+                image.close()
+            else:
+                thumbnail_uid = url.split('/')[-1]
+                provided_thumbnail_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.bin')
+                shutil.move(provided_thumbnail_path, thumb_path)
+                info_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.info')
+                if os.path.exists(info_path):
+                    os.remove(info_path)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+
 
             # Save the image.
             media_base = os.path.relpath(media_path, settings.MEDIA_ROOT)
@@ -3338,6 +3361,7 @@ class SaveImageAPI(APIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.info(traceback.format_exc())
         finally:
             # Delete files from the uploads directory.
             if 'upload_path' in locals():
@@ -3468,6 +3492,7 @@ class AlgorithmLaunchAPI(APIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.info(traceback.format_exc())
         finally:
             return response;
 
