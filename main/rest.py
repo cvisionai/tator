@@ -3327,7 +3327,7 @@ class SaveImageAPI(APIView):
                 image.save(thumb_path)
                 image.close()
             else:
-                thumbnail_uid = url.split('/')[-1]
+                thumbnail_uid = thumbnail_url.split('/')[-1]
                 provided_thumbnail_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.bin')
                 shutil.move(provided_thumbnail_path, thumb_path)
                 info_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.info')
