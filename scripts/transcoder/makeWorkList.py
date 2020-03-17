@@ -68,6 +68,21 @@ if __name__=="__main__":
         }
         return paths
 
+    def make_workflow_image(image):
+        # Calculate md5
+        md5 = md5_lookup[image]
+
+        base = os.path.splitext(image)[0]
+        # This is the arguments for each iteration of the transcode DAG
+        paths = {
+            'url': 'None',
+            'original': image,
+            'entity_type': '-1', # Have server auto compute this
+            'name': os.path.basename(image),
+            'md5': md5
+        }
+        return paths
+
     def states_for_media(media):
         base = os.path.splitext(media)[0]
         l = []
@@ -106,7 +121,7 @@ if __name__=="__main__":
         json.dump(work, work_file)
 
     with open(os.path.join(args.directory, "images.json"), 'w') as work_file:
-        work=[]
+        work=[make_workflow_video(image) for image in images]
         json.dump(work, work_file)
 
     with open(os.path.join(args.directory, "localizations.json"), 'w') as work_file:

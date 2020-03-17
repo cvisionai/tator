@@ -336,6 +336,49 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
+        self.image_upload_task = {
+            'name': 'image-upload',
+            'inputs': {'parameters' : spell_out_params(['url',
+                                                        'original',
+                                                        'entity_type',
+                                                        'name',
+                                                        'md5'])},
+            'container': {
+                'image': '{{workflow.parameters.transcoder_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': [
+                    'uploadImage.py',
+                    '--original_path', '{{inputs.parameters.original}}',
+                    '--original_url', '{{inputs.parameters.url}}',
+                    '--tus_url', '{{workflow.parameters.tus_url}}',
+                    '--url', '{{workflow.parameters.rest_url}}',
+                    '--token', '{{workflow.parameters.token}}',
+                    '--project', '{{workflow.parameters.project}}',
+                    '--type', '{{inputs.parameters.entity_type}}',
+                    '--gid', '{{workflow.parameters.gid}}',
+                    '--uid', '{{workflow.parameters.uid}}',
+                    # TODO: If we made section a DAG argument, we could
+                    # conceviably import a tar across multiple sections
+                    '--section', '{{workflow.parameters.section}}',
+                    '--name', '{{inputs.parameters.name}}',
+                    '--md5', '{{inputs.parameters.md5}}',
+                    '--progressName', '{{workflow.parameters.upload_name}}',
+                ],
+                'workingDir': '/scripts',
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '500Mi',
+                        'cpu': '1000m',
+                    },
+                },
+            },
+        }
+        
         self.upload_task = {
             'name': 'upload',
             'inputs': {'parameters' : spell_out_params(['url',
@@ -505,15 +548,20 @@ class TatorTranscode(JobManagerMixin):
                             'arguments' : item_parameters,
                             'withParam' : '{{tasks.unpack-task.outputs.parameters.videos}}',
                             'dependencies' : ['unpack-task']},
+                           {'name': 'image-upload-task',
+                            'template': 'image-upload',
+                            'arguments' : item_parameters,
+                            'withParam' : '{{tasks.unpack-task.outputs.parameters.images}}',
+                            'dependencies' : ['unpack-task']},
                            {'name': 'state-import-task',
                             'template': 'data-import',
                             'arguments' : state_import_parameters,
-                            'dependencies' : ['transcode-task'],
+                            'dependencies' : ['transcode-task', 'image-upload-task'],
                             'withParam': '{{tasks.unpack-task.outputs.parameters.states}}'},
                            {'name': 'localization-import-task',
                             'template': 'data-import',
                             'arguments' : localization_import_parameters,
-                            'dependencies' : ['transcode-task'],
+                            'dependencies' : ['transcode-task', 'image-upload-task'],
                             'withParam': '{{tasks.unpack-task.outputs.parameters.localizations}}'}
                            ]
 
@@ -669,6 +717,7 @@ class TatorTranscode(JobManagerMixin):
                     self.thumbnail_task,
                     self.segments_task,
                     self.upload_task,
+                    self.image_upload_task,
                     self.unpack_task,
                     self.get_transcode_dag(),
                     pipeline_task,
@@ -750,6 +799,7 @@ class TatorTranscode(JobManagerMixin):
                     self.thumbnail_task,
                     self.segments_task,
                     self.upload_task,
+                    self.image_upload_task,
                     self.get_transcode_dag(),
                     pipeline_task,
                     self.progress_task,
