@@ -77,7 +77,6 @@ if __name__=="__main__":
         paths = {
             'url': 'None',
             'original': image,
-            'thumbnail': base + '_thumbnail.jpg',
             'entity_type': '-1', # Have server auto compute this
             'name': os.path.basename(image),
             'md5': md5
