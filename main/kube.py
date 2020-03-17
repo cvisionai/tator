@@ -661,6 +661,7 @@ class TatorTranscode(JobManagerMixin):
                 'onExit': 'exit-handler',
                 'ttlSecondsAfterFinished': 300,
                 'volumeClaimTemplates': [self.pvc],
+                'parallelism': 4,
                 'templates': [
                     self.download_task,
                     self.delete_task,
