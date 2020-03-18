@@ -175,7 +175,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '128Mi',
+                        'memory': '512Mi',
                         'cpu': '500m',
                     },
                 },
