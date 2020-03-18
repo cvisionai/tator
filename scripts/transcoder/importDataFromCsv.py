@@ -1,3 +1,5 @@
+""" Upload a CSV to a given media file """
+
 import argparse
 import copy
 
@@ -41,7 +43,6 @@ def uploadStateData(row, media, endpoint, default_object):
     print(new_obj)
     endpoint.new(new_obj)
     
-""" Upload a CSV to a given media file """
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser = pytator.tator.cli_parser(parser)

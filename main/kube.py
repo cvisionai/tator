@@ -218,6 +218,9 @@ class TatorTranscode(JobManagerMixin):
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
+                'env': [{'name': 'TATOR_URL', 'value': '{{workflow.parameters.rest_url}}'},
+                        {'name': 'TATOR_PROJECT', 'value': '{{workflow.parameters.project}}'},
+                        {'name': 'TATOR_TOKEN', 'value': '{{workflow.parameters.token}}'}],
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
                 'volumeMounts': [{

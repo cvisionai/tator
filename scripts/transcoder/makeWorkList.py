@@ -1,13 +1,19 @@
+""" Makes a work list given contents of an extracted tarball/zip """
+
 import os
 import argparse
 import json
 import subprocess
 import hashlib
+import pytator
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser = pytator.tator.cli_parser(parser)
     parser.add_argument("directory")
     args = parser.parse_args()
+
+    tator = pytator.Tator(args.url, args.token, args.project)
 
     # This actually gets images + videos
     videos = []
