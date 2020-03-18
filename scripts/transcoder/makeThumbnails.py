@@ -62,7 +62,12 @@ def make_thumbnails(video_path, thumb_path, thumb_gif_path):
 
     logger.info("Got info = {}".format(output))
     video_info = json.loads(output)
-    stream=video_info["streams"][0]
+    stream_idx=0
+    for idx, stream in enumerate(video_info["streams"]):
+        if stream["codec_type"] == "video":
+            stream_idx=idx
+            break
+    stream=video_info["streams"][stream_idx]
     seconds = float(stream["duration"]);
 
     # Compute evenly spaced intervals and filenames.
