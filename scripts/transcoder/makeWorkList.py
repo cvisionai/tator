@@ -122,6 +122,21 @@ if __name__=="__main__":
             state_files.extend(states_for_media(media))
             localization_files.extend(localizations_for_media(media))
 
+    # Remove media that already is in database
+    for idx,media in enumerate(videos):
+        cmd = [
+            "ffprobe",
+            "-v","error",
+            "-show_entries", "stream",
+            "-print_format", "json",
+            "{}".format(video_path),
+        ]
+        status = subprocess.run(cmd).returncode
+        if status != 0:
+            print(f"Removing {media} from worklist due to video corruption")
+            del videos[idx]
+
+
     with open(os.path.join(args.directory, "videos.json"), 'w') as work_file:
         work=[make_workflow_video(video) for video in videos]
         json.dump(work, work_file)
