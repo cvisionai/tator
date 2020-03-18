@@ -159,42 +159,38 @@ containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dock
 	./externals/build_tools/makocc.py -o $@ $<
 
 
+.PHONY: tator-image
 tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online:$(GIT_VERSION))" tator-image
 
 PYTATOR_VERSION=$(shell cat scripts/packages/pytator/version)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
 containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
 	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
+
+.PHONY: marshal-image
 marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) -f $< containers || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION)
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION))" marshal-image
 
+.PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_postgis)" postgis-image
 
+.PHONY: tus-image
 tus-image: containers/tus/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_tusd:latest
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
 
 # Publish transcoder image to dockerhub so it can be used cross-cluster
+.PHONY: transcoder-image
 transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
-	sleep 1
-	touch -d "$(shell docker inspect -f '{{ .Created }}' $(DOCKERHUB_USER)/tator_transcoder)" tator-transcoder
 
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py
@@ -426,20 +422,6 @@ clean_js:
 .PHONY: images
 images:
 	make ${IMAGES}
-
-imageClean:
-	rm -f ${IMAGES}
-	rm -f `find . -name Dockerfile.gen`
-
-imageHold:
-	touch ${IMAGES}
-
-imageQuery:
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_online)" tator-image
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_algo_marshal)" marshal-image
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_tusd)" tus-image
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_postgis)" postgis-image
-	touch -d "$(shell docker inspect -f '{{ .Created }}' ${DOCKERHUB_USER}/tator_transcoder)" transcoder-image
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
