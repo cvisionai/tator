@@ -123,26 +123,35 @@ if __name__=="__main__":
             localization_files.extend(localizations_for_media(media))
 
     # Remove media that already is in database
-    for idx,media in enumerate(videos):
+    def is_unique(media):
+        match = tator.Media.filter({"md5": md5_lookup[media]})
+        print(f"MATCH = {match}")
+        if match is not None:
+            print(f"Removing {media} from worklist due to duplication")
+            return False
+
+        # Check to make sure the image/video is not corrupt
         cmd = [
             "ffprobe",
             "-v","error",
             "-show_entries", "stream",
             "-print_format", "json",
-            "{}".format(video_path),
+            "{}".format(media),
         ]
         status = subprocess.run(cmd).returncode
         if status != 0:
             print(f"Removing {media} from worklist due to video corruption")
-            del videos[idx]
-
+            return False
+        else:
+            print(f"Adding {media} to worklist")
+            return True
 
     with open(os.path.join(args.directory, "videos.json"), 'w') as work_file:
-        work=[make_workflow_video(video) for video in videos]
+        work=[make_workflow_video(vid) for vid in videos if is_unique(vid)]
         json.dump(work, work_file)
 
     with open(os.path.join(args.directory, "images.json"), 'w') as work_file:
-        work=[make_workflow_video(image) for image in images]
+        work=[make_workflow_video(img) for img in images if is_unique(img)]
         json.dump(work, work_file)
 
     with open(os.path.join(args.directory, "localizations.json"), 'w') as work_file:
