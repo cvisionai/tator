@@ -472,7 +472,7 @@ clusters that are already setup.
 Job cluster setup
 =================
 
-Tator uses [Argo](https://argoproj.github.io/argo/) to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
+Tator uses [Argo](https://argoproj.github.io/projects/argo) to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
 
 - It must have the Argo custom resource definitions (CRD) installed.
 - It must have a dynamic persistent volume (PV) provisioner.
