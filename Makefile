@@ -8,9 +8,9 @@ IMAGES=tator-image marshal-image tus-image postgis-image transcoder-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
-DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["dockerRegistry"])')
+DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"), Loader=yaml.FullLoader); print(a["dockerRegistry"])')
 
-SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("systemImageRepo"))')
+SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"), Loader=yaml.FullLoader); print(a.get("systemImageRepo"))')
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
