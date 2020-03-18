@@ -112,6 +112,7 @@ from .consumers import ProgressProducer
 
 from .notify import Notify
 
+from .search import id_mask as ID_MASK
 from .search import TatorSearch
 from .kube import TatorTranscode
 from .kube import TatorAlgorithm
@@ -1022,7 +1023,7 @@ def get_media_queryset(project, query_params, attr_filter):
 
     query = get_attribute_query(query_params, query, bools, project)
 
-    media_ids, media_count = TatorSearch().search(project, query)
+    media_ids, media_count, _ = TatorSearch().search(project, query)
 
     return media_ids, media_count, query
 
@@ -1049,7 +1050,7 @@ class MediaPrevAPI(APIView):
 
         query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        media_ids, count = TatorSearch().search(media.project.pk, query)
+        media_ids, count, _ = TatorSearch().search(media.project.pk, query)
         if count > 0:
             response_data = {'prev': media_ids.pop()}
         else:
@@ -1076,7 +1077,7 @@ class MediaNextAPI(APIView):
 
         query = get_attribute_query(request.query_params, query, bools, media.project.pk)
 
-        media_ids, count = TatorSearch().search(media.project.pk, query)
+        media_ids, count, _ = TatorSearch().search(media.project.pk, query)
         if count > 0:
             response_data = {'next': media_ids.pop()}
         else:
@@ -1305,6 +1306,77 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
             return response;
 
 def get_annotation_queryset(project, query_params, attr_filter):
+    """Returns tuple based on annotation query string. Documents
+       may contain duplicates if query is broad enough.
+       (documents, annotation_count, query)
+    """
+    mediaId = query_params.get('media_id', None)
+    filterType = query_params.get('type', None)
+    version = query_params.get('version', None)
+    modified = query_params.get('modified', None)
+    start = query_params.get('start', None)
+    stop = query_params.get('stop', None)
+
+    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+    query['sort']['_exact_name'] = 'asc'
+    media_bools = []
+    annotation_bools = []
+
+    if mediaId != None:
+        media_bools.append({'ids': {'values': mediaId.split(',')}})
+
+    if filterType != None:
+        annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})
+
+    if version != None:
+        annotation_bools.append({'match': {'_annotation_version': {'query': int(version)}}})
+
+    if start != None:
+        query['from'] = int(start)
+
+    if start == None and stop != None:
+        query['size'] = int(stop)
+
+    if start != None and stop != None:
+        query['size'] = int(stop) - int(start)
+    query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools, modified)
+
+    annotation_ids, annotation_count, documents = TatorSearch().search(project, query, True)
+
+    return documents, annotation_count, query
+
+def serialize_es_document(document):
+    serialized={}
+    source = document['_source']
+    serialized['id'] = int(document['_id']) & ID_MASK
+    serialized['meta'] = source.get('_meta',None)
+    serialized['user'] = source.get('_user',None)
+    serialized['version'] = source.get('_annotation_version',None)
+    serialized['email'] = source.get('_email',None)
+    serialized['modified'] = source.get('_modified', None)
+    serialized['frame'] = source.get('_frame', 0)
+    serialized['thumbnail_image'] = source.get('_thumbnail_image', None)
+    serialized['attributes'] = {}
+    attribute_keys = [x for x in source if not x.startswith('_')]
+    for key in attribute_keys:
+        serialized['attributes'][key] = source.get(key, None)
+    dtype = source['_dtype']
+    if dtype == 'box':
+        serialized['x'] = source.get('_x', None)
+        serialized['y'] = source.get('_y', None)
+        serialized['width'] = source.get('_width',None)
+        serialized['height'] = source.get('_height',None)
+    elif dtype == 'line':
+        serialized['x0'] = source.get('_x0',None)
+        serialized['y0'] = source.get('_y0',None)
+        serialized['x1'] = source.get('_x1',None)
+        serialized['y1'] = source.get('_y1',None)
+    elif dtype == 'dot':
+        serialized['x'] = source.get('_x',None)
+        serialized['y'] = source.get('_y',None)
+    return serialized
+
+def get_state_queryset(project, query_params, attr_filter):
     """Converts annotation query string into a list of IDs and a count.
     """
     mediaId = query_params.get('media_id', None)
@@ -1338,7 +1410,7 @@ def get_annotation_queryset(project, query_params, attr_filter):
         query['size'] = int(stop) - int(start)
     query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools, modified)
 
-    annotation_ids, annotation_count = TatorSearch().search(project, query)
+    annotation_ids, annotation_count, _ = TatorSearch().search(project, query, True)
 
     return annotation_ids, annotation_count, query
 
@@ -1448,23 +1520,26 @@ class LocalizationList(APIView, AttributeFilterMixin):
         return queryset
 
     def get(self, request, format=None, **kwargs):
+        logger.info("Entered Get Function")
         try:
             self.validate_attribute_filter(request.query_params)
-            annotation_ids, annotation_count, _ = get_annotation_queryset(
+            before=time.time()
+            annotation_docs, annotation_count, _ = get_annotation_queryset(
                 self.kwargs['project'],
                 self.request.query_params,
                 self,
             )
+            after_es=time.time()
             self.request=request
-            before=time.time()
-            qs = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
             if self.operation:
                 if self.operation == 'count':
-                    responseData = {'count': qs.count()}
+                    responseData = {'count': annotation_count}
                 else:
                     raise Exception('Invalid operation parameter!')
             else:
-                responseData=FastEntityLocalizationSerializer(qs)
+                before_serializer=time.time()
+                responseData=[serialize_es_document(x) for x in annotation_docs]
+                after_serializer=time.time()
                 if request.accepted_renderer.format == 'csv':
                     # CSV creation requires a bit more
                     user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
@@ -1481,6 +1556,7 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
                     filter_type=self.request.query_params.get('type', None)
                     type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
+                    before_loop=time.time()
                     for element in responseData:
                         del element['meta']
 
@@ -1493,9 +1569,13 @@ class LocalizationList(APIView, AttributeFilterMixin):
 
                         element['user'] = email_dict[user_id]
                         element['media'] = filename_dict[media_id]
-
+                    after_loop=time.time()
+                    logger.info(f"Loop time = {(after_loop-before_loop)*1000}ms")
                     responseData = responseData
             after=time.time()
+            logger.info(f"ES Access time = {(after_es-before)*1000}ms")
+            logger.info(f"Serialization time = {(after_serializer-before_serializer)*1000}ms")
+            logger.info(f"Localization Access time = {(after-before)*1000}ms")
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -1780,7 +1860,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         filterType=self.request.query_params.get('type', None)
         try:
             self.validate_attribute_filter(request.query_params)
-            annotation_ids, annotation_count, _ = get_annotation_queryset(
+            annotation_ids, annotation_count, _ = get_state_queryset(
                 kwargs['project'],
                 request.query_params,
                 self
@@ -2000,7 +2080,7 @@ class SuggestionAPI(APIView):
             {'range': {'_treeleaf_depth': {'gte': minLevel}}},
             {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
         ]
-        ids, _ = TatorSearch().search(kwargs['project'], query)
+        ids, _, __ = TatorSearch().search(kwargs['project'], query)
         queryset = list(TreeLeaf.objects.filter(pk__in=ids))
 
         suggestions=[]
