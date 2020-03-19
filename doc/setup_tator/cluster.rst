@@ -24,14 +24,76 @@ you are starting with just bare metal.
 Architectural Pieces
 ====================
 
-Before diving into steps, this section describes the various components that
-make up a Tator deployment.
+A Tator deployment makes use of one or more kubernetes clusters. This tutorial
+walks you through setting up one kubernetes cluster for both job serving (algorithm workflows) and the actual website hosting.
 
-TODO-DOC: Insert picture
+.. image:: https://user-images.githubusercontent.com/47112112/77114204-827e1000-6a02-11ea-857b-9d27f7f98310.png
+   :scale: 50 %
+   :alt: Top-level architectural componens
 
-TODO-DOC: Insert caption or paragraph that defines each component.
+The green/blue boxes above denote where one can seperate the deployment to two
+seperate kubernetes clusters. There are many components within a Tator
+deployment, a summary of the core components is below:
 
-Installation of Prerequisites 
+.. glossary::
+
+   MetalLB
+     The load balancer used in a bare metal deployment of kubernetes. The load
+     balancer is configured via :term:`loadBalancerIp` to forward traffic seen
+     at that IP to the internal software network of kubernetes. Advanced
+     configuration of load balancing failovers is not covered in this
+     tutorial. As an example an IP address of `192.168.1.221` can be used
+     if it is both outside the DHCP range of the network and visible to the
+     master node of the kubernetes cluster.
+
+   Job Server
+     The job server is the kuberneters cluster that has :term:`Argo` installed
+     to run asynchronous jobs for the tator deployment.
+
+   Argo
+     An extension to kubernetes to define a new job type called a *workflow*.
+     This allows for defining the execution of complex algorithms or routines
+     across a series of pods based on the description.
+     `Argo <https://argoproj.github.io/projects/argo/>`_ is develoiped and
+     maintained by `Intuit <https://www.intuit.com/>`_.
+
+   NGINX
+     The `web server <https://www.nginx.com/>`_ used to handle both static
+     serving of files as well as forwarding to dynamic content created by
+     django.
+
+   Django
+     The `python web framework <https://www.djangoproject.com/>`_ used by
+     tator online for handling dynamic web content and REST interactions.
+
+   Elastic Search
+     Complement to the :term:`PostgresSQL` database to allow for `faster searches <https://www.elastic.co/>`_.
+
+   PostgresSQL
+     `SQL-compliant database <https://www.postgresql.org/>`_ used to store
+     project configurations as well as media and associated metadata.
+
+   Kubernetes
+     The underlying system used to deploy and manage the containerized
+     application. `Kubernetes https://kubernetes.io/`_ or k8s relays on
+     a working `Docker <https://www.docker.com/>`_ installation.
+
+Networking considerations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If attempting to utilize a bare metal installation some thought should go into
+the IP address schema used by system. A static IP address for the server(s)
+running k8s is required. On the network an IP address for the :term:`MetalLB`
+loadbalancer should also be assigned. It is helpful if the underlying MetalLB
+address is the same as the underlying NIC address; as otherwise ICMP messages
+like ping are not responded appropriately at that address.
+
+Lastly, if behind a NAT firewall and outside traffic is desired to the web
+application, `port forwarding <https://en.wikipedia.org/wiki/Port_forwarding>`_
+must be enabled on your network's router. To be exact, ports `443` and port
+`80` must be forwarded to the load balancer IP via the NAT router.
+
+Installation of Prerequisites
 ==================
 
 NFS and other standard packages
@@ -180,7 +242,7 @@ The following message will display:
 
    Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>
 
-For the next step you will need to get your token from your `<duckdns.org>`_ account page. 
+For the next step you will need to get your token from your `<duckdns.org>`_ account page.
 
 In order to deploy this DNS TXT record open a new browser window and enter the following into the address bar:
    `https://www.duckdns.org/update?domains=<sub\_domain\_only>&token=<your\_token\_value>&txt=<DNS\_TXT\_value>`
@@ -378,7 +440,7 @@ development/evaluation.
 
 Using NFS3
 **********
-Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image. 
+Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
 
 * Disable rpcbind:
 
@@ -552,7 +614,7 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-client-provisioner helm chart
 *********************************************
 
-* :ref:`From the NFS setup<NFS Setup>`, there should be a folder exported called `/media/kubernetes/scratch`. 
+* :ref:`From the NFS setup<NFS Setup>`, there should be a folder exported called `/media/kubernetes/scratch`.
 
 * Install the helm chart:
 
@@ -574,7 +636,7 @@ Create a file called nfs-test.yaml with the following spec (Note the storage cla
 .. code-block:: yaml
    :linenos:
    :emphasize-lines: 8
-      
+
    kind: PersistentVolumeClaim
    apiVersion: v1
    metadata:
@@ -610,16 +672,16 @@ Update the configuration file
 The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of important fields:
 
 .. glossary::
-   
+
   dockerRegistry
     The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
-   
+
   djangoSecretKey
     A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
-   
+
   postgresUsername
     Field that allows you to give your postgres db a user name (or if you are accessing an existing db, make sure credentials match)
- 
+
   postgresPassword
     Field that allows you to set your postgres db password (or if you are accessing an existing one, provide the password here)
 
@@ -633,11 +695,11 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
   domain
     The domain name that was set up earlier in this tutorial. (e.g. mysite.duckdns.org)
-   
+
   metallb.enabled
     A boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud
     providers as in these cases a load balancer implementation is provided.
- 
+
   metallb.ipRangeStart
   metallb.ipRangeStop
     Indicates the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of
@@ -646,16 +708,16 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   redis.enabled
      A boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service,
      in which case this should be set to false.
-     
+
   postgis.enabled
      A boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed
      postgresql service, in which case this should be set to false.
-     
+
   postgis.hostPath
      Specifies the host path for the postgres data directory. This should be a path to high speed storage
      (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes
      setup step via the dbServer node label.
-  
+
   gunicornReplicas
   transcoderReplicas
   algorithmReplicas
@@ -668,7 +730,7 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   pv.backupPath
   pv.migrationsPath
      Indicates the location of each persistent volume.
-     
+
   pvc.staticSize
   pvc.uploadSize
   pvc.mediaSize
