@@ -36,6 +36,7 @@ seperate kubernetes clusters. There are many components within a Tator
 deployment, a summary of the core components is below:
 
 .. glossary::
+   :sorted:
 
    MetalLB
      The load balancer used in a bare metal deployment of kubernetes. The load
@@ -75,7 +76,7 @@ deployment, a summary of the core components is below:
 
    Kubernetes
      The underlying system used to deploy and manage the containerized
-     application. `Kubernetes https://kubernetes.io/`_ or k8s relays on
+     application. `Kubernetes <https://kubernetes.io/>`_ or k8s relays on
      a working `Docker <https://www.docker.com/>`_ installation.
 
 Networking considerations
