@@ -1,9 +1,206 @@
 Setting up a deployment
 #######################
 
-The steps below will guide you through setup of a Tator deployment. By the end you should be able to open Tator in your browser. We will use `DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app. You may set the IP address for this domain to a local address or something accessible via the web. Tator only works over https, so we will use `LetsEncrypt <https://letsencrypt.org>`_ for getting an SSL certificate. For hardware, you can use a single virtual machine, a single node, or a cluster of nodes in a local area network. The machines must be running Ubuntu 18.04 LTS.
+The steps below will guide you through setup of a Tator deployment. By the end
+you should be able to open Tator in your browser. The tutorial is assuming you
+are starting with a fresh (or near fresh) install of Ubuntu Linux 18.04. Other
+distributions may also work, but steps are literal to the Ubuntu platform.
 
-We recommend going through the full tutorial at least once using a single node or VM. After that, feel free to skip some steps if you already have a domain, SSL certificate, NFS server, or Kubernetes cluster. The full tutorial assumes you are starting with just bare metal.
+To serve the web application to the world wide web, the tutorial  will use
+`DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app.
+Tator is configured to work over https, so a TLS certificate is required.
+`LetsEncrypt <https://letsencrypt.org>`_ will be used to get a TLS certificate.
+
+For hardware, you can use a single virtual machine, a single node,
+or a cluster of nodes in a local area network. Other CAs can also be used
+to provide TLS certificates. For LAN-only deployments, the DuckDNS subdomain
+can be configured to point to a LAN-local address via its DNS entry.
+
+We recommend going through the full tutorial at least once using a single node
+or VM. After that, feel free to skip some steps if you already have a domain,
+SSL certificate, NFS server, or Kubernetes cluster. The full tutorial assumes
+you are starting with just bare metal.
+
+Architectural Pieces
+====================
+
+A Tator deployment makes use of one or more kubernetes clusters. This tutorial
+walks you through setting up one kubernetes cluster for both job serving (algorithm workflows) and the actual website hosting.
+
+.. image:: https://user-images.githubusercontent.com/47112112/77114204-827e1000-6a02-11ea-857b-9d27f7f98310.png
+   :scale: 50 %
+   :alt: Top-level architectural componens
+
+The green/blue boxes above denote where one can seperate the deployment to two
+seperate kubernetes clusters. There are many components within a Tator
+deployment, a summary of the core components is below:
+
+.. glossary::
+
+   MetalLB
+     The load balancer used in a bare metal deployment of kubernetes. The load
+     balancer is configured via :term:`loadBalancerIp` to forward traffic seen
+     at that IP to the internal software network of kubernetes. Advanced
+     configuration of load balancing failovers is not covered in this
+     tutorial. As an example an IP address of `192.168.1.221` can be used
+     if it is both outside the DHCP range of the network and visible to the
+     master node of the kubernetes cluster.
+
+   Job Server
+     The job server is the kuberneters cluster that has :term:`Argo` installed
+     to run asynchronous jobs for the tator deployment.
+
+   Argo
+     An extension to kubernetes to define a new job type called a *workflow*.
+     This allows for defining the execution of complex algorithms or routines
+     across a series of pods based on the description.
+     `Argo <https://argoproj.github.io/projects/argo/>`_ is develoiped and
+     maintained by `Intuit <https://www.intuit.com/>`_.
+
+   NGINX
+     The `web server <https://www.nginx.com/>`_ used to handle both static
+     serving of files as well as forwarding to dynamic content created by
+     django.
+
+   Django
+     The `python web framework <https://www.djangoproject.com/>`_ used by
+     tator online for handling dynamic web content and REST interactions.
+
+   Elastic Search
+     Complement to the :term:`PostgresSQL` database to allow for `faster searches <https://www.elastic.co/>`_.
+
+   PostgresSQL
+     `SQL-compliant database <https://www.postgresql.org/>`_ used to store
+     project configurations as well as media and associated metadata.
+
+   Kubernetes
+     The underlying system used to deploy and manage the containerized
+     application. `Kubernetes https://kubernetes.io/`_ or k8s relays on
+     a working `Docker <https://www.docker.com/>`_ installation.
+
+Networking considerations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If attempting to utilize a bare metal installation some thought should go into
+the IP address schema used by system. A static IP address for the server(s)
+running k8s is required. On the network an IP address for the :term:`MetalLB`
+loadbalancer should also be assigned. It is helpful if the underlying MetalLB
+address is the same as the underlying NIC address; as otherwise ICMP messages
+like ping are not responded appropriately at that address.
+
+Lastly, if behind a NAT firewall and outside traffic is desired to the web
+application, `port forwarding <https://en.wikipedia.org/wiki/Port_forwarding>`_
+must be enabled on your network's router. To be exact, ports `443` and port
+`80` must be forwarded to the load balancer IP via the NAT router.
+
+Installation of Prerequisites
+==================
+
+NFS and other standard packages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get install nfs-common
+
+Install Docker
+^^^^^^^^^^^^^^
+
+* Install docker on each node. Make sure it is version 18.09.8
+
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get remove docker docker-engine docker.io containerd runc
+   sudo apt-get install \
+       apt-transport-https \
+       ca-certificates \
+       curl \
+       gnupg-agent \
+       software-properties-common
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+   sudo add-apt-repository \
+      "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) \
+      stable"
+   sudo apt-get update
+   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
+
+
+* Add yourself to the docker group
+
+``sudo usermod -aG docker $USER``
+
+* Restart terminal or reboot to update groups
+* Log in to dockerhub
+
+``docker login``
+
+Enter your credentials for dockerhub.com.
+
+For GPU nodes, install nvidia-docker
+************************************
+
+* Make sure your node has the latest PPA provided graphics driver.
+
+.. code-block:: bash
+   :linenos:
+
+    sudo add-apt-repository ppa:graphics-drivers/ppa
+    sudo apt-get update
+    sudo apt-get install nvidia-430
+    sudo apt-get install nvidia-docker2``
+
+Install Kubernetes
+^^^^^^^^^^^^^^^^^^
+
+* Install Kubernetes 1.14.3 on all cluster nodes.
+
+.. code-block:: bash
+   :linenos:
+
+   sudo su
+   apt-get update
+   apt-get install -y apt-transport-https curl
+   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+   deb https://apt.kubernetes.io/ kubernetes-xenial main
+   EOF
+   apt-get update
+   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
+   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
+   sysctl net.bridge.bridge-nf-call-iptables=1
+   exit
+   sudo iptables -P FORWARD ACCEPT
+
+Installing Argo
+^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+   :linenos:
+
+   kubectl create namespace argo
+   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.4.3/manifests/install.yaml
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.1/argo-linux-amd64
+   sudo chmod +x /usr/local/bin/argo
+
+Install helm
+^^^^^^^^^^^^
+
+To build Tator you will need Helm 3 somewhere on your path.
+
+* Download and extract helm:
+
+.. code-block:: bash
+   :linenos:
+
+   wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
+   tar xzvf helm-v3.0.2-linux-amd64.tar.gz
+
+
+* Add the executable to your PATH in bashrc:
+
+``export PATH=$HOME/linux-amd64:$PATH``
 
 DuckDNS Domain Setup
 ====================
@@ -39,15 +236,23 @@ Get the certificate
 ^^^^^^^^^^^^^^^^^^^
 ``sudo certbot -d <domain> --manual --preferred-challenges dns certonly``
 
-* Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE> displays
-* Open a new browser window and enter the following into the address bar:
-    * Your token can be found on the duckdns.org account page
-    * https://www.duckdns.org/update?domains=<sub_domain_only>&token=<your_token_value>&txt=<DNS_TXT_value>
-    * OK should appear in your browser
-* Navigate back to the terminal, hit enter
-* Certificate has been issued. Note the location of the certificate files.
+The following message will display:
 
-**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto and repeat step 4.**
+.. code-block:: bash
+
+   Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>
+
+For the next step you will need to get your token from your `<duckdns.org>`_ account page.
+
+In order to deploy this DNS TXT record open a new browser window and enter the following into the address bar:
+   `https://www.duckdns.org/update?domains=<sub\_domain\_only>&token=<your\_token\_value>&txt=<DNS\_TXT\_value>`
+
+* ``OK`` should appear in your browser
+* Navigate back to the terminal, hit enter
+
+The certificate has been issued. Note the location of the certificate files.
+
+**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto**
 
 Certbot-auto installation steps:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,66 +300,18 @@ Kubernetes Pre-flight Setup
 
 * Modify /etc/fstab and comment out the swap volume.
 
-Install NFS client package
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-``sudo apt-get install nfs-common``
+Network instability
+^^^^^^^^^^^^^^^^^^^
 
-Install Docker
-^^^^^^^^^^^^^^
-
-* Install docker on each node. Make sure it is version 18.09.8
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get remove docker docker-engine docker.io containerd runc
-   sudo apt-get install \
-       apt-transport-https \
-       ca-certificates \
-       curl \
-       gnupg-agent \
-       software-properties-common
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-   sudo add-apt-repository \
-      "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) \
-      stable"
-   sudo apt-get update
-   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
-
-
-* Add yourself to the docker group
-
-``sudo usermod -aG docker $USER``
-
-* Restart terminal or reboot to update groups
-* Log in to dockerhub
-
-``docker login``
-
-Enter your credentials for dockerhub.com.
-
-For GPU nodes, install nvidia-docker
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Make sure your node has the latest PPA provided graphics driver.
-
-.. code-block:: bash
-   :linenos:
-
-    sudo add-apt-repository ppa:graphics-drivers/ppa
-    sudo apt-get update
-    sudo apt-get install nvidia-430
-
-
-* Install nvidia-docker
-
-``sudo apt-get install nvidia-docker2``
+A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
+older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
+clusters that are already setup.
 
 Configuring a local docker registry
 ===================================
 
-Tator assumes a local registry is available for storing custom Docker images. We will set up a docker registry using the registry docker container.
+Depending on your `values.yaml` configuration, Tator requires a local registry is available for storing custom Docker images.
+We will set up a docker registry using the registry docker container.
 
 Start the docker registry
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -163,13 +320,14 @@ Start the docker registry
 Set the docker values in values.yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Set ``dockerRegistry`` to the registry you plan to use.
-* Set ``dockerUsername`` and ``dockerPassword`` to the credentials for that registry.
+* Set ``dockerRegistry`` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
+* Set ``dockerUsername`` and ``dockerPassword`` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
 
 Configure the docker daemon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each node must be configured to accept this registry as insecure.
+Unless the local registry is setup to use authentication, the docker client on each node needs to add it to its list of
+insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
 
 * Open /etc/docker/daemon.json
 * If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'myserver':
@@ -229,14 +387,11 @@ Tator creates all Kubernetes persistent volumes using NFS shares. Its build syst
 * The **raw** share is for storing raw media.
 * The **backup** share is for storing database backups.
 * The **migrations** share is for storing migrations.
-
-Make sure the nfs client package is installed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``sudo apt-get install nfs-common``
+* The **scratch** share is for temporary storage of artifacts used by workflows
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
-Create a file called *exports* that we will use for defining the NFS shares and put the following content into it (change the subnet if necessary):
+Create a file called *exports* in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
 
 .. code-block:: text
    :linenos:
@@ -248,6 +403,8 @@ Create a file called *exports* that we will use for defining the NFS shares and 
    /media/kubernetes_share/backup 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/migrations 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
+
+.. _NFS Setup:
 
 Preparing NFS server node
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -278,11 +435,12 @@ Preparing NFS server node
 NFS version
 ^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for development/evaluation.
+We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for
+development/evaluation.
 
 Using NFS3
 **********
-Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image. 
+Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
 
 * Disable rpcbind:
 
@@ -337,29 +495,6 @@ Database performance is dependent on high speed storage. Tator currently runs da
 
 Kubernetes Cluster Setup
 ========================
-
-Install Kubernetes
-^^^^^^^^^^^^^^^^^^
-
-* Install Kubernetes 1.14.3 on all cluster nodes.
-
-.. code-block:: bash
-   :linenos:
-
-   sudo su
-   apt-get update
-   apt-get install -y apt-transport-https curl
-   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-   deb https://apt.kubernetes.io/ kubernetes-xenial main
-   EOF
-   apt-get update
-   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
-   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
-   sysctl net.bridge.bridge-nf-call-iptables=1
-   exit
-   sudo iptables -P FORWARD ACCEPT
-
 
 Resetting kubernetes configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -462,38 +597,14 @@ Make sure you apply labels for all nodes in the Kubernetes cluster.
 
 The Kubernetes cluster is now configured and you are ready to build Tator.
 
-Network instability
-^^^^^^^^^^^^^^^^^^^
-
-A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
-older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
-clusters that are already setup.
 
 Job cluster setup
 =================
 
-Tator uses [Argo](https://argoproj.github.io/projects/argo) to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
+Tator uses `Argo <https://argoproj.github.io/projects/argo>`_ to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
 
 - It must have the Argo custom resource definitions (CRD) installed.
-- It must have a dynamic persistent volume (PV) provisioner.
-
-Installing Argo
-^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   kubectl create namespace argo
-   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.4.3/manifests/install.yaml
-
-Installing Argo CLI
-^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.1/argo-linux-amd64
-   sudo chmod +x /usr/local/bin/argo
+- It must have a dynamic persistent volume (PV) provisioner. Steps are provided to install the `nfs-client-provisioner`.
 
 Setting up dynamic PV provisioner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -503,13 +614,14 @@ Managed Kubernetes solutions typically come with a dynamic PV provisioner includ
 Install the nfs-client-provisioner helm chart
 *********************************************
 
-* From the NFS setup, there should be a folder exported called `/media/kubernetes/scratch`. 
+* :ref:`From the NFS setup<NFS Setup>`, there should be a folder exported called `/media/kubernetes/scratch`.
 
 * Install the helm chart:
 
 .. code-block:: bash
    :linenos:
 
+   kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
    helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
@@ -519,10 +631,11 @@ Install the nfs-client-provisioner helm chart
 Test the provisioner
 ********************
 
-Create a file called nfs-test.yaml with the following spec:
+Create a file called nfs-test.yaml with the following spec (Note the storage class requested):
 
 .. code-block:: yaml
    :linenos:
+   :emphasize-lines: 8
 
    kind: PersistentVolumeClaim
    apiVersion: v1
@@ -553,46 +666,86 @@ Tator build system
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
 
-Install helm
-^^^^^^^^^^^^
-
-To build Tator you will need Helm 3 somewhere on your path.
-
-* Download and extract helm:
-
-.. code-block:: bash
-   :linenos:
-
-   wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
-   tar xzvf helm-v3.0.2-linux-amd64.tar.gz
-
-
-* Add the executable to your PATH in bashrc:
-
-``export PATH=$HOME/linux-amd64:$PATH``
-
 Update the configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of each field:
+The Tator configuration file is located at ``helm/tator/values.yaml``. Modify this file to meet your requirements. Below is an explanation of important fields:
 
-* `dockerRegistry` is the host and port of the cluster's local docker registry that was set up earlier in this tutorial.
-* `nfsServer` is the IP address of the host serving the NFS shares.
-* `loadBalancerIp` is the external IP address of the load balancer. This is where NGINX will receive requests.
-* `domain` is the domain name that was set up earlier in this tutorial.
-* `metallb.enabled` is a boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud providers as in these cases a load balancer implementation is provided.
-* `metallb.ipRangeStart` and `metallb.ipRangeStop` indicate the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of any DHCP servers on your network (such as a router).
-* `redis.enabled` is a boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service, in which case this should be set to false.
-* Other redis settings should not be modified at this time.
-* `postgis.enabled` is a boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed postgresql service, in which case this should be set to false.
-* `postgis.hostPath` specifies the host path for the postgres data directory. This should be a path to high speed storage (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes setup step via the dbServer node label.
-* `gunicornReplicas`, `transcoderReplicas`, and `algorithmReplicas` indicate the number of pod replicas for each of these services.
-* `pv` variables indicate the size of the persistent volumes corresponding to the NFS shares. These can be modified according to available space on your NFS shares.
+.. glossary::
+
+  dockerRegistry
+    The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
+
+  djangoSecretKey
+    A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
+
+  postgresUsername
+    Field that allows you to give your postgres db a user name (or if you are accessing an existing db, make sure credentials match)
+
+  postgresPassword
+    Field that allows you to set your postgres db password (or if you are accessing an existing one, provide the password here)
+
+  nfsServer
+    The IP address of the host serving the NFS shares.
+
+  loadBalancerIp
+    The external IP address of the load balancer. This is where NGINX will receive requests. For single node deployments this
+    can be the same as the IP address of the node on the LAN (e.g. 192.168.1.100). It is ideal if this is a static IP address. This
+    ip address should be within the inclusive range of :term:`metallb.ipRangeStart` and :term:`metallb.ipRangeStop`.
+
+  domain
+    The domain name that was set up earlier in this tutorial. (e.g. mysite.duckdns.org)
+
+  metallb.enabled
+    A boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud
+    providers as in these cases a load balancer implementation is provided.
+
+  metallb.ipRangeStart
+  metallb.ipRangeStop
+    Indicates the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of
+    any DHCP servers on your network. Verify the selected :term:`loadBalancerIp` falls into this range
+
+  redis.enabled
+     A boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service,
+     in which case this should be set to false.
+
+  postgis.enabled
+     A boolean indicating whether the postgis pod should be enabled. On cloud providers you may wish to use a managed
+     postgresql service, in which case this should be set to false.
+
+  postgis.hostPath
+     Specifies the host path for the postgres data directory. This should be a path to high speed storage
+     (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes
+     setup step via the dbServer node label.
+
+  gunicornReplicas
+  transcoderReplicas
+  algorithmReplicas
+     Indicates the number of pod replicas for each of these services.
+
+  pv.staticPath
+  pv.uploadPath
+  pv.mediaPath
+  pv.rawPath
+  pv.backupPath
+  pv.migrationsPath
+     Indicates the location of each persistent volume.
+
+  pvc.staticSize
+  pvc.uploadSize
+  pvc.mediaSize
+  pvc.rawSize
+  pvc.backupSize
+  pvc.migrationsSize
+     Indicates the size of the persistent volumes corresponding to the NFS shares. These can be modified according to
+     available space on your NFS shares.
 
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tator will be accessed via the `loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally, simply update your domain to point to this IP address. If you are setting up a website, you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
+Tator will be accessed via the :term:`loadBalancerIp` defined in your ``values.yaml``. If you are using Tator locally, update
+your domain to point to this IP address. If you are setting up a website,
+you will need to route external traffic to this load balancer IP address using your router or other network infrastructure.
 
 Building Tator
 ==============
@@ -622,6 +775,7 @@ Building Tator
 
 * Install npm packages
 
+``sudo apt install npm``
 ``npm install``
 
 
@@ -642,6 +796,15 @@ It will take a little while for all the services, pods, and volumes to come up. 
 ``make collect-static``
 
 * Open the site. Open your browser and navigate to mydomain.duckdns.org (or whatever your domain is). If you get a login page, congrats! You have completed the Tator build process.
+
+If something goes wrong (and it probably will the first time), there are a few steps to clear away a broken/incomplete install and start over at make cluster:
+
+.. code-block:: bash
+
+   helm ls -a
+   helm delete tator
+   make clean
+
 
 Setting up a root user
 ^^^^^^^^^^^^^^^^^^^^^^
