@@ -212,7 +212,7 @@ class AnnotationPlayer extends TatorElement {
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      this._video.loadFromURL(val.url, val.fps, val.num_frames, dims)
+      this._video.loadFromVideoObject(val)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
             composed: true

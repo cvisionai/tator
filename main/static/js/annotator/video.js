@@ -775,8 +775,33 @@ class VideoCanvas extends AnnotationCanvas {
 
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromURL(videoUrl, fps, numFrames, dims)
+  loadFromVideoObject(videoObject)
   {
+    // Note: dims is width,height here
+    let videoUrl, fps, numFrames, dims;
+    fps = videoObject.fps;
+    numFrames = videoObject.num_frames;
+    if (videoObject.media_files)
+    {
+      // Load first streaming file available
+      let streaming_data = videoObject.media_files["streaming"][0];
+
+      let host = `${window.location.protocol}//${window.location.host}`;
+      if (streaming_data.host)
+      {
+        host = streaming_data.host;
+      }
+      // TODO: add auth support for off-site media
+      videoUrl = `${host}/${streaming_data["path"]}`;
+      dims = [streaming_data.resolution[1],streaming_data.resolution[0]];
+    }
+    else
+    {
+      videoUrl = videoObject.url;
+      dims = [videoObject.width,videoObject.height];
+      console.warn("Using old access method!");
+    }
+    // TODO: videoUrl, fps, numFrames, dims
     var that = this;
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
