@@ -174,17 +174,6 @@ Install Kubernetes
    exit
    sudo iptables -P FORWARD ACCEPT
 
-Installing Argo
-^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   kubectl create namespace argo
-   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.4.3/manifests/install.yaml
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.1/argo-linux-amd64
-   sudo chmod +x /usr/local/bin/argo
-
 Install helm
 ^^^^^^^^^^^^
 
@@ -606,6 +595,17 @@ Tator uses `Argo <https://argoproj.github.io/projects/argo>`_ to manage jobs, in
 
 - It must have the Argo custom resource definitions (CRD) installed.
 - It must have a dynamic persistent volume (PV) provisioner. Steps are provided to install the `nfs-client-provisioner`.
+
+Installing Argo
+^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+   :linenos:
+
+   kubectl create namespace argo
+   kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/v2.4.3/manifests/install.yaml
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.5.1/argo-linux-amd64
+   sudo chmod +x /usr/local/bin/argo
 
 Setting up dynamic PV provisioner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
