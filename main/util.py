@@ -1,11 +1,15 @@
 import logging
 import os
 import time
+import subprocess
+import json
 
 from progressbar import progressbar,ProgressBar
 
 from main.models import *
 from main.search import TatorSearch
+
+from django.conf import settings
 
 from elasticsearch.helpers import streaming_bulk
 
@@ -360,3 +364,53 @@ def clearStaleProgress(project, ptype):
         print("Unknown progress type")
 
     Redis(host=os.getenv('REDIS_HOST')).delete(f'{ptype}_latest_{project}')
+
+from pprint import pprint
+
+def make_video_definition(disk_file, url_path):
+        cmd = [
+        "ffprobe",
+        "-v","error",
+        "-show_entries", "stream",
+        "-print_format", "json",
+        "-count_frames",
+        "-skip_frame", "nokey",
+        disk_file,
+        ]
+        output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+        video_info = json.loads(output)
+        stream_idx=0
+        for idx, stream in enumerate(video_info["streams"]):
+            if stream["codec_type"] == "video":
+                stream_idx=idx
+                break
+        stream = video_info["streams"][stream_idx]
+        video_def = getVideoDefinition(
+            url_path,
+            stream["codec_name"],
+            stream["height"],
+            codec_description=stream["codec_long_name"])
+
+        return video_def
+def migrateVideosToNewSchema(project):
+    videos = EntityMediaVideo.objects.filter(project=project)
+    for video in progressbar(videos):
+        streaming_definition = make_video_definition(
+            os.path.join(settings.MEDIA_ROOT,
+                         video.file.name),
+            os.path.join(settings.MEDIA_URL,
+                         video.file.name))
+        if video.segment_info:
+            streaming_definition['segment_info'] = os.path.relpath(
+                video.segment_info,
+                '/data')
+        if video.original:
+            archival_definition = make_video_definition(video.original,
+                                                        video.original)
+        media_files = {"streaming" : [streaming_definition]}
+
+        if archival_definition:
+            media_files.update({"archival": [archival_definition]})
+        video.media_files = media_files
+        pprint(media_files)
+        video.save()
