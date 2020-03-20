@@ -266,7 +266,7 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
     original_url = serializers.SerializerMethodField()
     thumb_gif_url = serializers.SerializerMethodField()
     thumb_url = serializers.SerializerMethodField()
-    media_files = serializers.SerializerMethodField()
+    media_files = serializers.JSONField()
 
     def get_thumb_url(self, obj):
         return self.context['view'].request.build_absolute_uri(obj.thumbnail.url)
@@ -277,22 +277,6 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
             return None
     def get_thumb_gif_url(self, obj):
         return self.context['view'].request.build_absolute_uri(obj.thumbnail_gif.url)
-    def get_media_files(self, obj):
-        if obj.media_files != None:
-            media_files = {}
-            if 'archival' in obj.media_files:
-                media_files['archival'] = []
-                for media_def in obj.media_files['archival']:
-                    media_def['path'] = self.context['view'].request.build_absolute_uri(media_def['path'])
-                    media_files['archival'].append(media_def)
-            if 'streaming' in obj.media_files:
-                media_files['streaming'] = []
-                for media_def in obj.media_files['streaming']:
-                    media_def['path'] = self.context['view'].request.build_absolute_uri(media_def['path'])
-                    media_files['streaming'].append(media_def)
-            return media_files
-        else:
-            return None
     class Meta:
         model = EntityMediaVideo
         fields = EntityMedia_baseFields + [
