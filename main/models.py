@@ -40,6 +40,8 @@ from django_ltree.fields import PathField
 from .cache import TatorCache
 from .search import TatorSearch
 
+from collections import UserDict
+
 import logging
 import os
 
@@ -178,7 +180,7 @@ class Version(Model):
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
     show_empty = BooleanField(default=False)
-    """ Tells the UI to show this version even if the current media does not 
+    """ Tells the UI to show this version even if the current media does not
         have any annotations.
     """
 
@@ -343,6 +345,22 @@ def image_delete(sender, instance, **kwargs):
     instance.file.delete(False)
     instance.thumbnail.delete(False)
 
+def getVideoDefinition(path, codec, resolution, **kwargs):
+    """ Convenience function to generate video definiton dictionary """
+    obj = {"path": path,
+           "codec": codec,
+           "resolution": resolution}
+    for arg in kwargs:
+        if arg in ["segment_info",
+                   "host",
+                   "http_auth",
+                   "codec_meme",
+                   "codec_description"]:
+            obj[arg] = kwargs[arg]
+        else:
+            raise TypeError(f"Invalid argument '{arg}' supplied")
+    return obj
+
 class EntityMediaVideo(EntityMediaBase):
     """
     Fields:
@@ -387,9 +405,9 @@ class EntityMediaVideo(EntityMediaBase):
                                   # Example mime: 'video/mp4; codecs="avc1.64001e"'
                                   # Only relevant for straming files, will assume
                                   # example above if not present.
-                                  "codec-mime": <mime for MSE decode>
+                                  "codec_mime": <mime for MSE decode>
 
-                                  "description": <description other than codec>}
+                                  "codec_description": <description other than codec>}
 
 
     """
