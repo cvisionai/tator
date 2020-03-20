@@ -10,7 +10,7 @@ MAINTAINER CVision AI <info@cvisionai.com>
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        && rm -rf /var/lib/apt/lists
+        ffmpeg && rm -rf /var/lib/apt/lists
 %else:
 FROM ubuntu:19.04
 MAINTAINER CVision AI <info@cvisionai.com>
