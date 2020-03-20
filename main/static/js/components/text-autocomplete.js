@@ -58,7 +58,7 @@ class WormsAutoComplete {
     let name_url = worms_service_url;
     name_url += "/AphiaRecordsByName/";
     name_url += text;
-    name_url += "?like=true";
+    name_url += "?like=true&marine_only=false";
     let name_request = new Request(name_url);
 
     let vernacular_detail_url = worms_service_url;
