@@ -388,7 +388,7 @@ def make_video_definition(disk_file, url_path):
         video_def = getVideoDefinition(
             url_path,
             stream["codec_name"],
-            stream["height"],
+            (stream["height"], stream["width"]),
             codec_description=stream["codec_long_name"])
 
         return video_def

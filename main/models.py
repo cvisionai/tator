@@ -383,7 +383,7 @@ class EntityMediaVideo(EntityMediaBase):
                             "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
-                                  "resolution": <vertical pixel count, e.g. 720>
+                                  "resolution": [<vertical pixel count, e.g. 720>, width]
 
 
                                   ###################
