@@ -310,8 +310,8 @@ Start the docker registry
 Set the docker values in values.yaml
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Set ``dockerRegistry`` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
-* Set ``dockerUsername`` and ``dockerPassword`` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
+* Set :term:`dockerRegistry` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
+* Set :term:`dockerUsername` and :term:`dockerPassword` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
 
 Configure the docker daemon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -676,6 +676,11 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
   dockerRegistry
     The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
+
+  systemImageRepo
+    The host and port of the cluster's docker registry to use for system images.
+    This defaults to 'cvisionai' off dockerhub; but for development should be
+    set to the value in :term:`dockerRegistry`
 
   djangoSecretKey
     A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
