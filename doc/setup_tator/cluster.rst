@@ -412,6 +412,8 @@ Preparing NFS server node
    mkdir /media/kubernetes_share/upload
    mkdir /media/kubernetes_share/migrations
    mkdir /media/kubernetes_share/scratch
+   mkdir /media/kubernetes_share/elasticsearch
+   mkdir /media/kubernetes_share/postgres
 
 * Set NFS permissions:
 
