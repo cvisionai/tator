@@ -13,7 +13,7 @@ Once you have a [deployment](../setup_tator/cluster.html) set up, you can follow
 
 Project creation and configuration will eventually be part of the front end and available to all users. However currently projects can only be created via the Django admin console.
 
-* Make sure you are logged in with an admin account. If you don't have an admin account, follow the instructions [here](#Creating an admin acount).
+* Make sure you are logged in with an admin account. If you don't have an admin account, follow the instructions [here](admin.md#Creating an admin acount).
 * Open the admin console at `<your-domain>/admin`.
 * Click `Projects`.
 * Click `Add Project`.
