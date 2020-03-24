@@ -373,8 +373,6 @@ def make_video_definition(disk_file, url_path):
         "-v","error",
         "-show_entries", "stream",
         "-print_format", "json",
-        "-count_frames",
-        "-skip_frame", "nokey",
         disk_file,
         ]
         output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
