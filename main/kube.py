@@ -747,7 +747,7 @@ class TatorTranscode(JobManagerMixin):
         base, _ = os.path.splitext(name)
         args = {
             'original': '/work/' + name,
-            'transcoded': '/work/' + base + '_transcoded.mp4',
+            'transcoded': '/work/' + base + '_transcoded',
             'thumbnail': '/work/' + base + '_thumbnail.jpg',
             'thumbnail_gif': '/work/' + base + '_thumbnail_gif.gif',
             'segments': '/work/' + base + '_segments.json',
