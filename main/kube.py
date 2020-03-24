@@ -314,31 +314,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        self.segments_task = {
-            'name': 'segments',
-            'inputs': {'parameters' : spell_out_params(['transcoded','segments'])},
-            'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': [
-                    'makeFragmentInfo.py',
-                    '--output', '{{inputs.parameters.segments}}',
-                    '{{inputs.parameters.transcoded}}',
-                ],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '500Mi',
-                        'cpu': '1000m',
-                    },
-                },
-            },
-        }
+
         self.image_upload_task = {
             'name': 'image-upload',
             'inputs': {'parameters' : spell_out_params(['url',
@@ -381,7 +357,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-        
+
         self.upload_task = {
             'name': 'upload',
             'inputs': {'parameters' : spell_out_params(['url',
@@ -603,15 +579,10 @@ class TatorTranscode(JobManagerMixin):
                     'template': 'thumbnail',
                     'arguments': passthrough_parameters
                 }, {
-                    'name': 'segments-task',
-                    'template': 'segments',
-                    'arguments': passthrough_parameters,
-                    'dependencies': ['transcode-task',],
-                }, {
                     'name': 'upload-task',
                     'template': 'upload',
                     'arguments': passthrough_parameters,
-                    'dependencies': ['transcode-task', 'thumbnail-task', 'segments-task'],
+                    'dependencies': ['transcode-task', 'thumbnail-task'],
                 }],
             },
         }
@@ -718,7 +689,6 @@ class TatorTranscode(JobManagerMixin):
                     self.delete_task,
                     self.transcode_task,
                     self.thumbnail_task,
-                    self.segments_task,
                     self.upload_task,
                     self.image_upload_task,
                     self.unpack_task,
@@ -800,7 +770,6 @@ class TatorTranscode(JobManagerMixin):
                     self.download_task,
                     self.transcode_task,
                     self.thumbnail_task,
-                    self.segments_task,
                     self.upload_task,
                     self.image_upload_task,
                     self.get_transcode_dag(),
