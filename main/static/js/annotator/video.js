@@ -6,7 +6,7 @@
 ///
 /// The off-screen buffer is then copied to a buffer of GPU-backed
 /// textures, whose depth is configurable by 'bufferDepth' variable in
-/// 'loadFromURL'.
+/// 'loadFromVideoElement'.
 ///
 /// The 'playGeneric' routine is kicked off for forward/rewind activities
 /// and drives to userspace threads.
@@ -801,7 +801,8 @@ class VideoCanvas extends AnnotationCanvas {
       dims = [videoObject.width,videoObject.height];
       console.warn("Using old access method!");
     }
-    // TODO: videoUrl, fps, numFrames, dims
+
+    console.info(`Video dimensions = ${dims}`);
     var that = this;
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
