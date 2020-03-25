@@ -380,7 +380,6 @@ class TatorTranscode(JobManagerMixin):
                     '--transcoded_path', '{{inputs.parameters.transcoded}}',
                     '--thumbnail_path', '{{inputs.parameters.thumbnail}}',
                     '--thumbnail_gif_path', '{{inputs.parameters.thumbnail_gif}}',
-                    '--segments_path', '{{inputs.parameters.segments}}',
                     '--tus_url', '{{workflow.parameters.tus_url}}',
                     '--url', '{{workflow.parameters.rest_url}}',
                     '--token', '{{workflow.parameters.token}}',

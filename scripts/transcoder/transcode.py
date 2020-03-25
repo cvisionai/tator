@@ -47,7 +47,8 @@ def determine_transcode(path):
 
     # Handle up to but not exceeding FHD
     height = int(stream["height"])
-    resolutions=[resolution in STREAMING_RESOLUTIONS if resolution < height]
+    print(f"Height of video is : {height}")
+    resolutions=[resolution for resolution in STREAMING_RESOLUTIONS if resolution < height]
     if height <= MAX_RESOLUTION:
         resolutions.append(height)
     return resolutions
@@ -79,7 +80,7 @@ def transcode(path, outpath):
     logger.info(f"Transcoding to {resolutions}")
     for resolution in resolutions:
         logger.info(f"Generating resolution @ {resolution}")
-        output_file = os.path.join(output, f"{resolution}.mp4")
+        output_file = os.path.join(outpath, f"{resolution}.mp4")
         resolution_cmd = [*cmd, "-vf", f"scale=-2:{resolution}",
                           output_file]
         logger.info('ffmpeg cmd = {}'.format(resolution_cmd))

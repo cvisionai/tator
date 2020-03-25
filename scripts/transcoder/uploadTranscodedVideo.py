@@ -5,6 +5,7 @@ import logging
 import json
 import math
 import subprocess
+import os
 
 from tusclient.client import TusClient
 from progressbar import progressbar
@@ -17,10 +18,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Uploads transcoded video.')
     parser.add_argument('--original_path', type=str, help='Original video file.')
     parser.add_argument('--original_url', type=str, help='Upload URL of original file. If given, upload is skipped.')
-    parser.add_argument('--transcoded_path', type=str, help='Transcoded video file.')
+    parser.add_argument('--transcoded_path', type=str, help='Transcoded video directory (contains multiple video resolutions).')
     parser.add_argument('--thumbnail_path', type=str, help='Thumbnail file.')
     parser.add_argument('--thumbnail_gif_path', type=str, help='Thumbnail gif file.')
-    parser.add_argument('--segments_path', type=str, help='Segment info file.')
     parser.add_argument('--tus_url', type=str, default='https://www.tatorapp.com/files/', help='TUS URL.')
     parser.add_argument('--url', type=str, default='https://www.tatorapp.com/rest', help='REST API URL.')
     parser.add_argument('--token', type=str, help='REST API token.')
@@ -75,6 +75,27 @@ def get_metadata(path):
 
     return (codec, fps, num_frames, width, height)
 
+def make_video_definition(disk_file):
+    cmd = [
+        "ffprobe",
+        "-v","error",
+        "-show_entries", "stream",
+        "-print_format", "json",
+        disk_file,
+    ]
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+    video_info = json.loads(output)
+    stream_idx=0
+    for idx, stream in enumerate(video_info["streams"]):
+        if stream["codec_type"] == "video":
+            stream_idx=idx
+            break
+    stream = video_info["streams"][stream_idx]
+    video_def = {"resolution": (stream["height"], stream["width"]),
+                 "codec": stream["codec_name"],
+                 "codec_description": stream["codec_long_name"]}
+    return video_def
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -92,17 +113,44 @@ if __name__ == '__main__':
         original_url = args.original_url
 
 
-    logger.info("Uploading transcoded file...")
-    transcoded_url = upload_file(args.transcoded_path, args.tus_url)
+
     logger.info("Uploading thumbnail...")
     thumbnail_url = upload_file(args.thumbnail_path, args.tus_url)
     logger.info("Uploading thumbnail gif...")
     thumbnail_gif_url = upload_file(args.thumbnail_gif_path, args.tus_url)
-    logger.info("Uploading segments file...")
-    segments_url = upload_file(args.segments_path, args.tus_url)
 
+
+    media_files={"archival": [],
+                 "streaming": []}
+    video_def = make_video_definition(args.original_path)
+    video_def['url'] = original_url
     # Get metadata for the original file
     codec, fps, num_frames, width, height = get_metadata(args.original_path)
+    media_files['archival'].append(video_def)
+
+    for root, dirs, files in os.walk(args.transcoded_path):
+        print(f"Processing {files} in {args.transcoded_path}")
+        for vid_file in files:
+            vid_path = os.path.join(root, vid_file)
+            base = os.path.splitext(vid_file)[0]
+            segments_path = os.path.join(root, f"{base}.json")
+            segments_cmd=["python3",
+                          "/scripts/makeFragmentInfo.py",
+                          "--output", segments_path,
+                          vid_path]
+            subprocess.run(segments_cmd, stdout=subprocess.PIPE, check=True)
+
+            logger.info("Uploading transcoded file...")
+            transcoded_url = upload_file(vid_path, args.tus_url)
+
+            logger.info("Uploading segments file...")
+            segments_url = upload_file(segments_path, args.tus_url)
+
+            #Generate video info block
+            video_def = make_video_definition(vid_path)
+            video_def["url"] = transcoded_url
+            video_def["segment_info_url"] = segments_url
+            media_files['streaming'].append(video_def)
 
     # Save the video
     out = requests.post(
@@ -116,11 +164,9 @@ if __name__ == '__main__':
             'type': args.type,
             'uid': args.uid,
             'gid': args.gid,
-            'original_url': original_url,
-            'transcoded_url': transcoded_url,
+            'media_files': media_files,
             'thumbnail_url': thumbnail_url,
             'thumbnail_gif_url': thumbnail_gif_url,
-            'segments_url': segments_url,
             'name': args.name,
             'section': args.section,
             'md5': args.md5,
