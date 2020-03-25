@@ -270,11 +270,30 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
     thumb_url = serializers.SerializerMethodField()
     media_files = serializers.JSONField()
 
+    def get_file_url(self, obj):
+        try:
+            return self.context['view'].request.build_absolute_uri(obj.file.url)
+        except:
+            if obj.media_files != None:
+                # For backwards compatibility, return the first streaming file
+                streaming = obj.media_files.get('streaming', [{"path": None}])
+                logger.info(f"Serializing media files {streaming}")
+                url = self.context['view'].request.build_absolute_uri(streaming[0]['path'])
+                logger.info(f"Serializing media files {url}")
+                return url
+            else:
+                return None
+
     def get_thumb_url(self, obj):
         return self.context['view'].request.build_absolute_uri(obj.thumbnail.url)
     def get_original_url(self, obj):
         if obj.original != None:
             return self.context['view'].request.build_absolute_uri(obj.original)
+        elif obj.media_files != None:
+            # For backwards compatibility, return the first archival file
+            files = obj.media_files.get('archival', [{"path": None}])
+            url = self.context['view'].request.build_absolute_uri(files[0]['path'])
+            return url
         else:
             return None
     def get_thumb_gif_url(self, obj):
@@ -500,4 +519,3 @@ class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
         fields = ['id', 'name', 'description', 'number', 'project', 'show_empty']
-
