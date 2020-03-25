@@ -84,11 +84,16 @@ class QualityControl extends TatorElement {
 
     slider.addEventListener("input", evt => {
       const index = evt.target.value;
+      const quality = resolutions[resolutions.length-index];
+      this._span.textContent = quality + "p";
+    });
+    slider.addEventListener("change", evt => {
+      const index = evt.target.value;
       // Resolutions are in descending order
       const resolution = resolutions[resolutions.length-index];
       this.quality = resolution;
       this.dispatchEvent(new CustomEvent("qualityChange", {
-        detail: {resolution: resolution},
+        detail: {quality: resolution},
         composed: true
       }));
     });
