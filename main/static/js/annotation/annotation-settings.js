@@ -30,7 +30,7 @@ class AnnotationSettings extends TatorElement {
       url += "?attribute=" + searchParams.get("attribute");
       url += this._queryParams();
       const text = document.createElement("textarea");
-      text.textContent = url;
+      text.textContent = encodeURI(url);
       text.style.opacity = 0;
       document.body.appendChild(text);
       text.select();
