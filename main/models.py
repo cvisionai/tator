@@ -428,11 +428,33 @@ def video_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
 
+def safe_delete(path):
+    try:
+        logger.info(f"Deleting {path}")
+        os.remove(path)
+    except:
+        logger.warning(f"Could not remove {path}")
+
 @receiver(pre_delete, sender=EntityMediaVideo)
 def video_delete(sender, instance, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().delete_document(instance)
     instance.file.delete(False)
+    if instance.original != None:
+        path = str(instance.original)
+        safe_delete(path)
+
+    # Delete all the files referenced in media_files
+    if not instance.media_files is None:
+        files = instance.media_files.get('streaming', [])
+        for obj in files:
+            path = "/data" + obj['path']
+            safe_delete(path)
+            path = "/data" + obj['segment_info']
+            safe_delete(path)
+        files = instance.media_files.get('archival', [])
+        for obj in files:
+            safe_delete(obj['path'])
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
