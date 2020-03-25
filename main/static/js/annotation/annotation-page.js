@@ -213,6 +213,12 @@ class AnnotationPage extends TatorPage {
       }
     });
 
+    this._settings.addEventListener("qualityChange", evt => {
+      if ("setQuality" in canvas) {
+        canvas.setQuality(evt.detail.quality);
+      }
+    });
+
     canvas.addEventListener("zoomChange", evt => {
       this._settings.setAttribute("zoom", evt.detail.zoom);
     });

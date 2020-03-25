@@ -204,6 +204,7 @@ class AnnotationPlayer extends TatorElement {
 
   set mediaInfo(val) {
     this._video.mediaInfo = val;
+    this._mediaInfo = val;
     const dims = [val.width, val.height];
     this._slider.setAttribute("min", 0);
     this._slider.setAttribute("max", val.num_frames);
@@ -258,6 +259,14 @@ class AnnotationPlayer extends TatorElement {
   setRate(val) {
     this._rate = val;
     this._video.rateChange(this._rate);
+  }
+
+  setQuality(quality) {
+    // For now reload the video
+    console.info("Setting quality = " + quality);
+    this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
+      this._video.refresh();
+    });
   }
 
   zoomPlus() {
