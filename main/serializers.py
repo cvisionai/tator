@@ -277,9 +277,7 @@ class EntityMediaVideoSerializer(serializers.ModelSerializer,
             if obj.media_files != None:
                 # For backwards compatibility, return the first streaming file
                 streaming = obj.media_files.get('streaming', [{"path": None}])
-                logger.info(f"Serializing media files {streaming}")
                 url = self.context['view'].request.build_absolute_uri(streaming[0]['path'])
-                logger.info(f"Serializing media files {url}")
                 return url
             else:
                 return None
