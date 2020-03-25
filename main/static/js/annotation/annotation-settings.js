@@ -160,8 +160,17 @@ class AnnotationSettings extends TatorElement {
       {
         quality_list.push(media_file.resolution[0]);
       }
-      console.info(`NOTE: Valid resolutions: ${quality_list}`);
+      this._quality.resolutions = quality_list;
     }
+    else
+    {
+      this._quality.hide();
+    }
+  }
+
+  set quality(val)
+  {
+    this._quality = val;
   }
 }
 
