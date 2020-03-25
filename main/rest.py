@@ -3077,8 +3077,8 @@ class SaveVideoAPI(APIView):
                 upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
 
                 res_uid = str(uuid1())
-                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, f"{res_uid}_segments.json")
-                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, res_uid + '.mp4')
+                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
+                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
                 del streaming_format['url']
                 del streaming_format['segment_info_url']
                 streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
