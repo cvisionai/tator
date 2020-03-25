@@ -775,16 +775,37 @@ class VideoCanvas extends AnnotationCanvas {
 
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject)
+  loadFromVideoObject(videoObject, quality)
   {
+    // If quality is not supplied default to 720
+    if (quality == undefined || quality == null)
+    {
+      quality = 720;
+    }
+
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
     if (videoObject.media_files)
     {
-      // Load first streaming file available
-      let streaming_data = videoObject.media_files["streaming"][0];
+      let match_idx = 0;
+      let max_delta = videoObject.height;
+      let resolutions = videoObject.media_files["streaming"].length;
+      for (let idx = 0; idx < resolutions; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        let delta = Math.abs(quality - height);
+        if (delta < max_delta)
+        {
+          max_delta = delta;
+          match_idx = idx;
+        }
+      }
+      console.info(`NOTICE: Choose video stream ${match_idx}`);
+
+      // Load version with closest resolution
+      let streaming_data = videoObject.media_files["streaming"][match_idx];
 
       let host = `${window.location.protocol}//${window.location.host}`;
       if (streaming_data.host)
@@ -1194,7 +1215,7 @@ class VideoCanvas extends AnnotationCanvas {
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
-        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`; 
+        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
 		    console.info(fps_msg);
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;

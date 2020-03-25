@@ -85,6 +85,12 @@ class AnnotationPlayer extends TatorElement {
     this._lastScrub = Date.now();
     this._rate = 1;
 
+    const searchParams = new URLSearchParams(window.location.search);
+    this._quality = 720;
+    if (searchParams.has("quality"))
+    {
+      this._quality = Number(searchParams.get("quality"));
+    }
     this._slider.addEventListener("input", evt => {
       // Along allow a scrub display as the user is going
       // slow
@@ -212,7 +218,7 @@ class AnnotationPlayer extends TatorElement {
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      this._video.loadFromVideoObject(val)
+      this._video.loadFromVideoObject(val, this._quality)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
             composed: true
