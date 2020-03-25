@@ -27,6 +27,7 @@ class QualityControl extends TatorElement {
 
     this._div = document.createElement("div");
     this._div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
+    this._div.style.width = "100px";
     styleDiv.appendChild(this._div);
 
     // handle default
@@ -60,10 +61,8 @@ class QualityControl extends TatorElement {
 
   set resolutions(resolutions)
   {
-    const slider = document.createElement("input");
-    slider.setAttribute("class", "range flex-grow");
-    slider.setAttribute("type", "range");
-    slider.setAttribute("step", "1");
+    const select = document.createElement("select");
+    select.setAttribute("class", "form-select has-border select-sm col-12");
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;
@@ -75,23 +74,24 @@ class QualityControl extends TatorElement {
         max_diff = diff;
         closest_idx = idx;
       }
+      let option = document.createElement("option");
+      option.setAttribute("value", idx);
+      option.textContent = `${resolutions[idx]}p`;
+      select.appendChild(option);
     }
-    slider.setAttribute("value", resolutions.length-closest_idx);
-    slider.setAttribute("min", 1);
-    slider.setAttribute("max", resolutions.length);
-    this._div.appendChild(slider);
+    select.selectedIndex = closest_idx;
+    this._div.appendChild(select);
     this.quality = resolutions[closest_idx];
 
-    slider.addEventListener("input", evt => {
-      const index = evt.target.value;
-      const quality = resolutions[resolutions.length-index];
-      this._span.textContent = quality + "p";
-    });
-    slider.addEventListener("change", evt => {
-      const index = evt.target.value;
+    select.addEventListener("change", evt => {
+      const index = Number(select.options[select.selectedIndex].value);
       // Resolutions are in descending order
-      const resolution = resolutions[resolutions.length-index];
-      this.quality = resolution;
+      let resolution = null;
+      if (index >= 0)
+      {
+        resolution = resolutions[index];
+        this.quality = resolution;
+      }
       this.dispatchEvent(new CustomEvent("qualityChange", {
         detail: {quality: resolution},
         composed: true
