@@ -147,6 +147,19 @@ class AnnotationSettings extends TatorElement {
     }
     return params;
   }
+
+  set mediaInfo(val)
+  {
+    if (val.media_files)
+    {
+      let quality_list = [];
+      for (let media_file of val.media_files["streaming"])
+      {
+        quality_list.push(media_file.resolution[0]);
+      }
+      console.info(`NOTE: Valid resolutions: ${quality_list}`);
+    }
+  }
 }
 
 customElements.define("annotation-settings", AnnotationSettings);

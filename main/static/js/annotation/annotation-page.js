@@ -83,6 +83,7 @@ class AnnotationPage extends TatorPage {
           this._breadcrumbs.setAttribute("section-name", data.attributes.tator_user_sections);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
+          this._settings.mediaInfo = data;
 
           fetch("/rest/EntityTypeMedia/" + data.meta, {
             method: "GET",
