@@ -300,6 +300,7 @@ FILES = \
     annotation/media-next-button.js \
     annotation/zoom-control.js \
     annotation/rate-control.js \
+    annotation/quality-control.js \
     annotation/annotation-settings.js \
     annotation/edit-button.js \
     annotation/box-button.js \
