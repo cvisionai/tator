@@ -44,7 +44,7 @@ class QualityControl extends TatorElement {
       const index = evt.target.value;
       const rate = rates[index];
       span.textContent = rate + "x";
-      this.dispatchEvent(new CustomEvent("rateChange", {
+      this.dispatchEvent(new CustomEvent("qualityChange", {
         detail: {rate: rate},
         composed: true
       }));

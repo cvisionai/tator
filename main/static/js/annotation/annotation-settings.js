@@ -21,6 +21,9 @@ class AnnotationSettings extends TatorElement {
     this._rate = document.createElement("rate-control");
     div.appendChild(this._rate);
 
+    this._quality = document.createElement("quality-control");
+    div.appendChild(this._quality);
+
     this._zoom = document.createElement("zoom-control");
     div.appendChild(this._zoom);
 
