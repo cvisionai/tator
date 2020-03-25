@@ -2899,14 +2899,10 @@ class SaveVideoAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='A UUID generated for the upload.')),
-        coreapi.Field(name='original_url',
+        coreapi.Field(name='media_files',
                       required=True,
                       location='body',
-                      schema=coreschema.String(description='The upload url for the file to be transcoded.')),
-        coreapi.Field(name='transcoded_url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the transcoded file.')),
+                      schema=coreschema.String(description='List of upload urls for the transcoded file and corresponding VideoDefinition.')),
         coreapi.Field(name='thumbnail_url',
                       required=True,
                       location='body',
@@ -2915,10 +2911,6 @@ class SaveVideoAPI(APIView):
                       required=True,
                       location='body',
                       schema=coreschema.String(description='The upload url for the thumbnail gif.')),
-        coreapi.Field(name='segments_url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the segments file.')),
         coreapi.Field(name='section',
                       required=True,
                       location='body',
@@ -2966,11 +2958,9 @@ class SaveVideoAPI(APIView):
             entity_type = request.data.get('type', None)
             gid = request.data.get('gid', None)
             uid = request.data.get('uid', None)
-            original_url = request.data.get('original_url', None)
-            transcoded_url = request.data.get('transcoded_url', None)
+            media_files = request.data.get('media_files', None)
             thumbnail_url = request.data.get('thumbnail_url', None)
             thumbnail_gif_url = request.data.get('thumbnail_gif_url', None)
-            segments_url = request.data.get('segments_url', None)
             section = request.data.get('section', None)
             name = request.data.get('name', None)
             md5 = request.data.get('md5', None)
@@ -2992,20 +2982,14 @@ class SaveVideoAPI(APIView):
             if uid is None:
                 raise Exception('Missing required uuid for upload')
 
-            if original_url is None:
-                raise Exception('Missing required url of original file for upload')
-
-            if transcoded_url is None:
-                raise Exception('Missing required url of transcoded file for upload')
+            if media_files is None:
+                raise Exception('Missing required media_files object for upload')
 
             if thumbnail_url is None:
                 raise Exception('Missing required url of thumbnail file for upload')
 
             if thumbnail_gif_url is None:
                 raise Exception('Missing required url of thumbnail gif file for upload')
-
-            if segments_url is None:
-                raise Exception('Missing required url of segments file for upload')
 
             if section is None:
                 raise Exception('Missing required section for uploaded video')
@@ -3063,18 +3047,50 @@ class SaveVideoAPI(APIView):
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
             os.makedirs(raw_project_dir, exist_ok=True)
 
+            # Short resolutions in descending order by convention
+            media_files['archival'].sort(key=lambda x: x['resolution'][0], reverse=True)
+            media_files['streaming'].sort(key=lambda x: x['resolution'][0], reverse=True)
+
             # Determine uploaded file paths
             upload_uids = {
-                'original': original_url.split('/')[-1],
-                'transcoded': transcoded_url.split('/')[-1],
                 'thumbnail': thumbnail_url.split('/')[-1],
                 'thumbnail_gif': thumbnail_gif_url.split('/')[-1],
-                'segments': segments_url.split('/')[-1],
             }
+
+            # Determine save paths
+            media_uid = str(uuid1())
+            save_paths = {
+                'thumbnail': os.path.join(project_dir, str(uuid1()) + '.jpg'),
+                'thumbnail_gif': os.path.join(project_dir, str(uuid1()) + '.gif'),
+            }
+
+            for idx,archive_format in enumerate(media_files['archival']):
+                upload_uids[f"archive_{idx}_file"] = archive_format['url'].split('/')[-1]
+
+                res_uid = str(uuid1())
+                save_paths[f"archive_{idx}_file"] = os.path.join(raw_project_dir, res_uid + '.mp4')
+                del archive_format['url']
+                archive_format['path'] = save_paths[f"archive_{idx}_file"]
+
+            for idx,streaming_format in enumerate(media_files['streaming']):
+                upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
+                upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
+
+                res_uid = str(uuid1())
+                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, f"{res_uid}_segments.json")
+                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, res_uid + '.mp4')
+                del streaming_format['url']
+                del streaming_format['segment_info_url']
+                streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
+                streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
+
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
                 for key, uid in upload_uids.items()
             }
+
+            logger.info(f"Upload set = {upload_paths}")
+
 
             # Make sure upload paths exist
             for key in upload_paths:
@@ -3083,15 +3099,7 @@ class SaveVideoAPI(APIView):
                     prog.failed(fail_msg)
                     raise RuntimeError(fail_msg)
 
-            # Determine save paths
-            media_uid = str(uuid1())
-            save_paths = {
-                'original': os.path.join(raw_project_dir, media_uid + '.mp4'),
-                'transcoded': os.path.join(project_dir, media_uid + '.mp4'),
-                'thumbnail': os.path.join(project_dir, str(uuid1()) + '.jpg'),
-                'thumbnail_gif': os.path.join(project_dir, str(uuid1()) + '.gif'),
-                'segments': os.path.join(project_dir, f"{media_uid}_segments.json"),
-            }
+
 
             # Create the video object.
             media_obj = EntityMediaVideo(
@@ -3102,6 +3110,7 @@ class SaveVideoAPI(APIView):
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
                 md5=md5,
                 attributes={'tator_user_sections': section},
+                media_files=media_files,
                 num_frames=num_frames,
                 fps=fps,
                 codec=codec,
@@ -3110,11 +3119,6 @@ class SaveVideoAPI(APIView):
                 created_by=self.request.user,
                 modified_by=self.request.user,
             )
-
-            # Save the transcoded file.
-            media_base = os.path.relpath(save_paths['transcoded'], settings.MEDIA_ROOT)
-            with open(upload_paths['transcoded'], 'rb') as f:
-                media_obj.file.save(media_base, f, save=False)
 
             # Save the thumbnail.
             media_base = os.path.relpath(save_paths['thumbnail'], settings.MEDIA_ROOT)
@@ -3126,16 +3130,11 @@ class SaveVideoAPI(APIView):
             with open(upload_paths['thumbnail_gif'], 'rb') as f:
                 media_obj.thumbnail_gif.save(media_base, f, save=False)
 
-            # Save the raw file.
-            if media_type.keep_original == True:
-                shutil.copyfile(upload_paths['original'], save_paths['original'])
-                os.chmod(save_paths['original'], 0o644)
-                media_obj.original = save_paths['original']
+            for key in upload_paths:
+                if key in ['thumbnail', 'thumbnail_gif']:
+                    pass # already handled these above
 
-            # Save the segments file.
-            shutil.copyfile(upload_paths['segments'], save_paths['segments'])
-            os.chmod(save_paths['segments'], 0o644)
-            media_obj.segment_info = save_paths['segments']
+                shutil.copyfile(upload_paths[key], save_paths[key])
 
             # Save the database record.
             media_obj.save()
@@ -3143,7 +3142,6 @@ class SaveVideoAPI(APIView):
             # Send a message saying upload successful.
             info = {
                 "id": media_obj.id,
-                "url": media_obj.file.url,
                 "thumb_url": media_obj.thumbnail.url,
                 "thumb_gif_url": media_obj.thumbnail_gif.url,
                 "name": progress_name,

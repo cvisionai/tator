@@ -244,8 +244,10 @@ class EntityMediaBaseSerializer(serializers.Serializer):
     attributes = serializers.SerializerMethodField()
 
     def get_file_url(self, obj):
-        return self.context['view'].request.build_absolute_uri(obj.file.url)
-
+        try:
+            return self.context['view'].request.build_absolute_uri(obj.file.url)
+        except:
+            return None
     def get_attributes(self, obj):
         attrs = {}
         if obj.attributes is not None:
