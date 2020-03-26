@@ -261,12 +261,21 @@ class VideoBufferDemux
       {
         that._vidBuffers[0].onloadeddata = function()
         {
-          // attempt to go to the frame that is requested to be loaded
-          console.log("Going to frame " + video._dispFrame);
-          video.gotoFrame(video._dispFrame).then(() => {
-            resolve();
+          // In version 2 buffers are immediately available
+          if (video._videoVersion >= 2)
+          {
             that._vidBuffers[0].onloadeddata = null;
-          });
+            resolve();
+          }
+          else
+          {
+            // attempt to go to the frame that is requested to be loaded
+            console.log("Going to frame " + video._dispFrame);
+            video.gotoFrame(video._dispFrame).then(() => {
+              resolve();
+              that._vidBuffers[0].onloadeddata = null;
+            });
+          }
         }
         that._vidBuffers[0].onerror = function()
         {
@@ -607,6 +616,7 @@ class VideoCanvas extends AnnotationCanvas {
     super();
     var that = this;
     this._diagnosticMode = false;
+    this._videoVersion = 1;
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -655,9 +665,9 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  refresh()
+  refresh(forceSeekBuffer)
   {
-    return this.gotoFrame(this._dispFrame);
+    return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
 
   currentFrame()
@@ -764,6 +774,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._dlWorker.postMessage({"type": "download"});
         that._startBias = e.data["startBias"];
+        that._videoVersion = e.data["version"];
         console.info(`Video has start bias of ${that._startBias}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
@@ -997,14 +1008,14 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
-  seekFrame(frame, callback)
+  seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
     var time=this.frameToTime(frame);
     var video=this.videoBuffer(frame);
 
     // Only support seeking if we are stopped (i.e. not playing)
-    if (video == null && this._direction == Direction.STOPPED)
+    if (video == null && this._direction == Direction.STOPPED || forceSeekBuffer)
     {
       // Set the seek buffer, and command worker to get the seek
       // response
@@ -1081,14 +1092,15 @@ class VideoCanvas extends AnnotationCanvas {
 	  return false;
   }
 
-  gotoFrame(frameIdx)
+  // Goto a given frame; optionally force usage of seek buffer
+  gotoFrame(frameIdx, forceSeekBuffer)
   {
 	  if (this._direction != Direction.STOPPED)
 	  {
 	    return;
 	  }
 
-    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame);
+    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
     promise.then(()=>
                  {this._pauseCb.forEach(cb => {cb(frameIdx);});}
                 );
