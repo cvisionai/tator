@@ -25,13 +25,23 @@ class VideoDownloader
       info.json().then(data => {
         that._info = data
         that._numPackets=data["segments"].length
+        var version = 1;
+        try
+        {
+          version = data["file"]["version"];
+        }
+        catch(error)
+        {
+
+        }
         var startBias = 0.0;
         if ('file' in data)
         {
           startBias = data.file.start;
         }
         postMessage({"type": "ready",
-                     "startBias": startBias});
+                     "startBias": startBias,
+                     "version": version});
       });
     }
     else
