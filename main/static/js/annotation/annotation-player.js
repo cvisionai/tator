@@ -265,7 +265,7 @@ class AnnotationPlayer extends TatorElement {
     // For now reload the video
     console.info("Setting quality = " + quality);
     this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-      this._video.refresh();
+      this._video.refresh(true);
     });
   }
 
