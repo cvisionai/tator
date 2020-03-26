@@ -2,33 +2,19 @@ class QualityControl extends TatorElement {
   constructor() {
     super();
 
-    const details = document.createElement("details");
-    details.setAttribute("class", "position-relative");
-    this._shadow.appendChild(details);
-
-    const summary = document.createElement("summary");
+    const summary = document.createElement("div");
     summary.style.cursor = "pointer";
     summary.setAttribute("class", "annotation__setting d-flex flex-items-center px-3 rounded-1");
-    details.appendChild(summary);
+    this._shadow.appendChild(summary);
 
     const rateSpan = document.createElement("div");
     rateSpan.setAttribute("class", "text-gray");
     rateSpan.textContent = "Quality:";
     summary.appendChild(rateSpan);
 
-    this._span = document.createElement("span");
-    this._span.setAttribute("class", "px-1");
-    this._span.textContent = "";
-    summary.appendChild(this._span);
-
-    const styleDiv = document.createElement("div");
-    styleDiv.setAttribute("class", "files__main files-wrap");
-    details.appendChild(styleDiv);
-
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
-    this._div.style.width = "100px";
-    styleDiv.appendChild(this._div);
+    this._div.setAttribute("class", "px-1");
+    summary.appendChild(this._div);
 
     // handle default
     const searchParams = new URLSearchParams(window.location.search);
@@ -47,7 +33,6 @@ class QualityControl extends TatorElement {
   set quality(quality)
   {
     this._quality = quality;
-    this._span.textContent = quality + "p";
 
     let params = new URLSearchParams(document.location.search.substring(1));
     params.set("quality", quality);
@@ -62,7 +47,8 @@ class QualityControl extends TatorElement {
   set resolutions(resolutions)
   {
     const select = document.createElement("select");
-    select.setAttribute("class", "form-select has-border select-sm col-12");
+    select.setAttribute("class", "form-select has-border select-sm1");
+    select.style.color = "#FFFFFF";
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;
