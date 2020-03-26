@@ -132,6 +132,10 @@ class VideoBufferDemux
     {
       var mbInUse=this._inUse[idx]/(1024*1024);
       console.info(`\t${idx} = ${mbInUse}/${bufferSizeMb} MB`);
+      if (this._vidBuffers[idx] == null)
+      {
+        return;
+      }
       var ranges=this._vidBuffers[idx].buffered;
       if (ranges.length > 0)
       {
@@ -149,6 +153,10 @@ class VideoBufferDemux
     }
 
     console.info("Seek Buffer:")
+    if (this._seekBuffer == null)
+    {
+      return;
+    }
     var ranges=this._seekBuffer.buffered;
     if (ranges.length > 0)
     {
@@ -253,9 +261,12 @@ class VideoBufferDemux
       {
         that._vidBuffers[0].onloadeddata = function()
         {
-          video.gotoFrame(0);
-          resolve();
-          that._vidBuffers[0].onloadeddata = null;
+          // attempt to go to the frame that is requested to be loaded
+          console.log("Going to frame " + video._dispFrame);
+          video.gotoFrame(video._dispFrame).then(() => {
+            resolve();
+            that._vidBuffers[0].onloadeddata = null;
+          });
         }
         that._vidBuffers[0].onerror = function()
         {
@@ -604,11 +615,16 @@ class VideoCanvas extends AnnotationCanvas {
       this._diagnosticMode = true;
     }
     // Make a new off-screen video reference
-    this._videoElement=new VideoBufferDemux();
     this._motionComp = new MotionComp();
     this._motionComp._diagnosticMode = this._diagnosticMode;
     this._playbackRate=1.0;
     this._dispFrame=0; //represents the currently displayed frame
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("frame"))
+    {
+      this._dispFrame = Number(searchParams.get("frame"));
+    }
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
     this._fpsLoadDiag=0;
@@ -649,9 +665,17 @@ class VideoCanvas extends AnnotationCanvas {
     return this._dispFrame;
   }
 
+  stopDownload()
+  {
+    // If there is an existing download, kill it
+    if (this._dlWorker != null)
+    {
+      this._dlWorker.terminate();
+    }
+  }
+
   startDownload(videoUrl)
   {
-    var needToSeekTo0=2;
     var that = this;
 
     this._dlWorker = new Worker(`${src_path}/vid_downloader.js`);
@@ -663,7 +687,6 @@ class VideoCanvas extends AnnotationCanvas {
       if (type == "finished")
       {
         console.info("Stopping download worker.");
-        //that._dlWorker.terminate();
       }
       else if (type =="seek_result")
       {
@@ -715,19 +738,6 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          if (needToSeekTo0)
-          {
-            if (needToSeekTo0 == 0)
-            {
-              console.log("Seek to frame 0");
-              that.seekFrame(0, that.drawFrame);
-              needToSeekTo0 = -1;
-            }
-            else
-            {
-              needToSeekTo0--;
-            }
-          }
           that.dispatchEvent(new CustomEvent("bufferLoaded",
                                              {composed: true,
                                               detail: {"percent_complete":e.data["percent_complete"]}
@@ -777,11 +787,16 @@ class VideoCanvas extends AnnotationCanvas {
   /// Returns a promise when the video resource is loaded
   loadFromVideoObject(videoObject, quality)
   {
+    this._videoElement=new VideoBufferDemux();
+
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)
     {
       quality = 720;
     }
+
+    // Clear the buffer in case this is a hot-swap
+    this._draw.clear();
 
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
@@ -832,6 +847,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._dims=dims;
     this.resetRoi();
 
+    this.stopDownload();
     var promise = this._videoElement.loadedDataPromise(this);
     this.startDownload(videoUrl);
     if (fps > guiFPS)
@@ -963,7 +979,7 @@ class VideoCanvas extends AnnotationCanvas {
     var direction = this._direction;
     if (direction == Direction.STOPPED)
     {
-      if (frame > this.currentFrame())
+      if (frame > this.currentFrame() || frame == this.currentFrame())
       {
         direction = Direction.FORWARD;
       }
