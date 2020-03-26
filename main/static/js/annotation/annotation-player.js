@@ -22,8 +22,9 @@ class AnnotationPlayer extends TatorElement {
     playButtons.appendChild(rewind);
 
     const play = document.createElement("play-button");
-    play.setAttribute("is-paused", "");
-    playButtons.appendChild(play);
+    this._play = play;
+    this._play.setAttribute("is-paused", "");
+    playButtons.appendChild(this._play);
 
     const fastForward = document.createElement("fast-forward-button");
     playButtons.appendChild(fastForward);
@@ -114,14 +115,13 @@ class AnnotationPlayer extends TatorElement {
     });
 
     play.addEventListener("click", () => {
-      const paused = play.hasAttribute("is-paused");
-      if (paused) {
-        this._video.rateChange(this._rate);
-        this._video.play();
-        play.removeAttribute("is-paused");
-      } else {
-        this._video.pause();
-        play.setAttribute("is-paused", "");
+      if (this.is_paused())
+      {
+        this.play();
+      }
+      else
+      {
+        this.pause();
       }
     });
 
@@ -247,6 +247,30 @@ class AnnotationPlayer extends TatorElement {
     this._video.updateType(objDescription);
   }
 
+  is_paused()
+  {
+    return this._play.hasAttribute("is-paused");
+  }
+  
+  play()
+  {
+    const paused = this.is_paused();
+    if (paused) {
+      this._video.rateChange(this._rate);
+      this._video.play();
+      this._play.removeAttribute("is-paused");
+    }
+  }
+
+  pause()
+  {
+    const paused = this.is_paused();
+    if (paused == false) {
+      this._video.pause();
+      this._play.setAttribute("is-paused", "")
+    }
+  }
+  
   refresh() {
     this._video.refresh();
   }
@@ -263,10 +287,19 @@ class AnnotationPlayer extends TatorElement {
 
   setQuality(quality) {
     // For now reload the video
-    console.info("Setting quality = " + quality);
-    this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-      this._video.refresh(true);
-    });
+    if (this.is_paused())
+    {
+      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
+        this._video.refresh(true);
+      });
+    }
+    else
+    {
+      this.pause();
+      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
+        this._video.refresh(true);
+      });
+    }
   }
 
   zoomPlus() {
