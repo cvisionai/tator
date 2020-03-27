@@ -22,8 +22,9 @@ class AnnotationPlayer extends TatorElement {
     playButtons.appendChild(rewind);
 
     const play = document.createElement("play-button");
-    play.setAttribute("is-paused", "");
-    playButtons.appendChild(play);
+    this._play = play;
+    this._play.setAttribute("is-paused", "");
+    playButtons.appendChild(this._play);
 
     const fastForward = document.createElement("fast-forward-button");
     playButtons.appendChild(fastForward);
@@ -85,6 +86,12 @@ class AnnotationPlayer extends TatorElement {
     this._lastScrub = Date.now();
     this._rate = 1;
 
+    const searchParams = new URLSearchParams(window.location.search);
+    this._quality = 720;
+    if (searchParams.has("quality"))
+    {
+      this._quality = Number(searchParams.get("quality"));
+    }
     this._slider.addEventListener("input", evt => {
       // Along allow a scrub display as the user is going
       // slow
@@ -108,14 +115,13 @@ class AnnotationPlayer extends TatorElement {
     });
 
     play.addEventListener("click", () => {
-      const paused = play.hasAttribute("is-paused");
-      if (paused) {
-        this._video.rateChange(this._rate);
-        this._video.play();
-        play.removeAttribute("is-paused");
-      } else {
-        this._video.pause();
-        play.setAttribute("is-paused", "");
+      if (this.is_paused())
+      {
+        this.play();
+      }
+      else
+      {
+        this.pause();
       }
     });
 
@@ -198,6 +204,7 @@ class AnnotationPlayer extends TatorElement {
 
   set mediaInfo(val) {
     this._video.mediaInfo = val;
+    this._mediaInfo = val;
     const dims = [val.width, val.height];
     this._slider.setAttribute("min", 0);
     this._slider.setAttribute("max", val.num_frames);
@@ -212,7 +219,7 @@ class AnnotationPlayer extends TatorElement {
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      this._video.loadFromURL(val.url, val.fps, val.num_frames, dims)
+      this._video.loadFromVideoObject(val, this._quality)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
             composed: true
@@ -240,6 +247,30 @@ class AnnotationPlayer extends TatorElement {
     this._video.updateType(objDescription);
   }
 
+  is_paused()
+  {
+    return this._play.hasAttribute("is-paused");
+  }
+  
+  play()
+  {
+    const paused = this.is_paused();
+    if (paused) {
+      this._video.rateChange(this._rate);
+      this._video.play();
+      this._play.removeAttribute("is-paused");
+    }
+  }
+
+  pause()
+  {
+    const paused = this.is_paused();
+    if (paused == false) {
+      this._video.pause();
+      this._play.setAttribute("is-paused", "")
+    }
+  }
+  
   refresh() {
     this._video.refresh();
   }
@@ -252,6 +283,23 @@ class AnnotationPlayer extends TatorElement {
   setRate(val) {
     this._rate = val;
     this._video.rateChange(this._rate);
+  }
+
+  setQuality(quality) {
+    // For now reload the video
+    if (this.is_paused())
+    {
+      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
+        this._video.refresh(true);
+      });
+    }
+    else
+    {
+      this.pause();
+      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
+        this._video.refresh(true);
+      });
+    }
   }
 
   zoomPlus() {

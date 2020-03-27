@@ -83,6 +83,7 @@ class AnnotationPage extends TatorPage {
           this._breadcrumbs.setAttribute("section-name", data.attributes.tator_user_sections);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
+          this._settings.mediaInfo = data;
 
           fetch("/rest/EntityTypeMedia/" + data.meta, {
             method: "GET",
@@ -146,7 +147,7 @@ class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             this.enableEditing(true);
           });
-            
+
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
@@ -174,14 +175,17 @@ class AnnotationPage extends TatorPage {
             }
           }
         }
+        if (haveFrame)
+        {
+          // Belts and suspenders here to ensure we jump upon a URL
+          // parameter..
+          const frame = Number(searchParams.get("frame"));
+          canvas.goToFrame(frame);
+        }
         if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
           this._browser._openForTypeId(typeId);
-        }
-        if (haveFrame) {
-          const frame = Number(searchParams.get("frame"));
-          canvas.goToFrame(frame);
         }
       }
     }
@@ -209,6 +213,12 @@ class AnnotationPage extends TatorPage {
     this._settings.addEventListener("rateChange", evt => {
       if ("setRate" in canvas) {
         canvas.setRate(evt.detail.rate);
+      }
+    });
+
+    this._settings.addEventListener("qualityChange", evt => {
+      if ("setQuality" in canvas) {
+        canvas.setQuality(evt.detail.quality);
       }
     });
 

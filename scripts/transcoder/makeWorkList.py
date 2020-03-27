@@ -64,7 +64,7 @@ if __name__=="__main__":
         paths = {
             'url': 'None',
             'original': video,
-            'transcoded': base + '_transcoded.mp4',
+            'transcoded': base + '_transcoded',
             'thumbnail': base + '_thumbnail.jpg',
             'thumbnail_gif': base + '_thumbnail_gif.gif',
             'segments': base + '_segments.json',

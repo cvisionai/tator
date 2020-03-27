@@ -40,6 +40,8 @@ from django_ltree.fields import PathField
 from .cache import TatorCache
 from .search import TatorSearch
 
+from collections import UserDict
+
 import logging
 import os
 
@@ -178,7 +180,7 @@ class Version(Model):
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
     show_empty = BooleanField(default=False)
-    """ Tells the UI to show this version even if the current media does not 
+    """ Tells the UI to show this version even if the current media does not
         have any annotations.
     """
 
@@ -343,6 +345,22 @@ def image_delete(sender, instance, **kwargs):
     instance.file.delete(False)
     instance.thumbnail.delete(False)
 
+def getVideoDefinition(path, codec, resolution, **kwargs):
+    """ Convenience function to generate video definiton dictionary """
+    obj = {"path": path,
+           "codec": codec,
+           "resolution": resolution}
+    for arg in kwargs:
+        if arg in ["segment_info",
+                   "host",
+                   "http_auth",
+                   "codec_meme",
+                   "codec_description"]:
+            obj[arg] = kwargs[arg]
+        else:
+            raise TypeError(f"Invalid argument '{arg}' supplied")
+    return obj
+
 class EntityMediaVideo(EntityMediaBase):
     """
     Fields:
@@ -365,7 +383,7 @@ class EntityMediaVideo(EntityMediaBase):
                             "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
-                                  "resolution": <vertical pixel count, e.g. 720>
+                                  "resolution": [<vertical pixel count, e.g. 720>, width]
 
 
                                   ###################
@@ -387,9 +405,9 @@ class EntityMediaVideo(EntityMediaBase):
                                   # Example mime: 'video/mp4; codecs="avc1.64001e"'
                                   # Only relevant for straming files, will assume
                                   # example above if not present.
-                                  "codec-mime": <mime for MSE decode>
+                                  "codec_mime": <mime for MSE decode>
 
-                                  "description": <description other than codec>}
+                                  "codec_description": <description other than codec>}
 
 
     """
@@ -410,11 +428,33 @@ def video_save(sender, instance, created, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
 
+def safe_delete(path):
+    try:
+        logger.info(f"Deleting {path}")
+        os.remove(path)
+    except:
+        logger.warning(f"Could not remove {path}")
+
 @receiver(pre_delete, sender=EntityMediaVideo)
 def video_delete(sender, instance, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().delete_document(instance)
     instance.file.delete(False)
+    if instance.original != None:
+        path = str(instance.original)
+        safe_delete(path)
+
+    # Delete all the files referenced in media_files
+    if not instance.media_files is None:
+        files = instance.media_files.get('streaming', [])
+        for obj in files:
+            path = "/data" + obj['path']
+            safe_delete(path)
+            path = "/data" + obj['segment_info']
+            safe_delete(path)
+        files = instance.media_files.get('archival', [])
+        for obj in files:
+            safe_delete(obj['path'])
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 

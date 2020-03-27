@@ -21,6 +21,9 @@ class AnnotationSettings extends TatorElement {
     this._rate = document.createElement("rate-control");
     div.appendChild(this._rate);
 
+    this._quality = document.createElement("quality-control");
+    div.appendChild(this._quality);
+
     this._zoom = document.createElement("zoom-control");
     div.appendChild(this._zoom);
 
@@ -30,7 +33,7 @@ class AnnotationSettings extends TatorElement {
       url += "?attribute=" + searchParams.get("attribute");
       url += this._queryParams();
       const text = document.createElement("textarea");
-      text.textContent = url;
+      text.textContent = encodeURI(url);
       text.style.opacity = 0;
       document.body.appendChild(text);
       text.select();
@@ -103,6 +106,7 @@ class AnnotationSettings extends TatorElement {
         else {
           this._prev.addEventListener("click", () => {
             let url = baseUrl + prevData.prev;
+            const searchParams = new URLSearchParams(window.location.search);
             url += "?" + searchParams.toString();
             url += this._typeParams();
             window.location.href = url;
@@ -115,6 +119,7 @@ class AnnotationSettings extends TatorElement {
         else {
           this._next.addEventListener("click", () => {
             let url = baseUrl + nextData.next;
+            const searchParams = new URLSearchParams(window.location.search);
             url += "?" + searchParams.toString();
             url += this._typeParams();
             window.location.href = url;
@@ -146,6 +151,28 @@ class AnnotationSettings extends TatorElement {
       params += "&frame=" + this.getAttribute("frame");
     }
     return params;
+  }
+
+  set mediaInfo(val)
+  {
+    if (val.media_files)
+    {
+      let quality_list = [];
+      for (let media_file of val.media_files["streaming"])
+      {
+        quality_list.push(media_file.resolution[0]);
+      }
+      this._quality.resolutions = quality_list;
+    }
+    else
+    {
+      this._quality.hide();
+    }
+  }
+
+  set quality(val)
+  {
+    this._quality = val;
   }
 }
 

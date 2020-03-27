@@ -4,8 +4,12 @@ import argparse
 import logging
 import subprocess
 import json
+import os
 
 logger = logging.getLogger(__name__)
+
+STREAMING_RESOLUTIONS=[144, 360, 480, 720, 1080]
+MAX_RESOLUTION=max(STREAMING_RESOLUTIONS)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Transcodes a raw video.')
@@ -14,8 +18,6 @@ def parse_args():
     return parser.parse_args()
 
 def determine_transcode(path):
-
-    FHDResolution=1920*1080
     """ Determines if file is supported as-is by the video player """
     cmd = [
         "ffprobe",
@@ -41,28 +43,24 @@ def determine_transcode(path):
         fps = float(fps_fractional[0]) / float(fps_fractional[1])
         seconds = float(stream["duration"]);
         num_frames = float(fps * seconds)
-    gop = num_frames / float(stream["nb_read_frames"])
-    need_gop = False
-    if gop > 25.0:
-        need_gop = True
-    elif gop < 2.0:
-        # Handle error case when ffprobe doesn't skip non-key frames.
-        need_gop = True
+
 
     # Handle up to but not exceeding FHD
-    pixels = int(stream["width"]) * int(stream["height"])
-    need_resize = False
-    if pixels >= FHDResolution:
-         need_resize = True
-
-    return (need_gop, need_resize)
+    height = int(stream["height"])
+    print(f"Height of video is : {height}")
+    resolutions=[resolution for resolution in STREAMING_RESOLUTIONS if resolution < height]
+    if height <= MAX_RESOLUTION:
+        resolutions.append(height)
+    return resolutions
 
 def transcode(path, outpath):
     """Starts a transcode for the given media file.
     """
 
-    needs_transcode = determine_transcode(path)
+    resolutions = determine_transcode(path)
     logger.info(f"Transcoding {path} to {outpath}...")
+
+    os.makedirs(outpath, exist_ok=True)
 
     cmd = [
         "ffmpeg", "-y",
@@ -79,14 +77,15 @@ def transcode(path, outpath):
         "-tune", "fastdecode",
     ]
 
-    if needs_transcode[1]:
-        #Resize to 720p
-        cmd.extend(["-vf", "scale=-2:720"])
-
-    cmd.append(outpath)
-    logger.info('ffmpeg cmd = {}'.format(cmd))
-    subprocess.run(cmd, check=True)
-    logger.info("Transcoding finished!")
+    logger.info(f"Transcoding to {resolutions}")
+    for resolution in resolutions:
+        logger.info(f"Generating resolution @ {resolution}")
+        output_file = os.path.join(outpath, f"{resolution}.mp4")
+        resolution_cmd = [*cmd, "-vf", f"scale=-2:{resolution}",
+                          output_file]
+        logger.info('ffmpeg cmd = {}'.format(resolution_cmd))
+        subprocess.run(resolution_cmd, check=True)
+        logger.info("Transcoding finished!")
 
 if __name__ == '__main__':
     args = parse_args()

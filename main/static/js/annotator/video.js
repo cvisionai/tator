@@ -6,7 +6,7 @@
 ///
 /// The off-screen buffer is then copied to a buffer of GPU-backed
 /// textures, whose depth is configurable by 'bufferDepth' variable in
-/// 'loadFromURL'.
+/// 'loadFromVideoElement'.
 ///
 /// The 'playGeneric' routine is kicked off for forward/rewind activities
 /// and drives to userspace threads.
@@ -132,6 +132,10 @@ class VideoBufferDemux
     {
       var mbInUse=this._inUse[idx]/(1024*1024);
       console.info(`\t${idx} = ${mbInUse}/${bufferSizeMb} MB`);
+      if (this._vidBuffers[idx] == null)
+      {
+        return;
+      }
       var ranges=this._vidBuffers[idx].buffered;
       if (ranges.length > 0)
       {
@@ -149,6 +153,10 @@ class VideoBufferDemux
     }
 
     console.info("Seek Buffer:")
+    if (this._seekBuffer == null)
+    {
+      return;
+    }
     var ranges=this._seekBuffer.buffered;
     if (ranges.length > 0)
     {
@@ -253,9 +261,21 @@ class VideoBufferDemux
       {
         that._vidBuffers[0].onloadeddata = function()
         {
-          video.gotoFrame(0);
-          resolve();
-          that._vidBuffers[0].onloadeddata = null;
+          // In version 2 buffers are immediately available
+          if (video._videoVersion >= 2)
+          {
+            that._vidBuffers[0].onloadeddata = null;
+            resolve();
+          }
+          else
+          {
+            // attempt to go to the frame that is requested to be loaded
+            console.log("Going to frame " + video._dispFrame);
+            video.gotoFrame(video._dispFrame).then(() => {
+              resolve();
+              that._vidBuffers[0].onloadeddata = null;
+            });
+          }
         }
         that._vidBuffers[0].onerror = function()
         {
@@ -419,61 +439,15 @@ class MotionComp {
     this._times = [];
 
     // This takes ~1/3 sec
-    const TRIALS = 20;
+    this._TRIALS = 20;
 
     // First we need to do a couple of trials to figure out what the
     // interval of the system is.
     let calcTimes = (now) => {
       this._times.push(now);
-      if (this._times.length > TRIALS)
+      if (this._times.length > this._TRIALS)
       {
-        let mode = new Map();
-        // Calculate the mode of the delta over the calls ignoring the first few.
-        for (let idx = 2; idx < TRIALS-1; idx++)
-        {
-          let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
-          if (mode.has(fps))
-          {
-            mode.set(fps, mode.get(fps) + 1);
-          }
-          else
-          {
-            mode.set(fps, 1);
-          }
-        }
-
-        let maxOccurance = 0;
-
-        for (const canidate of mode.keys())
-        {
-          let occurance = mode.get(canidate)
-          if (occurance > maxOccurance)
-          {
-            maxOccurance = occurance;
-            this._monitorFps = canidate;
-          }
-        }
-
-        console.info("Raw FPS observed at " + this._monitorFps);
-
-        if (Math.abs(this._monitorFps-240) < 10)
-        {
-          this._monitorFps = 240;
-        }
-        else if (Math.abs(this._monitorFps-120) < 10)
-        {
-          this._monitorFps = 120;
-        }
-        else if (Math.abs(this._monitorFps-60) < 5)
-        {
-          this._monitorFps = 60;
-        }
-        else if (Math.abs(this._monitorFps-30) < 5)
-        {
-          this._monitorFps = 30;
-        }
-
-        this._interval = 1000.0 / this._monitorFps;
+        this.calculateMonitorFPS();
         console.info(`Calculated FPS interval = ${this._interval} (${this._monitorFps})`);
       }
       else
@@ -484,6 +458,75 @@ class MotionComp {
     window.requestAnimationFrame(calcTimes);
   }
 
+  calculateMonitorFPS() {
+    let mode = new Map();
+    // Calculate the mode of the delta over the calls ignoring the first few.
+    for (let idx = 2; idx < this._TRIALS-1; idx++)
+    {
+      let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
+      if (mode.has(fps))
+      {
+        mode.set(fps, mode.get(fps) + 1);
+      }
+      else
+      {
+        mode.set(fps, 1);
+      }
+    }
+
+    let maxOccurance = 0;
+
+    for (const canidate of mode.keys())
+    {
+      let occurance = mode.get(canidate)
+      if (occurance > maxOccurance)
+      {
+        maxOccurance = occurance;
+        this._monitorFps = canidate;
+      }
+    }
+
+    if (Math.abs(this._monitorFps-240) < 10)
+    {
+      this._monitorFps = 240;
+    }
+    else if (Math.abs(this._monitorFps-120) < 10)
+    {
+      this._monitorFps = 120;
+    }
+    else if (Math.abs(this._monitorFps-60) < 5)
+    {
+      this._monitorFps = 60;
+    }
+    else if (Math.abs(this._monitorFps-30) < 5)
+    {
+      this._monitorFps = 30;
+    }
+
+    this._interval = 1000.0 / this._monitorFps;
+    this._times = []
+  }
+
+  clearTimesVector()
+  {
+    this._times = [];
+  }
+
+  periodicRateCheck(now)
+  {
+    this._times.push(now);
+    if (this._times.length > this._TRIALS)
+    {
+      const oldMonitor = this._monitorFps;
+      this.calculateMonitorFPS();
+      if (oldMonitor != this._monitorFps)
+      {
+        console.warn(`ALERT: New FPS interval = ${this._interval} (${this._monitorFps})`);
+        console.warn("ALERT: Recalculating playback scheduled");
+        computePlaybackSchedule(this._videoFps, this._factor);
+      }
+    }
+  }
   /// Given a video at a frame rate calculate the frame update
   /// schedule:
   ///
@@ -505,6 +548,10 @@ class MotionComp {
   ///
   computePlaybackSchedule(videoFps, factor)
   {
+    // Cache these in case we need to recalculate later
+    this._videoFps = videoFps;
+    this._factor = factor;
+
     let displayFps = videoFps;
     if (factor < 1)
     {
@@ -596,6 +643,7 @@ class VideoCanvas extends AnnotationCanvas {
     super();
     var that = this;
     this._diagnosticMode = false;
+    this._videoVersion = 1;
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -604,11 +652,16 @@ class VideoCanvas extends AnnotationCanvas {
       this._diagnosticMode = true;
     }
     // Make a new off-screen video reference
-    this._videoElement=new VideoBufferDemux();
     this._motionComp = new MotionComp();
     this._motionComp._diagnosticMode = this._diagnosticMode;
     this._playbackRate=1.0;
     this._dispFrame=0; //represents the currently displayed frame
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("frame"))
+    {
+      this._dispFrame = Number(searchParams.get("frame"));
+    }
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
     this._fpsLoadDiag=0;
@@ -639,9 +692,9 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  refresh()
+  refresh(forceSeekBuffer)
   {
-    return this.gotoFrame(this._dispFrame);
+    return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
 
   currentFrame()
@@ -649,9 +702,17 @@ class VideoCanvas extends AnnotationCanvas {
     return this._dispFrame;
   }
 
+  stopDownload()
+  {
+    // If there is an existing download, kill it
+    if (this._dlWorker != null)
+    {
+      this._dlWorker.terminate();
+    }
+  }
+
   startDownload(videoUrl)
   {
-    var needToSeekTo0=2;
     var that = this;
 
     this._dlWorker = new Worker(`${src_path}/vid_downloader.js`);
@@ -663,7 +724,6 @@ class VideoCanvas extends AnnotationCanvas {
       if (type == "finished")
       {
         console.info("Stopping download worker.");
-        //that._dlWorker.terminate();
       }
       else if (type =="seek_result")
       {
@@ -715,19 +775,6 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          if (needToSeekTo0)
-          {
-            if (needToSeekTo0 == 0)
-            {
-              console.log("Seek to frame 0");
-              that.seekFrame(0, that.drawFrame);
-              needToSeekTo0 = -1;
-            }
-            else
-            {
-              needToSeekTo0--;
-            }
-          }
           that.dispatchEvent(new CustomEvent("bufferLoaded",
                                              {composed: true,
                                               detail: {"percent_complete":e.data["percent_complete"]}
@@ -754,6 +801,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._dlWorker.postMessage({"type": "download"});
         that._startBias = e.data["startBias"];
+        that._videoVersion = e.data["version"];
         console.info(`Video has start bias of ${that._startBias}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
@@ -775,8 +823,61 @@ class VideoCanvas extends AnnotationCanvas {
 
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromURL(videoUrl, fps, numFrames, dims)
+  loadFromVideoObject(videoObject, quality)
   {
+    this._videoElement=new VideoBufferDemux();
+
+    // If quality is not supplied default to 720
+    if (quality == undefined || quality == null)
+    {
+      quality = 720;
+    }
+
+    // Clear the buffer in case this is a hot-swap
+    this._draw.clear();
+
+    // Note: dims is width,height here
+    let videoUrl, fps, numFrames, dims;
+    fps = videoObject.fps;
+    numFrames = videoObject.num_frames;
+    let match_idx = -1;
+    if (videoObject.media_files)
+    {
+      let max_delta = videoObject.height;
+      let resolutions = videoObject.media_files["streaming"].length;
+      for (let idx = 0; idx < resolutions; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        let delta = Math.abs(quality - height);
+        if (delta < max_delta)
+        {
+          max_delta = delta;
+          match_idx = idx;
+        }
+      }
+      console.info(`NOTICE: Choose video stream ${match_idx}`);
+
+      // Load version with closest resolution
+      let streaming_data = videoObject.media_files["streaming"][match_idx];
+
+      let host = `${window.location.protocol}//${window.location.host}`;
+      if (streaming_data.host)
+      {
+        host = streaming_data.host;
+      }
+      // TODO: add auth support for off-site media
+      videoUrl = `${host}/${streaming_data["path"]}`;
+      dims = [streaming_data.resolution[1],streaming_data.resolution[0]];
+    }
+    // Handle cases when there are no streaming files in the set
+    if (match_idx == -1)
+    {
+      videoUrl = videoObject.url;
+      dims = [videoObject.width,videoObject.height];
+      console.warn("Using old access method!");
+    }
+
+    console.info(`Video dimensions = ${dims}`);
     var that = this;
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
@@ -785,6 +886,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._dims=dims;
     this.resetRoi();
 
+    this.stopDownload();
     var promise = this._videoElement.loadedDataPromise(this);
     this.startDownload(videoUrl);
     if (fps > guiFPS)
@@ -916,7 +1018,7 @@ class VideoCanvas extends AnnotationCanvas {
     var direction = this._direction;
     if (direction == Direction.STOPPED)
     {
-      if (frame > this.currentFrame())
+      if (frame > this.currentFrame() || frame == this.currentFrame())
       {
         direction = Direction.FORWARD;
       }
@@ -934,14 +1036,14 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
-  seekFrame(frame, callback)
+  seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
     var time=this.frameToTime(frame);
     var video=this.videoBuffer(frame);
 
     // Only support seeking if we are stopped (i.e. not playing)
-    if (video == null && this._direction == Direction.STOPPED)
+    if (video == null && this._direction == Direction.STOPPED || forceSeekBuffer)
     {
       // Set the seek buffer, and command worker to get the seek
       // response
@@ -1018,14 +1120,15 @@ class VideoCanvas extends AnnotationCanvas {
 	  return false;
   }
 
-  gotoFrame(frameIdx)
+  // Goto a given frame; optionally force usage of seek buffer
+  gotoFrame(frameIdx, forceSeekBuffer)
   {
 	  if (this._direction != Direction.STOPPED)
 	  {
 	    return;
 	  }
 
-    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame);
+    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
     promise.then(()=>
                  {this._pauseCb.forEach(cb => {cb(frameIdx);});}
                 );
@@ -1050,6 +1153,9 @@ class VideoCanvas extends AnnotationCanvas {
 
 	  // Reset the GPU buffer on a new play action
 	  this._draw.clear();
+
+    // Reset perioidc health check in motion comp
+    this._motionComp.clearTimesVector();
 
 	  /// This is the notional scheduled diagnostic interval
 	  var schedDiagInterval=2000.0;
@@ -1077,6 +1183,7 @@ class VideoCanvas extends AnnotationCanvas {
 		    that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
 	    }
 
+      that._motionComp.periodicRateCheck(domtime);
       let increment = that._motionComp.animationIncrement(domtime, lastTime);
       if (increment > 0)
       {
@@ -1100,7 +1207,8 @@ class VideoCanvas extends AnnotationCanvas {
 	    }
 	    else
 	    {
-		    that._playerTimeout=null;
+        that._motionComp.clearTimesVector();
+        that._playerTimeout=null;
 	    }
 	  };
 
@@ -1168,7 +1276,7 @@ class VideoCanvas extends AnnotationCanvas {
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
-        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`; 
+        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
 		    console.info(fps_msg);
 		    that._fpsDiag=0;
 		    that._fpsLoadDiag=0;

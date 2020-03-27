@@ -111,7 +111,7 @@ textarea.form-control {
 }
 
 .input-sm1 {
-  height: 16px;
+  height: 24px;
   padding-left: $spacing-2;
   padding-right: $spacing-2;
 }
@@ -122,6 +122,10 @@ textarea.form-control {
   .project__person & { // On invite people to project roles
     width: 115px;
   }
+}
+
+.select-sm1 {
+  height: 24px;
 }
 
 .select-in-input {
