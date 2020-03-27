@@ -439,61 +439,15 @@ class MotionComp {
     this._times = [];
 
     // This takes ~1/3 sec
-    const TRIALS = 20;
+    this._TRIALS = 20;
 
     // First we need to do a couple of trials to figure out what the
     // interval of the system is.
     let calcTimes = (now) => {
       this._times.push(now);
-      if (this._times.length > TRIALS)
+      if (this._times.length > this._TRIALS)
       {
-        let mode = new Map();
-        // Calculate the mode of the delta over the calls ignoring the first few.
-        for (let idx = 2; idx < TRIALS-1; idx++)
-        {
-          let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
-          if (mode.has(fps))
-          {
-            mode.set(fps, mode.get(fps) + 1);
-          }
-          else
-          {
-            mode.set(fps, 1);
-          }
-        }
-
-        let maxOccurance = 0;
-
-        for (const canidate of mode.keys())
-        {
-          let occurance = mode.get(canidate)
-          if (occurance > maxOccurance)
-          {
-            maxOccurance = occurance;
-            this._monitorFps = canidate;
-          }
-        }
-
-        console.info("Raw FPS observed at " + this._monitorFps);
-
-        if (Math.abs(this._monitorFps-240) < 10)
-        {
-          this._monitorFps = 240;
-        }
-        else if (Math.abs(this._monitorFps-120) < 10)
-        {
-          this._monitorFps = 120;
-        }
-        else if (Math.abs(this._monitorFps-60) < 5)
-        {
-          this._monitorFps = 60;
-        }
-        else if (Math.abs(this._monitorFps-30) < 5)
-        {
-          this._monitorFps = 30;
-        }
-
-        this._interval = 1000.0 / this._monitorFps;
+        this.calculateMonitorFPS();
         console.info(`Calculated FPS interval = ${this._interval} (${this._monitorFps})`);
       }
       else
@@ -504,6 +458,75 @@ class MotionComp {
     window.requestAnimationFrame(calcTimes);
   }
 
+  calculateMonitorFPS() {
+    let mode = new Map();
+    // Calculate the mode of the delta over the calls ignoring the first few.
+    for (let idx = 2; idx < this._TRIALS-1; idx++)
+    {
+      let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
+      if (mode.has(fps))
+      {
+        mode.set(fps, mode.get(fps) + 1);
+      }
+      else
+      {
+        mode.set(fps, 1);
+      }
+    }
+
+    let maxOccurance = 0;
+
+    for (const canidate of mode.keys())
+    {
+      let occurance = mode.get(canidate)
+      if (occurance > maxOccurance)
+      {
+        maxOccurance = occurance;
+        this._monitorFps = canidate;
+      }
+    }
+
+    if (Math.abs(this._monitorFps-240) < 10)
+    {
+      this._monitorFps = 240;
+    }
+    else if (Math.abs(this._monitorFps-120) < 10)
+    {
+      this._monitorFps = 120;
+    }
+    else if (Math.abs(this._monitorFps-60) < 5)
+    {
+      this._monitorFps = 60;
+    }
+    else if (Math.abs(this._monitorFps-30) < 5)
+    {
+      this._monitorFps = 30;
+    }
+
+    this._interval = 1000.0 / this._monitorFps;
+    this._times = []
+  }
+
+  clearTimesVector()
+  {
+    this._times = [];
+  }
+
+  periodicRateCheck(now)
+  {
+    this._times.push(now);
+    if (this._times.length > this._TRIALS)
+    {
+      const oldMonitor = this._monitorFps;
+      this.calculateMonitorFPS();
+      if (oldMonitor != this._monitorFps)
+      {
+        console.warn(`ALERT: New FPS interval = ${this._interval} (${this._monitorFps})`);
+        console.warn("ALERT: Recalculating playback scheduled");
+        computePlaybackSchedule(this._videoFps, this._factor);
+      }
+    }
+  }
   /// Given a video at a frame rate calculate the frame update
   /// schedule:
   ///
@@ -525,6 +548,10 @@ class MotionComp {
   ///
   computePlaybackSchedule(videoFps, factor)
   {
+    // Cache these in case we need to recalculate later
+    this._videoFps = videoFps;
+    this._factor = factor;
+
     let displayFps = videoFps;
     if (factor < 1)
     {
@@ -1126,6 +1153,9 @@ class VideoCanvas extends AnnotationCanvas {
 	  // Reset the GPU buffer on a new play action
 	  this._draw.clear();
 
+    // Reset perioidc health check in motion comp
+    this._motionComp.clearTimesVector();
+
 	  /// This is the notional scheduled diagnostic interval
 	  var schedDiagInterval=2000.0;
 
@@ -1152,6 +1182,7 @@ class VideoCanvas extends AnnotationCanvas {
 		    that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
 	    }
 
+      that._motionComp.periodicRateCheck(domtime);
       let increment = that._motionComp.animationIncrement(domtime, lastTime);
       if (increment > 0)
       {
@@ -1175,6 +1206,7 @@ class VideoCanvas extends AnnotationCanvas {
 	    }
 	    else
 	    {
+        this._motionComp.clearTimesVector();
 		    that._playerTimeout=null;
 	    }
 	  };
