@@ -63,15 +63,6 @@ def transcode(path, args, gid):
     ]
     subprocess.run(cmd, check=True)
 
-    # Make segments file.
-    cmd = [
-        'python3',
-        'makeFragmentInfo.py',
-        '--output', paths['segments'],
-        paths['transcoded'],
-    ]
-    subprocess.run(cmd, check=True)
-
     # Upload the results.
     cmd = [
         'python3',
