@@ -161,6 +161,7 @@ class AnnotationPage extends TatorPage {
         const haveEntity = searchParams.has("selected_entity");
         const haveEntityType = searchParams.has("selected_entity_type");
         const haveType = searchParams.has("selected_type");
+        const haveFrame = searchParams.has("frame");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -173,6 +174,13 @@ class AnnotationPage extends TatorPage {
               break;
             }
           }
+        }
+        if (haveFrame)
+        {
+          // Belts and suspenders here to ensure we jump upon a URL
+          // parameter..
+          const frame = Number(searchParams.get("frame"));
+          canvas.goToFrame(frame);
         }
         if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
