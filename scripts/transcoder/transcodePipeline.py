@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+""" Depercated way to test each script in the transcode pipeline """
+
 import argparse
 import subprocess
 import os
@@ -24,7 +26,7 @@ def get_file_paths(path):
     base, _ = os.path.splitext(path)
     paths = {
         'original': path,
-        'transcoded': base + '_transcoded.mp4',
+        'transcoded': base + '_transcoded',
         'thumbnail': base + '_thumbnail.jpg',
         'thumbnail_gif': base + '_thumbnail_gif.gif',
         'segments': base + '_segments.json',
@@ -78,7 +80,6 @@ def transcode(path, args, gid):
         '--transcoded_path', paths['transcoded'],
         '--thumbnail_path', paths['thumbnail'],
         '--thumbnail_gif_path', paths['thumbnail_gif'],
-        '--segments_path', paths['segments'],
         '--tus_url', args.tus_url,
         '--url', args.url,
         '--token', args.token,
