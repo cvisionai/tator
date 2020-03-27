@@ -1206,8 +1206,8 @@ class VideoCanvas extends AnnotationCanvas {
 	    }
 	    else
 	    {
-        this._motionComp.clearTimesVector();
-		    that._playerTimeout=null;
+        that._motionComp.clearTimesVector();
+        that._playerTimeout=null;
 	    }
 	  };
 
