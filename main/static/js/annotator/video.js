@@ -840,9 +840,9 @@ class VideoCanvas extends AnnotationCanvas {
     let videoUrl, fps, numFrames, dims;
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
+    let match_idx = -1;
     if (videoObject.media_files)
     {
-      let match_idx = 0;
       let max_delta = videoObject.height;
       let resolutions = videoObject.media_files["streaming"].length;
       for (let idx = 0; idx < resolutions; idx++)
@@ -869,7 +869,8 @@ class VideoCanvas extends AnnotationCanvas {
       videoUrl = `${host}/${streaming_data["path"]}`;
       dims = [streaming_data.resolution[1],streaming_data.resolution[0]];
     }
-    else
+    // Handle cases when there are no streaming files in the set
+    if (match_idx == -1)
     {
       videoUrl = videoObject.url;
       dims = [videoObject.width,videoObject.height];
