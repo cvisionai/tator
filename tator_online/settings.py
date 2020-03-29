@@ -24,11 +24,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+if os.getenv("TATOR_DEBUG") == "True":
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = True
+else:
+    DEBUG = False
 
 # Control whether minified JS is used
-USE_MIN_JS = True
+if os.getenv("TATOR_USE_MIN_JS") == "True":
+    USE_MIN_JS = True
+else:
+    USE_MIN_JS = False
 
 ALLOWED_HOSTS = [
     os.getenv('MAIN_HOST'),
