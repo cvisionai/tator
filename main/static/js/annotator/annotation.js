@@ -934,68 +934,96 @@ class AnnotationCanvas extends TatorElement
     var loc = this.scaleToRelative(clickLoc);
     var currentFrame = this.currentFrame();
     var that = this;
+
+    let hypot = (a,b) =>
+        {
+          return Math.sqrt(Math.pow(a,2)+Math.pow(b,2));
+        };
+    let distance_func = (a,b) =>
+        {
+          return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));
+        };
+
     if (this._framedData.has(currentFrame))
     {
       var match = null;
       this._framedData.get(currentFrame).forEach(
-        function(localizations)
-        {
-          return localizations.forEach(
-            function(localization)
+        (localizations) => {
+          let distances=[];
+          for (let idx = 0; idx < localizations.length; idx++)
+          {
+            let localization = localizations[idx]
+            var meta = that.getObjectDescription(localization);
+            if (match) return;
+            if (meta.type.dtype == "box")
             {
-              var meta = that.getObjectDescription(localization);
-              if (match) return;
-              if (meta.type.dtype == "box")
+              var nw = [localization.x,localization.y];
+              var sw = [localization.x,localization.y+localization.height];
+              var ne = [localization.x+localization.width,localization.y];
+              var se = [localization.x+localization.width,localization.y+localization.height];
+              if (loc[0] <= ne[0] && loc[0] >= nw[0] &&
+                  loc[1] <= se[1] && loc[1] >= ne[1])
               {
-                var maxX = localization.x + localization.width;
-                var maxY = localization.y + localization.height;
-                if ((loc[0] <= maxX  &&
-                     loc[0] >= localization.x &&
-                     loc[1] <= maxY &&
-                     loc[1] >= localization.y))
+                for (let corner of [nw,sw,ne,se])
                 {
-                  match = localization;
-                }
-              }
-              // Thershold is a width
-              var t = that.scaleToRelative([0,0,10])[2];
-              if (meta.type.dtype == "dot")
-              {
-                var x=localization.x;
-                var y=localization.y;
-                var distance = Math.sqrt(Math.pow(loc[0]-x,2)+Math.pow(loc[1]-y,2));
-                if ((distance) < t)
-                {
-                  match = localization;
-                }
-              }
-              if (meta.type.dtype == "line")
-              {
-                var y2=localization.y1;
-                var y1=localization.y0;
-                var x2=localization.x1;
-                var x1=localization.x0;
-
-                var x_min=Math.min(x1,x2);
-                var y_min=Math.min(y1,y2);
-                var x_max=Math.max(x1,x2);
-                var y_max=Math.max(y1,y2);
-
-                if (loc[0] > x_min && loc[0] < x_max &&
-                    loc[1] > y_min && loc[1] < y_max )
-                {
-                  // Line distance equation
-                  var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
-                                                ((x2-x1)*loc[1])+
-                                                (x2*y1)-(y2*x1))/
-                      Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
-                  if (distanceFromLine < t)
+                  var distance = distance_func(corner, loc);
+                  if (distance < hypot(localization.width/2, localization.height/2))
                   {
-                    match = localization;
+                    distances.push({"distance": distance,
+                                    "data": localization});
                   }
                 }
               }
-            })
+            }
+            // Thershold is a width
+            var t = that.scaleToRelative([0,0,10])[2];
+            if (meta.type.dtype == "dot")
+            {
+              var pos = [localization.x, localization.y];
+              var distance = distance_func(pos, loc);
+              if ((distance) < t)
+              {
+                distances.push({"distance": distance,
+                                  "data": localization});
+              }
+            }
+            if (meta.type.dtype == "line")
+            {
+              var y2=localization.y1;
+              var y1=localization.y0;
+              var x2=localization.x1;
+              var x1=localization.x0;
+
+              var x_min=Math.min(x1,x2);
+              var y_min=Math.min(y1,y2);
+              var x_max=Math.max(x1,x2);
+              var y_max=Math.max(y1,y2);
+
+              if (loc[0] > x_min && loc[0] < x_max &&
+                  loc[1] > y_min && loc[1] < y_max )
+              {
+                // Line distance equation
+                var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
+                                              ((x2-x1)*loc[1])+
+                                              (x2*y1)-(y2*x1))/
+                    Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
+                if (distanceFromLine < t)
+                {
+                  distances.push({"distance": distanceFromLine,
+                                "data": localization});
+                }
+              }
+            }
+          }
+
+          //distances now contains a list of canidates so sort them and return the first one
+          if (distances.length > 0)
+          {
+            console.info(`distances = ${distances}`);
+            distances.sort((a,b) => {return a['distance'] - b['distance']});
+            match = distances[0].data;
+          }
+
         });
       return match;
     }
