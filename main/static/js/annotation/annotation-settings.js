@@ -107,8 +107,12 @@ class AnnotationSettings extends TatorElement {
           this._prev.addEventListener("click", () => {
             let url = baseUrl + prevData.prev;
             const searchParams = new URLSearchParams(window.location.search);
+            searchParams.delete("selected_type");
+            const typeParams = this._typeParams();
+            if (typeParams) {
+              searchParams.append("selected_type",typeParams)
+            }
             url += "?" + searchParams.toString();
-            url += this._typeParams();
             window.location.href = url;
           });
         }
@@ -120,8 +124,11 @@ class AnnotationSettings extends TatorElement {
           this._next.addEventListener("click", () => {
             let url = baseUrl + nextData.next;
             const searchParams = new URLSearchParams(window.location.search);
+            const typeParams = this._typeParams();
+            if (typeParams) {
+              searchParams.append("selected_type", typeParams)
+            }
             url += "?" + searchParams.toString();
-            url += this._typeParams();
             window.location.href = url;
           });
         }
@@ -131,14 +138,15 @@ class AnnotationSettings extends TatorElement {
   }
 
   _typeParams() {
-    let params = "";
+    let params = null;
     if (this.hasAttribute("type-id")) {
-      params += "&selected_type=" + this.getAttribute("type-id");
+      params = this.getAttribute("type-id");
     }
     return params;
   }
 
   _queryParams() {
+    // TODO: Use the URLSearchParams here instead!
     let params = "";
     if (this.hasAttribute("entity-id")) {
       params += "&selected_entity=" + this.getAttribute("entity-id");
@@ -146,7 +154,9 @@ class AnnotationSettings extends TatorElement {
     if (this.hasAttribute("entity-type")) {
       params += "&selected_entity_type=" + this.getAttribute("entity-type");
     }
-    params += this._typeParams();
+    if (this._typeParams()) {
+      params += "&selected_type=" + this._typeParams();
+    }
     if (this.hasAttribute("frame")) {
       params += "&frame=" + this.getAttribute("frame");
     }
