@@ -684,6 +684,14 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
     This defaults to 'cvisionai' off dockerhub; but for development should be
     set to the value in :term:`dockerRegistry`
 
+  tatorDebug
+    Either "False" or "True" (with quotes) to denote whether to run django in
+    debug [Default if not specified: "False"]
+
+  useMinJs
+    Either "False" or "True" (with quotes) to denote whether to use minified
+    javascript [Default if not specified: "True"]
+
   djangoSecretKey
     A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
 
