@@ -123,6 +123,7 @@ class AnnotationSettings extends TatorElement {
           this._next.addEventListener("click", () => {
             let url = baseUrl + nextData.next;
             const searchParams = new URLSearchParams(window.location.search);
+            searchParams.delete("selected_type");
             const typeParams = this._typeParams();
             if (typeParams) {
               searchParams.append("selected_type", typeParams)
