@@ -192,6 +192,11 @@ transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
 
+.PHONY: transcoder-latest
+transcoder-latest:
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
+
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py
 	./externals/build_tools/multiArch.py  --help
