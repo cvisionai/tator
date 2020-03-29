@@ -364,8 +364,9 @@ endef
 $(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
 
 
-USE_MIN_JS=$(shell cat tator_online/settings.py | grep USE_MIN_JS | grep True | wc -l)
-ifeq ($(USE_MIN_JS),1)
+#USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("useMinJs","")' )
+USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("useMinJs","True"))')
+ifeq ($(USE_MIN_JS),True)
 min-js:
 	@echo "Building min-js file, because USE_MIN_JS is true"
 	mkdir -p $(OUTDIR)
