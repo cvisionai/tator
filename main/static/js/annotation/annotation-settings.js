@@ -30,10 +30,9 @@ class AnnotationSettings extends TatorElement {
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
       let url = window.location.origin + window.location.pathname;
-      url += "?attribute=" + searchParams.get("attribute");
-      url += this._queryParams();
+      url += "?" + this._queryParams(searchParams).toString();
       const text = document.createElement("textarea");
-      text.textContent = encodeURI(url);
+      text.textContent = url;
       text.style.opacity = 0;
       document.body.appendChild(text);
       text.select();
@@ -145,20 +144,22 @@ class AnnotationSettings extends TatorElement {
     return params;
   }
 
-  _queryParams() {
-    // TODO: Use the URLSearchParams here instead!
-    let params = "";
+  _queryParams(params) {
+    if (params == undefined)
+    {
+      params = new URLSearchParams()
+    }
     if (this.hasAttribute("entity-id")) {
-      params += "&selected_entity=" + this.getAttribute("entity-id");
+      params.append("selected_entity", this.getAttribute("entity-id"));
     }
     if (this.hasAttribute("entity-type")) {
-      params += "&selected_entity_type=" + this.getAttribute("entity-type");
+      params.append("selected_entity_type",this.getAttribute("entity-type"));
     }
     if (this._typeParams()) {
-      params += "&selected_type=" + this._typeParams();
+      params.append("selected_type", this._typeParams());
     }
     if (this.hasAttribute("frame")) {
-      params += "&frame=" + this.getAttribute("frame");
+      params.append("frame", this.getAttribute("frame"));
     }
     return params;
   }
