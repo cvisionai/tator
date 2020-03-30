@@ -820,6 +820,13 @@ class TatorAlgorithm(JobManagerMixin):
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
+        if 'volumeClaimTemplates' in self.manifest['spec']:
+            for claim in self.manifest['spec']['volumeClaimTemplates']:
+                storage_class_name = claim['spec'].get('storageClassName',None)
+                if storage_class_name is None:
+                    claim['storageClassName'] = 'nfs-client'
+                    logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
+
         # Save off the algorithm name.
         self.name = alg.name
 
