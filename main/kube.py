@@ -157,7 +157,7 @@ class TatorTranscode(JobManagerMixin):
                 'limit': 3,
                 'retryOn': "Always",
                 'backoff': {
-                    'duration': 1,
+                    'duration': '1s',
                     'factor': 2,
                     'maxDuration': "1m",
                 },
@@ -680,7 +680,7 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'unpack-pipeline',
                 'arguments': {'parameters' : global_parameters},
                 'onExit': 'exit-handler',
-                'ttlSecondsAfterFinished': 300,
+                'ttlStrategy': {'SecondsAfterCompletion': 300},
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
@@ -763,7 +763,7 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'single-file-pipeline',
                 'onExit': 'exit-handler',
                 'arguments': {'parameters' : global_parameters},
-                'ttlSecondsAfterFinished': 300,
+                'ttlStrategy': {'SecondsAfterCompletion': 300},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
                     self.download_task,
