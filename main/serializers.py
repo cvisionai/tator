@@ -338,7 +338,7 @@ class AttributeTypeEnumSerializer(serializers.ModelSerializer,
                                   AttributeTypeBaseSerializer):
     class Meta:
         model = AttributeTypeEnum
-        fields = AttributeTypeBase_BaseFields + ['dtype', 'choices', 'default']
+        fields = AttributeTypeBase_BaseFields + ['dtype', 'choices', 'labels', 'default']
 
 class AttributeTypeStringSerializer(serializers.ModelSerializer,
                                     AttributeTypeBaseSerializer):

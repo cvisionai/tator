@@ -744,6 +744,7 @@ class AttributeTypeEnum(AttributeTypeBase):
     attr_name = "Enum"
     dtype = "enum"
     choices = ArrayField(CharField(max_length=64))
+    labels = ArrayField(CharField(max_length=64), null=True, blank=True)
     default = CharField(max_length=64, null=True, blank=True)
 
 @receiver(post_save, sender=AttributeTypeEnum)
