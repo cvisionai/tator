@@ -64,7 +64,17 @@ class AttributePanel extends TatorElement {
       } else if (column.dtype == "enum") {
         widget = document.createElement("enum-input");
         widget.setAttribute("name", column.name);
-        widget.choices = column.choices;
+        let choices = [];
+        for (let idx = 0; idx < column.choices.length; idx++)
+        {
+          let choice = {'value': column.choices[idx]};
+          if (column.labels)
+          {
+            choice.label = column.labels[idx];
+          }
+          choices.push(choice);
+        }
+        widget.choices = choices;
       } else {
         // TODO: Implement a better datetime widget
         // TODO: Implement a better geopos widget
