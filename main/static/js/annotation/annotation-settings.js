@@ -107,6 +107,7 @@ class AnnotationSettings extends TatorElement {
             let url = baseUrl + prevData.prev;
             const searchParams = new URLSearchParams(window.location.search);
             searchParams.delete("selected_type");
+            searchParams.delete("frame");
             const typeParams = this._typeParams();
             if (typeParams) {
               searchParams.append("selected_type",typeParams)
@@ -124,6 +125,7 @@ class AnnotationSettings extends TatorElement {
             let url = baseUrl + nextData.next;
             const searchParams = new URLSearchParams(window.location.search);
             searchParams.delete("selected_type");
+            searchParams.delete("frame");
             const typeParams = this._typeParams();
             if (typeParams) {
               searchParams.append("selected_type", typeParams)
