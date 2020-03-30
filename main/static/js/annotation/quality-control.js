@@ -8,6 +8,7 @@ class QualityControl extends TatorElement {
     this._shadow.appendChild(summary);
 
     const rateSpan = document.createElement("div");
+    rateSpan.style.cursor = "default";
     rateSpan.setAttribute("class", "text-gray");
     rateSpan.textContent = "Quality:";
     summary.appendChild(rateSpan);
