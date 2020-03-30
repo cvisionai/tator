@@ -947,9 +947,9 @@ class AnnotationCanvas extends TatorElement
     if (this._framedData.has(currentFrame))
     {
       var match = null;
+      let distances=[];
       this._framedData.get(currentFrame).forEach(
         (localizations) => {
-          let distances=[];
           for (let idx = 0; idx < localizations.length; idx++)
           {
             let localization = localizations[idx]
@@ -1015,16 +1015,13 @@ class AnnotationCanvas extends TatorElement
               }
             }
           }
-
-          //distances now contains a list of canidates so sort them and return the first one
-          if (distances.length > 0)
-          {
-            console.info(`distances = ${distances}`);
-            distances.sort((a,b) => {return a['distance'] - b['distance']});
-            match = distances[0].data;
-          }
-
         });
+      //distances now contains a list of canidates so sort them and return the first one
+      if (distances.length > 0)
+      {
+        distances.sort((a,b) => {return a['distance'] - b['distance']});
+        match = distances[0].data;
+      }
       return match;
     }
     else
