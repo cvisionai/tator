@@ -8,18 +8,26 @@ IMAGES=tator-image marshal-image tus-image postgis-image transcoder-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
-DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["dockerRegistry"])')
+# Get python version and set yaml arguments correctly
+PYTHON3_REVISION=$(shell python3 --version | grep ^Python | sed 's/^.* //g' | awk -F. '{print $$2}')
+ifeq ($(shell if [ $(PYTHON3_REVISION) -ge 7 ]; then echo "7"; fi),7)
+YAML_ARGS=Loader=yaml.FullLoader
+else
+YAML_ARGS=
+endif
 
-SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("systemImageRepo"))')
+DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["dockerRegistry"])')
+
+SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
 SYSTEM_IMAGE_REGISTRY=cvisionai
 endif
 
-POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresHost"])')
-POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresUsername"])')
-POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a["postgresPassword"])')
+POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
+POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
+POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
 #############################
 ## Help Rule + Generic targets
@@ -58,7 +66,7 @@ ecr_update:
 	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
 	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
 	$(LOGIN)
-	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r")); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
+	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
 
 psql_cloud:
 	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
@@ -369,8 +377,7 @@ endef
 $(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
 
 
-#USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("useMinJs","")' )
-USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r")); print(a.get("useMinJs","True"))')
+USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
 ifeq ($(USE_MIN_JS),True)
 min-js:
 	@echo "Building min-js file, because USE_MIN_JS is true"
