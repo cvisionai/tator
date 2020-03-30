@@ -48,7 +48,6 @@ class QualityControl extends TatorElement {
   {
     const select = document.createElement("select");
     select.setAttribute("class", "form-select has-border select-sm1");
-    select.style.color = "#FFFFFF";
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;

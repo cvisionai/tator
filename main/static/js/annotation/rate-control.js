@@ -18,7 +18,6 @@ class RateControl extends TatorElement {
 
     const select = document.createElement("select");
     select.setAttribute("class", "form-select has-border select-sm1");
-    select.style.color = "#FFFFFF";
     div.appendChild(select);
 
     const rates = [0.125, 0.25, 0.5, 1, 2, 4, 8];
