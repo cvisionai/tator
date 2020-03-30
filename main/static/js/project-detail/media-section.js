@@ -161,6 +161,15 @@ class MediaSection extends TatorElement {
     const nameDefined = this.getAttribute("name") !== null;
     if (projectDefined && nameDefined) {
       this._files.addEventListener("algorithm", evt => {
+        let body = {"algorithm_name": evt.detail.algorithmName};
+        if ('mediaIds' in evt.detail)
+        {
+          body["media_ids"] = evt.detail.mediaIds;
+        }
+        else
+        {
+          body["media_query"] = this._sectionFilter();
+        }
         const projectId = this.getAttribute("project-id");
         fetch("/rest/AlgorithmLaunch/" + projectId, {
           method: "POST",
@@ -170,10 +179,7 @@ class MediaSection extends TatorElement {
             "Accept": "application/json",
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            "algorithm_name": evt.detail.algorithmName,
-            "media_query": this._sectionFilter(),
-          }),
+          body: JSON.stringify(body),
         })
         .then(response => {
           const page = document.querySelector("project-detail");

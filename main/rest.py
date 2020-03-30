@@ -3441,7 +3441,7 @@ class AlgorithmLaunchAPI(APIView):
             if 'media_query' in reqObject:
                 media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
             elif 'media_ids' in reqObject:
-                media_ids.extend(reqObject['media_ids'].split(','))
+                media_ids = reqObject['media_ids']
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))

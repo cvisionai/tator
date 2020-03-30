@@ -41,7 +41,7 @@ class MediaCard extends TatorElement {
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(new CustomEvent("algorithm", {
         detail: {
-          mediaIds: this.getAttribute("media-id"),
+          mediaIds: [Number(this.getAttribute("media-id"))],
           algorithmName: evt.detail.algorithmName
         },
         composed: true
