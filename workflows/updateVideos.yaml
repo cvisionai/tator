@@ -5,6 +5,7 @@ metadata:
 spec:
   entrypoint: pipeline
   ttlSecondsAfterFinished: 500
+  parallelism: 4
   volumeClaimTemplates:
   - metadata:
       name: workdir
@@ -23,8 +24,8 @@ spec:
     steps:
     - - name: download
         template: download
-    - - name: update-video
-        template: update-video
+    - - name: transcode-video
+        template: transcode-video
         withParam: "{{steps.download.outputs.parameters.update-list}}"
         arguments:
           parameters:
@@ -34,6 +35,15 @@ spec:
             value: "{{item.dest}}"
           - name: source
             value: "{{item.source}}"
+    - - name: upload-video
+        template: upload-video
+        withParam: "{{steps.download.outputs.parameters.update-list}}"
+        arguments:
+          parameters:
+          - name: video-scratch
+            value: "{{item.dest}}"
+          - name: video-id
+            value: "{{item.id}}"
   - name: download
     container:
       image: localhost:5000/tator_transcoder:latest
@@ -62,7 +72,7 @@ spec:
       - name: update-list
         valueFrom:
           path: "/work/update-list.json"
-  - name: update-video
+  - name: transcode-video
     inputs:
         parameters:
         - name: resolutions
@@ -74,17 +84,6 @@ spec:
         limits:
           cpu: 4000m
           memory: 2Gi
-      env:
-      - name: TATOR_MEDIA_IDS
-        value: "{{workflow.parameters.media_ids}}"
-      - name: TATOR_API_SERVICE
-        value: "{{workflow.parameters.rest_url}}"
-      - name: TATOR_AUTH_TOKEN
-        value: "{{workflow.parameters.rest_token}}"
-      - name: TATOR_PROJECT_ID
-        value: "{{workflow.parameters.project_id}}"
-      - name: TATOR_WORK_DIR
-        value: "/work"
       volumeMounts:
       - name: workdir
         mountPath: /work
@@ -93,3 +92,28 @@ spec:
              "--resolutions", "{{inputs.parameters.resolutions}}",
              "-o", "{{inputs.parameters.dest}}",
              "{{inputs.parameters.source}}"]
+  - name: upload-video
+    inputs:
+        parameters:
+        - name: video-scratch
+        - name: video-id
+    container:
+      image: localhost:5000/tator_transcoder:latest
+      resources:
+        limits:
+          cpu: 4000m
+          memory: 2Gi
+      volumeMounts:
+      - name: workdir
+        mountPath: /work
+      command: [python3]
+      args: ["/scripts/patchTranscodedVideo.py",
+             "--transcoded-path", "{{inputs.parameters.video-scratch}}",
+             "--tus-url", "{{workflow.parameters.tus_url}}",
+             "--url", "{{workflow.parameters.rest_url}}",
+             "--token", "{{workflow.parameters.rest_token}}",
+             "--project", "{{workflow.parameters.project_id}}",
+             "--gid", "{{workflow.parameters.gid}}",
+             "--uid", "{{workflow.parameters.uid}}",
+             "--video-id", "{{inputs.parameters.video-id}}"
+             ]
