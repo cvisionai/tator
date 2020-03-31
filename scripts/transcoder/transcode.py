@@ -14,6 +14,7 @@ MAX_RESOLUTION=max(STREAMING_RESOLUTIONS)
 def parse_args():
     parser = argparse.ArgumentParser(description='Transcodes a raw video.')
     parser.add_argument('input', type=str, help='Path to input file.')
+    parser.add_argument('--resolutions')
     parser.add_argument("-o", "--output");
     return parser.parse_args()
 
@@ -57,7 +58,11 @@ def transcode(path, outpath):
     """Starts a transcode for the given media file.
     """
 
-    resolutions = determine_transcode(path)
+    if args.resolutions is None:
+        resolutions = determine_transcode(path)
+    else:
+        resolutions = args.resolutions.split(',')
+
     logger.info(f"Transcoding {path} to {outpath}...")
 
     os.makedirs(outpath, exist_ok=True)
