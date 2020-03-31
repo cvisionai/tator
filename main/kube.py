@@ -680,7 +680,7 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'unpack-pipeline',
                 'arguments': {'parameters' : global_parameters},
                 'onExit': 'exit-handler',
-                'ttlStrategy': {'SecondsAfterCompletion': 300},
+                'ttlStrategy': {'secondsAfterCompletion': 300},
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
@@ -763,7 +763,7 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'single-file-pipeline',
                 'onExit': 'exit-handler',
                 'arguments': {'parameters' : global_parameters},
-                'ttlStrategy': {'SecondsAfterCompletion': 300},
+                'ttlStrategy': {'secondsAfterCompletion': 300},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
                     self.download_task,
