@@ -26,6 +26,14 @@ spec:
     - - name: update-video
         template: update-video
         withParam: "{{steps.download.outputs.parameters.update-list}}"
+        arguments:
+          parameters:
+          - name: resolutions
+            value: "{{item.resolutions}}"
+          - name: dest
+            value: "{{item.dest}}"
+          - name: source
+            value: "{{item.source}}"
   - name: download
     container:
       image: localhost:5000/tator_transcoder:latest
@@ -55,6 +63,11 @@ spec:
         valueFrom:
           path: "/work/update-list.json"
   - name: update-video
+    inputs:
+        parameters:
+        - name: resolutions
+        - name: dest
+        - name: source
     container:
       image: localhost:5000/tator_transcoder:latest
       resources:
@@ -76,4 +89,7 @@ spec:
       - name: workdir
         mountPath: /work
       command: [python3]
-      args: ["/scripts/tator/docker_entry.py"]
+      args: ["/scripts/transcode.py",
+             "--resolutions", "{{inputs.parameters.resolutions}}",
+             "-o", "{{inputs.parameters.dest}}",
+             "{{inputs.parameters.source}}"]
