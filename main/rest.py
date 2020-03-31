@@ -20,6 +20,7 @@ from polymorphic.managers import PolymorphicQuerySet
 from django.core.exceptions import ObjectDoesNotExist
 from urllib import parse as urllib_parse
 import time
+import subprocess
 
 from rest_framework.compat import coreschema,coreapi
 from rest_framework.generics import ListAPIView
@@ -75,6 +76,7 @@ from .models import AnalysisCount
 from .models import User
 from .models import Version
 from .models import InterpolationMethods
+from .models import getVideoDefinition
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 
@@ -2951,6 +2953,143 @@ class SaveVideoAPI(APIView):
     ])
     permission_classes = [ProjectTransferPermission]
 
+    def make_video_definition(self, disk_file, url_path):
+        cmd = [
+        "ffprobe",
+        "-v","error",
+        "-show_entries", "stream",
+        "-print_format", "json",
+        disk_file,
+        ]
+        output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+        video_info = json.loads(output)
+        stream_idx=0
+        for idx, stream in enumerate(video_info["streams"]):
+            if stream["codec_type"] == "video":
+                stream_idx=idx
+                break
+        stream = video_info["streams"][stream_idx]
+        video_def = getVideoDefinition(
+            url_path,
+            stream["codec_name"],
+            (stream["height"], stream["width"]),
+            codec_description=stream["codec_long_name"])
+        return video_def
+
+    def patch(self, request, format=None, **kwargs):
+        response=Response({})
+        try:
+            gid = request.data.get('gid', None)
+            uid = request.data.get('uid', None)
+            new_media_files = request.data.get('media_files', None)
+            media_id = request.data.get('id', None)
+            media_element = EntityMediaVideo.objects.get(pk=media_id)
+            project = kwargs['project']
+            progress_name = media_element.name
+            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+
+            if gid is None:
+                raise Exception('Missing required gid for upload')
+
+            if uid is None:
+                raise Exception('Missing required uuid for upload')
+
+            if new_media_files is None:
+                raise Exception('Missing required media_files object for upload')
+            if media_id is None:
+                raise Exception('Missing required media_id for upload')
+
+            # First determine if we need to move originals out
+            if media_element.media_files is None:
+                media_files = {}
+            else:
+                media_files = media_element.media_files
+
+            # First determine if we need to move originals to media_files
+            if media_element.original:
+                originals=media_files.get('archival',[])
+                if len(originals) == 0:
+                    archival_def = self.make_video_definition(media_element.original,
+                                                              media_element.original)
+                    media_files['archival'] = [archival_def]
+                    # Clear the old pointer for consistency
+                    #media_element.original = None
+
+            upload_uids = {}
+            save_paths = {}
+            streaming = media_files.get('streaming',[])
+            for idx,streaming_format in enumerate(new_media_files['streaming']):
+                upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
+                upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
+
+                res_uid = str(uuid1())
+                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
+                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
+                del streaming_format['url']
+                del streaming_format['segment_info_url']
+                streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
+                streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
+                streaming.append(streaming_format)
+
+            media_files['streaming'] = streaming
+
+            upload_paths = {
+                key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
+                for key, uid in upload_uids.items()
+            }
+
+            for key in upload_paths:
+                shutil.copyfile(upload_paths[key], save_paths[key])
+
+            # Delete the old 720p version that has who knows what generation it is
+            if media_element.file:
+                found_it = False
+                for media in existing_streaming:
+                    logger.info(f"Comparing {media['path']} vs. {os.path.relpath(media_element.file.path, '/data/media')}")
+                    if os.path.relpath(media['path'], '/media') == os.path.relpath(media_element.file.path, "/data/media"):
+                        logger.info(f"Found {media['path']} in new indexing list")
+                        found_it = True
+                if found_it:
+                    media_element.file = None
+                    media_element.segment_info = None
+                else:
+                    media_element.file.delete(False)
+                    if media_element.segment_info:
+                        try:
+                            os.remove(media_element.segment_info)
+                        except:
+                            logger.info("Could not delete segment info")
+                        media_element.segment_info = None
+
+            # Sort resolutions in descending order by convention
+            media_files['archival'].sort(key=lambda x: x['resolution'][0], reverse=True)
+            media_files['streaming'].sort(key=lambda x: x['resolution'][0], reverse=True)
+
+            media_element.media_files = media_files
+            media_element.save()
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+            prog.failed("Could not save video!")
+        finally:
+            # Delete files from the uploads directory.
+            if 'upload_paths' in locals():
+                for key in upload_paths:
+                    logger.info(f"Removing uploaded file {upload_paths[key]}")
+                    if os.path.exists(upload_paths[key]):
+                        logger.info(f"{upload_paths[key]} exists and is being removed!")
+                        os.remove(upload_paths[key])
+                    info_path = os.path.splitext(upload_paths[key])[0] + '.info'
+                    if os.path.exists(info_path):
+                        os.remove(info_path)
+            return response;
+
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
@@ -3047,7 +3186,7 @@ class SaveVideoAPI(APIView):
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
             os.makedirs(raw_project_dir, exist_ok=True)
 
-            # Short resolutions in descending order by convention
+            # Sort resolutions in descending order by convention
             media_files['archival'].sort(key=lambda x: x['resolution'][0], reverse=True)
             media_files['streaming'].sort(key=lambda x: x['resolution'][0], reverse=True)
 
