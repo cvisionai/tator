@@ -1241,7 +1241,7 @@ class VideoCanvas extends AnnotationCanvas {
 		    {
 		      // Update the next frame to display and recurse back at twice the framerate
 		      currentFrame=nextFrame;
-		      that._loaderTimeout=setTimeout(loader, fpsInterval/4);
+		      that._loaderTimeout=setTimeout(loader, 0);
 		    }
 		    else
 		    {
