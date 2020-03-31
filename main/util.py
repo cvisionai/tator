@@ -412,3 +412,16 @@ def migrateVideosToNewSchema(project):
         video.media_files = media_files
         pprint(media_files)
         video.save()
+
+def fixVideoDims(project):
+    videos = EntityMediaVideo.objects.filter(project=project)
+    for video in progressbar(videos):
+        try:
+            if video.original:
+                archival_definition = make_video_definition(video.original,
+                                                            video.original)
+                video.height = archival_definition["resolution"][0]
+                video.width = archival_definition["resolution"][1]
+                video.save()
+        except:
+            print(f"Error on {video.pk}")
