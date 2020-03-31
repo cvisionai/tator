@@ -52,7 +52,7 @@ if __name__ == '__main__':
                                 'scratch')
         os.makedirs(dest_dir, exist_ok=True)
         tator.Media.downloadFile(media_element, video_fp)
-        work.append({"id": media_element['id'],
+        work.append({"id": str(media_element['id']),
                      "resolutions": ",".join(str(x) for x in missing), # must be string for cli
                      "source": video_fp,
                      "dest": dest_dir})
