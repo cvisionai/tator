@@ -202,10 +202,10 @@ transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 
-.PHONY: transcoder-latest
+.PHONY: transcoder-publish
 transcoder-latest: transcoder-image
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) cvisionai/tator_transcoder:latest
+	docker push cvisionai/tator_transcoder:latest
 
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py

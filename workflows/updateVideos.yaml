@@ -46,7 +46,7 @@ spec:
             value: "{{item.id}}"
   - name: download
     container:
-      image: localhost:5000/tator_transcoder:latest
+      image: cvisionai/tator_transcoder:latest
       resources:
         limits:
           cpu: 1000m
@@ -79,7 +79,7 @@ spec:
         - name: dest
         - name: source
     container:
-      image: localhost:5000/tator_transcoder:latest
+      image: cvisionai/tator_transcoder:latest
       resources:
         limits:
           cpu: 4000m
@@ -98,7 +98,7 @@ spec:
         - name: video-scratch
         - name: video-id
     container:
-      image: localhost:5000/tator_transcoder:latest
+      image: cvisionai/tator_transcoder:latest
       resources:
         limits:
           cpu: 4000m
