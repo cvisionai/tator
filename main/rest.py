@@ -3044,8 +3044,7 @@ class SaveVideoAPI(APIView):
             # Delete the old 720p version that has who knows what generation it is
             if media_element.file:
                 found_it = False
-                for media in existing_streaming:
-                    logger.info(f"Comparing {media['path']} vs. {os.path.relpath(media_element.file.path, '/data/media')}")
+                for media in streaming:
                     if os.path.relpath(media['path'], '/media') == os.path.relpath(media_element.file.path, "/data/media"):
                         logger.info(f"Found {media['path']} in new indexing list")
                         found_it = True
