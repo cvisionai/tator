@@ -201,7 +201,7 @@ transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
 
 .PHONY: transcoder-latest
-transcoder-latest:
+transcoder-latest: transcoder-image
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 
