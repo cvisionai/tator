@@ -11,23 +11,21 @@ MAX_RESOLUTION=max(RESOLUTIONS)
 def determine_update(media_element):
     height = media_element['height']
     media_files = media_element['media_files']
-    if media_files is None:
-        return RESOLUTIONS
-    streaming_files = media_files.get('streaming', None)
-    if streaming_files is None:
-        return RESOLUTIONS
-                
+    streaming_files = []
+    if media_files:
+        streaming_files = media_files.get('streaming',[])
     expected=[res for res in RESOLUTIONS if res < height]
     if height <= MAX_RESOLUTION:
         expected.append(height)
+    print(f"Given {height}; we expect {expected}")
     actual=[info['resolution'][0] for info in streaming_files if 'resolution' in info]
-
     missing = [res for res in expected if res not in actual]
+    print(f"Missing resolutions = {missing}")
     return missing        
         
 if __name__ == '__main__':
     media_ids = os.getenv('TATOR_MEDIA_IDS')
-    print(f"processing = {media_ids})")
+    print(f"processing = {media_ids}")
     media_ids = [int(m) for m in media_ids.split(',')]
     rest_svc = os.getenv('TATOR_API_SERVICE')
     work_dir = os.getenv('TATOR_WORK_DIR')
