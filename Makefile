@@ -199,6 +199,7 @@ tus-image: containers/tus/Dockerfile.gen
 transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
+	make transcoder-latest
 
 .PHONY: transcoder-latest
 transcoder-latest: transcoder-image
