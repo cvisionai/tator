@@ -69,8 +69,10 @@ def transcode(path, outpath):
 
     cmd = [
         "ffmpeg", "-y",
-        "-i", path,
-        "-an",
+        "-i", path
+    ]
+
+    per_res = ["-an",
         "-metadata:s", "handler_name=tator",
         "-vcodec", "libx264",
         "-g", "25",
@@ -79,18 +81,19 @@ def transcode(path, outpath):
         "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
         "-movflags",
         "faststart+frag_keyframe+empty_moov+default_base_moof",
-        "-tune", "fastdecode",
-    ]
+        "-tune", "fastdecode"]
 
     logger.info(f"Transcoding to {resolutions}")
     for resolution in resolutions:
         logger.info(f"Generating resolution @ {resolution}")
         output_file = os.path.join(outpath, f"{resolution}.mp4")
-        resolution_cmd = [*cmd, "-vf", f"scale=-2:{resolution}",
-                          output_file]
-        logger.info('ffmpeg cmd = {}'.format(resolution_cmd))
-        subprocess.run(resolution_cmd, check=True)
-        logger.info("Transcoding finished!")
+        cmd.extend([*per_res,
+                    "-vf",
+                    f"scale=-2:{resolution}",
+                    output_file])
+    logger.info('ffmpeg cmd = {}'.format(cmd))
+    subprocess.run(cmd, check=True)
+    logger.info("Transcoding finished!")
 
 if __name__ == '__main__':
     args = parse_args()
