@@ -64,19 +64,12 @@ var src_path="/static/js/annotator/";
 /// Support multiple off-screen videos
 class VideoBufferDemux
 {
-  constructor(bufferSize, numBuffers)
+  constructor(streaming_files, play_idx, scrub_idx, hq_idx)
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
     this._numBuffers = 30;
-    if (bufferSize)
-    {
-      this._bufferSize = bufferSize;
-    }
-    if (numBuffers)
-    {
-      this._numBuffers = numBuffers;
-    }
+
     this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
     this._inUse=[];
@@ -825,24 +818,19 @@ class VideoCanvas extends AnnotationCanvas {
   /// Returns a promise when the video resource is loaded
   loadFromVideoObject(videoObject, quality)
   {
-    this._videoElement=new VideoBufferDemux();
-
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)
     {
       quality = 720;
     }
 
-    // Clear the buffer in case this is a hot-swap
-    this._draw.clear();
-
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
-    let match_idx = -1;
-    if (videoObject.media_files)
-    {
+
+    let find_closest = (videoObject, resolution) => {
+      let play_idx = -1;
       let max_delta = videoObject.height;
       let resolutions = videoObject.media_files["streaming"].length;
       for (let idx = 0; idx < resolutions; idx++)
@@ -852,30 +840,57 @@ class VideoCanvas extends AnnotationCanvas {
         if (delta < max_delta)
         {
           max_delta = delta;
-          match_idx = idx;
+          play_idx = idx;
         }
       }
-      console.info(`NOTICE: Choose video stream ${match_idx}`);
+      return play_idx;
+    };
 
-      // Load version with closest resolution
-      let streaming_data = videoObject.media_files["streaming"][match_idx];
+    let play_idx = -1;
+    let scrub_idx = -1;
+    let hq_idx = -1;
+    let streaming_files = null;
+    if (videoObject.media_files)
+    {
+      streaming_files = videoObject.media_files["streaming"];
+      play_idx = find_closest(videoObject, quality);
+      // Todo parameterize this to maximize flexibility
+      scrub_idx = find_closest(videoObject, 320);
+      hq_idx = 0;
+      console.info(`NOTICE: Choose video stream ${play_idx}`);
+
+      // Use worst-case dims
+      dims = [streaming_files[0].resolution[1],
+              streaming_files[0].resolution[0]];
 
       let host = `${window.location.protocol}//${window.location.host}`;
-      if (streaming_data.host)
+      for (var idx = 0; idx < streaming_files.length; idx++)
       {
-        host = streaming_data.host;
+        if (streaming_files[idx].host)
+        {
+          host = streaming_files[idx].host;
+        }
+        streaming_files[idx].path = `${host}/${streaming_files[idx].path}`;
       }
-      // TODO: add auth support for off-site media
-      videoUrl = `${host}/${streaming_data["path"]}`;
-      dims = [streaming_data.resolution[1],streaming_data.resolution[0]];
     }
     // Handle cases when there are no streaming files in the set
-    if (match_idx == -1)
+    if (play_idx == -1)
     {
       videoUrl = videoObject.url;
       dims = [videoObject.width,videoObject.height];
       console.warn("Using old access method!");
+      streaming_files = [{"path": videoObject.url,
+                         "resolution": [videoObject.height,videoObject.width]}];
+      play_idx = 0;
+      scrub_idx = 0;
+      hq_idx = 0;
     }
+
+    this._videoElement=new VideoBufferDemux();
+
+    // Clear the buffer in case this is a hot-swap
+    this._draw.clear();
+
 
     console.info(`Video dimensions = ${dims}`);
     var that = this;
@@ -888,7 +903,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     this.stopDownload();
     var promise = this._videoElement.loadedDataPromise(this);
-    this.startDownload(videoUrl);
+    this.startDownload(streaming_files[play_idx].path);
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;
