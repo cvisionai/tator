@@ -813,7 +813,9 @@ class VideoCanvas extends AnnotationCanvas {
     };
     this._dlWorker.postMessage({"type": "start",
                                 "media_files": streaming_files,
-                                "play_idx": play_idx});
+                                "play_idx": play_idx,
+                                "hq_idx": hq_idx,
+                                "scrub_idx": scrub_idx});
   }
 
   /// Load a video from URL (whole video) with associated metadata
