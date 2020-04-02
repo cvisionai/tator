@@ -704,7 +704,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  startDownload(streaming_files, play_idx)
+  startDownload(streaming_files)
   {
     var that = this;
 
@@ -720,11 +720,12 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type =="seek_result")
       {
-        that._videoElement.appendSeekBuffer(e.data["buffer"], e.data['time']);
+        that._videoElement[that._seek_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
       }
       else if (type =="buffer")
       {
-        var error = that._videoElement.error();
+        let buffer = that._videoElement[e.data["buf_idx"]];
+        var error = buffer.error();
         if (error)
         {
           updateStatus("Video decode error", "danger", "-1");
@@ -745,14 +746,14 @@ class VideoCanvas extends AnnotationCanvas {
             {
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
-              that._videoElement.appendAllBuffers(data.slice(begin, end), callback);
+              buffer.appendAllBuffers(data.slice(begin, end), callback);
               idx+=2;
             }
             else
             {
               var begin=offsets[idx][0];
               var end=offsets[idx][0] + offsets[idx][1];
-              that._videoElement.appendLatestBuffer(data.slice(begin, end), callback);
+              buffer.appendLatestBuffer(data.slice(begin, end), callback);
               idx++;
             }
           }
@@ -760,7 +761,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         var afterUpdate = function(_)
         {
-          var error = that._videoElement.error();
+          var error = that._videoElement[that._play_idx].error();
           if (error)
           {
             console.error("Error " + error.code + "; details: " + error.message);
@@ -803,7 +804,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         // Go to compatibility mode
         console.warn("In video compatibility mode");
-        that._videoElement.compat(videoUrl);
+        that._videoElement[this._play_idx].compat(videoUrl);
         that.seekFrame(0, that.drawFrame);
         that.dispatchEvent(new CustomEvent("bufferLoaded",
                                            {composed: true,
@@ -813,9 +814,9 @@ class VideoCanvas extends AnnotationCanvas {
     };
     this._dlWorker.postMessage({"type": "start",
                                 "media_files": streaming_files,
-                                "play_idx": play_idx,
-                                "hq_idx": hq_idx,
-                                "scrub_idx": scrub_idx});
+                                "play_idx": this._play_idx,
+                                "hq_idx": this._hq_idx,
+                                "scrub_idx": this._scrub_idx});
   }
 
   /// Load a video from URL (whole video) with associated metadata
@@ -890,8 +891,16 @@ class VideoCanvas extends AnnotationCanvas {
       hq_idx = 0;
     }
 
-    this._videoElement=new VideoBufferDemux();
+    // Set initial buffer index values
+    this._play_idx = play_idx;
+    this._scrub_idx = scrub_idx;
+    this._hq_idx = hq_idx;
 
+    this._videoElement = [];
+    for (let idx = 0; idx < streaming_files.length; idx++)
+    {
+      this._videoElement.push(new VideoBufferDemux());
+    }
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
 
@@ -906,8 +915,8 @@ class VideoCanvas extends AnnotationCanvas {
     this.resetRoi();
 
     this.stopDownload();
-    var promise = this._videoElement.loadedDataPromise(this);
-    this.startDownload(streaming_files, play_idx);
+    var promise = this._videoElement[this._play_idx].loadedDataPromise(this);
+    this.startDownload(streaming_files);
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;
@@ -1046,7 +1055,7 @@ class VideoCanvas extends AnnotationCanvas {
         direction = Direction.BACKWARD;
       }
     }
-    return this._videoElement.forTime(time, direction);
+    return this._videoElement[this._play_idx].forTime(time, direction);
   }
 
   frameToTime(frame)
@@ -1066,7 +1075,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       // Set the seek buffer, and command worker to get the seek
       // response
-      video = this._videoElement.seekBuffer();
+      video = this._videoElement[this._play_idx].seekBuffer();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
                                   "time": time});
@@ -1393,7 +1402,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  }
 
 	  this._direction=Direction.STOPPED;
-	  this._videoElement.pause();
+	  this._videoElement[this._play_idx].pause();
 	  this.stopPlayerThread();
 
 	  this.seekFrame(this._dispFrame, this.drawFrame);

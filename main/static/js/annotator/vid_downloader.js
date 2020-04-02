@@ -2,12 +2,18 @@ importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
-  constructor(media_files, play_idx, blockSize)
+  constructor(media_files, blockSize)
+  {
+    this._media_files = media_files;
+    this._blockSize = blockSize;
+  }
+
+  startLinearDownload(idx)
   {
     this._currentPacket=0;
     this._numPackets=0;
-    this._url=media_files[play_idx].path;
-    this._blockSize = blockSize;
+    this._res_idx = idx;
+    this._url=this._media_files[idx].path;
     this._info_url=this._url.substring(0,
                                        this._url.indexOf('.mp4'))+"_segments.json";
 
@@ -162,13 +168,14 @@ class VideoDownloader
     fetch(this._url,
           {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
          ).then(
-           function(response)
+           (response) =>
            {
              response.arrayBuffer().then(
-               function(buffer)
+               (buffer) =>
                {
                  // Transfer the buffer to the
                  var data={"type": "buffer",
+                           "buf_idx" : this._res_idx,
                            "pts_start": 0,
                            "pts_end": 0,
                            "percent_complete": percent_complete,
@@ -189,7 +196,12 @@ onmessage = function(e)
   // Download in 5 MB chunks
   if (type == 'start')
   {
-    ref = new VideoDownloader(msg.media_files, msg.play_idx, 5*1024*1024);
+    if (ref == null)
+    {
+      ref = new VideoDownloader(msg.media_files,
+                                5*1024*1024);
+    }
+    ref.startLinearDownload(msg["play_idx"]);
   }
   else if (type == 'download')
   {
