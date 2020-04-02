@@ -2,14 +2,14 @@ importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
-  constructor(url, blockSize)
+  constructor(media_files, play_idx, blockSize)
   {
     this._currentPacket=0;
     this._numPackets=0;
-    this._url=url;
+    this._url=media_files[play_idx].path;
     this._blockSize = blockSize;
-
-    this._info_url=url.substring(0,url.indexOf('.mp4'))+"_segments.json";
+    this._info_url=this._url.substring(0,
+                                       this._url.indexOf('.mp4'))+"_segments.json";
 
     const info = new Request(this._info_url);
     fetch(info).then(
@@ -189,7 +189,7 @@ onmessage = function(e)
   // Download in 5 MB chunks
   if (type == 'start')
   {
-    ref = new VideoDownloader(msg['url'], 5*1024*1024);
+    ref = new VideoDownloader(msg.media_files, msg.play_idx, 5*1024*1024);
   }
   else if (type == 'download')
   {

@@ -704,7 +704,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  startDownload(videoUrl)
+  startDownload(streaming_files, play_idx)
   {
     var that = this;
 
@@ -811,7 +811,9 @@ class VideoCanvas extends AnnotationCanvas {
                                            }));
       }
     };
-    this._dlWorker.postMessage({"type": "start", "url": videoUrl});
+    this._dlWorker.postMessage({"type": "start",
+                                "media_files": streaming_files,
+                                "play_idx": play_idx});
   }
 
   /// Load a video from URL (whole video) with associated metadata
@@ -903,7 +905,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     this.stopDownload();
     var promise = this._videoElement.loadedDataPromise(this);
-    this.startDownload(streaming_files[play_idx].path);
+    this.startDownload(streaming_files, play_idx);
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;
