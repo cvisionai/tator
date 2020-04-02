@@ -724,8 +724,8 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type =="buffer")
       {
-        let buffer = that._videoElement[e.data["buf_idx"]];
-        var error = buffer.error();
+        let video_buffer = that._videoElement[e.data["buf_idx"]];
+        var error = video_buffer.error();
         if (error)
         {
           updateStatus("Video decode error", "danger", "-1");
@@ -746,14 +746,14 @@ class VideoCanvas extends AnnotationCanvas {
             {
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
-              buffer.appendAllBuffers(data.slice(begin, end), callback);
+              video_buffer.appendAllBuffers(data.slice(begin, end), callback);
               idx+=2;
             }
             else
             {
               var begin=offsets[idx][0];
               var end=offsets[idx][0] + offsets[idx][1];
-              buffer.appendLatestBuffer(data.slice(begin, end), callback);
+              video_buffer.appendLatestBuffer(data.slice(begin, end), callback);
               idx++;
             }
           }
@@ -761,7 +761,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         var afterUpdate = function(_)
         {
-          var error = that._videoElement[that._play_idx].error();
+          var error = video_buffer.error();
           if (error)
           {
             console.error("Error " + error.code + "; details: " + error.message);
