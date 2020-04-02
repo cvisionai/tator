@@ -523,7 +523,7 @@ class MotionComp {
       {
         console.warn(`ALERT: New FPS interval = ${this._interval} (${this._monitorFps})`);
         console.warn("ALERT: Recalculating playback scheduled");
-        computePlaybackSchedule(this._videoFps, this._factor);
+        this.computePlaybackSchedule(this._videoFps, this._factor);
       }
     }
   }
