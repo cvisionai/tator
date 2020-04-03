@@ -157,6 +157,9 @@ class SaveDialog extends TatorElement {
         const boxBottom = Math.max(this._dragInfo.start.y, this._dragInfo.end.y) + 2;
         thisTop = boxBottom - this.clientHeight + this._canvasPosition.top + 16;
       }
+      // Prevent being drawn off screen
+      thisTop = Math.max(thisTop, 50);
+      thisLeft = Math.max(thisLeft, 50);
       this.style.top = thisTop + "px";
       this.style.left = thisLeft + "px";
     }
