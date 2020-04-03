@@ -61,7 +61,11 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-/// Support multiple off-screen videos
+/// Support multiple off-screen videos at varying resolutions
+/// the intention is this class is used to store raw video
+/// frames as they are downloaded. There are two
+/// internal buffers the default ; and a seek buffer.
+/// The default can be filled linearly or 
 class VideoBufferDemux
 {
   constructor(streaming_files, play_idx, scrub_idx, hq_idx)
@@ -776,7 +780,8 @@ class VideoCanvas extends AnnotationCanvas {
 
           if (idx == offsets.length)
           {
-            that._dlWorker.postMessage({"type": "download"});
+            that._dlWorker.postMessage({"type": "download",
+                                        "buf_idx": e.data["buf_idx"]});
           }
           else
           {
@@ -793,7 +798,8 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "ready")
       {
-        that._dlWorker.postMessage({"type": "download"});
+        that._dlWorker.postMessage({"type": "download",
+                                    "buf_idx": e.data["buf_idx"]});
         that._startBias = e.data["startBias"];
         that._videoVersion = e.data["version"];
         console.info(`Video has start bias of ${that._startBias}`);

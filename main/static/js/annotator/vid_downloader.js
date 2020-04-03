@@ -6,31 +6,43 @@ class VideoDownloader
   {
     this._media_files = media_files;
     this._blockSize = blockSize;
+    this._num_res = media_files.length;
+    this._currentPacket=[];
+    this._numPackets=[];
+    this._info=[];
+    for (var idx = 0; idx < this._num_res; idx++)
+    {
+      this._currentPacket[idx] = 0;
+      this._numPackets[idx] = 0;
+    }
   }
 
   startLinearDownload(idx)
   {
-    this._currentPacket=0;
-    this._numPackets=0;
-    this._res_idx = idx;
-    this._url=this._media_files[idx].path;
-    this._info_url=this._url.substring(0,
-                                       this._url.indexOf('.mp4'))+"_segments.json";
-
-    const info = new Request(this._info_url);
-    fetch(info).then(
-      this.processInitResponses.bind(this));
+    if (this._currentPacket[idx] == 0)
+    {
+      let url=this._media_files[idx].path;
+      let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
+      const info = new Request(info_url);
+      fetch(info).then((info_resp) => {
+        this.processInitResponses(idx,info_resp);
+      });
+    }
+    else
+    {
+      console.warn("Not supported");
+    }
   }
 
-  processInitResponses(info)
+  processInitResponses(buf_idx,info)
   {
     var that = this;
     if (info.status == 200)
     {
       console.log("Fetched info");
       info.json().then(data => {
-        that._info = data
-        that._numPackets=data["segments"].length
+        that._info[buf_idx] = data
+        that._numPackets[buf_idx]=data["segments"].length
         var version = 1;
         try
         {
@@ -47,13 +59,14 @@ class VideoDownloader
         }
         postMessage({"type": "ready",
                      "startBias": startBias,
-                     "version": version});
+                     "version": version,
+                     "buf_idx": buf_idx});
       });
     }
     else
     {
       postMessage({"type": "error", "status": info.status});
-      console.warn(`Couldn't fetch '${this._info_url}'`);
+      console.warn(`Couldn't fetch '${info.url}'`);
     }
   }
 
@@ -118,10 +131,11 @@ class VideoDownloader
 
   }
 
-  downloadNextSegment()
+  downloadNextSegment(buf_idx)
   {
     var currentSize=0;
-    var idx = this._currentPacket;
+    var idx = this._currentPacket[buf_idx];
+    console.info(`Downloading to ${buf_idx}`);
 
     // Temp code one can use to force network seeking
     //if (idx > 0)
@@ -131,14 +145,14 @@ class VideoDownloader
     //  return;
     // }
 
-    if (idx >= this._numPackets)
+    if (idx >= this._numPackets[buf_idx])
     {
       console.log("Done downloading..");
       postMessage({"type": "finished"});
       return;
     }
 
-    var startByte=parseInt(this._info["segments"][idx]["offset"]);
+    var startByte=parseInt(this._info[buf_idx]["segments"][idx]["offset"]);
     if (idx == 0)
     {
       startByte = 0;
@@ -151,9 +165,9 @@ class VideoDownloader
         iterBlockSize=1024*1024;
     }
     var offsets=[];
-    while (currentSize < iterBlockSize && idx < this._numPackets)
+    while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx])
     {
-      const packet = this._info["segments"][idx];
+      const packet = this._info[buf_idx]["segments"][idx];
       const pos=parseInt(packet["offset"]);
       const size=parseInt(packet["size"]);
       offsets.push([pos-startByte,size, packet["name"]]);
@@ -162,10 +176,10 @@ class VideoDownloader
     }
 
     //console.log(`Downloading '${currentSize}' at '${startByte}' (${idx})`);
-    this._currentPacket = idx;
-    var percent_complete=idx/this._numPackets;
+    this._currentPacket[buf_idx] = idx;
+    var percent_complete=idx/this._numPackets[buf_idx];
 
-    fetch(this._url,
+    fetch(this._media_files[buf_idx].path,
           {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
          ).then(
            (response) =>
@@ -175,7 +189,7 @@ class VideoDownloader
                {
                  // Transfer the buffer to the
                  var data={"type": "buffer",
-                           "buf_idx" : this._res_idx,
+                           "buf_idx" : buf_idx,
                            "pts_start": 0,
                            "pts_end": 0,
                            "percent_complete": percent_complete,
@@ -205,7 +219,7 @@ onmessage = function(e)
   }
   else if (type == 'download')
   {
-    ref.downloadNextSegment();
+    ref.downloadNextSegment(msg.buf_idx);
   }
   else if (type == 'seek')
   {
