@@ -70,8 +70,7 @@ def updateProjectTotals(force=False):
             project.size = 0
             for file in files:
                 if file.file:
-                    if os.path.exists(file.file):
-                        project.size += file.file.size
+                    project.size += file.file.size
                 project.size += file.thumbnail.size
                 if isinstance(file, EntityMediaVideo):
                     if file.original:
