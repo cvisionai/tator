@@ -61,24 +61,35 @@ def makeLocalizationsRelative():
         dot.relativeCoords = True
         dot.save()
 
-def updateProjectTotals():
+def updateProjectTotals(force=False):
     projects=Project.objects.all()
     for project in projects:
         files = EntityMediaBase.objects.filter(project=project)
-        if files.count() != project.num_files:
+        if (files.count() != project.num_files) or force:
             project.num_files = files.count()
             project.size = 0
             for file in files:
-                try:
-                    project.size += file.file.size
-                    project.size += file.thumbnail.size
-                    if isinstance(file, EntityMediaVideo):
-                        if file.original:
+                if file.file:
+                    if os.path.exists(file.file):
+                        project.size += file.file.size
+                project.size += file.thumbnail.size
+                if isinstance(file, EntityMediaVideo):
+                    if file.original:
+                        if os.path.exists(file.original):
                             statinfo = os.stat(file.original)
                             project.size = project.size + statinfo.st_size
-                        project.size += file.thumbnail_gif.size
-                except:
-                    pass
+                    project.size += file.thumbnail_gif.size
+                    if file.media_files:
+                        if 'archival' in file.media_files:
+                            for archival in file.media_files['archival']:
+                                if os.path.exists(archival['path']):
+                                    statinfo = os.stat(archival['path'])
+                                    project.size += statinfo.st_size
+                        if 'streaming' in file.media_files:
+                            for streaming in file.media_files['streaming']:
+                                if os.path.exists(streaming['path']):
+                                    statinfo = os.stat(streaming['path'])
+                                    project.size += statinfo.st_size
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
             project.save()
 
