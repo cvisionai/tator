@@ -70,14 +70,17 @@ def updateProjectTotals(force=False):
             project.size = 0
             for file in files:
                 if file.file:
-                    project.size += file.file.size
-                project.size += file.thumbnail.size
+                    if os.path.exists(file.file.path):
+                        project.size += file.file.size
+                if os.path.exists(file.thumbnail.path):
+                    project.size += file.thumbnail.size
                 if isinstance(file, EntityMediaVideo):
                     if file.original:
                         if os.path.exists(file.original):
                             statinfo = os.stat(file.original)
                             project.size = project.size + statinfo.st_size
-                    project.size += file.thumbnail_gif.size
+                    if os.path.exists(file.thumbnail_gif.path):
+                        project.size += file.thumbnail_gif.size
                     if file.media_files:
                         if 'archival' in file.media_files:
                             for archival in file.media_files['archival']:
