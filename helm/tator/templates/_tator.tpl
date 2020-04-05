@@ -60,9 +60,9 @@ spec:
             - name: SYSTEM_IMAGES_REGISTRY
               value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
             - name: TATOR_DEBUG
-              value: {{ .Values.tatorDebug | default "False" | quote }}
+              value: {{ .Values.tatorDebug | default "false" | quote }}
             - name: TATOR_USE_MIN_JS
-              value: {{ .Values.useMinJs | default "True" | quote }}
+              value: {{ .Values.useMinJs | default "true" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
