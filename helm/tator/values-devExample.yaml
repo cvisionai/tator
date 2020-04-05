@@ -3,6 +3,10 @@ domain: your.domain.com
 redirects:
   - other.domain.com
   - other.domain1.com
+# Enables debug mode for gunicorn. Do NOT enable this in production.
+tatorDebug: true
+# Enables javascript minification.
+useMinJs: false
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
 nginxReplicas: 1
