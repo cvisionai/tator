@@ -64,6 +64,12 @@ spec:
                   key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
+            - name: SYSTEM_IMAGES_REGISTRY
+              value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
+            - name: TATOR_DEBUG
+              value: {{ .Values.tatorDebug | default "false" | quote }}
+            - name: TATOR_USE_MIN_JS
+              value: {{ .Values.useMinJs | default "true" | quote }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
