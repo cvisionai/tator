@@ -310,7 +310,10 @@ class Upload {
           this.progress("started", "Checking...", percentage);
         }
       } else {
-        this.md5 = spark.end();
+        let md5 = spark.end();
+
+        // Salt in the file size
+        this.md5 = SparkMD5.hash(md5 + this.file.size);
         fetchRetry(
             "/rest/EntityMedias/" + this.projectId + "?format=json&type=" + 
             this.mediaTypeId + "&md5=" + this.md5)
