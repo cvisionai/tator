@@ -296,7 +296,7 @@ class Upload {
     }
     let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
     const chunkSize = 2097152; // 2MB
-    const chunks = Math.ceil(this.file.size / chunkSize);
+    const chunks = 1; //Math.ceil(this.file.size / chunkSize);
     let currentChunk = 0;
     let spark = new SparkMD5.ArrayBuffer();
     let reader = new FileReader();
