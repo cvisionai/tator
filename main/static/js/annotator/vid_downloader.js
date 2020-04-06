@@ -70,12 +70,12 @@ class VideoDownloader
     }
   }
 
-  downloadForFrame(frame, time)
+  downloadForFrame(buf_idx, frame, time)
   {
     var version = 1;
     try
     {
-      version = this._info["file"]["version"];
+      version = this._info[buf_idx]["file"]["version"];
     }
     catch(error)
     {
@@ -113,7 +113,7 @@ class VideoDownloader
     var startByte = parseInt(moof_packet["offset"]);
     var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
 
-    fetchRetry(this._url,
+    fetchRetry(this._media_files[buf_idx].path,
           {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
          ).then(
            function(response)
@@ -223,6 +223,6 @@ onmessage = function(e)
   }
   else if (type == 'seek')
   {
-    ref.downloadForFrame(msg['frame'], msg['time']);
+    ref.downloadForFrame(msg.buf_idx, msg['frame'], msg['time']);
   }
 }

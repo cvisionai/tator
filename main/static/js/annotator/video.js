@@ -1081,10 +1081,11 @@ class VideoCanvas extends AnnotationCanvas {
     {
       // Set the seek buffer, and command worker to get the seek
       // response
-      video = this._videoElement[this._play_idx].seekBuffer();
+      video = this._videoElement[this._hq_idx].seekBuffer();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
-                                  "time": time});
+                                  "time": time,
+                                  "buf_idx": this._hq_idx});
     }
     else if (video == null)
     {
@@ -1411,7 +1412,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  this._videoElement[this._play_idx].pause();
 	  this.stopPlayerThread();
 
-	  this.seekFrame(this._dispFrame, this.drawFrame);
+	  this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
   back()
