@@ -63,6 +63,8 @@ spec:
               value: {{ .Values.tatorDebug | default "false" | quote }}
             - name: TATOR_USE_MIN_JS
               value: {{ .Values.useMinJs | default "true" | quote }}
+            - name: TRANSCODER_PVC_SIZE
+              value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
