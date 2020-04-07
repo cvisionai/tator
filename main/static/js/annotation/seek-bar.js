@@ -34,18 +34,22 @@ class SeekBar extends TatorElement {
     this.bar.addEventListener("click", clickHandler);
 
     var sendUpdate = (evt, evt_type) => {
-      var width = that.offsetWidth;
-      if (width == 0)
+      // Only recalculate if it is an input, not a change
+      if (evt_type == "input")
       {
-        width = that.parentElement.offsetWidth;
+        var width = that.offsetWidth;
+        if (width == 0)
+        {
+          width = that.parentElement.offsetWidth;
+        }
+        var relativeX =
+            Math.min(Math.max(evt.pageX - that.offsetLeft,0),
+                     width);
+        const percentage = Math.min(relativeX/width,
+                                    that._loadedPercentage);
+        that.value =
+          Math.round((percentage*that._max)+that._min);
       }
-      var relativeX =
-          Math.min(Math.max(evt.pageX - that.offsetLeft,0),
-                   width);
-      const percentage = Math.min(relativeX/width,
-                                  that._loadedPercentage);
-      that.value =
-        Math.round((percentage*that._max)+that._min);
       that.dispatchEvent(
         new CustomEvent(evt_type,
                         {composed: true}));
