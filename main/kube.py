@@ -137,7 +137,7 @@ class TatorTranscode(JobManagerMixin):
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
-                        'storage': '10Gi',
+                        'storage': os.getenv("TRANSCODER_PVC_SIZE"),
                     }
                 }
             }
