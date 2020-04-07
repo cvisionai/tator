@@ -680,7 +680,8 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'unpack-pipeline',
                 'arguments': {'parameters' : global_parameters},
                 'onExit': 'exit-handler',
-                'ttlStrategy': {'secondsAfterCompletion': 300},
+                'ttlStrategy': {'secondsAfterSuccess': 300,
+                                'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
