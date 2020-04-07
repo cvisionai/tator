@@ -32,31 +32,34 @@ class SeekBar extends TatorElement {
             return false;
         }
         this.bar.addEventListener("click", clickHandler);
+
+        var sendUpdate = (evt, evt_type) => {
+          var width = that.offsetWidth;
+          if (width == 0)
+          {
+            width = that.parentElement.offsetWidth;
+          }
+          var relativeX =
+              Math.min(Math.max(evt.pageX - that.offsetLeft,0),
+                       width);
+          const percentage = Math.min(relativeX/width,
+                                      that._loadedPercentage);
+          that.value =
+            Math.round((percentage*that._max)+that._min);
+          that.dispatchEvent(
+            new CustomEvent(evt_type,
+                            {composed: true}));
+          evt.stopPropagation();
+          return false;
+         };
         var dragHandler=function(evt)
         {
-            if (evt.button == 0)
-            {
-                var width = that.offsetWidth;
-                if (width == 0)
-                {
-                    width = that.parentElement.offsetWidth;
-                }
-                var relativeX =
-                    Math.min(Math.max(evt.pageX - that.offsetLeft,0),
-                             width);
-                const percentage = Math.min(relativeX/width,
-                                            that._loadedPercentage);
-                that.value =
-                    Math.round((percentage*that._max)+that._min);
-                that.dispatchEvent(
-                    new CustomEvent("input",
-                                    {composed: true}));
-                evt.stopPropagation();
-                return false;
-
-            }
-            evt.cancelBubble=true;
-            return false;
+          if (evt.button == 0)
+          {
+            return sendUpdate(evt, "input");
+          }
+          evt.cancelBubble=true;
+          return false;
         }
         var releaseMouse=function(evt)
         {
@@ -65,6 +68,7 @@ class SeekBar extends TatorElement {
                                          releaseMouse);
             document.removeEventListener("mousemove",
                                          dragHandler);
+            sendUpdate(evt, "change");
             that.handle.classList.remove("range-handle-selected");
             // Add back in event handler next iteration (time=0)
             setTimeout(() =>
