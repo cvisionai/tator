@@ -1371,14 +1371,12 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-	  this.pause();
 	  this._playCb.forEach(cb => {cb();});
 	  this._playGeneric(Direction.FORWARD);
   }
 
   playBackwards()
   {
-	  this.pause();
 	  this._playCb.forEach(cb => {cb();});
 	  this._playGeneric(Direction.BACKWARDS);
   }
@@ -1416,7 +1414,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  this._videoElement[this._play_idx].pause();
 	  this.stopPlayerThread();
 
-	  this.seekFrame(this._dispFrame, this.drawFrame, true);
+	  return this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
   back()
@@ -1424,9 +1422,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  var newFrame=this._dispFrame-1;
 	  if (newFrame >= 0)
 	  {
-	    this.seekFrame(newFrame, this.drawFrame).then(() => {
-      this._pauseCb.forEach(cb => {cb();});
-      });
+      this.gotoFrame(newFrame, true);
 	  }
   }
 
@@ -1435,9 +1431,7 @@ class VideoCanvas extends AnnotationCanvas {
 	  var newFrame=this._dispFrame+1;
 	  if (newFrame < this._numFrames)
 	  {
-	    this.seekFrame(newFrame, this.drawFrame).then(() => {
-        this._pauseCb.forEach(cb => {cb();});
-      });
+	    this.gotoFrame(newFrame, true);
 	  }
   }
 
