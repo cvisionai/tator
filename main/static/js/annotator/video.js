@@ -1359,6 +1359,12 @@ class VideoCanvas extends AnnotationCanvas {
 	  this._loaderTimeout=setTimeout(loader, 0);
   }
 
+  // Return whether the video is paused/stopped
+  isPaused()
+  {
+    return this._direction == Direction.STOPPED;
+  }
+
   addPlayListener(cb)
   {
 	  this._playCb.push(cb);
