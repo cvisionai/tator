@@ -692,7 +692,7 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
     Either "False" or "True" (with quotes) to denote whether to use minified
     javascript [Default if not specified: "True"]
 
-  transcoderPvcSie
+  transcoderPvcSize
     Ability to specify the size allocated to the pvc for transcoding. This can
     limit the maximum size of an upload. [Default if not specifed: "10Gi"]
 
