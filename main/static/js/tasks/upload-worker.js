@@ -295,7 +295,7 @@ class Upload {
       return;
     }
     let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
-    const chunkSize = 2097152; // 2MB
+    const chunkSize = 100*1024*1024; // 100MB
     const chunks = 1; //Math.ceil(this.file.size / chunkSize);
     let currentChunk = 0;
     let spark = new SparkMD5.ArrayBuffer();
