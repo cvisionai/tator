@@ -10,27 +10,26 @@ class VideoDownloader
     this._currentPacket=[];
     this._numPackets=[];
     this._info=[];
+    this._initialSent = false;
     for (var idx = 0; idx < this._num_res; idx++)
     {
       this._currentPacket[idx] = 0;
       this._numPackets[idx] = 0;
     }
+
+    this.initializeInfoObjects();
   }
 
-  startLinearDownload(idx)
+  initializeInfoObjects()
   {
-    if (this._currentPacket[idx] == 0)
+    for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
     {
-      let url=this._media_files[idx].path;
+      let url=this._media_files[buf_idx].path;
       let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
       const info = new Request(info_url);
       fetch(info).then((info_resp) => {
-        this.processInitResponses(idx,info_resp);
+        this.processInitResponses(buf_idx,info_resp);
       });
-    }
-    else
-    {
-      console.warn("Not supported");
     }
   }
 
@@ -70,6 +69,21 @@ class VideoDownloader
     }
   }
 
+  verifyInitialDownload()
+  {
+    if (this._initialSent == true)
+    {
+      return true;
+    }
+    for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
+    {
+      // Download the initial fragment info into each buffer
+      this.downloadNextSegment(buf_idx, 2);
+    }
+    this._initialSent = true;
+    return false;
+  }
+
   downloadForFrame(buf_idx, frame, time)
   {
     var version = 1;
@@ -87,12 +101,12 @@ class VideoDownloader
       return;
     }
     var matchIdx = -1;
-    for (var idx = 0; idx < this._numPackets; idx++)
+    for (var idx = 0; idx < this._numPackets[buf_idx]; idx++)
     {
-      if (this._info["segments"][idx]["name"] == "moof")
+      if (this._info[buf_idx]["segments"][idx]["name"] == "moof")
       {
-        var frame_start = parseInt(this._info["segments"][idx]["frame_start"]);
-        var frame_samples = parseInt(this._info["segments"][idx]["frame_samples"]);
+        var frame_start = parseInt(this._info[buf_idx]["segments"][idx]["frame_start"]);
+        var frame_samples = parseInt(this._info[buf_idx]["segments"][idx]["frame_samples"]);
         if (frame >= frame_start && frame < frame_start+frame_samples)
         {
           // Found the packet after which we seek
@@ -108,8 +122,8 @@ class VideoDownloader
       return;
     }
 
-    const moof_packet = this._info["segments"][matchIdx];
-    const mdat_packet = this._info["segments"][matchIdx+1];
+    const moof_packet = this._info[buf_idx]["segments"][matchIdx];
+    const mdat_packet = this._info[buf_idx]["segments"][matchIdx+1];
     var startByte = parseInt(moof_packet["offset"]);
     var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
 
@@ -131,11 +145,10 @@ class VideoDownloader
 
   }
 
-  downloadNextSegment(buf_idx)
+  downloadNextSegment(buf_idx, packet_limit)
   {
     var currentSize=0;
     var idx = this._currentPacket[buf_idx];
-    console.info(`Downloading to ${buf_idx}`);
 
     // Temp code one can use to force network seeking
     //if (idx > 0)
@@ -144,6 +157,12 @@ class VideoDownloader
     //  postMessage({"type": "finished"});
     //  return;
     // }
+
+    if (packet_limit == undefined)
+    {
+      packet_limit = Infinity;
+    }
+    console.info(`Download Next Segment ${buf_idx} : ${packet_limit} @ ${idx}`);
 
     if (idx >= this._numPackets[buf_idx])
     {
@@ -165,7 +184,7 @@ class VideoDownloader
         iterBlockSize=1024*1024;
     }
     var offsets=[];
-    while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx])
+    while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx] && offsets.length < packet_limit)
     {
       const packet = this._info[buf_idx]["segments"][idx];
       const pos=parseInt(packet["offset"]);
@@ -215,11 +234,13 @@ onmessage = function(e)
       ref = new VideoDownloader(msg.media_files,
                                 5*1024*1024);
     }
-    ref.startLinearDownload(msg["play_idx"]);
   }
   else if (type == 'download')
   {
-    ref.downloadNextSegment(msg.buf_idx);
+    if (ref.verifyInitialDownload() == true)
+    {
+      ref.downloadNextSegment(msg.buf_idx);
+    }
   }
   else if (type == 'seek')
   {

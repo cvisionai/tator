@@ -110,7 +110,8 @@ class AnnotationPlayer extends TatorElement {
       play.setAttribute("is-paused","");
       const frame = Number(evt.target.value);
       this._video.stopPlayerThread();
-      this._video.seekFrame(frame, this._video.drawFrame)
+      // Use the hq buffer when the input is finalized
+      this._video.seekFrame(frame, this._video.drawFrame, true)
       .then(this._lastScrub = Date.now());
     });
 

@@ -65,7 +65,7 @@ var src_path="/static/js/annotator/";
 /// the intention is this class is used to store raw video
 /// frames as they are downloaded. There are two
 /// internal buffers the default ; and a seek buffer.
-/// The default can be filled linearly or 
+/// The default can be filled linearly or
 class VideoBufferDemux
 {
   constructor(streaming_files, play_idx, scrub_idx, hq_idx)
@@ -724,7 +724,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type =="seek_result")
       {
-        that._videoElement[that._seek_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
+        that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
       }
       else if (type =="buffer")
       {
@@ -778,7 +778,7 @@ class VideoCanvas extends AnnotationCanvas {
                                               detail: {"percent_complete":e.data["percent_complete"]}
                                              }));
 
-          if (idx == offsets.length)
+          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx)
           {
             that._dlWorker.postMessage({"type": "download",
                                         "buf_idx": e.data["buf_idx"]});
@@ -798,13 +798,16 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "ready")
       {
-        that._dlWorker.postMessage({"type": "download",
-                                    "buf_idx": e.data["buf_idx"]});
-        that._startBias = e.data["startBias"];
-        that._videoVersion = e.data["version"];
-        console.info(`Video has start bias of ${that._startBias}`);
-        console.info("Setting hi performance mode");
-        guiFPS = 60;
+        if (e.data["buf_idx"] == that._play_idx)
+        {
+          that._dlWorker.postMessage({"type": "download",
+                                      "buf_idx": e.data["buf_idx"]});
+          that._startBias = e.data["startBias"];
+          that._videoVersion = e.data["version"];
+          console.info(`Video has start bias of ${that._startBias}`);
+          console.info("Setting hi performance mode");
+          guiFPS = 60;
+        }
       }
       else if (type == "error")
       {
@@ -906,6 +909,7 @@ class VideoCanvas extends AnnotationCanvas {
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
       this._videoElement.push(new VideoBufferDemux());
+      this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
