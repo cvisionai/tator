@@ -183,6 +183,8 @@ containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) -f $< containers || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:latest
 
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
@@ -202,7 +204,7 @@ transcoder-image: containers/tator_transcoder/Dockerfile.gen
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
 
-.PHONY: transcoder-publish
+.PHONY: transcoder-latest
 transcoder-latest: transcoder-image
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) cvisionai/tator_transcoder:latest
 	docker push cvisionai/tator_transcoder:latest
