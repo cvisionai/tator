@@ -2839,6 +2839,16 @@ class TranscodeAPI(APIView):
                 {'section': section},
             )
 
+            # Get the file size of the uploaded blob if local
+            netloc = urllib_parse.urlsplit(url).netloc
+            logger.info(f"{netloc} vs. {request.get_host()}")
+            if netloc == request.get_host():
+                upload_uid = url.split('/')[-1]
+                upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
+                upload_size = os.stat(upload_path).st_size
+            else:
+                # TODO: get file size of remote
+                upload_size = None
             if entity_type == -1:
                 TatorTranscode().start_tar_import(
                     project,
@@ -2850,7 +2860,8 @@ class TranscodeAPI(APIView):
                     md5,
                     gid,
                     uid,
-                    request.user.pk)
+                    request.user.pk,
+                    upload_size)
             else:
                 TatorTranscode().start_transcode(
                 project,
@@ -2862,7 +2873,8 @@ class TranscodeAPI(APIView):
                 md5,
                 gid,
                 uid,
-                request.user.pk)
+                request.user.pk,
+                upload_size)
 
             prog.progress("Transcoding...", 60)
 
@@ -3034,7 +3046,7 @@ class SaveVideoAPI(APIView):
             media_files['streaming'] = streaming
 
             upload_paths = {
-                key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
+                key: os.path.join(settings.UPLOAD_ROOT, uid)
                 for key, uid in upload_uids.items()
             }
 
@@ -3223,7 +3235,7 @@ class SaveVideoAPI(APIView):
                 streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
 
             upload_paths = {
-                key: os.path.join(settings.UPLOAD_ROOT, uid + '.bin')
+                key: os.path.join(settings.UPLOAD_ROOT, uid)
                 for key, uid in upload_uids.items()
             }
 
@@ -3418,7 +3430,7 @@ class SaveImageAPI(APIView):
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
             os.makedirs(raw_project_dir, exist_ok=True)
             thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid + '.bin')
+            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
 
             # Set up interface for sending progress messages.
             prog = ProgressProducer(
@@ -3464,7 +3476,7 @@ class SaveImageAPI(APIView):
                 image.close()
             else:
                 thumbnail_uid = thumbnail_url.split('/')[-1]
-                provided_thumbnail_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.bin')
+                provided_thumbnail_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid)
                 shutil.move(provided_thumbnail_path, thumb_path)
                 info_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.info')
                 if os.path.exists(info_path):
