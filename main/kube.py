@@ -173,7 +173,7 @@ class TatorTranscode(JobManagerMixin):
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
-                'args': ['-o', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
+                'args': ['--http1.1', '-o', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
