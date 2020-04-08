@@ -2839,6 +2839,16 @@ class TranscodeAPI(APIView):
                 {'section': section},
             )
 
+            # Get the file size of the uploaded blob if local
+            netloc = urllib_parse.urlsplit(url).netloc
+            logger.info(f"{netloc} vs. {request.get_host()}")
+            if netloc == request.get_host():
+                upload_uid = url.split('/')[-1]
+                upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
+                upload_size = os.stat(upload_path).st_size
+            else:
+                # TODO: get file size of remote
+                upload_size = None
             if entity_type == -1:
                 TatorTranscode().start_tar_import(
                     project,
@@ -2850,7 +2860,8 @@ class TranscodeAPI(APIView):
                     md5,
                     gid,
                     uid,
-                    request.user.pk)
+                    request.user.pk,
+                    upload_size)
             else:
                 TatorTranscode().start_transcode(
                 project,
@@ -2862,7 +2873,8 @@ class TranscodeAPI(APIView):
                 md5,
                 gid,
                 uid,
-                request.user.pk)
+                request.user.pk,
+                upload_size)
 
             prog.progress("Transcoding...", 60)
 

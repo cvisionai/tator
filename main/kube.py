@@ -1,3 +1,4 @@
+import math
 import os
 import logging
 import tempfile
@@ -18,6 +19,10 @@ from .version import Git
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+def bytes_to_mi_str(num_bytes):
+    num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
+    return "{}Mi".format(num_megabytes)
 
 def get_marshal_image_name():
     """ Returns the location and version of the marshal image to use """
@@ -632,7 +637,8 @@ class TatorTranscode(JobManagerMixin):
                          md5,
                          gid,
                          uid,
-                         user):
+                         user,
+                         upload_size):
         """ Initiate a transcode based on the contents on an archive """
         comps = name.split('.')
         base = comps[0]
@@ -640,6 +646,10 @@ class TatorTranscode(JobManagerMixin):
 
         if entity_type != -1:
             raise Exception("entity type is not -1!")
+
+        if upload_size:
+            rounded_size = upload_size * 4
+            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         args = {'original': '/work/' + name,
                 'name': name}
@@ -710,7 +720,7 @@ class TatorTranscode(JobManagerMixin):
             body=manifest,
         )
 
-    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user):
+    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user, upload_size):
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -725,6 +735,10 @@ class TatorTranscode(JobManagerMixin):
             'md5' : md5,
             'name': name,
         }
+
+        if upload_size:
+            rounded_size = upload_size * 4
+            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
