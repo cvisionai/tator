@@ -23,7 +23,7 @@ spec:
         - name: tusd
           image: {{ .Values.dockerRegistry }}/tator_tusd
           command: ["tusd"]
-          args: ["-behind-proxy","-dir","/data/uploads"]
+          args: ["-behind-proxy","-upload-dir","/data/uploads"]
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 1080
