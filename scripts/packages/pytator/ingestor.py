@@ -380,6 +380,7 @@ def ingestMedia(args):
                         help="Path to input file")
     parser.add_argument("--typeId",
                         help="Type ID of the media to import",
+                        type=int,
                         required=True)
     parser.add_argument("--project",
                         help="Project ID",
