@@ -62,12 +62,8 @@ if __name__=="__main__":
         base = os.path.splitext(video)[0]
         # This is the arguments for each iteration of the transcode DAG
         paths = {
-            'url': 'None',
-            'original': video,
-            'transcoded': base + '_transcoded',
-            'thumbnail': base + '_thumbnail.jpg',
-            'thumbnail_gif': base + '_thumbnail_gif.gif',
-            'segments': base + '_segments.json',
+            'dirname': os.path.dirname(video),
+            'base': os.path.basename(base),
             'entity_type': '-1', # Have server auto compute this
             'name': os.path.basename(video),
             'md5': md5

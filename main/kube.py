@@ -492,17 +492,24 @@ class TatorTranscode(JobManagerMixin):
             return {'name': name,
                     'value': f'{{{{item.{name}}}}}'}
 
-        instance_args = ['url',
-                         'original',
-                         'transcoded',
-                         'thumbnail',
-                         'thumbnail_gif',
-                         'segments',
-                         'entity_type',
+        instance_args = ['entity_type',
                          'name',
                          'md5']
 
         item_parameters = {"parameters" : [make_item_arg(x) for x in instance_args]}
+        # unpack work list
+        item_parameters["parameters"].append({"name": "url",
+                                              "value": "None"})
+        item_parameters["parameters"].append({"name": "original",
+                                              "value": "{{item.dirname}}/{{item.name}}"})
+        item_parameters["parameters"].append({"name": "transcoded",
+                                              "value": "{{item.dirname}}/{{item.base}}_transcoded"})
+        item_parameters["parameters"].append({"name": "thumbnail",
+                                              "value": "{{item.dirname}}/{{item.base}}_thumbnail.jpg"})
+        item_parameters["parameters"].append({"name": "thumbnail_gif",
+                                              "value": "{{item.dirname}}/{{item.base}}_thumbnail_gif.gif"})
+        item_parameters["parameters"].append({"name": "segments",
+                                              "value": "{{item.dirname}}/{{item.base}}_segments.json"})
         state_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
         localization_import_parameters = {"parameters" : [make_item_arg(x) for x in ["md5", "file"]]}
 
