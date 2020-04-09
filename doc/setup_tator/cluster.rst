@@ -609,6 +609,13 @@ Installing Argo
    sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/stable/argo-linux-amd64
    sudo chmod +x /usr/local/bin/argo
 
+Upgrade the default service acount privileges
+*********************************************
+
+Argo workflows are run using the ``default`` ``ServiceAccount`` from the ``default`` namespace. Therefore this account needs to have sufficient privileges to create workflows:
+
+``kubectl create rolebinding default-admin --clusterrole=admin --serviceaccount=default:default``
+
 Setting up dynamic PV provisioner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -712,8 +719,8 @@ The bearer token for the default service account can be obtained via the followi
 .. code-block:: bash
    :linenos:
 
-    SECRET_NAME=$(kubectl get secrets -n argo | grep ^argo-token | cut -f1 -d ' ')
-    TOKEN=$(kubectl describe secret -n argo $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
+    SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+    TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
     echo $TOKEN``
 
 The API server certificate can be obtained via the following (run on the job cluster):
@@ -721,8 +728,8 @@ The API server certificate can be obtained via the following (run on the job clu
 .. code-block:: bash
    :linenos:
 
-    SECRET_NAME=$(kubectl get secrets -n argo | grep ^argo-token | cut -f1 -d ' ')
-    CERT=$(kubectl get secret -n argo $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
+    SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+    CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
     echo $CERT | base64 --decode
 
 These should be used to update ``values.yaml`` if remote transcodes are desired. They may also be used to create a JobCluster object via the admin interface for use with algorithm registrations.
