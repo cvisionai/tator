@@ -119,12 +119,12 @@ remoteTranscodes:
   host: "your.transcode.domain.org"
   port: "6443"
   # Token can be obtained via the following (run on the transcode cluster):
-  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
-  #   TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
-  #   echo $TOKEN
+  #   SECRET_NAME=$(kubectl get secrets -n argo | grep ^argo-token | cut -f1 -d ' ')
+  #   TOKEN=$(kubectl describe secret -n argo $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
+  #   echo $TOKEN``
   token: "Bearer <Your token here>"
   # Certificate can be obtained via the following (run on the transcode cluster):
-  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+  #   SECRET_NAME=$(kubectl get secrets -n argo | grep ^argo-token | cut -f1 -d ' ')
   #   CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
   #   echo $CERT | base64 --decode
   cert: |
