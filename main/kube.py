@@ -20,6 +20,8 @@ from .version import Git
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+NUM_WORK_PACKETS=20
+
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return "{}Mi".format(num_megabytes)
@@ -205,21 +207,22 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-
         # Unpacks a tarball and sets up the work products for follow up
         # dags or steps
+        unpack_params = [{'name': f'videos-{x}',
+                          'valueFrom': {'path': f'/work/videos_{x}.json'}} for x in range(NUM_WORK_PACKETS)]
+        unpack_params.extend([{'name': f'images-{x}',
+                               'valueFrom': {'path': f'/work/images_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
+
+        unpack_params.extend([{'name': f'localizations-{x}',
+                               'valueFrom': {'path': f'/work/localizations_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
+
+        unpack_params.extend([{'name': f'states-{x}',
+                               'valueFrom': {'path': f'/work/states_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
         self.unpack_task = {
             'name': 'unpack',
             'inputs': {'parameters' : spell_out_params(['original'])},
-            'outputs': {'parameters' : [{'name': 'videos',
-                                         'valueFrom': {'path': '/work/videos.json'}},
-                                        {'name': 'images',
-                                         'valueFrom': {'path': '/work/images.json'}},
-                                        {'name': 'localizations',
-                                         'valueFrom': {'path': '/work/localizations.json'}},
-                                        {'name': 'states',
-                                         'valueFrom': {'path': '/work/states.json'}},
-            ]},
+            'outputs': {'parameters' : unpack_params},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -531,33 +534,35 @@ class TatorTranscode(JobManagerMixin):
                            {'name': 'delete-task',
                             'template': 'delete',
                             'arguments': parameters,
-                            'dependencies' : ['unpack-task']},
-                           # Loop over unpacked archive
-                           {'name': 'transcode-task',
-                            'template': 'transcode-pipeline',
-                            'arguments' : item_parameters,
-                            'withParam' : '{{tasks.unpack-task.outputs.parameters.videos}}',
-                            'dependencies' : ['unpack-task']},
-                           {'name': 'image-upload-task',
-                            'template': 'image-upload',
-                            'arguments' : item_parameters,
-                            'withParam' : '{{tasks.unpack-task.outputs.parameters.images}}',
-                            'dependencies' : ['unpack-task']},
-                           {'name': 'state-import-task',
-                            'template': 'data-import',
-                            'arguments' : state_import_parameters,
-                            'dependencies' : ['transcode-task', 'image-upload-task'],
-                            'withParam': '{{tasks.unpack-task.outputs.parameters.states}}'},
-                           {'name': 'localization-import-task',
-                            'template': 'data-import',
-                            'arguments' : localization_import_parameters,
-                            'dependencies' : ['transcode-task', 'image-upload-task'],
-                            'withParam': '{{tasks.unpack-task.outputs.parameters.localizations}}'}
+                            'dependencies' : ['unpack-task']}
                            ]
-
+                }
             } # end of dag
-        }
 
+        unpack_task['dag']['tasks'].extend([{'name': f'transcode-task-{x}',
+                                             'template': 'transcode-pipeline',
+                                             'arguments' : item_parameters,
+                                             'withParam' : f'{{{{tasks.unpack-task.outputs.parameters.videos-{x}}}}}',
+                                             'dependencies' : ['unpack-task']} for x in range(NUM_WORK_PACKETS)])
+        unpack_task['dag']['tasks'].extend([{'name': f'image-upload-task-{x}',
+                                             'template': 'image-upload',
+                                             'arguments' : item_parameters,
+                                             'withParam' : f'{{{{tasks.unpack-task.outputs.parameters.images-{x}}}}}',
+                                             'dependencies' : ['unpack-task']} for x in range(NUM_WORK_PACKETS)])
+
+        deps = [f'transcode-task-{x}' for x in range(NUM_WORK_PACKETS)]
+        deps.extend([f'image-upload-task-{x}' for x in range(NUM_WORK_PACKETS)])
+        unpack_task['dag']['tasks'].extend([{'name': f'state-import-task-{x}',
+                                             'template': 'data-import',
+                                             'arguments' : state_import_parameters,
+                                             'dependencies' : deps,
+                                             'withParam': f'{{{{tasks.unpack-task.outputs.parameters.states-{x}}}}}'} for x in range(NUM_WORK_PACKETS)])
+
+        unpack_task['dag']['tasks'].extend([{'name': f'localization-import-task-{x}',
+                                             'template': 'data-import',
+                                             'arguments' : localization_import_parameters,
+                                             'dependencies' : deps,
+                                             'withParam': f'{{{{tasks.unpack-task.outputs.parameters.localizations-{x}}}}}'}  for x in range(NUM_WORK_PACKETS)])
         return unpack_task
 
     def get_transcode_dag(self):

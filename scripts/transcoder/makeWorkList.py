@@ -142,16 +142,43 @@ if __name__=="__main__":
             print(f"Adding {media} to worklist")
             return True
 
-    with open(os.path.join(args.directory, "videos.json"), 'w') as work_file:
-        work=[make_workflow_video(vid) for vid in videos if is_unique(vid)]
-        json.dump(work, work_file)
+    print(f"Putting jsons into {args.directory}")
+    def split_list_into_k8s_chunks(data, name):
+        MAX_NUM_WORK_FILES=20
+        MAX_FILE_SIZE=220000
+        work_packets=['' for x in range(MAX_NUM_WORK_FILES)]
+        temp_list=[]
+        work_packet=0
 
-    with open(os.path.join(args.directory, "images.json"), 'w') as work_file:
-        work=[make_workflow_video(img) for img in images if is_unique(img)]
-        json.dump(work, work_file)
+        # Initialize empty files just incase
+        for x in range(MAX_NUM_WORK_FILES):
+            print(f'Attempting to save {os.path.join(args.directory, f"{name}_{work_packet}.json")}')
+            with open(os.path.join(args.directory, f"{name}_{x}.json"), 'w') as packet_file:
+                json.dump(temp_list, packet_file)
 
-    with open(os.path.join(args.directory, "localizations.json"), 'w') as work_file:
-        json.dump(localization_files, work_file)
+        # Iterate through each data and figure out how to break it up into ~220Kb chunks
+        for x in data:
+            temp_list.append(x)
+            json_str = json.dumps(temp_list)
+            if len(json_str) > MAX_FILE_SIZE:
+                temp_list.pop()
+                with open(os.path.join(args.directory, f"{name}_{work_packet}.json"), 'w') as packet_file:
+                    print(f"temp_list = {temp_list}")
+                    json.dump(temp_list, packet_file)
+                    temp_list = [x]
+                    work_packet += 1
+        if len(temp_list) > 0:
+            print(f"temp_list = {temp_list}")
+            with open(os.path.join(args.directory, f"{name}_{work_packet}.json"), 'w') as packet_file:
+                json.dump(temp_list, packet_file)
 
-    with open(os.path.join(args.directory, "states.json"), 'w') as work_file:
-        json.dump(state_files, work_file)
+    # Initialize all the work files first
+    work=[make_workflow_video(vid) for vid in videos if is_unique(vid)]
+    split_list_into_k8s_chunks(work,"videos")
+
+    work=[make_workflow_video(img) for img in images if is_unique(img)]
+    split_list_into_k8s_chunks(work,"images")
+
+    split_list_into_k8s_chunks(localization_files,"localizations")
+
+    split_list_into_k8s_chunks(state_files, "states")
