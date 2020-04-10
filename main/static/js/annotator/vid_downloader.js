@@ -101,6 +101,7 @@ class VideoDownloader
       return;
     }
     var matchIdx = -1;
+    var boundary = false;
     for (var idx = 0; idx < this._numPackets[buf_idx]; idx++)
     {
       if (this._info[buf_idx]["segments"][idx]["name"] == "moof")
@@ -109,8 +110,11 @@ class VideoDownloader
         var frame_samples = parseInt(this._info[buf_idx]["segments"][idx]["frame_samples"]);
         if (frame >= frame_start && frame < frame_start+frame_samples)
         {
-          // Found the packet after which we seek
           matchIdx = idx;
+          if (frame - frame_start > frame_samples-5)
+          {
+            boundary = true;
+          }
           break;
         }
       }
@@ -122,10 +126,26 @@ class VideoDownloader
       return;
     }
 
-    const moof_packet = this._info[buf_idx]["segments"][matchIdx];
-    const mdat_packet = this._info[buf_idx]["segments"][matchIdx+1];
-    var startByte = parseInt(moof_packet["offset"]);
-    var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
+    // Calculate which section of the file to get, default
+    // is the segment (moof+mdat)
+    let start = matchIdx;
+    let end = matchIdx + 1;
+
+    // If we are at a boundary get the next segment
+    if (boundary == true)
+    {
+      end = Math.max(matchIdx + 3, this._numPackets[buf_idx]-1);
+    }
+
+    const start_packet = this._info[buf_idx]["segments"][matchIdx];
+    var startByte = parseInt(start_packet["offset"]);
+    var offset = 0;
+
+    // Add up the size of any included packets
+    for (let idx = matchIdx; idx <= end; idx++)
+    {
+      offset += this._info[buf_idx]["segments"][idx]["size"];
+    }
 
     fetchRetry(this._media_files[buf_idx].path,
           {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
