@@ -109,6 +109,46 @@ class APIElement:
         """
         return self.getMany(self.endpoint, None)
 
+    def bulk_update(self, params, patch):
+        """ Given a filter and patch object, update the matching elements.
+
+            :param params: Query parameters for the objects to be updated.
+            :param patch: Object attributes to apply.
+
+            :return: A tuple containing the status code and JSON response from server
+        """
+        try:
+            ep = self.url + "/" + self.endpoint + "/" + self.project
+            response = requests.patch(ep,
+                                      params=params,
+                                      json=patch,
+                                      headers=self.headers)
+            if response.status_code >= 300 or response.status_code < 200:
+                print(f"ERROR {response.status_code}: got {response.text}")
+        except Exception as e:
+            print(e)
+        finally:
+            return (response.status_code, response.json())
+
+    def bulk_delete(self, params):
+        """ Given a filter object, delete the matching elements.
+
+            :param params: Query parameters for the objects to be deleted.
+
+            :return: A tuple containing the status code and JSON response from server
+        """
+        try:
+            ep = self.url + "/" + self.endpoint + "/" + self.project
+            response = requests.delete(ep,
+                                       params=params,
+                                       headers=self.headers)
+            if response.status_code >= 300 or response.status_code < 200:
+                print(f"ERROR {response.status_code}: got {response.text}")
+        except Exception as e:
+            print(e)
+        finally:
+            return (response.status_code, response.json())
+
     def update(self, pk, patch):
         """ Update an element. To understand what fields apply to a given
             object type, `rest/EntityTypeSchema/<type id>` can be used.
