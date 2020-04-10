@@ -1521,6 +1521,7 @@ class LocalizationTypesTestCase(
 
 class MembershipTestCase(
         APITestCase,
+        PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
@@ -1534,7 +1535,10 @@ class MembershipTestCase(
         self.detail_uri = 'Membership'
         self.patch_json = {
             'user': self.user.pk,
-            'project': self.project.pk,
+            'permission': 'a',
+        }
+        self.create_json = {
+            'user': self.user.pk,
             'permission': 'a',
         }
         self.edit_permission = Permission.FULL_CONTROL
