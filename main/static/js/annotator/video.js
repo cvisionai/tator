@@ -1393,6 +1393,7 @@ class VideoCanvas extends AnnotationCanvas {
     if (this._playerTimeout)
 	  {
 	    clearTimeout(this._playerTimeout);
+      cancelAnimationFrame(this._playerTimeout)
 	    this._playerTimeout=null;
 	  }
 	  if (this._loaderTimeout)
@@ -1410,6 +1411,9 @@ class VideoCanvas extends AnnotationCanvas {
 
   pause()
   {
+    // Stop the player thread first
+    this.stopPlayerThread();
+
 	  // If we weren't already paused send the event
 	  if (this._direction != Direction.STOPPED)
 	  {
@@ -1418,8 +1422,9 @@ class VideoCanvas extends AnnotationCanvas {
 
 	  this._direction=Direction.STOPPED;
 	  this._videoElement[this._play_idx].pause();
-	  this.stopPlayerThread();
 
+
+    // force a redraw at the currently displayed frame
 	  return this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
