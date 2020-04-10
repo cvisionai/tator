@@ -3793,7 +3793,10 @@ class ProjectListAPI(ListCreateAPIView):
                 permission=Permission.FULL_CONTROL,
             )
             member.save()
-            response = Response({'message': f"Project {name} created!"})
+            response = Response(
+                {'message': f"Project {name} created!", 'id': project.id},
+                status=status.HTTP_201_CREATED,
+            )
 
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
