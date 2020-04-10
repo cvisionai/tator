@@ -812,13 +812,13 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          that.dispatchEvent(new CustomEvent("bufferLoaded",
-                                             {composed: true,
-                                              detail: {"percent_complete":e.data["percent_complete"]}
-                                             }));
-
           if (idx == offsets.length && e.data["buf_idx"] == that._play_idx)
           {
+            that.dispatchEvent(new CustomEvent("bufferLoaded",
+                                               {composed: true,
+                                                detail: {"percent_complete":e.data["percent_complete"]}
+                                               }));
+
             that._dlWorker.postMessage({"type": "download",
                                         "buf_idx": e.data["buf_idx"]});
           }
@@ -867,10 +867,61 @@ class VideoCanvas extends AnnotationCanvas {
                                 "scrub_idx": this._scrub_idx});
   }
 
+  setQuality(quality)
+  {
+    let find_closest = (videoObject, resolution) => {
+      let play_idx = -1;
+      let max_delta = videoObject.height;
+      let resolutions = videoObject.media_files["streaming"].length;
+      for (let idx = 0; idx < resolutions; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        let delta = Math.abs(quality - height);
+        if (delta < max_delta)
+        {
+          max_delta = delta;
+          play_idx = idx;
+        }
+      }
+      return play_idx;
+    };
+
+    let new_play_idx = find_closest(this._videoObject, quality);
+    if (new_play_idx == this._play_idx)
+    {
+      console.info("Ignoring duplicate quality change");
+    }
+    else
+    {
+      console.info(`Changing quality to ${new_play_idx}`);
+
+      // Stop any existing download
+      this.dispatchEvent(new CustomEvent("bufferLoaded",
+                                               {composed: true,
+                                                detail: {"percent_complete":0.0}
+                                               }));
+      this.stopDownload();
+
+      // Reinitialize the buffers
+      this._play_idx = new_play_idx;
+      this._videoElement = [];
+      let streaming_files = this._videoObject.media_files["streaming"];
+      for (let idx = 0; idx < streaming_files.length; idx++)
+      {
+        this._videoElement.push(new VideoBufferDemux());
+        this._videoElement[idx].named_idx = idx;
+      }
+      // Clear the buffer in case this is a hot-swap
+      this._draw.clear();
+      this.startDownload(streaming_files);
+
+    }
+  }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
   loadFromVideoObject(videoObject, quality)
   {
+    this._videoObject = videoObject;
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)
     {

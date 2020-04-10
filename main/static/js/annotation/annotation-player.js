@@ -307,17 +307,14 @@ class AnnotationPlayer extends TatorElement {
     // For now reload the video
     if (this.is_paused())
     {
-      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-        this._video.refresh(true);
-      });
+      this._video.setQuality(quality);
     }
     else
     {
       this.pause();
-      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-        this._video.refresh(true);
-      });
+      this._video.setQuality(quality);
     }
+    this._video.refresh(true);
   }
 
   zoomPlus() {
