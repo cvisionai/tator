@@ -593,7 +593,7 @@ The Kubernetes cluster is now configured and you are ready to build Tator.
 Job cluster setup
 =================
 
-Tator uses `Argo <https://argoproj.github.io/projects/argo>`_ to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. In either case, the cluster must meet the following requirements:
+Tator uses `Argo <https://argoproj.github.io/projects/argo>`_ to manage jobs, including transcodes and custom algorithms. These may be processed on the same Kubernetes cluster where Tator is deployed, or on a remote cluster. A remote cluster requires some additional configuration to make it accessible from the Tator cluster. In either case, the cluster must meet the following requirements:
 
 - It must have the Argo custom resource definitions (CRD) installed.
 - It must have a dynamic persistent volume (PV) provisioner. Steps are provided to install the `nfs-client-provisioner`.
@@ -671,8 +671,8 @@ If it does, the provisioner is working and you can delete the pvc:
 
 ``kubectl delete pvc nfs-test``
 
-Updating kube API certificate SANs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Updating kube API certificate SANs (remote job clusters only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If your job cluster is associated with a domain name, you may need to update the API server certificate SANs.
 
@@ -711,8 +711,8 @@ And killing this container. Kubernetes will automatically restart it:
 
 ``docker kill <containerID>``
 
-Retrieving the bearer token and API certificates
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieving the bearer token and API certificates (remote job clusters only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The bearer token for the default service account can be obtained via the following (run on the job cluster):
 
@@ -721,7 +721,7 @@ The bearer token for the default service account can be obtained via the followi
 
     SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
     TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
-    echo $TOKEN``
+    echo $TOKEN
 
 The API server certificate can be obtained via the following (run on the job cluster):
 
@@ -732,7 +732,7 @@ The API server certificate can be obtained via the following (run on the job clu
     CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
     echo $CERT | base64 --decode
 
-These should be used to update ``values.yaml`` if remote transcodes are desired. They may also be used to create a JobCluster object via the admin interface for use with algorithm registrations.
+These should be used to update the ``remoteTranscodes`` section of ``values.yaml`` if remote transcodes are desired. They may also be used to create a JobCluster object via the admin interface for use with algorithm registrations.
 
 Tator build system
 ==================
