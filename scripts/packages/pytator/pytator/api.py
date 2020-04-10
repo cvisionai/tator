@@ -152,6 +152,26 @@ class APIElement:
 
         return response.json()
 
+    def delete(self, pk):
+        """ Delete an individual object from the database.
+        
+        :param int pk: The id of the object to delete
+        :return: A status code from server
+        """
+        endpoint=self.url + "/" + self.individual_endpoint + "/" + str(pk)
+        response=requests.delete(endpoint,
+                                 headers=self.headers)
+        if response.status_code >= 300 or response.status_code < 200:
+            try:
+                msg=response.json()
+                print("Error: {}\nDetails: {}".format(msg['message'],
+                                                      msg['details']))
+            except:
+                print("Error: {}".format(response.text))
+            return 0
+
+        return response.status_code
+
     def new(self, obj):
         """ Add a new object to the database.
 
