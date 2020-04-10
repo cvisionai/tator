@@ -180,7 +180,11 @@ class APIElement:
 
         :param dict obj: The object to add to the database.
         """
-        response=requests.post(self.url + "/" + self.endpoint +"/"+self.project,
+        if self.project:
+            ep = self.url + "/" + self.endpoint + "/" + self.project
+        else:
+            ep = self.url + "/" + self.endpoint
+        response=requests.post(ep,
                                json=obj,
                                headers=self.headers)
         if response.status_code >= 300 or response.status_code < 200:
