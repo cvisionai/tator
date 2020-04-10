@@ -3922,8 +3922,25 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
 
+class VersionListSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        manual_fields = super().get_manual_fields(path, method)
+        if (method=='POST'):
+            manual_fields += [
+                coreapi.Field(name='name',
+                              required=True,
+                              location='body',
+                              schema=coreschema.String(description='Name of the version.')),
+                coreapi.Field(name='description',
+                              required=False,
+                              location='body',
+                              schema=coreschema.String(description='Description of the version.')),
+            ]
+        return manual_fields
+
 class VersionListAPI(APIView):
     """ View or update a version """
+    schema = VersionListSchema()
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
