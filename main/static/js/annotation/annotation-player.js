@@ -108,9 +108,11 @@ class AnnotationPlayer extends TatorElement {
 
     this._slider.addEventListener("change", evt => {
       play.setAttribute("is-paused","");
-      const frame = Number(evt.target.value);
+      // Only use the current frame to prevent glitches
+      const frame = this._video.currentFrame();
       this._video.stopPlayerThread();
-      this._video.seekFrame(frame, this._video.drawFrame)
+      // Use the hq buffer when the input is finalized
+      this._video.seekFrame(frame, this._video.drawFrame, true)
       .then(this._lastScrub = Date.now());
     });
 
@@ -142,13 +144,29 @@ class AnnotationPlayer extends TatorElement {
     });
 
     framePrev.addEventListener("click", () => {
-      this._video.pause();
-      this._video.back();
+      if (this.is_paused() == false)
+      {
+        this._video.pause().then(() => {
+          this._video.back();
+        });
+      }
+      else
+      {
+        this._video.back();
+      }
     });
 
     frameNext.addEventListener("click", () => {
-      this._video.pause();
-      this._video.advance();
+      if (this.is_paused() == false)
+      {
+        this._video.pause().then(() => {
+          this._video.advance();
+        });
+      }
+      else
+      {
+        this._video.advance();
+      }
     });
 
     this._video.addEventListener("frameChange", evt => {
@@ -289,17 +307,14 @@ class AnnotationPlayer extends TatorElement {
     // For now reload the video
     if (this.is_paused())
     {
-      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-        this._video.refresh(true);
-      });
+      this._video.setQuality(quality);
     }
     else
     {
       this.pause();
-      this._video.loadFromVideoObject(this._mediaInfo, quality).then(() => {
-        this._video.refresh(true);
-      });
+      this._video.setQuality(quality);
     }
+    this._video.refresh(true);
   }
 
   zoomPlus() {

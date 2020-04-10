@@ -535,10 +535,13 @@ class AnnotationCanvas extends TatorElement
 
         // Finalize the resize
         this._resizeTimer = setTimeout(() => {
-          this._draw.resizeViewport(dims[0], dims[1]);
-          this.refresh();
+          //this._draw.resizeViewport(dims[0], dims[1]);
+          if (this.isPaused() == true)
+          {
+            this.refresh(true);
+          }
           resizeHandler();
-        }, 100);
+        }, 10);
       });
     });
   }
@@ -679,14 +682,14 @@ class AnnotationCanvas extends TatorElement
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() + amount);
+        this.gotoFrame(this.currentFrame() + amount, true);
         return false;
       }
       if (event.key == 'ArrowLeft')
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() - amount);
+        this.gotoFrame(this.currentFrame() - amount, true);
         return false;
       }
 

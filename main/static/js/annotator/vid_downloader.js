@@ -2,29 +2,46 @@ importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
-  constructor(url, blockSize)
+  constructor(media_files, blockSize)
   {
-    this._currentPacket=0;
-    this._numPackets=0;
-    this._url=url;
+    this._media_files = media_files;
     this._blockSize = blockSize;
+    this._num_res = media_files.length;
+    this._currentPacket=[];
+    this._numPackets=[];
+    this._info=[];
+    this._initialSent = false;
+    for (var idx = 0; idx < this._num_res; idx++)
+    {
+      this._currentPacket[idx] = 0;
+      this._numPackets[idx] = 0;
+    }
 
-    this._info_url=url.substring(0,url.indexOf('.mp4'))+"_segments.json";
-
-    const info = new Request(this._info_url);
-    fetch(info).then(
-      this.processInitResponses.bind(this));
+    this.initializeInfoObjects();
   }
 
-  processInitResponses(info)
+  initializeInfoObjects()
+  {
+    for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
+    {
+      let url=this._media_files[buf_idx].path;
+      let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
+      const info = new Request(info_url);
+      fetch(info).then((info_resp) => {
+        this.processInitResponses(buf_idx,info_resp);
+      });
+    }
+  }
+
+  processInitResponses(buf_idx,info)
   {
     var that = this;
     if (info.status == 200)
     {
       console.log("Fetched info");
       info.json().then(data => {
-        that._info = data
-        that._numPackets=data["segments"].length
+        that._info[buf_idx] = data
+        that._numPackets[buf_idx]=data["segments"].length
         var version = 1;
         try
         {
@@ -41,22 +58,38 @@ class VideoDownloader
         }
         postMessage({"type": "ready",
                      "startBias": startBias,
-                     "version": version});
+                     "version": version,
+                     "buf_idx": buf_idx});
       });
     }
     else
     {
       postMessage({"type": "error", "status": info.status});
-      console.warn(`Couldn't fetch '${this._info_url}'`);
+      console.warn(`Couldn't fetch '${info.url}'`);
     }
   }
 
-  downloadForFrame(frame, time)
+  verifyInitialDownload()
+  {
+    if (this._initialSent == true)
+    {
+      return true;
+    }
+    for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
+    {
+      // Download the initial fragment info into each buffer
+      this.downloadNextSegment(buf_idx, 2);
+    }
+    this._initialSent = true;
+    return false;
+  }
+
+  downloadForFrame(buf_idx, frame, time)
   {
     var version = 1;
     try
     {
-      version = this._info["file"]["version"];
+      version = this._info[buf_idx]["file"]["version"];
     }
     catch(error)
     {
@@ -68,33 +101,58 @@ class VideoDownloader
       return;
     }
     var matchIdx = -1;
-    for (var idx = 0; idx < this._numPackets; idx++)
+    var boundary = false;
+    for (var idx = 0; idx < this._numPackets[buf_idx]; idx++)
     {
-      if (this._info["segments"][idx]["name"] == "moof")
+      if (this._info[buf_idx]["segments"][idx]["name"] == "moof")
       {
-        var frame_start = parseInt(this._info["segments"][idx]["frame_start"]);
-        var frame_samples = parseInt(this._info["segments"][idx]["frame_samples"]);
+        var frame_start = parseInt(this._info[buf_idx]["segments"][idx]["frame_start"]);
+        var frame_samples = parseInt(this._info[buf_idx]["segments"][idx]["frame_samples"]);
         if (frame >= frame_start && frame < frame_start+frame_samples)
         {
-          // Found the packet after which we seek
           matchIdx = idx;
+          if (frame - frame_start > frame_samples-5)
+          {
+            boundary = true;
+          }
           break;
+        }
+        else if (idx == 2 && frame < frame_start)
+        {
+          // Handle beginning of videos
+          matchIdx = idx;
         }
       }
     }
     // No match
     if (matchIdx == -1)
     {
-      console.warn(`Couldn't fetch video for ${time}`)
+      console.warn(`Couldn't fetch video for ${time}(${frame})`)
       return;
     }
 
-    const moof_packet = this._info["segments"][matchIdx];
-    const mdat_packet = this._info["segments"][matchIdx+1];
-    var startByte = parseInt(moof_packet["offset"]);
-    var offset = parseInt(moof_packet["size"]) + parseInt(mdat_packet["size"]);
+    // Calculate which section of the file to get, default
+    // is the segment (moof+mdat)
+    let start = matchIdx;
+    let end = matchIdx + 1;
 
-    fetchRetry(this._url,
+    // If we are at a boundary get the next segment
+    if (boundary == true)
+    {
+      end = Math.max(matchIdx + 3, this._numPackets[buf_idx]-1);
+    }
+
+    const start_packet = this._info[buf_idx]["segments"][matchIdx];
+    var startByte = parseInt(start_packet["offset"]);
+    var offset = 0;
+
+    // Add up the size of any included packets
+    for (let idx = matchIdx; idx <= end; idx++)
+    {
+      offset += this._info[buf_idx]["segments"][idx]["size"];
+    }
+
+    fetchRetry(this._media_files[buf_idx].path,
           {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
          ).then(
            function(response)
@@ -112,10 +170,10 @@ class VideoDownloader
 
   }
 
-  downloadNextSegment()
+  downloadNextSegment(buf_idx, packet_limit)
   {
     var currentSize=0;
-    var idx = this._currentPacket;
+    var idx = this._currentPacket[buf_idx];
 
     // Temp code one can use to force network seeking
     //if (idx > 0)
@@ -125,14 +183,20 @@ class VideoDownloader
     //  return;
     // }
 
-    if (idx >= this._numPackets)
+    if (packet_limit == undefined)
+    {
+      packet_limit = Infinity;
+    }
+    console.info(`Download Next Segment ${buf_idx} : ${packet_limit} @ ${idx}`);
+
+    if (idx >= this._numPackets[buf_idx])
     {
       console.log("Done downloading..");
       postMessage({"type": "finished"});
       return;
     }
 
-    var startByte=parseInt(this._info["segments"][idx]["offset"]);
+    var startByte=parseInt(this._info[buf_idx]["segments"][idx]["offset"]);
     if (idx == 0)
     {
       startByte = 0;
@@ -145,9 +209,9 @@ class VideoDownloader
         iterBlockSize=1024*1024;
     }
     var offsets=[];
-    while (currentSize < iterBlockSize && idx < this._numPackets)
+    while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx] && offsets.length < packet_limit)
     {
-      const packet = this._info["segments"][idx];
+      const packet = this._info[buf_idx]["segments"][idx];
       const pos=parseInt(packet["offset"]);
       const size=parseInt(packet["size"]);
       offsets.push([pos-startByte,size, packet["name"]]);
@@ -156,19 +220,20 @@ class VideoDownloader
     }
 
     //console.log(`Downloading '${currentSize}' at '${startByte}' (${idx})`);
-    this._currentPacket = idx;
-    var percent_complete=idx/this._numPackets;
+    this._currentPacket[buf_idx] = idx;
+    var percent_complete=idx/this._numPackets[buf_idx];
 
-    fetch(this._url,
+    fetch(this._media_files[buf_idx].path,
           {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
          ).then(
-           function(response)
+           (response) =>
            {
              response.arrayBuffer().then(
-               function(buffer)
+               (buffer) =>
                {
                  // Transfer the buffer to the
                  var data={"type": "buffer",
+                           "buf_idx" : buf_idx,
                            "pts_start": 0,
                            "pts_end": 0,
                            "percent_complete": percent_complete,
@@ -189,14 +254,21 @@ onmessage = function(e)
   // Download in 5 MB chunks
   if (type == 'start')
   {
-    ref = new VideoDownloader(msg['url'], 5*1024*1024);
+    if (ref == null)
+    {
+      ref = new VideoDownloader(msg.media_files,
+                                5*1024*1024);
+    }
   }
   else if (type == 'download')
   {
-    ref.downloadNextSegment();
+    if (ref.verifyInitialDownload() == true)
+    {
+      ref.downloadNextSegment(msg.buf_idx);
+    }
   }
   else if (type == 'seek')
   {
-    ref.downloadForFrame(msg['frame'], msg['time']);
+    ref.downloadForFrame(msg.buf_idx, msg['frame'], msg['time']);
   }
 }
