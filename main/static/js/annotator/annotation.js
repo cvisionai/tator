@@ -682,14 +682,14 @@ class AnnotationCanvas extends TatorElement
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() + amount);
+        this.gotoFrame(this.currentFrame() + amount, true);
         return false;
       }
       if (event.key == 'ArrowLeft')
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() - amount);
+        this.gotoFrame(this.currentFrame() - amount, true);
         return false;
       }
 
