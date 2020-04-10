@@ -894,7 +894,7 @@ class VideoCanvas extends AnnotationCanvas {
       dims = [videoObject.width,videoObject.height];
       console.warn("Using old access method!");
       streaming_files = [{"path": videoObject.url,
-                         "resolution": [videoObject.height,videoObject.width]}];
+                          "resolution": [videoObject.height,videoObject.width]}];
       play_idx = 0;
       scrub_idx = 0;
       hq_idx = 0;
@@ -1099,41 +1099,41 @@ class VideoCanvas extends AnnotationCanvas {
 
     var promise = new Promise(
       function(resolve,reject)
-	    {
-	      // Because we are using off-screen rendering we need to defer
-	      // updating the canvas until the video/frame is actually ready, we do this
-	      // by waiting for a signal off the video + then scheduling an animation frame.
-	      video.oncanplay=function()
-	      {
-	        // Don't do anything busy in the canplay interrupt as it holds up the GUI
-	        // rasterizer.
-	        // Need to bind the member function to the result handler
-	        callback=callback.bind(that);
-	        callback(frame, video, that._dims[0], that._dims[1])
-	        resolve();
-	        video.oncanplay=null;
-	      };
-	    });
+      {
+        // Because we are using off-screen rendering we need to defer
+        // updating the canvas until the video/frame is actually ready, we do this
+        // by waiting for a signal off the video + then scheduling an animation frame.
+        video.oncanplay=function()
+        {
+          // Don't do anything busy in the canplay interrupt as it holds up the GUI
+          // rasterizer.
+          // Need to bind the member function to the result handler
+          callback=callback.bind(that);
+          callback(frame, video, that._dims[0], that._dims[1])
+          resolve();
+          video.oncanplay=null;
+        };
+      });
 
     if (time <= video.duration || isNaN(video.duration))
     {
-	    video.currentTime=time;
-	  }
-	  else if (time > video.duration)
-	  {
-	    var end = video.duration;
-	    time = end;
-	    frame = end*this._fps;
-	    video.currentTime=end;
-	  }
-	  else
-	  {
-	    time = 0;
-	    frame=0;
-	    video.currentTime=0;
-	  }
+      video.currentTime=time;
+    }
+    else if (time > video.duration)
+    {
+      var end = video.duration;
+      time = end;
+      frame = end*this._fps;
+      video.currentTime=end;
+    }
+    else
+    {
+      time = 0;
+      frame=0;
+      video.currentTime=0;
+    }
 
-	  return promise;
+    return promise;
   }
 
   ////////////////////////////////
@@ -1141,7 +1141,7 @@ class VideoCanvas extends AnnotationCanvas {
   ////////////////////////////////
   rateChange(newRate)
   {
-	  this._playbackRate=newRate;
+    this._playbackRate=newRate;
     if (this._direction != Direction.STOPPED)
     {
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
@@ -1154,24 +1154,24 @@ class VideoCanvas extends AnnotationCanvas {
 
   processRateChange(event)
   {
-	  this._playbackRate=this._controls.rateControl.val();
-	  console.log("set rate to: " + this._playbackRate);
-	  return false;
+    this._playbackRate=this._controls.rateControl.val();
+    console.log("set rate to: " + this._playbackRate);
+    return false;
   }
 
   // Goto a given frame; optionally force usage of seek buffer
   gotoFrame(frameIdx, forceSeekBuffer)
   {
-	  if (this._direction != Direction.STOPPED)
-	  {
-	    return;
-	  }
+    if (this._direction != Direction.STOPPED)
+    {
+      return;
+    }
 
     var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
     promise.then(()=>
                  {this._pauseCb.forEach(cb => {cb(frameIdx);});}
                 );
-	  return promise;
+    return promise;
   }
 
   captureFrame(localizations,frame)
@@ -1187,40 +1187,40 @@ class VideoCanvas extends AnnotationCanvas {
 
   _playGeneric(direction)
   {
-	  var that = this;
+    var that = this;
     this._direction=direction;
 
-	  // Reset the GPU buffer on a new play action
-	  this._draw.clear();
+    // Reset the GPU buffer on a new play action
+    this._draw.clear();
 
     // Reset perioidc health check in motion comp
     this._motionComp.clearTimesVector();
 
-	  /// This is the notional scheduled diagnostic interval
-	  var schedDiagInterval=2000.0;
+    /// This is the notional scheduled diagnostic interval
+    var schedDiagInterval=2000.0;
 
-	  // set the current frame based on what is displayed
-	  var currentFrame=this._dispFrame;
+    // set the current frame based on what is displayed
+    var currentFrame=this._dispFrame;
 
     this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
     let fpsInterval = 1000.0 / (this._fps);
     let frameIncrement = this._motionComp.frameIncrement(this._fps,this._playbackRate);
-	  // This is the time to wait to start playing when the buffer is dead empty.
-	  // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
-	  // This may end up being a tuneable thing, or we may want to calculate it
-	  // more intelligently.
-	  var bufferWaitTime=fpsInterval*4;
+    // This is the time to wait to start playing when the buffer is dead empty.
+    // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
+    // This may end up being a tuneable thing, or we may want to calculate it
+    // more intelligently.
+    var bufferWaitTime=fpsInterval*4;
 
     var lastTime=performance.now();
     var animationIdx = 0;
 
-	  var player=function(domtime){
+    var player=function(domtime){
 
-	    // Start the FPS monitor once we start playing
-	    if (that._diagTimeout == null)
-	    {
-		    that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
-	    }
+      // Start the FPS monitor once we start playing
+      if (that._diagTimeout == null)
+      {
+        that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+      }
 
       that._motionComp.periodicRateCheck(domtime);
       let increment = that._motionComp.animationIncrement(domtime, lastTime);
@@ -1232,93 +1232,93 @@ class VideoCanvas extends AnnotationCanvas {
         for (let tempIdx = increment; tempIdx > 0; tempIdx--)
         {
           if (that._motionComp.timeToUpdate(animationIdx+increment))
-	        {
-		        that.displayLatest();
+          {
+            that.displayLatest();
             break;
-	        }
+          }
         }
         animationIdx = animationIdx + increment;
       }
 
-	    if (that._draw.canPlay())
-	    {
-		    that._playerTimeout=window.requestAnimationFrame(player);
-	    }
-	    else
-	    {
+      if (that._draw.canPlay())
+      {
+        that._playerTimeout=window.requestAnimationFrame(player);
+      }
+      else
+      {
         that._motionComp.clearTimesVector();
         that._playerTimeout=null;
-	    }
-	  };
+      }
+    };
 
-	  /// This is the loader thread it recalculates intervals based on GUI changes
-	  /// and seeks to the current frame in the off-screen buffer. If the player
-	  /// isn't running and there are sufficient frames it will kick off the player
-	  /// in 10 load cycles
-	  var loader=function(){
+    /// This is the loader thread it recalculates intervals based on GUI changes
+    /// and seeks to the current frame in the off-screen buffer. If the player
+    /// isn't running and there are sufficient frames it will kick off the player
+    /// in 10 load cycles
+    var loader=function(){
 
-	    // If the load buffer is full try again in the load interval
-	    if (that._draw.canLoad() == false)
-	    {
-		    that._loaderTimeout=setTimeout(loader, fpsInterval*4);
-		    return;
-	    }
+      // If the load buffer is full try again in the load interval
+      if (that._draw.canLoad() == false)
+      {
+        that._loaderTimeout=setTimeout(loader, fpsInterval*4);
+        return;
+      }
 
       frameIncrement = that._motionComp.frameIncrement(that._fps,that._playbackRate);
 
-	    // Canidate next frame
-	    var nextFrame=currentFrame+(direction * frameIncrement);
+      // Canidate next frame
+      var nextFrame=currentFrame+(direction * frameIncrement);
 
-	    //Schedule the next load if we are done loading
-	    var pushAndGoToNextFrame=function(frameIdx, source, width, height)
-	    {
-		    that._fpsLoadDiag++;
-		    that.pushFrame(frameIdx, source, width, height);
+      //Schedule the next load if we are done loading
+      var pushAndGoToNextFrame=function(frameIdx, source, width, height)
+      {
+        that._fpsLoadDiag++;
+        that.pushFrame(frameIdx, source, width, height);
 
-		    // If the next frame is loadable and we didn't get paused set a timer, else exit
-		    if (nextFrame >= 0 && nextFrame < that._numFrames && that._direction!=Direction.STOPPED)
-		    {
-		      // Update the next frame to display and recurse back at twice the framerate
-		      currentFrame=nextFrame;
-		      that._loaderTimeout=setTimeout(loader, 0);
-		    }
-		    else
-		    {
-		      that._loaderTimeout=null;
+        // If the next frame is loadable and we didn't get paused set a timer, else exit
+        if (nextFrame >= 0 && nextFrame < that._numFrames && that._direction!=Direction.STOPPED)
+        {
+          // Update the next frame to display and recurse back at twice the framerate
+          currentFrame=nextFrame;
+          that._loaderTimeout=setTimeout(loader, 0);
+        }
+        else
+        {
+          that._loaderTimeout=null;
           that._direction=Direction.STOPPED;
-		    }
-	    }
+        }
+      }
 
 
-	    // Seek to the current frame and call our atomic callback
-	    that.seekFrame(currentFrame, pushAndGoToNextFrame);
+      // Seek to the current frame and call our atomic callback
+      that.seekFrame(currentFrame, pushAndGoToNextFrame);
 
 
-	    // If the player is dead, we should restart it
-	    if (that._playerTimeout == null && that._draw.canPlay())
-	    {
-		    that._playerTimeout=setTimeout(player, bufferWaitTime);
-	    }
-	  };
+      // If the player is dead, we should restart it
+      if (that._playerTimeout == null && that._draw.canPlay())
+      {
+        that._playerTimeout=setTimeout(player, bufferWaitTime);
+      }
+    };
 
-	  // turn on/off diagnostics
-	  if (true)
-	  {
-	    this._fpsDiag=0;
-	    this._fpsLoadDiag=0;
+    // turn on/off diagnostics
+    if (true)
+    {
+      this._fpsDiag=0;
+      this._fpsLoadDiag=0;
       this._fpsScore=3;
       this._networkUpdate = 0;
 
-	    var diagRoutine=function(last)
-	    {
+      var diagRoutine=function(last)
+      {
         var diagInterval = Date.now()-last;
         var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
         let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
-		    console.info(fps_msg);
-		    that._fpsDiag=0;
-		    that._fpsLoadDiag=0;
+        console.info(fps_msg);
+        that._fpsDiag=0;
+        that._fpsLoadDiag=0;
 
         if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
         {
@@ -1347,16 +1347,16 @@ class VideoCanvas extends AnnotationCanvas {
           }
         }
 
-		    if (that._direction!=Direction.STOPPED)
-		    {
-		      that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
-		    }
+        if (that._direction!=Direction.STOPPED)
+        {
+          that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+        }
 
-	    };
-	  }
+      };
+    }
 
-	  // Kick off the loader
-	  this._loaderTimeout=setTimeout(loader, 0);
+    // Kick off the loader
+    this._loaderTimeout=setTimeout(loader, 0);
   }
 
   // Return whether the video is paused/stopped
@@ -1367,46 +1367,46 @@ class VideoCanvas extends AnnotationCanvas {
 
   addPlayListener(cb)
   {
-	  this._playCb.push(cb);
+    this._playCb.push(cb);
   }
 
   addPauseListener(cb)
   {
-	  this._pauseCb.push(cb);
+    this._pauseCb.push(cb);
   }
 
   play()
   {
-	  this._playCb.forEach(cb => {cb();});
-	  this._playGeneric(Direction.FORWARD);
+    this._playCb.forEach(cb => {cb();});
+    this._playGeneric(Direction.FORWARD);
   }
 
   playBackwards()
   {
-	  this._playCb.forEach(cb => {cb();});
-	  this._playGeneric(Direction.BACKWARDS);
+    this._playCb.forEach(cb => {cb();});
+    this._playGeneric(Direction.BACKWARDS);
   }
 
   // If running will clear player context
   stopPlayerThread()
   {
     if (this._playerTimeout)
-	  {
-	    clearTimeout(this._playerTimeout);
+    {
+      clearTimeout(this._playerTimeout);
       cancelAnimationFrame(this._playerTimeout)
-	    this._playerTimeout=null;
-	  }
-	  if (this._loaderTimeout)
-	  {
-	    clearTimeout(this._loaderTimeout);
-	    this._loaderTimeout=null;
-	  }
+      this._playerTimeout=null;
+    }
+    if (this._loaderTimeout)
+    {
+      clearTimeout(this._loaderTimeout);
+      this._loaderTimeout=null;
+    }
 
-	  if (this._diagTimeout)
-	  {
-	    clearTimeout(this._diagTimeout);
-	    this._diagTimeout=null;
-	  }
+    if (this._diagTimeout)
+    {
+      clearTimeout(this._diagTimeout);
+      this._diagTimeout=null;
+    }
   }
 
   pause()
@@ -1414,36 +1414,36 @@ class VideoCanvas extends AnnotationCanvas {
     // Stop the player thread first
     this.stopPlayerThread();
 
-	  // If we weren't already paused send the event
-	  if (this._direction != Direction.STOPPED)
-	  {
-	    this._pauseCb.forEach(cb => {cb();});
-	  }
+    // If we weren't already paused send the event
+    if (this._direction != Direction.STOPPED)
+    {
+      this._pauseCb.forEach(cb => {cb();});
+    }
 
-	  this._direction=Direction.STOPPED;
-	  this._videoElement[this._play_idx].pause();
+    this._direction=Direction.STOPPED;
+    this._videoElement[this._play_idx].pause();
 
 
     // force a redraw at the currently displayed frame
-	  return this.seekFrame(this._dispFrame, this.drawFrame, true);
+    return this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
   back()
   {
-	  var newFrame=this._dispFrame-1;
-	  if (newFrame >= 0)
-	  {
+    var newFrame=this._dispFrame-1;
+    if (newFrame >= 0)
+    {
       this.gotoFrame(newFrame, true);
-	  }
+    }
   }
 
   advance()
   {
-	  var newFrame=this._dispFrame+1;
-	  if (newFrame < this._numFrames)
-	  {
-	    this.gotoFrame(newFrame, true);
-	  }
+    var newFrame=this._dispFrame+1;
+    if (newFrame < this._numFrames)
+    {
+      this.gotoFrame(newFrame, true);
+    }
   }
 
   //////////////////////////////////
