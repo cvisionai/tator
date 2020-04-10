@@ -328,6 +328,11 @@ class MediaType(APIElement):
     def __init__(self, api):
          super().__init__(api, "EntityTypeMedias", "EntityTypeMedia")
 
+class Membership(APIElement):
+    """ Describes elements from `rest/Memberships` """
+    def __init__(self, api):
+        super().__init__(api, "Memberships", "Membership")
+
 class Project(APIElement):
     """ Describes elements from `rest/Projects` """
     def __init__(self, api):
