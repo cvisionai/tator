@@ -1849,15 +1849,39 @@ class AnnotationCanvas extends TatorElement
       requestObj.frame = this.currentFrame();
     }
 
+
+    // Drag info is now in DOM coordinates
     this.dispatchEvent(new CustomEvent("create", {
       detail: {
         objDescription: objDescription,
-        dragInfo: dragInfo,
+        dragInfo: this.normalizeDrag(dragInfo),
         requestObj: requestObj,
         metaMode: this._metaMode
       },
       composed: true,
     }));
+  }
+
+  normalizeDrag(drag)
+  {
+    let normalize = (point) => {
+      return {
+        x: point.x * (this.clientWidth / this._canvas.width),
+        y: point.y * (this.clientHeight / this._canvas.height)}
+    };
+    if ('current' in drag)
+    {
+      drag.current = normalize(drag.current);
+    }
+    if ('start' in drag)
+    {
+      drag.start = normalize(drag.start);
+    }
+    if ('end' in drag)
+    {
+      drag.end = normalize(drag.end);
+    }
+    return drag;
   }
 
   deleteLocalization(localization,successCb, failureCb)
