@@ -3925,6 +3925,10 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
 
+class CurrentUserAPI(APIView):
+    def get(self, request, format=None, **kwargs):
+        return Response(UserSerializerBasic(request.user).data)
+
 class VersionListSchema(AutoSchema):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path, method)

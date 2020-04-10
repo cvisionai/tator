@@ -879,6 +879,14 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
+class CurrentUserTestCase(APITestCase):
+    def test_get(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        response = self.client.get('/rest/User/GetCurrent')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.user.id)
+
 class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()

@@ -47,6 +47,7 @@ from .rest import ProjectDetailAPI
 from .rest import AnalysisAPI
 from .rest import NotifyAPI
 from .rest import UserDetailAPI
+from .rest import CurrentUserAPI
 from .rest import MediaPrevAPI
 from .rest import MediaNextAPI
 from .rest import MediaSectionsAPI
@@ -198,6 +199,10 @@ urlpatterns += [
     path(
         'rest/User/<int:pk>',
         UserDetailAPI.as_view(),
+    ),
+    path(
+        'rest/User/GetCurrent',
+        CurrentUserAPI.as_view(),
     ),
     path(
         'rest/MediaPrev/<int:pk>',
