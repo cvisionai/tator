@@ -36,6 +36,7 @@ class Tator:
     def __init__(self, url, token, project):
         self.project = project
         self._url = url
+        self._token = token
         self.Algorithm = apiImpl.Algorithm((url,token,project))
         self.Media = apiImpl.Media((url,token,project))
         self.MediaType = apiImpl.MediaType((url,token,project))
@@ -54,3 +55,14 @@ class Tator:
         """ Returns the URL for accessing site content """
         remove_rest = self._url.replace("/rest", "")
         return remove_rest + "/"
+
+    def whoami(self):
+        """ Returns current user """
+        ep = self._url + "/User/GetCurrent"
+        response = requests.get(
+            ep,
+            headers={"Authorization" : "Token {}".format(self._token),
+                     "Content-Type": "application/json",
+                     "Accept-Encoding": "gzip"},
+        )
+        return response.json()
