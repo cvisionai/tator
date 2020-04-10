@@ -117,12 +117,17 @@ class VideoDownloader
           }
           break;
         }
+        else if (idx == 2 && frame < frame_start)
+        {
+          // Handle beginning of videos
+          matchIdx = idx;
+        }
       }
     }
     // No match
     if (matchIdx == -1)
     {
-      console.warn(`Couldn't fetch video for ${time}`)
+      console.warn(`Couldn't fetch video for ${time}(${frame})`)
       return;
     }
 

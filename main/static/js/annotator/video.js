@@ -205,6 +205,27 @@ class VideoBufferDemux
     return null;
   }
 
+  // Returns the seek buffer if it is present, or
+  // The time buffer if in there
+  returnSeekIfPresent(time, direction)
+  {
+    let time_result= this.forTime(time, direction);
+    if (time_result)
+    {
+      return time_result;
+    }
+    for (let idx = 0; idx < this._seekVideo.buffered.length; idx++)
+    {
+      // If the time is comfortably in the range don't bother getting
+      // additional data
+      if (time >= this._seekVideo.buffered.start(idx) &&
+          time < this._seekVideo.buffered.end(idx) *0.90)
+      {
+        return this._seekVideo;
+      }
+    }
+    return null;
+  }
   seekBuffer()
   {
     return this._seekVideo;
@@ -1064,7 +1085,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   /// Returns the raw HTML5 buffer for a given frame (default current)
   /// TODO: Add strategy for multires
-  videoBuffer(frame)
+  videoBuffer(frame, forceSeekBuffer)
   {
     if (frame == undefined)
     {
@@ -1083,7 +1104,15 @@ class VideoCanvas extends AnnotationCanvas {
         direction = Direction.BACKWARD;
       }
     }
-    return this._videoElement[this._play_idx].forTime(time, direction);
+
+    if (forceSeekBuffer)
+    {
+      return this._videoElement[this._hq_idx].returnSeekIfPresent(time, direction);
+    }
+    else
+    {
+      return this._videoElement[this._play_idx].forTime(time, direction);
+    }
   }
 
   frameToTime(frame)
@@ -1096,10 +1125,10 @@ class VideoCanvas extends AnnotationCanvas {
   {
     var that = this;
     var time=this.frameToTime(frame);
-    var video=this.videoBuffer(frame);
+    var video=this.videoBuffer(frame, forceSeekBuffer);
 
     // Only support seeking if we are stopped (i.e. not playing)
-    if (video == null && this._direction == Direction.STOPPED || forceSeekBuffer)
+    if (video == null && this._direction == Direction.STOPPED)
     {
       // Set the seek buffer, and command worker to get the seek
       // response
