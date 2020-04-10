@@ -23,8 +23,6 @@ def project(request):
         'name': f'test_project_{dt_str}',
         'summary': f'Test project created by pytator unit tests on {current_dt}',
     })
-    print(f"STATUS: {status}")
-    print(f"RESPONSE: {response}")
     project_id = response['id']
     tator = pytator.Tator(url, token, project_id)
     user = tator.whoami()

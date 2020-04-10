@@ -1529,7 +1529,6 @@ class MembershipTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        print(f"MEMBERSHIP PK: {self.membership.pk}")
         self.entities = [self.membership,]
         self.list_uri = 'Memberships'
         self.detail_uri = 'Membership'
