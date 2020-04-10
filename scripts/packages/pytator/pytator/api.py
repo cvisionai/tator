@@ -274,6 +274,11 @@ class User(APIElement):
     def __init__(self, api):
          super().__init__(api, "Users")
 
+class Version(APIElement):
+    """ Describes elements from `rest/Versions` """
+    def __init__(self, api):
+        super().__init__(api, "Versions", "Version")
+
 class Media(APIElement):
     """ Defines interactions to Media elements at `/rest/EntityMedias` """
     def __init__(self, api):
