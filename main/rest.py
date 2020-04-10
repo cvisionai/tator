@@ -3741,6 +3741,11 @@ class MembershipListAPI(ListAPIView):
         members = Membership.objects.filter(project__id=project_id)
         return members
 
+class MembershipDetailAPI(RetrieveUpdateDestroyAPIView):
+    serializer_class = MembershipSerializer
+    queryset = Membership.objects.all()
+    permission_classes = [ProjectFullControlPermission]
+
 class ProjectListSchema(AutoSchema):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path, method)

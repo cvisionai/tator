@@ -18,30 +18,31 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 
-from .rest import LocalizationList;
-from .rest import LocalizationTypeListAPI;
-from .rest import LocalizationDetailAPI;
+from .rest import LocalizationList
+from .rest import LocalizationTypeListAPI
+from .rest import LocalizationDetailAPI
 from .rest import EntityMediaDetailAPI
 from .rest import EntityMediaListAPI
 from .rest import EntityTypeMediaListAPI
 from .rest import EntityTypeMediaDetailAPI
 from .rest import EntityTypeSchemaAPI
-from .rest import EntityStateCreateListAPI;
-from .rest import EntityStateDetailAPI;
-from .rest import EntityStateTypeListAPI;
-from .rest import SuggestionAPI;
-from .rest import TreeLeafListAPI;
-from .rest import TreeLeafDetailAPI;
-from .rest import TreeLeafTypeListAPI;
-from .rest import LocalizationAssociationDetailAPI;
+from .rest import EntityStateCreateListAPI
+from .rest import EntityStateDetailAPI
+from .rest import EntityStateTypeListAPI
+from .rest import SuggestionAPI
+from .rest import TreeLeafListAPI
+from .rest import TreeLeafDetailAPI
+from .rest import TreeLeafTypeListAPI
+from .rest import LocalizationAssociationDetailAPI
 from .rest import FrameAssociationDetailAPI
-from .rest import ProgressAPI;
-from .rest import TranscodeAPI;
-from .rest import AlgorithmListAPI;
-from .rest import AlgorithmLaunchAPI;
+from .rest import ProgressAPI
+from .rest import TranscodeAPI
+from .rest import AlgorithmListAPI
+from .rest import AlgorithmLaunchAPI
 from .rest import JobDetailAPI
 from .rest import JobGroupDetailAPI
-from .rest import MembershipListAPI;
+from .rest import MembershipListAPI
+from .rest import MembershipDetailAPI
 from .rest import ProjectListAPI
 from .rest import ProjectDetailAPI
 from .rest import AnalysisAPI
@@ -179,6 +180,10 @@ urlpatterns += [
     path(
         'rest/Memberships/<int:project>',
         MembershipListAPI.as_view(),
+    ),
+    path(
+        'rest/Membership/<int:pk>',
+        MembershipDetailAPI.as_view(),
     ),
     path(
         'rest/Projects',
