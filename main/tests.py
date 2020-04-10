@@ -1521,13 +1521,23 @@ class LocalizationTypesTestCase(
 
 class MembershipTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionListMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        print(f"MEMBERSHIP PK: {self.membership.pk}")
+        self.entities = [self.membership,]
         self.list_uri = 'Memberships'
+        self.detail_uri = 'Membership'
+        self.patch_json = {
+            'user': self.user.pk,
+            'project': self.project.pk,
+            'permission': 'a',
+        }
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
