@@ -288,7 +288,7 @@ class VideoBufferDemux
     return promise;
   }
 
-  appendSeekBuffer(data, time=undefined)
+  appendSeekBuffer(data, time=undefined, delete_range=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
@@ -307,11 +307,24 @@ class VideoBufferDemux
         if (this._pendingSeeks.length > 0)
         {
           var pending = this._pendingSeeks.shift();
-          this.appendSeekBuffer(pending.data, pending.time);
+          this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
         }
       };
 
-      this._seekBuffer.appendBuffer(data);
+      // If this is a data request delete the stuff currently in the buffer
+      if (data != null)
+      {
+        for (let idx = 0; idx < this._seekBuffer.buffered.length; idx++)
+        {
+          this._pendingSeeks.push({"delete_range": [this._seekBuffer.buffered.start(idx),
+                                                    this._seekBuffer.buffered.end(idx)]});
+        }
+        this._seekBuffer.appendBuffer(data);
+      }
+      else if (delete_range)
+      {
+        this._seekBuffer.remove(delete_range[0], delete_range[1]);
+      }
     }
     else
     {
