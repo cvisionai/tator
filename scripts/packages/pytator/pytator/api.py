@@ -34,11 +34,11 @@ class APIElement:
     :param api: Tuple provided from :class:`pytator.Tator` object construction, represents the Tator webservice endpoint, authorization token, and project number.
     :param str endpoint: Name of the endpoint provided from derived class.
     """
-    def __init__(self, api, endpoint):
+    def __init__(self, api, list_endpoint, detail_endpoint):
         """ Construct an API element. Constructed by :class:`pytator.Tator`
         """
-        self.endpoint = endpoint
-        self.individual_endpoint = endpoint.rstrip('s')
+        self.endpoint = list_endpoint
+        self.individual_endpoint = detail_endpoint
         self.url = api[0].rstrip('/')
         self.token = str(api[1])
         if api[2]:
@@ -210,7 +210,7 @@ class Algorithm(APIElement):
         `rest/Algorithms` endpoint.
     """
     def __init__(self, api):
-        super().__init__(api, "Algorithms")
+        super().__init__(api, "Algorithms", "Algorithm")
     def launch_on_media(self, algorithm_name, media_id):
         """ Launch a given algorithm on an individual media
 
@@ -262,17 +262,17 @@ class Algorithm(APIElement):
 class MediaType(APIElement):
     """ Describes elements from `rest/EntityTypeMedias` """
     def __init__(self, api):
-         super().__init__(api, "EntityTypeMedias")
+         super().__init__(api, "EntityTypeMedias", "EntityTypeMedia")
 
 class Project(APIElement):
     """ Describes elements from `rest/Projects` """
     def __init__(self, api):
-         super().__init__(api, "Projects")
+         super().__init__(api, "Projects", "Project")
 
 class User(APIElement):
     """ Describes elements from `rest/Users` """
     def __init__(self, api):
-         super().__init__(api, "Users")
+         super().__init__(api, "Users", "User")
 
 class Version(APIElement):
     """ Describes elements from `rest/Versions` """
@@ -282,7 +282,7 @@ class Version(APIElement):
 class Media(APIElement):
     """ Defines interactions to Media elements at `/rest/EntityMedias` """
     def __init__(self, api):
-        super().__init__(api, "EntityMedias")
+        super().__init__(api, "EntityMedias", "EntityMedia")
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
         self.mediaTypeApi = MediaType(api)
@@ -435,7 +435,7 @@ class Media(APIElement):
 class LocalizationType(APIElement):
     """ Class to support operations to `rest/LocalizationTypes` """
     def __init__(self, api):
-         super().__init__(api, "LocalizationTypes")
+         super().__init__(api, "LocalizationTypes", "LocalizationType")
 
     def byTypeId(self, typeId):
         return self.getSingleElement("LocalizationTypes", {"type": typeId})
@@ -443,7 +443,7 @@ class LocalizationType(APIElement):
 class StateType(APIElement):
     """ Class to support operations to `rest/EntityStateTypes` """
     def __init__(self, api):
-         super().__init__(api, "EntityStateTypes")
+         super().__init__(api, "EntityStateTypes", "EntityStateType")
 
     def byTypeId(self, typeId):
         """ Returns a state type element with a matching type id
@@ -456,7 +456,7 @@ class StateType(APIElement):
 class State(APIElement):
     """ Class to support operations to `rest/EntityStates` """
     def __init__(self, api):
-        super().__init__(api,"EntityStates")
+        super().__init__(api,"EntityStates", "EntityState")
     def byAttr(self, key, value):
         """ Returns a state element with a matching name
 
@@ -553,7 +553,7 @@ class Localization(APIElement):
     videos.
     """
     def __init__(self, api):
-         super().__init__(api, "Localizations")
+         super().__init__(api, "Localizations", "Localization")
 
     def add(self, mediaId, typeId, attrs):
         """ Add a new localization to a media element.
@@ -619,7 +619,7 @@ class TreeLeaf(APIElement):
         use of a TreeLeaf tree is a taxonomic structure.
     """
     def __init__(self, api):
-        super().__init__(api, "TreeLeaves")
+        super().__init__(api, "TreeLeaves", "TreeLeaf")
 
     def isPresent(self, name):
         """ Acquire a tree leaf element by its name
