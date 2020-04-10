@@ -691,6 +691,11 @@ class VideoCanvas extends AnnotationCanvas {
 
   refresh(forceSeekBuffer)
   {
+    // Refresh defaults to high-res buffer
+    if (forceSeekBuffer == undefined)
+    {
+      forceSeekBuffer = true;
+    }
     return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
 
