@@ -25,6 +25,16 @@ def project(request):
     })
     print(f"STATUS: {status}")
     print(f"RESPONSE: {response}")
-    yield response['id']
-    status = tator.Project.delete(response['id'])
+    project_id = response['id']
+    tator = pytator.Tator(url, token, project_id)
+    user = tator.whoami()
+    user_id = user['id']
+    print(f"USER: {user}")
+    status, response = tator.Membership.new({
+        'user': user_id,
+        'project': project_id,
+        'permission': 'a',
+    })
+    yield project_id
+    status = tator.Project.delete(project_id)
 
