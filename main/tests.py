@@ -1382,13 +1382,17 @@ class EntityStateTypesTestCase(
         
 class EntityTypeMediaTestCase(
         APITestCase,
-        PermissionDetailMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.detail_uri = 'EntityTypeMedia'
+        self.list_uri = 'EntityTypeMedias'
         self.entities = [
             EntityTypeMediaVideo.objects.create(
                 name="videos",
@@ -1404,6 +1408,16 @@ class EntityTypeMediaTestCase(
         ]
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
+        self.edit_permission = Permission.FULL_CONTROL
+        self.patch_json = {
+            'name': 'asdf',
+        }
+        self.create_json = {
+            'name': 'videos',
+            'uploadable': True,
+            'keep_original': True,
+            'dtype': 'video',
+        }
 
     def tearDown(self):
         self.project.delete()
