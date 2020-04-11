@@ -20,6 +20,7 @@ from .views import AuthAdminView
 
 from .rest import LocalizationList
 from .rest import LocalizationTypeListAPI
+from .rest import LocalizationTypeDetailAPI
 from .rest import LocalizationDetailAPI
 from .rest import EntityMediaDetailAPI
 from .rest import EntityMediaListAPI
@@ -92,6 +93,10 @@ urlpatterns += [
     path(
         'rest/LocalizationTypes/<int:project>',
         LocalizationTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/LocalizationType/<int:pk>',
+        LocalizationTypeDetailAPI.as_view(),
     ),
     path(
         'rest/EntityTypeMedias/<int:project>',

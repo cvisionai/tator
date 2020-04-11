@@ -1506,12 +1506,21 @@ class LocalizationAssociationTestCase(
 
 class LocalizationTypesTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.media_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
         self.entities = [
             EntityTypeLocalizationBox.objects.create(
                 name="box",
@@ -1529,6 +1538,14 @@ class LocalizationTypesTestCase(
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'LocalizationTypes'
+        self.detail_uri = 'LocalizationType'
+        self.create_json = {
+            'name': 'box type',
+            'dtype': 'box',
+            'media_types': [self.media_type.pk],
+        }
+        self.patch_json = {'name': 'box asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
