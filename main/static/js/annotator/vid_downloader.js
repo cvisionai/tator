@@ -139,7 +139,7 @@ class VideoDownloader
     // If we are at a boundary get the next segment
     if (boundary == true)
     {
-      end = Math.max(matchIdx + 3, this._numPackets[buf_idx]-1);
+      end = Math.min(matchIdx + 3, this._numPackets[buf_idx]-1);
     }
 
     const start_packet = this._info[buf_idx]["segments"][matchIdx];
