@@ -1359,23 +1359,42 @@ class TreeLeafTypeTestCase(
 
 class EntityStateTypesTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.list_uri = 'EntityStateTypes'
+        self.media_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
         self.entities = [
             EntityTypeState.objects.create(
-                name="lines",
+                name="state1",
                 project=self.project,
             ),
             EntityTypeState.objects.create(
-                name="boxes",
+                name="state2",
                 project=self.project,
             ),
         ]
+        for entity_type in self.entities:
+            create_test_attribute_types(entity_type, self.project)
+        self.list_uri = 'EntityStateTypes'
+        self.detail_uri = 'EntityStateType'
+        self.create_json = {
+            'name': 'frame state type',
+            'association': 'Frame',
+            'media_types': [self.media_type.pk],
+        }
+        self.patch_json = {'name': 'state asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()

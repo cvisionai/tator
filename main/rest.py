@@ -2703,6 +2703,138 @@ class EntityStateTypeListAPI(EntityTypeListAPIMixin):
     baseObj=EntityState
     entityTypeAttrSerializer=EntityTypeStateAttrSerializer
 
+    def post(self, request, format=None, **kwargs):
+        response=Response({})
+
+        try:
+            name = request.data.get('name', None)
+            description = request.data.get('description', '')
+            media_types = request.data.get('media_types', None)
+            association = request.data.get('association', None)
+            project = kwargs['project']
+
+            if name is None:
+                raise Exception('Missing required field "name" for state type!')
+
+            if media_types is None:
+                raise Exception('Missing required field "media_types" for localization type!')
+
+            if association is not None:
+                if association not in ['Media', 'Frame', 'Localization']:
+                    raise Exception('Field "association" must be one of "Media", "Frame", or "Localization"!') 
+
+            obj = EntityTypeState(
+                name=name,
+                description=description,
+                project=Project.objects.get(pk=project),
+                association=association,
+            )
+            obj.save()
+            media_qs = EntityTypeMediaBase.objects.filter(project=project, pk__in=media_types)
+            if media_qs.count() != len(media_types):
+                obj.delete()
+                raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating state type!")
+            for media in media_qs:
+                obj.media.add(media)
+            obj.save()
+
+            response=Response({'message': 'State type created successfully!', 'id': obj.id},
+                              status=status.HTTP_201_CREATED)
+
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+class StateTypeDetailAPI(RetrieveUpdateDestroyAPIView):
+    schema=AutoSchema(manual_fields=
+                          [coreapi.Field(name='pk',
+                                         required=True,
+                                         location='path',
+                                         schema=coreschema.String(description='A unique integer value identifying a state type'))])
+    serializer_class = EntityTypeStateAttrSerializer
+    permission_classes = [ProjectFullControlPermission]
+
+    def get(self, request, format=None, **kwargs):
+        """ Returns single localization type.
+        """
+        response=Response({})
+
+        try:
+            state_type_id=self.kwargs['pk']
+
+            entityType = EntityTypeState.objects.get(pk=state_type_id)
+
+            dataurl=request.build_absolute_uri(
+                    reverse_queryArgs('EntityStates',
+                                      kwargs={'project': entityType.project.pk},
+                                      queryargs={'type' : state_type_id}))
+            result={"type": entityType,
+                     "columns": AttributeTypeBase.objects.filter(applies_to=entityType),
+                     "data" : dataurl,
+                     "count": 0}
+
+            response = Response(EntityTypeStateAttrSerializer(result).data);
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        return response
+
+    def patch(self, request, format=None, **kwargs):
+        """ Updates a localization type.
+        """
+        response = Response({})
+        try:
+            name = request.data.get('name', None)
+            description = request.data.get('description', None)
+
+            obj = EntityTypeState.objects.get(pk=int(kwargs['pk']))
+            if name is not None:
+                obj.name = name
+            if description is not None:
+                obj.description = description
+
+            obj.save()
+            response=Response({'message': 'Localization type updated successfully!'},
+                              status=status.HTTP_200_OK)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        return response
+
+    def delete(self, request, format=None, **kwargs):
+        """ Deletes a localization type.
+        """
+        response = Response({})
+        try:
+            pk = int(kwargs['pk'])
+            obj = EntityTypeState.objects.get(pk=pk)
+            attr_types = AttributeTypeBase.objects.filter(applies_to=pk)
+            delete_polymorphic_qs(attr_types)
+            obj.delete()
+            response=Response({'message': 'State type deleted successfully!'},
+                              status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        return response
+
+    def get_queryset(self):
+        return EntityTypeState.objects.all()
+
 class TreeLeafTypeListAPI(EntityTypeListAPIMixin):
     entity_endpoint='TreeLeaves'
     entityBaseObj=EntityTypeTreeLeaf

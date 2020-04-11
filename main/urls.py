@@ -30,6 +30,7 @@ from .rest import EntityTypeSchemaAPI
 from .rest import EntityStateCreateListAPI
 from .rest import EntityStateDetailAPI
 from .rest import EntityStateTypeListAPI
+from .rest import StateTypeDetailAPI
 from .rest import SuggestionAPI
 from .rest import TreeLeafListAPI
 from .rest import TreeLeafDetailAPI
@@ -133,6 +134,10 @@ urlpatterns += [
     path(
         'rest/EntityStateTypes/<int:project>',
         EntityStateTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/EntityStateType/<int:pk>',
+        StateTypeDetailAPI.as_view(),
     ),
     path(
         'rest/TreeLeafTypes/<int:project>',
