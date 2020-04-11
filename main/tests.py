@@ -1342,7 +1342,10 @@ class TreeLeafTestCase(
 
 class TreeLeafTypeTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -1353,6 +1356,12 @@ class TreeLeafTypeTestCase(
             for _ in range(random.randint(6, 10))
         ]
         self.list_uri = 'TreeLeafTypes'
+        self.detail_uri = 'TreeLeafType'
+        self.create_json = {
+            'name': 'tree leaf type',
+        }
+        self.patch_json = {'name': 'tree leaf asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()

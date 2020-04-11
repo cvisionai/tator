@@ -35,6 +35,7 @@ from .rest import SuggestionAPI
 from .rest import TreeLeafListAPI
 from .rest import TreeLeafDetailAPI
 from .rest import TreeLeafTypeListAPI
+from .rest import TreeLeafTypeDetailAPI
 from .rest import LocalizationAssociationDetailAPI
 from .rest import FrameAssociationDetailAPI
 from .rest import ProgressAPI
@@ -144,12 +145,17 @@ urlpatterns += [
         TreeLeafTypeListAPI.as_view(),
     ),
     path(
+        'rest/TreeLeafType/<int:pk>',
+        TreeLeafTypeDetailAPI.as_view(),
+    ),
+    path(
         'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
         SuggestionAPI.as_view(),
     ),
     path(
         'rest/TreeLeaves/<int:project>',
         TreeLeafListAPI.as_view(),
+        name='TreeLeaves',
     ),
     path(
         'rest/TreeLeaf/<int:pk>',
