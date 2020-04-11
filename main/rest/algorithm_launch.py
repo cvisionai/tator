@@ -1,10 +1,25 @@
+import traceback
+import logging
+from uuid import uuid1
+
 from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Case
+from django.db.models import When
 
+from ..models import Algorithm
+from ..models import EntityMediaBase
 from ..kube import TatorAlgorithm
+from ..consumers import ProgressProducer
 
 from ._permissions import ProjectExecutePermission
+
+logger = logging.getLogger(__name__)
 
 def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
@@ -78,7 +93,7 @@ class AlgorithmLaunchAPI(APIView):
                 qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
-                response = submitter.start_algorithm(
+                alg_response = submitter.start_algorithm(
                     media_ids=batch_str,
                     sections=sections,
                     gid=gid,

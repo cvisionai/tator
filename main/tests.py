@@ -426,7 +426,6 @@ class PermissionDetailMembershipTestMixin:
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
-
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
         response = self.client.get(
