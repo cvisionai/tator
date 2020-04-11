@@ -943,7 +943,7 @@ class AlgorithmLaunchTestCase(
         self.list_uri = 'AlgorithmLaunch'
         self.create_json = {
             'algorithm_name': self.algorithm.name,
-            'media_ids': '1,2,3',
+            'media_ids': [1,2,3],
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
