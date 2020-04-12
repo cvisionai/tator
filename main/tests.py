@@ -1773,7 +1773,7 @@ class VersionTestCase(
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
             create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
-            for idx in range(random.randint(3, 10))
+            for idx in range(random.randint(6, 10))
         ]
         self.list_uri = 'Versions'
         self.detail_uri = 'Version'
