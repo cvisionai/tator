@@ -1,10 +1,22 @@
+import traceback
+import logging
+import os
+
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from django.core.exceptions import ObjectDoesNotExist
+from urllib import parse as urllib_parse
 
 from ..kube import TatorTranscode
+from ..consumers import ProgressProducer
 
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class TranscodeAPI(APIView):
     """

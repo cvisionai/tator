@@ -1,16 +1,37 @@
+import traceback
+import logging
+
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import EntityState
+from ..models import EntityTypeState
+from ..models import EntityMediaBase
+from ..models import EntityLocalizationBase
+from ..models import MediaAssociation
+from ..models import FrameAssociation
+from ..models import LocalizationAssociation
+from ..models import Version
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
 from ..serializers import EntityStateLocalizationSerializer
 
+from ._annotation_query import get_annotation_queryset
 from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
+from ._attributes import patch_attributes
+from ._attributes import validate_attributes
+from ._attributes import convert_attribute
+from ._util import computeRequiredFields
 from ._permissions import ProjectEditPermission
+
+logger = logging.getLogger(__name__)
 
 class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):

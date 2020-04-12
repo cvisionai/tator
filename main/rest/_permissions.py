@@ -8,6 +8,8 @@ from ..models import Project
 from ..models import Membership
 from ..models import Algorithm
 from ..models import EntityState
+from ..models import FrameAssociation
+from ..models import LocalizationAssociation
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 

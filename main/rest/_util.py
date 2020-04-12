@@ -4,6 +4,7 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 
 from ..models import AttributeTypeBase
+from ..models import type_to_obj
 
 class Array(Subquery):
     """ Class to expose ARRAY SQL function to ORM """

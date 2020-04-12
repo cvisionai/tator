@@ -1,4 +1,6 @@
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework import status
 
 from ..models import LocalizationAssociation
 from ..models import EntityLocalizationBox

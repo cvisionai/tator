@@ -1,5 +1,6 @@
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from ..models import User
 from ..serializers import UserSerializerBasic

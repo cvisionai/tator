@@ -1,8 +1,18 @@
+import traceback
+import logging
+
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
+from django.db import connection
+from django.conf import settings
 
+from ..models import EntityBase
 from ..models import EntityMediaBase
 from ..models import EntityMediaImage
 from ..models import EntityMediaVideo
@@ -12,7 +22,13 @@ from ..search import TatorSearch
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
+from ._attributes import bulk_patch_attributes
+from ._attributes import patch_attributes
+from ._attributes import validate_attributes
+from ._util import delete_polymorphic_qs
 from ._permissions import ProjectEditPermission
+
+logger = logging.getLogger(__name__)
 
 class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
@@ -177,9 +193,11 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
             response=Response({'message': 'Attribute patch successful!'},
                               status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
+            print(f"EXCEPTION: {dne}")
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            print(f"EXCEPTION: {e}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
