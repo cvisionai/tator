@@ -18,6 +18,7 @@ from django.conf import settings
 from ..models import EntityMediaVideo
 from ..models import EntityTypeMediaVideo
 from ..models import getVideoDefinition
+from ..models import Project
 from ..consumers import ProgressProducer
 
 from ._permissions import ProjectTransferPermission

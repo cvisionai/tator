@@ -3,6 +3,7 @@ from collections import defaultdict
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from ..models import AnalysisCount
 from ..search import TatorSearch
 
 from ._media_query import get_attribute_query
