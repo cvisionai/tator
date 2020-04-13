@@ -323,10 +323,16 @@ class Algorithm(APIElement):
     def getMany(self, endpoint, params):
         """ .. warning:: Not supported for algorithms endpoint """
         pass
-class MediaType(APIElement):
-    """ Describes elements from `rest/EntityTypeMedias` """
+
+class AttributeType(APIElement):
+    """ Describes elements from `rest/AttributeTypes` """
     def __init__(self, api):
-         super().__init__(api, "EntityTypeMedias", "EntityTypeMedia")
+        super().__init__(api, "AttributeTypes", "AttributeType")
+
+class MediaType(APIElement):
+    """ Describes elements from `rest/MediaTypes` """
+    def __init__(self, api):
+        super().__init__(api, "MediaTypes", "MediaType")
 
 class Membership(APIElement):
     """ Describes elements from `rest/Memberships` """
@@ -336,12 +342,12 @@ class Membership(APIElement):
 class Project(APIElement):
     """ Describes elements from `rest/Projects` """
     def __init__(self, api):
-         super().__init__(api, "Projects", "Project")
+        super().__init__(api, "Projects", "Project")
 
 class User(APIElement):
     """ Describes elements from `rest/Users` """
     def __init__(self, api):
-         super().__init__(api, "Users", "User")
+        super().__init__(api, "Users", "User")
 
 class Version(APIElement):
     """ Describes elements from `rest/Versions` """
@@ -349,9 +355,9 @@ class Version(APIElement):
         super().__init__(api, "Versions", "Version")
 
 class Media(APIElement):
-    """ Defines interactions to Media elements at `/rest/EntityMedias` """
+    """ Defines interactions to Media elements at `/rest/Medias` """
     def __init__(self, api):
-        super().__init__(api, "EntityMedias", "EntityMedia")
+        super().__init__(api, "Medias", "Media")
         split=urlsplit(self.url)
         self.tusURL=urljoin("https://"+split.netloc, "files/")
         self.mediaTypeApi = MediaType(api)
@@ -459,7 +465,7 @@ class Media(APIElement):
         .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
-        return self.getSingleElement("EntityMedias", {"md5": md5})
+        return self.getSingleElement("Medias", {"md5": md5})
 
     def byName(self, name):
         """ Returns a media element with a matching name
@@ -467,7 +473,7 @@ class Media(APIElement):
         .. deprecated:: 0.0.2
            Use :func:`APIElement.filter` instead
         """
-        return self.getSingleElement("EntityMedias", {"name": name})
+        return self.getSingleElement("Medias", {"name": name})
 
     def byId(self, pk):
         """ Returns a media element with a given id
@@ -484,7 +490,7 @@ class Media(APIElement):
            Use :func:`APIElement.patch` instead
         """
 
-        patchUrl=f"EntityMedia/{media_id}"
+        patchUrl=f"Media/{media_id}"
         response = requests.patch(self.url+"/"+patchUrl,
                                   json={"attributes":attributes},
                                   headers=self.headers)
@@ -500,7 +506,6 @@ class Media(APIElement):
         else:
             return True
 
-
 class LocalizationType(APIElement):
     """ Class to support operations to `rest/LocalizationTypes` """
     def __init__(self, api):
@@ -510,9 +515,9 @@ class LocalizationType(APIElement):
         return self.getSingleElement("LocalizationTypes", {"type": typeId})
 
 class StateType(APIElement):
-    """ Class to support operations to `rest/EntityStateTypes` """
+    """ Class to support operations to `rest/StateTypes` """
     def __init__(self, api):
-         super().__init__(api, "EntityStateTypes", "EntityStateType")
+         super().__init__(api, "StateTypes", "StateType")
 
     def byTypeId(self, typeId):
         """ Returns a state type element with a matching type id
@@ -520,12 +525,12 @@ class StateType(APIElement):
         .. deprecated:: 0.0.2
            Use :func:`APIElement.get` instead
         """
-        return self.getSingleElement("EntityStateTypes", {"type": typeId})
+        return self.getSingleElement("StateTypes", {"type": typeId})
 
 class State(APIElement):
-    """ Class to support operations to `rest/EntityStates` """
+    """ Class to support operations to `rest/States` """
     def __init__(self, api):
-        super().__init__(api,"EntityStates", "EntityState")
+        super().__init__(api,"States", "State")
     def byAttr(self, key, value):
         """ Returns a state element with a matching name
 
@@ -533,7 +538,7 @@ class State(APIElement):
            Use :func:`APIElement.filter` instead
         """
         lookup=f"{key}::{value}"
-        return self.getSingleElement("EntityStates", {"attribute": lookup})
+        return self.getSingleElement("States", {"attribute": lookup})
     def add(self, typeId, medias, attrs, localizations=[], version=None):
         """ Adds a new state element
 
@@ -551,7 +556,7 @@ class State(APIElement):
         if version:
             obj["version"] = version
         obj.update(attrs)
-        (code, json) = self.newSingleElement("EntityStates", obj)
+        (code, json) = self.newSingleElement("States", obj)
         # TODO: Should we return something more than 200 back from serfver?
         return code == 200
 
@@ -755,3 +760,9 @@ class TreeLeaf(APIElement):
         else:
             print(f"Return = {code}, {json}")
             return False
+
+class TreeLeafType(APIElement):
+    """ Interface to tree leaf type elements. `rest/TreeLeafTypes` """
+    def __init__(self, api):
+        super().__init__(api, "TreeLeafTypes", "TreeLeafType")
+
