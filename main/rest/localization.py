@@ -96,7 +96,7 @@ class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
 
         return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
 
-class LocalizationList(APIView, AttributeFilterMixin):
+class LocalizationListAPI(APIView, AttributeFilterMixin):
     """
     Endpoint for getting + adding localizations
 

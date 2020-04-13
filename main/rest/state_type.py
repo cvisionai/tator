@@ -16,7 +16,7 @@ from ._entity_type_mixins import EntityTypeListAPIMixin
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
-class EntityStateTypeListAPI(EntityTypeListAPIMixin):
+class StateTypeListAPI(EntityTypeListAPIMixin):
     pkname='media_id'
     entity_endpoint='EntityStates'
     entityBaseObj=EntityTypeState

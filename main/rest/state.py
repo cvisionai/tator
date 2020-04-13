@@ -33,7 +33,7 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
+class StateListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path,method)
         postOnly_fields = []
@@ -96,7 +96,7 @@ class EntityStateCreateListSchema(AutoSchema, AttributeFilterSchemaMixin):
 
         return manual_fields + postOnly_fields + getOnly_fields + self.attribute_fields()
 
-class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
+class StateListAPI(APIView, AttributeFilterMixin):
     """
     Create/List EntityState (by Video id)
 
@@ -118,7 +118,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
     }
     ```
     """
-    schema=EntityStateCreateListSchema()
+    schema=StateListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
@@ -329,7 +329,7 @@ class EntityStateCreateListAPI(APIView, AttributeFilterMixin):
         finally:
             return response;
 
-class EntityStateDetailAPI(RetrieveUpdateDestroyAPIView):
+class StateDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
     serializer_class = EntityStateSerializer

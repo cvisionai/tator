@@ -20,7 +20,7 @@ from ..serializers import EntityTypeMediaAttrSerializer
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
-class EntityTypeMediaListAPI(ListCreateAPIView):
+class MediaTypeListAPI(ListCreateAPIView):
     serializer_class = EntityTypeMediaSerializer
     schema = AutoSchema(manual_fields=[
         coreapi.Field(name='project',
@@ -92,7 +92,7 @@ class EntityTypeMediaListAPI(ListCreateAPIView):
         qs = EntityTypeMediaBase.objects.filter(project__id=project_id)
         return qs
 
-class EntityTypeMediaDetailAPI(EntityTypeDetailAPIMixin):
+class MediaTypeDetailAPI(EntityTypeDetailAPIMixin):
     """ Generic service for associated EntityTypes with attributes
 
     Derived classes must set pkname + entity_endpoiunt

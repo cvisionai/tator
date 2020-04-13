@@ -31,7 +31,7 @@ from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
 
-class SuggestionAPI(APIView):
+class TreeLeafSuggestionAPI(APIView):
     """ Rest Endpoint compatible with devbridge suggestion format.
 
     <https://github.com/kraaden/autocomplete>

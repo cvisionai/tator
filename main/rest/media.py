@@ -67,7 +67,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
 
-class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
+class MediaListAPI(ListAPIView, AttributeFilterMixin):
     """
     Endpoint for getting lists of media
 
@@ -203,7 +203,7 @@ class EntityMediaListAPI(ListAPIView, AttributeFilterMixin):
         finally:
             return response;
 
-class EntityMediaDetailAPI(RetrieveUpdateDestroyAPIView):
+class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
     serializer_class = EntityMediaSerializer
