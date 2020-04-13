@@ -457,7 +457,7 @@ class Media(APIElement):
                         print("Waiting for transcode...")
                         time.sleep(2.5)
 
-        return True
+        return media['id']
 
     def byMd5(self, md5):
         """ Returns a media element with a matching md5
