@@ -105,13 +105,14 @@ def attribute_types(request, project, box_type):
         elif dtype == 'enum':
             aux = {'choices': ['a', 'b', 'c'], 'default': 'a'}
         elif dtype == 'datetime':
-            aux = {}
+            aux = {'use_current': True}
         elif dtype == 'geopos':
             aux = {'default': [-179.0, -89.0]}
         status, response = tator.AttributeType.new({
             'name': f'test_{dtype}',
             'description': 'Test box type',
             'project': project,
+            'applies_to': box_type,
             'dtype': dtype,
             'order': order,
             **aux,

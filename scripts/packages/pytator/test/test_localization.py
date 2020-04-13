@@ -12,13 +12,13 @@ def random_localization(project, box_type, video_obj):
     return {
         'x': x,
         'y': y,
-        'w': w,
-        'h': h,
+        'width': w,
+        'height': h,
         'test_bool': random.choice([False, True]),
         'test_int': random.randint(-1000, 1000),
         'test_float': random.uniform(-1000.0, 1000.0),
         'test_enum': random.choice(['a', 'b', 'c']),
-        'test_str': uuid.uuid1(),
+        'test_str': str(uuid.uuid1()),
         'test_datetime': datetime.datetime.now().isoformat(),
         'test_geopos': [random.uniform(-180.0, 180.0), random.uniform(-90.0, 90.0)],
         'project': project,
@@ -27,7 +27,7 @@ def random_localization(project, box_type, video_obj):
         'frame': random.uniform(0, video_obj['num_frames'] - 1),
     }
 
-def test_localization_crud(url, token, project, video_type, video, box_type):
+def test_localization_crud(url, token, project, video_type, video, box_type, attribute_types):
     tator = pytator.Tator(url, token, project)
     video_obj = tator.Media.get(pk=video)
     print(f'VIDEO OBJ: {video_obj}')
@@ -38,7 +38,8 @@ def test_localization_crud(url, token, project, video_type, video, box_type):
         random_localization(project, box_type, video_obj)
         for _ in range(num_localizations)
     ]
-    status, response = tator.Localization.new(boxes)
+    status, response = tator.Localization.addMany(boxes)
+    print(f"New localization response: {response}")
     assert status == 201
    
     # Patch a box
