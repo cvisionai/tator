@@ -4,6 +4,8 @@ import logging
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import LocalizationAssociation
 from ..models import EntityLocalizationBox

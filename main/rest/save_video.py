@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import shutil
+from uuid import uuid1
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
