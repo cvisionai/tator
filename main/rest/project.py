@@ -1,3 +1,5 @@
+import traceback
+
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
 from rest_framework.generics import ListCreateAPIView
@@ -8,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import Project
 from ..models import Membership
+from ..models import Permission
 from ..serializers import ProjectSerializer
 
 from ._permissions import ProjectFullControlPermission
