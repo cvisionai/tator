@@ -1616,11 +1616,21 @@ class ProjectTestCase(APITestCase):
             for entity in self.entities
         ]
         self.detail_uri = 'Project'
+        self.list_uri = 'Projects'
         self.patch_json = {
             'name': 'aaasdfasd',
             'section_order': ['asdf1', 'asdf2', 'asdf3']
         }
+        self.create_json = {
+            'name': 'asdfasd',
+            'summary': 'asdfa summary',
+        }
         self.edit_permission = Permission.FULL_CONTROL
+
+    def test_create(self):
+        endpoint = f'/rest/{self.list_uri}'
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_detail_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
