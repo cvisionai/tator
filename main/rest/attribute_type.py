@@ -136,14 +136,18 @@ class AttributeTypeListAPI(APIView):
             # Get the parameters.
             params = self.schema.parse(request, kwargs)
             params['applies_to'] = EntityTypeBase.objects.get(pk=params['applies_to'])
+            params['project'] = Project.objects.get(pk=params['project'])
+            if params['order'] is None:
+                params['order'] = 0
 
-            # Pop off optional/convertible parameters.
+            # Pop off optional parameters.
             dtype = params.pop('dtype')
             default = params.pop('default')
             lower_bound = params.pop('lower_bound')
             upper_bound = params.pop('upper_bound')
             choices = params.pop('choices')
             labels = params.pop('labels')
+            labels = params.pop('autocomplete')
 
             # Create the attribute type.
             if dtype == 'bool':
@@ -183,7 +187,7 @@ class AttributeTypeListAPI(APIView):
 class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
-    schema = {
+    schema = Schema({
         'all': [
             coreapi.Field(
                 name='pk',
@@ -205,7 +209,7 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
                 schema=coreschema.String(description='Description of the attribute.')),
         ],
         'DELETE': [],
-    }
+    })
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.
@@ -215,9 +219,9 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
             params = self.schema.parse(request, kwargs)
             obj = AttributeTypeBase.objects.get(pk=params['pk'])
             if params['name'] is not None:
-                obj.name = name
+                obj.name = params['name']
             if params['description'] is not None:
-                obj.description = description
+                obj.description = params['description']
             obj.save()
             response=Response({'message': 'Attribute type updated successfully!'},
                               status=status.HTTP_200_OK)
