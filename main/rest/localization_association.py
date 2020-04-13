@@ -1,3 +1,6 @@
+import traceback
+import logging
+
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,6 +10,8 @@ from ..models import EntityLocalizationBox
 from ..serializers import LocalizationAssociationSerializer
 
 from ._permissions import ProjectEditPermission
+
+logger = logging.getLogger(__name__)
 
 class LocalizationAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks

@@ -5,6 +5,7 @@ from urllib import parse as urllib_parse
 from ..search import TatorSearch
 
 from ._attribute_query import get_attribute_query
+from ._attributes import AttributeFilterMixin
 
 def get_media_queryset(project, query_params, attr_filter):
     """Converts raw media query string into a list of IDs and a count.
