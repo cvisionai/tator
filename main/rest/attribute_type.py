@@ -78,7 +78,7 @@ class AttributeTypeListAPI(APIView):
                 name='default',
                 location='body',
                 required=False,
-                schema=coreschema.String(description='Default value for the attribute.')),
+                schema=coreschema.Anything(description='Default value for the attribute.')),
             coreapi.Field(
                 name='lower_bound',
                 location='body',
@@ -110,6 +110,11 @@ class AttributeTypeListAPI(APIView):
                     )},
                 ),
             ),
+            coreapi.Field(
+                name='use_current',
+                location='body',
+                required=False,
+                schema=coreschema.Boolean(description='True to use current datetime as default.')),
         ],
     })
 
@@ -147,7 +152,8 @@ class AttributeTypeListAPI(APIView):
             upper_bound = params.pop('upper_bound')
             choices = params.pop('choices')
             labels = params.pop('labels')
-            labels = params.pop('autocomplete')
+            autocomplete = params.pop('autocomplete')
+            use_current = params.pop('use_current')
 
             # Create the attribute type.
             if dtype == 'bool':
@@ -159,9 +165,9 @@ class AttributeTypeListAPI(APIView):
             elif dtype == 'enum':
                 obj = AttributeTypeEnum(**params, choices=choices, labels=labels)
             elif dtype == 'str':
-                obj = AttributeTypeString(**params)
+                obj = AttributeTypeString(**params, autocomplete=autocomplete)
             elif dtype == 'datetime':
-                obj = AttributeTypeDatetime(**params)
+                obj = AttributeTypeDatetime(**params, use_current=use_current)
             elif dtype == 'geopos':
                 obj = AttributeTypeGeoposition(**params)
 
