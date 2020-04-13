@@ -1790,3 +1790,42 @@ class VersionTestCase(
 
     def tearDown(self):
         self.project.delete()
+
+class AttributeTypeTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.entities = [
+            create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
+            for idx in range(random.randint(6, 10))
+        ]
+        self.list_uri = 'Versions'
+        self.detail_uri = 'Version'
+        self.create_json = {
+            'project': self.project.pk,
+            'name': 'version_create_test',
+            'description': 'asdf',
+            'dtype': 'enum',
+        }
+        self.patch_json = {
+            'description': 'asdf123',
+        }
+        self.edit_permission = Permission.CAN_EDIT
+
+    def tearDown(self):
+        self.project.delete()
+
