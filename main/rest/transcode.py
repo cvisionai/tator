@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from urllib import parse as urllib_parse
 
 from ..kube import TatorTranscode
