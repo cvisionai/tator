@@ -1,5 +1,4 @@
 from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 
 class Schema(AutoSchema):
     def __init__(self, fields):
@@ -21,7 +20,7 @@ class Schema(AutoSchema):
         """
         values = {}
         if request.method in self._fields:
-            fields = self._fields.get('ALL', []) + self._fields.get(request.method)
+            fields = self._fields.get('all', []) + self._fields.get(request.method)
             for field in fields:
                 # Grab the field value
                 if field.location == 'body':
@@ -33,14 +32,14 @@ class Schema(AutoSchema):
 
                 # Check if required field 
                 if field.required and values[field.name] is None:
-                    raise Exception(f'Missing required field "{field.name}" in {field.location} '
-                                     'for {path}!')
+                    raise Exception(f'Missing required field "{field.name}" in request '
+                                    f'{field.location} for {request.path}!')
 
                 # Validate the value
                 if values[field.name] is not None:
                     valid = field.schema.validate(values[field.name])
                     if len(valid) > 0:
-                        raise Exception(f'Invalid value for field "{field.name}" in {field.location} '
-                                         'for {path}! {valid[0].text}')
+                        raise Exception(f'Invalid value for field "{field.name}" in request '
+                                        f'{field.location} for {request.path}! {valid[0].text}')
         return values
                 

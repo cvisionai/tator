@@ -18,6 +18,8 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 
+from .rest import AttributeTypeListAPI
+from .rest import AttributeTypeDetailAPI
 from .rest import LocalizationList
 from .rest import LocalizationTypeListAPI
 from .rest import LocalizationTypeDetailAPI
@@ -83,6 +85,16 @@ urlpatterns += [
     url(r'^rest/', include_docs_urls(title='Tator REST API', renderer_classes=[CustomDocs])),
     # TODO figure out how to not hard code this.
     url('^schema$', get_schema_view('Tator REST API', url='http://' + os.getenv('MAIN_HOST'))),
+    path(
+        'rest/AttributeTypes/<int:project>',
+        AttributeTypeListAPI.as_view(),
+        name='AttributeTypes'
+    ),
+    path(
+        'rest/AttributeType/<int:pk>',
+        AttributeTypeDetailAPI.as_view(),
+        name='AttributeType'
+    ),
     path(
         'rest/Localizations/<int:project>',
         LocalizationList.as_view(),

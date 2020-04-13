@@ -298,6 +298,7 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -1808,23 +1809,22 @@ class AttributeTypeTestCase(
             uploadable=False,
             keep_original=False,
         )
-        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
-        self.entities = [
-            create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
-            for idx in range(random.randint(6, 10))
-        ]
-        self.list_uri = 'Versions'
-        self.detail_uri = 'Version'
+        attribute_types = create_test_attribute_types(self.entity_type, self.project)
+        self.entities = list(attribute_types.values())
+        self.list_uri = 'AttributeTypes'
+        self.detail_uri = 'AttributeType'
         self.create_json = {
             'project': self.project.pk,
-            'name': 'version_create_test',
+            'name': 'attribute_type_create_test',
             'description': 'asdf',
             'dtype': 'enum',
+            'choices': ['asdf', 'asdfas', 'asdfasaa'],
+            'applies_to': self.entity_type.pk,
         }
         self.patch_json = {
             'description': 'asdf123',
         }
-        self.edit_permission = Permission.CAN_EDIT
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()

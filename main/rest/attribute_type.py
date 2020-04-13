@@ -1,7 +1,10 @@
 import traceback
 
+from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AttributeTypeBase
@@ -12,6 +15,7 @@ from ..models import AttributeTypeEnum
 from ..models import AttributeTypeString
 from ..models import AttributeTypeDatetime
 from ..models import AttributeTypeGeoposition
+from ..models import EntityTypeBase
 from ..models import Project
 from ..serializers import AttributeTypeSerializer
 
@@ -20,7 +24,7 @@ from ._attributes import convert_attribute
 from ._permissions import ProjectFullControlPermission
 
 
-class AttributeTypesAPI(APIView):
+class AttributeTypeListAPI(APIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = Schema({
@@ -113,24 +117,27 @@ class AttributeTypesAPI(APIView):
         response=Response({})
         try:
             params = self.schema.parse(request, kwargs)
-            qs = AttributeTypeBase.object.filter(project=params['project'])
+            qs = AttributeTypeBase.objects.filter(project=params['project'])
             if params['applies_to']:
                 qs = qs.filter(**params)
-            return qs
-            response_data = AttributeTypeSerializer(qs)
+            response = Response(AttributeTypeSerializer(qs, many=True).data)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-            return response;
-        return Response(response_data)
+        finally:
+            return response
+
+    def get_queryset(self):
+        return AttributeTypeBase.objects.all()
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
         try:
             # Get the parameters.
             params = self.schema.parse(request, kwargs)
+            params['applies_to'] = EntityTypeBase.objects.get(pk=params['applies_to'])
 
-            # Pop off optional parameters.
+            # Pop off optional/convertible parameters.
             dtype = params.pop('dtype')
             default = params.pop('default')
             lower_bound = params.pop('lower_bound')
@@ -173,7 +180,7 @@ class AttributeTypesAPI(APIView):
         finally:
             return response;
 
-class AttributeTypeAPI(RetrieveUpdateDestroyAPIView):
+class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = {
@@ -221,5 +228,8 @@ class AttributeTypeAPI(RetrieveUpdateDestroyAPIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         return response
+
+    def get_queryset(self):
+        return AttributeTypeBase.objects.all()
 
 
