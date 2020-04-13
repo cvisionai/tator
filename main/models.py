@@ -240,7 +240,7 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
                             null=True,
                             blank=True,
                             choices=ImageFileFormat,
-                            default=ImageFileFormat[0][0])
+                            default=None)
 
 class EntityTypeMediaVideo(EntityTypeMediaBase):
     entity_name = 'Video'
@@ -249,7 +249,7 @@ class EntityTypeMediaVideo(EntityTypeMediaBase):
                             null=True,
                             blank=True,
                             choices=FileFormat,
-                            default=FileFormat[0][0])
+                            default=None)
     keep_original = BooleanField()
 
 class EntityTypeLocalizationBase(EntityTypeBase):
