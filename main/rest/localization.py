@@ -260,6 +260,9 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         else:
             requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
 
+        if 'attributes' in reqObject:
+            reqObject = {**reqObject, **reqObject['attributes']}
+
         for field in {**requiredFields,**reqAttributes}:
             if field not in reqObject:
                 raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
@@ -427,6 +430,11 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             else:
                 # TODO: Handle lines and dots (and circles too someday.)
                 pass
+
+            # Patch frame.
+            frame = request.data.get("frame", None)
+            if frame:
+                localization_object.frame = frame
 
             # Patch modified field
             if "modified" in request.data:
