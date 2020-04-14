@@ -36,6 +36,12 @@ class ImageCanvas extends AnnotationCanvas
     });
   }
 
+
+  // Images are neither playing or paused
+  isPaused()
+  {
+    return undefined;
+  }
   refresh()
   {
     // Prevent image buffer from loading prior to localizations
