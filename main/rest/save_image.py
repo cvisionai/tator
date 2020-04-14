@@ -16,6 +16,7 @@ from PIL import Image
 
 from ..models import EntityMediaImage
 from ..models import EntityTypeMediaImage
+from ..models import Project
 from ..consumers import ProgressProducer
 
 from ._permissions import ProjectTransferPermission

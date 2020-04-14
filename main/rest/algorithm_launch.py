@@ -11,12 +11,14 @@ from rest_framework.authtoken.models import Token
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Case
 from django.db.models import When
+from django.http import Http404
 
 from ..models import Algorithm
 from ..models import EntityMediaBase
 from ..kube import TatorAlgorithm
 from ..consumers import ProgressProducer
 
+from ._media_query import query_string_to_media_ids
 from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)

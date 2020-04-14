@@ -22,6 +22,7 @@ from ..models import EntityTypeLocalizationDot
 from ..models import EntityMediaBase
 from ..models import EntityMediaImage
 from ..models import EntityTypeMediaVideo
+from ..models import User
 from ..models import Version
 from ..models import type_to_obj
 from ..serializers import EntityLocalizationSerializer

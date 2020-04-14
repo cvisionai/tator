@@ -1,5 +1,7 @@
 import traceback
+import logging
 
+from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models.expressions import RawSQL
@@ -28,6 +30,8 @@ from ..models import AttributeTypeString
 from ..models import AttributeTypeDatetime
 from ..models import AttributeTypeGeoposition
 from ..models import EntityTypeBase
+
+logger = logging.getLogger(__name__)
 
 # Separator for key value pairs in attribute queries
 kv_separator = '::'

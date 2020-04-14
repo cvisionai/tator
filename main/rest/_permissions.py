@@ -2,6 +2,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from ..models import Permission
 from ..models import Project
