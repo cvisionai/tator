@@ -29,21 +29,11 @@ class ProjectPermissionBase(BasePermission):
             uid = view.kwargs['run_uid']
             project = TatorTranscode().find_project(f"uid={uid}")
             if not project:
-                qs = Job.objects.filter(run_uid=uid)
-                if not qs.exists():
-                    raise Http404
-                project = self._project_from_object(qs[0])
-            if not project:
                 for alg in Algorithm.objects.all():
                     project = TatorAlgorithm(alg).find_project(f"uid={uid}")
         elif 'group_id' in view.kwargs:
             uid = view.kwargs['group_id']
             project = TatorTranscode().find_project(f"gid={uid}")
-            if not project:
-                qs = Job.objects.filter(group_id=uid)
-                if not qs.exists():
-                    raise Http404
-                project = self._project_from_object(qs[0])
             if not project:
                 for alg in Algorithm.objects.all():
                     project = TatorAlgorithm(alg).find_project(f"gid={uid}")
