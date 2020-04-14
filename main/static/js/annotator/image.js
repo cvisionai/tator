@@ -40,7 +40,7 @@ class ImageCanvas extends AnnotationCanvas
   // Images are neither playing or paused
   isPaused()
   {
-    return undefined;
+    return true;
   }
   refresh()
   {
