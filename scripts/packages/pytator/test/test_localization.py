@@ -88,7 +88,6 @@ def test_localization_crud(url, token, project, video_type, video, box_type, att
 
     # Verify all boxes have been updated.
     boxes = tator.Localization.filter(params)
-    print(f"NUM BOXES: {len(boxes)}")
     for box in boxes:
         assert_close_enough(bulk_patch, box)
     
