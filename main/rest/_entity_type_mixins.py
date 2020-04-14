@@ -10,7 +10,7 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AttributeTypeBase
-from ..models import EntityTypeMediaBase
+from ..models import EntityMediaBase
 
 from ._util import delete_polymorphic_qs
 from ._util import reverse_queryArgs
