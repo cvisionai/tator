@@ -1941,8 +1941,8 @@ class AnnotationCanvas extends TatorElement
       var coord = coords[idx];
       var minusX = Math.max(0-coord[0],0);
       var minusY = Math.max(0-coord[1],0);
-      var overX = Math.min(this.clientWidth-coord[0],0);
-      var overY = Math.min(this.clientHeight-coord[1]-1, 0);
+      var overX = Math.min(this._dims[0]-coord[0],0);
+      var overY = Math.min(this._dims[1]-coord[1]-1, 0);
 
       if (minusX != 0)
       {
