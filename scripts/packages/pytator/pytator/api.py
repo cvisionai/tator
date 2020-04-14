@@ -58,7 +58,7 @@ class APIElement:
            use :func:`APIElement.filter` or :func:`APIElement.all` instead
 
         """
-        obj = None
+        obj = []
         try:
             if self.project:
                 ep = self.url + "/" + endpoint+"/"+self.project
@@ -147,7 +147,7 @@ class APIElement:
         except Exception as e:
             print(e)
         finally:
-            return (response.status_code, response.json())
+            return response.status_code
 
     def update(self, pk, patch):
         """ Update an element. To understand what fields apply to a given
