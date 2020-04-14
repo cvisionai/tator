@@ -305,8 +305,8 @@ class DrawGL
       // The player may have blown up the video depending on
       // UI choices. The view port should be set to physical
       // picture height/width. which includes factoring in DPI
-      this.clientHeight = this.viewport.clientHeight;
-      this.clientWidth = this.viewport.clientWidth;
+      this.clientHeight = height;
+      this.clientWidth = width;
 
       // Turns out you need to reset this after the browser snaps
       // and account for the Device Pixel Ratio to render properly

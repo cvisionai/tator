@@ -1568,6 +1568,9 @@ class AnnotationCanvas extends TatorElement
                                   var userColor = pair.color;
                                   var meta = this.getObjectDescription(localization);
                                   var width = meta.type.line_width;
+                                  // Make the line width appear as monitor pixels
+                                  width *= this._draw.displayToViewportScale()[0];
+                                  width = Math.round(width);
 
 
                                   var drawColor = userColor;
@@ -1659,6 +1662,8 @@ class AnnotationCanvas extends TatorElement
 
     var meta = this.getObjectDescription(localization);
     var width = meta.type.line_width;
+    width *= this._draw.displayToViewportScale()[0];
+    width = Math.round(width);
     var poly = this.localizationToPoly(localization);
     var line = this.localizationToLine(localization);
     var that = this;
@@ -1941,8 +1946,8 @@ class AnnotationCanvas extends TatorElement
       var coord = coords[idx];
       var minusX = Math.max(0-coord[0],0);
       var minusY = Math.max(0-coord[1],0);
-      var overX = Math.min(this.clientWidth-coord[0],0);
-      var overY = Math.min(this.clientHeight-coord[1]-1, 0);
+      var overX = Math.min(this._dims[0]-coord[0],0);
+      var overY = Math.min(this._dims[1]-coord[1]-1, 0);
 
       if (minusX != 0)
       {
@@ -2214,17 +2219,18 @@ class AnnotationCanvas extends TatorElement
         {
           if (objType.type.dtype == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, objType.type.line_width);
+            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE,
+                                   Math.round(objType.type.line_width * this._draw.displayToViewportScale()[0]));
           }
           else if (objType.type.dtype == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0], line[1], color.WHITE, objType.type.line_width);
+            this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.type.line_width * this._draw.displayToViewportScale()[0]));
           }
           else
           {
             var line = translatedDot(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0], line[1], color.WHITE, defaultDotWidth);
+            this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(defaultDotWidth * this._draw.displayToViewportScale()[0]));
           }
           this._draw.dispImage(true, true);
         }
@@ -2318,6 +2324,9 @@ class AnnotationCanvas extends TatorElement
           var typeObject=this.getObjectDescription(localization);
           var type=typeObject.type.dtype;
           var width=typeObject.type.line_width;
+          // Make the line width appear as monitor pixels
+          width *= this._draw.displayToViewportScale()[0];
+          width = Math.round(width);
 
           // Default to blue
           var drawColor = color.BLUE;
