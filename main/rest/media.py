@@ -318,6 +318,8 @@ class GetFrameAPI(APIView):
                 video_file = video.media_files["streaming"][0]["path"]
                 height = video.media_files["streaming"][0]["resolution"][0]
                 width = video.media_files["streaming"][0]["resolution"][1]
+
+            fps = video.fps
             # compute the crop argument
             crop_filter = None
             roi = request.query_params.get('roi', None)
@@ -330,21 +332,32 @@ class GetFrameAPI(APIView):
                     y = round(float(comps[3])*height)
                     crop_filter = f"crop={width}:{height}:{x}:{y}"
 
+            def frame_to_time_str(frame):
+                total_seconds = int(frame) / fps
+                hours = math.floor(total_seconds / 3600)
+                minutes = math.floor((total_seconds % 3600) / 60)
+                seconds = total_seconds % 60
+                return f"{hours}:{minutes}:{seconds}"
+
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Convert file to local path for processing
                 video_file = os.path.relpath(video_file, settings.MEDIA_URL)
                 video_file = os.path.join(settings.MEDIA_ROOT, video_file)
                 logger.info(f"Processing {video_file}")
-                args = ["ffmpeg", "-i", video_file]
+                args = ["ffmpeg"]
+                inputs = []
+                outputs = []
                 for frame_idx,frame in enumerate(frames):
-                    filter_str=f"select='eq(n\,{frame})'"
+                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1"])
                     if crop_filter:
-                        filter_str=f"{filter_str},{crop_filter}"
-                    args.extend(["-vf",
-                                 filter_str,
-                                 "-frames:v", "1",
-                                 os.path.join(temp_dir,f"{frame_idx}.jpg")])
-                logger.info(args)
+                        outputs.extend(["-vf", crop_filter])
+
+                    outputs.append(os.path.join(temp_dir,f"{frame_idx}.jpg"))
+                    inputs.extend(["-ss", frame_to_time_str(frame), "-i", video_file])
+                args.extend(inputs)
+                args.extend(outputs)
+                logger.info(" ".join(args))
 
                 proc = subprocess.run(args, check=True, capture_output=True)
                 if len(frames) > 1:
