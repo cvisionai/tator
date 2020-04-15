@@ -23,6 +23,7 @@ from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import count_by_attribute
 from ._attributes import patch_attributes
+from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._attributes import convert_attribute
 from ._util import paginate
