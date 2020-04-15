@@ -22,6 +22,7 @@ from ..models import EntityTypeLocalizationDot
 from ..models import EntityMediaBase
 from ..models import EntityMediaImage
 from ..models import EntityTypeMediaVideo
+from ..models import EntityBase
 from ..models import User
 from ..models import Version
 from ..models import type_to_obj
@@ -33,8 +34,10 @@ from ._annotation_query import get_annotation_queryset
 from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
+from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._attributes import convert_attribute
+from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
 from ._permissions import ProjectEditPermission
 
@@ -344,6 +347,58 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         finally:
             return response;
 
+    def delete(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            annotation_ids, annotation_count, query = get_annotation_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(annotation_ids) == 0:
+                raise ObjectDoesNotExist
+            qs = EntityBase.objects.filter(pk__in=annotation_ids)
+            delete_polymorphic_qs(qs)
+            TatorSearch().delete(self.kwargs['project'], query)
+            response=Response({'message': 'Batch delete successful!'},
+                              status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+    def patch(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            annotation_ids, annotation_count, query = get_annotation_queryset(
+                self.kwargs['project'],
+                self.request.query_params,
+                self
+            )
+            if len(annotation_ids) == 0:
+                raise ObjectDoesNotExist
+            qs = EntityBase.objects.filter(pk__in=annotation_ids)
+            new_attrs = validate_attributes(request, qs[0])
+            bulk_patch_attributes(new_attrs, qs)
+            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+            response=Response({'message': 'Attribute patch successful!'},
+                              status=status.HTTP_200_OK)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+
 class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
@@ -356,6 +411,12 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
         try:
             localization_object = EntityLocalizationBase.objects.get(pk=self.kwargs['pk'])
             self.check_object_permissions(request, localization_object)
+
+            # Patch frame.
+            frame = request.data.get("frame", None)
+            if frame:
+                localization_object.frame = frame
+
             if type(localization_object) == EntityLocalizationBox:
                 x = request.data.get("x", None)
                 y = request.data.get("y", None)
@@ -410,11 +471,6 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
             else:
                 # TODO: Handle lines and dots (and circles too someday.)
                 pass
-
-            # Patch frame.
-            frame = request.data.get("frame", None)
-            if frame:
-                localization_object.frame = frame
 
             # Patch modified field
             if "modified" in request.data:
