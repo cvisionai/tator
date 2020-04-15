@@ -3,6 +3,7 @@ import traceback
 import logging
 import os
 import subprocess
+import math
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
@@ -260,7 +261,13 @@ class GetFrameAPI(APIView):
         coreapi.Field(name='frames',
                       required=False,
                       location='query',
-                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)'))]})
+                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)')),
+        coreapi.Field(name='tile',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='wxh, if not supplied is made as squarish as possible')),
+    ]})
+
 
     renderer_classes = (JpegRenderer,)
     def get(self, request, **kwargs):
@@ -272,6 +279,27 @@ class GetFrameAPI(APIView):
             logger.info(f"{values['frames']}")
             frames = request.query_params.get('frames', '0')
             frames = frames.split(",")
+
+            if len(frames) > 10:
+                raise Exception("Too many frames requested")
+            tile_size = values['tile']
+
+            try:
+                if tile_size != None:
+                    # check supplied tile size makes sense
+                    comps=tile_size.split('x')
+                    if len(comps) != 2:
+                        raise Exception("Bad Tile Size")
+                    if int(comps[0])*int(comps[1]) < len(frames):
+                        raise Exception("Bad Tile Size")
+            except:
+                tile_size = None
+            # compute the required tile size
+            if tile_size == None:
+                width = math.ceil(math.sqrt(len(frames)))
+                height = math.ceil(len(frames) / width)
+                tile_size = f"{width}x{height}"
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 if video.file:
                     video_file = video.file.path
@@ -283,18 +311,25 @@ class GetFrameAPI(APIView):
                 video_file = os.path.join(settings.MEDIA_ROOT, video_file)
                 logger.info(f"Processing {video_file}")
                 args = ["ffmpeg", "-i", video_file]
-                filter_string_comps = [["-vf",
-                                        f"select='eq(n\,{frame})'",
-                                        "-frames:v", "1",
-                                        os.path.join(temp_dir,f"{frame}.jpg")]
-                                        for frame in frames]
-                for comps in filter_string_comps:
-                    args.extend(comps)
+                for frame_idx,frame in enumerate(frames):
+                    args.extend(["-vf",
+                                 f"select='eq(n\,{frame})'",
+                                 "-frames:v", "1",
+                                 os.path.join(temp_dir,f"{frame_idx}.jpg")])
                 logger.info(args)
-                proc = subprocess.run(args, check=True, capture_output=True)
 
-                for frame in frames:
-                    with open(os.path.join(temp_dir,f"{frame}.jpg"), 'rb') as data_file:
+                proc = subprocess.run(args, check=True, capture_output=True)
+                if len(frames) > 1:
+                    tile_args = ["ffmpeg",
+                                 "-i", os.path.join(temp_dir, f"%d.jpg"),
+                                 "-vf", f"tile={tile_size}",
+                                 os.path.join(temp_dir,"tile.jpg")]
+                    logger.info(tile_args)
+                    proc = subprocess.run(tile_args, check=True, capture_output=True)
+                    with open(os.path.join(temp_dir,"tile.jpg"), 'rb') as data_file:
+                        response = Response(data_file.read())
+                else:
+                    with open(os.path.join(temp_dir,f"0.jpg"), 'rb') as data_file:
                         response = Response(data_file.read())
 
 
