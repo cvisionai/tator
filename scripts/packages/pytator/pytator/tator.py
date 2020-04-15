@@ -36,16 +36,20 @@ class Tator:
     def __init__(self, url, token, project):
         self.project = project
         self._url = url
+        self._token = token
         self.Algorithm = apiImpl.Algorithm((url,token,project))
+        self.AttributeType = apiImpl.AttributeType((url,token,project))
+        self.Localization = apiImpl.Localization((url,token,project))
+        self.LocalizationType = apiImpl.LocalizationType((url,token,project))
         self.Media = apiImpl.Media((url,token,project))
         self.MediaType = apiImpl.MediaType((url,token,project))
-        self.LocalizationType = apiImpl.LocalizationType((url,token,project))
-        self.StateType = apiImpl.StateType((url,token,project))
-        self.State = apiImpl.State((url,token,project))
-        self.Track = apiImpl.Track((url,token,project))
-        self.Localization = apiImpl.Localization((url,token,project))
-        self.TreeLeaf = apiImpl.TreeLeaf((url,token,project))
+        self.Membership = apiImpl.Membership((url,token,project))
         self.Project = apiImpl.Project((url,token,None))
+        self.State = apiImpl.State((url,token,project))
+        self.StateType = apiImpl.StateType((url,token,project))
+        self.Track = apiImpl.Track((url,token,project))
+        self.TreeLeaf = apiImpl.TreeLeaf((url,token,project))
+        self.TreeLeafType = apiImpl.TreeLeafType((url,token,project))
         self.User = apiImpl.User((url,token,None))
         self.Version = apiImpl.Version((url,token,project))
 
@@ -53,3 +57,14 @@ class Tator:
         """ Returns the URL for accessing site content """
         remove_rest = self._url.replace("/rest", "")
         return remove_rest + "/"
+
+    def whoami(self):
+        """ Returns current user """
+        ep = self._url + "/User/GetCurrent"
+        response = requests.get(
+            ep,
+            headers={"Authorization" : "Token {}".format(self._token),
+                     "Content-Type": "application/json",
+                     "Accept-Encoding": "gzip"},
+        )
+        return response.json()

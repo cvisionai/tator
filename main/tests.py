@@ -5,6 +5,7 @@ import datetime
 import logging
 import string
 import functools
+import time
 from uuid import uuid1
 from math import sin, cos, sqrt, atan2, radians
 
@@ -332,6 +333,8 @@ class PermissionListTestMixin:
         self.membership.save()
 
     def test_list_delete_permissions(self):
+        # Wait for ES
+        time.sleep(1)
         permission_index = permission_levels.index(self.edit_permission)
         for index, level in enumerate(permission_levels):
             self.membership.permission = level
@@ -425,7 +428,6 @@ class PermissionDetailMembershipTestMixin:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
-
 
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
@@ -879,6 +881,14 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
+class CurrentUserTestCase(APITestCase):
+    def test_get(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        response = self.client.get('/rest/User/GetCurrent')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.user.id)
+
 class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
@@ -936,7 +946,7 @@ class AlgorithmLaunchTestCase(
         self.list_uri = 'AlgorithmLaunch'
         self.create_json = {
             'algorithm_name': self.algorithm.name,
-            'media_ids': '1,2,3',
+            'media_ids': [1,2,3],
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
@@ -1334,7 +1344,10 @@ class TreeLeafTestCase(
 
 class TreeLeafTypeTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -1345,42 +1358,71 @@ class TreeLeafTypeTestCase(
             for _ in range(random.randint(6, 10))
         ]
         self.list_uri = 'TreeLeafTypes'
+        self.detail_uri = 'TreeLeafType'
+        self.create_json = {
+            'name': 'tree leaf type',
+        }
+        self.patch_json = {'name': 'tree leaf asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
 
 class EntityStateTypesTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.list_uri = 'EntityStateTypes'
+        self.media_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
         self.entities = [
             EntityTypeState.objects.create(
-                name="lines",
+                name="state1",
                 project=self.project,
             ),
             EntityTypeState.objects.create(
-                name="boxes",
+                name="state2",
                 project=self.project,
             ),
         ]
+        for entity_type in self.entities:
+            create_test_attribute_types(entity_type, self.project)
+        self.list_uri = 'EntityStateTypes'
+        self.detail_uri = 'EntityStateType'
+        self.create_json = {
+            'name': 'frame state type',
+            'association': 'Frame',
+            'media_types': [self.media_type.pk],
+        }
+        self.patch_json = {'name': 'state asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
         
 class EntityTypeMediaTestCase(
         APITestCase,
-        PermissionDetailMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.detail_uri = 'EntityTypeMedia'
+        self.list_uri = 'EntityTypeMedias'
         self.entities = [
             EntityTypeMediaVideo.objects.create(
                 name="videos",
@@ -1396,6 +1438,16 @@ class EntityTypeMediaTestCase(
         ]
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
+        self.edit_permission = Permission.FULL_CONTROL
+        self.patch_json = {
+            'name': 'asdf',
+        }
+        self.create_json = {
+            'name': 'videos',
+            'uploadable': True,
+            'keep_original': True,
+            'dtype': 'video',
+        }
 
     def tearDown(self):
         self.project.delete()
@@ -1484,12 +1536,21 @@ class LocalizationAssociationTestCase(
 
 class LocalizationTypesTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.media_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
         self.entities = [
             EntityTypeLocalizationBox.objects.create(
                 name="box",
@@ -1507,19 +1568,40 @@ class LocalizationTypesTestCase(
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'LocalizationTypes'
+        self.detail_uri = 'LocalizationType'
+        self.create_json = {
+            'name': 'box type',
+            'dtype': 'box',
+            'media_types': [self.media_type.pk],
+        }
+        self.patch_json = {'name': 'box asdf'}
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
 
 class MembershipTestCase(
         APITestCase,
-        PermissionListMembershipTestMixin):
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.entities = [self.membership,]
         self.list_uri = 'Memberships'
+        self.detail_uri = 'Membership'
+        self.patch_json = {
+            'user': self.user.pk,
+            'permission': 'a',
+        }
+        self.create_json = {
+            'user': self.user.pk,
+            'permission': 'a',
+        }
+        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()
@@ -1537,11 +1619,21 @@ class ProjectTestCase(APITestCase):
             for entity in self.entities
         ]
         self.detail_uri = 'Project'
+        self.list_uri = 'Projects'
         self.patch_json = {
             'name': 'aaasdfasd',
             'section_order': ['asdf1', 'asdf2', 'asdf3']
         }
+        self.create_json = {
+            'name': 'asdfasd',
+            'summary': 'asdfa summary',
+        }
         self.edit_permission = Permission.FULL_CONTROL
+
+    def test_create(self):
+        endpoint = f'/rest/{self.list_uri}'
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_detail_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
@@ -1694,7 +1786,7 @@ class VersionTestCase(
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
             create_test_version(f'asdf{idx}', f'desc{idx}', idx, self.project, self.media)
-            for idx in range(random.randint(3, 10))
+            for idx in range(random.randint(6, 10))
         ]
         self.list_uri = 'Versions'
         self.detail_uri = 'Version'
@@ -1711,3 +1803,41 @@ class VersionTestCase(
 
     def tearDown(self):
         self.project.delete()
+
+class AttributeTypeTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
+        attribute_types = create_test_attribute_types(self.entity_type, self.project)
+        self.entities = list(attribute_types.values())
+        self.list_uri = 'AttributeTypes'
+        self.detail_uri = 'AttributeType'
+        self.create_json = {
+            'project': self.project.pk,
+            'name': 'attribute_type_create_test',
+            'description': 'asdf',
+            'dtype': 'enum',
+            'choices': ['asdf', 'asdfas', 'asdfasaa'],
+            'applies_to': self.entity_type.pk,
+        }
+        self.patch_json = {
+            'description': 'asdf123',
+        }
+        self.edit_permission = Permission.FULL_CONTROL
+
+    def tearDown(self):
+        self.project.delete()
+

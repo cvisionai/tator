@@ -60,9 +60,17 @@ spec:
             - name: SYSTEM_IMAGES_REGISTRY
               value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
             - name: TATOR_DEBUG
-              value: {{ .Values.tatorDebug | default "false" | quote }}
+            {{- if .Values.tatorDebug }}
+              value: "true"
+            {{- else }}
+              value: "false"
+            {{- end }}
             - name: TATOR_USE_MIN_JS
-              value: {{ .Values.useMinJs | default "true" | quote }}
+            {{- if .Values.useMinJs }}
+              value: "true"
+            {{- else }}
+              value: "false"
+            {{- end }}
             - name: TRANSCODER_PVC_SIZE
               value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
             {{- if hasKey .Values "slackToken" }}

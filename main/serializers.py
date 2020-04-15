@@ -358,7 +358,6 @@ class AttributeTypeGeopositionSerializer(serializers.ModelSerializer,
         model = AttributeTypeDatetime
         fields = AttributeTypeBase_BaseFields + ['dtype']
 
-
 class AttributeTypeSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
         AttributeTypeBool : AttributeTypeBoolSerializer,
