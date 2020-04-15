@@ -255,6 +255,47 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
 
         return queryset;
 
+    def patch(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            qs = self.get_queryset()
+            if qs.count() > 0:
+                new_attrs = validate_attributes(request, qs[0])
+                bulk_patch_attributes(new_attrs, qs)
+            response=Response({'message': 'Attribute patch successful!'},
+                              status=status.HTTP_200_OK)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
+    def delete(self, request, **kwargs):
+        response = Response({})
+        try:
+            self.validate_attribute_filter(request.query_params)
+            qs = list(self.get_queryset())
+            types = set(map(lambda x: type(x), qs))
+            ids = list(map(lambda x: x.id, list(qs)))
+            for entity_type in types:
+                # Go through each unique type
+                qs = entity_type.objects.filter(pk__in=ids)
+                qs.delete()
+            response=Response({'message': 'Batch delete successful!'},
+                              status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response;
+
 class TreeLeafDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
