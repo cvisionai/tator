@@ -27,6 +27,7 @@ def determine_transcode(path):
         "-print_format", "json",
         "-count_frames",
         "-skip_frame", "nokey",
+        "-select_streams", "v",
         path,
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout

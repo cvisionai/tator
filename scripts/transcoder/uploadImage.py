@@ -51,6 +51,7 @@ def get_metadata(path):
         "-v","error",
         "-show_entries", "stream",
         "-print_format", "json",
+        "-select_streams", "v",
         "{}".format(path)
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout

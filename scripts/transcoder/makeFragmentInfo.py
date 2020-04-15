@@ -27,6 +27,7 @@ if __name__=="__main__":
          "stream",
          "-print_format",
          "json",
+         "-select_streams", "v",
          args.input]
     proc=subprocess.Popen(cmd, stdout=subprocess.PIPE)
     ffprobe_output,error=proc.communicate()

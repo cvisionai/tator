@@ -56,6 +56,7 @@ def make_thumbnails(video_path, thumb_path, thumb_gif_path):
         "-v","error",
         "-show_entries", "stream",
         "-print_format", "json",
+        "-select_streams", "v",
         "{}".format(video_path),
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
