@@ -59,6 +59,9 @@ def test_state_crud(url, token, project, video_type, video, state_type, state_at
     status = tator.State.delete(state_id)
     assert status == 204
 
+    # ES can be slow at indexing so wait for a bit.
+    time.sleep(5)
+
     # Bulk update state attributes.
     bulk_patch = random_state(project, state_type, video_obj)
     bulk_patch = {'attributes': bulk_patch['attributes']}

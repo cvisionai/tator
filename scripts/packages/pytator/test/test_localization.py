@@ -1,6 +1,7 @@
 import datetime
 import random
 import uuid
+import time
 
 import pytator
 from ._common import assert_close_enough
@@ -66,6 +67,9 @@ def test_localization_crud(url, token, project, video_type, video, box_type, box
     status = tator.Localization.delete(box_id)
     assert status == 204
 
+    # ES can be slow at indexing so wait for a bit.
+    time.sleep(5)
+
     # Bulk update box attributes.
     bulk_patch = random_localization(project, box_type, video_obj)
     bulk_patch = {'attributes': bulk_patch['attributes']}
@@ -81,6 +85,7 @@ def test_localization_crud(url, token, project, video_type, video, box_type, box
     # Delete all boxes.
     status = tator.Localization.bulk_delete(params)
     assert status == 204
+    time.sleep(1)
 
     # Verify all boxes are gone.
     boxes = tator.Localization.filter(params)
