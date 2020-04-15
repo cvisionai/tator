@@ -115,34 +115,13 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        mediaId = self.request.query_params.get('media_id', None)
-        filterType = self.request.query_params.get('type', None)
-        attribute = self.request.query_params.get('attribute', None)
-        # Figure out what object we are dealing with
-        obj=EntityLocalizationBase
-        if filterType != None:
-            typeObj=EntityTypeLocalizationBase.objects.get(pk=filterType)
-            if type(typeObj) == EntityTypeLocalizationBox:
-                obj=EntityLocalizationBox
-            elif type(typeObj) == EntityTypeLocalizationLine:
-                obj=EntityLocalizationLine
-            elif type(typeObj) == EntityTypeLocalizationDot:
-                obj=EntityLocalizationDot
-            else:
-                raise Exception('Unknown localization type')
-        else:
-            raise Exception('Missing type parameter!')
-
-        if mediaId != None:
-            queryset = obj.objects.filter(media=mediaId)
-        else:
-            queryset = obj.objects.filter(project=self.kwargs['project'])
-
-        if filterType != None:
-            queryset = queryset.filter(meta=filterType)
-
-        queryset = self.filter_by_attribute(queryset)
-
+        self.validate_attribute_filter(self.request.query_params)
+        annotation_ids, annotation_count, _ = get_annotation_queryset(
+            self.kwargs['project'],
+            self.request.query_params,
+            self,
+        )
+        queryset = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
         return queryset
 
     def get(self, request, format=None, **kwargs):

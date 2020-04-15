@@ -127,25 +127,14 @@ class StateListAPI(APIView, AttributeFilterMixin):
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        filterType=self.request.query_params.get('type', None)
-
-        mediaId=self.request.query_params.get('media_id', None)
-        allStates = EntityState.objects.all()
-        if mediaId != None:
-            mediaId = list(map(lambda x: int(x), mediaId.split(',')))
-            allStates = allStates.filter(Q(association__media__in=mediaId) | Q(association__frameassociation__extracted__in=mediaId))
-        if filterType != None:
-            allStates = allStates.filter(meta=filterType)
-        if filterType == None and mediaId == None:
-            allStates = allStates.filter(project=self.kwargs['project'])
-
-        allStates = self.filter_by_attribute(allStates)
-
-        if filterType:
-            type_object=EntityTypeState.objects.get(pk=filterType)
-            if type_object.association == 'Frame':
-                allStates = allStates.annotate(frame=F('association__frameassociation__frame')).order_by('frame')
-        return allStates
+        self.validate_attribute_filter(self.request.query_params)
+        annotation_ids, annotation_count, _ = get_annotation_queryset(
+            self.kwargs['project'],
+            self.request.query_params,
+            self,
+        )
+        queryset = EntityState.objects.filter(pk__in=annotation_ids)
+        return queryset
 
     def get(self, request, format=None, **kwargs):
         """
