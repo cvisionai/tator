@@ -1,12 +1,15 @@
+import tempfile
 import traceback
 import logging
+import os
+import subprocess
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -29,6 +32,7 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
+from ._schema import Schema
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
@@ -248,23 +252,52 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
             return response;
 
 class GetFrameAPI(APIView):
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='id',
+    schema = Schema({'GET' : [
+        coreapi.Field(name='pk',
                       required=True,
                       location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a media')),
+                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
         coreapi.Field(name='frames',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Frames to capture'))])
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)'))]})
 
     renderer_classes = (JpegRenderer,)
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
             # upon success we can return an image
-            response=Response("blah".encode())
-            raise Exception("Blah")
+            values = self.schema.parse(request, kwargs)
+            video = EntityMediaVideo.objects.get(pk=values['pk'])
+            logger.info(f"{values['frames']}")
+            frames = request.query_params.get('frames', '0')
+            frames = frames.split(",")
+            with tempfile.TemporaryDirectory() as temp_dir:
+                if video.file:
+                    video_file = video.file.path
+                else:
+                    video_file = video.media_files["streaming"][0]["path"]
+
+                # Convert file to local path for processing
+                video_file = os.path.relpath(video_file, settings.MEDIA_URL)
+                video_file = os.path.join(settings.MEDIA_ROOT, video_file)
+                logger.info(f"Processing {video_file}")
+                args = ["ffmpeg", "-i", video_file]
+                filter_string_comps = [["-vf",
+                                        f"select='eq(n\,{frame})'",
+                                        "-frames:v", "1",
+                                        os.path.join(temp_dir,f"{frame}.jpg")]
+                                        for frame in frames]
+                for comps in filter_string_comps:
+                    args.extend(comps)
+                logger.info(args)
+                proc = subprocess.run(args, check=True, capture_output=True)
+
+                for frame in frames:
+                    with open(os.path.join(temp_dir,f"{frame}.jpg"), 'rb') as data_file:
+                        response = Response(data_file.read())
+
+
         except ObjectDoesNotExist as dne:
             # need to switch renderer back to JSON to send error message
             request.accepted_renderer = JSONRenderer()
@@ -273,7 +306,6 @@ class GetFrameAPI(APIView):
             logger.warning(traceback.format_exc())
         except Exception as e:
             # need to switch renderer back to JSON to send error message
-            logger.info(request.accepted_renderer)
             request.accepted_renderer = JSONRenderer()
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
