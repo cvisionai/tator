@@ -3,6 +3,7 @@ import random
 import uuid
 
 import pytator
+from ._common import assert_close_enough
 
 def random_localization(project, box_type, video_obj):
     x = random.uniform(0.0, 1.0)
@@ -29,29 +30,15 @@ def random_localization(project, box_type, video_obj):
         }
     }
 
-def is_number(x):
-    try:
-        float(x)
-        return True
-    except:
-        return False
-
-def assert_close_enough(a, b):
-    for key in a:
-        if key in ['project', 'type', 'media_id', 'id', 'meta', 'user']:
-            continue
-        assert key in b
-        if is_number(a[key]):
-            assert abs(a[key] - b[key]) < 0.0001
-        else:
-            assert a[key] == b[key]
-
-def test_localization_crud(url, token, project, video_type, video, box_type, attribute_types):
+def test_localization_crud(url, token, project, video_type, video, box_type, box_attribute_types):
     tator = pytator.Tator(url, token, project)
     video_obj = tator.Media.get(pk=video)
 
+    # These fields will not be checked for object equivalence after patch.
+    exclude = ['project', 'type', 'media_id', 'id', 'meta', 'user']
+
     # Test bulk create.
-    num_localizations = random.randint(0, 1000)
+    num_localizations = random.randint(1, 1000)
     boxes = [
         random_localization(project, box_type, video_obj)
         for _ in range(num_localizations)
@@ -73,7 +60,7 @@ def test_localization_crud(url, token, project, video_type, video, box_type, att
 
     # Get single box.
     updated_box = tator.Localization.get(box_id)
-    assert_close_enough(patch, updated_box)
+    assert_close_enough(patch, updated_box, exclude)
     
     # Delete single box.
     status = tator.Localization.delete(box_id)
@@ -89,7 +76,7 @@ def test_localization_crud(url, token, project, video_type, video, box_type, att
     # Verify all boxes have been updated.
     boxes = tator.Localization.filter(params)
     for box in boxes:
-        assert_close_enough(bulk_patch, box)
+        assert_close_enough(bulk_patch, box, exclude)
     
     # Delete all boxes.
     status = tator.Localization.bulk_delete(params)
