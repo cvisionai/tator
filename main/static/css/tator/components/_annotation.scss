@@ -106,6 +106,8 @@ save-dialog {
 }
 
 .annotation__panel-group {
+  max-height: calc(100vh - 307px);
+  overflow-y: auto;
   border-top: 1px solid $color-charcoal--light;
   padding-bottom: $spacing-3;
 
