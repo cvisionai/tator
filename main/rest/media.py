@@ -3,8 +3,10 @@ import logging
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
+from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,6 +20,7 @@ from ..models import EntityMediaImage
 from ..models import EntityMediaVideo
 from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
+from ..renderers import JpegRenderer
 
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
@@ -244,3 +247,36 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
         finally:
             return response;
 
+class GetFrameAPI(APIView):
+    schema = AutoSchema(manual_fields=[
+        coreapi.Field(name='id',
+                      required=True,
+                      location='path',
+                      schema=coreschema.String(description='A unique integer value identifying a media')),
+        coreapi.Field(name='frames',
+                      required=True,
+                      location='body',
+                      schema=coreschema.String(description='Frames to capture'))])
+
+    renderer_classes = (JpegRenderer,)
+    def get(self, request, **kwargs):
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
+        try:
+            # upon success we can return an image
+            response=Response("blah".encode())
+            raise Exception("Blah")
+        except ObjectDoesNotExist as dne:
+            # need to switch renderer back to JSON to send error message
+            request.accepted_renderer = JSONRenderer()
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            # need to switch renderer back to JSON to send error message
+            logger.info(request.accepted_renderer)
+            request.accepted_renderer = JSONRenderer()
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+        finally:
+            return response

@@ -234,6 +234,9 @@ urlpatterns += [
         VersionDetailAPI.as_view(),
         name='Version',
     ),
+    path('rest/GetFrame/<int:pk>',
+         GetFrameAPI.as_view(),
+    ),
     # To be deprecated
     path(
         'rest/EntityTypeMedias/<int:project>',
