@@ -248,6 +248,7 @@ def validate_attributes(request, obj):
     for attr_name in attributes:
         if attr_name == 'tator_user_sections':
             # This is a built-in attribute used for organizing media sections.
+            validated[attr_name] = attributes[attr_name]
             continue
         attr_type_qs = AttributeTypeBase.objects.filter(
             name=attr_name).filter(applies_to=obj.meta)

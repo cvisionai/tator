@@ -1,10 +1,16 @@
+import tempfile
 import traceback
 import logging
+import os
+import subprocess
+import math
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
+from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,6 +24,7 @@ from ..models import EntityMediaImage
 from ..models import EntityMediaVideo
 from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
+from ..renderers import JpegRenderer
 
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
@@ -26,6 +33,7 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
+from ._schema import Schema
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
@@ -244,3 +252,120 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
         finally:
             return response;
 
+class GetFrameAPI(APIView):
+    schema = Schema({'GET' : [
+        coreapi.Field(name='pk',
+                      required=True,
+                      location='path',
+                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
+        coreapi.Field(name='frames',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)')),
+        coreapi.Field(name='tile',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='wxh, if not supplied is made as squarish as possible')),
+        coreapi.Field(name='roi',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
+    ]})
+
+
+    renderer_classes = (JpegRenderer,)
+    def get(self, request, **kwargs):
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
+        try:
+            # upon success we can return an image
+            values = self.schema.parse(request, kwargs)
+            video = EntityMediaVideo.objects.get(pk=values['pk'])
+            logger.info(f"{values['frames']}")
+            frames = request.query_params.get('frames', '0')
+            frames = frames.split(",")
+
+            if len(frames) > 10:
+                raise Exception("Too many frames requested")
+            tile_size = values['tile']
+
+            try:
+                if tile_size != None:
+                    # check supplied tile size makes sense
+                    comps=tile_size.split('x')
+                    if len(comps) != 2:
+                        raise Exception("Bad Tile Size")
+                    if int(comps[0])*int(comps[1]) < len(frames):
+                        raise Exception("Bad Tile Size")
+            except:
+                tile_size = None
+            # compute the required tile size
+            if tile_size == None:
+                width = math.ceil(math.sqrt(len(frames)))
+                height = math.ceil(len(frames) / width)
+                tile_size = f"{width}x{height}"
+
+            if video.file:
+                video_file = video.file.path
+                height = video.height
+                width = video.width
+            else:
+                video_file = video.media_files["streaming"][0]["path"]
+                height = video.media_files["streaming"][0]["resolution"][0]
+                width = video.media_files["streaming"][0]["resolution"][1]
+            # compute the crop argument
+            crop_filter = None
+            roi = request.query_params.get('roi', None)
+            if roi:
+                comps = roi.split(':')
+                if len(comps) == 4:
+                    width = round(float(comps[0])*width)
+                    height = round(float(comps[1])*height)
+                    x = round(float(comps[2])*width)
+                    y = round(float(comps[3])*height)
+                    crop_filter = f"crop={width}:{height}:{x}:{y}"
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Convert file to local path for processing
+                video_file = os.path.relpath(video_file, settings.MEDIA_URL)
+                video_file = os.path.join(settings.MEDIA_ROOT, video_file)
+                logger.info(f"Processing {video_file}")
+                args = ["ffmpeg", "-i", video_file]
+                for frame_idx,frame in enumerate(frames):
+                    filter_str=f"select='eq(n\,{frame})'"
+                    if crop_filter:
+                        filter_str=f"{filter_str},{crop_filter}"
+                    args.extend(["-vf",
+                                 filter_str,
+                                 "-frames:v", "1",
+                                 os.path.join(temp_dir,f"{frame_idx}.jpg")])
+                logger.info(args)
+
+                proc = subprocess.run(args, check=True, capture_output=True)
+                if len(frames) > 1:
+                    tile_args = ["ffmpeg",
+                                 "-i", os.path.join(temp_dir, f"%d.jpg"),
+                                 "-vf", f"tile={tile_size}",
+                                 os.path.join(temp_dir,"tile.jpg")]
+                    logger.info(tile_args)
+                    proc = subprocess.run(tile_args, check=True, capture_output=True)
+                    with open(os.path.join(temp_dir,"tile.jpg"), 'rb') as data_file:
+                        response = Response(data_file.read())
+                else:
+                    with open(os.path.join(temp_dir,f"0.jpg"), 'rb') as data_file:
+                        response = Response(data_file.read())
+
+
+        except ObjectDoesNotExist as dne:
+            # need to switch renderer back to JSON to send error message
+            request.accepted_renderer = JSONRenderer()
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            # need to switch renderer back to JSON to send error message
+            request.accepted_renderer = JSONRenderer()
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+        finally:
+            return response

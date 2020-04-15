@@ -29,6 +29,7 @@ if __name__=="__main__":
                 "-v","error",
                 "-show_entries", "stream",
                 "-print_format", "json",
+                "-select_streams", "v",
                 path,
             ]
             try:
@@ -132,6 +133,7 @@ if __name__=="__main__":
             "-v","error",
             "-show_entries", "stream",
             "-print_format", "json",
+            "-select_streams", "v",
             "{}".format(media),
         ]
         status = subprocess.run(cmd).returncode
