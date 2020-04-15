@@ -266,6 +266,10 @@ class GetFrameAPI(APIView):
                       required=False,
                       location='query',
                       schema=coreschema.String(description='wxh, if not supplied is made as squarish as possible')),
+        coreapi.Field(name='roi',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
     ]})
 
 
@@ -300,20 +304,38 @@ class GetFrameAPI(APIView):
                 height = math.ceil(len(frames) / width)
                 tile_size = f"{width}x{height}"
 
-            with tempfile.TemporaryDirectory() as temp_dir:
-                if video.file:
-                    video_file = video.file.path
-                else:
-                    video_file = video.media_files["streaming"][0]["path"]
+            if video.file:
+                video_file = video.file.path
+                height = video.height
+                width = video.width
+            else:
+                video_file = video.media_files["streaming"][0]["path"]
+                height = video.media_files["streaming"][0]["resolution"][0]
+                width = video.media_files["streaming"][0]["resolution"][1]
+            # compute the crop argument
+            crop_filter = None
+            roi = request.query_params.get('roi', None)
+            if roi:
+                comps = roi.split(':')
+                if len(comps) == 4:
+                    width = round(float(comps[0])*width)
+                    height = round(float(comps[1])*height)
+                    x = round(float(comps[2])*width)
+                    y = round(float(comps[3])*height)
+                    crop_filter = f"crop={width}:{height}:{x}:{y}"
 
+            with tempfile.TemporaryDirectory() as temp_dir:
                 # Convert file to local path for processing
                 video_file = os.path.relpath(video_file, settings.MEDIA_URL)
                 video_file = os.path.join(settings.MEDIA_ROOT, video_file)
                 logger.info(f"Processing {video_file}")
                 args = ["ffmpeg", "-i", video_file]
                 for frame_idx,frame in enumerate(frames):
+                    filter_str=f"select='eq(n\,{frame})'"
+                    if crop_filter:
+                        filter_str=f"{filter_str},{crop_filter}"
                     args.extend(["-vf",
-                                 f"select='eq(n\,{frame})'",
+                                 filter_str,
                                  "-frames:v", "1",
                                  os.path.join(temp_dir,f"{frame_idx}.jpg")])
                 logger.info(args)
