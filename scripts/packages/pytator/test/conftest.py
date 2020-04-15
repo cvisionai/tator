@@ -84,7 +84,23 @@ def box_type(request, project, video_type):
     status = tator.LocalizationType.delete(box_type_id)
 
 @pytest.fixture(scope='session')
-def attribute_types(request, project, box_type):
+def state_type(request, project, video_type):
+    import pytator
+    url = request.config.option.url
+    token = request.config.option.token
+    tator = pytator.Tator(url, token, project)
+    status, response = tator.StateType.new({
+        'name': 'state_type',
+        'description': 'Test state type',
+        'project': project,
+        'media_types': [video_type],
+        'association': 'Frame',
+    })
+    state_type_id = response['id']
+    yield state_type_id
+    status = tator.StateType.delete(state_type_id)
+
+def make_attribute_types(request, project, type_id):
     """ Dict of attribute type ids applied to a box type, one for each dtype. """
     import pytator
     url = request.config.option.url
@@ -112,7 +128,7 @@ def attribute_types(request, project, box_type):
             'name': f'test_{dtype}',
             'description': 'Test box type',
             'project': project,
-            'applies_to': box_type,
+            'applies_to': type_id,
             'dtype': dtype,
             'order': order,
             **aux,
@@ -121,4 +137,11 @@ def attribute_types(request, project, box_type):
     yield attribute_type_ids
     for dtype in attribute_type_ids:
         status = tator.AttributeType.delete(attribute_type_ids[dtype])
+
+@pytest.fixture(scope='session')
+def box_attribute_types(request, project, box_type):
+    yield from make_attribute_types(request, project, box_type)
     
+@pytest.fixture(scope='session')
+def state_attribute_types(request, project, state_type):
+    yield from make_attribute_types(request, project, state_type)
