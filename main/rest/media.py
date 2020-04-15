@@ -35,6 +35,7 @@ from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
 from ._schema import Schema
 from ._permissions import ProjectEditPermission
+from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
@@ -274,6 +275,11 @@ class GetFrameAPI(APIView):
 
 
     renderer_classes = (JpegRenderer,)
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get_queryset(self):
+        return EntityMediaVideo.objects.all()
+
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
