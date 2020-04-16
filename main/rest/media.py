@@ -281,7 +281,7 @@ class GetFrameAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
-        return EntityMediaVideo.objects.all()
+        return EntityBase.objects.all()
 
     def generate_error_image(self, code, message):
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
@@ -315,6 +315,7 @@ class GetFrameAPI(APIView):
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
+            logger.info("Got here")
             # upon success we can return an image
             values = self.schema.parse(request, kwargs)
             video = EntityMediaVideo.objects.get(pk=values['pk'])
@@ -414,7 +415,7 @@ class GetFrameAPI(APIView):
 
 
         except ObjectDoesNotExist as dne:
-            response=Response(self.generate_error_image(404, str(dne)),
+            response=Response(self.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
