@@ -322,8 +322,8 @@ class GetFrameAPI(APIView):
             frames = request.query_params.get('frames', '0')
             frames = frames.split(",")
 
-            if len(frames) > 10:
-                raise Exception("Too many frames requested")
+            if len(frames) > 32:
+                raise Exception("Too many frames requested (Max = 32)")
 
             for frame in frames:
                 if int(frame) >= video.num_frames:
