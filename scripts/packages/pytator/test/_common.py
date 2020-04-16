@@ -12,6 +12,11 @@ def print_fail(a, b, key):
     print(f"a: {json.dumps(a, indent=4)}")
     print(f"b: {json.dumps(b, indent=4)}")
 
+def assert_vector_equal(a,b):
+    assert(len(a)==len(b))
+    for idx,v in enumerate(a):
+        assert(a[idx] == b[idx])
+
 def assert_close_enough(a, b, exclude):
     for key in a:
         if key in exclude:
