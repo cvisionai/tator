@@ -9,7 +9,10 @@ Example usage:
 python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output {:d}.jpg --detile 10323 400 500
 
 # Saves 400.jpg
-python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output {:d}.jpg 10323 400
+python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output 400.jpg 10323 400
+
+# Saves tile.jpg (400,500,600,700)
+python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output 400.jpg 10323 400 500 600 700
 
 """
 
