@@ -54,3 +54,12 @@ Generate file summary data across a section
 .. literalinclude:: ../../scripts/packages/pytator/examples/makeFileSummary.py
    :language: python
    :linenos:
+
+Capture frames from server-side w/o downloading entire video file
+*******************************************
+
+Utilizes :class:`pytator.api.GetFrame` endpoint.
+
+.. literalinclude:: ../../scripts/packages/pytator/examples/get_frame.py
+   :language: python
+   :linenos:

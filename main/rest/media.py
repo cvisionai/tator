@@ -4,6 +4,9 @@ import logging
 import os
 import subprocess
 import math
+import io
+from PIL import Image, ImageDraw, ImageFont
+import textwrap
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
@@ -278,11 +281,41 @@ class GetFrameAPI(APIView):
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
-        return EntityMediaVideo.objects.all()
+        return EntityBase.objects.all()
+
+    def generate_error_image(self, code, message):
+        font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+        img = Image.open(os.path.join(settings.STATIC_ROOT,
+                                      "images/computer.jpg"))
+        draw = ImageDraw.Draw(img)
+        W, H = img.size
+
+        x_bias = 60
+        header=f"Error {code}"
+        w, h = draw.textsize(header)
+        logger.info(f"{W}-{w}/2; {H}-{h}/2")
+        offset = font.getoffset(header)
+        logger.info(f"Offset = {offset}")
+
+        draw.text((W/2-((w/2)+x_bias),80), header, (255,62,29), font=font_bold)
+
+
+        _, line_height = draw.textsize(message)
+        line_height *= 3
+        start_height = 200-line_height
+        lines = textwrap.wrap(message,17)
+        for line_idx, line in enumerate(lines):
+            draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
+
+        img_buf = io.BytesIO()
+        img.save(img_buf, "jpeg", quality=95)
+        return img_buf.getvalue()
 
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
+            logger.info("Got here")
             # upon success we can return an image
             values = self.schema.parse(request, kwargs)
             video = EntityMediaVideo.objects.get(pk=values['pk'])
@@ -290,8 +323,14 @@ class GetFrameAPI(APIView):
             frames = request.query_params.get('frames', '0')
             frames = frames.split(",")
 
-            if len(frames) > 10:
-                raise Exception("Too many frames requested")
+            if len(frames) > 32:
+                raise Exception("Too many frames requested (Max = 32)")
+
+            for frame in frames:
+                if int(frame) >= video.num_frames:
+                    raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+                elif int(frame) < 0:
+                    raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
             tile_size = values['tile']
 
             try:
@@ -349,7 +388,7 @@ class GetFrameAPI(APIView):
                 inputs = []
                 outputs = []
                 for frame_idx,frame in enumerate(frames):
-                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1"])
+                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
                     if crop_filter:
                         outputs.extend(["-vf", crop_filter])
 
@@ -364,6 +403,7 @@ class GetFrameAPI(APIView):
                     tile_args = ["ffmpeg",
                                  "-i", os.path.join(temp_dir, f"%d.jpg"),
                                  "-vf", f"tile={tile_size}",
+                                 "-q:v", "3",
                                  os.path.join(temp_dir,"tile.jpg")]
                     logger.info(tile_args)
                     proc = subprocess.run(tile_args, check=True, capture_output=True)
@@ -375,16 +415,12 @@ class GetFrameAPI(APIView):
 
 
         except ObjectDoesNotExist as dne:
-            # need to switch renderer back to JSON to send error message
-            request.accepted_renderer = JSONRenderer()
-            response=Response({'message' : str(dne)},
+            response=Response(self.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
-            # need to switch renderer back to JSON to send error message
-            request.accepted_renderer = JSONRenderer()
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+            response=Response(self.generate_error_image(400, str(e)),
+                              status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
         finally:
             return response

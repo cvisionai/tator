@@ -18,7 +18,9 @@ setup(
     install_requires=['requests>=2.21.0',
                       'progressbar2>=3.42.0',
                       'tuspy>=0.2.4',
-                      'pandas>=0.24.2'],
+                      'pandas>=0.24.2',
+                      'opencv-python>=4.1.0',
+                      'numpy>=1.16.0'],
 
     # metadata to display on PyPI
     author="CVision AI",
