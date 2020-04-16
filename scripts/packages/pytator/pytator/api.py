@@ -11,6 +11,7 @@ These endpoints do not need to be manually constructed and instead can be
 accessed via :class:`pytator.Tator`.
 
  """
+import cv2
 import json
 import math
 import requests
@@ -18,6 +19,7 @@ import time
 import os
 import progressbar
 import pandas as pd
+import numpy as np
 
 from pytator.md5sum import md5_sum
 from itertools import count
@@ -776,6 +778,52 @@ class GetFrame():
                       "Accept-Encoding": "gzip"}
 
 
+    def get_bgr(self, media_element_or_id, frames, roi=None):
+        """ Return a list of np.arrays representing bgr data for each requested
+            frame
+
+            media_element_or_id : dict or int
+                   Represents the media to fetch (either a dict with 'id' or
+                   just the integer itself)
+
+            frames : list
+                   Represents the frames to fetch
+
+            roi : tuple
+                  Represents the (w,h,x,y) of a bounding box (applies to all
+                  frames in a multi-frame request).
+        """
+        code, jpg_data = self.get_jpg(media_element_or_id,
+                                      frames,
+                                      roi=roi,
+                                      tile=(len(frames),1))
+        if code != 200:
+            return code,None
+
+        if media_element_or_id is dict:
+            if all(elem in media_element_or_id for elem in ['width','height']):
+                media_element = media_element_or_id
+        else:
+            media = Media((self.url, self.token, self.project))
+            media_element = media.get(media_element_or_id)
+
+        if 'media_files' in media_element:
+            height = media_element['media_files']['streaming'][0]['resolution'][0]
+            width = media_element['media_files']['streaming'][0]['resolution'][1]
+        else:
+            height = media_element['height']
+            width = media_element['width']
+
+        bgr_data = cv2.imdecode(np.asarray(bytearray(jpg_data)), cv2.IMREAD_COLOR)
+        frame_data=[]
+        for idx,_ in enumerate(frames):
+            start_x = idx*width
+            end_x = width+(idx*width)
+            frame = bgr_data[:,start_x:end_x,:]
+            frame_data.append(frame)
+
+        return code, frame_data
+
     def get_jpg(self, media_element_or_id, frames, roi=None, tile=None):
         """ Return a potentially tiled jpeg back from the media server
 
@@ -817,9 +865,6 @@ class GetFrame():
         response = requests.get(ep,
                                 params=params,
                                 headers=self.headers)
-
-        print(ep)
-
 
         if response.status_code != 200:
             print(f"ERROR {response.status_code} from GetFrame")
