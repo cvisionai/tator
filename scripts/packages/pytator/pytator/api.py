@@ -766,3 +766,12 @@ class TreeLeafType(APIElement):
     def __init__(self, api):
         super().__init__(api, "TreeLeafTypes", "TreeLeafType")
 
+class GetFrame():
+    """ Interface for fetching frames from media server """
+    def __init__(self, api):
+        self.url = api[0].rstrip('/')
+        self.token = str(api[1])
+        self.project = str(api[2])
+        self.headers={"Authorization" : "Token {}".format(self.token),
+                      "Accept": "application/jpeg",
+                      "Accept-Encoding": "gzip"}

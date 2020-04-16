@@ -52,6 +52,7 @@ class Tator:
         self.TreeLeafType = apiImpl.TreeLeafType((url,token,project))
         self.User = apiImpl.User((url,token,None))
         self.Version = apiImpl.Version((url,token,project))
+        self.GetFrame = apiImpl.GetFrame((url,token,project))
 
     def baseURL(self):
         """ Returns the URL for accessing site content """
