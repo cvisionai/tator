@@ -42,4 +42,5 @@ Installing
 
    ../pytator/api
    ../pytator/examples
+   ../pytator/running-tests
 
