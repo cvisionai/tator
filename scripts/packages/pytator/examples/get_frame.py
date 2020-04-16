@@ -6,13 +6,13 @@ Fetch frame(s) and save to disk
 Example usage:
 
 # Saves 400.jpg and 500.jpg from a single request
-python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output {:d}.jpg --detile 10323 400 500
+python3 examples/get_frame.py --url <SERVER>/rest --project <proj>  --token <TOKEN> --output {:d}.jpg --detile 10323 400 500
 
 # Saves 400.jpg
-python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output 400.jpg 10323 400
+python3 examples/get_frame.py --url <SERVER>/rest --project <proj>  --token <TOKEN> --output 400.jpg 10323 400
 
 # Saves tile.jpg (400,500,600,700)
-python3 examples/get_frame.py --url <SERVER>/rest --project 1  --token <TOKEN> --output 400.jpg 10323 400 500 600 700
+python3 examples/get_frame.py --url <SERVER>/rest --project <proj>  --token <TOKEN> --output tile.jpg 10323 400 500 600 700
 
 """
 
