@@ -7,8 +7,8 @@ from django.conf.urls import url
 from rest_framework.authtoken import views
 from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
-from rest_framework.renderers import DocumentationRenderer
 
+from .views import APIBrowserView
 from .views import MainRedirect
 from .views import ProjectsView
 from .views import CustomView
@@ -20,9 +20,10 @@ from .views import AuthAdminView
 
 from .rest import *
 
-class CustomDocs(DocumentationRenderer):
-    template = '/tator_online/main/templates/browser.html'
-    languages = ['javascript']
+schema_view = get_schema_view(
+    title='Tator REST API',
+    version='v1',
+)
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -38,10 +39,19 @@ urlpatterns = [
 
 # This is used for REST calls
 urlpatterns += [
-    url(r'^rest/Token', views.obtain_auth_token),
-    url(r'^rest/', include_docs_urls(title='Tator REST API', renderer_classes=[CustomDocs])),
-    # TODO figure out how to not hard code this.
-    url('^schema$', get_schema_view('Tator REST API', url='http://' + os.getenv('MAIN_HOST'))),
+    #url(r'^rest/Token', views.obtain_auth_token),
+    path('rest/', APIBrowserView.as_view()),
+    path('schema/', schema_view, name='schema'),
+    path(
+        'rest/AttributeTypes/<int:project>',
+        AttributeTypeListAPI.as_view(),
+        name='AttributeTypes'
+    ),
+    path('rest/GetFrame/<int:id>',
+         GetFrameAPI.as_view(),
+    ),
+]
+"""
     path(
         'rest/Algorithms/<int:project>',
         AlgorithmListAPI.as_view(),
@@ -274,3 +284,4 @@ urlpatterns += [
         StateTypeDetailAPI.as_view(),
     ),
 ]
+"""

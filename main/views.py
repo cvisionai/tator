@@ -27,6 +27,10 @@ import traceback
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
+class APIBrowserView(LoginRequiredMixin, TemplateView):
+    template_name = 'browser.html'
+    extra_context = {'schema_url': 'schema'}
+
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
