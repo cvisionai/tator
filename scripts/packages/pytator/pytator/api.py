@@ -194,7 +194,7 @@ class APIElement:
 
     def delete(self, pk):
         """ Delete an individual object from the database.
-        
+
         :param int pk: The id of the object to delete
         :return: A status code from server
         """
@@ -773,5 +773,54 @@ class GetFrame():
         self.token = str(api[1])
         self.project = str(api[2])
         self.headers={"Authorization" : "Token {}".format(self.token),
-                      "Accept": "application/jpeg",
                       "Accept-Encoding": "gzip"}
+
+
+    def get_jpg(self, media_element_or_id, frames, roi=None, tile=None):
+        """ Return a potentially tiled jpeg back from the media server
+
+            media_element_or_id : dict or int
+                   Represents the media to fetch (either a dict with 'id' or
+                   just the integer itself)
+
+            frames : list
+                   Represents the frames to fetch
+
+            roi : tuple
+                  Represents the (w,h,x,y) of a bounding box (applies to all
+                  frames in a multi-frame request).
+
+            tile : tuple
+                   Represents the (w,h) of the tile arrangement of frames. If
+                   w*h is less than the len(frames), the server ignores the
+                   requested size.
+        """
+
+        if type(media_element_or_id) == dict:
+            media_id = media_element_or_id['id']
+        else:
+            media_id = media_element_or_id
+
+        params={"frames" : ",".join([str(el) for el in frames])}
+
+        if roi:
+            assert(len(roi) == 4)
+            params.update({"roi": ":".join([str(el) for el in roi])})
+
+        if tile:
+            assert(len(tile) == 2)
+            params.update({"tile": "x".join([str(el) for el in tile])})
+
+
+        ep = self.url + "/GetFrame" + f"/{media_id}"
+
+        response = requests.get(ep,
+                                params=params,
+                                headers=self.headers)
+
+        print(ep)
+
+
+        if response.status_code != 200:
+            print(f"ERROR {response.status_code} from GetFrame")
+        return response.status_code, response.content
