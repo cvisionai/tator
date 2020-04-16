@@ -914,8 +914,14 @@ Before you can log in, you will need to create a root user account.
 
 Tator admin console
 ^^^^^^^^^^^^^^^^^^^
-The admin console is the primary means of configuring Tator users and projects. It can be accessed at the /admin URI (mydomain.duckdns.org/admin).
+The admin console is the primary means of configuring Tator users and projects. It can be accessed at the /admin URI (mydomain.duckdns.org/admin). At this page
+a token can be created for the super user account.
 
 Use the admin console to configure your user account, projects, media types, annotations, and attributes.
 
-Next steps: `Administer the deployment <../administration/admin.html>`_
+`Administer the deployment <../administration/admin.html>`_
+
+`Verify the deployment <../pytator/running-tests.html>`_
+
+
+
