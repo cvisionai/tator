@@ -285,7 +285,7 @@ class GetFrameAPI(APIView):
 
     def generate_error_image(self, code, message):
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
-        font = ImageFont.truetype("DejaVuSans.ttf", 32)
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
         img = Image.open(os.path.join(settings.STATIC_ROOT,
                                       "images/computer.jpg"))
         draw = ImageDraw.Draw(img)
@@ -324,6 +324,12 @@ class GetFrameAPI(APIView):
 
             if len(frames) > 10:
                 raise Exception("Too many frames requested")
+
+            for frame in frames:
+                if int(frame) >= video.num_frames:
+                    raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+                elif int(frame) < 0:
+                    raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
             tile_size = values['tile']
 
             try:
