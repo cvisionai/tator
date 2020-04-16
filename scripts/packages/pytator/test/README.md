@@ -18,3 +18,11 @@ def test_<name>(<fixtures...>):
 ```
 
 where `<fixtures...>` is one of the elements defined in `conftest.py`
+
+### Running a specific test
+
+To minimize test test during development, a single test can be run like so:
+
+```
+pytest --url https://btate.duckdns.org/rest --token test/test_getframe.py
+```
