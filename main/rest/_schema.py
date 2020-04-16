@@ -11,23 +11,25 @@ def _get_type(field):
         type_ = 'string'
     elif isinstance(field.schema, coreschema.Integer):
         type_ = 'integer'
+    return type_
 
 def _coreapi_to_dict(field):
     return {
         'name': field.name,
         'in': field.location,
         'required': field.required,
-        'description': field.description,
+        'description': field.schema.description,
         'schema': {
             'type': _get_type(field),
         },
     }
 
 def _coreapi_to_property(field):
-    return {field.name: {
+    return (field.name, {
         'type': _get_type(field),
-        'description': field.description,
-    }}
+        'description': field.schema.description,
+        'required': field.required,
+    })
 
 class Schema(AutoSchema):
     def __init__(self, fields, tags=None):
@@ -57,10 +59,14 @@ class Schema(AutoSchema):
         if len(fields) == 0:
             body = {}
         else:
+            properties = {}
+            for field in fields:
+                key, val = _coreapi_to_property(field)
+                properties[key] = val
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'properties': [_coreapi_to_property(field) for field in fields],
+                    'properties': properties,
                 },
             }}}
         return body
