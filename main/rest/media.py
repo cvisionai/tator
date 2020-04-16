@@ -309,7 +309,7 @@ class GetFrameAPI(APIView):
             draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
 
         img_buf = io.BytesIO()
-        img.save(img_buf, "jpeg")
+        img.save(img_buf, "jpeg", quality=95)
         return img_buf.getvalue()
 
     def get(self, request, **kwargs):
