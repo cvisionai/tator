@@ -236,7 +236,7 @@ class EntityTypeMediaBase(EntityTypeBase):
 class EntityTypeMediaImage(EntityTypeMediaBase):
     entity_name = 'Image'
     dtype = 'image'
-    file_format = CharField(max_length=3,
+    file_format = CharField(max_length=4,
                             null=True,
                             blank=True,
                             choices=ImageFileFormat,
@@ -245,7 +245,7 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
 class EntityTypeMediaVideo(EntityTypeMediaBase):
     entity_name = 'Video'
     dtype = 'video'
-    file_format = CharField(max_length=3,
+    file_format = CharField(max_length=4,
                             null=True,
                             blank=True,
                             choices=FileFormat,
