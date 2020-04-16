@@ -387,7 +387,7 @@ class GetFrameAPI(APIView):
                 inputs = []
                 outputs = []
                 for frame_idx,frame in enumerate(frames):
-                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1"])
+                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
                     if crop_filter:
                         outputs.extend(["-vf", crop_filter])
 
@@ -402,6 +402,7 @@ class GetFrameAPI(APIView):
                     tile_args = ["ffmpeg",
                                  "-i", os.path.join(temp_dir, f"%d.jpg"),
                                  "-vf", f"tile={tile_size}",
+                                 "-q:v", "3",
                                  os.path.join(temp_dir,"tile.jpg")]
                     logger.info(tile_args)
                     proc = subprocess.run(tile_args, check=True, capture_output=True)
