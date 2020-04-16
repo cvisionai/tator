@@ -1,6 +1,6 @@
 from django.views import View
 from django.views.generic.base import TemplateView
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -196,7 +196,7 @@ def ErrorNotifierView(request, code,message,details=None):
     context['code'] = code
     context['msg'] = message
     context['details'] = details
-    response=render_to_response('error-page.html', context)
+    response=render('error-page.html', context)
     response.status_code = code
 
     # Generate slack message
