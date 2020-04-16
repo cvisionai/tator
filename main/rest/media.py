@@ -255,7 +255,7 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
 
 class GetFrameAPI(APIView):
     schema = Schema({'GET' : [
-        coreapi.Field(name='pk',
+        coreapi.Field(name='id',
                       required=True,
                       location='path',
                       schema=coreschema.Integer(description='A unique integer value identifying a media')),
@@ -271,7 +271,7 @@ class GetFrameAPI(APIView):
                       required=False,
                       location='query',
                       schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
-    ]})
+    ]}, tags=['Media'])
 
 
     renderer_classes = (JpegRenderer,)
@@ -285,7 +285,7 @@ class GetFrameAPI(APIView):
         try:
             # upon success we can return an image
             values = self.schema.parse(request, kwargs)
-            video = EntityMediaVideo.objects.get(pk=values['pk'])
+            video = EntityMediaVideo.objects.get(pk=values['id'])
             logger.info(f"{values['frames']}")
             frames = request.query_params.get('frames', '0')
             frames = frames.split(",")

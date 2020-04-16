@@ -38,7 +38,7 @@ class AttributeTypeListAPI(APIView):
         'GET': [
             coreapi.Field(
                 name='applies_to',
-                location='body',
+                location='query',
                 required=False,
                 schema=coreschema.Integer(description='Unique integer identifying an entity type '
                                                       'that this attribute describes.')),
@@ -116,7 +116,7 @@ class AttributeTypeListAPI(APIView):
                 required=False,
                 schema=coreschema.Boolean(description='True to use current datetime as default.')),
         ],
-    })
+    }, tags=['AttributeType'])
 
     def get(self, request, format=None, **kwargs):
         response=Response({})
@@ -215,7 +215,7 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
                 schema=coreschema.String(description='Description of the attribute.')),
         ],
         'DELETE': [],
-    })
+    }, tags=['AttributeType'])
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.
