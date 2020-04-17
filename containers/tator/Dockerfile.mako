@@ -38,12 +38,12 @@ RUN pip3 --no-cache-dir install \
         psycopg2-binary==2.8.5 pillow==6.2.1 imageio==2.6.1 \
         djangorestframework==3.11.0 pygments==2.4.2 \
         django-rest-polymorphic==0.1.9 django-extensions==2.2.5 pygraphviz==1.5 \
-        pyparsing==2.4.7 pydot==1.4.1 markdown==3.2.1 coreapi-cli==1.0.9 \
+        pyparsing==2.4.7 pydot==1.4.1 markdown==3.2.1 \
         hiredis==1.0.1 channels_redis==2.4.2 redis==3.4.1 \
         daphne==2.5.0 gunicorn==20.0.4 django_admin_json_editor==0.2.0 django-ltree==0.5 \
         requests==2.23.0 python-dateutil==2.8.1 ujson==2.0.3 slackclient==2.5.0 \
         google-auth==1.14.0 elasticsearch==7.1.0 progressbar2==3.50.1 \
-        gevent==1.5.0
+        gevent==1.5.0 uritemplate==3.0.1
 
 # Install fork of openapi-core that works in DRF views
 WORKDIR /working
