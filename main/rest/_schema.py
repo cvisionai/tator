@@ -18,6 +18,12 @@ def parse(request):
     openapi_request = DjangoOpenAPIRequest(request)
     result = validator.validate(openapi_request)
     result.raise_for_errors()
-    return result
+    out = {
+        **result.parameters.path,
+        **result.parameters.query,
+    }
+    if result.body:
+        out = {**out, **result.body}
+    return out
 
 parse.openapi_spec = None
