@@ -47,6 +47,23 @@ class CustomGenerator(SchemaGenerator):
                 },
             }},
         }
+        schema['paths']['/rest/Token']['post']['responses'] = {
+            200: {
+                'description': 'Login credentials accepted.',
+                'content': {'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'token': {
+                                'description': 'API token.',
+                                'type': 'string',
+                            },
+                        },
+                    },
+                }},
+            },
+            400: {'description': 'Login credentials invalid.'},
+        }
         schema['paths']['/rest/Token']['post']['tags'] = ['Token']
         return schema
 
