@@ -852,7 +852,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         // Go to compatibility mode
         console.warn("In video compatibility mode");
-        that._videoElement[this._play_idx].compat(videoUrl);
+        that._videoElement[0].compat(streaming_files[0].path);
         that.seekFrame(0, that.drawFrame);
         that.dispatchEvent(new CustomEvent("bufferLoaded",
                                            {composed: true,
