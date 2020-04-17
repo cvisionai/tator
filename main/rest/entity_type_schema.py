@@ -35,10 +35,10 @@ class EntityTypeSchemaSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = {}
-        responses[404] = {'description': 'Failure to find entity type with given ID.'}
-        responses[400] = {'description': 'Bad request.'}
+        responses['404'] = {'description': 'Failure to find entity type with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses[200] = {'Successful retrieval of entity type schema.'}
+            responses['200'] = {'description': 'Successful retrieval of entity type schema.'}
         return responses
 
 class EntityTypeSchemaAPI(APIView):

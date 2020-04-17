@@ -29,11 +29,9 @@ class AlgorithmListSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses[404] = {'description': 'Failure to find project with given ID.'}
-        responses[400] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses[200] = {'Successful retrieval of algorithm list.'}
+        responses = super()._get_responses(path, method)
+        responses['404'] = {'description': 'Failure to find project with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
         return responses
 
 class AlgorithmListAPI(ListAPIView):

@@ -194,13 +194,11 @@ class AttributeTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses[404] = {'description': 'Failure to find project with given ID.'}
-        responses[400] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses[200] = {'Successful retrieval of attribute type list.'}
+        responses = super()._get_responses(path, method)
+        responses['404'] = {'description': 'Failure to find project with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
         if method == 'POST':
-            responses[201] = {'description': 'Successful creation of attribute type.'}
+            responses['201'] = {'description': 'Successful creation of attribute type.'}
         return responses
 
 class AttributeTypeListAPI(APIView):
@@ -328,15 +326,13 @@ class AttributeTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses[404] = {'description': 'Failure to find attribute type with given ID.'}
-        responses[400] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses[200] = {'description': 'Successful retrieval of attribute type.'}
+        responses = super()._get_responses(path, method)
+        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
         if method == 'PATCH':
-            responses[200] = {'description': 'Successful update of attribute type.'}
+            responses['200'] = {'description': 'Successful update of attribute type.'}
         if method == 'DELETE':
-            responses[204] = {'description': 'Successful deletion of attribute type.'}
+            responses['204'] = {'description': 'Successful deletion of attribute type.'}
         return responses
 
 class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
