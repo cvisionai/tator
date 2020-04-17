@@ -436,13 +436,20 @@ class GetFrameAPI(APIView):
 
                 proc = subprocess.run(args, check=True, capture_output=True)
                 if len(frames) > 1 and values['animate']:
+                    palette_args = ["ffmpeg",
+                                    "-i", os.path.join(temp_dir, f"%d.jpg"),
+                                    "-vf", "palettegen",
+                                    os.path.join(temp_dir,"palette.png")]
+                    proc = subprocess.run(palette_args, check=True, capture_output=True)
                     gif_args = ["ffmpeg",
                                  "-framerate", str(values['animate']),
                                  "-i", os.path.join(temp_dir, f"%d.jpg"),
+                                 "-i", os.path.join(temp_dir,"palette.png"),
                                  "-r", "2",
+                                 "-filter_complex", f"[0:v][1:v] paletteuse",
                                  os.path.join(temp_dir,"animation.gif")]
                     logger.info(gif_args)
-                    proc = subprocess.run(gif_args, check=True, capture_output=True)
+                    proc = subprocess.run(gif_args, check=True, capture_output=False)
                     with open(os.path.join(temp_dir,"animation.gif"), 'rb') as data_file:
                         request.accepted_renderer = GifRenderer()
                         response = Response(data_file.read())
