@@ -81,12 +81,12 @@ urlpatterns += [
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Job/<str:run_uid>',
         JobDetailAPI.as_view(),
