@@ -353,6 +353,9 @@ class GetFrameAPI(APIView):
                 video_file = video.file.path
                 height = video.height
                 width = video.width
+                # Make file relative to URL to be consistent with streaming files below
+                video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
+                video_file = os.path.join(settings.MEDIA_URL, video_file)
             else:
                 video_file = video.media_files["streaming"][0]["path"]
                 height = video.media_files["streaming"][0]["resolution"][0]
