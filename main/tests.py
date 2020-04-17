@@ -1755,8 +1755,6 @@ class AnalysisCountTestCase(
         )
         self.list_uri = 'Analyses'
         self.create_json = {
-            'resourcetype': 'AnalysisCount',
-            'project': self.project.pk,
             'name': 'count_create_test',
             'data_type': self.entity_type.pk,
             'data_query': 'enum_test:enum_val2',

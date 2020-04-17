@@ -80,6 +80,14 @@ urlpatterns += [
         AlgorithmLaunchAPI.as_view(),
     ),
     path(
+        'rest/Algorithms/<int:project>',
+        AlgorithmListAPI.as_view(),
+    ),
+    path(
+        'rest/Analyses/<int:project>',
+        AnalysisListAPI.as_view(),
+    ),
+    path(
         'rest/AttributeTypes/<int:project>',
         AttributeTypeListAPI.as_view(),
         name='AttributeTypes'
@@ -94,24 +102,6 @@ urlpatterns += [
     ),
 ]
 """
-    path(
-        'rest/Algorithms/<int:project>',
-        AlgorithmListAPI.as_view(),
-    ),
-    path(
-        'rest/Analyses/<int:project>',
-        AnalysisAPI.as_view(),
-    ),
-    path(
-        'rest/AttributeTypes/<int:project>',
-        AttributeTypeListAPI.as_view(),
-        name='AttributeTypes'
-    ),
-    path(
-        'rest/AttributeType/<int:pk>',
-        AttributeTypeDetailAPI.as_view(),
-        name='AttributeType'
-    ),
     path(
         'rest/EntityTypeSchema/<int:pk>',
         EntityTypeSchemaAPI.as_view(),

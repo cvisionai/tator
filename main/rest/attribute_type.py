@@ -264,7 +264,7 @@ class AttributeTypeListAPI(APIView):
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
-            return response;
+            return response
 
 class AttributeTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
