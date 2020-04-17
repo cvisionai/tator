@@ -78,6 +78,16 @@ class AnalysisListSchema(AutoSchema):
             }}}
         return body
 
+    def _get_responses(self, path, method):
+        responses = {}
+        responses[404] = {'description': 'Failure to find project with given ID.'}
+        responses[400] = {'description': 'Bad request.'}
+        if method == 'GET':
+            responses[200] = {'Successful retrieval of analysis list.'}
+        if method == 'POST':
+            responses[201] = {'description': 'Successful creation of analysis.'}
+        return responses
+
 class AnalysisListAPI(ListCreateAPIView):
     """ Define and list analyses for a project.
 

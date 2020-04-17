@@ -193,6 +193,16 @@ class AttributeTypeListSchema(AutoSchema):
             }}}
         return body
 
+    def _get_responses(self, path, method):
+        responses = {}
+        responses[404] = {'description': 'Failure to find project with given ID.'}
+        responses[400] = {'description': 'Bad request.'}
+        if method == 'GET':
+            responses[200] = {'Successful retrieval of attribute type list.'}
+        if method == 'POST':
+            responses[201] = {'description': 'Successful creation of attribute type.'}
+        return responses
+
 class AttributeTypeListAPI(APIView):
     """ Create or list attribute types.
 
@@ -317,6 +327,18 @@ class AttributeTypeDetailSchema(AutoSchema):
             }}}
         return body
 
+    def _get_responses(self, path, method):
+        responses = {}
+        responses[404] = {'description': 'Failure to find attribute type with given ID.'}
+        responses[400] = {'description': 'Bad request.'}
+        if method == 'GET':
+            responses[200] = {'description': 'Successful retrieval of attribute type.'}
+        if method == 'PATCH':
+            responses[200] = {'description': 'Successful update of attribute type.'}
+        if method == 'DELETE':
+            responses[204] = {'description': 'Successful deletion of attribute type.'}
+        return responses
+
 class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Interact with an individual attribute type.
 
@@ -329,6 +351,7 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = AttributeTypeDetailSchema()
+    lookup_field='id'
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.
@@ -336,7 +359,7 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
         response = Response({})
         try:
             params = self.schema.parse(request, kwargs)
-            obj = AttributeTypeBase.objects.get(pk=params['pk'])
+            obj = AttributeTypeBase.objects.get(pk=params['id'])
             if params['name'] is not None:
                 obj.name = params['name']
             if params['description'] is not None:

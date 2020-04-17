@@ -28,6 +28,14 @@ class AlgorithmListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         return {}
 
+    def _get_responses(self, path, method):
+        responses = {}
+        responses[404] = {'description': 'Failure to find project with given ID.'}
+        responses[400] = {'description': 'Bad request.'}
+        if method == 'GET':
+            responses[200] = {'Successful retrieval of algorithm list.'}
+        return responses
+
 class AlgorithmListAPI(ListAPIView):
     """ Interact with algorithms that have been registered to a project.
 
