@@ -28,6 +28,7 @@ from ..models import EntityMediaVideo
 from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
 from ..renderers import JpegRenderer
+from ..renderers import GifRenderer
 
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
@@ -274,6 +275,11 @@ class GetFrameAPI(APIView):
                       required=False,
                       location='query',
                       schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
+        coreapi.Field(name='animate',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='If not tiling, animate each frame at a given fps in a gif.')),
+
     ]})
 
 
@@ -332,6 +338,15 @@ class GetFrameAPI(APIView):
                 elif int(frame) < 0:
                     raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
             tile_size = values['tile']
+
+            if values['tile'] and values['animate']:
+                raise Exception("Can't supply both tile and animate arguments")
+
+            if values['animate']:
+                if values['animate'].isdecimal() is False:
+                    raise Exception('Animation FPS must be an integer')
+                if int(values['animate']) > 15 or int(values['animate']) <= 0:
+                    raise Exception('Animation FPS must be between >0 and <=15')
 
             try:
                 if tile_size != None:
@@ -402,7 +417,19 @@ class GetFrameAPI(APIView):
                 logger.info(" ".join(args))
 
                 proc = subprocess.run(args, check=True, capture_output=True)
-                if len(frames) > 1:
+                if len(frames) > 1 and values['animate']:
+                    gif_args = ["ffmpeg",
+                                 "-framerate", str(values['animate']),
+                                 "-i", os.path.join(temp_dir, f"%d.jpg"),
+                                 "-r", "2",
+                                 os.path.join(temp_dir,"animation.gif")]
+                    logger.info(gif_args)
+                    proc = subprocess.run(gif_args, check=True, capture_output=True)
+                    with open(os.path.join(temp_dir,"animation.gif"), 'rb') as data_file:
+                        request.accepted_renderer = GifRenderer()
+                        response = Response(data_file.read())
+                elif len(frames) > 1:
+                    # Make a tiled jpeg
                     tile_args = ["ffmpeg",
                                  "-i", os.path.join(temp_dir, f"%d.jpg"),
                                  "-vf", f"tile={tile_size}",
