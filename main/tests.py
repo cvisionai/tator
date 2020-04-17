@@ -1531,7 +1531,10 @@ class LocalizationAssociationTestCase(
                 entity.localizations.add(localization)
         self.detail_uri = 'LocalizationAssociation'
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'color': 'asdf'}
+        self.patch_json = {
+            'localizations': [loc.pk for loc in self.localizations[:2]],
+            'color': 'aabbcc',
+        }
 
     def tearDown(self):
         self.project.delete()

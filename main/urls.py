@@ -93,12 +93,12 @@ urlpatterns += [
         'rest/JobGroup/<str:group_id>',
         JobGroupDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Localizations/<int:project>',
         LocalizationListAPI.as_view(),
@@ -247,9 +247,6 @@ urlpatterns += [
         'rest/Version/<int:id>',
         VersionDetailAPI.as_view(),
         name='Version',
-    ),
-    path('rest/GetFrame/<int:id>',
-         GetFrameAPI.as_view(),
     ),
     # To be deprecated
     path(
