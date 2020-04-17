@@ -274,7 +274,7 @@ class GetFrameAPI(APIView):
         coreapi.Field(name='roi',
                       required=False,
                       location='query',
-                      schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
+                      schema=coreschema.String(description='w:h:x:y,[w:h:x:y], optionally crop each frame to a given roi in relative coordinates. Supply either a single roi for all frames or a list one roi for each.')),
         coreapi.Field(name='animate',
                       required=False,
                       location='query',
@@ -381,13 +381,31 @@ class GetFrameAPI(APIView):
             crop_filter = None
             roi = request.query_params.get('roi', None)
             if roi:
-                comps = roi.split(':')
-                if len(comps) == 4:
-                    width = round(float(comps[0])*width)
-                    height = round(float(comps[1])*height)
-                    x = round(float(comps[2])*width)
-                    y = round(float(comps[3])*height)
-                    crop_filter = f"crop={width}:{height}:{x}:{y}"
+                crop_filter = [None] * len(frames)
+                roi_list = roi.split(',')
+                logger.info(roi_list)
+                if len(roi_list) == 1:
+                    # Repeat the same roi if only 1 is given for a set
+                    comps = roi_list[0].split(':')
+                    if len(comps) == 4:
+                        box_width = round(float(comps[0])*width)
+                        box_height = round(float(comps[1])*height)
+                        x = round(float(comps[2])*width)
+                        y = round(float(comps[3])*height)
+                        crop_filter = [f"crop={box_width}:{box_height}:{x}:{y}"]*len(frames)
+                else:
+                    # If each individual roi is supplied manually set each one
+                    if len(roi_list) != len(frames):
+                        raise Exception(f'Explicit roi list{len(roi_list)} is different length than frame list{len(frames)}')
+                    for idx,frame_roi in enumerate(roi_list):
+                        comps = frame_roi.split(':')
+                        if len(comps) == 4:
+                            box_width = round(float(comps[0])*width)
+                            box_height = round(float(comps[1])*height)
+                            x = round(float(comps[2])*width)
+                            y = round(float(comps[3])*height)
+                            crop_filter[idx] = f"crop={box_width}:{box_height}:{x}:{y}"
+                            logger.info(f"Crop_filter = {crop_filter[idx]}")
 
             def frame_to_time_str(frame):
                 total_seconds = int(frame) / fps
@@ -408,7 +426,7 @@ class GetFrameAPI(APIView):
                 for frame_idx,frame in enumerate(frames):
                     outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
                     if crop_filter:
-                        outputs.extend(["-vf", crop_filter])
+                        outputs.extend(["-vf", crop_filter[frame_idx]])
 
                     outputs.append(os.path.join(temp_dir,f"{frame_idx}.jpg"))
                     inputs.extend(["-ss", frame_to_time_str(frame), "-i", video_file])
