@@ -179,6 +179,11 @@ urlpatterns += [
         StateListAPI.as_view(),
         name='States'
     ),
+      path(
+        'rest/StateGraphic/<int:pk>',
+        StateGraphicAPI.as_view(),
+        name='StateGraphic'
+    ),
     path(
         'rest/State/<int:pk>',
         StateDetailAPI.as_view(),

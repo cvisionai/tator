@@ -31,6 +31,7 @@ from .save_video import SaveVideoAPI
 from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
+from .state import StateGraphicAPI
 from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI
 from .transcode import TranscodeAPI
