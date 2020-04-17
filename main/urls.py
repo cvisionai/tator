@@ -85,8 +85,6 @@ urlpatterns += [
         'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Job/<str:run_uid>',
         JobDetailAPI.as_view(),
@@ -95,6 +93,8 @@ urlpatterns += [
         'rest/JobGroup/<str:group_id>',
         JobGroupDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),

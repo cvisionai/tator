@@ -5,9 +5,9 @@ from .attribute_type import AttributeTypeListAPI
 from .attribute_type import AttributeTypeDetailAPI
 from .entity_type_schema import EntityTypeSchemaAPI
 from .frame_association import FrameAssociationDetailAPI
-"""
 from .job_group import JobGroupDetailAPI
 from .job import JobDetailAPI
+"""
 from .localization_association import LocalizationAssociationDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
