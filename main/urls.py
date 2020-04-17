@@ -82,7 +82,7 @@ urlpatterns = [
     path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
-    path('<int:project_id>/annotation/<int:pk>', AnnotationView.as_view(), name='annotation'),
+    path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
 ]
@@ -110,9 +110,14 @@ urlpatterns += [
         name='AttributeTypes'
     ),
     path(
-        'rest/AttributeType/<int:pk>',
+        'rest/AttributeType/<int:id>',
         AttributeTypeDetailAPI.as_view(),
         name='AttributeType'
+    ),
+    path(
+        'rest/EntityTypeSchema/<int:id>',
+        EntityTypeSchemaAPI.as_view(),
+        name='EntityTypeSchema'
     ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
@@ -120,12 +125,7 @@ urlpatterns += [
 ]
 """
     path(
-        'rest/EntityTypeSchema/<int:pk>',
-        EntityTypeSchemaAPI.as_view(),
-        name='EntityTypeSchema'
-    ),
-    path(
-        'rest/FrameAssociation/<int:pk>',
+        'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),
     ),
     path(
@@ -137,7 +137,7 @@ urlpatterns += [
         JobGroupDetailAPI.as_view(),
     ),
     path(
-        'rest/LocalizationAssociation/<int:pk>',
+        'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),
     ),
     path(
@@ -146,7 +146,7 @@ urlpatterns += [
         name='Localizations'
     ),
     path(
-        'rest/Localization/<int:pk>',
+        'rest/Localization/<int:id>',
         LocalizationDetailAPI.as_view(),
     ),
     path(
@@ -154,7 +154,7 @@ urlpatterns += [
         LocalizationTypeListAPI.as_view(),
     ),
     path(
-        'rest/LocalizationType/<int:pk>',
+        'rest/LocalizationType/<int:id>',
         LocalizationTypeDetailAPI.as_view(),
     ),
     path(
@@ -163,17 +163,17 @@ urlpatterns += [
         name='Medias'
     ),
     path(
-        'rest/Media/<int:pk>',
+        'rest/Media/<int:id>',
         MediaDetailAPI.as_view(),
         name='Media'
     ),
     path(
-        'rest/MediaNext/<int:pk>',
+        'rest/MediaNext/<int:id>',
         MediaNextAPI.as_view(),
         name='MediaNext',
     ),
     path(
-        'rest/MediaPrev/<int:pk>',
+        'rest/MediaPrev/<int:id>',
         MediaPrevAPI.as_view(),
         name='MediaPrev',
     ),
@@ -187,7 +187,7 @@ urlpatterns += [
         MediaTypeListAPI.as_view(),
     ),
     path(
-        'rest/MediaType/<int:pk>',
+        'rest/MediaType/<int:id>',
         MediaTypeDetailAPI.as_view(),
     ),
     path(
@@ -195,7 +195,7 @@ urlpatterns += [
         MembershipListAPI.as_view(),
     ),
     path(
-        'rest/Membership/<int:pk>',
+        'rest/Membership/<int:id>',
         MembershipDetailAPI.as_view(),
     ),
     path(
@@ -211,7 +211,7 @@ urlpatterns += [
         ProjectListAPI.as_view(),
     ),
     path(
-        'rest/Project/<int:pk>',
+        'rest/Project/<int:id>',
         ProjectDetailAPI.as_view(),
     ),
     path(
@@ -235,7 +235,7 @@ urlpatterns += [
         name='States'
     ),
     path(
-        'rest/State/<int:pk>',
+        'rest/State/<int:id>',
         StateDetailAPI.as_view(),
     ),
     path(
@@ -243,7 +243,7 @@ urlpatterns += [
         StateTypeListAPI.as_view(),
     ),
     path(
-        'rest/StateType/<int:pk>',
+        'rest/StateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
     path(
@@ -255,7 +255,7 @@ urlpatterns += [
         TreeLeafTypeListAPI.as_view(),
     ),
     path(
-        'rest/TreeLeafType/<int:pk>',
+        'rest/TreeLeafType/<int:id>',
         TreeLeafTypeDetailAPI.as_view(),
     ),
     path(
@@ -268,11 +268,11 @@ urlpatterns += [
         name='TreeLeaves',
     ),
     path(
-        'rest/TreeLeaf/<int:pk>',
+        'rest/TreeLeaf/<int:id>',
         TreeLeafDetailAPI.as_view(),
     ),
     path(
-        'rest/User/<int:pk>',
+        'rest/User/<int:id>',
         UserDetailAPI.as_view(),
     ),
     path(
@@ -285,11 +285,11 @@ urlpatterns += [
         name='Versions',
     ),
     path(
-        'rest/Version/<int:pk>',
+        'rest/Version/<int:id>',
         VersionDetailAPI.as_view(),
         name='Version',
     ),
-    path('rest/GetFrame/<int:pk>',
+    path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
     # To be deprecated
@@ -298,11 +298,11 @@ urlpatterns += [
         MediaTypeListAPI.as_view(),
     ),
     path(
-        'rest/EntityTypeMedia/<int:pk>',
+        'rest/EntityTypeMedia/<int:id>',
         MediaTypeDetailAPI.as_view(),
     ),
     path(
-        'rest/EntityMedia/<int:pk>',
+        'rest/EntityMedia/<int:id>',
         MediaDetailAPI.as_view(),
         name='EntityMedia'
     ),
@@ -317,7 +317,7 @@ urlpatterns += [
         name='EntityStates'
     ),
     path(
-        'rest/EntityState/<int:pk>',
+        'rest/EntityState/<int:id>',
         StateDetailAPI.as_view(),
     ),
     path(
@@ -325,7 +325,7 @@ urlpatterns += [
         StateTypeListAPI.as_view(),
     ),
     path(
-        'rest/EntityStateType/<int:pk>',
+        'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
 ]

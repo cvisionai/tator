@@ -40,8 +40,8 @@ class ProjectPermissionBase(BasePermission):
         if 'project' in view.kwargs:
             project_id = view.kwargs['project']
             project = get_object_or_404(Project, pk=int(project_id))
-        elif 'pk' in view.kwargs:
-            pk = view.kwargs['pk']
+        elif 'id' in view.kwargs:
+            pk = view.kwargs['id']
             obj = get_object_or_404(view.get_queryset(), pk=pk)
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
@@ -56,7 +56,6 @@ class ProjectPermissionBase(BasePermission):
             if not project:
                 for alg in Algorithm.objects.all():
                     project = TatorAlgorithm(alg).find_project(f"gid={uid}")
-
         else:
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)
