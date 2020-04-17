@@ -793,7 +793,7 @@ class GetFrame():
                   Represents the (w,h,x,y) of a bounding box (applies to all
                   frames in a multi-frame request).
         """
-        code, jpg_data = self.get_jpg(media_element_or_id,
+        code, jpg_data = self.get_encoded_img(media_element_or_id,
                                       frames,
                                       roi=roi,
                                       tile=(len(frames),1))
