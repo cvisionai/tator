@@ -244,11 +244,10 @@ class MediaUtil:
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
-    def _generateFrameImages(self, frames, rois):
+    def _generateFrameImages(self, frames, rois=None):
         crop_filter = None
-        logger.info(f"rois = {rois}")
         if rois:
-            crop_filter = [f"crop={c[0]*self._width}:{c[1]*self._height}:{c[2]*self._width}:{c[3]*self._height}" for c in rois]
+            crop_filter = [f"crop={round(c[0]*self._width)}:{round(c[1]*self._height)}:{round(c[2]*self._width)}:{round(c[3]*self._height)}" for c in rois]
 
         logger.info(f"Processing {self._video_file}")
         args = ["ffmpeg"]
@@ -265,11 +264,10 @@ class MediaUtil:
         # Now add all the cmds in
         args.extend(inputs)
         args.extend(outputs)
-        logger.info("CMD = {}".format(" ".join(args)))
-        proc = subprocess.run(args, check=True, capture_output=False)
+        proc = subprocess.run(args, check=True, capture_output=True)
         return proc.returncode == 0
 
-    def getTileImage(self, frames, rois, tile_size):
+    def getTileImage(self, frames, rois=None, tile_size=None):
         """ Generate a tile jpeg of the given frame/rois """
         # Compute tile size if not supplied explicitly
         try:
@@ -481,10 +479,10 @@ class GetFrameAPI(APIView):
                     for idx,frame_roi in enumerate(roi_list):
                         comps = frame_roi.split(':')
                         if len(comps) == 4:
-                            box_width = round(float(comps[0]))
-                            box_height = round(float(comps[1]))
-                            x = round(float(comps[2]))
-                            y = round(float(comps[3]))
+                            box_width = float(comps[0])
+                            box_height = float(comps[1])
+                            x = float(comps[2])
+                            y = float(comps[3])
                             roi_arg.append((box_width,box_height,x,y))
 
 

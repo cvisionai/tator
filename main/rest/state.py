@@ -1,5 +1,6 @@
-import traceback
 import logging
+import tempfile
+import traceback
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
@@ -478,22 +479,35 @@ class StateGraphicAPI(APIView):
             if typeObj.association != 'Localization':
                 raise Exception('Not a localization association state')
 
-            video = state.association.media[0]
-            localizations = state.association.localizations
-            frames = [l['frame'] for l in localizations]
+            video = state.association.media.all()[0]
+            localizations = state.association.localizations.all()
+            frames = [l.frame for l in localizations]
             roi = [(l.width, l.height, l.x, l.y) for l in localizations]
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir)
-            if mode == "animate":
-                gif_fp = media_util.getAnimation(frames, roi, fps)
-                with open(gif_fp, 'rb') as data_file:
-                    request.accepted_renderer = GifRenderer()
-                    response = Response(data_file.read())
-            else:
-                tiled_fp = media_util.getTileImage(frames, roi)
-                with open(tiled_fp, 'rb') as data_file:
-                    request.accepted_renderer = JpegRenderer()
-                    response = Response(data_file.read())
+                if mode == "animate":
+                    gif_fp = media_util.getAnimation(frames, roi, fps)
+                    with open(gif_fp, 'rb') as data_file:
+                        request.accepted_renderer = GifRenderer()
+                        response = Response(data_file.read())
+                else:
+                    max_w = 0
+                    max_h = 0
+                    for el in roi:
+                        if el[0] > max_w:
+                            max_w = el[0]
+                        if el[1] > max_h:
+                            max_h = el[1]
+
+                    # rois have to be the same size box for tile to work
+                    new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
+                    for idx,r in enumerate(roi):
+                        print(f"{r} corrected to {new_rois[idx]}")
+                    print(f"{max_w} {max_h}")
+                    tiled_fp = media_util.getTileImage(frames, new_rois)
+                    with open(tiled_fp, 'rb') as data_file:
+                        request.accepted_renderer = JpegRenderer()
+                        response = Response(data_file.read())
 
 
         except ObjectDoesNotExist as dne:
