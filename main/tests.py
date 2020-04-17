@@ -37,6 +37,7 @@ from .models import EntityLocalizationLine
 from .models import EntityLocalizationDot
 from .models import EntityState
 from .models import LocalizationAssociation
+from .models import FrameAssociation
 from .models import TreeLeaf
 from .models import MediaAssociation
 from .models import AttributeTypeBool
@@ -364,6 +365,7 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
@@ -1530,6 +1532,56 @@ class LocalizationAssociationTestCase(
         self.detail_uri = 'LocalizationAssociation'
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'color': 'asdf'}
+
+    def tearDown(self):
+        self.project.delete()
+
+class FrameAssociationTestCase(
+        APITestCase,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        media_entity_type = EntityTypeMediaVideo.objects.create(
+            name="video",
+            project=self.project,
+            uploadable=False,
+            keep_original=False,
+        )
+        image_type = EntityTypeMediaImage.objects.create(
+            name="images",
+            project=self.project,
+            uploadable=False,
+        )
+        image = create_test_image(self.user, "asdf", image_type, self.project)
+        self.media_entities = [
+            create_test_video(self.user, f'asdf', media_entity_type, self.project)
+            for idx in range(random.randint(3, 10))
+        ]
+        self.entities = [
+            FrameAssociation.objects.create(frame=random.randint(0, 1000))
+            for _ in range(random.randint(6, 10))
+        ]
+        state_type = EntityTypeState.objects.create(
+            name="lines",
+            project=self.project,
+        )
+        self.states = [
+            EntityState.objects.create(
+                meta=state_type,
+                project=self.project,
+                association=entity,
+            ) for entity in self.entities
+        ]
+        self.detail_uri = 'FrameAssociation'
+        self.edit_permission = Permission.CAN_EDIT
+        self.patch_json = {
+            'frame': 100,
+            'extracted': image.pk,
+        }
 
     def tearDown(self):
         self.project.delete()
