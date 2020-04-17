@@ -1,5 +1,9 @@
+import logging
+import os
+
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
+from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -13,6 +17,21 @@ from ..models import FrameAssociation
 from ..models import LocalizationAssociation
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
+
+logger = logging.getLogger(__name__)
+
+def _for_schema_view(request, view):
+    """ Returns true if permission is being requested for the schema view. This is 
+        necessary since there is no way to check project based permissions when
+        no URL parameters are given.
+    """
+    return (
+        view.kwargs == {}
+        and type(request.authenticators[0]) == SessionAuthentication
+        and request.META['HTTP_REFERER'] == f"https://{os.getenv('MAIN_HOST')}/rest/"
+        and request.META['HTTP_HOST'] == f"{os.getenv('MAIN_HOST')}"
+        and request.META['RAW_URI'] == '/schema/'
+    )
 
 class ProjectPermissionBase(BasePermission):
     """Base class for requiring project permissions.
@@ -38,6 +57,11 @@ class ProjectPermissionBase(BasePermission):
             if not project:
                 for alg in Algorithm.objects.all():
                     project = TatorAlgorithm(alg).find_project(f"gid={uid}")
+
+        else:
+            # If this is a request from schema view, show all endpoints.
+            return _for_schema_view(request, view)
+
         return self._validate_project(request, project)
 
     def has_object_permission(self, request, view, obj):
