@@ -109,7 +109,11 @@ class AnnotationPlayer extends TatorElement {
     this._slider.addEventListener("change", evt => {
       play.setAttribute("is-paused","");
       // Only use the current frame to prevent glitches
-      const frame = this._video.currentFrame();
+      let frame = this._video.currentFrame();
+      if (evt.detail)
+      {
+        frame = evt.detail.frame;
+      }
       this._video.stopPlayerThread();
       // Use the hq buffer when the input is finalized
       this._video.seekFrame(frame, this._video.drawFrame, true)

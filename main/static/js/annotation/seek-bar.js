@@ -27,7 +27,8 @@ class SeekBar extends TatorElement {
                    +that._min);
       that.dispatchEvent(
         new CustomEvent("change",
-                        {composed: true}));
+                        {composed: true,
+                         detail: {frame: that.value}}));
       evt.stopPropagation();
       return false;
     }
