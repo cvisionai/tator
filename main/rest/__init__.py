@@ -3,8 +3,8 @@ from .algorithm import AlgorithmListAPI
 from .analysis import AnalysisListAPI
 from .attribute_type import AttributeTypeListAPI
 from .attribute_type import AttributeTypeDetailAPI
-"""
 from .entity_type_schema import EntityTypeSchemaAPI
+"""
 from .frame_association import FrameAssociationDetailAPI
 from .job_group import JobGroupDetailAPI
 from .job import JobDetailAPI
