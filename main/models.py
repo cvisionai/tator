@@ -568,6 +568,10 @@ class MediaAssociation(AssociationType):
         return EntityState.objects.filter(association__in=mediaAssociations)
 
 class LocalizationAssociation(AssociationType):
+    """
+    color : "#RRGGBB" or "RRGGBB" to represent track color. If not set, display
+            will use automatic color progression.
+    """
     localizations = ManyToManyField(EntityLocalizationBase)
     segments = JSONField(null=True)
     color = CharField(null=True,blank=True,max_length=8)
