@@ -92,7 +92,7 @@ class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
                 associationObject.extracted = image
             associationObject.save()
             response = Response({'message': f"Frame association updated successfully!"},
-                                status=status.HTTP_201_CREATED)
+                                status=status.HTTP_200_OK)
 
         except PermissionDenied as err:
             raise
