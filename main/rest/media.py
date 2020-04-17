@@ -327,6 +327,35 @@ class MediaUtil:
         proc = subprocess.run(gif_args, check=True, capture_output=True)
         return os.path.join(self._temp_dir,"animation.gif")
 
+    def generate_error_image(code, message):
+        font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+        img = Image.open(os.path.join(settings.STATIC_ROOT,
+                                      "images/computer.jpg"))
+        draw = ImageDraw.Draw(img)
+        W, H = img.size
+
+        x_bias = 60
+        header=f"Error {code}"
+        w, h = draw.textsize(header)
+        logger.info(f"{W}-{w}/2; {H}-{h}/2")
+        offset = font.getoffset(header)
+        logger.info(f"Offset = {offset}")
+
+        draw.text((W/2-((w/2)+x_bias),80), header, (255,62,29), font=font_bold)
+
+
+        _, line_height = draw.textsize(message)
+        line_height *= 3
+        start_height = 200-line_height
+        lines = textwrap.wrap(message,17)
+        for line_idx, line in enumerate(lines):
+            draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
+
+        img_buf = io.BytesIO()
+        img.save(img_buf, "jpeg", quality=95)
+        return img_buf.getvalue()
+
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
@@ -399,35 +428,6 @@ class GetFrameAPI(APIView):
 
     def get_queryset(self):
         return EntityBase.objects.all()
-
-    def generate_error_image(self, code, message):
-        font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
-        font = ImageFont.truetype("DejaVuSans.ttf", 28)
-        img = Image.open(os.path.join(settings.STATIC_ROOT,
-                                      "images/computer.jpg"))
-        draw = ImageDraw.Draw(img)
-        W, H = img.size
-
-        x_bias = 60
-        header=f"Error {code}"
-        w, h = draw.textsize(header)
-        logger.info(f"{W}-{w}/2; {H}-{h}/2")
-        offset = font.getoffset(header)
-        logger.info(f"Offset = {offset}")
-
-        draw.text((W/2-((w/2)+x_bias),80), header, (255,62,29), font=font_bold)
-
-
-        _, line_height = draw.textsize(message)
-        line_height *= 3
-        start_height = 200-line_height
-        lines = textwrap.wrap(message,17)
-        for line_idx, line in enumerate(lines):
-            draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
-
-        img_buf = io.BytesIO()
-        img.save(img_buf, "jpeg", quality=95)
-        return img_buf.getvalue()
 
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
@@ -503,11 +503,11 @@ class GetFrameAPI(APIView):
 
 
         except ObjectDoesNotExist as dne:
-            response=Response(self.generate_error_image(404, "No Media Found"),
+            response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
-            response=Response(self.generate_error_image(400, str(e)),
+            response=Response(MediaUtil.generate_error_image(400, str(e)),
                               status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
         finally:
