@@ -14,6 +14,8 @@ def parse(request):
         openapi_spec = create_spec(spec)
         parse.validator = RequestValidator(openapi_spec)
     openapi_request = DjangoOpenAPIRequest(request)
+    if openapi_request.mimetype.startswith('application/json'):
+        openapi_request.mimetype = 'application/json'
     result = parse.validator.validate(openapi_request)
     result.raise_for_errors()
     out = {
