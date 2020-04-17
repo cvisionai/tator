@@ -47,6 +47,11 @@ urlpatterns += [
         AttributeTypeListAPI.as_view(),
         name='AttributeTypes'
     ),
+    path(
+        'rest/AttributeType/<int:pk>',
+        AttributeTypeDetailAPI.as_view(),
+        name='AttributeType'
+    ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
