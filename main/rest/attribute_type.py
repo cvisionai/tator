@@ -194,6 +194,14 @@ class AttributeTypeListSchema(AutoSchema):
         return body
 
 class AttributeTypeListAPI(APIView):
+    """ Create or list attribute types.
+
+        Attribute types are used to define data types that describe entities. An
+        attribute may give information about a media, localization, or state entity 
+        in the form of a boolean, integer, float, string, enumeration, datetime, 
+        or geoposition. Besides the data type, attribute types define attribute
+        defaults, bounds, and other constraints.
+    """
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = AttributeTypeListSchema()
@@ -310,6 +318,14 @@ class AttributeTypeDetailSchema(AutoSchema):
         return body
 
 class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ Interact with an individual attribute type.
+
+        Attribute types are used to define data types that describe entities. An
+        attribute may give information about a media, localization, or state entity 
+        in the form of a boolean, integer, float, string, enumeration, datetime, 
+        or geoposition. Besides the data type, attribute types define attribute
+        defaults, bounds, and other constraints.
+    """
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = AttributeTypeDetailSchema()

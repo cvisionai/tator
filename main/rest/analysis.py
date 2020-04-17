@@ -79,6 +79,12 @@ class AnalysisListSchema(AutoSchema):
         return body
 
 class AnalysisListAPI(ListCreateAPIView):
+    """ Define and list analyses for a project.
+
+        Analysis objects are used to display information about filtered media lists
+        and/or annotations on the project detail page of the web UI. Currently only
+        counting analysis is supported.
+    """
     serializer_class = AnalysisSerializer
     schema = AnalysisListSchema()
     permission_classes = [ProjectFullControlPermission]

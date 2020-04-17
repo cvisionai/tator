@@ -90,8 +90,18 @@ def media_batches(media_list, files_per_job):
         yield media_list[i:i + files_per_job]
 
 class AlgorithmLaunchAPI(APIView):
-    """
-    Start an algorithm.
+    """ Start an algorithm.
+
+        This will create one or more Argo workflows that execute the named algorithm
+        registration. To get a list of available algorithms, use the `Algorithms` endpoint.
+        A media list will be submitted for processing using either a query string or 
+        a list of media IDs. If neither are included, the algorithm will be launched on
+        all media in the project. 
+
+        Media is divided into batches for based on the `files_per_job` field of the 
+        `Algorithm` object. One batch is submitted to each Argo workflow.
+
+        Submitted algorithm jobs may be cancelled via the `Job` or `JobGroup` endpoints.
     """
     schema = AlgorithmLaunchSchema()
     permission_classes = [ProjectExecutePermission]
