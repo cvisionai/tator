@@ -91,6 +91,8 @@ class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
                 image = EntityMediaImage.objects.get(pk=params['extracted'])
                 associationObject.extracted = image
             associationObject.save()
+            response = Response({'message': f"Frame association updated successfully!"},
+                                status=status.HTTP_201_CREATED)
 
         except PermissionDenied as err:
             raise
