@@ -1,10 +1,14 @@
 import os
+import logging
 
 from django.urls import path
 from django.urls import include
 from django.conf.urls import url
 
 from rest_framework.authtoken import views
+from rest_framework.schemas.openapi import SchemaGenerator
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 
@@ -20,9 +24,38 @@ from .views import AuthAdminView
 
 from .rest import *
 
+logger = logging.getLogger(__name__)
+
+class CustomGenerator(SchemaGenerator):
+    def get_schema(self, request=None, public=False):
+        schema = super().get_schema(request, public)
+        schema['paths']['/rest/Token']['post']['requestBody'] = {
+            'content': {'application/json': {
+                'schema': {
+                    'type': 'object',
+                    'required': ['username', 'password'],
+                    'properties': {
+                        'username': {
+                            'description': 'Account username.',
+                            'type': 'string',
+                        },
+                        'password': {
+                            'description': 'Account password.',
+                            'type': 'string',
+                        },
+                    },
+                },
+            }},
+        }
+        schema['paths']['/rest/Token']['post']['tags'] = ['Token']
+        return schema
+
 schema_view = get_schema_view(
     title='Tator REST API',
     version='v1',
+    authentication_classes=[SessionAuthentication],
+    permission_classes=[IsAuthenticated],
+    generator_class=CustomGenerator,
 )
 
 urlpatterns = [
@@ -39,7 +72,7 @@ urlpatterns = [
 
 # This is used for REST calls
 urlpatterns += [
-    #url(r'^rest/Token', views.obtain_auth_token),
+    url(r'^rest/Token', views.obtain_auth_token),
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
