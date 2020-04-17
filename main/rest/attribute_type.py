@@ -87,32 +87,12 @@ class AttributeTypeListSchema(AutoSchema):
                         },
                         'default': {
                             'description': 'Default value for the attribute.',
-                            'oneOf': [
-                                {'type': 'boolean'},
-                                {'type': 'integer'},
-                                {'type': 'number'},
-                                {'type': 'string'}, # Covers string, datetime, enum
-                                { # geopos
-                                    'type': 'array',
-                                    'items': {'type': 'number'},
-                                    'minItems': 2,
-                                    'maxItems': 2,
-                                },
-                            ],
                         },
                         'lower_bound': {
                             'description': 'Lower bound for int or float dtype.',
-                            'oneOf': [
-                                {'type': 'integer'},
-                                {'type': 'number'},
-                            ],
                         },
                         'upper_bound': {
                             'description': 'Upper bound for int or float dtype.',
-                            'oneOf': [
-                                {'type': 'integer'},
-                                {'type': 'number'},
-                            ],
                         },
                         'choices': {
                             'description': 'Array of possible values for enum dtype.',
@@ -223,7 +203,7 @@ class AttributeTypeListAPI(APIView):
         try:
             params = parse(request)
             qs = AttributeTypeBase.objects.filter(project=params['project'])
-            if params['applies_to']:
+            if 'applies_to' in params:
                 qs = qs.filter(**params)
             response = Response(AttributeTypeSerializer(qs, many=True).data)
         except Exception as e:
@@ -240,20 +220,16 @@ class AttributeTypeListAPI(APIView):
         try:
             # Get the parameters.
             params = parse(request)
+
+            # Convert pk to objects.
             params['applies_to'] = EntityTypeBase.objects.get(pk=params['applies_to'])
             params['project'] = Project.objects.get(pk=params['project'])
-            if params['order'] is None:
-                params['order'] = 0
 
-            # Pop off optional parameters.
+            # Pull off parameters that need further processing.
             dtype = params.pop('dtype')
-            default = params.pop('default')
-            lower_bound = params.pop('lower_bound')
-            upper_bound = params.pop('upper_bound')
-            choices = params.pop('choices')
-            labels = params.pop('labels')
-            autocomplete = params.pop('autocomplete')
-            use_current = params.pop('use_current')
+            default = params.pop('default', None)
+            lower_bound = params.pop('lower_bound', None)
+            upper_bound = params.pop('upper_bound', None)
 
             # Create the attribute type.
             if dtype == 'bool':
@@ -263,11 +239,11 @@ class AttributeTypeListAPI(APIView):
             elif dtype == 'float':
                 obj = AttributeTypeFloat(**params)
             elif dtype == 'enum':
-                obj = AttributeTypeEnum(**params, choices=choices, labels=labels)
+                obj = AttributeTypeEnum(**params)
             elif dtype == 'str':
-                obj = AttributeTypeString(**params, autocomplete=autocomplete)
+                obj = AttributeTypeString(**params)
             elif dtype == 'datetime':
-                obj = AttributeTypeDatetime(**params, use_current=use_current)
+                obj = AttributeTypeDatetime(**params)
             elif dtype == 'geopos':
                 obj = AttributeTypeGeoposition(**params)
 
@@ -318,11 +294,11 @@ class AttributeTypeDetailSchema(AutoSchema):
                     'properties': {
                         'name': {
                             'description': 'Name of the attribute.',
-                            'schema': {'type': 'string'},
+                            'type': 'string',
                         },
                         'description': {
                             'description': 'Description of the attribute.',
-                            'schema': {'type': 'string'},
+                            'type': 'string',
                         },
                     },
                 },
