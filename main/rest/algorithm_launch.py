@@ -17,6 +17,7 @@ from ..models import EntityMediaBase
 from ..kube import TatorAlgorithm
 from ..consumers import ProgressProducer
 
+from ._schema import parse
 from ._media_query import query_string_to_media_ids
 from ._permissions import ProjectExecutePermission
 
@@ -100,15 +101,11 @@ class AlgorithmLaunchAPI(APIView):
 
         try:
             entityType=None
-            reqObject=request.data;
-
-            ## Check for required fields first
-            if 'algorithm_name' not in reqObject:
-                raise Exception('Missing required field in request object "algorithm_name"')
+            params = parse(request)
 
             # Find the algorithm
-            project_id = self.kwargs['project']
-            alg_name = reqObject['algorithm_name']
+            project_id = params['project']
+            alg_name = params['algorithm_name']
             alg_obj = Algorithm.objects.filter(project__id=project_id)
             alg_obj = alg_obj.filter(name=alg_name)
             if len(alg_obj) != 1:
@@ -118,10 +115,10 @@ class AlgorithmLaunchAPI(APIView):
 
             media_ids = []
             # Get media IDs
-            if 'media_query' in reqObject:
-                media_ids = query_string_to_media_ids(project_id, reqObject['media_query'])
-            elif 'media_ids' in reqObject:
-                media_ids = reqObject['media_ids']
+            if 'media_query' in params:
+                media_ids = query_string_to_media_ids(project_id, params['media_query'])
+            elif 'media_ids' in params:
+                media_ids = params['media_ids']
             else:
                 media = EntityMediaBase.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))
