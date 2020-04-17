@@ -1,5 +1,6 @@
-import traceback
 import logging
+import tempfile
+import traceback
 
 from rest_framework.schemas import AutoSchema
 from rest_framework.compat import coreschema, coreapi
@@ -23,6 +24,8 @@ from ..models import LocalizationAssociation
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import EntityBase
+from ..renderers import JpegRenderer,GifRenderer,Mp4Renderer
+from ..rest.media import MediaUtil
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
 from ..serializers import EntityStateLocalizationSerializer
@@ -39,6 +42,8 @@ from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
 from ._util import Array
 from ._permissions import ProjectEditPermission
+from ._permissions import ProjectViewOnlyPermission
+from ._schema import Schema
 
 logger = logging.getLogger(__name__)
 
@@ -429,3 +434,96 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
         finally:
             return response;
 
+
+class StateGraphicAPI(APIView):
+    schema = Schema({'GET' : [
+        coreapi.Field(name='pk',
+                      required=True,
+                      location='path',
+                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
+        coreapi.Field(name='mode',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='Either "animate" or "tile"')),
+        coreapi.Field(name='fps',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='FPS if animating')),
+    ]})
+
+
+    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get_queryset(self):
+        return EntityBase.objects.all()
+
+    def get(self, request, **kwargs):
+        """ Facility to get frame(s) of a given localization-associated state. Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+
+        TODO: Add logic for all state types
+"""
+        try:
+            # upon success we can return an image
+            values = self.schema.parse(request, kwargs)
+            state = EntityState.objects.get(pk=values['pk'])
+
+            mode = values['mode']
+            if mode == None:
+                mode = 'animate'
+            fps = values['fps']
+
+            if fps == None:
+                fps = 2
+            else:
+                fps = int(fps)
+
+            typeObj = state.meta
+            if typeObj.association != 'Localization':
+                raise Exception('Not a localization association state')
+
+            video = state.association.media.all()[0]
+            localizations = state.association.localizations.all()
+            frames = [l.frame for l in localizations]
+            roi = [(l.width, l.height, l.x, l.y) for l in localizations]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                media_util = MediaUtil(video, temp_dir)
+                if mode == "animate":
+                    if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                        pass
+                    else:
+                        request.accepted_renderer = GifRenderer()
+                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format)
+                    with open(gif_fp, 'rb') as data_file:
+                        request.accepted_renderer = GifRenderer()
+                        response = Response(data_file.read())
+                else:
+                    max_w = 0
+                    max_h = 0
+                    for el in roi:
+                        if el[0] > max_w:
+                            max_w = el[0]
+                        if el[1] > max_h:
+                            max_h = el[1]
+
+                    # rois have to be the same size box for tile to work
+                    new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
+                    for idx,r in enumerate(roi):
+                        print(f"{r} corrected to {new_rois[idx]}")
+                    print(f"{max_w} {max_h}")
+                    tiled_fp = media_util.getTileImage(frames, new_rois)
+                    with open(tiled_fp, 'rb') as data_file:
+                        request.accepted_renderer = JpegRenderer()
+                        response = Response(data_file.read())
+
+
+        except ObjectDoesNotExist as dne:
+            response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            response=Response(MediaUtil.generate_error_image(400, str(e)),
+                              status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+        finally:
+            return response

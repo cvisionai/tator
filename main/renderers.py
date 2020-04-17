@@ -54,3 +54,19 @@ class JpegRenderer(BaseRenderer):
 
     def render(self, data, media_type=None, renderer_context=None):
         return data
+
+class GifRenderer(BaseRenderer):
+    media_type = 'image/gif'
+    charset = None
+    format = 'gif'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return data
+
+class Mp4Renderer(BaseRenderer):
+    media_type = 'video/mp4'
+    charset = None
+    format = 'mp4'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return data

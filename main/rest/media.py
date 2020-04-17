@@ -28,6 +28,8 @@ from ..models import EntityMediaVideo
 from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
 from ..renderers import JpegRenderer
+from ..renderers import GifRenderer
+from ..renderers import Mp4Renderer
 
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
@@ -215,6 +217,147 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
         finally:
             return response;
 
+class MediaUtil:
+    def __init__(self, video, temp_dir):
+        self._temp_dir = temp_dir
+
+        if video.file:
+            video_file = video.file.path
+            self._height = video.height
+            self._width = video.width
+            # Make file relative to URL to be consistent with streaming files below
+            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
+            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
+        else:
+            self._video_file = video.media_files["streaming"][0]["path"]
+            self._height = video.media_files["streaming"][0]["resolution"][0]
+            self._width = video.media_files["streaming"][0]["resolution"][1]
+
+        self._video_file = os.path.relpath(self._video_file, settings.MEDIA_URL)
+        self._video_file = os.path.join(settings.MEDIA_ROOT, self._video_file)
+
+        self._fps = video.fps
+
+    def frameToTimeStr(self, frame):
+        total_seconds = int(frame) / self._fps
+        hours = math.floor(total_seconds / 3600)
+        minutes = math.floor((total_seconds % 3600) / 60)
+        seconds = total_seconds % 60
+        return f"{hours}:{minutes}:{seconds}"
+
+    def _generateFrameImages(self, frames, rois=None):
+        crop_filter = None
+        if rois:
+            crop_filter = [f"crop={round(c[0]*self._width)}:{round(c[1]*self._height)}:{round(c[2]*self._width)}:{round(c[3]*self._height)}" for c in rois]
+
+        logger.info(f"Processing {self._video_file}")
+        args = ["ffmpeg"]
+        inputs = []
+        outputs = []
+        for frame_idx,frame in enumerate(frames):
+            outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
+            if crop_filter:
+                outputs.extend(["-vf", crop_filter[frame_idx]])
+
+            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.jpg"))
+            inputs.extend(["-ss", self.frameToTimeStr(frame), "-i", self._video_file])
+
+        # Now add all the cmds in
+        args.extend(inputs)
+        args.extend(outputs)
+        proc = subprocess.run(args, check=True, capture_output=True)
+        return proc.returncode == 0
+
+    def getTileImage(self, frames, rois=None, tile_size=None):
+        """ Generate a tile jpeg of the given frame/rois """
+        # Compute tile size if not supplied explicitly
+        try:
+            if tile_size != None:
+                # check supplied tile size makes sense
+                comps=tile_size.split('x')
+                if len(comps) != 2:
+                    raise Exception("Bad Tile Size")
+                if int(comps[0])*int(comps[1]) < len(frames):
+                    raise Exception("Bad Tile Size")
+        except:
+            tile_size = None
+            # compute the required tile size
+        if tile_size == None:
+            width = math.ceil(math.sqrt(len(frames)))
+            height = math.ceil(len(frames) / width)
+            tile_size = f"{width}x{height}"
+
+        if self._generateFrameImages(frames, rois) == False:
+            return None
+
+        output_file = None
+        if len(frames) > 1:
+            # Make a tiled jpeg
+            tile_args = ["ffmpeg",
+                         "-i", os.path.join(self._temp_dir, f"%d.jpg"),
+                         "-vf", f"tile={tile_size}",
+                         "-q:v", "3",
+                         os.path.join(self._temp_dir,"tile.jpg")]
+            logger.info(tile_args)
+            proc = subprocess.run(tile_args, check=True, capture_output=True)
+            if proc.returncode == 0:
+                output_file = os.path.join(self._temp_dir,"tile.jpg")
+        else:
+            output_file = os.path.join(self._temp_dir,f"0.jpg")
+
+        return output_file
+
+    def getAnimation(self,frames, roi, fps, render_format):
+        if self._generateFrameImages(frames, roi) == False:
+            return None
+
+        mp4_args = ["ffmpeg",
+                    "-framerate", str(fps),
+                    "-i", os.path.join(self._temp_dir, f"%d.jpg"),
+                    os.path.join(self._temp_dir, "temp.mp4")]
+        proc = subprocess.run(mp4_args, check=True, capture_output=True)
+
+        if render_format == 'mp4':
+            return os.path.join(self._temp_dir, "temp.mp4")
+        else:
+            # Convert temporary mp4 into a gif
+            gif_args = ["ffmpeg",
+                        "-i", os.path.join(self._temp_dir, "temp.mp4"),
+                        "-filter_complex", f"[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse",
+                        os.path.join(self._temp_dir,"animation.gif")]
+            logger.info(gif_args)
+            proc = subprocess.run(gif_args, check=True, capture_output=True)
+            return os.path.join(self._temp_dir,"animation.gif")
+
+    def generate_error_image(code, message):
+        font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+        font = ImageFont.truetype("DejaVuSans.ttf", 28)
+        img = Image.open(os.path.join(settings.STATIC_ROOT,
+                                      "images/computer.jpg"))
+        draw = ImageDraw.Draw(img)
+        W, H = img.size
+
+        x_bias = 60
+        header=f"Error {code}"
+        w, h = draw.textsize(header)
+        logger.info(f"{W}-{w}/2; {H}-{h}/2")
+        offset = font.getoffset(header)
+        logger.info(f"Offset = {offset}")
+
+        draw.text((W/2-((w/2)+x_bias),80), header, (255,62,29), font=font_bold)
+
+
+        _, line_height = draw.textsize(message)
+        line_height *= 3
+        start_height = 200-line_height
+        lines = textwrap.wrap(message,17)
+        for line_idx, line in enumerate(lines):
+            draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
+
+        img_buf = io.BytesIO()
+        img.save(img_buf, "jpeg", quality=95)
+        return img_buf.getvalue()
+
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
     """
@@ -273,53 +416,27 @@ class GetFrameAPI(APIView):
         coreapi.Field(name='roi',
                       required=False,
                       location='query',
-                      schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
+                      schema=coreschema.String(description='w:h:x:y,[w:h:x:y], optionally crop each frame to a given roi in relative coordinates. Supply either a single roi for all frames or a list one roi for each.')),
+        coreapi.Field(name='animate',
+                      required=False,
+                      location='query',
+                      schema=coreschema.String(description='If not tiling, animate each frame at a given fps in a gif.')),
+
     ]})
 
 
-    renderer_classes = (JpegRenderer,)
+    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
         return EntityBase.objects.all()
 
-    def generate_error_image(self, code, message):
-        font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
-        font = ImageFont.truetype("DejaVuSans.ttf", 28)
-        img = Image.open(os.path.join(settings.STATIC_ROOT,
-                                      "images/computer.jpg"))
-        draw = ImageDraw.Draw(img)
-        W, H = img.size
-
-        x_bias = 60
-        header=f"Error {code}"
-        w, h = draw.textsize(header)
-        logger.info(f"{W}-{w}/2; {H}-{h}/2")
-        offset = font.getoffset(header)
-        logger.info(f"Offset = {offset}")
-
-        draw.text((W/2-((w/2)+x_bias),80), header, (255,62,29), font=font_bold)
-
-
-        _, line_height = draw.textsize(message)
-        line_height *= 3
-        start_height = 200-line_height
-        lines = textwrap.wrap(message,17)
-        for line_idx, line in enumerate(lines):
-            draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
-
-        img_buf = io.BytesIO()
-        img.save(img_buf, "jpeg", quality=95)
-        return img_buf.getvalue()
-
     def get(self, request, **kwargs):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
-            logger.info("Got here")
             # upon success we can return an image
             values = self.schema.parse(request, kwargs)
             video = EntityMediaVideo.objects.get(pk=values['pk'])
-            logger.info(f"{values['frames']}")
             frames = request.query_params.get('frames', '0')
             frames = frames.split(",")
 
@@ -333,96 +450,70 @@ class GetFrameAPI(APIView):
                     raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
             tile_size = values['tile']
 
-            try:
-                if tile_size != None:
-                    # check supplied tile size makes sense
-                    comps=tile_size.split('x')
-                    if len(comps) != 2:
-                        raise Exception("Bad Tile Size")
-                    if int(comps[0])*int(comps[1]) < len(frames):
-                        raise Exception("Bad Tile Size")
-            except:
-                tile_size = None
-            # compute the required tile size
-            if tile_size == None:
-                width = math.ceil(math.sqrt(len(frames)))
-                height = math.ceil(len(frames) / width)
-                tile_size = f"{width}x{height}"
+            if values['tile'] and values['animate']:
+                raise Exception("Can't supply both tile and animate arguments")
 
-            if video.file:
-                video_file = video.file.path
-                height = video.height
-                width = video.width
-                # Make file relative to URL to be consistent with streaming files below
-                video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
-                video_file = os.path.join(settings.MEDIA_URL, video_file)
-            else:
-                video_file = video.media_files["streaming"][0]["path"]
-                height = video.media_files["streaming"][0]["resolution"][0]
-                width = video.media_files["streaming"][0]["resolution"][1]
+            if values['animate']:
+                if values['animate'].isdecimal() is False:
+                    raise Exception('Animation FPS must be an integer')
+                if int(values['animate']) > 15 or int(values['animate']) <= 0:
+                    raise Exception('Animation FPS must be between >0 and <=15')
 
-            fps = video.fps
+
             # compute the crop argument
-            crop_filter = None
+            roi_arg = []
             roi = request.query_params.get('roi', None)
             if roi:
-                comps = roi.split(':')
-                if len(comps) == 4:
-                    width = round(float(comps[0])*width)
-                    height = round(float(comps[1])*height)
-                    x = round(float(comps[2])*width)
-                    y = round(float(comps[3])*height)
-                    crop_filter = f"crop={width}:{height}:{x}:{y}"
+                crop_filter = [None] * len(frames)
+                roi_list = roi.split(',')
+                logger.info(roi_list)
+                if len(roi_list) == 1:
+                    # Repeat the same roi if only 1 is given for a set
+                    comps = roi_list[0].split(':')
+                    if len(comps) == 4:
+                        box_width = float(comps[0])
+                        box_height = float(comps[1])
+                        x = float(comps[2])
+                        y = float(comps[3])
+                        roi_arg = [(box_width,box_height,x,y)]*len(frames)
+                else:
+                    # If each individual roi is supplied manually set each one
+                    if len(roi_list) != len(frames):
+                        raise Exception(f'Explicit roi list{len(roi_list)} is different length than frame list{len(frames)}')
+                    for idx,frame_roi in enumerate(roi_list):
+                        comps = frame_roi.split(':')
+                        if len(comps) == 4:
+                            box_width = float(comps[0])
+                            box_height = float(comps[1])
+                            x = float(comps[2])
+                            y = float(comps[3])
+                            roi_arg.append((box_width,box_height,x,y))
 
-            def frame_to_time_str(frame):
-                total_seconds = int(frame) / fps
-                hours = math.floor(total_seconds / 3600)
-                minutes = math.floor((total_seconds % 3600) / 60)
-                seconds = total_seconds % 60
-                return f"{hours}:{minutes}:{seconds}"
 
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Convert file to local path for processing
-                video_file = os.path.relpath(video_file, settings.MEDIA_URL)
-                video_file = os.path.join(settings.MEDIA_ROOT, video_file)
-                logger.info(f"Processing {video_file}")
-                args = ["ffmpeg"]
-                inputs = []
-                outputs = []
-                for frame_idx,frame in enumerate(frames):
-                    outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
-                    if crop_filter:
-                        outputs.extend(["-vf", crop_filter])
-
-                    outputs.append(os.path.join(temp_dir,f"{frame_idx}.jpg"))
-                    inputs.extend(["-ss", frame_to_time_str(frame), "-i", video_file])
-                args.extend(inputs)
-                args.extend(outputs)
-                logger.info(" ".join(args))
-
-                proc = subprocess.run(args, check=True, capture_output=True)
-                if len(frames) > 1:
-                    tile_args = ["ffmpeg",
-                                 "-i", os.path.join(temp_dir, f"%d.jpg"),
-                                 "-vf", f"tile={tile_size}",
-                                 "-q:v", "3",
-                                 os.path.join(temp_dir,"tile.jpg")]
-                    logger.info(tile_args)
-                    proc = subprocess.run(tile_args, check=True, capture_output=True)
-                    with open(os.path.join(temp_dir,"tile.jpg"), 'rb') as data_file:
+                media_util = MediaUtil(video, temp_dir)
+                if len(frames) > 1 and values['animate']:
+                    # Default to gif for animate, but mp4 is also supported
+                    if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                        pass
+                    else:
+                        request.accepted_renderer = GifRenderer()
+                    gif_fp = media_util.getAnimation(frames, roi_arg, fps=values['animate'], render_format=request.accepted_renderer.format)
+                    with open(gif_fp, 'rb') as data_file:
                         response = Response(data_file.read())
                 else:
-                    with open(os.path.join(temp_dir,f"0.jpg"), 'rb') as data_file:
+                    tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size)
+                    with open(tiled_fp, 'rb') as data_file:
                         response = Response(data_file.read())
 
 
         except ObjectDoesNotExist as dne:
-            response=Response(self.generate_error_image(404, "No Media Found"),
+            response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
-            response=Response(self.generate_error_image(400, str(e)),
+            response=Response(MediaUtil.generate_error_image(400, str(e)),
                               status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
         finally:

@@ -42,11 +42,11 @@ if __name__=="__main__":
         else:
             print("ERROR {code}")
     else:
-        code,png_data = tator.GetFrame.get_jpg(args.media, args.frames)
+        code,img_data = tator.GetFrame.get_encoded_img(args.media, args.frames)
         if code == 200:
             if args.output:
                 with open(args.output, 'wb') as fp:
                     print(f"Outputing to {args.output}")
-                    fp.write(png_data)
+                    fp.write(img_data)
     
 
