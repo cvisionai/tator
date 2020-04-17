@@ -29,6 +29,7 @@ from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
+from ..renderers import Mp4Renderer
 
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterSchemaMixin
@@ -306,7 +307,7 @@ class MediaUtil:
 
         return output_file
 
-    def getAnimation(self,frames, roi, fps):
+    def getAnimation(self,frames, roi, fps, render_format):
         if self._generateFrameImages(frames, roi) == False:
             return None
 
@@ -316,14 +317,17 @@ class MediaUtil:
                     os.path.join(self._temp_dir, "temp.mp4")]
         proc = subprocess.run(mp4_args, check=True, capture_output=True)
 
-        # Convert temporary mp4 into a gif
-        gif_args = ["ffmpeg",
-                    "-i", os.path.join(self._temp_dir, "temp.mp4"),
-                    "-filter_complex", f"[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse",
-                    os.path.join(self._temp_dir,"animation.gif")]
-        logger.info(gif_args)
-        proc = subprocess.run(gif_args, check=True, capture_output=True)
-        return os.path.join(self._temp_dir,"animation.gif")
+        if render_format == 'mp4':
+            return os.path.join(self._temp_dir, "temp.mp4")
+        else:
+            # Convert temporary mp4 into a gif
+            gif_args = ["ffmpeg",
+                        "-i", os.path.join(self._temp_dir, "temp.mp4"),
+                        "-filter_complex", f"[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse",
+                        os.path.join(self._temp_dir,"animation.gif")]
+            logger.info(gif_args)
+            proc = subprocess.run(gif_args, check=True, capture_output=True)
+            return os.path.join(self._temp_dir,"animation.gif")
 
     def generate_error_image(code, message):
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
@@ -421,7 +425,7 @@ class GetFrameAPI(APIView):
     ]})
 
 
-    renderer_classes = (JpegRenderer,)
+    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
@@ -490,9 +494,13 @@ class GetFrameAPI(APIView):
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir)
                 if len(frames) > 1 and values['animate']:
-                    gif_fp = media_util.getAnimation(frames, roi_arg, values['animate'])
-                    with open(gif_fp, 'rb') as data_file:
+                    # Default to gif for animate, but mp4 is also supported
+                    if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                        pass
+                    else:
                         request.accepted_renderer = GifRenderer()
+                    gif_fp = media_util.getAnimation(frames, roi_arg, fps=values['animate'], render_format=request.accepted_renderer.format)
+                    with open(gif_fp, 'rb') as data_file:
                         response = Response(data_file.read())
                 else:
                     tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size)

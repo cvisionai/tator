@@ -24,7 +24,7 @@ from ..models import LocalizationAssociation
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import EntityBase
-from ..renderers import JpegRenderer,GifRenderer
+from ..renderers import JpegRenderer,GifRenderer,Mp4Renderer
 from ..rest.media import MediaUtil
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
@@ -452,14 +452,17 @@ class StateGraphicAPI(APIView):
     ]})
 
 
-    renderer_classes = (JpegRenderer,)
+    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
+        """ Facility to get frame(s) of a given localization-associated state. Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+
+        TODO: Add logic for all state types
+"""
         try:
             # upon success we can return an image
             values = self.schema.parse(request, kwargs)
@@ -486,7 +489,11 @@ class StateGraphicAPI(APIView):
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir)
                 if mode == "animate":
-                    gif_fp = media_util.getAnimation(frames, roi, fps)
+                    if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                        pass
+                    else:
+                        request.accepted_renderer = GifRenderer()
+                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format)
                     with open(gif_fp, 'rb') as data_file:
                         request.accepted_renderer = GifRenderer()
                         response = Response(data_file.read())

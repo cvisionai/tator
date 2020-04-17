@@ -62,3 +62,11 @@ class GifRenderer(BaseRenderer):
 
     def render(self, data, media_type=None, renderer_context=None):
         return data
+
+class Mp4Renderer(BaseRenderer):
+    media_type = 'video/mp4'
+    charset = None
+    format = 'mp4'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        return data
