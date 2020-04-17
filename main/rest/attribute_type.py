@@ -1,6 +1,7 @@
 import traceback
 
-from rest_framework.compat import coreschema, coreapi
+
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -19,109 +20,209 @@ from ..models import EntityTypeBase
 from ..models import Project
 from ..serializers import AttributeTypeSerializer
 
-from ._schema import Schema
+from ._schema import parse
 from ._attributes import convert_attribute
 from ._permissions import ProjectFullControlPermission
 
+class AttributeTypeListSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['AttributeType']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'project',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a project.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        params = []
+        if method == 'GET':
+            params = [{
+                'name': 'applies_to',
+                'in': 'query',
+                'required': False,
+                'description': 'Unique integer identifying the entity type that this attribute '
+                               'describes.',
+                'schema': {'type': 'integer'},
+            }]
+        return params
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'POST':
+            body = {'content': {'application/json': {
+                'schema': {
+                    'type': 'object',
+                    'required': ['name', 'dtype', 'applies_to'],
+                    'properties': {
+                        'name': {
+                            'description': 'Name of the attribute.',
+                            'type': 'string',
+                        },
+                        'description': {
+                            'description': 'Description of the attribute.',
+                            'type': 'string',
+                        },
+                        'dtype': {
+                            'description': 'Data type of the attribute.',
+                            'type': 'string',
+                            'enum': ['bool', 'int', 'float', 'enum', 'str',
+                                     'datetime', 'geopos'],
+                        },
+                        'applies_to': {
+                            'description': 'Unique integer identifying the entity type that '
+                                           'this attribute describes.',
+                            'type': 'integer',
+                        },
+                        'order': {
+                            'description': 'Integer specifying relative order this attribute '
+                                           'is displayed in the UI. Negative values are hidden '
+                                           'by default.',
+                            'type': 'integer',
+                            'default': 0,
+                        },
+                        'default': {
+                            'description': 'Default value for the attribute.',
+                            #'oneOf': [
+                            #    {'type': 'boolean'},
+                            #    {'type': 'integer'},
+                            #    {'type': 'number'},
+                            #    {'type': 'string'}, # Covers string, datetime, enum
+                            #    { # geopos
+                            #        'type': 'array',
+                            #        'items': {'type': 'number'},
+                            #        'minItems': 2,
+                            #        'maxItems': 2,
+                            #    },
+                            #],
+                        },
+                        'lower_bound': {
+                            'description': 'Lower bound for int or float dtype.',
+                            'oneOf': [
+                                {'type': 'integer'},
+                                {'type': 'number'},
+                            ],
+                        },
+                        'upper_bound': {
+                            'description': 'Upper bound for int or float dtype.',
+                            'oneOf': [
+                                {'type': 'integer'},
+                                {'type': 'number'},
+                            ],
+                        },
+                        'choices': {
+                            'description': 'Array of possible values for enum dtype.',
+                            'type': 'array',
+                            'items': {'type': 'string'},
+                        },
+                        'labels': {
+                            'description': 'Array of labels for enum dtype.',
+                            'type': 'array',
+                            'items': {'type': 'string'},
+                        },
+                        'autocomplete': {
+                            'description': 'Object indicating URL of autocomplete service '
+                                           'for string dtype.',
+                            'type': 'object',
+                        },
+                        'use_current': {
+                            'description': 'True to use current datetime as default for '
+                                           'datetime dtype.',
+                            'type': 'boolean',
+                        },
+                    },
+                },
+                'examples': {
+                    'bool': {
+                        'summary': 'Boolean attribute type',
+                        'value': {
+                            'name': 'My Boolean',
+                            'dtype': 'bool',
+                            'applies_to': 1,
+                            'default': False,
+                        },
+                    },
+                    'int': {
+                        'summary': 'Integer attribute type',
+                        'value': {
+                            'name': 'My Integer',
+                            'dtype': 'int',
+                            'applies_to': 1,
+                            'default': 0,
+                            'lower_bound': -1,
+                            'upper_bound': 1,
+                        },
+                    },
+                    'float': {
+                        'summary': 'Float attribute type',
+                        'value': {
+                            'name': 'My Float',
+                            'dtype': 'float',
+                            'applies_to': 1,
+                            'default': 0.0,
+                            'lower_bound': -1.0,
+                            'upper_bound': 1.0,
+                        },
+                    },
+                    'enum': {
+                        'summary': 'Enumeration attribute type',
+                        'value': {
+                            'name': 'My Enumeration',
+                            'dtype': 'enum',
+                            'applies_to': 1,
+                            'default': 'a',
+                            'choices': ['a', 'b', 'c'],
+                            'labels': ['a', 'b', 'c'],
+                        },
+                    },
+                    'string': {
+                        'summary': 'String attribute type',
+                        'value': {
+                            'name': 'My String',
+                            'dtype': 'string',
+                            'applies_to': 1,
+                            'default': '---',
+                            'autocomplete': {
+                                'serviceUrl': 'https://www.example.com/suggestion',
+                            },
+                        },
+                    },
+                    'datetime': {
+                        'summary': 'Datetime attribute type',
+                        'value': {
+                            'name': 'My Datetime',
+                            'dtype': 'datetime',
+                            'applies_to': 1,
+                            'use_current': True,
+                        },
+                    },
+                    'geopos': {
+                        'summary': 'Geoposition attribute type',
+                        'value': {
+                            'name': 'My Geoposition',
+                            'dtype': 'geopos',
+                            'applies_to': 1,
+                            'default': [-179.0, 90.0],
+                        },
+                    }
+                }
+            }}}
+        return body
 
 class AttributeTypeListAPI(APIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
-    schema = Schema({
-        'all': [
-            coreapi.Field(
-                name='project',
-                location='path',
-                required=True,
-                schema=coreschema.Integer(description='A unique integer identifying a project')),
-        ],
-        'GET': [
-            coreapi.Field(
-                name='applies_to',
-                location='query',
-                required=False,
-                schema=coreschema.Integer(description='Unique integer identifying an entity type '
-                                                      'that this attribute describes.')),
-        ],
-        'POST': [
-            coreapi.Field(
-                name='name',
-                location='body',
-                required=True,
-                schema=coreschema.String(description='Name of the attribute.')),
-            coreapi.Field(
-                name='description',
-                location='body',
-                required=False,
-                schema=coreschema.String(description='Description of the attribute.')),
-            coreapi.Field(
-                name='dtype',
-                location='body',
-                required=True,
-                schema=coreschema.Enum(description='Data type of the attribute.',
-                                       enum=['bool', 'int', 'float', 'enum', 'str', 
-                                             'datetime', 'geopos'])),
-            coreapi.Field(
-                name='applies_to',
-                location='body',
-                required=True,
-                schema=coreschema.Integer(description='Unique integer identifying an entity type '
-                                                      'that this attribute describes.')),
-            coreapi.Field(
-                name='order',
-                location='body',
-                required=False,
-                schema=coreschema.Integer(description='Integer specifying where this attribute '
-                                                      'is displayed in the UI. Negative values '
-                                                      'are hidden by default.')),
-            coreapi.Field(
-                name='default',
-                location='body',
-                required=False,
-                schema=coreschema.Anything(description='Default value for the attribute.')),
-            coreapi.Field(
-                name='lower_bound',
-                location='body',
-                required=False,
-                schema=coreschema.Number(description='Lower bound for float or int dtype.')),
-            coreapi.Field(
-                name='upper_bound',
-                location='body',
-                required=False,
-                schema=coreschema.Number(description='Upper bound for float or int dtype.')),
-            coreapi.Field(
-                name='choices',
-                location='body',
-                required=False,
-                schema=coreschema.Array(description='Array of possible values for enum dtype.')),
-            coreapi.Field(
-                name='labels',
-                location='body',
-                required=False,
-                schema=coreschema.Array(description='Array of labels for enum dtype.')),
-            coreapi.Field(
-                name='autocomplete',
-                location='body',
-                required=False,
-                schema=coreschema.Object(
-                    description='JSON object indictating URL of autocomplete service.',
-                    properties={'serviceUrl': coreschema.String(
-                        description='URL of autocomplete service.',
-                    )},
-                ),
-            ),
-            coreapi.Field(
-                name='use_current',
-                location='body',
-                required=False,
-                schema=coreschema.Boolean(description='True to use current datetime as default.')),
-        ],
-    }, tags=['AttributeType'])
+    schema = AttributeTypeListSchema()
 
     def get(self, request, format=None, **kwargs):
         response=Response({})
         try:
-            params = self.schema.parse(request, kwargs)
+            params = parse(request)
             qs = AttributeTypeBase.objects.filter(project=params['project'])
             if params['applies_to']:
                 qs = qs.filter(**params)
@@ -139,7 +240,7 @@ class AttributeTypeListAPI(APIView):
         response=Response({})
         try:
             # Get the parameters.
-            params = self.schema.parse(request, kwargs)
+            params = parse(request)
             params['applies_to'] = EntityTypeBase.objects.get(pk=params['applies_to'])
             params['project'] = Project.objects.get(pk=params['project'])
             if params['order'] is None:
@@ -190,32 +291,53 @@ class AttributeTypeListAPI(APIView):
         finally:
             return response;
 
+class AttributeTypeDetailSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['AttributeType']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying an attribute type.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'PATCH':
+            body = {'content': {'application/json': {
+                'schema': {
+                    'type': 'object',
+                    'required': ['name', 'dtype', 'applies_to'],
+                    'properties': {
+                        'name': {
+                            'description': 'Name of the attribute.',
+                            'schema': {'type': 'string'},
+                        },
+                        'description': {
+                            'description': 'Description of the attribute.',
+                            'schema': {'type': 'string'},
+                        },
+                    },
+                },
+                'example': {
+                    'name': 'New name',
+                    'description': 'New description',
+                }
+            }}}
+        return body
+
 class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
-    schema = Schema({
-        'all': [
-            coreapi.Field(
-                name='pk',
-                location='path',
-                required=True,
-                schema=coreschema.Integer(description='A unique integer identifying an attribute type')),
-        ],
-        'GET': [],
-        'PATCH': [
-            coreapi.Field(
-                name='name',
-                location='body',
-                required=False,
-                schema=coreschema.String(description='Name of the attribute.')),
-            coreapi.Field(
-                name='description',
-                location='body',
-                required=False,
-                schema=coreschema.String(description='Description of the attribute.')),
-        ],
-        'DELETE': [],
-    }, tags=['AttributeType'])
+    schema = AttributeTypeDetailSchema()
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.

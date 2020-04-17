@@ -5,8 +5,7 @@ import os
 import subprocess
 import math
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -33,12 +32,13 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
-from ._schema import Schema
+from ._schema import parse
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
+"""
 class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
     def get_manual_fields(self, path, method):
         manual_fields = super().get_manual_fields(path,method)
@@ -75,6 +75,7 @@ class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
                               schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements')),
             ]
         return manual_fields + getOnly_fields + self.attribute_fields()
+"""
 
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
     """
@@ -90,7 +91,7 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
 
     """
     serializer_class = EntityMediaSerializer
-    schema=MediaListSchema()
+    #schema=MediaListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get(self, request, *args, **kwargs):
@@ -253,27 +254,59 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
         finally:
             return response;
 
+
+class GetFrameSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['Media']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a media object.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        params = []
+        if method == 'GET':
+            params = [
+                {
+                    'name': 'frames',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Comma-seperated list of frames to capture.',
+                    'schema': {
+                        'type': 'string',
+                        'default': '0',
+                    },
+                },
+                {
+                    'name': 'tile',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'wxh, if not supplied is made as squarish as possible.',
+                    'schema': {'type': 'string'},
+                },
+                {
+                    'name': 'roi',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'w:h:x:y, optionally crop each frame to a given roi in '
+                                   'relative coordinates.',
+                    'schema': {'type': 'string'},
+                },
+            ]
+        return params
+
+    def _get_request_body(self, path, method):
+        return {}
+
 class GetFrameAPI(APIView):
-    schema = Schema({'GET' : [
-        coreapi.Field(name='id',
-                      required=True,
-                      location='path',
-                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
-        coreapi.Field(name='frames',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)')),
-        coreapi.Field(name='tile',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='wxh, if not supplied is made as squarish as possible')),
-        coreapi.Field(name='roi',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='w:h:x:y, optionally crop each frame to a given roi in relative coordinates')),
-    ]}, tags=['Media'])
-
-
+    schema = GetFrameSchema()
     renderer_classes = (JpegRenderer,)
     permission_classes = [ProjectViewOnlyPermission]
 
@@ -284,10 +317,10 @@ class GetFrameAPI(APIView):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
             # upon success we can return an image
-            values = self.schema.parse(request, kwargs)
-            video = EntityMediaVideo.objects.get(pk=values['id'])
-            logger.info(f"{values['frames']}")
-            frames = request.query_params.get('frames', '0')
+            values = parse(request)
+            video = EntityMediaVideo.objects.get(pk=values.parameters.path['id'])
+            logger.info(f"{values.parameters.query['frames']}")
+            frames = values.parameters.query['frames']
             frames = frames.split(",")
 
             if len(frames) > 10:
