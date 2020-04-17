@@ -824,8 +824,11 @@ class GetFrame():
 
         return code, frame_data
 
-    def get_jpg(self, media_element_or_id, frames, roi=None, tile=None):
-        """ Return a potentially tiled jpeg back from the media server
+    def get_encoded_img(self, media_element_or_id, frames,
+                        roi=None,
+                        tile=None,
+                        animate=None):
+        """ Return an encoded image (jpg,gif) from the media server
 
             media_element_or_id : dict or int
                    Represents the media to fetch (either a dict with 'id' or
@@ -834,7 +837,7 @@ class GetFrame():
             frames : list
                    Represents the frames to fetch
 
-            roi : tuple
+            roi : tuple or list of tuples
                   Represents the (w,h,x,y) of a bounding box (applies to all
                   frames in a multi-frame request).
 
@@ -842,6 +845,9 @@ class GetFrame():
                    Represents the (w,h) of the tile arrangement of frames. If
                    w*h is less than the len(frames), the server ignores the
                    requested size.
+
+            animate : int
+                   Represents fps of the requested animation
         """
 
         if type(media_element_or_id) == dict:
@@ -852,8 +858,18 @@ class GetFrame():
         params={"frames" : ",".join([str(el) for el in frames])}
 
         if roi:
-            assert(len(roi) == 4)
-            params.update({"roi": ":".join([str(el) for el in roi])})
+            if type(roi) is tuple:
+                assert(len(roi) == 4)
+                params.update({"roi": ":".join([str(el) for el in roi])})
+            elif type(roi) is list:
+                frame_rois=[]
+                for frame_roi in roi:
+                    frame_rois.append(":".join([str(el) for el in frame_roi]))
+                params.update({"roi": ",".join(frame_rois)})
+
+        if animate:
+            params.update({"animate": animate})
+
 
         if tile:
             assert(len(tile) == 2)
