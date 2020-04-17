@@ -28,7 +28,6 @@ def _for_schema_view(request, view):
     return (
         view.kwargs == {}
         and type(request.authenticators[0]) == SessionAuthentication
-        and request.META['HTTP_REFERER'] == f"https://{os.getenv('MAIN_HOST')}/rest/"
         and request.META['HTTP_HOST'] == f"{os.getenv('MAIN_HOST')}"
         and request.META['RAW_URI'] == '/schema/'
     )
