@@ -85,6 +85,32 @@ class AlgorithmLaunchSchema(AutoSchema):
             }}}
         return body
 
+    def _get_responses(self, path, method):
+        responses = {}
+        responses['404'] = {'description': 'Failure to find the algorithm with the given name.'}
+        responses['400'] = {'description': 'Bad request.'}
+        if method == 'POST':
+            responses['201'] = {
+                'description': 'Successful update of attribute type.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'run_uids': {
+                            'type': 'array',
+                            'description': 'A list of uuid1 strings identifying each job '
+                                           'started.',
+                            'items': {'type': 'string'},
+                        },
+                        'group_id': {
+                            'type': 'string',
+                            'description': 'A uuid1 string identifying the group of jobs '
+                                           'started.',
+                        },
+                    },
+                }}}
+            }
+        return responses
+
 def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
         yield media_list[i:i + files_per_job]
@@ -136,10 +162,12 @@ class AlgorithmLaunchAPI(APIView):
 
             # Create algorithm jobs
             gid = str(uuid1())
+            uids = []
             submitter = TatorAlgorithm(alg_obj)
             token, _ = Token.objects.get_or_create(user=request.user)
             for batch in media_batches(media_ids, files_per_job):
                 run_uid = str(uuid1())
+                uids.append(run_uid)
                 batch_str = ','.join(batch)
                 batch_int = [int(pk) for pk in batch]
                 batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
@@ -168,8 +196,10 @@ class AlgorithmLaunchAPI(APIView):
                 )
                 prog.queued("Queued...")
 
-            response = Response({'message': f"Algorithm {alg_name} started successfully!"},
-                                status=status.HTTP_201_CREATED)
+            response = Response({'message': f"Algorithm {alg_name} started successfully!",
+                                 'run_uids': uids,
+                                 'group_id': gid},
+                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
