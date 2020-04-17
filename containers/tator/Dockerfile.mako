@@ -45,6 +45,12 @@ RUN pip3 --no-cache-dir install \
         google-auth==1.14.0 elasticsearch==7.1.0 progressbar2==3.50.1 \
         gevent==1.5.0
 
+# Install fork of openapi-core that works in DRF views
+WORKDIR /working
+RUN git clone https://github.com/jrtcppv/openapi-core.git
+WORKDIR /working/openapi-core
+RUN python3 setup.py install
+
 # Install kubernetes client
 WORKDIR /working
 RUN git clone --branch release-10.0 --recursive https://github.com/kubernetes-client/python
