@@ -144,7 +144,9 @@ class TranscodeAPI(APIView):
 
             prog.progress("Transcoding...", 60)
 
-            response = Response({'message': "Transcode started successfully!"},
+            response = Response({'message': "Transcode started successfully!",
+                                'run_uid': uid,
+                                'group_id': gid},
                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:
