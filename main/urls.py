@@ -76,6 +76,10 @@ urlpatterns += [
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
+        'rest/AlgorithmLaunch/<int:project>',
+        AlgorithmLaunchAPI.as_view(),
+    ),
+    path(
         'rest/AttributeTypes/<int:project>',
         AttributeTypeListAPI.as_view(),
         name='AttributeTypes'
@@ -93,10 +97,6 @@ urlpatterns += [
     path(
         'rest/Algorithms/<int:project>',
         AlgorithmListAPI.as_view(),
-    ),
-    path(
-        'rest/AlgorithmLaunch/<int:project>',
-        AlgorithmLaunchAPI.as_view(),
     ),
     path(
         'rest/Analyses/<int:project>',

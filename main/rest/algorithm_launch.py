@@ -3,8 +3,7 @@ import logging
 from uuid import uuid1
 
 from rest_framework.views import APIView
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -23,6 +22,68 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
+class AlgorithmLaunchSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['Algorithm']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'project',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a project.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'POST':
+            body = {'content': {'application/json': {
+                'schema': {
+                    'type': 'object',
+                    'required': ['algorithm_name'],
+                    'properties': {
+                        'algorithm_name': {
+                            'description': 'Name of the algorithm to execute.',
+                            'type': 'string',
+                        },
+                        'media_query': {
+                            'description': 'Query string used to filter media IDs. Must '
+                                           'supply media_query or media_ids.',
+                            'type': 'string',
+                        },
+                        'media_ids': {
+                            'description': 'List of media IDs. Must supply media_query '
+                                           'or media_ids.',
+                            'type': 'array',
+                            'items': {'type': 'integer'},
+                        },
+                    },
+                },
+                'examples': {
+                    'by_query': {
+                        'summary': 'Launch by query',
+                        'value': {
+                            'algorithm_name': 'My Algorithm',
+                            'media_query': '?project=1&type=2',
+                        },
+                    },
+                    'by_ids': {
+                        'summary': 'Launch by media ids',
+                        'value': {
+                            'algorithm_name': 'My Algorithm',
+                            'media_ids': [1, 5, 10],
+                        },
+                    },
+                },
+            }}}
+        return body
+
 def media_batches(media_list, files_per_job):
     for i in range(0, len(media_list), files_per_job):
         yield media_list[i:i + files_per_job]
@@ -31,24 +92,7 @@ class AlgorithmLaunchAPI(APIView):
     """
     Start an algorithm.
     """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-        coreapi.Field(name='algorithm_name',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Name of the algorithm to execute.')),
-        coreapi.Field(name='media_query',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='Query string used to filter media IDs. (Must supply media_query or media_ids)')),
-        coreapi.Field(name='media_ids',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='List of media IDs. (Must supply media_query or media_ids)')),
-    ])
+    schema = AlgorithmLaunchSchema()
     permission_classes = [ProjectExecutePermission]
 
     def post(self, request, format=None, **kwargs):
