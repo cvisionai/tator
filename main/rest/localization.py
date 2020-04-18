@@ -2,8 +2,6 @@ import traceback
 import logging
 import time
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -29,9 +27,10 @@ from ..models import type_to_obj
 from ..serializers import EntityLocalizationSerializer
 from ..serializers import FastEntityLocalizationSerializer
 from ..search import TatorSearch
+from ..schema import LocalizationListSchema
 
+from ._schema import parse
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
@@ -42,63 +41,6 @@ from ._util import computeRequiredFields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
-
-class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        postOnly_fields = []
-
-        manual_fields += [
-            coreapi.Field(
-                name='project',
-                required=True,
-                location='path',
-                schema=coreschema.String(description='A unique integer identifying a project')
-            ),
-        ]
-
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-                coreapi.Field(name='version',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a Version')),
-                coreapi.Field(name='modified',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
-            ] + self.attribute_fields()
-        if (method=='POST'):
-             postOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-                coreapi.Field(name='<details>',
-                              required=False,
-                              location='body',
-                              schema=coreschema.String(description='Various depending on `type`. See `/EntityTypeSchema` service.')),
-                coreapi.Field(name='operation',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
-
-            ]
-
-        return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
 
 class LocalizationListAPI(APIView, AttributeFilterMixin):
     """
@@ -242,9 +184,6 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             requiredFields, reqAttributes, attrTypes=cache['required']
         else:
             requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
-
-        if 'attributes' in reqObject:
-            reqObject = {**reqObject, **reqObject['attributes']}
 
         for field in {**requiredFields,**reqAttributes}:
             if field not in reqObject:
@@ -405,6 +344,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
     serializer_class = EntityLocalizationSerializer
     queryset = EntityLocalizationBase.objects.all()
     permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
 
     def patch(self, request, **kwargs):
         response = Response({})

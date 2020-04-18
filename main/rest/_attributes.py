@@ -1,7 +1,6 @@
 import traceback
 import logging
 
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models.expressions import RawSQL
@@ -289,43 +288,6 @@ def bulk_patch_attributes(new_attrs, qs):
             new_value=val,
             create_missing=True,
         ))
-
-class AttributeFilterSchemaMixin:
-    """Defines attribute filtering schema.
-    """
-    def attribute_fields(self):
-        """Returns manual fields for attribute filtering.
-        """
-        return [
-            coreapi.Field(name='attribute',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_lt',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_lte',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_gt',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_gte',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_contains',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_distance',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::distance_km::lat::lon,[key1::distance_km1::lat1::lon1]')),
-        ]
 
 class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.

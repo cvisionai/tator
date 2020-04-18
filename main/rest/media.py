@@ -26,7 +26,6 @@ from ..search import TatorSearch
 from ..renderers import JpegRenderer
 
 from ._media_query import get_media_queryset
-from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes

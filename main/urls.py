@@ -97,8 +97,6 @@ urlpatterns += [
         'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Localizations/<int:project>',
         LocalizationListAPI.as_view(),
@@ -108,6 +106,8 @@ urlpatterns += [
         'rest/Localization/<int:id>',
         LocalizationDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/LocalizationTypes/<int:project>',
         LocalizationTypeListAPI.as_view(),
