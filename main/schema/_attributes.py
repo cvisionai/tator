@@ -1,5 +1,40 @@
 attribute_filter_parameter_schema = [
     {
+        'name': 'search',
+        'in': 'query',
+        'required': False,
+        'description': 'Lucene query syntax string for use with Elasticsearch. '
+                       'See `reference <https://lucene.apache.org/core/2_9_4/'
+                       'queryparsersyntax.html>`_.',
+        'schema': {'type': 'string'},
+        'examples': {
+            'basic': {
+                'summary': 'Generic search',
+                'value': '"My search string"',
+            },
+            'user_attribute': {
+                'summary': 'Search on user-defined attribute',
+                'value': 'Species:lobster',
+            },
+            'builtin_attribute': {
+                'summary': 'Search built-in attribute',
+                'value': '_name:*.mp4',
+            },
+            'numerical_attribute': {
+                'summary': 'Search numerical attribute',
+                'value': '_width:<0.5',
+            },
+            'wildcard': {
+                'summary': 'Wildcard search',
+                'value': 'Species:*hake',
+            },
+            'boolean': {
+                'summary': 'Boolean search',
+                'value': '_name:*.mp4 AND Species:*hake',
+            },
+        },
+    },
+    {
         'name': 'attribute',
         'in': 'query',
         'required': False,
@@ -62,5 +97,14 @@ attribute_filter_parameter_schema = [
                        '[attribute2::distancekm2::lat2::lon2].',
         'schema': {'type': 'string'},
         'example': 'attribute_distance=Location::100::-89.0::-179.0',
+    },
+    {
+        'name': 'attribute_null',
+        'in': 'query',
+        'required': False,
+        'description': 'Attribute null filter. Returns elements for which '
+                       'a given attribute is not defined.',
+        'schema': {'type': 'string'},
+        'example': 'attribute_null=Temperature',
     },
 ]
