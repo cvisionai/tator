@@ -71,10 +71,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
     def get(self, request, format=None, **kwargs):
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, _ = get_annotation_queryset(
                 self.kwargs['project'],
-                self.request.query_params,
+                params,
                 self,
             )
             self.request=request
@@ -101,7 +102,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
                     for media in medias:
                         filename_dict[media['id']] = media['name']
 
-                    filter_type=self.request.query_params.get('type', None)
+                    filter_type=params.get('type', None)
                     type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
                     for element in responseData:
                         del element['meta']
@@ -129,16 +130,8 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
         stage = {}
         stage[0] = time.time()
-        ## Check for required fields first
-        if 'media_id' in reqObject:
-            media_id = reqObject['media_id'];
-        else:
-            raise Exception('Missing required field in request Object "media_id", got={}'.format(reqObject))
-
-        if 'type' in reqObject:
-            entityTypeId=reqObject['type']
-        else:
-            raise Exception('Missing required field in request object "type"')
+        media_id = reqObject['media_id'];
+        entityTypeId=reqObject['type']
 
         stage[1] = time.time()
         if cache:
@@ -289,10 +282,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 self.kwargs['project'],
-                self.request.query_params,
+                params,
                 self
             )
             if len(annotation_ids) == 0:
@@ -314,10 +308,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 self.kwargs['project'],
-                self.request.query_params,
+                params,
                 self
             )
             if len(annotation_ids) == 0:
@@ -349,7 +344,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            localization_object = EntityLocalizationBase.objects.get(pk=self.kwargs['pk'])
+            localization_object = EntityLocalizationBase.objects.get(pk=self.kwargs['id'])
             self.check_object_permissions(request, localization_object)
 
             # Patch frame.
