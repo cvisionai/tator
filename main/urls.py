@@ -148,8 +148,6 @@ urlpatterns += [
         'rest/MediaType/<int:id>',
         MediaTypeDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Memberships/<int:project>',
         MembershipListAPI.as_view(),
@@ -158,6 +156,8 @@ urlpatterns += [
         'rest/Membership/<int:id>',
         MembershipDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Notify',
         NotifyAPI.as_view(),

@@ -1648,12 +1648,11 @@ class MembershipTestCase(
         self.list_uri = 'Memberships'
         self.detail_uri = 'Membership'
         self.patch_json = {
-            'user': self.user.pk,
-            'permission': 'a',
+            'permission': 'Full Control',
         }
         self.create_json = {
             'user': self.user.pk,
-            'permission': 'a',
+            'permission': 'Full Control',
         }
         self.edit_permission = Permission.FULL_CONTROL
 

@@ -20,9 +20,9 @@ from .media_prev import MediaPrevSchema
 from .media_sections import MediaSectionsSchema
 from .media_type import MediaTypeListSchema
 from .media_type import MediaTypeDetailSchema
-"""
 from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
+"""
 from .notify import NotifySchema
 from .progress import ProgressSchema
 from .project import ProjectListSchema
