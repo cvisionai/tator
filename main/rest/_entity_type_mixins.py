@@ -30,9 +30,6 @@ class EntityTypeListAPIMixin(APIView):
     permission_classes = [ProjectFullControlPermission]
 
     def get(self, request, format=None, **kwargs):
-        """
-        Returns a list of all LocalizationTypes associated with the given media.
-        """
         response=Response({})
 
         try:
