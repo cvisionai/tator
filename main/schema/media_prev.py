@@ -94,4 +94,13 @@ class MediaPrevSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {'description': 'ID of previous media in the list corresponding to '
                                                'query.'}
+            responses['200'] = {
+                'description': 'ID of previous media in the list corresponding to query.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'prev': {'type': 'integer', 'minimum': 0},
+                    },
+                }}}
+            }
         return responses

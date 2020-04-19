@@ -92,6 +92,13 @@ class MediaNextSchema(AutoSchema):
         responses['404'] = {'description': 'Failure to find project with given ID.'}
         responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'ID of next media in the list corresponding to '
-                                               'query.'}
+            responses['200'] = {
+                'description': 'ID of next media in the list corresponding to query.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'next': {'type': 'integer', 'minimum': 0},
+                    },
+                }}}
+            }
         return responses
