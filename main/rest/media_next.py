@@ -1,21 +1,15 @@
 from collections import defaultdict
-import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.core.exceptions import PermissionDenied
-from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import EntityMediaBase
 from ..search import TatorSearch
 from ..schema import MediaNextSchema
 from ..schema import parse
 
-from ._attribute_query import get_attribute_query
 from ._media_query import get_media_queryset
 from ._permissions import ProjectViewOnlyPermission
-
-logger = logging.getLogger(__name__)
 
 class MediaNextAPI(APIView):
     """ Retrieve ID of next media in a media list.
