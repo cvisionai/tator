@@ -279,9 +279,14 @@ class GetFrameSchema(AutoSchema):
                     'required': False,
                     'description': 'Comma-seperated list of frames to capture.',
                     'schema': {
-                        'type': 'string',
-                        'default': '0',
+                        'type': 'array',
+                        'items': {
+                            'type': 'integer',
+                            'minimum': 0,
+                        },
+                        'default': [0],
                     },
+                    'example': [0, 100, 200],
                 },
                 {
                     'name': 'tile',
@@ -325,15 +330,13 @@ class GetFrameAPI(APIView):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
         try:
             # upon success we can return an image
-            values = parse(request)
-            video = EntityMediaVideo.objects.get(pk=values.parameters.path['id'])
-            logger.info(f"{values.parameters.query['frames']}")
-            frames = values.parameters.query['frames']
-            frames = frames.split(",")
+            params = parse(request)
+            video = EntityMediaVideo.objects.get(pk=params['id'])
+            frames = params['frames']
 
             if len(frames) > 10:
                 raise Exception("Too many frames requested")
-            tile_size = values['tile']
+            tile_size = params.get('tile', None)
 
             try:
                 if tile_size != None:
@@ -361,7 +364,7 @@ class GetFrameAPI(APIView):
                 width = video.media_files["streaming"][0]["resolution"][1]
             # compute the crop argument
             crop_filter = None
-            roi = request.query_params.get('roi', None)
+            roi = params.get('roi', None)
             if roi:
                 comps = roi.split(':')
                 if len(comps) == 4:
