@@ -15,8 +15,8 @@ from .localization_type import LocalizationTypeDetailAPI
 from .media import MediaListAPI
 from .media import MediaDetailAPI
 from .media import GetFrameAPI
-"""
 from .media_next import MediaNextAPI
+"""
 from .media_prev import MediaPrevAPI
 from .media_sections import MediaSectionsAPI
 from .media_type import MediaTypeListAPI

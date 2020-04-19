@@ -7,7 +7,8 @@ from ..search import TatorSearch
 from ._attribute_query import get_attribute_query
 from ._attributes import AttributeFilterMixin
 
-def get_media_queryset(project, query_params, attr_filter):
+
+def get_media_queryset(project, query_params, dry_run=False):
     """Converts raw media query string into a list of IDs and a count.
     """
     mediaId = query_params.get('media_id', None)
@@ -46,6 +47,9 @@ def get_media_queryset(project, query_params, attr_filter):
         query['size'] = int(stop) - int(start)
 
     query = get_attribute_query(query_params, query, bools, project)
+
+    if dry_run:
+        return [], [], query
 
     media_ids, media_count = TatorSearch().search(project, query)
 
