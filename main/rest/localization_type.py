@@ -21,6 +21,12 @@ from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
 class LocalizationTypeListAPI(EntityTypeListAPIMixin):
+    """ Create or retrieve localization types.
+
+        A localization type is the metadata definition object for a localization. It includes
+        shape, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     pkname='media_id'
     entity_endpoint='Localizations'
     entityBaseObj=EntityTypeLocalizationBase
@@ -64,6 +70,12 @@ class LocalizationTypeListAPI(EntityTypeListAPIMixin):
             return response;
 
 class LocalizationTypeDetailAPI(EntityTypeDetailAPIMixin):
+    """ Interact with an individual localization type.
+
+        A localization type is the metadata definition object for a localization. It includes
+        shape, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     pkname='media_id'
     entity_endpoint='Localizations'
     entityBaseObj=EntityTypeLocalizationBase
