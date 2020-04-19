@@ -1,6 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._attributes import attribute_filter_parameter_schema
+from ._annotation_query import annotation_filter_parameter_schema
 
 localization_properties = {
     'x': {
@@ -83,49 +84,7 @@ class LocalizationListSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PATCH', 'DELETE']:
-            params = [
-                {
-                    'name': 'media_id',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Unique integer identifying a media element.',
-                    'schema': {'type': 'integer'},
-                },
-                {
-                    'name': 'type',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Unique integer identifying a localization type.',
-                    'schema': {'type': 'integer'},
-                },
-                {
-                    'name': 'version',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Unique integer identifying a version.',
-                    'schema': {'type': 'integer'},
-                },
-                {
-                    'name': 'modified',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Whether to return original or modified localizations, 0 or 1.',
-                    'schema': {
-                        'type': 'integer',
-                        'enum': [0, 1],
-                    },
-                },
-                {
-                    'name': 'operation',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Set to "count" to return a count of objects instead of the objects.',
-                    'schema': {
-                        'type': 'string',
-                        'enum': ['count'],
-                    },
-                },
-            ] + attribute_filter_parameter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
     def _get_request_body(self, path, method):
