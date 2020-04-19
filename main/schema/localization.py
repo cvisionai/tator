@@ -289,3 +289,49 @@ class LocalizationListSchema(AutoSchema):
             responses['204'] = {'description': 'Successful bulk delete of localizations.'}
         return responses
 
+class LocalizationDetailSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['Localization']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a localization.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'PATCH':
+            body = {'content': {'application/json': {
+                'schema': {
+                    'type': 'object',
+                    'additionalProperties': True,
+                    'properties': localization_properties,
+                },
+                'example': {
+                    'x': 0.25,
+                    'y': 0.25,
+                    'width': 0.25,
+                    'height': 0.25,
+                }
+            }}}
+        return body
+
+    def _get_responses(self, path, method):
+        responses = super()._get_responses(path, method)
+        responses['404'] = {'description': 'Failure to find localization with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
+        if method == 'PATCH':
+            responses['200'] = {'description': 'Successful update of localization.'}
+        if method == 'DELETE':
+            responses['204'] = {'description': 'Successful deletion of localization.'}
+        return responses
+
