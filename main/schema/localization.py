@@ -64,6 +64,11 @@ localization_properties = {
         'description': 'Frame number of this localization if it is in a video.',
         'type': 'integer',
     },
+    'attributes': {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': True,
+    }
 }
 
 class LocalizationListSchema(AutoSchema):
@@ -313,7 +318,6 @@ class LocalizationDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'additionalProperties': True,
                     'properties': localization_properties,
                 },
                 'example': {

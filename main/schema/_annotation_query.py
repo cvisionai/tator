@@ -13,7 +13,7 @@ annotation_filter_parameter_schema = [
         'name': 'type',
         'in': 'query',
         'required': False,
-        'description': 'Unique integer identifying a localization type.',
+        'description': 'Unique integer identifying a annotation type.',
         'schema': {'type': 'integer'},
     },
     {
@@ -27,7 +27,7 @@ annotation_filter_parameter_schema = [
         'name': 'modified',
         'in': 'query',
         'required': False,
-        'description': 'Whether to return original or modified localizations, 0 or 1.',
+        'description': 'Whether to return original or modified annotations, 0 or 1.',
         'schema': {
             'type': 'integer',
             'enum': [0, 1],
