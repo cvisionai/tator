@@ -1369,7 +1369,7 @@ class TreeLeafTypeTestCase(
     def tearDown(self):
         self.project.delete()
 
-class EntityStateTypesTestCase(
+class StateTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
@@ -1398,8 +1398,8 @@ class EntityStateTypesTestCase(
         ]
         for entity_type in self.entities:
             create_test_attribute_types(entity_type, self.project)
-        self.list_uri = 'EntityStateTypes'
-        self.detail_uri = 'EntityStateType'
+        self.list_uri = 'StateTypes'
+        self.detail_uri = 'StateType'
         self.create_json = {
             'name': 'frame state type',
             'association': 'Frame',
@@ -1411,7 +1411,7 @@ class EntityStateTypesTestCase(
     def tearDown(self):
         self.project.delete()
         
-class EntityTypeMediaTestCase(
+class MediaTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
@@ -1422,8 +1422,8 @@ class EntityTypeMediaTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.detail_uri = 'EntityTypeMedia'
-        self.list_uri = 'EntityTypeMedias'
+        self.detail_uri = 'MediaType'
+        self.list_uri = 'MediaTypes'
         self.entities = [
             EntityTypeMediaVideo.objects.create(
                 name="videos",
@@ -1588,7 +1588,7 @@ class FrameAssociationTestCase(
     def tearDown(self):
         self.project.delete()
 
-class LocalizationTypesTestCase(
+class LocalizationTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
