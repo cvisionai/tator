@@ -1,7 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._attributes import attribute_filter_parameter_schema
-from ._annotation_query import annotation_filter_parameter_schema
 
 media_properties = {
     'name': {
