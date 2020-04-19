@@ -1,41 +1,63 @@
 from collections import defaultdict
+import copy
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from ..search import TatorSearch
+from ..schema import MediaSectionsSchema
+from ..schema import parse
 
-from ._media_query import get_attribute_query
+from ._media_query import get_media_queryset
 from ._permissions import ProjectViewOnlyPermission
 
+def _search_by_dtype(dtype, query, response_data, params):
+    dtype_filter = [{'match': {'_dtype': {'query': dtype}}}]
+    query = copy.deepcopy(query)
+    if query['query']['bool']['filter']:
+        query['query']['bool']['filter'] += dtype_filter
+    else:
+        query['query']['bool']['filter'] = dtype_filter
+    num_elements = TatorSearch().search_raw(params['project'], query)
+    num_elements = num_elements['aggregations']['section_counts']['buckets']
+    for data in num_elements:
+        response_data[data['key']][f'num_{dtype}s'] = data['doc_count']
+    return response_data
+
 class MediaSectionsAPI(APIView):
+    """ Retrieve media counts by section.
+
+        This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
+        but only returns the number of images and videos per sections.
     """
-    Endpoint for getting section names and media counts of a project
-    """
+    schema = MediaSectionsSchema()
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, *args, **kwargs):
-        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+        params = parse(request)
+        
+        # Get query associated with media filters.
+        _, _, query = get_media_queryset(params['project'], params, True)
+
+        # Update query with aggregations.
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['aggs']['section_counts']['terms']['size'] = 1000 # Return up to 1000 sections
         query['size'] = 0
 
-
+        # Do queries.
         response_data = defaultdict(dict)
+        response_data = _search_by_dtype('image', query, response_data, params)
+        response_data = _search_by_dtype('video', query, response_data, params)
 
-        bools = [{'match': {'_dtype': {'query': 'image'}}}]
-        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
-        num_images = TatorSearch().search_raw(kwargs['project'], query)
-        num_images = num_images['aggregations']['section_counts']['buckets']
-        for data in num_images:
-            response_data[data['key']]['num_images'] = data['doc_count']
+        # Fill in zeros.
+        for section in response_data:
+            no_videos = 'num_videos' not in response_data[section]
+            no_images = 'num_images' not in response_data[section]
+            if no_images:
+                response_data[section]['num_images'] = 0
+            if no_videos:
+                response_data[section]['num_videos'] = 0
 
-        bools = [{'match': {'_dtype': {'query': 'video'}}}]
-        query = get_attribute_query(request.query_params, query, bools, kwargs['project'])
-        num_videos = TatorSearch().search_raw(kwargs['project'], query)
-        num_videos = num_videos['aggregations']['section_counts']['buckets']
-        for data in num_videos:
-            response_data[data['key']]['num_videos'] = data['doc_count']
-
+        # Do query for videos.
         return Response(response_data)
 
