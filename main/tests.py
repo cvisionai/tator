@@ -996,12 +996,12 @@ class VideoTestCase(
         ]
         self.media_entities = self.entities
         self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.list_uri = 'EntityMedias'
-        self.detail_uri = 'EntityMedia'
+        self.list_uri = 'Medias'
+        self.detail_uri = 'Media'
         self.create_entity = functools.partial(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'video1', 'resourcetype': 'EntityMediaVideo'}
+        self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1030,8 +1030,8 @@ class ImageTestCase(
         ]
         self.media_entities = self.entities
         self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.list_uri = 'EntityMedias'
-        self.detail_uri = 'EntityMedia'
+        self.list_uri = 'Medias'
+        self.detail_uri = 'Media'
         self.create_entity = functools.partial(
             create_test_image, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
