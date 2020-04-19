@@ -241,23 +241,18 @@ def validate_attributes(request, obj):
        a type conversion.
     """
     attributes = request.data.get("attributes", None)
-    if not attributes:
-        attributes = request.data
-    validated = {}
-    for attr_name in attributes:
-        if attr_name == 'tator_user_sections':
-            # This is a built-in attribute used for organizing media sections.
-            validated[attr_name] = attributes[attr_name]
-            continue
-        attr_type_qs = AttributeTypeBase.objects.filter(
-            name=attr_name).filter(applies_to=obj.meta)
-        if attr_type_qs.count() != 1:
-            continue
-        attr_type = attr_type_qs[0]
-        # This is just done to test convertibility. If not, an exception is raised.
-        convert_attribute(attr_type, attributes[attr_name])
-        validated[attr_name] = attributes[attr_name]
-    return validated
+    if attributes:
+        for attr_name in attributes:
+            if attr_name == 'tator_user_sections':
+                # This is a built-in attribute used for organizing media sections.
+                continue
+            attr_type_qs = AttributeTypeBase.objects.filter(
+                name=attr_name).filter(applies_to=obj.meta)
+            if attr_type_qs.count() != 1:
+                raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
+            attr_type = attr_type_qs[0]
+            convert_attribute(attr_type, attributes[attr_name])
+    return attributes
 
 def patch_attributes(new_attrs, obj):
     """Updates attribute values.
