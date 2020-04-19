@@ -28,6 +28,7 @@ from ..serializers import EntityLocalizationSerializer
 from ..serializers import FastEntityLocalizationSerializer
 from ..search import TatorSearch
 from ..schema import LocalizationListSchema
+from ..schema import LocalizationDetailSchema
 
 from ._schema import parse
 from ._annotation_query import get_annotation_queryset
@@ -43,17 +44,15 @@ from ._permissions import ProjectEditPermission
 logger = logging.getLogger(__name__)
 
 class LocalizationListAPI(APIView, AttributeFilterMixin):
-    """
-    Endpoint for getting + adding localizations
+    """ Interact with list of localizations.
 
-    Example:
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        one of three types of entity in Tator, meaning they can be described by user defined
+        attributes.
 
-    #all types all videos
-    GET /localizations
-
-    #only lines for media_id=3 of type 1
-    GET /localizations?type=1&media=id=3
-
+        This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
+        Both are accomplished using the same query parameters used for a GET request.
     """
     serializer_class = EntityLocalizationSerializer
     schema=LocalizationListSchema()
@@ -334,8 +333,14 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
 
 class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
+    """ Interact with single localization.
+
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        one of three types of entity in Tator, meaning they can be described by user defined
+        attributes.
     """
+    schema = LocalizationDetailSchema()
     serializer_class = EntityLocalizationSerializer
     queryset = EntityLocalizationBase.objects.all()
     permission_classes = [ProjectEditPermission]
@@ -344,20 +349,20 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            localization_object = EntityLocalizationBase.objects.get(pk=self.kwargs['id'])
-            self.check_object_permissions(request, localization_object)
+            params = parse(request)
+            localization_object = EntityLocalizationBase.objects.get(pk=params['id'])
 
             # Patch frame.
-            frame = request.data.get("frame", None)
+            frame = params.get("frame", None)
             if frame:
                 localization_object.frame = frame
 
             if type(localization_object) == EntityLocalizationBox:
-                x = request.data.get("x", None)
-                y = request.data.get("y", None)
-                height = request.data.get("height", None)
-                width = request.data.get("width", None)
-                thumbnail_image = request.data.get("thumbnail_image", None)
+                x = params.get("x", None)
+                y = params.get("y", None)
+                height = params.get("height", None)
+                width = params.get("width", None)
+                thumbnail_image = params.get("thumbnail_image", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -382,10 +387,10 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 # TODO we shouldn't be saving here (after patch below)
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationLine:
-                x0 = request.data.get("x0", None)
-                y0 = request.data.get("y0", None)
-                x1 = request.data.get("x1", None)
-                y1 = request.data.get("y1", None)
+                x0 = params.get("x0", None)
+                y0 = params.get("y0", None)
+                x1 = params.get("x1", None)
+                y1 = params.get("y1", None)
                 if x0:
                     localization_object.x0 = x0
                 if y0:
@@ -396,8 +401,8 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                     localization_object.y1 = y1
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationDot:
-                x = request.data.get("x", None)
-                y = request.data.get("y", None)
+                x = params.get("x", None)
+                y = params.get("y", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -408,8 +413,8 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 pass
 
             # Patch modified field
-            if "modified" in request.data:
-                localization_object.modified = request.data["modified"]
+            if "modified" in params:
+                localization_object.modified = params["modified"]
                 localization_object.save()
 
             new_attrs = validate_attributes(request, localization_object)

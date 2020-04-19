@@ -1,1 +1,2 @@
 from .localization import LocalizationListSchema
+from .localization import LocalizationDetailSchema
