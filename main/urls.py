@@ -160,12 +160,12 @@ urlpatterns += [
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Progress/<int:project>',
         ProgressAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Projects',
         ProjectListAPI.as_view(),
