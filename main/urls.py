@@ -130,13 +130,13 @@ urlpatterns += [
         MediaNextAPI.as_view(),
         name='MediaNext',
     ),
-]
-"""
     path(
         'rest/MediaPrev/<int:id>',
         MediaPrevAPI.as_view(),
         name='MediaPrev',
     ),
+]
+"""
     path(
         'rest/MediaSections/<int:project>',
         MediaSectionsAPI.as_view(),

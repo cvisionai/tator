@@ -38,10 +38,11 @@ class MediaNextAPI(APIView):
         _, _, query = get_media_queryset(media.project.pk, params, True)
 
         # Modify the query to only retrieve next media.
+        range_filter = [{'range': {'_exact_name': {'gt': media.name}}}]
         if query['query']['bool']['filter']:
-            query['query']['bool']['filter'] += [{'range': {'_exact_name': {'gt': media.name}}}]
+            query['query']['bool']['filter'] += range_filter
         else:
-            query['query']['bool']['filter'] = [{'range': {'_exact_name': {'gt': media.name}}}]
+            query['query']['bool']['filter'] = range_filter
         query['size'] = 1
         media_ids, count = TatorSearch().search(media.project.pk, query)
         if count > 0:
