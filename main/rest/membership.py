@@ -18,6 +18,15 @@ from ..schema import parse
 from ._permissions import ProjectFullControlPermission
 
 class MembershipListAPI(ListCreateAPIView):
+    """ Create or retrieve a list of project memberships.
+
+        Memberships specify a permission level of a user to a project. There are currently
+        five cumulative permission levels. `View Only` can only view a project and not change
+        any data. `Can Edit` can create, modify, and delete annotations. `Can Transfer` can
+        upload and download media. `Can Execute` can launch algorithm workflows. `Full Control`
+        can change project settings, including inviting new members, project name, and
+        project metadata schema.
+    """
     schema = MembershipListSchema()
     serializer_class = MembershipSerializer
     permission_classes = [ProjectFullControlPermission]
@@ -62,6 +71,15 @@ class MembershipListAPI(ListCreateAPIView):
         return members
 
 class MembershipDetailAPI(RetrieveUpdateDestroyAPIView):
+    """ Interact with an individual project membership.
+
+        Memberships specify a permission level of a user to a project. There are currently
+        five cumulative permission levels. `View Only` can only view a project and not change
+        any data. `Can Edit` can create, modify, and delete annotations. `Can Transfer` can
+        upload and download media. `Can Execute` can launch algorithm workflows. `Full Control`
+        can change project settings, including inviting new members, project name, and
+        project metadata schema.
+    """
     schema = MembershipDetailSchema()
     serializer_class = MembershipSerializer
     queryset = Membership.objects.all()
