@@ -34,11 +34,11 @@ class LocalizationTypeListSchema(AutoSchema):
                         'name': {
                             'description': 'Name of the localization type.',
                             'type': 'string',
-                            'default': '',
                         },
                         'description': {
                             'description': 'Description of the localization type.',
                             'type': 'string',
+                            'default': '',
                         },
                         'dtype': {
                             'description': 'Shape of the localization.',

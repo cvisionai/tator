@@ -18,9 +18,9 @@ from .media import GetFrameAPI
 from .media_next import MediaNextAPI
 from .media_prev import MediaPrevAPI
 from .media_sections import MediaSectionsAPI
-"""
 from .media_type import MediaTypeListAPI
 from .media_type import MediaTypeDetailAPI
+"""
 from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
 from .notify import NotifyAPI
