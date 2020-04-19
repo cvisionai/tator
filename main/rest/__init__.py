@@ -10,9 +10,9 @@ from .job import JobDetailAPI
 from .localization_association import LocalizationAssociationDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
-"""
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI
+"""
 from .media import MediaListAPI
 from .media import MediaDetailAPI
 """

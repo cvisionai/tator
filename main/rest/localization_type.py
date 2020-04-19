@@ -1,7 +1,5 @@
 import traceback
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -14,6 +12,9 @@ from ..models import EntityTypeLocalizationDot
 from ..models import EntityLocalizationBase
 from ..models import Project
 from ..serializers import EntityTypeLocalizationAttrSerializer
+from ..schema import LocalizationTypeListSchema
+from ..schema import LocalizationTypeDetailSchema
+from ..schema import parse
 
 from ._entity_type_mixins import EntityTypeListAPIMixin
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
@@ -25,49 +26,24 @@ class LocalizationTypeListAPI(EntityTypeListAPIMixin):
     entityBaseObj=EntityTypeLocalizationBase
     baseObj=EntityLocalizationBase
     entityTypeAttrSerializer=EntityTypeLocalizationAttrSerializer
+    schema = LocalizationTypeListSchema()
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', '')
-            dtype = request.data.get('dtype', None)
-            media_types = request.data.get('media_types', None)
-            project = kwargs['project']
-
-            if name is None:
-                raise Exception('Missing required field "name" for localization type!')
-
-            if dtype is None:
-                raise Exception('Missing required field "dtype" for localization type!')
-
-            if dtype not in ['box', 'line', 'dot']:
-                raise Exception(f'Invalid dtype for localization type "{dtype}"! Must be one "box", "line" or "dot"!')
-
-            if media_types is None:
-                raise Exception('Missing required field "media_types" for localization type!')
-
+            params = parse(request)
+            params['project'] = Project.objects.get(pk=params['project'])
+            dtype = params.pop('dtype')
+            media_types = params.pop('media_types')
             if dtype == 'box':
-                obj = EntityTypeLocalizationBox(
-                    name=name,
-                    description=description,
-                    project=Project.objects.get(pk=project),
-                )
+                obj = EntityTypeLocalizationBox(**params)
             elif dtype == 'line':
-                obj = EntityTypeLocalizationLine(
-                    name=name,
-                    description=description,
-                    project=Project.objects.get(pk=project),
-                )
+                obj = EntityTypeLocalizationLine(**params)
             elif dtype == 'dot':
-                obj = EntityTypeLocalizationDot(
-                    name=name,
-                    description=description,
-                    project=Project.objects.get(pk=project),
-                )
+                obj = EntityTypeLocalizationDot(**params)
             obj.save()
-            media_qs = EntityTypeMediaBase.objects.filter(project=project, pk__in=media_types)
+            media_qs = EntityTypeMediaBase.objects.filter(project=params['project'], pk__in=media_types)
             if media_qs.count() != len(media_types):
                 obj.delete()
                 raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating localization type!")
@@ -94,23 +70,21 @@ class LocalizationTypeDetailAPI(EntityTypeDetailAPIMixin):
     baseObj=EntityLocalizationBase
     entityTypeAttrSerializer=EntityTypeLocalizationAttrSerializer
 
-    schema=AutoSchema(manual_fields=
-                          [coreapi.Field(name='pk',
-                                         required=True,
-                                         location='path',
-                                         schema=coreschema.String(description='A unique integer value identifying a localization type'))])
+    schema = LocalizationTypeDetailSchema()
     serializer_class = EntityTypeLocalizationAttrSerializer
     permission_classes = [ProjectFullControlPermission]
+    lookup_field = 'id'
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.
         """
         response = Response({})
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', None)
+            params = parse(request)
+            name = params.get('name', None)
+            description = params.get('description', None)
 
-            obj = EntityTypeLocalizationBase.objects.get(pk=int(kwargs['pk']))
+            obj = EntityTypeLocalizationBase.objects.get(pk=params['id'])
             if name is not None:
                 obj.name = name
             if description is not None:

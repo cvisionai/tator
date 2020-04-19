@@ -43,6 +43,7 @@ class AttributeTypeListSchema(AutoSchema):
                         'description': {
                             'description': 'Description of the attribute.',
                             'type': 'string',
+                            'default': '',
                         },
                         'dtype': {
                             'description': 'Data type of the attribute.',
@@ -202,7 +203,6 @@ class AttributeTypeDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'required': ['name', 'dtype', 'applies_to'],
                     'properties': {
                         'name': {
                             'description': 'Name of the attribute.',

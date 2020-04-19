@@ -1,5 +1,3 @@
-from ._parse import parse
-from ._generator import CustomGenerator
 from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
 from .analysis import AnalysisListSchema
@@ -9,11 +7,12 @@ from .entity_type_schema import EntityTypeSchemaSchema
 from .frame_association import FrameAssociationDetailSchema
 from .job_group import JobGroupDetailSchema
 from .job import JobDetailSchema
+from .localization_association import LocalizationAssociationDetailSchema
 from .localization import LocalizationListSchema
 from .localization import LocalizationDetailSchema
-"""
 from .localization_type import LocalizationTypeListSchema
 from .localization_type import LocalizationTypeDetailSchema
+"""
 from .media import MediaListSchema
 from .media import MediaDetailSchema
 """
@@ -48,3 +47,5 @@ from .user import CurrentUserSchema
 from .version import VersionListSchema
 from .version import VersionDetailSchema
 """
+from ._parse import parse
+from ._generator import CustomGenerator

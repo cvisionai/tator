@@ -1,5 +1,6 @@
 import logging
 
+from rest_framework.schemas.openapi import SchemaGenerator
 from openapi_core import create_spec
 from openapi_core.validation.request.validators import RequestValidator
 from openapi_core.contrib.django import DjangoOpenAPIRequest

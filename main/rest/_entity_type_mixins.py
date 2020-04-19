@@ -1,8 +1,6 @@
 import traceback
 import logging
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -11,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AttributeTypeBase
 from ..models import EntityMediaBase
+from ..schema import parse
 
 from ._util import delete_polymorphic_qs
 from ._util import reverse_queryArgs
@@ -28,27 +27,6 @@ class EntityTypeListAPIMixin(APIView):
     entityBaseObj=None
     baseObj=None
     entityTypeAttrSerializer=None
-
-    schema=AutoSchema(manual_fields=[
-        coreapi.Field(
-            name='project',
-            required=True,
-            location='path',
-            schema=coreschema.String(description='A unique integer identifying a project')
-        ),
-        coreapi.Field(
-            name='media_id',
-            required=False,
-            location='query',
-            schema=coreschema.String(description='A unique integer value identifying a "media_id"')
-        ),
-        coreapi.Field(
-            name='type',
-            required=False,
-            location='query',
-            schema=coreschema.String(description='Find types against a specific type id.')
-        ),
-    ])
     permission_classes = [ProjectFullControlPermission]
 
     def get(self, request, format=None, **kwargs):
@@ -58,7 +36,8 @@ class EntityTypeListAPIMixin(APIView):
         response=Response({})
 
         try:
-            media_id=self.request.query_params.get('media_id', None)
+            params = parse(request)
+            media_id = params.get('media_id', None)
             if media_id != None:
                 logger.info(f"Getting media {media_id}")
                 mediaElement = EntityMediaBase.objects.get(pk=media_id)
@@ -68,7 +47,7 @@ class EntityTypeListAPIMixin(APIView):
             else:
                 entityTypes = self.entityBaseObj.objects.filter(project=self.kwargs['project'])
 
-            type_id=self.request.query_params.get('type', None)
+            type_id = params.get('type', None)
             if type_id != None:
                 entityTypes = entityTypes.filter(pk=type_id)
 
@@ -113,7 +92,8 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
         response=Response({})
 
         try:
-            entityTypeId=self.kwargs['pk']
+            params = parse(request)
+            entityTypeId = params['id']
 
             entityType = self.entityBaseObj.objects.get(pk=entityTypeId)
 
@@ -140,7 +120,8 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
         """
         response = Response({})
         try:
-            pk = int(kwargs['pk'])
+            params = parse(request)
+            pk = params['id']
             obj = self.entityBaseObj.objects.get(pk=pk)
             attr_types = AttributeTypeBase.objects.filter(applies_to=pk)
             delete_polymorphic_qs(attr_types)
