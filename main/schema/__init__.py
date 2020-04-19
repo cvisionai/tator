@@ -26,8 +26,8 @@ from .notify import NotifySchema
 from .progress import ProgressSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
-"""
 from .save_image import SaveImageSchema
+"""
 from .save_video import SaveVideoSchema
 from .section_analysis import SectionAnalysisSchema
 from .state import StateListSchema
