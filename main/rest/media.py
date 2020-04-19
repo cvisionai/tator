@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied
+from django.db.models import Case, When
 from django.db import connection
 from django.conf import settings
 
@@ -67,10 +68,10 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             media_ids, media_count, _ = get_media_queryset(
                 self.kwargs['project'],
                 params,
-                self
             )
             if len(media_ids) > 0:
-                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
+                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
+                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by(preserved)
                 # We are doing a full query; so we should bypass the ORM and
                 # use the SQL cursor directly.
                 # TODO: See if we can do this using queryset into a custom serializer instead
@@ -123,7 +124,6 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
         media_ids, media_count, _ = get_media_queryset(
             params['project'],
             params,
-            self
         )
         queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
         return queryset
@@ -136,7 +136,6 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             media_ids, media_count, query = get_media_queryset(
                 params['project'],
                 params,
-                self
             )
             if len(media_ids) == 0:
                 raise ObjectDoesNotExist
@@ -162,7 +161,6 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             media_ids, media_count, query = get_media_queryset(
                 params['project'],
                 params,
-                self
             )
             if len(media_ids) == 0:
                 raise ObjectDoesNotExist
