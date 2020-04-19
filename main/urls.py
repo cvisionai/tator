@@ -151,10 +151,12 @@ urlpatterns += [
     path(
         'rest/Memberships/<int:project>',
         MembershipListAPI.as_view(),
+        name='Memberships',
     ),
     path(
         'rest/Membership/<int:id>',
         MembershipDetailAPI.as_view(),
+        name='Membership',
     ),
     path(
         'rest/Notify',

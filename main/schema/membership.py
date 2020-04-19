@@ -16,6 +16,8 @@ membership_properties = {
 class MembershipListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'RetrieveMembershipList'
         operation['tags'] = ['Membership']
         return operation
 
