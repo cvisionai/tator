@@ -164,8 +164,6 @@ urlpatterns += [
         'rest/Progress/<int:project>',
         ProgressAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Projects',
         ProjectListAPI.as_view(),
@@ -174,6 +172,8 @@ urlpatterns += [
         'rest/Project/<int:id>',
         ProjectDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/SaveImage/<int:project>',
         SaveImageAPI.as_view(),
