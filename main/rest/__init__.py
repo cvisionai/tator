@@ -22,8 +22,8 @@ from .media_type import MediaTypeListAPI
 from .media_type import MediaTypeDetailAPI
 from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
-"""
 from .notify import NotifyAPI
+"""
 from .progress import ProgressAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI

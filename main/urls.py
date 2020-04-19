@@ -156,12 +156,12 @@ urlpatterns += [
         'rest/Membership/<int:id>',
         MembershipDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Progress/<int:project>',
         ProgressAPI.as_view(),
