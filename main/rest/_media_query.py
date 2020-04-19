@@ -25,7 +25,7 @@ def get_media_queryset(project, query_params, attr_filter):
     ]}}]
 
     if mediaId != None:
-        bools.append({'ids': {'values': mediaId.split(',')}})
+        bools.append({'ids': {'values': mediaId}})
 
     if filterType != None:
         bools.append({'match': {'_meta': {'query': int(filterType)}}})

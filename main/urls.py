@@ -115,8 +115,6 @@ urlpatterns += [
         'rest/LocalizationType/<int:id>',
         LocalizationTypeDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Medias/<int:project>',
         MediaListAPI.as_view(),
@@ -127,6 +125,8 @@ urlpatterns += [
         MediaDetailAPI.as_view(),
         name='Media'
     ),
+]
+"""
     path(
         'rest/MediaNext/<int:id>',
         MediaNextAPI.as_view(),

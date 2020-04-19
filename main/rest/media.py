@@ -23,6 +23,8 @@ from ..models import EntityMediaVideo
 from ..serializers import EntityMediaSerializer
 from ..search import TatorSearch
 from ..renderers import JpegRenderer
+from ..schema import MediaListSchema
+from ..schema import MediaDetailSchema
 from ..schema import GetFrameSchema
 from ..schema import parse
 
@@ -32,74 +34,39 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
-from ._schema import parse
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
-"""
-class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='project',
-                              required=True,
-                              location='path',
-                              schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-                coreapi.Field(name='media_id',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a MediaType')),
-                coreapi.Field(name='name',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Name of the media to filter on')),
-                coreapi.Field(name='search',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Searches against filename and attributes for matches')),
-                coreapi.Field(name='md5',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='MD5 sum of the media file')),
-                coreapi.Field(name='operation',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements')),
-            ]
-        return manual_fields + getOnly_fields + self.attribute_fields()
-"""
-
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
+    """ Interact with list of media.
+
+        A media may be an image or a video. Media are one of three types of entity in Tator, 
+        meaning they can be described by user defined attributes.
+
+        This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
+        Both are accomplished using the same query parameters used for a GET request.
+
+        This endpoint does not include a POST method. Creating media must be preceded by an
+        upload, after which a separate media creation endpoint must be called. The media creation
+        endpoints are `Transcode` to launch a transcode of an uploaded video and `SaveImage` to
+        save an uploaded image. If you would like to perform transcodes on local assets, you can
+        use the `SaveVideo` endpoint to save an already transcoded video. Local transcodes may be
+        performed with the script at `scripts/transcoder/transcodePipeline.py` in the Tator source
+        code.
     """
-    Endpoint for getting lists of media
-
-    Example:
-
-    #all types all videos
-    GET /Medias
-
-    #only lines for media_id=3 of type 1
-    GET /Medias?type=1&media=id=3
-
-    """
+    schema = MediaListSchema()
     serializer_class = EntityMediaSerializer
-    #schema=MediaListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get(self, request, *args, **kwargs):
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, _ = get_media_queryset(
                 self.kwargs['project'],
-                self.request.query_params,
+                params,
                 self
             )
             if len(media_ids) > 0:
@@ -152,9 +119,10 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
+        params = parse(self.request)
         media_ids, media_count, _ = get_media_queryset(
-            self.kwargs['project'],
-            self.request.query_params,
+            params['project'],
+            params,
             self
         )
         queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
@@ -163,10 +131,11 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, query = get_media_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
+                params['project'],
+                params,
                 self
             )
             if len(media_ids) == 0:
@@ -188,10 +157,11 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, query = get_media_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
+                params['project'],
+                params,
                 self
             )
             if len(media_ids) == 0:
@@ -203,28 +173,32 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             response=Response({'message': 'Attribute patch successful!'},
                               status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
-            print(f"EXCEPTION: {dne}")
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            print(f"EXCEPTION: {e}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
 
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
+    """ Interact with individual media.
+
+        A media may be an image or a video. Media are one of three types of entity in Tator, 
+        meaning they can be described by user defined attributes.
     """
+    schema = MediaDetailSchema()
     serializer_class = EntityMediaSerializer
     queryset = EntityMediaBase.objects.all()
     permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
 
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            if 'attributes' in request.data:
-                media_object = EntityMediaBase.objects.get(pk=self.kwargs['pk'])
+            params = parse(request)
+            media_object = EntityMediaBase.objects.get(pk=params['id'])
+            if 'attributes' in params:
                 self.check_object_permissions(request, media_object)
                 new_attrs = validate_attributes(request, media_object)
                 patch_attributes(new_attrs, media_object)
@@ -232,17 +206,22 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 if type(media_object) == EntityMediaImage:
                     for localization in media_object.thumbnail_image.all():
                         patch_attributes(new_attrs, localization)
-
-                del request.data['attributes']
-            if 'media_files' in request.data:
+            if 'media_files' in params:
                 # TODO: for now just pass through, eventually check URL
-                media_object = EntityMediaBase.objects.get(pk=self.kwargs['pk'])
-                media_object.media_files = request.data['media_files']
-                media_object.save()
+                media_object.media_files = params['media_files']
                 logger.info(f"Media files = {media_object.media_files}")
 
-            if bool(request.data):
-                super().patch(request, **kwargs)
+            if 'name' in params:
+                media_object.name = params['name']
+
+            if 'last_edit_start' in params:
+                media_object.last_edit_start = params['last_edit_start']
+
+            if 'last_edit_end' in params:
+                media_object.last_edit_end = params['last_edit_end']
+
+            media_object.save()
+                
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -263,7 +242,9 @@ class GetFrameAPI(APIView):
         return EntityMediaVideo.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of 
+            frames based on the input parameter
+        """
         try:
             # upon success we can return an image
             params = parse(request)
