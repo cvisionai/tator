@@ -10,7 +10,7 @@ from ._permissions import ProjectViewOnlyPermission
 class AlgorithmListAPI(ListAPIView):
     """ Interact with algorithms that have been registered to a project.
 
-        For instructions on how to do this, visit `GitHub`_.
+        For instructions on how to register an algorithm, visit `GitHub`_.
 
         .. _GitHub:
            https://github.com/cvisionai/tator/tree/master/examples/algorithms
