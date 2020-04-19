@@ -17,8 +17,8 @@ from .media import MediaDetailSchema
 from .media import GetFrameSchema
 from .media_next import MediaNextSchema
 from .media_prev import MediaPrevSchema
-"""
 from .media_sections import MediaSectionsSchema
+"""
 from .media_type import MediaTypeListSchema
 from .media_type import MediaTypeDetailSchema
 from .membership import MembershipListSchema
