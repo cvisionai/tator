@@ -229,7 +229,7 @@ class EntityTypeBase(PolymorphicModel):
         return f'{self.name} | {self.project}'
 
 class EntityTypeMediaBase(EntityTypeBase):
-    uploadable = BooleanField()
+    uploadable = BooleanField(default=True)
     editTriggers = JSONField(null=True,
                              blank=True)
 
@@ -250,7 +250,7 @@ class EntityTypeMediaVideo(EntityTypeMediaBase):
                             blank=True,
                             choices=FileFormat,
                             default=None)
-    keep_original = BooleanField()
+    keep_original = BooleanField(default=True)
 
 class EntityTypeLocalizationBase(EntityTypeBase):
     media = ManyToManyField(EntityTypeMediaBase)
