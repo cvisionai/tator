@@ -365,7 +365,6 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
