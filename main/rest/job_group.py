@@ -1,6 +1,5 @@
 import traceback
 
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,37 +9,10 @@ from django.http import Http404
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
+from ..schema import JobGroupDetailSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
-
-class JobGroupDetailSchema(AutoSchema):
-    def get_operation(self, path, method):
-        operation = super().get_operation(path, method)
-        operation['tags'] = ['Job']
-        return operation
-
-    def _get_path_parameters(self, path, method):
-        return [{
-            'name': 'group_id',
-            'in': 'path',
-            'required': True,
-            'description': 'A uuid1 string identifying a group of jobs.',
-            'schema': {'type': 'string'},
-        }]
-
-    def _get_filter_parameters(self, path, method):
-        return []
-
-    def _get_request_body(self, path, method):
-        return {}
-
-    def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find any jobs with given uuid.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'DELETE':
-            responses['204'] = {'description': 'Successful cancellation of the jobs.'}
-        return responses
 
 class JobGroupDetailAPI(APIView):
     """ Cancel a group of background jobs.
@@ -61,7 +33,8 @@ class JobGroupDetailAPI(APIView):
 
         try:
             # Find the job and delete it.
-            group_id = kwargs['group_id']
+            params = parse(request)
+            group_id = params['group_id']
             transcode_cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
             if not transcode_cancelled:
                 for alg in Algorithm.objects.all():

@@ -21,8 +21,9 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 
+from .schema import CustomGenerator
+
 from .rest import *
-from .rest._schema import CustomGenerator
 
 logger = logging.getLogger(__name__)
 
