@@ -31,6 +31,7 @@ from .save_video import SaveVideoSchema
 from .section_analysis import SectionAnalysisSchema
 from .state import StateListSchema
 from .state import StateDetailSchema
+from .state import StateGraphicSchema
 from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
 from .transcode import TranscodeSchema

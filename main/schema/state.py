@@ -208,14 +208,21 @@ class StateGraphicSchema(AutoSchema):
                 'in': 'query',
                 'required': False,
                 'description': 'Whether to animate or tile.',
-                'schema': {'type': 'string', 'enum': ['animate', 'tile']},
+                'schema': {
+                    'type': 'string',
+                    'enum': ['animate', 'tile'],
+                    'default': 'animate',
+                },
             },
             {
                 'name': 'fps',
                 'in': 'query',
                 'required': False,
                 'description': 'Frame rate if `mode` is `animate`.',
-                'schema': {'type': 'number'},
+                'schema': {
+                    'type': 'number',
+                    'default': 2,
+                },
             },
         ]
 

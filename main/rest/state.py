@@ -30,6 +30,7 @@ from ..serializers import EntityStateLocalizationSerializer
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
+from ..schema import StateGraphicSchema
 from ..schema import parse
 
 from ._annotation_query import get_annotation_queryset
@@ -380,22 +381,7 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
 
 
 class StateGraphicAPI(APIView):
-    schema = Schema({'GET' : [
-        coreapi.Field(name='pk',
-                      required=True,
-                      location='path',
-                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
-        coreapi.Field(name='mode',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='Either "animate" or "tile"')),
-        coreapi.Field(name='fps',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='FPS if animating')),
-    ]})
-
-
+    schema = StateGraphicSchema()
     renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
@@ -403,24 +389,18 @@ class StateGraphicAPI(APIView):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get frame(s) of a given localization-associated state. Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+        """ Get frame(s) of a given localization-associated state.
 
-        TODO: Add logic for all state types
-"""
+            Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+        """
+        # TODO: Add logic for all state types
         try:
             # upon success we can return an image
-            values = self.schema.parse(request, kwargs)
-            state = EntityState.objects.get(pk=values['pk'])
+            params = parse(request)
+            state = EntityState.objects.get(pk=params['id'])
 
-            mode = values['mode']
-            if mode == None:
-                mode = 'animate'
-            fps = values['fps']
-
-            if fps == None:
-                fps = 2
-            else:
-                fps = int(fps)
+            mode = params['mode']
+            fps = params['fps']
 
             typeObj = state.meta
             if typeObj.association != 'Localization':
