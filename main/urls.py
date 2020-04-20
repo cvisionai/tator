@@ -267,8 +267,6 @@ urlpatterns += [
         'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/User/<int:id>',
         UserDetailAPI.as_view(),
@@ -277,6 +275,8 @@ urlpatterns += [
         'rest/User/GetCurrent',
         CurrentUserAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Versions/<int:project>',
         VersionListAPI.as_view(),

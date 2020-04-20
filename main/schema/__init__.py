@@ -39,9 +39,9 @@ from .tree_leaf import TreeLeafListSchema
 from .tree_leaf import TreeLeafDetailSchema
 from .tree_leaf_type import TreeLeafTypeListSchema
 from .tree_leaf_type import TreeLeafTypeDetailSchema
-"""
 from .user import UserDetailSchema
 from .user import CurrentUserSchema
+"""
 from .version import VersionListSchema
 from .version import VersionDetailSchema
 """

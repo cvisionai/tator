@@ -170,8 +170,11 @@ class UserPermission(BasePermission):
         if isinstance(request.user, AnonymousUser):
             return False
 
+        if _for_schema_view(request, view):
+            return True
+
         user = request.user
-        finger_user = view.kwargs['pk']
+        finger_user = view.kwargs['id']
         if user.is_staff:
             return True
         if user.id == finger_user:
