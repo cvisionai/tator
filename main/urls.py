@@ -198,8 +198,6 @@ urlpatterns += [
         'rest/State/<int:id>',
         StateDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/StateTypes/<int:project>',
         StateTypeListAPI.as_view(),
@@ -208,6 +206,8 @@ urlpatterns += [
         'rest/StateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),

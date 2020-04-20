@@ -1,7 +1,5 @@
 import traceback
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,27 +9,38 @@ from ..models import EntityTypeState
 from ..models import EntityState
 from ..models import Project
 from ..serializers import EntityTypeStateAttrSerializer
+from ..schema import StateTypeListSchema
+from ..schema import StateTypeDetailSchema
+from ..schema import parse
 
 from ._entity_type_mixins import EntityTypeListAPIMixin
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
 class StateTypeListAPI(EntityTypeListAPIMixin):
+    """ Create or retrieve state types.
+
+        A state type is the metadata definition object for a state. It includes association
+        type, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     pkname='media_id'
-    entity_endpoint='EntityStates'
+    entity_endpoint='States'
     entityBaseObj=EntityTypeState
     baseObj=EntityState
     entityTypeAttrSerializer=EntityTypeStateAttrSerializer
+    schema = StateTypeListSchema()
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', '')
-            media_types = request.data.get('media_types', None)
-            association = request.data.get('association', None)
-            project = kwargs['project']
+            params = parse(request)
+            name = params['name']
+            description = params.get('description', '')
+            media_types = params['media_types']
+            association = params['association']
+            project = params['project']
 
             if name is None:
                 raise Exception('Missing required field "name" for state type!')
@@ -71,29 +80,31 @@ class StateTypeListAPI(EntityTypeListAPIMixin):
             return response;
 
 class StateTypeDetailAPI(EntityTypeDetailAPIMixin):
+    """ Interact with an individual state type.
+
+        A state type is the metadata definition object for a state. It includes association
+        type, name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     pkname='media_id'
-    entity_endpoint='EntityStates'
+    entity_endpoint='States'
     entityBaseObj=EntityTypeState
     baseObj=EntityState
     entityTypeAttrSerializer=EntityTypeStateAttrSerializer
+    lookup_field = 'id'
 
-    schema=AutoSchema(manual_fields=
-                          [coreapi.Field(name='pk',
-                                         required=True,
-                                         location='path',
-                                         schema=coreschema.String(description='A unique integer value identifying a state type'))])
+    schema = StateTypeDetailSchema()
     serializer_class = EntityTypeStateAttrSerializer
     permission_classes = [ProjectFullControlPermission]
 
     def patch(self, request, format=None, **kwargs):
-        """ Updates a state type.
-        """
         response = Response({})
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', None)
+            params = parse(request)
+            name = params.get('name', None)
+            description = params.get('description', None)
 
-            obj = EntityTypeState.objects.get(pk=int(kwargs['pk']))
+            obj = EntityTypeState.objects.get(pk=params['id'])
             if name is not None:
                 obj.name = name
             if description is not None:

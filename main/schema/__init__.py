@@ -31,9 +31,9 @@ from .save_video import SaveVideoSchema
 from .section_analysis import SectionAnalysisSchema
 from .state import StateListSchema
 from .state import StateDetailSchema
-"""
 from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
+"""
 from .transcode import TranscodeSchema
 from .tree_leaf import TreeLeafSuggestionSchema
 from .tree_leaf import TreeLeafListSchema
