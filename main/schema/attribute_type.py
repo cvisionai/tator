@@ -65,12 +65,20 @@ class AttributeTypeListSchema(AutoSchema):
                         },
                         'default': {
                             'description': 'Default value for the attribute.',
+                            'oneOf': [
+                                {'type': 'boolean'},
+                                {'type': 'number'},
+                                {'type': 'string'},
+                                {'type': 'array', 'items': {'type': 'number'}, 'minLength': 2, 'maxLength': 2},
+                            ]
                         },
                         'lower_bound': {
                             'description': 'Lower bound for int or float dtype.',
+                            'type': 'number',
                         },
                         'upper_bound': {
                             'description': 'Upper bound for int or float dtype.',
+                            'type': 'number',
                         },
                         'choices': {
                             'description': 'Array of possible values for enum dtype.',
