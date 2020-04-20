@@ -7,8 +7,6 @@ import os
 import shutil
 from uuid import uuid1
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -173,6 +171,7 @@ class SaveVideoAPI(APIView):
         response=Response({})
 
         try:
+            params = parse(request)
             entity_type = params['type']
             gid = params['gid']
             uid = params['uid']
