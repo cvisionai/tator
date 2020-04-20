@@ -210,16 +210,6 @@ urlpatterns += [
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
     ),
-]
-"""
-    path(
-        'rest/TreeLeafTypes/<int:project>',
-        TreeLeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:id>',
-        TreeLeafTypeDetailAPI.as_view(),
-    ),
     path(
         'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
         TreeLeafSuggestionAPI.as_view(),
@@ -232,24 +222,6 @@ urlpatterns += [
     path(
         'rest/TreeLeaf/<int:id>',
         TreeLeafDetailAPI.as_view(),
-    ),
-    path(
-        'rest/User/<int:id>',
-        UserDetailAPI.as_view(),
-    ),
-    path(
-        'rest/User/GetCurrent',
-        CurrentUserAPI.as_view(),
-    ),
-    path(
-        'rest/Versions/<int:project>',
-        VersionListAPI.as_view(),
-        name='Versions',
-    ),
-    path(
-        'rest/Version/<int:id>',
-        VersionDetailAPI.as_view(),
-        name='Version',
     ),
     # To be deprecated
     path(
@@ -286,6 +258,34 @@ urlpatterns += [
     path(
         'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
+    ),
+]
+"""
+    path(
+        'rest/TreeLeafTypes/<int:project>',
+        TreeLeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafType/<int:id>',
+        TreeLeafTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/User/<int:id>',
+        UserDetailAPI.as_view(),
+    ),
+    path(
+        'rest/User/GetCurrent',
+        CurrentUserAPI.as_view(),
+    ),
+    path(
+        'rest/Versions/<int:project>',
+        VersionListAPI.as_view(),
+        name='Versions',
+    ),
+    path(
+        'rest/Version/<int:id>',
+        VersionDetailAPI.as_view(),
+        name='Version',
     ),
 ]
 """
