@@ -59,11 +59,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        self.validate_attribute_filter(self.request.query_params)
+        params = parse(self.request)
+        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, _ = get_annotation_queryset(
-            self.kwargs['project'],
-            self.request.query_params,
-            self,
+            params['project'],
+            params,
         )
         queryset = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
         return queryset
@@ -73,9 +73,8 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             params = parse(request)
             self.validate_attribute_filter(params)
             annotation_ids, annotation_count, _ = get_annotation_queryset(
-                self.kwargs['project'],
+                params['project'],
                 params,
-                self,
             )
             self.request=request
             before=time.time()
@@ -284,9 +283,8 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             params = parse(request)
             self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
+                params['project'],
                 params,
-                self
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -310,9 +308,8 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             params = parse(request)
             self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
+                params['project'],
                 params,
-                self
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist

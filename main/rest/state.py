@@ -133,9 +133,8 @@ class StateListAPI(APIView, AttributeFilterMixin):
     def get_queryset(self):
         self.validate_attribute_filter(self.request.query_params)
         annotation_ids, annotation_count, _ = get_annotation_queryset(
-            self.kwargs['project'],
-            self.request.query_params,
-            self,
+            params['project'],
+            params,
         )
         queryset = EntityState.objects.filter(pk__in=annotation_ids)
         return queryset
@@ -148,9 +147,8 @@ class StateListAPI(APIView, AttributeFilterMixin):
         try:
             self.validate_attribute_filter(request.query_params)
             annotation_ids, annotation_count, _ = get_annotation_queryset(
-                kwargs['project'],
-                request.query_params,
-                self
+                params['project'],
+                params,
             )
             allStates = EntityState.objects.filter(pk__in=annotation_ids)
             if self.operation:
@@ -335,9 +333,8 @@ class StateListAPI(APIView, AttributeFilterMixin):
         try:
             self.validate_attribute_filter(request.query_params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -360,9 +357,8 @@ class StateListAPI(APIView, AttributeFilterMixin):
         try:
             self.validate_attribute_filter(request.query_params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
