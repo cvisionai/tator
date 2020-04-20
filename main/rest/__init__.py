@@ -37,9 +37,9 @@ from .transcode import TranscodeAPI
 from .tree_leaf import TreeLeafSuggestionAPI
 from .tree_leaf import TreeLeafListAPI
 from .tree_leaf import TreeLeafDetailAPI
-"""
 from .tree_leaf_type import TreeLeafTypeListAPI
 from .tree_leaf_type import TreeLeafTypeDetailAPI
+"""
 from .user import UserDetailAPI
 from .user import CurrentUserAPI
 from .version import VersionListAPI

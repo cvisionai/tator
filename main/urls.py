@@ -223,6 +223,14 @@ urlpatterns += [
         'rest/TreeLeaf/<int:id>',
         TreeLeafDetailAPI.as_view(),
     ),
+    path(
+        'rest/TreeLeafTypes/<int:project>',
+        TreeLeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafType/<int:id>',
+        TreeLeafTypeDetailAPI.as_view(),
+    ),
     # To be deprecated
     path(
         'rest/EntityTypeMedias/<int:project>',
@@ -261,14 +269,6 @@ urlpatterns += [
     ),
 ]
 """
-    path(
-        'rest/TreeLeafTypes/<int:project>',
-        TreeLeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:id>',
-        TreeLeafTypeDetailAPI.as_view(),
-    ),
     path(
         'rest/User/<int:id>',
         UserDetailAPI.as_view(),
