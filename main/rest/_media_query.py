@@ -59,6 +59,6 @@ def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_ids, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    media_ids, _, _ = get_media_queryset(project_id, query_params)
     return media_ids
 
