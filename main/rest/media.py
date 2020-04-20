@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
     """ Interact with list of media.
 
-        A media may be an image or a video. Media are one of three types of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator, 
         meaning they can be described by user defined attributes.
 
         This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
@@ -182,7 +182,7 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Interact with individual media.
 
-        A media may be an image or a video. Media are one of three types of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator, 
         meaning they can be described by user defined attributes.
     """
     schema = MediaDetailSchema()

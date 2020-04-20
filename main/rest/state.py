@@ -48,8 +48,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
         A state is a description of a collection of other objects. The objects a state describes
         could be media (image or video), video frames, or localizations. A state referring
         to a collection of localizations is often referred to as a track. States are
-        one of three types of entity in Tator, meaning they can be described by user defined
-        attributes.
+        a type of entity in Tator, meaning they can be described by user defined attributes.
 
         This endpoint supports bulk patch of user-defined state attributes and bulk delete.
         Both are accomplished using the same query parameters used for a GET request.
@@ -313,8 +312,7 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
         A state is a description of a collection of other objects. The objects a state describes
         could be media (image or video), video frames, or localizations. A state referring
         to a collection of localizations is often referred to as a track. States are
-        one of three types of entity in Tator, meaning they can be described by user defined
-        attributes.
+        a types of entity in Tator, meaning they can be described by user defined attributes.
     """
     schema = StateDetailSchema()
     serializer_class = EntityStateSerializer

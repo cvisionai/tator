@@ -48,8 +48,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
         box, line, or dot. Each shape has slightly different data members. Localizations are
-        one of three types of entity in Tator, meaning they can be described by user defined
-        attributes.
+        a type of entity in Tator, meaning they can be described by user defined attributes.
 
         This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
         Both are accomplished using the same query parameters used for a GET request.
@@ -334,8 +333,7 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
         box, line, or dot. Each shape has slightly different data members. Localizations are
-        one of three types of entity in Tator, meaning they can be described by user defined
-        attributes.
+        a type of entity in Tator, meaning they can be described by user defined attributes.
     """
     schema = LocalizationDetailSchema()
     serializer_class = EntityLocalizationSerializer
