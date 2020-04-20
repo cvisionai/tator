@@ -3,8 +3,11 @@ entity_type_filter_parameters_schema = [
         'name': 'media_id',
         'in': 'query',
         'required': False,
-        'description': 'A unique integer identifying a media.',
-        'schema': {'type': 'integer'},
+        'description': 'List of unique integers identifying a media.',
+        'schema': {
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
     },
     {
         'name': 'type',

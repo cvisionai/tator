@@ -38,7 +38,7 @@ class SectionAnalysisAPI(APIView):
                     if not media_query['query']['bool']['filter']:
                         media_query['query']['bool']['filter'] = []
                     media_query['query']['bool']['filter'].append(
-                        {'ids': {'values': mediaId.split(',')}}
+                        {'ids': {'values': mediaId}}
                     )
                 if analysis.data_type.dtype in ['image', 'video']:
                     query = media_query

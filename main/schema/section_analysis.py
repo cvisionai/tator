@@ -25,7 +25,13 @@ class SectionAnalysisSchema(AutoSchema):
                 'required': False,
                 'description': 'Unique integer identifying a media. Use this to do analyis '
                                'on a single file instead of sections.',
-                'schema': {'type': 'integer', 'minimum': 1},
+                'schema': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'integer',
+                        'minimum': 1,
+                    },
+                },
             },
         ] + attribute_filter_parameter_schema
 
