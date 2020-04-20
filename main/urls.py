@@ -189,8 +189,6 @@ urlpatterns += [
         SectionAnalysisAPI.as_view(),
         name='SectionAnalysis',
     ),
-]
-"""
     path(
         'rest/States/<int:project>',
         StateListAPI.as_view(),
@@ -200,6 +198,8 @@ urlpatterns += [
         'rest/State/<int:id>',
         StateDetailAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/StateTypes/<int:project>',
         StateTypeListAPI.as_view(),

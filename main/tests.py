@@ -1272,8 +1272,8 @@ class StateTestCase(
                 )
             )
         self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.list_uri = 'EntityStates'
-        self.detail_uri = 'EntityState'
+        self.list_uri = 'States'
+        self.detail_uri = 'State'
         self.create_entity = functools.partial(EntityState.objects.create,
             meta=self.entity_type,
             project=self.project,
@@ -1293,7 +1293,7 @@ class StateTestCase(
             'geoposition_test': [0.0, 0.0],
         }
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'state1', 'resourcetype': 'EntityState'}
+        self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
