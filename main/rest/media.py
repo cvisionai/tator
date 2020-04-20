@@ -395,30 +395,21 @@ class GetFrameAPI(APIView):
             params = parse(request)
             video = EntityMediaVideo.objects.get(pk=params['id'])
             frames = params.get('frames', '0')
-
-            if len(frames) > 32:
-                raise Exception("Too many frames requested (Max = 32)")
+            tile = params.get('tile', None)
+            animate = params.get('animate', None)
+            roi = params.get('roi', None)
 
             for frame in frames:
                 if int(frame) >= video.num_frames:
                     raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
-                elif int(frame) < 0:
-                    raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
-            tile_size = params.get('tile', None)
+            tile_size = tile
 
-            if values['tile'] and values['animate']:
+            if tile and animate:
                 raise Exception("Can't supply both tile and animate arguments")
-
-            if values['animate']:
-                if values['animate'].isdecimal() is False:
-                    raise Exception('Animation FPS must be an integer')
-                if int(values['animate']) > 15 or int(values['animate']) <= 0:
-                    raise Exception('Animation FPS must be between >0 and <=15')
 
 
             # compute the crop argument
             roi_arg = []
-            roi = params.get('roi', None)
             if roi:
                 crop_filter = [None] * len(frames)
                 roi_list = roi.split(',')
@@ -449,13 +440,13 @@ class GetFrameAPI(APIView):
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir)
-                if len(frames) > 1 and values['animate']:
+                if len(frames) > 1 and animate:
                     # Default to gif for animate, but mp4 is also supported
                     if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
                         pass
                     else:
                         request.accepted_renderer = GifRenderer()
-                    gif_fp = media_util.getAnimation(frames, roi_arg, fps=values['animate'], render_format=request.accepted_renderer.format)
+                    gif_fp = media_util.getAnimation(frames, roi_arg, fps=animate, render_format=request.accepted_renderer.format)
                     with open(gif_fp, 'rb') as data_file:
                         response = Response(data_file.read())
                 else:
