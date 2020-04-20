@@ -175,13 +175,6 @@ class AnnotationPage extends TatorPage {
             }
           }
         }
-        if (haveFrame)
-        {
-          // Belts and suspenders here to ensure we jump upon a URL
-          // parameter..
-          const frame = Number(searchParams.get("frame"));
-          canvas.goToFrame(frame);
-        }
         if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
