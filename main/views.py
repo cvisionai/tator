@@ -1,6 +1,6 @@
 from django.views import View
 from django.views.generic.base import TemplateView
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -26,6 +26,10 @@ import traceback
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+class APIBrowserView(LoginRequiredMixin, TemplateView):
+    template_name = 'browser.html'
+    extra_context = {'schema_url': 'schema'}
 
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
@@ -70,7 +74,7 @@ class AnnotationView(ProjectBase, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        media = get_object_or_404(EntityMediaBase, pk=self.kwargs['pk'])
+        media = get_object_or_404(EntityMediaBase, pk=self.kwargs['id'])
         context['media'] = media
         return context
 
@@ -192,7 +196,7 @@ def ErrorNotifierView(request, code,message,details=None):
     context['code'] = code
     context['msg'] = message
     context['details'] = details
-    response=render_to_response('error-page.html', context)
+    response=render('error-page.html', context)
     response.status_code = code
 
     # Generate slack message

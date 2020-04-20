@@ -7,7 +7,8 @@ from ..search import TatorSearch
 from ._attribute_query import get_attribute_query
 from ._attributes import AttributeFilterMixin
 
-def get_media_queryset(project, query_params, attr_filter):
+
+def get_media_queryset(project, query_params, dry_run=False):
     """Converts raw media query string into a list of IDs and a count.
     """
     mediaId = query_params.get('media_id', None)
@@ -25,7 +26,7 @@ def get_media_queryset(project, query_params, attr_filter):
     ]}}]
 
     if mediaId != None:
-        bools.append({'ids': {'values': mediaId.split(',')}})
+        bools.append({'ids': {'values': mediaId}})
 
     if filterType != None:
         bools.append({'match': {'_meta': {'query': int(filterType)}}})
@@ -47,6 +48,9 @@ def get_media_queryset(project, query_params, attr_filter):
 
     query = get_attribute_query(query_params, query, bools, project)
 
+    if dry_run:
+        return [], [], query
+
     media_ids, media_count = TatorSearch().search(project, query)
 
     return media_ids, media_count, query
@@ -55,6 +59,6 @@ def query_string_to_media_ids(project_id, url):
     query_params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
     attribute_filter = AttributeFilterMixin()
     attribute_filter.validate_attribute_filter(query_params)
-    media_ids, _, _ = get_media_queryset(project_id, query_params, attribute_filter)
+    media_ids, _, _ = get_media_queryset(project_id, query_params)
     return media_ids
 

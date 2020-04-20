@@ -229,14 +229,14 @@ class EntityTypeBase(PolymorphicModel):
         return f'{self.name} | {self.project}'
 
 class EntityTypeMediaBase(EntityTypeBase):
-    uploadable = BooleanField()
+    uploadable = BooleanField(default=True)
     editTriggers = JSONField(null=True,
                              blank=True)
 
 class EntityTypeMediaImage(EntityTypeMediaBase):
     entity_name = 'Image'
     dtype = 'image'
-    file_format = CharField(max_length=3,
+    file_format = CharField(max_length=4,
                             null=True,
                             blank=True,
                             choices=ImageFileFormat,
@@ -245,12 +245,12 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
 class EntityTypeMediaVideo(EntityTypeMediaBase):
     entity_name = 'Video'
     dtype = 'video'
-    file_format = CharField(max_length=3,
+    file_format = CharField(max_length=4,
                             null=True,
                             blank=True,
                             choices=FileFormat,
                             default=None)
-    keep_original = BooleanField()
+    keep_original = BooleanField(default=True)
 
 class EntityTypeLocalizationBase(EntityTypeBase):
     media = ManyToManyField(EntityTypeMediaBase)

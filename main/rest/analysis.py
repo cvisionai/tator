@@ -1,24 +1,55 @@
+import traceback
+
 from rest_framework.generics import ListCreateAPIView
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AnalysisBase
+from ..models import AnalysisCount
+from ..models import EntityTypeBase
+from ..models import Project
 from ..serializers import AnalysisSerializer
+from ..schema import AnalysisListSchema
+from ..schema import parse
 
 from ._permissions import ProjectFullControlPermission
 
-class AnalysisAPI(ListCreateAPIView):
+class AnalysisListAPI(ListCreateAPIView):
+    """ Define and list analyses for a project.
+
+        Analysis objects are used to display information about filtered media lists
+        and/or annotations on the project detail page of the web UI. Currently only
+        counting analysis is supported.
+    """
     serializer_class = AnalysisSerializer
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-    ])
+    schema = AnalysisListSchema()
     permission_classes = [ProjectFullControlPermission]
 
     def get_queryset(self):
-        project_id = self.kwargs['project']
-        qs = AnalysisBase.objects.filter(project__id=project_id)
+        params = parse(self.request)
+        qs = AnalysisBase.objects.filter(project__id=params['project'])
         return qs
 
+    def post(self, request, format=None, **kwargs):
+        response = Response({})
+        try:
+            # Get the parameters.
+            params = parse(request)
+
+            # Convert pk to objects.
+            params['data_type'] = EntityTypeBase.objects.get(pk=params['data_type'])
+            params['project'] = Project.objects.get(pk=params['project'])
+
+            # Create the object.
+            obj = AnalysisCount(**params)
+            obj.save()
+            response=Response({'message': 'Analysis created successfully!', 'id': obj.id},
+                              status=status.HTTP_201_CREATED)
+        except ObjectDoesNotExist as dne:
+            response=Response({'message' : str(dne)},
+                              status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            response=Response({'message' : str(e),
+                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
+        return response

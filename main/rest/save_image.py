@@ -5,8 +5,6 @@ import os
 import shutil
 from uuid import uuid1
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,90 +16,36 @@ from ..models import EntityMediaImage
 from ..models import EntityTypeMediaImage
 from ..models import Project
 from ..consumers import ProgressProducer
+from ..schema import SaveImageSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
 class SaveImageAPI(APIView):
+    """ Saves an uploaded image.
+
+        Media is uploaded via tus, a separate mechanism from the REST API. Once an image upload
+        is complete, the image must be saved to the database using this endpoint.
     """
-    Saves an uploaded image.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a project')),
-        coreapi.Field(name='type',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a ImageType (-1 means auto)')),
-        coreapi.Field(name='gid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload group.')),
-        coreapi.Field(name='uid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload.')),
-        coreapi.Field(name='url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the image.')),
-        coreapi.Field(name='thumbnail_url',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the thumbnail if already generated')),
-        coreapi.Field(name='section',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Media section name.')),
-        coreapi.Field(name='name',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Name of the file used to create the database record after transcode.')),
-        coreapi.Field(name='md5',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='MD5 sum of the media file')),
-    ])
+    schema = SaveImageSchema()
     permission_classes = [ProjectTransferPermission]
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
-            entity_type = request.data.get('type', None)
-            gid = request.data.get('gid', None)
-            uid = request.data.get('uid', None)
-            url = request.data.get('url', None)
-            thumbnail_url = request.data.get('thumbnail_url', None)
-            section = request.data.get('section', None)
-            name = request.data.get('name', None)
-            md5 = request.data.get('md5', None)
-            project = kwargs['project']
-
-            ## Check for required fields first
-            if entity_type is None:
-                raise Exception('Missing required entity type for upload')
-
-            if gid is None:
-                raise Exception('Missing required gid for upload')
-
-            if uid is None:
-                raise Exception('Missing required uid for upload')
-
-            if url is None:
-                raise Exception('Missing required url for upload')
-
-            if section is None:
-                raise Exception('Missing required section for uploaded image')
-
-            if name is None:
-                raise Exception('Missing required name for uploaded image')
-
-            if md5 is None:
-                raise Exception('Missing md5 for uploaded image')
+            params = parse(request)
+            entity_type = params['type']
+            gid = str(params['gid'])
+            uid = params['uid']
+            url = params['url']
+            thumbnail_url = params.get('thumbnail_url', None)
+            section = params['section']
+            name = params['name']
+            md5 = params['md5']
+            project = params['project']
 
             if int(entity_type) == -1:
                 media_types = EntityTypeMediaImage.objects.filter(project=project)

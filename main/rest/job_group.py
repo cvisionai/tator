@@ -1,8 +1,6 @@
 import traceback
 
 from rest_framework.views import APIView
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,19 +9,23 @@ from django.http import Http404
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
+from ..schema import JobGroupDetailSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
 
 class JobGroupDetailAPI(APIView):
+    """ Cancel a group of background jobs.
+
+        Algorithms and transcodes create argo workflows that are annotated with two
+        uuid1 strings, one identifying the run and the other identifying the group.
+        Jobs that are submitted together have the same group id, but each workflow
+        has a unique run id.
+
+        This endpoint allows the user to cancel a group of jobs using the `group_id` 
+        returned by either the `AlgorithmLaunch` or `Transcode` endpoints.
     """
-    Interact with a group of background jobs.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='group_id',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A uid identifying a queued or running job')),
-    ])
+    schema = JobGroupDetailSchema()
     permission_classes = [ProjectTransferPermission]
 
     def delete(self, request, format=None, **kwargs):
@@ -31,7 +33,8 @@ class JobGroupDetailAPI(APIView):
 
         try:
             # Find the job and delete it.
-            group_id = kwargs['group_id']
+            params = parse(request)
+            group_id = params['group_id']
             transcode_cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
             if not transcode_cancelled:
                 for alg in Algorithm.objects.all():

@@ -4,7 +4,7 @@ from ..search import TatorSearch
 
 from ._attribute_query import get_attribute_query
 
-def get_annotation_queryset(project, query_params, attr_filter):
+def get_annotation_queryset(project, query_params):
     """Converts annotation query string into a list of IDs and a count.
     """
     mediaId = query_params.get('media_id', None)
@@ -20,7 +20,7 @@ def get_annotation_queryset(project, query_params, attr_filter):
     annotation_bools = []
 
     if mediaId != None:
-        media_bools.append({'ids': {'values': mediaId.split(',')}})
+        media_bools.append({'ids': {'values': mediaId}})
 
     if filterType != None:
         annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})

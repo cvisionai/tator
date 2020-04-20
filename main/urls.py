@@ -1,14 +1,17 @@
 import os
+import logging
 
 from django.urls import path
 from django.urls import include
 from django.conf.urls import url
 
 from rest_framework.authtoken import views
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
-from rest_framework.renderers import DocumentationRenderer
 
+from .views import APIBrowserView
 from .views import MainRedirect
 from .views import ProjectsView
 from .views import CustomView
@@ -18,11 +21,19 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 
+from .schema import CustomGenerator
+
 from .rest import *
 
-class CustomDocs(DocumentationRenderer):
-    template = '/tator_online/main/templates/browser.html'
-    languages = ['javascript']
+logger = logging.getLogger(__name__)
+
+schema_view = get_schema_view(
+    title='Tator REST API',
+    version='v1',
+    authentication_classes=[SessionAuthentication],
+    permission_classes=[IsAuthenticated],
+    generator_class=CustomGenerator,
+)
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
@@ -31,7 +42,7 @@ urlpatterns = [
     path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
-    path('<int:project_id>/annotation/<int:pk>', AnnotationView.as_view(), name='annotation'),
+    path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
 ]
@@ -39,20 +50,19 @@ urlpatterns = [
 # This is used for REST calls
 urlpatterns += [
     url(r'^rest/Token', views.obtain_auth_token),
-    url(r'^rest/', include_docs_urls(title='Tator REST API', renderer_classes=[CustomDocs])),
-    # TODO figure out how to not hard code this.
-    url('^schema$', get_schema_view('Tator REST API', url='http://' + os.getenv('MAIN_HOST'))),
-    path(
-        'rest/Algorithms/<int:project>',
-        AlgorithmListAPI.as_view(),
-    ),
+    path('rest/', APIBrowserView.as_view()),
+    path('schema/', schema_view, name='schema'),
     path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),
     ),
     path(
+        'rest/Algorithms/<int:project>',
+        AlgorithmListAPI.as_view(),
+    ),
+    path(
         'rest/Analyses/<int:project>',
-        AnalysisAPI.as_view(),
+        AnalysisListAPI.as_view(),
     ),
     path(
         'rest/AttributeTypes/<int:project>',
@@ -60,17 +70,20 @@ urlpatterns += [
         name='AttributeTypes'
     ),
     path(
-        'rest/AttributeType/<int:pk>',
+        'rest/AttributeType/<int:id>',
         AttributeTypeDetailAPI.as_view(),
         name='AttributeType'
     ),
     path(
-        'rest/EntityTypeSchema/<int:pk>',
+        'rest/EntityTypeSchema/<int:id>',
         EntityTypeSchemaAPI.as_view(),
         name='EntityTypeSchema'
     ),
+    path('rest/GetFrame/<int:id>',
+         GetFrameAPI.as_view(),
+    ),
     path(
-        'rest/FrameAssociation/<int:pk>',
+        'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),
     ),
     path(
@@ -82,7 +95,7 @@ urlpatterns += [
         JobGroupDetailAPI.as_view(),
     ),
     path(
-        'rest/LocalizationAssociation/<int:pk>',
+        'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),
     ),
     path(
@@ -91,7 +104,7 @@ urlpatterns += [
         name='Localizations'
     ),
     path(
-        'rest/Localization/<int:pk>',
+        'rest/Localization/<int:id>',
         LocalizationDetailAPI.as_view(),
     ),
     path(
@@ -99,7 +112,7 @@ urlpatterns += [
         LocalizationTypeListAPI.as_view(),
     ),
     path(
-        'rest/LocalizationType/<int:pk>',
+        'rest/LocalizationType/<int:id>',
         LocalizationTypeDetailAPI.as_view(),
     ),
     path(
@@ -108,17 +121,17 @@ urlpatterns += [
         name='Medias'
     ),
     path(
-        'rest/Media/<int:pk>',
+        'rest/Media/<int:id>',
         MediaDetailAPI.as_view(),
         name='Media'
     ),
     path(
-        'rest/MediaNext/<int:pk>',
+        'rest/MediaNext/<int:id>',
         MediaNextAPI.as_view(),
         name='MediaNext',
     ),
     path(
-        'rest/MediaPrev/<int:pk>',
+        'rest/MediaPrev/<int:id>',
         MediaPrevAPI.as_view(),
         name='MediaPrev',
     ),
@@ -132,16 +145,18 @@ urlpatterns += [
         MediaTypeListAPI.as_view(),
     ),
     path(
-        'rest/MediaType/<int:pk>',
+        'rest/MediaType/<int:id>',
         MediaTypeDetailAPI.as_view(),
     ),
     path(
         'rest/Memberships/<int:project>',
         MembershipListAPI.as_view(),
+        name='Memberships',
     ),
     path(
-        'rest/Membership/<int:pk>',
+        'rest/Membership/<int:id>',
         MembershipDetailAPI.as_view(),
+        name='Membership',
     ),
     path(
         'rest/Notify',
@@ -156,7 +171,7 @@ urlpatterns += [
         ProjectListAPI.as_view(),
     ),
     path(
-        'rest/Project/<int:pk>',
+        'rest/Project/<int:id>',
         ProjectDetailAPI.as_view(),
     ),
     path(
@@ -180,12 +195,12 @@ urlpatterns += [
         name='States'
     ),
       path(
-        'rest/StateGraphic/<int:pk>',
+        'rest/StateGraphic/<int:id>',
         StateGraphicAPI.as_view(),
         name='StateGraphic'
     ),
     path(
-        'rest/State/<int:pk>',
+        'rest/State/<int:id>',
         StateDetailAPI.as_view(),
     ),
     path(
@@ -193,20 +208,12 @@ urlpatterns += [
         StateTypeListAPI.as_view(),
     ),
     path(
-        'rest/StateType/<int:pk>',
+        'rest/StateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafTypes/<int:project>',
-        TreeLeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:pk>',
-        TreeLeafTypeDetailAPI.as_view(),
     ),
     path(
         'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
@@ -218,11 +225,19 @@ urlpatterns += [
         name='TreeLeaves',
     ),
     path(
-        'rest/TreeLeaf/<int:pk>',
+        'rest/TreeLeaf/<int:id>',
         TreeLeafDetailAPI.as_view(),
     ),
     path(
-        'rest/User/<int:pk>',
+        'rest/TreeLeafTypes/<int:project>',
+        TreeLeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafType/<int:id>',
+        TreeLeafTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/User/<int:id>',
         UserDetailAPI.as_view(),
     ),
     path(
@@ -235,24 +250,23 @@ urlpatterns += [
         name='Versions',
     ),
     path(
-        'rest/Version/<int:pk>',
+        'rest/Version/<int:id>',
         VersionDetailAPI.as_view(),
         name='Version',
     ),
-    path('rest/GetFrame/<int:pk>',
-         GetFrameAPI.as_view(),
-    ),
+
+
     # To be deprecated
     path(
         'rest/EntityTypeMedias/<int:project>',
         MediaTypeListAPI.as_view(),
     ),
     path(
-        'rest/EntityTypeMedia/<int:pk>',
+        'rest/EntityTypeMedia/<int:id>',
         MediaTypeDetailAPI.as_view(),
     ),
     path(
-        'rest/EntityMedia/<int:pk>',
+        'rest/EntityMedia/<int:id>',
         MediaDetailAPI.as_view(),
         name='EntityMedia'
     ),
@@ -267,7 +281,7 @@ urlpatterns += [
         name='EntityStates'
     ),
     path(
-        'rest/EntityState/<int:pk>',
+        'rest/EntityState/<int:id>',
         StateDetailAPI.as_view(),
     ),
     path(
@@ -275,7 +289,7 @@ urlpatterns += [
         StateTypeListAPI.as_view(),
     ),
     path(
-        'rest/EntityStateType/<int:pk>',
+        'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
 ]

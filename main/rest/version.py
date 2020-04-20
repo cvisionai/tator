@@ -1,8 +1,6 @@
 import traceback
 from collections import defaultdict
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -13,27 +11,24 @@ from ..models import Version
 from ..models import Project
 from ..serializers import VersionSerializer
 from ..search import TatorSearch
+from ..schema import VersionListSchema
+from ..schema import VersionDetailSchema
+from ..schema import parse
 
 from ._permissions import ProjectEditPermission
 
-class VersionListSchema(AutoSchema):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path, method)
-        if (method=='POST'):
-            manual_fields += [
-                coreapi.Field(name='name',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='Name of the version.')),
-                coreapi.Field(name='description',
-                              required=False,
-                              location='body',
-                              schema=coreschema.String(description='Description of the version.')),
-            ]
-        return manual_fields
-
 class VersionListAPI(APIView):
-    """ View or update a version """
+    """ Interact with a list of versions.
+
+        Versions allow for multiple "layers" of annotations on the same media. Versions
+        are created at the project level, but are only displayed for a given media
+        if that media contains annotations in that version. The version of an annotation
+        can be set by providing it in a POST operation. Currently only localizations
+        and states can have versions.
+
+        Versions are used in conjunction with the `modified` flag to determine whether
+        an annotation should be displayed for a given media while annotating.
+    """
     schema = VersionListSchema()
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
@@ -43,15 +38,10 @@ class VersionListAPI(APIView):
         response=Response({})
 
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', None)
-            project = kwargs['project']
-
-            if name is None:
-                raise Exception('Missing version name!')
-
-            if project is None:
-                raise Exception('Missing project ID!')
+            params = parse(request)
+            name = params['name']
+            description = params.get('description', None)
+            project = params['project']
 
             number = max([obj.number for obj in Version.objects.filter(project=project)]) + 1
 
@@ -79,8 +69,9 @@ class VersionListAPI(APIView):
     def get(self, request, format=None, **kwargs):
         response = Response({})
         try:
-            media = request.query_params.get('media_id', None)
-            project = kwargs['project']
+            params = parse(request)
+            media = params.get('media_id', None)
+            project = params['project']
 
             qs = Version.objects.filter(project=project).order_by('number')
             data = self.serializer_class(
@@ -174,7 +165,19 @@ class VersionListAPI(APIView):
             return response
 
 class VersionDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ View or update a version """
+    """ Interact with individual version.
+
+        Versions allow for multiple "layers" of annotations on the same media. Versions
+        are created at the project level, but are only displayed for a given media
+        if that media contains annotations in that version. The version of an annotation
+        can be set by providing it in a POST operation. Currently only localizations
+        and states can have versions.
+
+        Versions are used in conjunction with the `modified` flag to determine whether
+        an annotation should be displayed for a given media while annotating.
+    """
+    schema = VersionDetailSchema()
     serializer_class = VersionSerializer
     queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'

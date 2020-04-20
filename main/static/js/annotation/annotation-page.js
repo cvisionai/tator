@@ -252,8 +252,8 @@ class AnnotationPage extends TatorPage {
   }
 
   _getMetadataTypes(canvas, canvasElement) {
-    const projectId = this.getAttribute("project-id");
-    const mediaId = this.getAttribute("media-id");
+    const projectId = Number(this.getAttribute("project-id"));
+    const mediaId = Number(this.getAttribute("media-id"));
     const query = "?media_id=" + mediaId;
     const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
       method: "GET",

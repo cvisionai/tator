@@ -1,6 +1,6 @@
 from .algorithm_launch import AlgorithmLaunchAPI
 from .algorithm import AlgorithmListAPI
-from .analysis import AnalysisAPI
+from .analysis import AnalysisListAPI
 from .attribute_type import AttributeTypeListAPI
 from .attribute_type import AttributeTypeDetailAPI
 from .entity_type_schema import EntityTypeSchemaAPI

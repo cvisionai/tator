@@ -2,8 +2,6 @@ import traceback
 import logging
 import os
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,86 +12,44 @@ from urllib import parse as urllib_parse
 
 from ..kube import TatorTranscode
 from ..consumers import ProgressProducer
+from ..schema import TranscodeSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
 class TranscodeAPI(APIView):
+    """ Start a transcode.
+
+        Videos in Tator must be transcoded to a multi-resolution streaming format before they
+        can be viewed or annotated. This endpoint launches a transcode on raw uploaded video by
+        creating an Argo workflow. The workflow will download the uploaded raw video, transcode
+        it to the proper format, upload the transcoded video, and save the video using the 
+        `SaveVideo` endpoint. Optionally, depending on the `keep_original` field of the video 
+        type specified by the `type` parameter, the originally uploaded file may also be saved.
+        Note that the raw video must be uploaded first via tus, which is a separate mechanism 
+        from the REST API. This endpoint requires a group and run UUID associated with this 
+        upload. If no progress messages were generated during upload, then the group and run 
+        UUIDs can be newly generated.
     """
-    Start a transcode.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a project')),
-        coreapi.Field(name='type',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType; if -1 means tar-based import')),
-        coreapi.Field(name='gid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload group.')),
-        coreapi.Field(name='uid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload.')),
-        coreapi.Field(name='url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the file to be transcoded.')),
-        coreapi.Field(name='section',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Media section name.')),
-        coreapi.Field(name='name',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Name of the file used to create the database record after transcode.')),
-        coreapi.Field(name='md5',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='MD5 sum of the media file')),
-    ])
+    schema = TranscodeSchema()
     permission_classes = [ProjectTransferPermission]
 
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
-            entity_type = request.data.get('type', None)
-            gid = request.data.get('gid', None)
-            uid = request.data.get('uid', None)
-            url = request.data.get('url', None)
-            section = request.data.get('section', None)
-            name = request.data.get('name', None)
-            md5 = request.data.get('md5', None)
-            project = kwargs['project']
+            params = parse(request)
+            entity_type = params['type']
+            gid = str(params['gid'])
+            uid = params['uid']
+            url = params['url']
+            section = params['section']
+            name = params['name']
+            md5 = params['md5']
+            project = params['project']
             token, _ = Token.objects.get_or_create(user=request.user)
-
-            ## Check for required fields first
-            if entity_type is None:
-                raise Exception('Missing required field in request object "type"')
-
-            if gid is None:
-                raise Exception('Missing required gid for upload')
-
-            if uid is None:
-                raise Exception('Missing required uuid for upload')
-
-            if url is None:
-                raise Exception('Missing required url for upload')
-
-            if section is None:
-                raise Exception('Missing required section for upload')
-
-            if name is None:
-                raise Exception('Missing required name for uploaded video')
-
-            if md5 is None:
-                raise Exception('Missing md5 for uploaded video')
 
             prog = ProgressProducer(
                 'upload',
@@ -144,7 +100,9 @@ class TranscodeAPI(APIView):
 
             prog.progress("Transcoding...", 60)
 
-            response = Response({'message': "Transcode started successfully!"},
+            response = Response({'message': "Transcode started successfully!",
+                                'run_uid': uid,
+                                'group_id': gid},
                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:

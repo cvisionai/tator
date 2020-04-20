@@ -9,32 +9,38 @@ from django.core.exceptions import ObjectDoesNotExist
 from ..models import FrameAssociation
 from ..models import EntityMediaImage
 from ..serializers import FrameAssociationSerializer
+from ..schema import FrameAssociationDetailSchema
+from ..schema import parse
 
 from ._permissions import ProjectEditPermission
 
 class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Modifiy a Frame Association Object
+    """ Modify a frame association.
+
+        Frame associations specify which frames that a `State` object applies to.
     """
     serializer_class = FrameAssociationSerializer
     queryset = FrameAssociation.objects.all()
     permission_classes = [ProjectEditPermission]
+    schema = FrameAssociationDetailSchema()
+    lookup_field = 'id'
 
     def patch(self, request, format=None, **kwargs):
         response=Response({})
         try:
-            reqObject=request.data
-            associationObject=FrameAssociation.objects.get(pk=self.kwargs['pk'])
+            params = parse(request)
+            associationObject=FrameAssociation.objects.get(pk=params['id'])
             self.check_object_permissions(request, associationObject)
 
-            frame = reqObject.get("frame", None)
-            if frame:
-                associationObject.frame = frame
+            if 'frame' in params:
+                associationObject.frame = params['frame']
 
-            extracted_id = reqObject.get("extracted", None)
-            if extracted_id:
-                image = EntityMediaImage.objects.get(pk=extracted_id)
+            if 'extracted' in params:
+                image = EntityMediaImage.objects.get(pk=params['extracted'])
                 associationObject.extracted = image
             associationObject.save()
+            response = Response({'message': f"Frame association updated successfully!"},
+                                status=status.HTTP_200_OK)
 
         except PermissionDenied as err:
             raise
@@ -44,6 +50,5 @@ class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+        return response;
 

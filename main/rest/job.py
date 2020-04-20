@@ -1,8 +1,6 @@
 import traceback
 
 from rest_framework.views import APIView
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,19 +9,23 @@ from django.http import Http404
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
+from ..schema import JobDetailSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
 
 class JobDetailAPI(APIView):
+    """ Cancel a background job.
+
+        Algorithms and transcodes create argo workflows that are annotated with two
+        uuid1 strings, one identifying the run and the other identifying the group.
+        Jobs that are submitted together have the same group id, but each workflow
+        has a unique run id.
+
+        This endpoint allows the user to cancel a job using the `run_uid` returned
+        by either the `AlgorithmLaunch` or `Transcode` endpoints.
     """
-    Interact with a background job.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='run_uid',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A uid identifying a queued or running job')),
-    ])
+    schema = JobDetailSchema()
     permission_classes = [ProjectTransferPermission]
 
     def delete(self, request, format=None, **kwargs):
@@ -32,7 +34,8 @@ class JobDetailAPI(APIView):
         try:
             # Try finding the job via the kube api.
             # Find the job and delete it.
-            run_uid = kwargs['run_uid']
+            params = parse(request)
+            run_uid = params['run_uid']
             transcode_cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
             if not transcode_cancelled:
                 for alg in Algorithm.objects.all():
