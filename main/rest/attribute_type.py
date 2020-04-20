@@ -124,11 +124,11 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
         """
         response = Response({})
         try:
-            params = self.schema.parse(request, kwargs)
+            params = parse(request)
             obj = AttributeTypeBase.objects.get(pk=params['id'])
-            if params['name'] is not None:
+            if 'name' in params:
                 obj.name = params['name']
-            if params['description'] is not None:
+            if 'description' in params:
                 obj.description = params['description']
             obj.save()
             response=Response({'message': 'Attribute type updated successfully!'},
