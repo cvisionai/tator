@@ -4,6 +4,8 @@ class VersionListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         operation['tags'] = ['Version']
+        if method == 'GET':
+            operation['operationId'] = 'RetrieveVersionList'
         return operation
 
     def _get_path_parameters(self, path, method):
