@@ -74,7 +74,7 @@ class AnnotationView(ProjectBase, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        media = get_object_or_404(EntityMediaBase, pk=self.kwargs['pk'])
+        media = get_object_or_404(EntityMediaBase, pk=self.kwargs['id'])
         context['media'] = media
         return context
 
