@@ -1,7 +1,5 @@
 import traceback
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,33 +8,35 @@ from ..models import EntityTypeTreeLeaf
 from ..models import TreeLeaf
 from ..models import Project
 from ..serializers import EntityTypeTreeLeafAttrSerializer
+from ..schema import TreeLeafTypeListSchema
+from ..schema import TreeLeafTypeDetailSchema
+from ..schema import parse
 
 from ._entity_type_mixins import EntityTypeListAPIMixin
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
 class TreeLeafTypeListAPI(EntityTypeListAPIMixin):
+    """ Interact with tree leaf type list.
+
+        A tree leaf type is the metadata definition object for a tree leaf. It includes
+        name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     entity_endpoint='TreeLeaves'
     entityBaseObj=EntityTypeTreeLeaf
     baseObj=TreeLeaf
     entityTypeAttrSerializer=EntityTypeTreeLeafAttrSerializer
 
+    schema = TreeLeafTypeListSchema()
+
     def post(self, request, format=None, **kwargs):
         response=Response({})
 
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', '')
-            project = kwargs['project']
-
-            if name is None:
-                raise Exception('Missing required field "name" for tree leaf type!')
-
-            obj = EntityTypeTreeLeaf(
-                name=name,
-                description=description,
-                project=Project.objects.get(pk=project),
-            )
+            params = parse(request)
+            params['project'] = Project.objects.get(pk=params['project'])
+            obj = EntityTypeTreeLeaf(**params)
             obj.save()
 
             response=Response({'message': 'Tree leaf type created successfully!', 'id': obj.id},
@@ -52,28 +52,32 @@ class TreeLeafTypeListAPI(EntityTypeListAPIMixin):
             return response;
 
 class TreeLeafTypeDetailAPI(EntityTypeDetailAPIMixin):
+    """ Interact with individual tree leaf type.
+
+        A tree leaf type is the metadata definition object for a tree leaf. It includes
+        name, description, and (like other entity types) may have any number of attribute
+        types associated with it.
+    """
     entity_endpoint='TreeLeaves'
     entityBaseObj=EntityTypeTreeLeaf
     baseObj=TreeLeaf
     entityTypeAttrSerializer=EntityTypeTreeLeafAttrSerializer
 
-    schema=AutoSchema(manual_fields=
-                          [coreapi.Field(name='pk',
-                                         required=True,
-                                         location='path',
-                                         schema=coreschema.String(description='A unique integer value identifying a tree leaf type'))])
+    schema = TreeLeafTypeDetailSchema()
     serializer_class = EntityTypeTreeLeafAttrSerializer
     permission_classes = [ProjectFullControlPermission]
+    lookup_field = 'id'
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a tree leaf type.
         """
         response = Response({})
         try:
-            name = request.data.get('name', None)
-            description = request.data.get('description', None)
+            params = parse(request)
+            name = params.get('name', None)
+            description = params.get('description', None)
 
-            obj = EntityTypeTreeLeaf.objects.get(pk=int(kwargs['pk']))
+            obj = EntityTypeTreeLeaf.objects.get(pk=params['id'])
             if name is not None:
                 obj.name = name
             if description is not None:

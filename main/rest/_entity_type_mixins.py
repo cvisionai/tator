@@ -1,8 +1,6 @@
 import traceback
 import logging
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -11,6 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AttributeTypeBase
 from ..models import EntityMediaBase
+from ..models import EntityTypeState
+from ..schema import parse
 
 from ._util import delete_polymorphic_qs
 from ._util import reverse_queryArgs
@@ -28,47 +28,26 @@ class EntityTypeListAPIMixin(APIView):
     entityBaseObj=None
     baseObj=None
     entityTypeAttrSerializer=None
-
-    schema=AutoSchema(manual_fields=[
-        coreapi.Field(
-            name='project',
-            required=True,
-            location='path',
-            schema=coreschema.String(description='A unique integer identifying a project')
-        ),
-        coreapi.Field(
-            name='media_id',
-            required=False,
-            location='query',
-            schema=coreschema.String(description='A unique integer value identifying a "media_id"')
-        ),
-        coreapi.Field(
-            name='type',
-            required=False,
-            location='query',
-            schema=coreschema.String(description='Find types against a specific type id.')
-        ),
-    ])
     permission_classes = [ProjectFullControlPermission]
 
     def get(self, request, format=None, **kwargs):
-        """
-        Returns a list of all LocalizationTypes associated with the given media.
-        """
         response=Response({})
 
         try:
-            media_id=self.request.query_params.get('media_id', None)
+            params = parse(request)
+            media_id = params.get('media_id', None)
             if media_id != None:
+                if len(media_id) != 1:
+                    raise Exception('Entity type list endpoints expect only one media ID!')
                 logger.info(f"Getting media {media_id}")
-                mediaElement = EntityMediaBase.objects.get(pk=media_id)
+                mediaElement = EntityMediaBase.objects.get(pk=media_id[0])
                 if mediaElement.project.id != self.kwargs['project']:
                     raise Exception('Media Not in Project')
                 entityTypes = self.entityBaseObj.objects.filter(media=mediaElement.meta)
             else:
                 entityTypes = self.entityBaseObj.objects.filter(project=self.kwargs['project'])
 
-            type_id=self.request.query_params.get('type', None)
+            type_id = params.get('type', None)
             if type_id != None:
                 entityTypes = entityTypes.filter(pk=type_id)
 
@@ -80,10 +59,14 @@ class EntityTypeListAPIMixin(APIView):
                     dataurl=request.build_absolute_uri(
                         reverse_queryArgs(self.entity_endpoint,
                                           kwargs={'project': self.kwargs['project']},
-                                          queryargs={self.pkname : media_id,
+                                          queryargs={self.pkname : media_id[0],
                                                      'type' : entityType.id}
                         ))
 
+                    if self.entityBaseObj != EntityTypeState:
+                        # States types expect media_id to be a list, localizations expect just
+                        # a number.
+                        media_id = media_id[0] 
                     count=self.baseObj.selectOnMedia(media_id).filter(meta=entityType).count()
                 results.append({"type": entityType,
                                 "columns": AttributeTypeBase.objects.filter(applies_to=entityType.id),
@@ -108,12 +91,11 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
     permission_classes = [ProjectFullControlPermission]
     
     def get(self, request, format=None, **kwargs):
-        """ Returns single entity type.
-        """
         response=Response({})
 
         try:
-            entityTypeId=self.kwargs['pk']
+            params = parse(request)
+            entityTypeId = params['id']
 
             entityType = self.entityBaseObj.objects.get(pk=entityTypeId)
 
@@ -136,11 +118,10 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
         return response
 
     def delete(self, request, format=None, **kwargs):
-        """ Deletes a localization type.
-        """
         response = Response({})
         try:
-            pk = int(kwargs['pk'])
+            params = parse(request)
+            pk = params['id']
             obj = self.entityBaseObj.objects.get(pk=pk)
             attr_types = AttributeTypeBase.objects.filter(applies_to=pk)
             delete_polymorphic_qs(attr_types)

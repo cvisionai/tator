@@ -4,7 +4,7 @@
 %>
 
 % if multiArch.arch=="x86_64":
-FROM ubuntu:18.04
+FROM ubuntu:19.10
 MAINTAINER CVision AI <info@cvisionai.com>
 # Install apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,18 +31,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install pip packages
 RUN pip3 --no-cache-dir install wheel
+RUN pip3 --no-cache-dir install pyyaml==5.3.1
 RUN pip3 --no-cache-dir install \
-        django==2.2.7 django-enumfields==1.0.0 \
-        django-polymorphic==2.1.2 channels==2.1.7 \
-        psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
-        djangorestframework==3.10.2 pygments==2.4.2 \
-        django-rest-polymorphic==0.1.8 coreapi==2.3.3 django-extensions==2.2.5 pygraphviz==1.5 \
-        pyparsing==2.4.5 pydot==1.4.1 markdown==3.1.1 coreapi-cli==1.0.9 \
-        hiredis==1.0.0 channels_redis==2.4.0 redis==3.3.11 \
-        daphne==2.2.5 gunicorn==20.0.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
-        requests==2.22.0 python-dateutil==2.8.1 ujson==1.35 slackclient==2.3.1 \
-        google-auth==1.6.3 elasticsearch==7.1.0 progressbar2==3.47.0 \
-        gevent==1.4.0
+        django==2.2.12 django-enumfields==2.0.0 \
+        django-polymorphic==2.1.2 channels==2.4.0 \
+        psycopg2-binary==2.8.5 pillow==6.2.1 imageio==2.6.1 \
+        djangorestframework==3.11.0 pygments==2.4.2 \
+        django-rest-polymorphic==0.1.9 django-extensions==2.2.5 pygraphviz==1.5 \
+        pyparsing==2.4.7 pydot==1.4.1 markdown==3.2.1 \
+        hiredis==1.0.1 channels_redis==2.4.2 redis==3.4.1 \
+        daphne==2.5.0 gunicorn==20.0.4 django_admin_json_editor==0.2.0 django-ltree==0.5 \
+        requests==2.23.0 python-dateutil==2.8.1 ujson==2.0.3 slackclient==2.5.0 \
+        google-auth==1.14.0 elasticsearch==7.1.0 progressbar2==3.50.1 \
+        gevent==1.5.0 uritemplate==3.0.1
+
+# Install fork of openapi-core that works in DRF views
+WORKDIR /working
+RUN git clone https://github.com/jrtcppv/openapi-core.git
+WORKDIR /working/openapi-core
+RUN python3 setup.py install
 
 # Install kubernetes client
 WORKDIR /working

@@ -1,48 +1,34 @@
 import traceback
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import EntityTypeBase
+from ..schema import EntityTypeSchemaSchema
+from ..schema import parse
 
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectViewOnlyPermission
 from ._util import computeRequiredFields
 
-class EntityTypeDetailSchema(AutoSchema):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='type',
-                              required=True,
-                              location='path',
-                              schema=coreschema.String(description='A unique integer value identifying an EntityType'))
-
-            ]
-
-        return manual_fields + getOnly_fields
-
 class EntityTypeSchemaAPI(APIView):
-    """ Output required fields for inserting a new object based on an EntityType
+    """ Output required fields for inserting a new object based on an EntityType.
 
-    Various REST calls take a '<varies>' argument, which is dependent on what type is being added. This method provides a way to
-    interrogate the service providor for what fields are required for a given addition.
+    Various REST calls take a polymorphic argument, which is dependent on what type is being added. This method provides a way to
+    interrogate the service provider for what fields are required for a given addition.
 
     The parameter to this function is the type id (i.e. the EntityTypeState or EntityTypeLocalization*** object that applies to a given
-    media type
+    media type.
 
     """
-    schema=EntityTypeDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
+    schema=EntityTypeSchemaSchema()
+    permission_classes = [ProjectViewOnlyPermission]
     def get(self, request, format=None, **kwargs):
         response=Response({})
         try:
-            entityType = EntityTypeBase.objects.get(id=self.kwargs['pk'])
+            params = parse(request)
+            entityType = EntityTypeBase.objects.get(id=params['id'])
             reqFields,reqAttributes,_=computeRequiredFields(entityType)
             allFields={**reqFields, **reqAttributes}
             msg={"name": entityType.name,

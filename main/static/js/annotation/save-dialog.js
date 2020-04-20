@@ -94,7 +94,7 @@ class SaveDialog extends TatorElement {
       type: this._dataType.type.id,
       name: this._dataType.type.name,
       media_id: this._mediaId,
-      modified: 1,
+      modified: true,
       version: this._version.id,
       ...requestObj,
       ...values,

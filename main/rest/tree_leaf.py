@@ -1,10 +1,7 @@
 import traceback
 import logging
-import datetime
 from collections import defaultdict
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -18,8 +15,11 @@ from ..models import Project
 from ..models import EntityTypeBase
 from ..serializers import TreeLeafSerializer
 from ..search import TatorSearch
+from ..schema import TreeLeafSuggestionSchema
+from ..schema import TreeLeafListSchema
+from ..schema import TreeLeafDetailSchema
+from ..schema import parse
 
-from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import count_by_attribute
 from ._attributes import patch_attributes
@@ -37,34 +37,15 @@ class TreeLeafSuggestionAPI(APIView):
     """ Rest Endpoint compatible with devbridge suggestion format.
 
     <https://github.com/kraaden/autocomplete>
-
-    ```
-    {
-    <TBD>
-    }
-   ```
     """
-    schema=AutoSchema(manual_fields=
-                      [coreapi.Field(name='ancestor',
-                                     required=False,
-                                     location='path',
-                                     schema=coreschema.String(description='Get descedants of a tree element (inclusive), by path (i.e. ITIS.Animalia)')),
-                       coreapi.Field(name='minLevel',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='Integer specifying level of results that are inputable. I.e. 2 refers to grandchildren if ancestor points to a grandparent.')),
-                       coreapi.Field(name='query',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='A string to search for matching names'))
-    ])
+    schema = TreeLeafSuggestionSchema()
     permission_classes = [ProjectViewOnlyPermission]
 
     def get(self, request, format=None, **kwargs):
-        s0 = datetime.datetime.now()
-        minLevel=int(self.request.query_params.get('minLevel', 1))
-        startsWith=self.request.query_params.get('query', None)
-        ancestor=kwargs['ancestor']
+        params = parse(request)
+        minLevel=int(params.get('minLevel', 1))
+        startsWith=params.get('query', None)
+        ancestor=params['ancestor']
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['size'] = 10
         query['sort']['_exact_treeleaf_name'] = 'asc'
@@ -73,13 +54,12 @@ class TreeLeafSuggestionAPI(APIView):
             {'range': {'_treeleaf_depth': {'gte': minLevel}}},
             {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
         ]
-        ids, _ = TatorSearch().search(kwargs['project'], query)
+        ids, _ = TatorSearch().search(params['project'], query)
         queryset = list(TreeLeaf.objects.filter(pk__in=ids))
 
         suggestions=[]
-        s1 = datetime.datetime.now()
         for idx,match in enumerate(queryset):
-            group = kwargs['ancestor']
+            group = params['ancestor']
             if match.parent:
                 group = match.parent.name
 
@@ -105,67 +85,24 @@ class TreeLeafSuggestionAPI(APIView):
         def functor(elem):
             return elem["group"]
 
-        s2 = datetime.datetime.now()
         suggestions.sort(key=functor)
-        s3 = datetime.datetime.now()
         resp = Response(suggestions)
-        s4 = datetime.datetime.now()
-        logger.info(f"Timing stage 0 = {s1-s0}, stage 1 = {s2-s1}, stage 2 = {s3-s2}, stage 3 = {s4-s3}, total={s4-s0}")
         return resp
 
-class TreeLeafListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        postOnly_fields = []
-
-        if (method=='GET'):
-            getOnly_fields = [coreapi.Field(name='project',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-                              coreapi.Field(name='ancestor',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='Get descedants of a tree element (inclusive). Path name to root of tree.')),
-                              coreapi.Field(name='type',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='Integer type id of tree leaf')),
-                              coreapi.Field(name='name',
-                                     required=False,
-                                     location='query',
-                                     schema=coreschema.String(description='A string to search for matching names'))
-            ] + self.attribute_fields()
-        if (method=='POST'):
-             postOnly_fields = [coreapi.Field(name='name',
-                                     required=True,
-                                     location='body',
-                                              schema=coreschema.String(description='A name to apply to the element')),
-                                coreapi.Field(name='parent',
-                                     required=False,
-                                     location='body',
-                                              schema=coreschema.String(description='ID to use as parent if there is one.')),
-                                coreapi.Field(name='attributes',
-                                     required=False,
-                                     location='body',
-                                              schema=coreschema.String(description='JSON structure representing attributes of this tree leaf element')),
-                                coreapi.Field(name='project',
-                                     required=False,
-                                     location='body',
-                                     schema=coreschema.String(description='ID to a project to associate with'))
-             ]
-
-        return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
-
 class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
+    """ Interact with a list of tree leaves.
+
+        Tree leaves are used to define label hierarchies that can be used for autocompletion
+        of string attribute types.
+    """
     serializer_class = TreeLeafSerializer
     schema=TreeLeafListSchema()
     permission_classes = [ProjectFullControlPermission]
 
     def get(self, request, *args, **kwargs):
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -174,9 +111,6 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
             qs = self.get_queryset() # TODO self.get_queryset().count() fails figure out why
             if self.operation == 'count':
                 return Response({'count': len(qs)})
-            elif self.operation.startswith('attribute_count'):
-                _, attr_name = self.operation.split('::')
-                return Response(count_by_attribute(qs, attr_name))
             else:
                 raise Exception('Invalid operation parameter!')
         else:
@@ -185,33 +119,26 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
     def post(self, request, format=None, **kwargs):
         response=Response({})
         try:
-            reqObject=request.data;
-            parent=reqObject.get("parent", None)
-            name=reqObject.get("name", None)
-            attr=reqObject.get("attributes", None)
-            project=Project.objects.get(pk=kwargs['project'])
-
-            if name is None:
-                raise Exception('Missing required field in request Object "name", got={}'.format(reqObject))
-
-            if 'type' in reqObject:
-                entityTypeId=reqObject['type']
-            else:
-                raise Exception('Missing required field in request object "entity_type_id"')
+            params = parse(request)
+            parent = params.get('parent', None)
+            name = params['name']
+            entityTypeId = params['type']
+            attr = params.get('attributes', None)
+            project = Project.objects.get(pk=params['project'])
 
             try:
                 entityType = EntityTypeBase.objects.get(pk=int(entityTypeId))
             except:
                 raise Exception(f'Entity type ID {entityTypeId} does not exist!')
 
-            requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
+            requiredFields, reqAttributes, attrTypes = computeRequiredFields(entityType)
 
-            for field in {**requiredFields,**reqAttributes}:
-                if field not in reqObject:
+            for field in {**requiredFields, **reqAttributes}:
+                if field not in params:
                     raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
 
             for attrType, field in zip(attrTypes, reqAttributes):
-                convert_attribute(attrType, reqObject[field]) # Validates attribute value
+                convert_attribute(attrType, params[field]) # Validates attribute value
 
             tl=TreeLeaf(name=name,
                         project=project,
@@ -232,13 +159,14 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
 
     def get_queryset(self):
         # Figure out what object we are dealing with
+        params = parse(self.request)
         obj=TreeLeaf
-        queryset = obj.objects.filter(project=self.kwargs['project'])
+        queryset = obj.objects.filter(project=params['project'])
         ancestorTree = None
 
-        ancestorId=self.request.query_params.get('ancestor', None)
-        name=self.request.query_params.get('name', None)
-        type_id=self.request.query_params.get('type', None)
+        ancestorId=params.get('ancestor', None)
+        name=params.get('name', None)
+        type_id=params.get('type', None)
 
         if ancestorId != None:
             ancestor = TreeLeaf.objects.get(path=ancestorId)
@@ -252,20 +180,21 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
 
         queryset = self.filter_by_attribute(queryset)
 
-        queryset = paginate(self.request.query_params, queryset)
+        queryset = paginate(params, queryset)
 
         return queryset;
 
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             qs = self.get_queryset()
             if qs.count() > 0:
                 new_attrs = validate_attributes(request, qs[0])
                 bulk_patch_attributes(new_attrs, qs)
-            response=Response({'message': 'Attribute patch successful!'},
-                              status=status.HTTP_200_OK)
+            response = Response({'message': 'Attribute patch successful!'},
+                                status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
@@ -278,7 +207,8 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             qs = list(self.get_queryset())
             types = set(map(lambda x: type(x), qs))
             ids = list(map(lambda x: x.id, list(qs)))
@@ -298,17 +228,25 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
             return response;
 
 class TreeLeafDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
+    """ Interact with individual tree leaf.
+
+        Tree leaves are used to define label hierarchies that can be used for autocompletion
+        of string attribute types.
     """
+    schema = TreeLeafDetailSchema()
     serializer_class = TreeLeafSerializer
     queryset = TreeLeaf.objects.all()
     permission_classes = [ProjectFullControlPermission]
+    lookup_field = 'id'
 
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            leaf_object = TreeLeaf.objects.get(pk=self.kwargs['pk'])
-            self.check_object_permissions(request, leaf_object)
+            params = parse(request)
+            leaf_object = TreeLeaf.objects.get(pk=params['id'])
+            if 'name' in params:
+                leaf_object.name = params['name']
+                leaf_object.save()
             new_attrs = validate_attributes(request, leaf_object)
             patch_attributes(new_attrs, leaf_object)
         except PermissionDenied as err:
@@ -319,6 +257,5 @@ class TreeLeafDetailAPI(RetrieveUpdateDestroyAPIView):
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+        return response;
 

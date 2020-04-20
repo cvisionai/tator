@@ -1,7 +1,6 @@
 import traceback
 import logging
 
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models.expressions import RawSQL
@@ -242,23 +241,18 @@ def validate_attributes(request, obj):
        a type conversion.
     """
     attributes = request.data.get("attributes", None)
-    if not attributes:
-        attributes = request.data
-    validated = {}
-    for attr_name in attributes:
-        if attr_name == 'tator_user_sections':
-            # This is a built-in attribute used for organizing media sections.
-            validated[attr_name] = attributes[attr_name]
-            continue
-        attr_type_qs = AttributeTypeBase.objects.filter(
-            name=attr_name).filter(applies_to=obj.meta)
-        if attr_type_qs.count() != 1:
-            continue
-        attr_type = attr_type_qs[0]
-        # This is just done to test convertibility. If not, an exception is raised.
-        convert_attribute(attr_type, attributes[attr_name])
-        validated[attr_name] = attributes[attr_name]
-    return validated
+    if attributes:
+        for attr_name in attributes:
+            if attr_name == 'tator_user_sections':
+                # This is a built-in attribute used for organizing media sections.
+                continue
+            attr_type_qs = AttributeTypeBase.objects.filter(
+                name=attr_name).filter(applies_to=obj.meta)
+            if attr_type_qs.count() != 1:
+                raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
+            attr_type = attr_type_qs[0]
+            convert_attribute(attr_type, attributes[attr_name])
+    return attributes
 
 def patch_attributes(new_attrs, obj):
     """Updates attribute values.
@@ -289,43 +283,6 @@ def bulk_patch_attributes(new_attrs, qs):
             new_value=val,
             create_missing=True,
         ))
-
-class AttributeFilterSchemaMixin:
-    """Defines attribute filtering schema.
-    """
-    def attribute_fields(self):
-        """Returns manual fields for attribute filtering.
-        """
-        return [
-            coreapi.Field(name='attribute',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_lt',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_lte',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_gt',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_gte',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_contains',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::value,[key1::value1]')),
-            coreapi.Field(name='attribute_distance',
-                          required=False,
-                          location='query',
-                          schema=coreschema.String(description='key::distance_km::lat::lon,[key1::distance_km1::lat1::lon1]')),
-        ]
 
 class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.

@@ -68,7 +68,7 @@ def get_metadata(path):
     fps_fractional = stream["avg_frame_rate"].split("/")
     fps = float(fps_fractional[0]) / float(fps_fractional[1])
     if "nb_frames" in stream:
-        num_frames = stream["nb_frames"]
+        num_frames = int(stream["nb_frames"])
     else:
         num_frames = round(fps * seconds)
     width = stream["width"]

@@ -1,25 +1,26 @@
 from rest_framework.generics import ListAPIView
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 
 from ..models import Algorithm
 from ..serializers import AlgorithmSerializer
+from ..schema import AlgorithmListSchema
+from ..schema import parse
 
 from ._permissions import ProjectViewOnlyPermission
 
 class AlgorithmListAPI(ListAPIView):
+    """ Interact with algorithms that have been registered to a project.
+
+        For instructions on how to register an algorithm, visit `GitHub`_.
+
+        .. _GitHub:
+           https://github.com/cvisionai/tator/tree/master/examples/algorithms
+    """
     serializer_class = AlgorithmSerializer
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a "project_id"')
-        ),
-    ])
+    schema = AlgorithmListSchema()
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
-        project_id = self.kwargs['project']
-        qs = Algorithm.objects.filter(project__id=project_id)
+        params = parse(self.request)
+        qs = Algorithm.objects.filter(project__id=params['project'])
         return qs
 

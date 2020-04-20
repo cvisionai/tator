@@ -249,7 +249,7 @@ REST_FRAMEWORK = {
         'main.renderers.CsvRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
 }
 
 AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']

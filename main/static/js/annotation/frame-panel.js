@@ -45,13 +45,13 @@ class FramePanel extends TatorElement {
         const data = this._data._dataByType.get(val.type.id);
         const index = data.findIndex(elem => elem.association.frame === this._frame);
         if (index === -1) {
-          const mediaId = this.getAttribute("media-id");
+          const mediaId = Number(this.getAttribute("media-id"));
           const body = {
             type: val.type.id,
             name: val.type.name,
-            media_ids: mediaId,
+            media_ids: [mediaId],
             frame: this._frame,
-            modified: 1,
+            modified: true,
             version: this._version.id,
             ...values,
           };
@@ -69,13 +69,13 @@ class FramePanel extends TatorElement {
 
         // If there are no annotations for this type, make a default one at frame 0.
         if (this._data._dataByType.get(typeObj.type.id).length == 0) {
-          const mediaId = this.getAttribute("media-id");
+          const mediaId = Number(this.getAttribute("media-id"));
           const body = {
             type: val.type.id,
             name: val.type.name,
-            media_ids: mediaId,
+            media_ids: [mediaId],
             frame: 0,
-            modified: 1,
+            modified: true,
             version: this._version.id,
           }
           for (const column of val.columns) {

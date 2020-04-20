@@ -7,8 +7,6 @@ import os
 import shutil
 from uuid import uuid1
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -20,82 +18,26 @@ from ..models import EntityTypeMediaVideo
 from ..models import getVideoDefinition
 from ..models import Project
 from ..consumers import ProgressProducer
+from ..schema import SaveVideoSchema
+from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
 class SaveVideoAPI(APIView):
-    """
-    Saves a transcoded video.
-    """
-    schema = AutoSchema(manual_fields=[
-        coreapi.Field(name='project',
-                      required=True,
-                      location='path',
-                      schema=coreschema.String(description='A unique integer value identifying a project')),
-        coreapi.Field(name='type',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A unique integer value identifying a MediaType (-1 means auto, first for project)')),
-        coreapi.Field(name='gid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload group.')),
-        coreapi.Field(name='uid',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='A UUID generated for the upload.')),
-        coreapi.Field(name='media_files',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='List of upload urls for the transcoded file and corresponding VideoDefinition.')),
-        coreapi.Field(name='thumbnail_url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the thumbnail.')),
-        coreapi.Field(name='thumbnail_gif_url',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='The upload url for the thumbnail gif.')),
-        coreapi.Field(name='section',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Media section name.')),
-        coreapi.Field(name='name',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Name of the file.')),
-        coreapi.Field(name='md5',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='MD5 sum of the media file')),
-        coreapi.Field(name='num_frames',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Number of frames in the video')),
-        coreapi.Field(name='fps',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Frame rate of the video')),
-        coreapi.Field(name='codec',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Codec of the original video')),
-        coreapi.Field(name='width',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Pixel width of the video')),
-        coreapi.Field(name='height',
-                      required=True,
-                      location='body',
-                      schema=coreschema.String(description='Pixel height of the video')),
-        coreapi.Field(name='progressName',
-                      required=False,
-                      location='body',
-                      schema=coreschema.String(description='Name to use for progress update.')),
+    """ Saves a transcoded video.
 
-    ])
+        Videos in Tator must be transcoded to a multi-resolution streaming format before they
+        can be viewed or annotated. To launch a transcode on raw uploaded video, use the 
+        `Transcode` endpoint, which will create an Argo workflow to perform the transcode
+        and save the video using this endpoint; no further REST calls are required. However,
+        if you would like to perform transcodes locally, this endpoint enables that. The
+        script at `scripts/transcoder/transcodePipeline.py` in the Tator source code provides
+        an example of how to transcode a Tator-compatible video, upload it, and save it
+        to the database using this endpoint.
+    """
+    schema = SaveVideoSchema()
     permission_classes = [ProjectTransferPermission]
 
     def make_video_definition(self, disk_file, url_path):
@@ -124,25 +66,15 @@ class SaveVideoAPI(APIView):
     def patch(self, request, format=None, **kwargs):
         response=Response({})
         try:
-            gid = request.data.get('gid', None)
-            uid = request.data.get('uid', None)
-            new_media_files = request.data.get('media_files', None)
-            media_id = request.data.get('id', None)
+            params = parse(request)
+            gid = str(params['gid'])
+            uid = params['uid']
+            new_media_files = params['media_files']
+            media_id = params['id']
             media_element = EntityMediaVideo.objects.get(pk=media_id)
-            project = kwargs['project']
+            project = params['project']
             progress_name = media_element.name
             project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
-
-            if gid is None:
-                raise Exception('Missing required gid for upload')
-
-            if uid is None:
-                raise Exception('Missing required uuid for upload')
-
-            if new_media_files is None:
-                raise Exception('Missing required media_files object for upload')
-            if media_id is None:
-                raise Exception('Missing required media_id for upload')
 
             # First determine if we need to move originals out
             if media_element.media_files is None:
@@ -212,6 +144,8 @@ class SaveVideoAPI(APIView):
             media_element.media_files = media_files
             media_element.save()
 
+            response = Response({'message': "Video updated successfully!"},
+                                status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
@@ -237,65 +171,23 @@ class SaveVideoAPI(APIView):
         response=Response({})
 
         try:
-            entity_type = request.data.get('type', None)
-            gid = request.data.get('gid', None)
-            uid = request.data.get('uid', None)
-            media_files = request.data.get('media_files', None)
-            thumbnail_url = request.data.get('thumbnail_url', None)
-            thumbnail_gif_url = request.data.get('thumbnail_gif_url', None)
-            section = request.data.get('section', None)
-            name = request.data.get('name', None)
-            md5 = request.data.get('md5', None)
-            num_frames = request.data.get('num_frames', None)
-            fps = request.data.get('fps', None)
-            codec = request.data.get('codec', None)
-            width = request.data.get('width', None)
-            height = request.data.get('height', None)
-            project = kwargs['project']
-            progress_name = request.data.get('progressName', name)
-
-            ## Check for required fields first
-            if entity_type is None:
-                raise Exception('Missing required entity type for upload')
-
-            if gid is None:
-                raise Exception('Missing required gid for upload')
-
-            if uid is None:
-                raise Exception('Missing required uuid for upload')
-
-            if media_files is None:
-                raise Exception('Missing required media_files object for upload')
-
-            if thumbnail_url is None:
-                raise Exception('Missing required url of thumbnail file for upload')
-
-            if thumbnail_gif_url is None:
-                raise Exception('Missing required url of thumbnail gif file for upload')
-
-            if section is None:
-                raise Exception('Missing required section for uploaded video')
-
-            if name is None:
-                raise Exception('Missing required name for uploaded video')
-
-            if md5 is None:
-                raise Exception('Missing md5 for uploaded video')
-
-            if num_frames is None:
-                raise Exception('Missing required number of frames for uploaded video')
-
-            if fps is None:
-                raise Exception('Missing required fps for uploaded video')
-
-            if codec is None:
-                raise Exception('Missing required codec for uploaded video')
-
-            if width is None:
-                raise Exception('Missing required width for uploaded video')
-
-            if height is None:
-                raise Exception('Missing required height for uploaded video')
+            params = parse(request)
+            entity_type = params['type']
+            gid = str(params['gid'])
+            uid = params['uid']
+            media_files = params['media_files']
+            thumbnail_url = params['thumbnail_url']
+            thumbnail_gif_url = params['thumbnail_gif_url']
+            section = params['section']
+            name = params['name']
+            md5 = params['md5']
+            num_frames = params['num_frames']
+            fps = params['fps']
+            codec = params['codec']
+            width = params['width']
+            height = params['height']
+            project = params['project']
+            progress_name = params.get('progressName', name)
 
             # Set up interface for sending progress messages.
             prog = ProgressProducer(

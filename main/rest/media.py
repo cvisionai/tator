@@ -8,8 +8,6 @@ import io
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -18,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied
+from django.db.models import Case, When
 from django.db import connection
 from django.conf import settings
 
@@ -30,84 +29,54 @@ from ..search import TatorSearch
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
+from ..schema import MediaListSchema
+from ..schema import MediaDetailSchema
+from ..schema import GetFrameSchema
+from ..schema import parse
 
 from ._media_query import get_media_queryset
-from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._util import delete_polymorphic_qs
-from ._schema import Schema
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
-class MediaListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='project',
-                              required=True,
-                              location='path',
-                              schema=coreschema.String(description='A unique integer value identifying a "project_id"')),
-                coreapi.Field(name='media_id',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a MediaType')),
-                coreapi.Field(name='name',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Name of the media to filter on')),
-                coreapi.Field(name='search',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Searches against filename and attributes for matches')),
-                coreapi.Field(name='md5',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='MD5 sum of the media file')),
-                coreapi.Field(name='operation',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements')),
-            ]
-        return manual_fields + getOnly_fields + self.attribute_fields()
-
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
+    """ Interact with list of media.
+
+        A media may be an image or a video. Media are a type of entity in Tator, 
+        meaning they can be described by user defined attributes.
+
+        This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
+        Both are accomplished using the same query parameters used for a GET request.
+
+        This endpoint does not include a POST method. Creating media must be preceded by an
+        upload, after which a separate media creation endpoint must be called. The media creation
+        endpoints are `Transcode` to launch a transcode of an uploaded video and `SaveImage` to
+        save an uploaded image. If you would like to perform transcodes on local assets, you can
+        use the `SaveVideo` endpoint to save an already transcoded video. Local transcodes may be
+        performed with the script at `scripts/transcoder/transcodePipeline.py` in the Tator source
+        code.
     """
-    Endpoint for getting lists of media
-
-    Example:
-
-    #all types all videos
-    GET /Medias
-
-    #only lines for media_id=3 of type 1
-    GET /Medias?type=1&media=id=3
-
-    """
+    schema = MediaListSchema()
     serializer_class = EntityMediaSerializer
-    schema=MediaListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get(self, request, *args, **kwargs):
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, _ = get_media_queryset(
                 self.kwargs['project'],
-                self.request.query_params,
-                self
+                params,
             )
             if len(media_ids) > 0:
-                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
+                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
+                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by(preserved)
                 # We are doing a full query; so we should bypass the ORM and
                 # use the SQL cursor directly.
                 # TODO: See if we can do this using queryset into a custom serializer instead
@@ -156,10 +125,10 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
         return Response(responseData)
 
     def get_queryset(self):
+        params = parse(self.request)
         media_ids, media_count, _ = get_media_queryset(
-            self.kwargs['project'],
-            self.request.query_params,
-            self
+            params['project'],
+            params,
         )
         queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
         return queryset
@@ -167,11 +136,11 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, query = get_media_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(media_ids) == 0:
                 raise ObjectDoesNotExist
@@ -192,11 +161,11 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             media_ids, media_count, query = get_media_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(media_ids) == 0:
                 raise ObjectDoesNotExist
@@ -207,11 +176,9 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             response=Response({'message': 'Attribute patch successful!'},
                               status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
-            print(f"EXCEPTION: {dne}")
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            print(f"EXCEPTION: {e}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
@@ -359,17 +326,23 @@ class MediaUtil:
         return img_buf.getvalue()
 
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
+    """ Interact with individual media.
+
+        A media may be an image or a video. Media are a type of entity in Tator, 
+        meaning they can be described by user defined attributes.
     """
+    schema = MediaDetailSchema()
     serializer_class = EntityMediaSerializer
     queryset = EntityMediaBase.objects.all()
     permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
 
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            if 'attributes' in request.data:
-                media_object = EntityMediaBase.objects.get(pk=self.kwargs['pk'])
+            params = parse(request)
+            media_object = EntityMediaBase.objects.get(pk=params['id'])
+            if 'attributes' in params:
                 self.check_object_permissions(request, media_object)
                 new_attrs = validate_attributes(request, media_object)
                 patch_attributes(new_attrs, media_object)
@@ -377,17 +350,22 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 if type(media_object) == EntityMediaImage:
                     for localization in media_object.thumbnail_image.all():
                         patch_attributes(new_attrs, localization)
-
-                del request.data['attributes']
-            if 'media_files' in request.data:
+            if 'media_files' in params:
                 # TODO: for now just pass through, eventually check URL
-                media_object = EntityMediaBase.objects.get(pk=self.kwargs['pk'])
-                media_object.media_files = request.data['media_files']
-                media_object.save()
+                media_object.media_files = params['media_files']
                 logger.info(f"Media files = {media_object.media_files}")
 
-            if bool(request.data):
-                super().patch(request, **kwargs)
+            if 'name' in params:
+                media_object.name = params['name']
+
+            if 'last_edit_start' in params:
+                media_object.last_edit_start = params['last_edit_start']
+
+            if 'last_edit_end' in params:
+                media_object.last_edit_end = params['last_edit_end']
+
+            media_object.save()
+                
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -400,45 +378,23 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
             return response;
 
 class GetFrameAPI(APIView):
-    schema = Schema({'GET' : [
-        coreapi.Field(name='pk',
-                      required=True,
-                      location='path',
-                      schema=coreschema.Integer(description='A unique integer value identifying a media')),
-        coreapi.Field(name='frames',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='Comma-seperated list of frames to capture (default = 0)')),
-        coreapi.Field(name='tile',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='wxh, if not supplied is made as squarish as possible')),
-        coreapi.Field(name='roi',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='w:h:x:y,[w:h:x:y], optionally crop each frame to a given roi in relative coordinates. Supply either a single roi for all frames or a list one roi for each.')),
-        coreapi.Field(name='animate',
-                      required=False,
-                      location='query',
-                      schema=coreschema.String(description='If not tiling, animate each frame at a given fps in a gif.')),
-
-    ]})
-
-
-    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
+    schema = GetFrameSchema()
+    renderer_classes = (JpegRenderer,)
+    renderer_classes = (JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of frames based on the input parameter """
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of 
+            frames based on the input parameter
+        """
         try:
             # upon success we can return an image
-            values = self.schema.parse(request, kwargs)
-            video = EntityMediaVideo.objects.get(pk=values['pk'])
-            frames = request.query_params.get('frames', '0')
-            frames = frames.split(",")
+            params = parse(request)
+            video = EntityMediaVideo.objects.get(pk=params['id'])
+            frames = params.get('frames', '0')
 
             if len(frames) > 32:
                 raise Exception("Too many frames requested (Max = 32)")
@@ -448,7 +404,7 @@ class GetFrameAPI(APIView):
                     raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
                 elif int(frame) < 0:
                     raise Exception(f"Frame {frame} is invalid. Must be greater than 0.")
-            tile_size = values['tile']
+            tile_size = params.get('tile', None)
 
             if values['tile'] and values['animate']:
                 raise Exception("Can't supply both tile and animate arguments")
@@ -462,7 +418,7 @@ class GetFrameAPI(APIView):
 
             # compute the crop argument
             roi_arg = []
-            roi = request.query_params.get('roi', None)
+            roi = params.get('roi', None)
             if roi:
                 crop_filter = [None] * len(frames)
                 roi_list = roi.split(',')

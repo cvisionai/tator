@@ -59,7 +59,7 @@ class UndoBuffer extends HTMLElement {
               },
               body: JSON.stringify({
                 "algorithm_name": algo_name,
-                "media_ids": `${this._media['id']}`,
+                "media_ids": [this._media['id']],
               }),
             })
           });

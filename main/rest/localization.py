@@ -2,8 +2,6 @@ import traceback
 import logging
 import time
 
-from rest_framework.schemas import AutoSchema
-from rest_framework.compat import coreschema, coreapi
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -29,9 +27,11 @@ from ..models import type_to_obj
 from ..serializers import EntityLocalizationSerializer
 from ..serializers import FastEntityLocalizationSerializer
 from ..search import TatorSearch
+from ..schema import LocalizationListSchema
+from ..schema import LocalizationDetailSchema
+from ..schema import parse
 
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterSchemaMixin
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
@@ -43,97 +43,37 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class LocalizationListSchema(AutoSchema, AttributeFilterSchemaMixin):
-    def get_manual_fields(self, path, method):
-        manual_fields = super().get_manual_fields(path,method)
-        getOnly_fields = []
-        postOnly_fields = []
-
-        manual_fields += [
-            coreapi.Field(
-                name='project',
-                required=True,
-                location='path',
-                schema=coreschema.String(description='A unique integer identifying a project')
-            ),
-        ]
-
-        if (method=='GET'):
-            getOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-                coreapi.Field(name='version',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='A unique integer value identifying a Version')),
-                coreapi.Field(name='modified',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Set to true for original + modified annotations, false for original only')),
-            ] + self.attribute_fields()
-        if (method=='POST'):
-             postOnly_fields = [
-                coreapi.Field(name='media_id',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a media_element')),
-                coreapi.Field(name='type',
-                              required=True,
-                              location='body',
-                              schema=coreschema.String(description='A unique integer value identifying a LocalizationType')),
-                coreapi.Field(name='<details>',
-                              required=False,
-                              location='body',
-                              schema=coreschema.String(description='Various depending on `type`. See `/EntityTypeSchema` service.')),
-                coreapi.Field(name='operation',
-                              required=False,
-                              location='query',
-                              schema=coreschema.String(description='Operation to perform on the query. Valid values are:\ncount: Return the number of elements\nattribute_count: Return count split by a given attribute name')),
-
-            ]
-
-        return manual_fields + getOnly_fields + postOnly_fields + self.attribute_fields()
-
 class LocalizationListAPI(APIView, AttributeFilterMixin):
-    """
-    Endpoint for getting + adding localizations
+    """ Interact with list of localizations.
 
-    Example:
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        a type of entity in Tator, meaning they can be described by user defined attributes.
 
-    #all types all videos
-    GET /localizations
-
-    #only lines for media_id=3 of type 1
-    GET /localizations?type=1&media=id=3
-
+        This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
+        Both are accomplished using the same query parameters used for a GET request.
     """
     serializer_class = EntityLocalizationSerializer
     schema=LocalizationListSchema()
     permission_classes = [ProjectEditPermission]
 
     def get_queryset(self):
-        self.validate_attribute_filter(self.request.query_params)
+        params = parse(self.request)
+        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, _ = get_annotation_queryset(
-            self.kwargs['project'],
-            self.request.query_params,
-            self,
+            params['project'],
+            params,
         )
         queryset = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
         return queryset
 
     def get(self, request, format=None, **kwargs):
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, _ = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self,
+                params['project'],
+                params,
             )
             self.request=request
             before=time.time()
@@ -159,7 +99,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
                     for media in medias:
                         filename_dict[media['id']] = media['name']
 
-                    filter_type=self.request.query_params.get('type', None)
+                    filter_type=params.get('type', None)
                     type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
                     for element in responseData:
                         del element['meta']
@@ -187,16 +127,8 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
         stage = {}
         stage[0] = time.time()
-        ## Check for required fields first
-        if 'media_id' in reqObject:
-            media_id = reqObject['media_id'];
-        else:
-            raise Exception('Missing required field in request Object "media_id", got={}'.format(reqObject))
-
-        if 'type' in reqObject:
-            entityTypeId=reqObject['type']
-        else:
-            raise Exception('Missing required field in request object "type"')
+        media_id = reqObject['media_id'];
+        entityTypeId=reqObject['type']
 
         stage[1] = time.time()
         if cache:
@@ -242,9 +174,6 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             requiredFields, reqAttributes, attrTypes=cache['required']
         else:
             requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
-
-        if 'attributes' in reqObject:
-            reqObject = {**reqObject, **reqObject['attributes']}
 
         for field in {**requiredFields,**reqAttributes}:
             if field not in reqObject:
@@ -299,9 +228,9 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         response=Response({})
 
         try:
+            params = parse(request)
             entityType=None
-            reqObject=request.data;
-            many=reqObject.get('many', None)
+            many = params.get('many', None)
             obj_ids = []
             ts = TatorSearch()
             if many:
@@ -333,7 +262,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
                 after = time.time()
                 logger.info(f"Total Index Duration = {after-begin}")
             else:
-                new_obj = self.addNewLocalization(reqObject, False)
+                new_obj = self.addNewLocalization(params, False)
                 obj_ids.append(new_obj.id)
             response=Response({'id': obj_ids},
                               status=status.HTTP_201_CREATED)
@@ -350,11 +279,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     def delete(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -375,11 +304,11 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            self.validate_attribute_filter(request.query_params)
+            params = parse(request)
+            self.validate_attribute_filter(params)
             annotation_ids, annotation_count, query = get_annotation_queryset(
-                self.kwargs['project'],
-                self.request.query_params,
-                self
+                params['project'],
+                params,
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -400,29 +329,35 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
 
 
 class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
-    """ Default Update/Destory view... TODO add custom `get_queryset` to add user authentication checks
+    """ Interact with single localization.
+
+        Localizations are shape annotations drawn on a video or image. They are currently of type
+        box, line, or dot. Each shape has slightly different data members. Localizations are
+        a type of entity in Tator, meaning they can be described by user defined attributes.
     """
+    schema = LocalizationDetailSchema()
     serializer_class = EntityLocalizationSerializer
     queryset = EntityLocalizationBase.objects.all()
     permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
 
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            localization_object = EntityLocalizationBase.objects.get(pk=self.kwargs['pk'])
-            self.check_object_permissions(request, localization_object)
+            params = parse(request)
+            localization_object = EntityLocalizationBase.objects.get(pk=params['id'])
 
             # Patch frame.
-            frame = request.data.get("frame", None)
+            frame = params.get("frame", None)
             if frame:
                 localization_object.frame = frame
 
             if type(localization_object) == EntityLocalizationBox:
-                x = request.data.get("x", None)
-                y = request.data.get("y", None)
-                height = request.data.get("height", None)
-                width = request.data.get("width", None)
-                thumbnail_image = request.data.get("thumbnail_image", None)
+                x = params.get("x", None)
+                y = params.get("y", None)
+                height = params.get("height", None)
+                width = params.get("width", None)
+                thumbnail_image = params.get("thumbnail_image", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -447,10 +382,10 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 # TODO we shouldn't be saving here (after patch below)
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationLine:
-                x0 = request.data.get("x0", None)
-                y0 = request.data.get("y0", None)
-                x1 = request.data.get("x1", None)
-                y1 = request.data.get("y1", None)
+                x0 = params.get("x0", None)
+                y0 = params.get("y0", None)
+                x1 = params.get("x1", None)
+                y1 = params.get("y1", None)
                 if x0:
                     localization_object.x0 = x0
                 if y0:
@@ -461,8 +396,8 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                     localization_object.y1 = y1
                 localization_object.save()
             elif type(localization_object) == EntityLocalizationDot:
-                x = request.data.get("x", None)
-                y = request.data.get("y", None)
+                x = params.get("x", None)
+                y = params.get("y", None)
                 if x:
                     localization_object.x = x
                 if y:
@@ -473,8 +408,8 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
                 pass
 
             # Patch modified field
-            if "modified" in request.data:
-                localization_object.modified = request.data["modified"]
+            if "modified" in params:
+                localization_object.modified = params["modified"]
                 localization_object.save()
 
             new_attrs = validate_attributes(request, localization_object)
