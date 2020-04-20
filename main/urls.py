@@ -195,7 +195,7 @@ urlpatterns += [
         name='States'
     ),
       path(
-        'rest/StateGraphic/<int:pk>',
+        'rest/StateGraphic/<int:id>',
         StateGraphicAPI.as_view(),
         name='StateGraphic'
     ),
