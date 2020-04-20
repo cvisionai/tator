@@ -126,9 +126,8 @@ class LocalizationListSchema(AutoSchema):
                         },
                         'modified': {
                             'description': 'Whether this localization was created in the web UI.',
-                            'type': 'integer',
-                            'default': 0,
-                            'enum': [0, 1],
+                            'type': 'boolean',
+                            'default': False,
                         },
                         **localization_properties,
                     },
