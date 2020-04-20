@@ -228,9 +228,9 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         response=Response({})
 
         try:
+            params = parse(request)
             entityType=None
-            reqObject=request.data;
-            many=reqObject.get('many', None)
+            many = params.get('many', None)
             obj_ids = []
             ts = TatorSearch()
             if many:
@@ -262,7 +262,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
                 after = time.time()
                 logger.info(f"Total Index Duration = {after-begin}")
             else:
-                new_obj = self.addNewLocalization(reqObject, False)
+                new_obj = self.addNewLocalization(params, False)
                 obj_ids.append(new_obj.id)
             response=Response({'id': obj_ids},
                               status=status.HTTP_201_CREATED)
