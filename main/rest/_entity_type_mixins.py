@@ -84,8 +84,6 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
     permission_classes = [ProjectFullControlPermission]
     
     def get(self, request, format=None, **kwargs):
-        """ Returns single entity type.
-        """
         response=Response({})
 
         try:
@@ -113,8 +111,6 @@ class EntityTypeDetailAPIMixin(RetrieveUpdateDestroyAPIView):
         return response
 
     def delete(self, request, format=None, **kwargs):
-        """ Deletes a localization type.
-        """
         response = Response({})
         try:
             params = parse(request)

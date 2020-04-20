@@ -3,7 +3,7 @@ from rest_framework.schemas.openapi import AutoSchema
 class FrameAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['State']
+        operation['tags'] = ['FrameAssociation']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -84,8 +84,6 @@ class MediaTypeDetailAPI(EntityTypeDetailAPIMixin):
     lookup_field = 'id'
 
     def patch(self, request, format=None, **kwargs):
-        """ Updates a media type.
-        """
         response = Response({})
         try:
             params = parse(request)

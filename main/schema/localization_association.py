@@ -3,7 +3,7 @@ from rest_framework.schemas.openapi import AutoSchema
 class LocalizationAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['State']
+        operation['tags'] = ['LocalizationAssociation']
         return operation
 
     def _get_path_parameters(self, path, method):

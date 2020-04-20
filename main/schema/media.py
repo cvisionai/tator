@@ -197,7 +197,7 @@ class MediaDetailSchema(AutoSchema):
 class GetFrameSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Media']
+        operation['tags'] = ['GetFrame']
         return operation
 
     def _get_path_parameters(self, path, method):
