@@ -198,6 +198,7 @@ class GetFrameSchema(AutoSchema):
                             'type': 'integer',
                             'minimum': 0,
                         },
+                        'maxLength': 32,
                         'default': [0],
                     },
                     'example': [0, 100, 200],
@@ -222,7 +223,11 @@ class GetFrameSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': 'If not tiling, animate each frame at a given fps in a gif.',
-                    'schema': {'type': 'number'},
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                        'maximum': 15,
+                    },
                 },
             ]
         return params
