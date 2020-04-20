@@ -55,32 +55,6 @@ class MediaNextSchema(AutoSchema):
                     'description': 'MD5 sum of the media file.',
                     'schema': {'type': 'string'},
                 },
-                {
-                    'name': 'operation',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Set to "count" to return a count of objects instead of the objects.',
-                    'schema': {
-                        'type': 'string',
-                        'enum': ['count'],
-                    },
-                },
-                {
-                    'name': 'start',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Pagination start index. Index of the first item in a larger list to '
-                                   'return.',
-                    'schema': {'type': 'integer'},
-                },
-                {
-                    'name': 'stop',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
-                                   'larger list to return.',
-                    'schema': {'type': 'integer'},
-                },
             ] + attribute_filter_parameter_schema
         return params
 
