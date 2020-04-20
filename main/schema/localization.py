@@ -98,15 +98,16 @@ class LocalizationListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'required': ['media_id', 'type'],
                     'additionalProperties': True,
                     'properties': {
                         'media_id': {
-                            'description': 'Unique integer identifying a media.',
+                            'description': 'Unique integer identifying a media. Required if '
+                                           '`many` is not given.',
                             'type': 'integer',
                         },
                         'type': {
-                            'description': 'Unique integer identifying a localization type.',
+                            'description': 'Unique integer identifying a localization type.'
+                                           'Required if `many` is not given.',
                             'type': 'integer',
                         },
                         'many': {
