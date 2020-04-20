@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import AttributeTypeBase
 from ..models import EntityMediaBase
+from ..models import EntityTypeState
 from ..schema import parse
 
 from ._util import delete_polymorphic_qs
@@ -38,9 +39,8 @@ class EntityTypeListAPIMixin(APIView):
             if media_id != None:
                 if len(media_id) != 1:
                     raise Exception('Entity type list endpoints expect only one media ID!')
-                media_id = media_id[0]
                 logger.info(f"Getting media {media_id}")
-                mediaElement = EntityMediaBase.objects.get(pk=media_id)
+                mediaElement = EntityMediaBase.objects.get(pk=media_id[0])
                 if mediaElement.project.id != self.kwargs['project']:
                     raise Exception('Media Not in Project')
                 entityTypes = self.entityBaseObj.objects.filter(media=mediaElement.meta)
@@ -59,10 +59,14 @@ class EntityTypeListAPIMixin(APIView):
                     dataurl=request.build_absolute_uri(
                         reverse_queryArgs(self.entity_endpoint,
                                           kwargs={'project': self.kwargs['project']},
-                                          queryargs={self.pkname : media_id,
+                                          queryargs={self.pkname : media_id[0],
                                                      'type' : entityType.id}
                         ))
 
+                    if self.entityBaseObj != EntityTypeState:
+                        # States types expect media_id to be a list, localizations expect just
+                        # a number.
+                        media_id = media_id[0] 
                     count=self.baseObj.selectOnMedia(media_id).filter(meta=entityType).count()
                 results.append({"type": entityType,
                                 "columns": AttributeTypeBase.objects.filter(applies_to=entityType.id),
