@@ -352,11 +352,11 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
 
             if 'media_ids' in params:
                 media_elements = EntityMediaBase.objects.filter(pk__in=params['media_ids'])
-                state_object.association.media = media_elements
+                state_object.association.media.set(media_elements)
 
             if 'localization_ids' in params:
                 localizations = EntityLocalizationBase.objects.filter(pk__in=params['localization_ids'])
-                state_object.association.localizations = localizations
+                state_object.association.localizations.set(localizations)
             state_object.save()
 
             new_attrs = validate_attributes(request, state_object)
