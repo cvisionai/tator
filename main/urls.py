@@ -206,12 +206,12 @@ urlpatterns += [
         'rest/StateType/<int:id>',
         StateTypeDetailAPI.as_view(),
     ),
-]
-"""
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
     ),
+]
+"""
     path(
         'rest/TreeLeafTypes/<int:project>',
         TreeLeafTypeListAPI.as_view(),

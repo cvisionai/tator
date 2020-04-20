@@ -1762,7 +1762,7 @@ class TranscodeTestCase(
             keep_original=False,
         )
         self.create_json = {
-            'type': f'{self.entity_type.pk}',
+            'type': self.entity_type.pk,
             'gid': str(uuid1()),
             'uid': str(uuid1()),
             'url': 'http://asdf.com',
