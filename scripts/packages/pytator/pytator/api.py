@@ -855,7 +855,7 @@ class GetFrame():
         else:
             media_id = media_element_or_id
 
-        params={"frames" : ",".join([str(el) for el in frames])}
+        params={"frames" : frames}
 
         if roi:
             if type(roi) is tuple:
