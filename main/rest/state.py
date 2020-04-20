@@ -43,7 +43,6 @@ from ._util import computeRequiredFields
 from ._util import Array
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
-from ._schema import Schema
 
 logger = logging.getLogger(__name__)
 
