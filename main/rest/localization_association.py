@@ -13,7 +13,6 @@ from ..serializers import LocalizationAssociationSerializer
 from ..schema import LocalizationAssociationDetailSchema
 from ..schema import parse
 
-from ._schema import parse
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)

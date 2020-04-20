@@ -29,8 +29,8 @@ from ..serializers import FastEntityLocalizationSerializer
 from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
+from ..schema import parse
 
-from ._schema import parse
 from ._annotation_query import get_annotation_queryset
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
