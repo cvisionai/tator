@@ -24,8 +24,10 @@ from ._permissions import ProjectTransferPermission
 logger = logging.getLogger(__name__)
 
 class SaveImageAPI(APIView):
-    """
-    Saves an uploaded image.
+    """ Saves an uploaded image.
+
+        Media is uploaded via tus, a separate mechanism from the REST API. Once an image upload
+        is complete, the image must be saved to the database using this endpoint.
     """
     schema = SaveImageSchema()
     permission_classes = [ProjectTransferPermission]

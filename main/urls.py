@@ -179,13 +179,13 @@ urlpatterns += [
         SaveImageAPI.as_view(),
         name='SaveImage',
     ),
-]
-"""
     path(
         'rest/SaveVideo/<int:project>',
         SaveVideoAPI.as_view(),
         name='SaveVideo',
     ),
+]
+"""
     path(
         'rest/SectionAnalysis/<int:project>',
         SectionAnalysisAPI.as_view(),
