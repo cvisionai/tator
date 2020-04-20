@@ -764,6 +764,7 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type =="seek_result")
       {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
+        document.body.style.cursor = null;
       }
       else if (type =="buffer")
       {
@@ -1183,6 +1184,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       // Set the seek buffer, and command worker to get the seek
       // response
+      document.body.style.cursor = "progress";
       video = this._videoElement[this._hq_idx].seekBuffer();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
@@ -1265,12 +1267,9 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
-    let original = document.body.style.cursor;
-    document.body.style.cursor = "progress";
     var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
     promise.then(()=>
                  {this._pauseCb.forEach(cb => {cb(frameIdx);});
-                  document.body.style.cursor = original;
                  }
                 );
     return promise;
