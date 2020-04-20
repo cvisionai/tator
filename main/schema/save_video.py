@@ -6,7 +6,7 @@ save_video_properties = {
                        '-1 to automatically select the video type if '
                        'only one video type exists in a project.',
         'type': 'integer',
-        'minimum': '-1',
+        'minimum': -1,
     },
     'gid': {
         'description': 'UUID generated for the job group. This value is '

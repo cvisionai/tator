@@ -31,7 +31,7 @@ class SaveImageSchema(AutoSchema):
                                            '-1 to automatically select the image type if '
                                            'only one image type exists in a project.',
                             'type': 'integer',
-                            'minimum': '-1',
+                            'minimum': -1,
                         },
                         'gid': {
                             'description': 'UUID generated for the job group. This value is '
