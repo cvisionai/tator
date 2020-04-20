@@ -41,9 +41,7 @@ from .tree_leaf_type import TreeLeafTypeListSchema
 from .tree_leaf_type import TreeLeafTypeDetailSchema
 from .user import UserDetailSchema
 from .user import CurrentUserSchema
-"""
 from .version import VersionListSchema
 from .version import VersionDetailSchema
-"""
 from ._parse import parse
 from ._generator import CustomGenerator
