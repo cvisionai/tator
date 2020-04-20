@@ -65,6 +65,7 @@ class ProgressAPI(APIView):
                 elif reqObject['state'] == 'finished':
                     prog.finished(reqObject['message'])
                 else:
+                    logger.info(f"Received invalid progress state {reqObject['state']}")
                     raise Exception(f"Invalid progress state {reqObject['state']}")
 
             response = Response({'message': "Progress sent successfully!"})
@@ -73,7 +74,6 @@ class ProgressAPI(APIView):
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            logger.info(f"ERROR: {str(e)}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
