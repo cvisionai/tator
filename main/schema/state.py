@@ -52,7 +52,7 @@ class StateListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'required': ['type'],
+                    'required': ['media_ids', 'type'],
                     'additionalProperties': True,
                     'properties': {
                         'type': {
@@ -64,11 +64,10 @@ class StateListSchema(AutoSchema):
                             'type': 'integer',
                         },
                         'modified': {
-                            'description': 'Integer specifying relative order this attribute '
-                                           'is displayed in the UI. Negative values are hidden '
-                                           'by default.',
-                            'type': 'boolean',
+                            'description': 'Whether this localization was created in the web UI.',
+                            'type': 'integer',
                             'default': 0,
+                            'enum': [0, 1],
                         },
                         **state_properties,
                     },
@@ -78,6 +77,7 @@ class StateListSchema(AutoSchema):
                         'summary': 'Frame associated state',
                         'value': {
                             'type': 1,
+                            'media_ids': [1],
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
@@ -87,6 +87,7 @@ class StateListSchema(AutoSchema):
                         'summary': 'Localization associated state',
                         'value': {
                             'type': 1,
+                            'media_ids': [1],
                             'localization_ids': [1, 5, 10],
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
@@ -101,7 +102,7 @@ class StateListSchema(AutoSchema):
                             'My Second Attribute': 'value2',
                         },
                     },
-                }
+                },
             }}}
         if method == 'PATCH':
             body = {'content': {'application/json': {
