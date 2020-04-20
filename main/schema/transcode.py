@@ -46,7 +46,6 @@ class TranscodeSchema(AutoSchema):
                                            'be newly generated. The transcode workflow will use '
                                            'this value to generate progress messages.',
                             'type': 'string',
-                            'format': 'uuid',
                         },
                         'url': {
                             'description': 'Upload URL for the raw video.',

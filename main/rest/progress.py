@@ -52,7 +52,7 @@ class ProgressAPI(APIView):
                     reqObject['job_type'],
                     params['project'],
                     str(reqObject['gid']),
-                    str(reqObject['uid']),
+                    reqObject['uid'],
                     reqObject['name'],
                     self.request.user,
                     aux,

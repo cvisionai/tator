@@ -46,7 +46,6 @@ class ProgressSchema(AutoSchema):
                                                'is returned in the response of the `AlgorithmLaunch` '
                                                'and `Transcode` endpoints.',
                                 'type': 'string',
-                                'format': 'uuid',
                             },
                             'swid': {
                                 'description': 'UUID generated for the service worker that is '

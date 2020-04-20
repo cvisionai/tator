@@ -45,7 +45,7 @@ class TranscodeAPI(APIView):
             params = parse(request)
             entity_type = params['type']
             gid = str(params['gid'])
-            uid = str(params['uid'])
+            uid = params['uid']
             url = params['url']
             section = params['section']
             name = params['name']
