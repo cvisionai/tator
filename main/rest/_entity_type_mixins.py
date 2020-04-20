@@ -36,6 +36,9 @@ class EntityTypeListAPIMixin(APIView):
             params = parse(request)
             media_id = params.get('media_id', None)
             if media_id != None:
+                if len(media_id) != 1:
+                    raise Exception('Entity type list endpoints expect only one media ID!')
+                media_id = media_id[0]
                 logger.info(f"Getting media {media_id}")
                 mediaElement = EntityMediaBase.objects.get(pk=media_id)
                 if mediaElement.project.id != self.kwargs['project']:
