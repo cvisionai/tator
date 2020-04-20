@@ -124,11 +124,10 @@ class LocalizationListSchema(AutoSchema):
                             'type': 'integer',
                         },
                         'modified': {
-                            'description': 'Integer specifying relative order this attribute '
-                                           'is displayed in the UI. Negative values are hidden '
-                                           'by default.',
-                            'type': 'boolean',
+                            'description': 'Whether this localization was created in the web UI.',
+                            'type': 'integer',
                             'default': 0,
+                            'enum': [0, 1],
                         },
                         **localization_properties,
                     },
