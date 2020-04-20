@@ -184,13 +184,13 @@ urlpatterns += [
         SaveVideoAPI.as_view(),
         name='SaveVideo',
     ),
-]
-"""
     path(
         'rest/SectionAnalysis/<int:project>',
         SectionAnalysisAPI.as_view(),
         name='SectionAnalysis',
     ),
+]
+"""
     path(
         'rest/States/<int:project>',
         StateListAPI.as_view(),
