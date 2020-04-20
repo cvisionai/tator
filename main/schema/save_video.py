@@ -2,7 +2,7 @@ from rest_framework.schemas.openapi import AutoSchema
 
 save_video_properties = {
     'type': {
-        'description': 'Unique integer identifying an video type. Use '
+        'description': 'Unique integer identifying a video type. Use '
                        '-1 to automatically select the video type if '
                        'only one video type exists in a project.',
         'type': 'integer',
@@ -26,20 +26,15 @@ save_video_properties = {
         'description': 'List of upload urls for the transcoded file and '
                        'corresponding `VideoDefinition`.',
         'type': 'array',
-        'items': {
-            'type': 'string',
-            'format': 'url',
-        },
+        'items': {'type': 'string'},
     },
     'thumbnail_url': {
         'description': 'Upload URL for the thumbnail.',
         'type': 'string',
-        'format': 'url',
     },
     'thumbnail_gif_url': {
         'description': 'Upload URL for the thumbnail gif.',
         'type': 'string',
-        'format': 'url',
     },
     'section': {
         'description': 'Media section name.',

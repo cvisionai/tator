@@ -50,12 +50,10 @@ class SaveImageSchema(AutoSchema):
                         'url': {
                             'description': 'Upload URL for the image.',
                             'type': 'string',
-                            'format': 'url',
                         },
                         'thumbnail_url': {
                             'description': 'Upload URL for the thumbnail if already generated.',
                             'type': 'string',
-                            'format': 'url',
                         },
                         'section': {
                             'description': 'Media section name.',
