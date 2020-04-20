@@ -39,7 +39,7 @@ class SaveImageAPI(APIView):
             params = parse(request)
             entity_type = params['type']
             gid = str(params['gid'])
-            uid = str(params['uid'])
+            uid = params['uid']
             url = params['url']
             thumbnail_url = params.get('thumbnail_url', None)
             section = params['section']

@@ -45,7 +45,6 @@ class SaveImageSchema(AutoSchema):
                                            'is returned in the response of the `AlgorithmLaunch` '
                                            'and `Transcode` endpoints.',
                             'type': 'string',
-                            'format': 'uuid',
                         },
                         'url': {
                             'description': 'Upload URL for the image.',

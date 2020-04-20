@@ -67,7 +67,7 @@ class SaveVideoAPI(APIView):
         response=Response({})
         try:
             params = parse(request)
-            gid = params['gid']
+            gid = str(params['gid'])
             uid = params['uid']
             new_media_files = params['media_files']
             media_id = params['id']
@@ -173,7 +173,7 @@ class SaveVideoAPI(APIView):
         try:
             params = parse(request)
             entity_type = params['type']
-            gid = params['gid']
+            gid = str(params['gid'])
             uid = params['uid']
             media_files = params['media_files']
             thumbnail_url = params['thumbnail_url']
