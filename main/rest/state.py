@@ -405,14 +405,27 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
     def patch(self, request, **kwargs):
         response = Response({})
         try:
-            state_object = EntityState.objects.get(pk=self.kwargs['pk'])
-            self.check_object_permissions(request, state_object)
-            # Patch modified field
-            if "modified" in request.data:
-                state_object.modified = request.data["modified"]
-                state_object.save()
+            params = parse(request)
+            state_object = EntityState.objects.get(pk=params['id'])
+            # Patch modified fields
+            if 'modified' in params:
+                state_object.modified = params['modified']
+
+            if 'frame' in params:
+                state_object.association.frame = params['frame']
+
+            if 'media_ids' in params:
+                media_elements = EntityMediaBase.objects.filter(pk__in=params['media_ids'])
+                state_object.association.media = media_elements
+
+            if 'localization_ids' in params:
+                localizations = EntityLocalizationBase.objects.filter(pk__in=params['localization_ids'])
+                state_object.association.localizations = localizations
+            state_object.save()
+
             new_attrs = validate_attributes(request, state_object)
             patch_attributes(new_attrs, state_object)
+
 
         except PermissionDenied as err:
             raise
