@@ -1265,9 +1265,13 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    let original = document.body.style.cursor;
+    document.body.style.cursor = "progress";
     var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
     promise.then(()=>
-                 {this._pauseCb.forEach(cb => {cb(frameIdx);});}
+                 {this._pauseCb.forEach(cb => {cb(frameIdx);});
+                  document.body.style.cursor = original;
+                 }
                 );
     return promise;
   }

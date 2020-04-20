@@ -187,7 +187,6 @@ class VideoDownloader
     {
       packet_limit = Infinity;
     }
-    console.info(`Download Next Segment ${buf_idx} : ${packet_limit} @ ${idx}`);
 
     if (idx >= this._numPackets[buf_idx])
     {
