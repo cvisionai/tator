@@ -33,6 +33,12 @@ media_properties = {
 class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetMediaList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMediaList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMediaList'
         operation['tags'] = ['Media']
         return operation
 
@@ -119,7 +125,16 @@ class MediaListSchema(AutoSchema):
         responses['404'] = {'description': 'Failure to find project with given ID.'}
         responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                    },
+                }}},
+            }
         elif method == 'PATCH':
             responses['200'] = {'description': 'Successful bulk update of media '
                                                'attributes.'}
