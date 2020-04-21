@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 class CustomGenerator(SchemaGenerator):
     """ Schema generator for Swagger UI. Should not be used for request validation.
     """
-    def get_schema(self, request=None, public=False):
+    def get_schema(self, request=None, public=True):
         schema = super().get_schema(request, public)
 
         # Add schema for Token endpoint.
@@ -45,14 +45,38 @@ class CustomGenerator(SchemaGenerator):
         }
         schema['paths']['/rest/Token']['post']['tags'] = ['Token']
 
+        # Set security scheme.
+        schema['components'] = {
+            'securitySchemes': {
+                'BasicAuth': {
+                    'type': 'http',
+                    'scheme': 'basic',
+                },
+                'TokenAuth': {
+                    'type': 'apiKey',
+                    'in': 'header',
+                    'name': 'Authorization',
+                },
+            }
+        }
+        schema['security'] = [
+            {'BasicAuth': []},
+            {'TokenAuth': []},
+        ]
+
         # Remove deprecated paths.
-        del schema['paths']['/rest/EntityTypeMedias/{project}']
-        del schema['paths']['/rest/EntityTypeMedia/{id}']
-        del schema['paths']['/rest/EntityMedia/{id}']
-        del schema['paths']['/rest/EntityMedias/{project}']
-        del schema['paths']['/rest/EntityState/{id}']
-        del schema['paths']['/rest/EntityStates/{project}']
-        del schema['paths']['/rest/EntityStateTypes/{project}']
-        del schema['paths']['/rest/EntityStateType/{id}']
+        deprecated = [
+            '/rest/EntityTypeMedias/{project}',
+            '/rest/EntityTypeMedia/{id}',
+            '/rest/EntityMedia/{id}',
+            '/rest/EntityMedias/{project}',
+            '/rest/EntityState/{id}',
+            '/rest/EntityStates/{project}',
+            '/rest/EntityStateTypes/{project}',
+            '/rest/EntityStateType/{id}',
+        ]
+        for d in deprecated:
+            if d in schema['paths']:
+                del schema['paths'][d]
         return schema
 
