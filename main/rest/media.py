@@ -2,11 +2,14 @@ import tempfile
 import traceback
 import logging
 import os
+import json
 import subprocess
 import math
 import io
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
+import mmap
+import sys
 
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
@@ -187,6 +190,10 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
 class MediaUtil:
     def __init__(self, video, temp_dir):
         self._temp_dir = temp_dir
+        # Do this for testing: self._temp_dir = '/data/media/temp'
+        # If available we only attempt to fetch
+        # the part of the file we need to
+        self._segment_info = None
 
         if video.file:
             video_file = video.file.path
@@ -199,20 +206,113 @@ class MediaUtil:
             self._video_file = video.media_files["streaming"][0]["path"]
             self._height = video.media_files["streaming"][0]["resolution"][0]
             self._width = video.media_files["streaming"][0]["resolution"][1]
+            segment_file = video.media_files["streaming"][0]["segment_info"]
+            segment_file = os.path.relpath(segment_file, settings.MEDIA_URL)
+            segment_file = os.path.join(settings.MEDIA_ROOT, segment_file)
+            with open(segment_file, 'r') as fp:
+                self._segment_info = json.load(fp)
+                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info['segments']) if x['name'] == 'moof']
+
 
         self._video_file = os.path.relpath(self._video_file, settings.MEDIA_URL)
         self._video_file = os.path.join(settings.MEDIA_ROOT, self._video_file)
 
         self._fps = video.fps
 
-    def frameToTimeStr(self, frame):
-        total_seconds = int(frame) / self._fps
+    def getImpactedSegments(self, frames):
+        if self._segment_info is None:
+            return None
+
+
+        segment_list=[]
+        for frame_str in frames:
+            frame_seg=set()
+            frame_seg.add(0)
+            frame_seg.add(1)
+            # We already load the header so ignore those segments
+            frame = int(frame_str)
+            min_idx = 0
+            max_idx = len(self._moof_data)-1
+            # Handle frames and files with frame biases
+            if frame < self._moof_data[0][1]['frame_start']:
+                frame_seg.add(self._moof_data[0][0])
+                continue
+
+            last_segment = self._moof_data[max_idx][1] #Frame start/stop is in the moof
+            if frame >= last_segment['frame_start'] + last_segment['frame_samples']:
+                continue
+
+            # Do a binary search for the segment in question
+            while min_idx <= max_idx:
+                guess_idx = math.floor((max_idx + min_idx) / 2)
+                moof = self._moof_data[guess_idx][1]
+                if frame < moof['frame_start']:
+                    max_idx = max_idx - 1
+                elif frame >= moof['frame_start'] + moof['frame_samples']:
+                    min_idx = min_idx + 1
+                else:
+                    frame_seg.add(self._moof_data[guess_idx][0])
+                    frame_seg.add(self._moof_data[guess_idx][0]+1)
+                    if frame - moof['frame_start'] > moof['frame_samples'] - 5:
+                        # Handle boundary conditions
+                        if guess_idx + 1 in self._moof_data:
+                            frame_seg.add(self._moof_data[guess_idx+1][0])
+                            frame_seg.add(self._moof_data[guess_idx+1][0]+1)
+                    break
+
+            frame_seg = list(frame_seg)
+            frame_seg.sort()
+            segment_list.append((frame, frame_seg))
+        logger.info(f"Given {frames}, we need {segment_list}")
+        return segment_list
+
+    def makeTemporaryVideos(self, segmentList):
+        """ Return a temporary mp4 for each impacted segment to limit IO to
+            cloud storage """
+        lookup = {}
+        for frame,segments in segmentList:
+            temp_video = os.path.join(self._temp_dir, f"{frame}.mp4")
+            preferred_block_size = 16*1024
+            sc_graph = [(0,0)]
+            segment_frame_start = sys.maxsize
+            # create a scatter/gather
+            for segment_idx in segments:
+                segment = self._segment_info['segments'][segment_idx]
+                last_io = sc_graph[len(sc_graph)-1]
+                if segment.get('frame_start',sys.maxsize) < segment_frame_start:
+                    segment_frame_start = segment['frame_start']
+                if last_io[0] + last_io[1] == segment['offset']:
+                    # merge contigous blocks
+                    sc_graph[len(sc_graph)-1] = (last_io[0], last_io[1] + segment['size'])
+                    logger.info(segment)
+                else:
+                    # A new block
+                    sc_graph.append((segment['offset'], segment['size']))
+
+            lookup[frame] = (segment_frame_start, temp_video)
+
+            logger.info(f"Scatter gather graph = {sc_graph}")
+            with open(self._video_file, "r+b") as vid_fp:
+                mm = mmap.mmap(vid_fp.fileno(),0)
+                with open(temp_video, "wb") as out_fp:
+                    for scatter in sc_graph:
+                        out_fp.write(mm[scatter[0]:scatter[0]+scatter[1]])
+
+        return lookup
+
+
+    def frameToTimeStr(self, frame, relativeTo=None):
+        if relativeTo:
+            frame -= relativeTo
+        total_seconds = frame / self._fps
         hours = math.floor(total_seconds / 3600)
         minutes = math.floor((total_seconds % 3600) / 60)
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
     def _generateFrameImages(self, frames, rois=None):
+        """ Generate a jpg for each requested frame and store in the working directory """
+        frames=[int(frame) for frame in frames]
         crop_filter = None
         if rois:
             crop_filter = [f"crop={round(c[0]*self._width)}:{round(c[1]*self._height)}:{round(c[2]*self._width)}:{round(c[3]*self._height)}" for c in rois]
@@ -221,17 +321,29 @@ class MediaUtil:
         args = ["ffmpeg"]
         inputs = []
         outputs = []
+
+        # attempt to make a temporary file in a fast manner to speed up AWS access
+        impactedSegments = self.getImpactedSegments(frames)
+        lookup = {}
+        if impactedSegments:
+            lookup = self.makeTemporaryVideos(impactedSegments)
+
         for frame_idx,frame in enumerate(frames):
             outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
             if crop_filter:
                 outputs.extend(["-vf", crop_filter[frame_idx]])
 
             outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.jpg"))
-            inputs.extend(["-ss", self.frameToTimeStr(frame), "-i", self._video_file])
+            if frame in lookup:
+                inputs.extend(["-ss", self.frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
+            else:
+                # If we didn't make per segment mp4s, use the big one
+                inputs.extend(["-ss", self.frameToTimeStr(frame), "-i", self._video_file])
 
         # Now add all the cmds in
         args.extend(inputs)
         args.extend(outputs)
+        logger.info(args)
         proc = subprocess.run(args, check=True, capture_output=True)
         return proc.returncode == 0
 
