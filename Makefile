@@ -443,3 +443,12 @@ images:
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
+
+.PHONY: python-bindings
+python-bindings:
+	mkdir -p scripts/packages/pytator/pytator/swagger
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py getschema > schema.json
+	docker run -it --rm -v $(shell pwd):/pwd swaggerapi/swagger-codegen-cli-v3 generate -c /pwd/scripts/packages/pytator/config.json -i /pwd/schema.json -l python -o /pwd/scripts/packages/pytator/pytator/swagger
+	rm schema.json
+
+
