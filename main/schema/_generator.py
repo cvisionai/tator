@@ -48,10 +48,6 @@ class CustomGenerator(SchemaGenerator):
         # Set security scheme.
         schema['components'] = {
             'securitySchemes': {
-                'BasicAuth': {
-                    'type': 'http',
-                    'scheme': 'basic',
-                },
                 'TokenAuth': {
                     'type': 'apiKey',
                     'in': 'header',
@@ -60,7 +56,6 @@ class CustomGenerator(SchemaGenerator):
             }
         }
         schema['security'] = [
-            {'BasicAuth': []},
             {'TokenAuth': []},
         ]
 
