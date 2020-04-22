@@ -458,8 +458,11 @@ class Media(APIElement):
                     else:
                         print("Waiting for transcode...")
                         time.sleep(2.5)
-
-        return media['id']
+            #return media id if we waited for it
+            return media['id']
+        # return true for async calls
+        # TODO: Make this less hokey
+        return True
 
     def byMd5(self, md5):
         """ Returns a media element with a matching md5
