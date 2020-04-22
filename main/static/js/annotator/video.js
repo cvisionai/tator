@@ -95,7 +95,6 @@ class VideoBufferDemux
     this._seekSource.onsourceopen=() => {
       this._seekSource.onsourceopen = null;
       this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
-      this._seekReady = true;
       if (this._pendingSeeks.length > 0)
       {
         console.info("Applying pending seek data.");
@@ -445,7 +444,7 @@ class VideoBufferDemux
     this._seekBuffer.onupdateend=() =>
       {
         this._seekBuffer.onupdateend = null;
-
+        this._seekReady = true;
         // Handle any pending seeks
         if (this._pendingSeeks.length > 0)
         {
