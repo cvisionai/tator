@@ -1519,14 +1519,13 @@ class VideoCanvas extends AnnotationCanvas {
     if (this._direction != Direction.STOPPED)
     {
       this._pauseCb.forEach(cb => {cb();});
+
+      this._direction=Direction.STOPPED;
+      this._videoElement[this._play_idx].pause();
+
+      // force a redraw at the currently displayed frame
+      return this.seekFrame(this._dispFrame, this.drawFrame, true);
     }
-
-    this._direction=Direction.STOPPED;
-    this._videoElement[this._play_idx].pause();
-
-
-    // force a redraw at the currently displayed frame
-    return this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
   back()
