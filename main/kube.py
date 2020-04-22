@@ -273,6 +273,7 @@ class TatorTranscode(JobManagerMixin):
 
         self.transcode_task = {
             'name': 'transcode',
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','transcoded'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
@@ -301,6 +302,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
+                'nodeSelector' : {'cpuWorker' : 'yes'},
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
