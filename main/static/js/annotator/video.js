@@ -87,6 +87,7 @@ class VideoBufferDemux
     this._seekVideo = document.createElement("VIDEO");
     this._seekBuffer = null;
     this._seekSource = new MediaSource();
+    this._seekReady = false;
     this._pendingSeeks = [];
 
     var mime_str='video/mp4; codecs="avc1.64001e"';
@@ -94,6 +95,13 @@ class VideoBufferDemux
     this._seekSource.onsourceopen=() => {
       this._seekSource.onsourceopen = null;
       this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
+      this._seekReady = true;
+      if (this._pendingSeeks.length > 0)
+      {
+        console.info("Applying pending seek data.");
+        var pending = this._pendingSeeks.shift();
+        this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
+      }
     };
 
     this._seekVideo.src = URL.createObjectURL(this._seekSource);
@@ -313,7 +321,7 @@ class VideoBufferDemux
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
-    if (this._seekBuffer.updating == false)
+    if (this._seekBuffer.updating == false || this._seekReady == false)
     {
       this._seekBuffer.onupdateend = () => {
 
