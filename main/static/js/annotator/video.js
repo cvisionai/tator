@@ -321,7 +321,7 @@ class VideoBufferDemux
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
-    if (this._seekBuffer.updating == false || this._seekReady == false)
+    if (this._seekBuffer.updating == false && this._seekReady == true)
     {
       this._seekBuffer.onupdateend = () => {
 
