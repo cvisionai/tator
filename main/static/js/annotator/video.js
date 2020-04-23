@@ -225,8 +225,9 @@ class VideoBufferDemux
     {
       // If the time is comfortably in the range don't bother getting
       // additional data
-      if (time >= this._seekVideo.buffered.start(idx) &&
-          time < this._seekVideo.buffered.end(idx) *0.90)
+      let timeFromStart = time - this._seekVideo.buffered.start(idx);
+      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.90;
+      if (timeFromStart <= bufferedLength && timeFromStart > 0)
       {
         return this._seekVideo;
       }
