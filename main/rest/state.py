@@ -437,7 +437,10 @@ class StateGraphicAPI(APIView):
                     print(f"{max_w} {max_h}")
 
                     # Get a tiled fp as a film strip
-                    tiled_fp = media_util.getTileImage(frames, new_rois, (len(frames),1))
+                    tile_size=f"{len(frames)}x1"
+                    tiled_fp = media_util.getTileImage(frames,
+                                                       new_rois,
+                                                       tile_size)
                     with open(tiled_fp, 'rb') as data_file:
                         request.accepted_renderer = JpegRenderer()
                         response = Response(data_file.read())
