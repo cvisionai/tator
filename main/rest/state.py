@@ -435,7 +435,9 @@ class StateGraphicAPI(APIView):
                     for idx,r in enumerate(roi):
                         print(f"{r} corrected to {new_rois[idx]}")
                     print(f"{max_w} {max_h}")
-                    tiled_fp = media_util.getTileImage(frames, new_rois)
+
+                    # Get a tiled fp as a film strip
+                    tiled_fp = media_util.getTileImage(frames, new_rois, (len(frames),1))
                     with open(tiled_fp, 'rb') as data_file:
                         request.accepted_renderer = JpegRenderer()
                         response = Response(data_file.read())
