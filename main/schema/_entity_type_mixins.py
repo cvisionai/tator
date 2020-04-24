@@ -4,6 +4,7 @@ entity_type_filter_parameters_schema = [
         'in': 'query',
         'required': False,
         'description': 'List of unique integers identifying a media.',
+        'explode': False,
         'schema': {
             'type': 'array',
             'items': {'type': 'integer'},

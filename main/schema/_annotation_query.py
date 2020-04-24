@@ -4,6 +4,7 @@ annotation_filter_parameter_schema = [
         'in': 'query',
         'required': False,
         'description': 'Comma-separated list of media IDs.',
+        'explode': False,
         'schema': {
             'type': 'array',
             'items': {'type': 'integer'},

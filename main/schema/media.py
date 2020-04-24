@@ -54,6 +54,7 @@ class MediaListSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': 'List of integers identifying media.',
+                    'explode': False,
                     'schema': {
                         'type': 'array',
                         'items': {
@@ -192,6 +193,7 @@ class GetFrameSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': 'Comma-seperated list of frames to capture.',
+                    'explode': False,
                     'schema': {
                         'type': 'array',
                         'items': {

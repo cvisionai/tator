@@ -26,6 +26,7 @@ class MediaPrevSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': 'List of integers identifying media.',
+                    'explode': False,
                     'schema': {
                         'type': 'array',
                         'items': {
