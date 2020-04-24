@@ -300,6 +300,7 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -1086,8 +1087,8 @@ class LocalizationBoxTestCase(
             'frame': 0,
             'x': 0,
             'y': 0,
-            'width': 10,
-            'height': 10,
+            'width': 0.5,
+            'height': 0.5,
             'bool_test': True,
             'int_test': 1,
             'float_test': 0.0,
@@ -1148,8 +1149,8 @@ class LocalizationLineTestCase(
             'frame': 0,
             'x0': 0,
             'y0': 0,
-            'x1': 10,
-            'y1': 10,
+            'x1': 0.5,
+            'y1': 0.5,
             'bool_test': True,
             'int_test': 1,
             'float_test': 0.0,
