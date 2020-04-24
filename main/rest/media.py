@@ -315,7 +315,13 @@ class MediaUtil:
         frames=[int(frame) for frame in frames]
         crop_filter = None
         if rois:
-            crop_filter = [f"crop={round(c[0]*self._width)}:{round(c[1]*self._height)}:{round(c[2]*self._width)}:{round(c[3]*self._height)}" for c in rois]
+            crop_filter=[]
+            for c in rois:
+                w = max(0,min(round(c[0]*self._width),self._width))
+                h = max(0,min(round(c[1]*self._height),self._height))
+                x = max(0,min(round(c[2]*self._width),self._width))
+                y = max(0,min(round(c[3]*self._height),self._height))
+                crop_filter.append(f"crop={w}:{h}:{x}:{y}")
 
         logger.info(f"Processing {self._video_file}")
         args = ["ffmpeg"]
