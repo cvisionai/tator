@@ -43,7 +43,13 @@ RUN pip3 --no-cache-dir install \
         daphne==2.5.0 gunicorn==20.0.4 django_admin_json_editor==0.2.0 django-ltree==0.5 \
         requests==2.23.0 python-dateutil==2.8.1 ujson==2.0.3 slackclient==2.5.0 \
         google-auth==1.14.0 elasticsearch==7.1.0 progressbar2==3.50.1 \
-        gevent==1.5.0 uritemplate==3.0.1 openapi-core==0.13.3
+        gevent==1.5.0 uritemplate==3.0.1
+
+# Install fork of openapi-core that works in DRF views
+WORKDIR /working
+RUN git clone https://github.com/jrtcppv/openapi-core.git
+WORKDIR /working/openapi-core
+RUN python3 setup.py install
 
 # Install kubernetes client
 WORKDIR /working
