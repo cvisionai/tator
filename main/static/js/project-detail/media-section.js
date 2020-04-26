@@ -199,7 +199,10 @@ class MediaSection extends TatorElement {
         if (evt.detail.mediaIds) {
           mediaFilter = "&media_id=" + evt.detail.mediaIds;
         }
-        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter() + mediaFilter, {
+        const getUrl = endpoint => {
+          return "/rest/" + endpoint + "/" + projectId + this._sectionFilter() + mediaFilter;
+        };
+        fetchRetry(getUrl("MediaSections"), {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -209,9 +212,13 @@ class MediaSection extends TatorElement {
           },
         })
         .then(response => response.json())
-        .then(medias => {
+        .then(mediaCount => {
           let fileIndex = 0;
           let numQueued = 0;
+          let count = 0;
+          for (const key in mediaCount) {
+            count += mediaCount[key]["num_images"] + mediaCount[key]["num_videos"];
+          }
           const filenames = new Set();
           const re = /(?:\.([^.]+))?$/;
           const headers = {
@@ -221,17 +228,61 @@ class MediaSection extends TatorElement {
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
           const readableZipStream = new ZIP({
             async pull(ctrl) {
-              if (fileIndex < medias.length) {
-                const media = medias[fileIndex];
-                const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
-                const ext = re.exec(media.name)[0];
-                let basename = basenameOrig;
-                let vers = 1;
-                while (filenames.has(basename)) {
-                  basename = basenameOrig + " (" + vers + ")";
-                  vers++;
-                }
-                filenames.add(basename);
+              if (fileIndex < count) {
+                stop = Math.min(fileIndex + 100, count);
+                fetchRetry(getUrl("Medias") + "&start=" + fileIndex + "&stop=" + stop, {
+                  method: "GET",
+                  credentials: "same-origin",
+                  headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                  },
+                })
+                .then(response => response.json())
+                .then(async medias => {
+                  for (const media of medias) {
+                    const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+                    const ext = re.exec(media.name)[0];
+                    let basename = basenameOrig;
+                    let vers = 1;
+                    while (filenames.has(basename)) {
+                      basename = basenameOrig + " (" + vers + ")";
+                      vers++;
+                    }
+                    filenames.add(basename);
+
+                    let request = Utilities.getDownloadRequest(media, headers);
+
+                    // Download media file.
+                    console.log("Downloading " + media.name + " from " + request.url + "...");
+                    await fetch(request)
+                    .then(response => {
+                      const stream = () => response.body;
+                      const name = basename + ext;
+                      ctrl.enqueue({name, stream});
+                      numQueued++;
+                      if (numQueued >= count) {
+                        ctrl.close();
+                      }
+                    });
+                    fileIndex++;
+                  }
+                });
+              }
+            }
+          });
+          if (window.WritableStream && readableZipStream.pipeTo) {
+            readableZipStream.pipeTo(fileStream);
+          } else {
+            const writer = fileStream.getWriter();
+            const reader = readableZipStream.getReader();
+            const pump = () => reader.read()
+              .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+            pump();
+          }
+        })
+      });
                 if (evt.detail.annotations) {
                   console.log("Downloading metadata for " + media.name + "...");
 
@@ -353,36 +404,7 @@ class MediaSection extends TatorElement {
 
                 } else {
 
-                  let request = Utilities.getDownloadRequest(media, headers);
 
-                  // Download media file.
-                  console.log("Downloading " + media.name + " from " + request.url + "...");
-                  await fetch(request)
-                  .then(response => {
-                    const stream = () => response.body;
-                    const name = basename + ext;
-                    ctrl.enqueue({name, stream});
-                    numQueued++;
-                    if (numQueued >= medias.length) {
-                      ctrl.close();
-                    }
-                  });
-                }
-                fileIndex++;
-              }
-            }
-          });
-          if (window.WritableStream && readableZipStream.pipeTo) {
-            readableZipStream.pipeTo(fileStream);
-          } else {
-            const writer = fileStream.getWriter();
-            const reader = readableZipStream.getReader();
-            const pump = () => reader.read()
-              .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
-            pump();
-          }
-        })
-      });
 
       this._files.addEventListener("rename", evt => {
         if (this._name.contains(this._nameText)) {
