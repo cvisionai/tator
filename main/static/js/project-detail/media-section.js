@@ -215,10 +215,14 @@ class MediaSection extends TatorElement {
         .then(mediaCount => {
           let fileIndex = 0;
           let numQueued = 0;
-          let count = 0;
+          let num_images = 0;
+          let num_videos = 0;
           for (const key in mediaCount) {
-            count += mediaCount[key]["num_images"] + mediaCount[key]["num_videos"];
+            num_images += mediaCount[key]["num_images"];
+            num_videos + mediaCount[key]["num_videos"];
           }
+          const count = num_images + num_videos;
+          const batchSize = num_images > num_videos ? 20 : 2;
           const filenames = new Set();
           const re = /(?:\.([^.]+))?$/;
           const headers = {
@@ -229,8 +233,10 @@ class MediaSection extends TatorElement {
           const readableZipStream = new ZIP({
             async pull(ctrl) {
               if (fileIndex < count) {
-                stop = Math.min(fileIndex + 100, count);
-                fetchRetry(getUrl("Medias") + "&start=" + fileIndex + "&stop=" + stop, {
+                const start = fileIndex;
+                const stop = Math.min(fileIndex + batchSize, count);
+                fileIndex = stop;
+                await fetchRetry(getUrl("Medias") + "&start=" + start + "&stop=" + stop, {
                   method: "GET",
                   credentials: "same-origin",
                   headers: {
@@ -266,7 +272,6 @@ class MediaSection extends TatorElement {
                         ctrl.close();
                       }
                     });
-                    fileIndex++;
                   }
                 });
               }
