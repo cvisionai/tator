@@ -72,5 +72,4 @@ fargateProfiles:
     selectors:
       - namespace: default
         labels:
-          cpuWorker: "yes"
-          webServer: "yes"
+          app: gunicorn
