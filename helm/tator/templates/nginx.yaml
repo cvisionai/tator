@@ -21,6 +21,10 @@ spec:
         - name: nginx
           image: nginx:1.16
           imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 300m
+              memory: 100Mi
           ports:
             - containerPort: 80
             - containerPort: 443

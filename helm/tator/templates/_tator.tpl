@@ -27,6 +27,10 @@ spec:
           imagePullPolicy: "Always"
           command: {{ .command }}
           args: {{ .args }}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
           env:
             - name: DJANGO_SECRET_KEY
               valueFrom:
