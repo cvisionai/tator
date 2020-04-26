@@ -13,7 +13,7 @@ nodeGroups:
       dbServer: "no"
     minSize: 1
     maxSize: 10
-    desiredCapacity: 3
+    desiredCapacity: 2
     iam:
       withAddonPolicies:
         autoScaler: true
@@ -32,9 +32,9 @@ nodeGroups:
       gpuWorker: "no"
       webServer: "no"
       dbServer: "yes"
-    minSize: 1
+    minSize: 0
     maxSize: 10
-    desiredCapacity: 3
+    desiredCapacity: 0
     iam:
       withAddonPolicies:
         autoScaler: true
@@ -67,3 +67,10 @@ nodeGroups:
     ssh:
       allow: true
       publicKeyPath: /home/aws/sshpublickey.pem
+fargateProfiles:
+  - name: fargate
+    selectors:
+      - namespace: default
+        labels:
+          cpuWorker: "yes"
+          webServer: "yes"
