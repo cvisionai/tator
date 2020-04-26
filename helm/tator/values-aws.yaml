@@ -53,6 +53,19 @@ pvc:
   rawSize: 6Ti
   backupSize: 100Gi
   migrationsSize: 1Gi
+hpa:
+  nginxMinReplicas: 2
+  nginxMaxReplicas: 10
+  nginxCpuPercent: 50
+  gunicornMinReplicas: 4
+  gunicornMaxReplicas: 10
+  gunicornCpuPercent: 50
+  daphneMinReplicas: 2
+  daphneMaxReplicas: 10
+  daphneCpuPercent: 50
+  tusdMinReplicas: 2
+  tusdMaxReplicas: 10
+  tusdCpuPercent: 50
 metallb:
   # A load balancer implementation is provided by AWS.
   enabled: false
