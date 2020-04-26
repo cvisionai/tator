@@ -52,7 +52,7 @@ class SectionFiles extends TatorElement {
     });
 
     this._more.addEventListener("annotations", evt => {
-      this.dispatchEvent(new CustomEvent("download", {
+      this.dispatchEvent(new CustomEvent("downloadAnnotations", {
         detail: {annotations: true}
       }));
     });

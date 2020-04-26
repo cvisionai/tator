@@ -288,128 +288,100 @@ class MediaSection extends TatorElement {
           }
         })
       });
-                if (evt.detail.annotations) {
-                  console.log("Downloading metadata for " + media.name + "...");
 
-                  // Download media metadata
-                  const p0 = fetch("/rest/EntityMedia/" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const stream = () => response.body;
-                    const name = basename + "__media.json";
-                    ctrl.enqueue({name, stream});
-                  });
+      this._files.addEventListener("downloadAnnotations", evt => {
+        const projectId = this.getAttribute("project-id");
+        let mediaFilter = "";
+        if (evt.detail.mediaIds) {
+          mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        }
+        const getUrl = endpoint => {
+          return "/rest/" + endpoint + "/" + projectId + "?media_query="
+                 + this._sectionFilter() + mediaFilter;
+        };
+        const mediaUrl = "/rest/Medias/" + projectId + this._sectionFilter() + mediaFilter;
+        const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+        const headers = {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Content-Type": "application/json"
+        };
+        const readableZipStream = new ZIP({
+          async pull(ctrl) {
+  
+            // Function for dumping types to file.
+            const getTypes = (endpoint, fname) => {
+              return fetch("/rest/" + endpoint + "/" + projectId, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const clone = response.clone();
+                const stream = () => response.body;
+                const name = fname;
+                ctrl.enqueue({name, stream});
+                return clone.json();
+              });
+            };
 
-                  // Download localizations
-                  const p1 = fetch("/rest/LocalizationTypes/" + projectId + "?media_id=" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const clone = response.clone();
-                    const stream = () => response.body;
-                    const name = basename + "__localization_types.json";
-                    ctrl.enqueue({name, stream});
-                    return clone.json();
-                  })
-                  .then(locTypes => {
-                    const promises = [];
-                    for (const locType of locTypes) {
-                      const typeId = locType.type.id;
-                      const locName = locType.type.name.toLowerCase();
-                      const params = "?media_id=" + media.id + "&type=" + typeId;
-                      promises.push(fetch("/rest/Localizations/" + projectId + params, {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__localizations__" + locName + ".json";
-                        ctrl.enqueue({name, stream});
-                      }));
-                      promises.push(fetch("/rest/Localizations/" + projectId + params + "&format=csv", {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__localizations__" + locName + ".csv";
-                        ctrl.enqueue({name, stream});
-                      }));
-                    }
-                    return Promise.all(promises);
-                  });
+            // Download media types
+            const mediaTypes = await getTypes("MediaTypes", "media_types.json");
+            const localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
+            const stateTypes = await getTypes("StateTypes", "state_types.json");
 
-                  // Download states
-                  const p2 = fetch("/rest/EntityStateTypes/" + projectId + "?media_id=" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const clone = response.clone();
-                    const stream = () => response.body;
-                    const name = basename + "__state_types.json";
-                    ctrl.enqueue({name, stream});
-                    return clone.json();
-                  })
-                  .then(stateTypes => {
-                    const promises = [];
-                    for (const stateType of stateTypes) {
-                      const typeId = stateType.type.id;
-                      const stateName = stateType.type.name.toLowerCase();
-                      const assoc = stateType.type.association;
-                      let entityName;
-                      if (assoc == "Localization") {
-                        entityName = "tracks";
-                      } else if (assoc == "Media") {
-                        entityName = "media";
-                      } else if (assoc == "Frame") {
-                        entityName = "events";
-                      }
-                      const params = "?media_id=" + media.id + "&type=" + typeId;
-                      promises.push(fetch("/rest/EntityStates/" + projectId + params, {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__" + entityName + "__" + stateName + ".json";
-                        ctrl.enqueue({name, stream});
-                      }));
-                      promises.push(fetch("/rest/EntityStates/" + projectId + params + "&format=csv", {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__" + entityName + "__" + stateName + ".csv";
-                        ctrl.enqueue({name, stream});
-                      }));
-                    }
-                    return Promise.all(promises);
-                  });
+            // Function for dumping metadata to file.
+            const getMetadata = (baseUrl, types, baseFilename) => {
+              const promises = [];
 
-                  // Add to number of queued.
-                  await Promise.all([p0, p1, p2])
-                  .then(() => {
-                    numQueued++;
-                    if (numQueued >= medias.length) {
-                      ctrl.close();
-                    }
-                  });
+              // Download in json format.
+              for (const type of types) {
+                promises.push(fetch(baseUrl + "&type=" + type.id, {
+                  method: "GET",
+                  credentials: "same-origin",
+                  headers: headers,
+                })
+                .then(response => {
+                  const stream = () => response.body;
+                  const name = baseFilename + type.name + ".json";
+                  ctrl.enqueue({name, stream});
+                }));
+              }
 
-                } else {
+              // Download in csv format.
+              for (const type of types) {
+                promises.push(fetch(baseUrl + "&type=" + type.id + "&format=csv", {
+                  method: "GET",
+                  credentials: "same-origin",
+                  headers: headers,
+                })
+                .then(response => {
+                  const stream = () => response.body;
+                  const name = baseFilename + type.name + ".csv";
+                  ctrl.enqueue({name, stream});
+                }));
+              }
+              return Promise.all(promises);
+            }
+      
+            // Download metadata
+            await getMetadata(mediaUrl, mediaTypes, "medias__");
+            await getMetadata(getUrl("Localizations"), localizationTypes, "localizations__");
+            await getMetadata(getUrl("States"), stateTypes, "states__");
 
-
+            // Close the zip file.
+            ctrl.close();
+          }
+        });
+        if (window.WritableStream && readableZipStream.pipeTo) {
+          readableZipStream.pipeTo(fileStream);
+        } else {
+          const writer = fileStream.getWriter();
+          const reader = readableZipStream.getReader();
+          const pump = () => reader.read()
+            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+          pump();
+        }
+      });
 
       this._files.addEventListener("rename", evt => {
         if (this._name.contains(this._nameText)) {
