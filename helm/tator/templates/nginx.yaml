@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: nginx
-  replicas: {{ .Values.nginxReplicas }}
+  replicas: {{ .Values.hpa.nginxMinReplicas }}
   template:
     metadata:
       labels:
