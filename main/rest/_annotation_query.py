@@ -73,7 +73,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
                              "'after'.")
 
     if after != None:
-        query['range'] = {'_postgres_id': {'gt': after}}
+        annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
 
     query = get_attribute_query(query_params, query, media_bools, project, False,
                                 annotation_bools, modified)
