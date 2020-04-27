@@ -227,51 +227,44 @@ class MediaSection extends TatorElement {
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
           const readableZipStream = new ZIP({
             async pull(ctrl) {
-              while (true) {
-                let finished = false;
-                let url = getUrl("Medias") + "&stop=" + batchSize;
-                if (lastFilename != null) {
-                  url += "&after=" + lastFilename;
-                }
-                await fetchRetry(url, {
-                  method: "GET",
-                  credentials: "same-origin",
-                  headers: headers,
-                })
-                .then(response => response.json())
-                .then(async medias => {
-                  if (medias.length == 0) {
-                    finished = true;
-                  }
-                  for (const media of medias) {
-                    lastFilename = media.name;
-                    const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
-                    const ext = re.exec(media.name)[0];
-                    let basename = basenameOrig;
-                    let vers = 1;
-                    while (filenames.has(basename)) {
-                      basename = basenameOrig + " (" + vers + ")";
-                      vers++;
-                    }
-                    filenames.add(basename);
-
-                    let request = Utilities.getDownloadRequest(media, headers);
-
-                    // Download media file.
-                    console.log("Downloading " + media.name + " from " + request.url + "...");
-                    await fetch(request)
-                    .then(response => {
-                      const stream = () => response.body;
-                      const name = basename + ext;
-                      ctrl.enqueue({name, stream});
-                    });
-                  }
-                });
-                if (finished) {
-                  ctrl.close();
-                  break;
-                }
+              let url = getUrl("Medias") + "&stop=" + batchSize;
+              if (lastFilename != null) {
+                url += "&after=" + lastFilename;
               }
+              await fetchRetry(url, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => response.json())
+              .then(async medias => {
+                if (medias.length == 0) {
+                  ctrl.close();
+                }
+                for (const media of medias) {
+                  lastFilename = media.name;
+                  const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+                  const ext = re.exec(media.name)[0];
+                  let basename = basenameOrig;
+                  let vers = 1;
+                  while (filenames.has(basename)) {
+                    basename = basenameOrig + " (" + vers + ")";
+                    vers++;
+                  }
+                  filenames.add(basename);
+
+                  let request = Utilities.getDownloadRequest(media, headers);
+
+                  // Download media file.
+                  console.log("Downloading " + media.name + " from " + request.url + "...");
+                  await fetch(request)
+                  .then(response => {
+                    const stream = () => response.body;
+                    const name = basename + ext;
+                    ctrl.enqueue({name, stream});
+                  });
+                }
+              });
             }
           });
           if (window.WritableStream && readableZipStream.pipeTo) {
