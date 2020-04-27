@@ -1,12 +1,16 @@
 from collections import defaultdict
+import logging
 
 from ..search import TatorSearch
 
 from ._media_query import query_string_to_media_ids
 from ._attribute_query import get_attribute_query
 
-def get_annotation_queryset(project, query_params):
+logger = logging.getLogger(__name__)
+
+def get_annotation_queryset(project, query_params, annotation_type):
     """Converts annotation query string into a list of IDs and a count.
+       annotation_type: Should be one of `localization` or `state`.
     """
     mediaId = query_params.get('media_id', None)
     media_query = query_params.get('media_query', None)
@@ -17,9 +21,27 @@ def get_annotation_queryset(project, query_params):
     stop = query_params.get('stop', None)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['_exact_name'] = 'asc'
-    media_bools = []
-    annotation_bools = []
+    query['sort']['_id'] = 'asc'
+    media_bools = [{'bool': {
+        'should': [
+            {'match': {'_dtype': 'image'}},
+            {'match': {'_dtype': 'video'}},
+        ],
+        'minimum_should_match': 1,
+    }}]
+    if annotation_type == 'localization':
+        annotation_bools = [{'bool': {
+            'should': [
+                {'match': {'_dtype': 'box'}},
+                {'match': {'_dtype': 'line'}},
+                {'match': {'_dtype': 'dot'}},
+            ],
+            'minimum_should_match': 1,
+        }}]
+    elif annotation_type == 'state':
+        annotation_bools = [{'match': {'_dtype': 'state'}}]
+    else:
+        raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
 
     if media_query != None:
         media_ids = query_string_to_media_ids(project, media_query)
