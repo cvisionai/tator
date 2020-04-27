@@ -828,7 +828,33 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   pvc.backupSize
   pvc.migrationsSize
      Indicates the size of the persistent volumes corresponding to the NFS shares. These can be modified according to
-     available space on your NFS shares.
+     available space on your NFS shares.\
+
+
+  hpa.nginxMinReplicas
+  hpa.gunicornMinReplicas
+  hpa.daphneMinReplicas
+  hpa.tusdMinReplicas
+      Indicates the minimum number of pods to scale for a given service
+
+
+  hpa.nginxMinReplicas
+  hpa.gunicornMinReplicas
+  hpa.daphneMinReplicas
+  hpa.tusdMinReplicas
+      Indicates the maximum number of pods to scale for a given service
+
+
+  hpa.nginxCpuPercent
+  hpa.gunicornCpuPercent
+  hpa.daphneCpuPercent
+  hpa.tusdCpuPercent
+      Indicates the percentage to monitor to scale a new pod for a given service
+
+
+
+
+
 
 Update your domain to access the load balancer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -922,6 +948,3 @@ Use the admin console to configure your user account, projects, media types, ann
 `Administer the deployment <../administration/admin.html>`_
 
 `Verify the deployment <../pytator/running-tests.html>`_
-
-
-
