@@ -257,7 +257,7 @@ class MediaSection extends TatorElement {
 
                   // Download media file.
                   console.log("Downloading " + media.name + " from " + request.url + "...");
-                  await fetch(request)
+                  await fetchRetry(request)
                   .then(response => {
                     const stream = () => response.body;
                     const name = basename + ext;
@@ -300,7 +300,7 @@ class MediaSection extends TatorElement {
   
             // Function for dumping types to file.
             const getTypes = (endpoint, fname) => {
-              return fetch("/rest/" + endpoint + "/" + projectId, {
+              return fetchRetry("/rest/" + endpoint + "/" + projectId, {
                 method: "GET",
                 credentials: "same-origin",
                 headers: headers,
@@ -325,7 +325,7 @@ class MediaSection extends TatorElement {
 
               // Download in json format.
               for (const type of types) {
-                promises.push(fetch(baseUrl + "&type=" + type.type.id, {
+                promises.push(fetchRetry(baseUrl + "&type=" + type.type.id, {
                   method: "GET",
                   credentials: "same-origin",
                   headers: headers,
@@ -339,7 +339,7 @@ class MediaSection extends TatorElement {
 
               // Download in csv format.
               for (const type of types) {
-                promises.push(fetch(baseUrl + "&type=" + type.type.id + "&format=csv", {
+                promises.push(fetchRetry(baseUrl + "&type=" + type.type.id + "&format=csv", {
                   method: "GET",
                   credentials: "same-origin",
                   headers: headers,
