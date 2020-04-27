@@ -202,52 +202,49 @@ class MediaSection extends TatorElement {
         const getUrl = endpoint => {
           return "/rest/" + endpoint + "/" + projectId + this._sectionFilter() + mediaFilter;
         };
+        const headers = {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        };
         fetchRetry(getUrl("MediaSections"), {
           method: "GET",
           credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
+          headers: headers,
         })
         .then(response => response.json())
         .then(mediaCount => {
-          let fileIndex = 0;
-          let numQueued = 0;
-          let num_images = 0;
-          let num_videos = 0;
+          let lastFilename = null;
+          let numImages = 0;
+          let numVideos = 0;
           for (const key in mediaCount) {
-            num_images += mediaCount[key]["num_images"];
-            num_videos + mediaCount[key]["num_videos"];
+            numImages += mediaCount[key]["num_images"];
+            numVideos += mediaCount[key]["num_videos"];
           }
-          const count = num_images + num_videos;
-          const batchSize = num_images > num_videos ? 20 : 2;
+          const batchSize = numImages > numVideos ? 20 : 2;
           const filenames = new Set();
           const re = /(?:\.([^.]+))?$/;
-          const headers = {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Content-Type": "application/json"
-          };
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
           const readableZipStream = new ZIP({
             async pull(ctrl) {
-              if (fileIndex < count) {
-                const start = fileIndex;
-                const stop = Math.min(fileIndex + batchSize, count);
-                fileIndex = stop;
-                await fetchRetry(getUrl("Medias") + "&start=" + start + "&stop=" + stop, {
+              while (true) {
+                let finished = false;
+                let url = getUrl("Medias") + "&stop=" + batchSize;
+                if (lastFilename != null) {
+                  url += "&after=" + lastFilename;
+                }
+                await fetchRetry(url, {
                   method: "GET",
                   credentials: "same-origin",
-                  headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "Accept": "application/json",
-                    "Content-Type": "application/json"
-                  },
+                  headers: headers,
                 })
                 .then(response => response.json())
                 .then(async medias => {
+                  if (medias.length == 0) {
+                    finished = true;
+                  }
                   for (const media of medias) {
+                    lastFilename = media.name;
                     const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
                     const ext = re.exec(media.name)[0];
                     let basename = basenameOrig;
@@ -267,13 +264,13 @@ class MediaSection extends TatorElement {
                       const stream = () => response.body;
                       const name = basename + ext;
                       ctrl.enqueue({name, stream});
-                      numQueued++;
-                      if (numQueued >= count) {
-                        ctrl.close();
-                      }
                     });
                   }
                 });
+                if (finished) {
+                  ctrl.close();
+                  break;
+                }
               }
             }
           });
