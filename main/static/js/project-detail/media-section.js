@@ -381,7 +381,7 @@ class MediaSection extends TatorElement {
 
               async next() {
                 // Fetches next batch of metadata, iterating over types. Returns
-                // Whether all metadata has been fetched.
+                // whether all metadata has been fetched.
                 let done = false;
                 if (this._types.length == 0) {
                   done = true;
