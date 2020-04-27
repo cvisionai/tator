@@ -63,6 +63,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         annotation_ids, annotation_count, _ = get_annotation_queryset(
             params['project'],
             params,
+            'localization',
         )
         queryset = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
         return queryset
@@ -74,6 +75,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, _ = get_annotation_queryset(
                 params['project'],
                 params,
+                'localization',
             )
             self.request=request
             before=time.time()
@@ -284,6 +286,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'localization',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -309,6 +312,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'localization',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist

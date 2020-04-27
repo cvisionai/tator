@@ -17,13 +17,17 @@ def get_media_queryset(project, query_params, dry_run=False):
     md5 = query_params.get('md5', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
+    after = query_params.get('after', None)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
-    bools = [{'bool': {'should': [
-        {'match': {'_dtype': 'image'}},
-        {'match': {'_dtype': 'video'}},
-    ]}}]
+    bools = [{'bool': {
+        'should': [
+            {'match': {'_dtype': 'image'}},
+            {'match': {'_dtype': 'video'}},
+        ],
+        'minimum_should_match': 1,
+    }}]
 
     if mediaId != None:
         bools.append({'ids': {'values': mediaId}})
@@ -39,12 +43,22 @@ def get_media_queryset(project, query_params, dry_run=False):
 
     if start != None:
         query['from'] = int(start)
+        if start > 10000:
+            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
 
     if start == None and stop != None:
         query['size'] = int(stop)
+        if stop > 10000:
+            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
 
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
+        if start + stop > 10000:
+            raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
+                             "'after'.")
+
+    if after != None:
+        bools.append({'range': {'_exact_name': {'gt': after}}})
 
     query = get_attribute_query(query_params, query, bools, project)
 

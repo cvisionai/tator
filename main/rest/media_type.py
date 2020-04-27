@@ -18,17 +18,24 @@ from ..schema import MediaTypeListSchema
 from ..schema import MediaTypeDetailSchema
 from ..schema import parse
 
+from ._entity_type_mixins import EntityTypeListAPIMixin
 from ._entity_type_mixins import EntityTypeDetailAPIMixin
 from ._permissions import ProjectFullControlPermission
 
-class MediaTypeListAPI(ListCreateAPIView):
+class MediaTypeListAPI(EntityTypeListAPIMixin):
     """ Create or retrieve localization types.
 
         A media type is the metadata definition object for media. It includes file format,
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
     """
+    pkname='media_id'
+    entity_endpoint='Medias'
+    entityBaseObj=EntityTypeMediaBase
+    baseObj=EntityMediaBase
+    entityTypeAttrSerializer=EntityTypeMediaAttrSerializer
     serializer_class = EntityTypeMediaSerializer
+
     schema = MediaTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
     queryset = EntityTypeMediaBase.objects.all()
@@ -58,11 +65,6 @@ class MediaTypeListAPI(ListCreateAPIView):
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             return response;
-
-    def get_queryset(self):
-        project_id = self.kwargs['project']
-        qs = EntityTypeMediaBase.objects.filter(project__id=project_id)
-        return qs
 
 class MediaTypeDetailAPI(EntityTypeDetailAPIMixin):
     """ Interact with an individual media type.

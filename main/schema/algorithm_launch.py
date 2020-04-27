@@ -31,8 +31,8 @@ class AlgorithmLaunchSchema(AutoSchema):
                             'type': 'string',
                         },
                         'media_query': {
-                            'description': 'Query string used to filter media IDs. Must '
-                                           'supply media_query or media_ids.',
+                            'description': 'Query string used to filter media IDs. If '
+                                           'supplied, media_ids will be ignored.',
                             'type': 'string',
                         },
                         'media_ids': {
