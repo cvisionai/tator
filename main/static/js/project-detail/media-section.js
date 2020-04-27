@@ -335,28 +335,28 @@ class MediaSection extends TatorElement {
 
               // Download in json format.
               for (const type of types) {
-                promises.push(fetch(baseUrl + "&type=" + type.id, {
+                promises.push(fetch(baseUrl + "&type=" + type.type.id, {
                   method: "GET",
                   credentials: "same-origin",
                   headers: headers,
                 })
                 .then(response => {
                   const stream = () => response.body;
-                  const name = baseFilename + type.name + ".json";
+                  const name = baseFilename + type.type.name + ".json";
                   ctrl.enqueue({name, stream});
                 }));
               }
 
               // Download in csv format.
               for (const type of types) {
-                promises.push(fetch(baseUrl + "&type=" + type.id + "&format=csv", {
+                promises.push(fetch(baseUrl + "&type=" + type.type.id + "&format=csv", {
                   method: "GET",
                   credentials: "same-origin",
                   headers: headers,
                 })
                 .then(response => {
                   const stream = () => response.body;
-                  const name = baseFilename + type.name + ".csv";
+                  const name = baseFilename + type.type.name + ".csv";
                   ctrl.enqueue({name, stream});
                 }));
               }
