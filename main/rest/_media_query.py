@@ -58,7 +58,7 @@ def get_media_queryset(project, query_params, dry_run=False):
                              "'after'.")
 
     if after != None:
-        bools.append({'range': {'_exact_name': {'gt': after}}})
+        query['range'] = {'_exact_name': {'gt': after}}
 
     query = get_attribute_query(query_params, query, bools, project)
 
