@@ -35,6 +35,7 @@ from ..renderers import Mp4Renderer
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import GetFrameSchema
+from ..schema import GetClipSchema
 from ..schema import parse
 
 from ._media_query import get_media_queryset
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
     """ Interact with list of media.
 
-        A media may be an image or a video. Media are a type of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
 
         This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
@@ -266,6 +267,28 @@ class MediaUtil:
         logger.info(f"Given {frames}, we need {segment_list}")
         return segment_list
 
+    def _getImpactedSegmentsFromRanges(self, frameRanges):
+        segment_list=[]
+        logger.info(f"Frame Ranges = {frameRanges}")
+        for frameRange in frameRanges:
+            begin = frameRange[0]
+            end = frameRange[1]
+            begin_segments = self._getImpactedSegments([begin])
+            end_segments = self._getImpactedSegments([end])
+            range_segment_set = set()
+            for frame,frame_seg in [*begin_segments, *end_segments]:
+                for segment in frame_seg:
+                    range_segment_set.add(segment)
+            start_missing = begin_segments[0][1][-1]
+            end_missing = end_segments[0][1][2]
+            for frame_seg in range(start_missing, end_missing):
+                range_segment_set.add(frame_seg)
+            range_segment = list(range_segment_set)
+            range_segment.sort()
+            segment_list.append((frameRange, range_segment))
+        logger.info(f"Range-based segment list: {segment_list}")
+        return segment_list
+
     def makeTemporaryVideos(self, segmentList):
         """ Return a temporary mp4 for each impacted segment to limit IO to
             cloud storage """
@@ -284,7 +307,6 @@ class MediaUtil:
                 if last_io[0] + last_io[1] == segment['offset']:
                     # merge contigous blocks
                     sc_graph[len(sc_graph)-1] = (last_io[0], last_io[1] + segment['size'])
-                    logger.info(segment)
                 else:
                     # A new block
                     sc_graph.append((segment['offset'], segment['size']))
@@ -352,6 +374,34 @@ class MediaUtil:
         logger.info(args)
         proc = subprocess.run(args, check=True, capture_output=True)
         return proc.returncode == 0
+
+    def getClip(self, frameRanges):
+        """ Given a list of frame ranges generate a temporary mp4
+
+            :param frameRanges: tuple or list of tuples representing (begin,end) -- range is inclusive!
+        """
+        if type(frameRanges) is tuple:
+            frameRanges = [frameRanges]
+
+        impactedSegments=self._getImpactedSegmentsFromRanges(frameRanges)
+        assert not impactedSegments is None, "Unable to calculate impacted video segments"
+        lookup = self.makeTemporaryVideos(impactedSegments)
+
+        logger.info(f"Lookup = {lookup}")
+        with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
+            for _,fp in lookup.values():
+                vid_list.write(f"file '{fp}'")
+
+        output_file = os.path.join(self._temp_dir, "concat.mp4")
+        args = ["ffmpeg",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", os.path.join(self._temp_dir, "vid_list.txt"),
+                "-c", "copy",
+                output_file]
+        proc = subprocess.run(args, check=True, capture_output=True)
+        return output_file
+
 
     def getTileImage(self, frames, rois=None, tile_size=None):
         """ Generate a tile jpeg of the given frame/rois """
@@ -446,7 +496,7 @@ class MediaUtil:
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Interact with individual media.
 
-        A media may be an image or a video. Media are a type of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
     """
     schema = MediaDetailSchema()
@@ -483,7 +533,7 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 media_object.last_edit_end = params['last_edit_end']
 
             media_object.save()
-                
+
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -505,7 +555,7 @@ class GetFrameAPI(APIView):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of 
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
             frames based on the input parameter
         """
         try:
@@ -573,6 +623,43 @@ class GetFrameAPI(APIView):
                         response = Response(data_file.read())
 
 
+        except ObjectDoesNotExist as dne:
+            response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            response=Response(MediaUtil.generate_error_image(400, str(e)),
+                              status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+        finally:
+            return response
+
+class GetClipAPI(APIView):
+    schema = GetClipSchema()
+    renderer_classes = (Mp4Renderer,)
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get_queryset(self):
+        return EntityBase.objects.all()
+
+    def get(self, request, **kwargs):
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
+            frames based on the input parameter
+        """
+        try:
+            # upon success we can return an image
+            params = parse(request)
+            video = EntityMediaVideo.objects.get(pk=params['id'])
+            frameRangesStr = params.get('frameRanges', None)
+            frameRangesTuple=[frameRange.split(':') for frameRange in frameRangesStr]
+            frameRanges=[]
+            for t in frameRangesTuple:
+                frameRanges.append((int(t[0]), int(t[1])))
+            with tempfile.TemporaryDirectory() as temp_dir:
+                media_util = MediaUtil(video, temp_dir)
+                fp = media_util.getClip(frameRanges)
+                with open(fp, 'rb') as data_file:
+                    response = Response(data_file.read())
         except ObjectDoesNotExist as dne:
             response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)

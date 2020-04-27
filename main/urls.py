@@ -82,6 +82,9 @@ urlpatterns += [
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
+    path('rest/GetClip/<int:id>',
+         GetClipAPI.as_view(),
+    ),
     path(
         'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),

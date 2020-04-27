@@ -210,3 +210,50 @@ class GetFrameSchema(AutoSchema):
             responses['200'] = {'description': 'Successful retrieval of frame image.'}
         return responses
 
+
+class GetClipSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['GetClip']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a media object.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        params = []
+        if method == 'GET':
+            params = [
+                {
+                    'name': 'frameRanges',
+                    'in': 'query',
+                    'required':True,
+                    'description': 'Comma-seperated list of frame ranges to capture.',
+                    'explode': False,
+                    'schema': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'string',
+                        },
+                    },
+                    'example': ["0:30", "50:90"],
+                },
+            ]
+        return params
+
+    def _get_request_body(self, path, method):
+        return {}
+
+    def _get_responses(self, path, method):
+        responses = {}
+        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
+        responses['400'] = {'description': 'Bad request.'}
+        if method == 'GET':
+            responses['200'] = {'description': 'Successful retrieval of frame image.'}
+        return responses
