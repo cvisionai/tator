@@ -20,10 +20,13 @@ def get_media_queryset(project, query_params, dry_run=False):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
-    bools = [{'bool': {'should': [
-        {'match': {'_dtype': 'image'}},
-        {'match': {'_dtype': 'video'}},
-    ]}}]
+    bools = [{'bool': {
+        'should': [
+            {'match': {'_dtype': 'image'}},
+            {'match': {'_dtype': 'video'}},
+        ],
+        'minimum_should_match': 1,
+    }}]
 
     if mediaId != None:
         bools.append({'ids': {'values': mediaId}})
