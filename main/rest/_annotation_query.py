@@ -19,6 +19,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
     modified = query_params.get('modified', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
+    after = query_params.get('after', None)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_id'] = 'asc'
@@ -57,13 +58,25 @@ def get_annotation_queryset(project, query_params, annotation_type):
 
     if start != None:
         query['from'] = int(start)
+        if start > 10000:
+            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
 
     if start == None and stop != None:
         query['size'] = int(stop)
+        if stop > 10000:
+            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
 
     if start != None and stop != None:
         query['size'] = int(stop) - int(start)
-    query = get_attribute_query(query_params, query, media_bools, project, False, annotation_bools, modified)
+        if start + stop > 10000:
+            raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
+                             "'after'.")
+
+    if after != None:
+        annotation_bools.append({'range': {'_id': {'gt': after}}})
+
+    query = get_attribute_query(query_params, query, media_bools, project, False,
+                                annotation_bools, modified)
 
     annotation_ids, annotation_count = TatorSearch().search(project, query)
 
