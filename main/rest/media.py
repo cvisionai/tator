@@ -219,7 +219,7 @@ class MediaUtil:
 
         self._fps = video.fps
 
-    def getImpactedSegments(self, frames):
+    def _getImpactedSegments(self, frames):
         if self._segment_info is None:
             return None
 
@@ -301,7 +301,7 @@ class MediaUtil:
         return lookup
 
 
-    def frameToTimeStr(self, frame, relativeTo=None):
+    def _frameToTimeStr(self, frame, relativeTo=None):
         if relativeTo:
             frame -= relativeTo
         total_seconds = frame / self._fps
@@ -329,7 +329,7 @@ class MediaUtil:
         outputs = []
 
         # attempt to make a temporary file in a fast manner to speed up AWS access
-        impactedSegments = self.getImpactedSegments(frames)
+        impactedSegments = self._getImpactedSegments(frames)
         lookup = {}
         if impactedSegments:
             lookup = self.makeTemporaryVideos(impactedSegments)
@@ -341,10 +341,10 @@ class MediaUtil:
 
             outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.jpg"))
             if frame in lookup:
-                inputs.extend(["-ss", self.frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
+                inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
             else:
                 # If we didn't make per segment mp4s, use the big one
-                inputs.extend(["-ss", self.frameToTimeStr(frame), "-i", self._video_file])
+                inputs.extend(["-ss", self._frameToTimeStr(frame), "-i", self._video_file])
 
         # Now add all the cmds in
         args.extend(inputs)
