@@ -42,4 +42,13 @@ annotation_filter_parameter_schema = [
             'enum': [0, 1],
         },
     },
+    {
+        'name': 'after',
+        'in': 'query',
+        'required': False,
+        'description': 'If given, all results returned will be after the '
+                       'localization with this ID. The `start` and `stop` '
+                       'parameters are relative to this modified range.',
+        'schema': {'type': 'integer'},
+    },
 ]
