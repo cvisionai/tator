@@ -279,6 +279,12 @@ class MediaSection extends TatorElement {
         })
       });
 
+      Number.prototype.pad = function(size) {
+        var s = String(this);
+        while (s.length < (size || 2)) {s = "0" + s;}
+        return s;
+      }
+
       this._files.addEventListener("downloadAnnotations", evt => {
         const projectId = this.getAttribute("project-id");
         let mediaFilter = "";
@@ -314,49 +320,71 @@ class MediaSection extends TatorElement {
               });
             };
 
-            // Download media types
+            // Download entity types
             const mediaTypes = await getTypes("MediaTypes", "media_types.json");
             const localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
             const stateTypes = await getTypes("StateTypes", "state_types.json");
 
-            // Function for dumping metadata to file.
-            const getMetadata = (baseUrl, types, baseFilename) => {
-              const promises = [];
-
-              // Download in json format.
-              for (const type of types) {
-                promises.push(fetchRetry(baseUrl + "&type=" + type.type.id, {
-                  method: "GET",
-                  credentials: "same-origin",
-                  headers: headers,
-                })
-                .then(response => {
-                  const stream = () => response.body;
-                  const name = baseFilename + type.type.name + ".json";
-                  ctrl.enqueue({name, stream});
-                }));
+            // Function for dumping single batch of metadata to file.
+            const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
+                                            baseFilename, lastId) => {
+              let url = baseUrl + "&type=" + type.type.id + "&stop=" + batchSize;
+              if (lastId != null) {
+                url += "&after=" + lastId;
               }
 
-              // Download in csv format.
-              for (const type of types) {
-                promises.push(fetchRetry(baseUrl + "&type=" + type.type.id + "&format=csv", {
-                  method: "GET",
-                  credentials: "same-origin",
-                  headers: headers,
-                })
-                .then(response => {
-                  const stream = () => response.body;
-                  const name = baseFilename + type.type.name + ".csv";
-                  ctrl.enqueue({name, stream});
-                }));
-              }
-              return Promise.all(promises);
-            }
+              // Fetch csv data first.
+              await fetchRetry(url + "&format=csv", {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const stream = () => response.body;
+                const batch_str = "__batch_" + Number(batchNum).pad(5);
+                const name = baseFilename + type.type.name + batch_str + ".csv";
+                ctrl.enqueue({name, stream});
+              });
+
+              // Fetch and return json data.
+              return fetchRetry(url, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const clone = response.clone();
+                const stream = () => response.body;
+                const batch_str = "__batch_" + Number(batchNum).pad(5);
+                const name = baseFilename + type.type.name + batch_str + ".json";
+                ctrl.enqueue({name, stream});
+                return clone.json();
+              });
+            };
       
+            // Function for downloading all metadata for one endpoint.
+            const getMetadata = async (baseUrl, types, baseFilename, idField) => {
+              let lastId = null; 
+              let batchNum = 0;
+              const batchSize = 1;
+              for (const type of types) {
+                while (true) {
+                  const entities = await getMetadataBatch(baseUrl, type, batchSize,
+                                                          batchNum, "medias__", lastId);
+                  if (entities.length == 0) {
+                    break;
+                  } else {
+                    lastId = entities[entities.length - 1][idField];
+                  }
+                  batchNum++;
+                }
+              }
+            };
+
             // Download metadata
-            await getMetadata(mediaUrl, mediaTypes, "medias__");
-            await getMetadata(getUrl("Localizations"), localizationTypes, "localizations__");
-            await getMetadata(getUrl("States"), stateTypes, "states__");
+            await getMetadata(mediaUrl, mediaTypes, "medias__", "name");
+            await getMetadata(getUrl("Localizations"), localizationTypes, "localizations__", "id");
+            await getMetadata(getUrl("States"), stateTypes, "states__", "id");
 
             // Close the zip file.
             ctrl.close();
@@ -398,7 +426,7 @@ class MediaSection extends TatorElement {
               this._sectionName = evt.target.value;
             }
             const projectId = this.getAttribute("project-id");
-            fetch("/rest/EntityMedias/" + projectId + this._sectionFilter(), {
+            fetch("/rest/Medias/" + projectId + this._sectionFilter(), {
               method: "PATCH",
               credentials: "same-origin",
               headers: {
