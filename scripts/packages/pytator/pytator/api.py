@@ -103,6 +103,12 @@ class APIElement:
                return None
 
         """
+        allObjects=self.filter(params)
+        if allObjects:
+            return pd.DataFrame(data=allObjects,
+                                columns=allObjects[0].keys())
+        else:
+            return None
     def all(self):
         """ Get list of all the elements of an endpoint as a list
 
