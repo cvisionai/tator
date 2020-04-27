@@ -72,6 +72,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
         annotation_ids, annotation_count, _ = get_annotation_queryset(
             params['project'],
             params,
+            'state',
         )
         queryset = EntityState.objects.filter(pk__in=annotation_ids)
         return queryset
@@ -84,6 +85,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, _ = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             allStates = EntityState.objects.filter(pk__in=annotation_ids)
             if self.operation:
@@ -268,6 +270,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -293,6 +296,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
