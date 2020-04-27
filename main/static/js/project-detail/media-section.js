@@ -297,6 +297,15 @@ class MediaSection extends TatorElement {
         };
         const mediaUrl = "/rest/Medias/" + projectId + this._sectionFilter() + mediaFilter;
         const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+        let mediaTypes = null;
+        let mediaFetcher = null;
+        let mediaDone = false;
+        let localizationTypes = null;
+        let localizationFetcher = null;
+        let localizationsDone = false;
+        let stateTypes = null;
+        let stateFetcher = null;
+        let statesDone = false;
         const headers = {
           "X-CSRFToken": getCookie("csrftoken"),
           "Content-Type": "application/json"
@@ -319,11 +328,6 @@ class MediaSection extends TatorElement {
                 return clone.json();
               });
             };
-
-            // Download entity types
-            const mediaTypes = await getTypes("MediaTypes", "media_types.json");
-            const localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
-            const stateTypes = await getTypes("StateTypes", "state_types.json");
 
             // Function for dumping single batch of metadata to file.
             const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
@@ -361,33 +365,86 @@ class MediaSection extends TatorElement {
                 return clone.json();
               });
             };
-      
-            // Function for downloading all metadata for one endpoint.
-            const getMetadata = async (baseUrl, types, baseFilename, idField) => {
-              let lastId = null; 
-              let batchNum = 0;
-              const batchSize = 1;
-              for (const type of types) {
-                while (true) {
-                  const entities = await getMetadataBatch(baseUrl, type, batchSize,
-                                                          batchNum, "medias__", lastId);
-                  if (entities.length == 0) {
-                    break;
-                  } else {
-                    lastId = entities[entities.length - 1][idField];
-                  }
-                  batchNum++;
-                }
+
+            // Class for fetching batches of metadata.
+            class MetadataFetcher {
+              constructor(types, baseUrl, baseFilename, lastField) {
+                this._types = types;
+                this._baseUrl = baseUrl;
+                this._baseFilename = baseFilename;
+                this._lastField = lastField;
+                this._batchNum = 0;
+                this._lastId = null;
+                this._typeIndex = 0;
+                this._batchSize = 1000;
               }
-            };
 
-            // Download metadata
-            await getMetadata(mediaUrl, mediaTypes, "medias__", "name");
-            await getMetadata(getUrl("Localizations"), localizationTypes, "localizations__", "id");
-            await getMetadata(getUrl("States"), stateTypes, "states__", "id");
+              async next() {
+                // Fetches next batch of metadata, iterating over types. Returns
+                // Whether all metadata has been fetched.
+                let done = false;
+                if (this._types.length == 0) {
+                  done = true;
+                } else {
+                  const entities = await getMetadataBatch(
+                    this._baseUrl,
+                    this._types[this._typeIndex],
+                    this._batchSize,
+                    this._batchNum,
+                    this._baseFilename,
+                    this._lastId,
+                  )
+                  this._batchNum++;
+                  if (entities.length == 0) {
+                    this._typeIndex++;
+                    if (this._typeIndex == this._types.length) {
+                      done = true;
+                    } else {
+                      this._batchNum = 0;
+                      this._lastId = null;
+                    }
+                  } else {
+                    this._lastId = entities[entities.length - 1][this._lastField];
+                  }
+                }
+                return done;
+              }
+            }
 
-            // Close the zip file.
-            ctrl.close();
+            if (mediaTypes == null) {
+              // Get media types.
+              mediaTypes = await getTypes("MediaTypes", "media_types.json");
+              mediaFetcher = new MetadataFetcher(mediaTypes, mediaUrl, "medias__", "name");
+            }
+            else if (localizationTypes == null) {
+              // Get localization types.
+              const localizationsUrl = getUrl("Localizations");
+              localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
+              localizationFetcher = new MetadataFetcher(localizationTypes, localizationsUrl,
+                                                        "localizations__", "id");
+            }
+            else if (stateTypes == null) {
+              // Get state types.
+              const statesUrl = getUrl("States");
+              stateTypes = await getTypes("StateTypes", "state_types.json");
+              stateFetcher = new MetadataFetcher(stateTypes, statesUrl, "states__", "id");
+            }
+            else if (mediaDone == false) {
+              // Get next batch of media metadata.
+              mediaDone = await mediaFetcher.next();
+            }
+            else if (localizationsDone == false) {
+              // Get next batch of localization metadata.
+              localizationsDone = await localizationFetcher.next();
+            }
+            else if (statesDone == false) {
+              // Get next batch of state metadata.
+              statesDone = await stateFetcher.next();
+            }
+            else {
+              // Close the zip file.
+              ctrl.close();
+            }
           }
         });
         if (window.WritableStream && readableZipStream.pipeTo) {
