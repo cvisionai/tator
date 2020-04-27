@@ -22,7 +22,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
     after = query_params.get('after', None)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['_id'] = 'asc'
+    query['sort']['_postgres_id'] = 'asc'
     media_bools = [{'bool': {
         'should': [
             {'match': {'_dtype': 'image'}},
@@ -73,7 +73,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
                              "'after'.")
 
     if after != None:
-        annotation_bools.append({'range': {'_id': {'gt': after}}})
+        query['range'] = {'_postgres_id': {'gt': after}}
 
     query = get_attribute_query(query_params, query, media_bools, project, False,
                                 annotation_bools, modified)

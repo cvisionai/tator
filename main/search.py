@@ -78,6 +78,7 @@ class TatorSearch:
                 '_modified': {'type': 'boolean'},
                 '_modified_datetime': {'type': 'date'},
                 '_modified_by': {'type': 'keyword'},
+                '_postgres_id': {'type': 'long'},
             }},
         )
 
@@ -130,6 +131,8 @@ class TatorSearch:
         aux = {}
         aux['_meta'] = entity.meta.pk
         aux['_dtype'] = entity.meta.dtype
+        aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
+                                        # purpose is not recommended by ES.
         duplicates = []
         if entity.meta.dtype in ['image', 'video']:
             aux['_media_relation'] = 'media'
