@@ -36,6 +36,7 @@ from .state import StateGraphicSchema
 from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema
+from .temporary_file import TemporaryFileListSchema
 from .transcode import TranscodeSchema
 from .tree_leaf import TreeLeafSuggestionSchema
 from .tree_leaf import TreeLeafListSchema

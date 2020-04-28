@@ -219,6 +219,10 @@ urlpatterns += [
         TemporaryFileAPI.as_view(),
     ),
     path(
+        'rest/TemporaryFiles/<int:project>',
+        TemporaryFileListAPI.as_view(),
+    ),
+    path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
     ),
