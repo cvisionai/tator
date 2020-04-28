@@ -191,7 +191,8 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
 class MediaUtil:
     def __init__(self, video, temp_dir):
         self._temp_dir = temp_dir
-        # Do this for testing: self._temp_dir = '/data/media/temp'
+        # Do this for testing:
+        #self._temp_dir = '/data/media/temp'
         # If available we only attempt to fetch
         # the part of the file we need to
         self._segment_info = None
@@ -389,8 +390,16 @@ class MediaUtil:
 
         logger.info(f"Lookup = {lookup}")
         with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
-            for _,fp in lookup.values():
-                vid_list.write(f"file '{fp}'")
+            for idx,(_,fp) in enumerate(lookup.values()):
+                mux_0 = os.path.join(self._temp_dir, f"{idx}_0.mp4")
+                args = ["ffmpeg",
+                        "-i", fp,
+                        "-c", "copy",
+                        "-muxpreload", "0",
+                        "-muxdelay", "0",
+                        mux_0]
+                proc = subprocess.run(args, check=True, capture_output=True)
+                vid_list.write(f"file '{mux_0}'\n")
 
         output_file = os.path.join(self._temp_dir, "concat.mp4")
         args = ["ffmpeg",
