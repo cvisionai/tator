@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from ._permissions import ProjectEditPermission
 
 from ..models import TemporaryFile
+from ..models import Project
 from ..serializers import TemporaryFileSerializer
 from ..schema import TemporaryFileDetailSchema
 from ..schema import TemporaryFileListSchema
@@ -17,6 +18,12 @@ from ..schema import parse
 import datetime
 
 import os
+import logging
+import uuid
+import shutil
+
+# Load the main.view logger
+logger = logging.getLogger(__name__)
 
 class TemporaryFileAPI(generics.RetrieveDestroyAPIView):
     """ Access a detailed view of a temporary file given an id """
@@ -46,16 +53,20 @@ class TemporaryFileListAPI(generics.ListAPIView):
             hours = params['hours']
             if hours == None:
                 hours = 24
-            eol = datetime.datetime.now() + datetime.timedelta(hours=hours)
+            now = datetime.datetime.utcnow()
+            eol =  now + datetime.timedelta(hours=hours)
             extension = os.path.splitext(name)[-1]
             local_file_path = os.path.join(settings.UPLOAD_ROOT,url.split('/')[-1])
             destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project}", f"{uuid.uuid1()}{extension}")
+            logger.info(f"Local path = {local_file_path}")
+            logger.info(f"Local path = {destination_fp}")
             shutil.copyfile(local_file_path, destination_fp)
             temporary_file = TemporaryFile(name=params['name'],
-                                           project=project,
+                                           project=Project.objects.get(pk=project),
                                            user=request.user,
                                            path=destination_fp,
                                            lookup=params['lookup'],
+                                           created_datetime=now,
                                            eol_datetime = eol)
             temporary_file.save()
         except Exception as e:

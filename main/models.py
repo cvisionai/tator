@@ -874,7 +874,7 @@ class TemporaryFile(Model):
     """ Path to file on storage """
     lookup = SlugField(max_length=32)
     """ unique lookup (md5sum of something useful) """
-    created_datetime = DateTimeField(auto_now_add=True)
+    created_datetime = DateTimeField()
     """ Time that the file was created """
     eol_datetime = DateTimeField()
     """ Time the file expires (reaches EoL) """
