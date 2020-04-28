@@ -41,6 +41,14 @@ class TemporaryFileListAPI(generics.ListAPIView):
     def get_queryset(self):
         params = parse(self.request)
         qs = TemporaryFile.objects.filter(project__id=params['project'])
+        if params['expired'] is None:
+            expired = 0
+        else:
+            expired = params['expired']
+
+        if expired > 0:
+            qs = qs.filter(eol_datetime__lte=datetime.datetime.now())
+
         return qs
 
     def post(self, request, format=None, **kwargs):

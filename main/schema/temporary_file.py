@@ -41,6 +41,24 @@ class TemporaryFileListSchema(AutoSchema):
             'description': 'A unique integer identifying a project.',
             'schema': {'type': 'integer'},
         }]
+    def _get_filter_parameters(self, path, method):
+        params=[]
+        if method in ['GET', 'DELETE']:
+            params = [
+                  {
+                      'name': 'expired',
+                      'in': 'query',
+                      'required': False,
+                      'description': 'If greater than 0 will return only'
+                                     ' expired files',
+                      'explode': False,
+                      'schema': {
+                          'type': 'integer',
+                          'default': 0
+                      },
+    },
+                ]
+        return params
 
     def _get_request_body(self, path, method):
         body = {}
