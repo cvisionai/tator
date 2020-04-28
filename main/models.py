@@ -887,3 +887,8 @@ class TemporaryFile(Model):
         past = pytz.timezone("UTC").localize(past)
         self.eol_datetime = past
         self.save()
+
+@receiver(pre_delete, sender=TemporaryFile)
+def temporary_file_delete(sender, instance, **kwargs):
+    if os.path.exists(instance.path):
+        os.remove(instance.path)
