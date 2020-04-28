@@ -27,6 +27,19 @@ class EnumField(serializers.ChoiceField):
         except:
             self.fail('invalid_choice', input=data)
 
+class TemporaryFileSerializer(serializers.ModelSerializer):
+    """ Basic serializer for outputting temporary files """
+    class Meta:
+        model = TemporaryFile
+        fields = ['id',
+                  'name',
+                  'project',
+                  'user',
+                  'path',
+                  'lookup',
+                  'created_datetime',
+                  'eol_datetime']
+
 class UserSerializerBasic(serializers.ModelSerializer):
     """ Specify a basic serializer for outputting users."""
     class Meta:
