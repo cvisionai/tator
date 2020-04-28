@@ -861,3 +861,20 @@ class Analysis2D(AnalysisBase):
     attribute_x = ForeignKey(AttributeTypeBase, on_delete=CASCADE, related_name='attribute_x')
     attribute_y = ForeignKey(AttributeTypeBase, on_delete=CASCADE, related_name='attribute_y')
     plot_type = EnumField(TwoDPlotType)
+
+class TemporaryFile(Model):
+    """ Represents a temporary file in the system, can be used for algorithm results or temporary outputs """
+    name = CharField(max_length=128)
+    """ Human readable name for display purposes """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    """ Project the temporary file resides in """
+    user = ForeignKey(User, on_delete=PROTECT)
+    """ User who created the temporary file """
+    path = FilePathField(path=settings.MEDIA_ROOT, null=True, blank=True)
+    """ Path to file on storage """
+    lookup = SlugField(max_length=32)
+    """ unique lookup (md5sum of something useful) """
+    created_datetime = DateTimeField(auto_now_add=True)
+    """ Time that the file was created """
+    eol_datetime = DateTimeField()
+    """ Time the file expires (reaches EoL) """
