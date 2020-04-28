@@ -42,6 +42,8 @@ from .search import TatorSearch
 
 from collections import UserDict
 
+import pytz
+import datetime
 import logging
 import os
 
@@ -878,3 +880,10 @@ class TemporaryFile(Model):
     """ Time that the file was created """
     eol_datetime = DateTimeField()
     """ Time the file expires (reaches EoL) """
+
+    def expire(self):
+        """ Set a given temporary file as expired """
+        past = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        past = pytz.timezone("UTC").localize(past)
+        self.eol_datetime = past
+        self.save()
