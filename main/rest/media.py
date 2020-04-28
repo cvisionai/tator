@@ -189,7 +189,7 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             return response;
 
 class MediaUtil:
-    def __init__(self, video, temp_dir):
+    def __init__(self, video, temp_dir, quality=None):
         self._temp_dir = temp_dir
         # Do this for testing:
         #self._temp_dir = '/data/media/temp'
@@ -205,10 +205,18 @@ class MediaUtil:
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
         else:
-            self._video_file = video.media_files["streaming"][0]["path"]
-            self._height = video.media_files["streaming"][0]["resolution"][0]
-            self._width = video.media_files["streaming"][0]["resolution"][1]
-            segment_file = video.media_files["streaming"][0]["segment_info"]
+            if quality is None:
+                quality_idx = 0
+            else:
+                max_delta = sys.maxsize
+                for idx,media_info in enumerate(video.media_files["streaming"]):
+                    delta = abs(quality-media_info['resolution'][0])
+                    if delta < max_delta:
+                        quality_idx = idx
+            self._video_file = video.media_files["streaming"][quality_idx]["path"]
+            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
             segment_file = os.path.relpath(segment_file, settings.MEDIA_URL)
             segment_file = os.path.join(settings.MEDIA_ROOT, segment_file)
             with open(segment_file, 'r') as fp:
@@ -575,6 +583,7 @@ class GetFrameAPI(APIView):
             tile = params.get('tile', None)
             animate = params.get('animate', None)
             roi = params.get('roi', None)
+            quality = params.get('quality', None)
 
             for frame in frames:
                 if int(frame) >= video.num_frames:
@@ -616,7 +625,7 @@ class GetFrameAPI(APIView):
 
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                media_util = MediaUtil(video, temp_dir)
+                media_util = MediaUtil(video, temp_dir, quality)
                 if len(frames) > 1 and animate:
                     # Default to gif for animate, but mp4 is also supported
                     if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
@@ -664,8 +673,10 @@ class GetClipAPI(APIView):
             frameRanges=[]
             for t in frameRangesTuple:
                 frameRanges.append((int(t[0]), int(t[1])))
+
+            quality = params.get('quality', None)
             with tempfile.TemporaryDirectory() as temp_dir:
-                media_util = MediaUtil(video, temp_dir)
+                media_util = MediaUtil(video, temp_dir, quality)
                 fp = media_util.getClip(frameRanges)
                 with open(fp, 'rb') as data_file:
                     response = Response(data_file.read())

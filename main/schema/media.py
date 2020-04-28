@@ -196,6 +196,16 @@ class GetFrameSchema(AutoSchema):
                         'maximum': 15,
                     },
                 },
+                {
+                    'name': 'quality',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Source resolution to use (default to highest quality)',
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                },
             ]
         return params
 
@@ -243,6 +253,16 @@ class GetClipSchema(AutoSchema):
                         },
                     },
                     'example': ["0:30", "50:90"],
+                },
+                {
+                    'name': 'quality',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Source resolution to use (default to highest quality)',
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
                 },
             ]
         return params
