@@ -15,12 +15,14 @@ from rest_framework.schemas.openapi import AutoSchema
 from ..schema import parse
 
 class TemporaryFileAPI(generics.RetrieveDestroyAPIView):
+    """ Access a detailed view of a temporary file given an id """
     queryset = TemporaryFile.objects.all()
     serializer_class = TemporaryFileSerializer
     permission_classes = [ProjectEditPermission]
     schema = TemporaryFileDetailSchema()
 
 class TemporaryFileListAPI(generics.ListAPIView):
+    """ Access a list of temporary files associated with a project """
     schema = TemporaryFileListSchema()
     permission_classes = [ProjectEditPermission]
     serializer_class = TemporaryFileSerializer
