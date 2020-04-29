@@ -896,6 +896,7 @@ class TemporaryFile(Model):
         """
         extension = os.path.splitext(name)[-1]
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
+        os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         shutil.copyfile(path, destination_fp)
 
         now = datetime.datetime.utcnow()
