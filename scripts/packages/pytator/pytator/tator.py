@@ -54,6 +54,7 @@ class Tator:
         self.Version = apiImpl.Version((url,token,project))
         self.GetFrame = apiImpl.GetFrame((url,token,project))
         self.StateGraphic = apiImpl.StateGraphic((url,token,project))
+        self.TemporaryFile = apiImpl.TemporaryFile((url,token,project))
 
     def baseURL(self):
         """ Returns the URL for accessing site content """

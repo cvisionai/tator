@@ -963,3 +963,29 @@ class GetFrame():
         if response.status_code != 200:
             print(f"ERROR {response.status_code} from GetFrame")
         return response.status_code, response.content
+
+class TemporaryFile(APIElement):
+    """ Defines interactions to Media elements at `/rest/TemporaryFiles` """
+    def __init__(self, api):
+        super().__init__(api, "TemporaryFiles", "TemporaryFile")
+        split=urlsplit(self.url)
+        self.tusURL=urljoin("https://"+split.netloc, "files/")
+
+    def uploadFile(self, filePath, lookup=None, hours=24, name=None):
+        if name is None:
+            name = os.path.basename(filePath)
+
+        if lookup is None:
+            lookup = name
+
+        tus = TusClient(self.tusURL)
+        chunk_size=100*1024*1024 # 100 Mb
+        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        for _ in range(num_chunks):
+            uploader.upload_chunk()
+
+        return self.new({"url": uploader.url,
+                         "name": name,
+                         "lookup": lookup,
+                         "hours": 24})
