@@ -678,13 +678,22 @@ class GetClipAPI(APIView):
                 frameRanges.append((int(t[0]), int(t[1])))
 
             quality = params.get('quality', None)
-            with tempfile.TemporaryDirectory() as temp_dir:
-                media_util = MediaUtil(video, temp_dir, quality)
-                fp = media_util.getClip(frameRanges)
-                h = hashlib.new('md5', f"{params}".encode())
-                temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, request.user, lookup=h.hexdigest(), hours=24)
-                responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
-                response = Response(responseData)
+            h = hashlib.new('md5', f"{params}".encode())
+            lookup = h.hexdigest()
+
+            # Check to see if we already made this clip
+            matches=TemporaryFile.objects.filter(project=project, lookup=lookup)
+            if matches.exists():
+                temp_file = matches[0]
+            else:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    media_util = MediaUtil(video, temp_dir, quality)
+                    fp = media_util.getClip(frameRanges)
+
+                    temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, request.user, lookup=lookup, hours=24)
+
+            responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
+            response = Response(responseData)
         except ObjectDoesNotExist as dne:
             response=Response({"message": "Video Not Found"},
                               status=status.HTTP_404_NOT_FOUND)
