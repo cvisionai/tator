@@ -46,6 +46,8 @@ import pytz
 import datetime
 import logging
 import os
+import shutil
+import uuid
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -887,6 +889,27 @@ class TemporaryFile(Model):
         past = pytz.timezone("UTC").localize(past)
         self.eol_datetime = past
         self.save()
+
+    def from_local(path, name, project, user, lookup, hours):
+        """ Given a local file create a temporary file storage object
+        :returns A saved TemporaryFile:
+        """
+        extension = os.path.splitext(name)[-1]
+        destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
+        shutil.copyfile(path, destination_fp)
+
+        now = datetime.datetime.utcnow()
+        eol =  now + datetime.timedelta(hours=hours)
+
+        temp_file = TemporaryFile(name=name,
+                                  project=project,
+                                  user=user,
+                                  path=destination_fp,
+                                  lookup=lookup,
+                                  created_datetime=now,
+                                  eol_datetime = eol)
+        temp_file.save()
+        return temp_file
 
 @receiver(pre_delete, sender=TemporaryFile)
 def temporary_file_delete(sender, instance, **kwargs):

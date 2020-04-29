@@ -75,22 +75,14 @@ class TemporaryFileListAPI(generics.ListAPIView):
             hours = params['hours']
             if hours == None:
                 hours = 24
-            now = datetime.datetime.utcnow()
-            eol =  now + datetime.timedelta(hours=hours)
-            extension = os.path.splitext(name)[-1]
+
             local_file_path = os.path.join(settings.UPLOAD_ROOT,url.split('/')[-1])
-            destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project}", f"{uuid.uuid1()}{extension}")
-            logger.info(f"Local path = {local_file_path}")
-            logger.info(f"Local path = {destination_fp}")
-            shutil.copyfile(local_file_path, destination_fp)
-            temporary_file = TemporaryFile(name=params['name'],
-                                           project=Project.objects.get(pk=project),
-                                           user=request.user,
-                                           path=destination_fp,
-                                           lookup=params['lookup'],
-                                           created_datetime=now,
-                                           eol_datetime = eol)
-            temporary_file.save()
+            TemporaryFile.from_local(path=local_file_path,
+                                     name=params['name'],
+                                     project=Project.objects.get(pk=project),
+                                     user=request.user,
+                                     lookup=params['lookup'],
+                                     hours = hours)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
