@@ -667,8 +667,7 @@ class GetClipAPI(APIView):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
-            frames based on the input parameter
+        """ Facility to get a clip from the server. Returns a temporary file object that expires in 24 hours.
         """
         try:
             # upon success we can return an image
