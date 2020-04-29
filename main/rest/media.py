@@ -659,6 +659,10 @@ class GetClipAPI(APIView):
     schema = GetClipSchema()
     permission_classes = [ProjectViewOnlyPermission]
 
+    def get_serializer(self):
+        """ This allows the AutoSchema to fill in the response details nicely"""
+        return TemporaryFileSerializer()
+
     def get_queryset(self):
         return EntityBase.objects.all()
 

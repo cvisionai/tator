@@ -269,11 +269,3 @@ class GetClipSchema(AutoSchema):
 
     def _get_request_body(self, path, method):
         return {}
-
-    def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses['200'] = {'description': 'Temporary file definition for clip'}
-        return responses
