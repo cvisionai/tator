@@ -8,11 +8,11 @@ metadata:
     type: web
 spec:
   schedule: {{ .schedule }}
+  concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
       template:
         spec:
-          concurrencyPolicy: "Forbid"
           restartPolicy: "OnFailure"
           nodeSelector:
             {{ .selector }}
