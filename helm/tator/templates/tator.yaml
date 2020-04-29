@@ -10,4 +10,7 @@
 ---
 {{- $sizerSettings := dict "Values" .Values "name" "sizer-deployment" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "init" "[echo]" "replicas" "1" }}
 {{include "tator.template" $sizerSettings }}
+---
+{{- $pruneSettings := dict "Values" .Values "name" "prune-crone" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunetemporaryfiles\"]" "schedule" "0 * * * *" }}
+{{include "tatorCron.template" $pruneSettings }}
 
