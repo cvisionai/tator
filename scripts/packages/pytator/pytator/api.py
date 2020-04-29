@@ -972,6 +972,7 @@ class TemporaryFile(APIElement):
         self.tusURL=urljoin("https://"+split.netloc, "files/")
 
     def uploadFile(self, filePath, lookup=None, hours=24, name=None):
+        """ Upload a file to the temporary file storage location """
         if name is None:
             name = os.path.basename(filePath)
 
@@ -989,3 +990,20 @@ class TemporaryFile(APIElement):
                          "name": name,
                          "lookup": lookup,
                          "hours": 24})
+
+    def downloadFile(self, element, out_path):
+        """ Download a media file from Tator to an off-line location
+
+        :param dict element: Dictionary from :func:`TemporaryFile.filter`
+        :param path-like out_path: Path to where to download
+        """
+
+        url=element['path']
+
+        # Supply token here for eventual media authorization
+        with requests.get(url, stream=True, headers=self.headers) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
