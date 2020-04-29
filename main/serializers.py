@@ -10,6 +10,7 @@ from django.db.models.functions import Cast
 from .models import *
 import logging
 import datetime
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,9 @@ class TemporaryFileSerializer(serializers.ModelSerializer):
             relpath = os.path.relpath(obj.path, settings.MEDIA_ROOT)
             urlpath = os.path.join(settings.MEDIA_URL, relpath)
             url = self.context['view'].request.build_absolute_uri(urlpath)
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Exception {e}")
+            logger.warning(traceback.format_exc())
         return url
 
     class Meta:

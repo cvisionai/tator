@@ -275,5 +275,5 @@ class GetClipSchema(AutoSchema):
         responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
         responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of frame image.'}
+            responses['200'] = {'description': 'Temporary file definition for clip'}
         return responses

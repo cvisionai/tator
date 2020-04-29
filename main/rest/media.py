@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import mmap
 import sys
+import hashlib
 
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
@@ -27,7 +28,9 @@ from ..models import EntityBase
 from ..models import EntityMediaBase
 from ..models import EntityMediaImage
 from ..models import EntityMediaVideo
+from ..models import TemporaryFile
 from ..serializers import EntityMediaSerializer
+from ..serializers import TemporaryFileSerializer
 from ..search import TatorSearch
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
@@ -654,7 +657,6 @@ class GetFrameAPI(APIView):
 
 class GetClipAPI(APIView):
     schema = GetClipSchema()
-    renderer_classes = (Mp4Renderer,)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
@@ -668,6 +670,7 @@ class GetClipAPI(APIView):
             # upon success we can return an image
             params = parse(request)
             video = EntityMediaVideo.objects.get(pk=params['id'])
+            project = video.project
             frameRangesStr = params.get('frameRanges', None)
             frameRangesTuple=[frameRange.split(':') for frameRange in frameRangesStr]
             frameRanges=[]
@@ -678,14 +681,16 @@ class GetClipAPI(APIView):
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir, quality)
                 fp = media_util.getClip(frameRanges)
-                with open(fp, 'rb') as data_file:
-                    response = Response(data_file.read())
+                h = hashlib.new('md5', f"{params}".encode())
+                temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, request.user, lookup=h.hexdigest(), hours=24)
+                responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
+                response = Response(responseData)
         except ObjectDoesNotExist as dne:
-            response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
+            response=Response({"message": "Video Not Found"},
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
-            response=Response(MediaUtil.generate_error_image(400, str(e)),
+            response=Response({"message" :str(e), "details": traceback.format_exc()},
                               status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
         finally:
