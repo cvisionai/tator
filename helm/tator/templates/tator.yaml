@@ -5,10 +5,10 @@
 {{- $daphneSettings := dict "Values" .Values "name" "daphne-deployment" "app" "daphne" "selector" "webServer: \"yes\""  "command" "[daphne]" "args" "[\"-b\", \"0.0.0.0\", \"-p\", \"8001\", \"tator_online.asgi:application\"]" "init" "[echo]" "replicas" .Values.hpa.daphneMinReplicas }}
 {{include "tator.template" $daphneSettings }}
 ---
-{{- $prunerSettings := dict "Values" .Values "name" "prune-messages-cron" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "schedule" "0-59 * * * *" }}
+{{- $prunerSettings := dict "Values" .Values "name" "prune-messages-cron" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "schedule" "0 * * * *" }}
 {{include "tatorCron.template" $prunerSettings }}
 ---
-{{- $sizerSettings := dict "Values" .Values "name" "sizer-cron" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "schedule" "0-59 * * * *"  }}
+{{- $sizerSettings := dict "Values" .Values "name" "sizer-cron" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "schedule" "0 * * * *"  }}
 {{include "tatorCron.template" $sizerSettings }}
 ---
 {{- $tempSettings := dict "Values" .Values "name" "prune-temp-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunetemporaryfiles\"]" "schedule" "0 * * * *" }}
