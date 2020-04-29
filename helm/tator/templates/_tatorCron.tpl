@@ -12,6 +12,7 @@ spec:
     spec:
       template:
         spec:
+          concurrencyPolicy: "Forbid"
           restartPolicy: "OnFailure"
           nodeSelector:
             {{ .selector }}
