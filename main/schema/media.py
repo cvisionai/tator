@@ -196,6 +196,16 @@ class GetFrameSchema(AutoSchema):
                         'maximum': 15,
                     },
                 },
+                {
+                    'name': 'quality',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Source resolution to use (default to highest quality)',
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                },
             ]
         return params
 
@@ -210,3 +220,52 @@ class GetFrameSchema(AutoSchema):
             responses['200'] = {'description': 'Successful retrieval of frame image.'}
         return responses
 
+
+class GetClipSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        operation['tags'] = ['GetClip']
+        return operation
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying a media object.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        params = []
+        if method == 'GET':
+            params = [
+                {
+                    'name': 'frameRanges',
+                    'in': 'query',
+                    'required':True,
+                    'description': 'Comma-seperated list of frame ranges to capture.',
+                    'explode': False,
+                    'schema': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'string',
+                        },
+                    },
+                    'example': ["0:30", "50:90"],
+                },
+                {
+                    'name': 'quality',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Source resolution to use (default to highest quality)',
+                    'schema': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                },
+            ]
+        return params
+
+    def _get_request_body(self, path, method):
+        return {}

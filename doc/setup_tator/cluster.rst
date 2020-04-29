@@ -766,6 +766,10 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
     Ability to specify the size allocated to the pvc for transcoding. This can
     limit the maximum size of an upload. [Default if not specifed: "10Gi"]
 
+  transcoderCpuLimit
+    Ability to specify the cpu limit allocated to the pvc for transcoding.
+    [Default if not specifed: "4000m"]
+
   djangoSecretKey
     A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
 

@@ -64,10 +64,15 @@ def makeLocalizationsRelative():
 def updateProjectTotals(force=False):
     projects=Project.objects.all()
     for project in projects:
+        temp_files = TemporaryFile.objects.filter(project=project)
         files = EntityMediaBase.objects.filter(project=project)
-        if (files.count() != project.num_files) or force:
-            project.num_files = files.count()
+        if (files.count() + temp_files.count() != project.num_files) or force:
+            project.num_files = files.count() + temp_files.count()
             project.size = 0
+            for file in temp_files:
+                if file.path:
+                    if os.path.exists(file.path):
+                        project.size += os.path.getsize(file.path)
             for file in files:
                 if file.file:
                     if os.path.exists(file.file.path):

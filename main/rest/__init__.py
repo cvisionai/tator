@@ -15,6 +15,7 @@ from .localization_type import LocalizationTypeDetailAPI
 from .media import MediaListAPI
 from .media import MediaDetailAPI
 from .media import GetFrameAPI
+from .media import GetClipAPI
 from .media_next import MediaNextAPI
 from .media_prev import MediaPrevAPI
 from .media_sections import MediaSectionsAPI
@@ -34,6 +35,8 @@ from .state import StateDetailAPI
 from .state import StateGraphicAPI
 from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI
+from .temporary_file import TemporaryFileAPI
+from .temporary_file import TemporaryFileListAPI
 from .transcode import TranscodeAPI
 from .tree_leaf import TreeLeafSuggestionAPI
 from .tree_leaf import TreeLeafListAPI

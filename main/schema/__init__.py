@@ -15,6 +15,7 @@ from .localization_type import LocalizationTypeDetailSchema
 from .media import MediaListSchema
 from .media import MediaDetailSchema
 from .media import GetFrameSchema
+from .media import GetClipSchema
 from .media_next import MediaNextSchema
 from .media_prev import MediaPrevSchema
 from .media_sections import MediaSectionsSchema
@@ -34,6 +35,8 @@ from .state import StateDetailSchema
 from .state import StateGraphicSchema
 from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
+from .temporary_file import TemporaryFileDetailSchema
+from .temporary_file import TemporaryFileListSchema
 from .transcode import TranscodeSchema
 from .tree_leaf import TreeLeafSuggestionSchema
 from .tree_leaf import TreeLeafListSchema

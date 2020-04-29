@@ -141,6 +141,7 @@ cluster-install:
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade: main/version.py images
+	kubectl delete cronjobs --all
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -444,5 +445,8 @@ clean_js:
 images:
 	make ${IMAGES}
 
-lazyPush:
-	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
+TOKEN=$(shell cat token.txt)
+URL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"] + "/rest")')
+.PHONY: pytest
+pytest:
+	cd scripts/packages/pytator/test && pytest --url $(URL) --token $(TOKEN)
