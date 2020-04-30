@@ -468,8 +468,8 @@ class MediaUtil:
 
         return output_file
 
-    def getAnimation(self,frames, roi, fps, render_format):
-        if self._generateFrameImages(frames, roi, render_format="jpg") == False:
+    def getAnimation(self,frames, roi, fps, render_format, force_scale):
+        if self._generateFrameImages(frames, roi, render_format="jpg", force_scale=force_scale) == False:
             return None
 
         mp4_args = ["ffmpeg",

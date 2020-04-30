@@ -425,7 +425,7 @@ class StateGraphicAPI(APIView):
                         pass
                     else:
                         request.accepted_renderer = GifRenderer()
-                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format)
+                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format, force_scale=force_scale)
                     with open(gif_fp, 'rb') as data_file:
                         request.accepted_renderer = GifRenderer()
                         response = Response(data_file.read())
