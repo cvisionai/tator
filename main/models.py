@@ -42,8 +42,12 @@ from .search import TatorSearch
 
 from collections import UserDict
 
+import pytz
+import datetime
 import logging
 import os
+import shutil
+import uuid
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
@@ -861,3 +865,54 @@ class Analysis2D(AnalysisBase):
     attribute_x = ForeignKey(AttributeTypeBase, on_delete=CASCADE, related_name='attribute_x')
     attribute_y = ForeignKey(AttributeTypeBase, on_delete=CASCADE, related_name='attribute_y')
     plot_type = EnumField(TwoDPlotType)
+
+class TemporaryFile(Model):
+    """ Represents a temporary file in the system, can be used for algorithm results or temporary outputs """
+    name = CharField(max_length=128)
+    """ Human readable name for display purposes """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    """ Project the temporary file resides in """
+    user = ForeignKey(User, on_delete=PROTECT)
+    """ User who created the temporary file """
+    path = FilePathField(path=settings.MEDIA_ROOT, null=True, blank=True)
+    """ Path to file on storage """
+    lookup = SlugField(max_length=32)
+    """ unique lookup (md5sum of something useful) """
+    created_datetime = DateTimeField()
+    """ Time that the file was created """
+    eol_datetime = DateTimeField()
+    """ Time the file expires (reaches EoL) """
+
+    def expire(self):
+        """ Set a given temporary file as expired """
+        past = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        past = pytz.timezone("UTC").localize(past)
+        self.eol_datetime = past
+        self.save()
+
+    def from_local(path, name, project, user, lookup, hours):
+        """ Given a local file create a temporary file storage object
+        :returns A saved TemporaryFile:
+        """
+        extension = os.path.splitext(name)[-1]
+        destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
+        os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
+        shutil.copyfile(path, destination_fp)
+
+        now = datetime.datetime.utcnow()
+        eol =  now + datetime.timedelta(hours=hours)
+
+        temp_file = TemporaryFile(name=name,
+                                  project=project,
+                                  user=user,
+                                  path=destination_fp,
+                                  lookup=lookup,
+                                  created_datetime=now,
+                                  eol_datetime = eol)
+        temp_file.save()
+        return temp_file
+
+@receiver(pre_delete, sender=TemporaryFile)
+def temporary_file_delete(sender, instance, **kwargs):
+    if os.path.exists(instance.path):
+        os.remove(instance.path)

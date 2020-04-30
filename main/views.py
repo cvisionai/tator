@@ -196,7 +196,7 @@ def ErrorNotifierView(request, code,message,details=None):
     context['code'] = code
     context['msg'] = message
     context['details'] = details
-    response=render('error-page.html', context)
+    response=render(request,'error-page.html', context=context)
     response.status_code = code
 
     # Generate slack message

@@ -103,6 +103,12 @@ class APIElement:
                return None
 
         """
+        allObjects=self.filter(params)
+        if allObjects:
+            return pd.DataFrame(data=allObjects,
+                                columns=allObjects[0].keys())
+        else:
+            return None
     def all(self):
         """ Get list of all the elements of an endpoint as a list
 
@@ -957,3 +963,47 @@ class GetFrame():
         if response.status_code != 200:
             print(f"ERROR {response.status_code} from GetFrame")
         return response.status_code, response.content
+
+class TemporaryFile(APIElement):
+    """ Defines interactions to Media elements at `/rest/TemporaryFiles` """
+    def __init__(self, api):
+        super().__init__(api, "TemporaryFiles", "TemporaryFile")
+        split=urlsplit(self.url)
+        self.tusURL=urljoin("https://"+split.netloc, "files/")
+
+    def uploadFile(self, filePath, lookup=None, hours=24, name=None):
+        """ Upload a file to the temporary file storage location """
+        if name is None:
+            name = os.path.basename(filePath)
+
+        if lookup is None:
+            lookup = name
+
+        tus = TusClient(self.tusURL)
+        chunk_size=100*1024*1024 # 100 Mb
+        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        for _ in range(num_chunks):
+            uploader.upload_chunk()
+
+        return self.new({"url": uploader.url,
+                         "name": name,
+                         "lookup": lookup,
+                         "hours": 24})
+
+    def downloadFile(self, element, out_path):
+        """ Download a media file from Tator to an off-line location
+
+        :param dict element: Dictionary from :func:`TemporaryFile.filter`
+        :param path-like out_path: Path to where to download
+        """
+
+        url=element['path']
+
+        # Supply token here for eventual media authorization
+        with requests.get(url, stream=True, headers=self.headers) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)

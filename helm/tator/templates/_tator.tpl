@@ -29,6 +29,8 @@ spec:
           args: {{ .args }}
           resources:
             limits:
+              cpu: 8000m
+            requests:
               cpu: 500m
               memory: 1Gi
           env:
@@ -77,6 +79,8 @@ spec:
             {{- end }}
             - name: TRANSCODER_PVC_SIZE
               value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
+            - name: TRANSCODER_CPU_LIMIT
+              value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:

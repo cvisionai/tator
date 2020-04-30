@@ -82,6 +82,9 @@ urlpatterns += [
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
+    path('rest/GetClip/<int:id>',
+         GetClipAPI.as_view(),
+    ),
     path(
         'rest/FrameAssociation/<int:id>',
         FrameAssociationDetailAPI.as_view(),
@@ -210,6 +213,14 @@ urlpatterns += [
     path(
         'rest/StateType/<int:id>',
         StateTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/TemporaryFile/<int:pk>',
+        TemporaryFileAPI.as_view(),
+    ),
+    path(
+        'rest/TemporaryFiles/<int:project>',
+        TemporaryFileListAPI.as_view(),
     ),
     path(
         'rest/Transcode/<int:project>',

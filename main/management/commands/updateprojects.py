@@ -11,7 +11,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         waitForMigrations()
-        while True:
-            updateProjectTotals()
-            time.sleep(10)
+        updateProjectTotals()
 

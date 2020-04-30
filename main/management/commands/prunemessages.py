@@ -48,31 +48,29 @@ class Command(BaseCommand):
 
         waitForMigrations()
 
-        while True:
-            for project in Project.objects.all():
-                latest_grp = 'upload_latest_' + str(project.id)
-                messages = upload_messages_by_swid(self.rds, latest_grp)
-                for swid in messages:
-                    last = parse(self.rds.hget('sw_latest', swid))
-                    now = datetime.datetime.now(datetime.timezone.utc)
-                    if (now - last) > max_time:
-                        logger.info(
-                            f"Service worker with ID {swid} timed out! "
-                            "Clearing its status messages..."
+        for project in Project.objects.all():
+            latest_grp = 'upload_latest_' + str(project.id)
+            messages = upload_messages_by_swid(self.rds, latest_grp)
+            for swid in messages:
+                last = parse(self.rds.hget('sw_latest', swid))
+                now = datetime.datetime.now(datetime.timezone.utc)
+                if (now - last) > max_time:
+                    logger.info(
+                        f"Service worker with ID {swid} timed out! "
+                        "Clearing its status messages..."
+                    )
+                    for msg in messages[swid]:
+                        prog = ProgressProducer(
+                            'upload',
+                            project.id,
+                            msg['uid_gid'],
+                            msg['uid'],
+                            msg['name'],
+                            msg['user'],
+                            {'section': msg['section']},
                         )
-                        for msg in messages[swid]:
-                            prog = ProgressProducer(
-                                'upload',
-                                project.id,
-                                msg['uid_gid'],
-                                msg['uid'],
-                                msg['name'],
-                                msg['user'],
-                                {'section': msg['section']},
-                            )
-                            prog.failed("Timed out!")
-                            time.sleep(0.01)
-                        self.rds.hdel('sw_latest', swid)
-            time.sleep(5)
+                        prog.failed("Timed out!")
+                        time.sleep(0.01)
+                    self.rds.hdel('sw_latest', swid)
 
 Command.setup_redis()
