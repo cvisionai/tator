@@ -32,6 +32,7 @@ from ..models import TemporaryFile
 from ..serializers import EntityMediaSerializer
 from ..serializers import TemporaryFileSerializer
 from ..search import TatorSearch
+from ..renderers import PngRenderer
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
@@ -344,7 +345,7 @@ class MediaUtil:
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
-    def _generateFrameImages(self, frames, rois=None):
+    def _generateFrameImages(self, frames, rois=None, render_format="jpg"):
         """ Generate a jpg for each requested frame and store in the working directory """
         frames=[int(frame) for frame in frames]
         crop_filter = None
@@ -373,7 +374,7 @@ class MediaUtil:
             if crop_filter:
                 outputs.extend(["-vf", crop_filter[frame_idx]])
 
-            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.jpg"))
+            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
             if frame in lookup:
                 inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
             else:
@@ -423,7 +424,7 @@ class MediaUtil:
         return output_file
 
 
-    def getTileImage(self, frames, rois=None, tile_size=None):
+    def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg"):
         """ Generate a tile jpeg of the given frame/rois """
         # Compute tile size if not supplied explicitly
         try:
@@ -442,28 +443,28 @@ class MediaUtil:
             height = math.ceil(len(frames) / width)
             tile_size = f"{width}x{height}"
 
-        if self._generateFrameImages(frames, rois) == False:
+        if self._generateFrameImages(frames, rois, render_format=render_format) == False:
             return None
 
         output_file = None
         if len(frames) > 1:
             # Make a tiled jpeg
             tile_args = ["ffmpeg",
-                         "-i", os.path.join(self._temp_dir, f"%d.jpg"),
+                         "-i", os.path.join(self._temp_dir, f"%d.{render_format}"),
                          "-vf", f"tile={tile_size}",
                          "-q:v", "3",
-                         os.path.join(self._temp_dir,"tile.jpg")]
+                         os.path.join(self._temp_dir,"tile.{render_format}")]
             logger.info(tile_args)
             proc = subprocess.run(tile_args, check=True, capture_output=True)
             if proc.returncode == 0:
-                output_file = os.path.join(self._temp_dir,"tile.jpg")
+                output_file = os.path.join(self._temp_dir,"tile.{render_format}")
         else:
-            output_file = os.path.join(self._temp_dir,f"0.jpg")
+            output_file = os.path.join(self._temp_dir,f"0.{render_format}")
 
         return output_file
 
     def getAnimation(self,frames, roi, fps, render_format):
-        if self._generateFrameImages(frames, roi) == False:
+        if self._generateFrameImages(frames, roi, render_format="jpg") == False:
             return None
 
         mp4_args = ["ffmpeg",
@@ -567,8 +568,7 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
 
 class GetFrameAPI(APIView):
     schema = GetFrameSchema()
-    renderer_classes = (JpegRenderer,)
-    renderer_classes = (JpegRenderer, GifRenderer, Mp4Renderer)
+    renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
@@ -639,7 +639,8 @@ class GetFrameAPI(APIView):
                     with open(gif_fp, 'rb') as data_file:
                         response = Response(data_file.read())
                 else:
-                    tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size)
+                    logger.info(f"Accepted format = {request.accepted_renderer.format}")
+                    tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size, render_format=request.accepted_renderer.format)
                     with open(tiled_fp, 'rb') as data_file:
                         response = Response(data_file.read())
 
