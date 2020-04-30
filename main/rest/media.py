@@ -646,10 +646,12 @@ class GetFrameAPI(APIView):
 
 
         except ObjectDoesNotExist as dne:
+            request.accepted_renderer.format = "jpg"
             response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
+            request.accepted_renderer.format = "jpg"
             response=Response(MediaUtil.generate_error_image(400, str(e)),
                               status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
