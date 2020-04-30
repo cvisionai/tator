@@ -453,11 +453,11 @@ class MediaUtil:
                          "-i", os.path.join(self._temp_dir, f"%d.{render_format}"),
                          "-vf", f"tile={tile_size}",
                          "-q:v", "3",
-                         os.path.join(self._temp_dir,"tile.{render_format}")]
+                         os.path.join(self._temp_dir,f"tile.{render_format}")]
             logger.info(tile_args)
             proc = subprocess.run(tile_args, check=True, capture_output=True)
             if proc.returncode == 0:
-                output_file = os.path.join(self._temp_dir,"tile.{render_format}")
+                output_file = os.path.join(self._temp_dir,f"tile.{render_format}")
         else:
             output_file = os.path.join(self._temp_dir,f"0.{render_format}")
 
