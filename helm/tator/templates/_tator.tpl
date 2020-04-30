@@ -29,6 +29,8 @@ spec:
           args: {{ .args }}
           resources:
             limits:
+              cpu: 4000m
+            requests:
               cpu: 500m
               memory: 1Gi
           env:
