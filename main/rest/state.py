@@ -22,7 +22,7 @@ from ..models import LocalizationAssociation
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import EntityBase
-from ..renderers import JpegRenderer,GifRenderer,Mp4Renderer
+from ..renderers import PngRenderer,JpegRenderer,GifRenderer,Mp4Renderer
 from ..rest.media import MediaUtil
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
@@ -386,7 +386,7 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
 
 class StateGraphicAPI(APIView):
     schema = StateGraphicSchema()
-    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
+    renderer_classes = (PngRenderer,JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
@@ -444,9 +444,9 @@ class StateGraphicAPI(APIView):
                     tile_size=f"{len(frames)}x1"
                     tiled_fp = media_util.getTileImage(frames,
                                                        new_rois,
-                                                       tile_size)
+                                                       tile_size,
+                                                       render_format=request.accepted_renderer.format)
                     with open(tiled_fp, 'rb') as data_file:
-                        request.accepted_renderer = JpegRenderer()
                         response = Response(data_file.read())
 
 
