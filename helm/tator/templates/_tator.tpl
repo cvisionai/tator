@@ -29,7 +29,7 @@ spec:
           args: {{ .args }}
           resources:
             limits:
-              cpu: 4000m
+              cpu: 8000m
             requests:
               cpu: 500m
               memory: 1Gi
