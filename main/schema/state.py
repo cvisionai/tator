@@ -224,6 +224,16 @@ class StateGraphicSchema(AutoSchema):
                     'default': 2,
                 },
             },
+            {
+                'name': 'forceScale',
+                'in': 'query',
+                'required': False,
+                'description': 'wxh to force each tile prior to stich',
+                'schema': {
+                    'type': 'string',
+                    'example': '240x240',
+                },
+            },
         ]
 
     def _get_request_body(self, path, method):

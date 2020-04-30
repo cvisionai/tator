@@ -345,7 +345,7 @@ class MediaUtil:
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
-    def _generateFrameImages(self, frames, rois=None, render_format="jpg"):
+    def _generateFrameImages(self, frames, rois=None, render_format="jpg", force_scale=None):
         """ Generate a jpg for each requested frame and store in the working directory """
         frames=[int(frame) for frame in frames]
         crop_filter = None
@@ -356,7 +356,12 @@ class MediaUtil:
                 h = max(0,min(round(c[1]*self._height),self._height))
                 x = max(0,min(round(c[2]*self._width),self._width))
                 y = max(0,min(round(c[3]*self._height),self._height))
-                crop_filter.append(f"crop={w}:{h}:{x}:{y}")
+                if force_scale:
+                    scale_w=force_scale[0]
+                    scale_h=force_scale[1]
+                    crop_filter.append(f"crop={w}:{h}:{x}:{y},scale={scale_w}:{scale_h}")
+                else:
+                    crop_filter.append(f"crop={w}:{h}:{x}:{y}")
 
         logger.info(f"Processing {self._video_file}")
         args = ["ffmpeg"]
@@ -424,7 +429,7 @@ class MediaUtil:
         return output_file
 
 
-    def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg"):
+    def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg", force_scale=None):
         """ Generate a tile jpeg of the given frame/rois """
         # Compute tile size if not supplied explicitly
         try:
@@ -443,7 +448,7 @@ class MediaUtil:
             height = math.ceil(len(frames) / width)
             tile_size = f"{width}x{height}"
 
-        if self._generateFrameImages(frames, rois, render_format=render_format) == False:
+        if self._generateFrameImages(frames, rois, render_format=render_format, force_scale=force_scale) == False:
             return None
 
         output_file = None

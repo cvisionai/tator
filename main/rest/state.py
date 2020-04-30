@@ -57,10 +57,10 @@ class StateListAPI(APIView, AttributeFilterMixin):
 
         This endpoint supports bulk patch of user-defined state attributes and bulk delete.
         Both are accomplished using the same query parameters used for a GET request.
-    
-        It is importarant to know the fields required for a given entity_type_id as they are 
-        expected in the request data for this function. As an example, if the entity_type_id has 
-        attribute types associated with it named time and position, the JSON object must have 
+
+        It is importarant to know the fields required for a given entity_type_id as they are
+        expected in the request data for this function. As an example, if the entity_type_id has
+        attribute types associated with it named time and position, the JSON object must have
         them specified as keys.
     """
     schema=StateListSchema()
@@ -395,7 +395,7 @@ class StateGraphicAPI(APIView):
     def get(self, request, **kwargs):
         """ Get frame(s) of a given localization-associated state.
 
-            Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+            Use the mode argument to control whether it is an animated gif or a tiled jpg.
         """
         # TODO: Add logic for all state types
         try:
@@ -405,6 +405,10 @@ class StateGraphicAPI(APIView):
 
             mode = params['mode']
             fps = params['fps']
+            force_scale = None
+            if 'forceScale' in params:
+                force_scale = params['forceScale'].split('x')
+                assert len(force_scale) == 2
 
             typeObj = state.meta
             if typeObj.association != 'Localization':
@@ -434,18 +438,24 @@ class StateGraphicAPI(APIView):
                         if el[1] > max_h:
                             max_h = el[1]
 
-                    # rois have to be the same size box for tile to work
-                    new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
-                    for idx,r in enumerate(roi):
-                        print(f"{r} corrected to {new_rois[idx]}")
                     print(f"{max_w} {max_h}")
+                    # rois have to be the same size box for tile to work
+                    if force_scale is None:
+                        new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
+                        for idx,r in enumerate(roi):
+                            print(f"{r} corrected to {new_rois[idx]}")
+                    else:
+                        new_rois = roi
+                        print(f"Using a forced scale")
+
 
                     # Get a tiled fp as a film strip
                     tile_size=f"{len(frames)}x1"
                     tiled_fp = media_util.getTileImage(frames,
                                                        new_rois,
                                                        tile_size,
-                                                       render_format=request.accepted_renderer.format)
+                                                       render_format=request.accepted_renderer.format,
+                                                       force_scale=force_scale)
                     with open(tiled_fp, 'rb') as data_file:
                         response = Response(data_file.read())
 
