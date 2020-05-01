@@ -10,8 +10,6 @@ from django.http import Http404
 from redis import Redis
 
 from ..models import Algorithm
-from ..models import Membership
-from ..models import Permission
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobGroupDetailSchema
@@ -51,7 +49,7 @@ class JobGroupDetailAPI(APIView):
                 if msg['prefix'] == 'upload':
                     cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
                 elif msg['prefix'] == 'algorithm':
-                    alg = Algorithm.objects.get(name=msg['name'])
+                    alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
                     cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
 
                 # If cancel did not go through, attempt to delete any stale progress messages.

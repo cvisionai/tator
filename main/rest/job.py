@@ -1,10 +1,13 @@
 import traceback
+import os
+import json
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
+from redis import Redis
 
 from ..models import Algorithm
 from ..kube import TatorTranscode
@@ -32,17 +35,34 @@ class JobDetailAPI(APIView):
         response=Response({})
 
         try:
-            # Try finding the job via the kube api.
-            # Find the job and delete it.
+            # Parse parameters
             params = parse(request)
             run_uid = params['run_uid']
-            transcode_cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
-            if not transcode_cancelled:
-                for alg in Algorithm.objects.all():
-                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
-                    if algorithm_cancelled:
-                        break
-            if not (transcode_cancelled or algorithm_cancelled):
+
+            # Find the gid in redis.
+            rds = Redis(host=os.getenv('REDIS_HOST'))
+            if rds.hexists('uids', run_uid):
+                msg = json.loads(rds.hget('uids', run_uid))
+
+                # Attempt to cancel.
+                cancelled = False
+                if msg['prefix'] == 'upload':
+                    cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
+                elif msg['prefix'] == 'algorithm':
+                    alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
+                    cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
+
+                # If cancel did not go through, attempt to delete stale progress messages.
+                if not cancelled:
+                    prog = ProgressProducer(
+                        msg['prefix'],
+                        msg['project_id'],
+                        msg['uid'],
+                        msg['uid_gid'],
+                        msg['name'],
+                        self.request.user,
+                    )
+            else:
                 raise Http404
 
             response = Response({'message': f"Job with run UID {run_uid} deleted!"})

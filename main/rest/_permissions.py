@@ -48,10 +48,10 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
-            project = TatorTranscode().find_project(f"uid={uid}")
-            if not project:
-                for alg in Algorithm.objects.all():
-                    project = TatorAlgorithm(alg).find_project(f"uid={uid}")
+            rds = Redis(host=os.getenv('REDIS_HOST'))
+            if rds.hexists('uids', uid):
+                msg = json.loads(rds.hget('uids', uid))
+                project = msg['project_id']
         elif 'group_id' in view.kwargs:
             group_id = view.kwargs['group_id']
             rds = Redis(host=os.getenv('REDIS_HOST'))
