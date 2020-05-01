@@ -277,7 +277,14 @@ class SectionData {
     if (!this._uploadProcesses.has(process.uid)) {
       this._numMedia++;
     }
-    this._uploadProcesses.set(process.uid, process);
+    // If the process already exists, update it instead of rewriting it,
+    // since it may contain thumbnail info.
+    if (this._uploadProcesses.has(process.uid)) {
+      const existing = this._uploadProcesses.get(process.uid);
+      this._uploadProcesses.set(process.uid, {...existing, ...process});
+    } else {
+      this._uploadProcesses.set(process.uid, process);
+    }
     const currentIndex = this._uploadIds.indexOf(process.uid);
     const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
     if (currentIndex > -1) {
