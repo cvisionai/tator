@@ -39,7 +39,7 @@ class MediaDescription extends TatorElement {
   }
 
   setProgress(state, percent, msg) {
-    if (percent === null) {
+    if (percent === null || percent == 100) {
       this._progress.style.display = "none";
     } else {
       this._progress.style.display = "block";
