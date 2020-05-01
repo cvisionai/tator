@@ -22,9 +22,11 @@ spec:
           image: nginx:1.16
           imagePullPolicy: "IfNotPresent"
           resources:
-            limits:
+            requests:
               cpu: 300m
-              memory: 100Mi
+              memory: 200Mi
+            limits:
+              cpu: 4000m
           ports:
             - containerPort: 80
             - containerPort: 443
