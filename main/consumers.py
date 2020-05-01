@@ -43,9 +43,11 @@ class ProgressProducer:
         }
         self.group_header = {
             'type': 'progress',
+            'project_id': project_id,
             'gid': gid,
             'prefix': prefix,
             'name': name,
+            'user': str(user),
         }
 
     def _broadcast(self, state, msg, progress=None, aux=None):
@@ -61,7 +63,9 @@ class ProgressProducer:
         if aux is not None:
             msg = {**msg, **aux}
         async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
-        self.rds.hset(self.latest_grp, self.uid, json.dumps(msg))
+        json_msg = json.dumps(msg)
+        self.rds.hset(self.latest_grp, self.uid, json_msg)
+        self.rds.hset('uids', self.uid, json_msg)
         if 'swid' in msg:
             now = datetime.datetime.now(datetime.timezone.utc)
             self.rds.hset('sw_latest', msg['swid'], str(now))
@@ -82,14 +86,18 @@ class ProgressProducer:
             self.rds.hdel(self.latest_grp, self.gid)
             self.rds.delete(self.gid + ':started')
             self.rds.delete(self.gid + ':done')
+            self.rds.hdel('gids', self.gid)
         else:
-            self.rds.hset(self.latest_grp, self.gid, json.dumps(msg))
+            json_msg = json.dumps(msg)
+            self.rds.hset(self.latest_grp, self.gid, json_msg)
+            self.rds.hset('gids', self.gid, json_msg)
 
     def _clear_latest(self):
         """Clears the latest queue from redis.
         """
         self.rds.hset(self.gid + ':done', self.uid, self.uid)
         self.rds.hdel(self.latest_grp, self.uid)
+        self.rds.hdel('uids', self.uid)
         self._summary()
 
     def queued(self, msg):
