@@ -273,6 +273,7 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
+    components/warning-light.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
