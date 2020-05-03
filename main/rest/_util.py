@@ -85,8 +85,6 @@ def check_required_fields(datafields, attr_types, body):
                 else:
                     attrs[field] = attr_type.default
             else:
-                logger.info(f"ATTRIBUTE TYPE THAT FAILED: {attr_type}")
-                logger.info(f"ATTRIBUTE TYPE DEFAULT: {attr_type.default}")
                 # Missing a field and no default.
                 raise Exception(f'Missing attribute value for "{field}". Required for = '
                                 f'"{attr_type.applies_to.name}". Set a `default` on '

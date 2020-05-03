@@ -346,7 +346,6 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
