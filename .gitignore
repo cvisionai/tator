@@ -26,3 +26,4 @@ helm/tator/Chart.lock
 containers/*.whl
 real-secrets.yaml
 helm/tator/values.yaml
+token.txt

@@ -2,11 +2,15 @@ import tempfile
 import traceback
 import logging
 import os
+import json
 import subprocess
 import math
 import io
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
+import mmap
+import sys
+import hashlib
 
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
@@ -24,14 +28,18 @@ from ..models import EntityBase
 from ..models import EntityMediaBase
 from ..models import EntityMediaImage
 from ..models import EntityMediaVideo
+from ..models import TemporaryFile
 from ..serializers import EntityMediaSerializer
+from ..serializers import TemporaryFileSerializer
 from ..search import TatorSearch
+from ..renderers import PngRenderer
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import GetFrameSchema
+from ..schema import GetClipSchema
 from ..schema import parse
 
 from ._media_query import get_media_queryset
@@ -48,7 +56,7 @@ logger = logging.getLogger(__name__)
 class MediaListAPI(ListAPIView, AttributeFilterMixin):
     """ Interact with list of media.
 
-        A media may be an image or a video. Media are a type of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
 
         This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
@@ -185,8 +193,13 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             return response;
 
 class MediaUtil:
-    def __init__(self, video, temp_dir):
+    def __init__(self, video, temp_dir, quality=None):
         self._temp_dir = temp_dir
+        # Do this for testing:
+        #self._temp_dir = '/data/media/temp'
+        # If available we only attempt to fetch
+        # the part of the file we need to
+        self._segment_info = None
 
         if video.file:
             video_file = video.file.path
@@ -196,46 +209,227 @@ class MediaUtil:
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
         else:
-            self._video_file = video.media_files["streaming"][0]["path"]
-            self._height = video.media_files["streaming"][0]["resolution"][0]
-            self._width = video.media_files["streaming"][0]["resolution"][1]
+            if quality is None:
+                quality_idx = 0
+            else:
+                max_delta = sys.maxsize
+                for idx,media_info in enumerate(video.media_files["streaming"]):
+                    delta = abs(quality-media_info['resolution'][0])
+                    if delta < max_delta:
+                        quality_idx = idx
+            self._video_file = video.media_files["streaming"][quality_idx]["path"]
+            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+            segment_file = os.path.relpath(segment_file, settings.MEDIA_URL)
+            segment_file = os.path.join(settings.MEDIA_ROOT, segment_file)
+            with open(segment_file, 'r') as fp:
+                self._segment_info = json.load(fp)
+                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info['segments']) if x['name'] == 'moof']
+
 
         self._video_file = os.path.relpath(self._video_file, settings.MEDIA_URL)
         self._video_file = os.path.join(settings.MEDIA_ROOT, self._video_file)
 
         self._fps = video.fps
 
-    def frameToTimeStr(self, frame):
-        total_seconds = int(frame) / self._fps
+    def _getImpactedSegments(self, frames):
+        if self._segment_info is None:
+            return None
+
+
+        segment_list=[]
+        for frame_str in frames:
+            frame_seg=set()
+            frame_seg.add(0)
+            frame_seg.add(1)
+            # We already load the header so ignore those segments
+            frame = int(frame_str)
+            min_idx = 0
+            max_idx = len(self._moof_data)-1
+            # Handle frames and files with frame biases
+            if frame < self._moof_data[0][1]['frame_start']:
+                frame_seg.add(self._moof_data[0][0])
+                continue
+
+            last_segment = self._moof_data[max_idx][1] #Frame start/stop is in the moof
+            if frame >= last_segment['frame_start'] + last_segment['frame_samples']:
+                continue
+
+            # Do a binary search for the segment in question
+            while min_idx <= max_idx:
+                guess_idx = math.floor((max_idx + min_idx) / 2)
+                moof = self._moof_data[guess_idx][1]
+                if frame < moof['frame_start']:
+                    max_idx = max_idx - 1
+                elif frame >= moof['frame_start'] + moof['frame_samples']:
+                    min_idx = min_idx + 1
+                else:
+                    frame_seg.add(self._moof_data[guess_idx][0])
+                    frame_seg.add(self._moof_data[guess_idx][0]+1)
+                    if frame - moof['frame_start'] > moof['frame_samples'] - 5:
+                        # Handle boundary conditions
+                        if guess_idx + 1 in self._moof_data:
+                            frame_seg.add(self._moof_data[guess_idx+1][0])
+                            frame_seg.add(self._moof_data[guess_idx+1][0]+1)
+                    break
+
+            frame_seg = list(frame_seg)
+            frame_seg.sort()
+            segment_list.append((frame, frame_seg))
+        logger.info(f"Given {frames}, we need {segment_list}")
+        return segment_list
+
+    def _getImpactedSegmentsFromRanges(self, frameRanges):
+        segment_list=[]
+        logger.info(f"Frame Ranges = {frameRanges}")
+        for frameRange in frameRanges:
+            begin = frameRange[0]
+            end = frameRange[1]
+            begin_segments = self._getImpactedSegments([begin])
+            end_segments = self._getImpactedSegments([end])
+            range_segment_set = set()
+            for frame,frame_seg in [*begin_segments, *end_segments]:
+                for segment in frame_seg:
+                    range_segment_set.add(segment)
+            start_missing = begin_segments[0][1][-1]
+            end_missing = end_segments[0][1][2]
+            for frame_seg in range(start_missing, end_missing):
+                range_segment_set.add(frame_seg)
+            range_segment = list(range_segment_set)
+            range_segment.sort()
+            segment_list.append((frameRange, range_segment))
+        logger.info(f"Range-based segment list: {segment_list}")
+        return segment_list
+
+    def makeTemporaryVideos(self, segmentList):
+        """ Return a temporary mp4 for each impacted segment to limit IO to
+            cloud storage """
+        lookup = {}
+        for frame,segments in segmentList:
+            temp_video = os.path.join(self._temp_dir, f"{frame}.mp4")
+            preferred_block_size = 16*1024
+            sc_graph = [(0,0)]
+            segment_frame_start = sys.maxsize
+            # create a scatter/gather
+            for segment_idx in segments:
+                segment = self._segment_info['segments'][segment_idx]
+                last_io = sc_graph[len(sc_graph)-1]
+                if segment.get('frame_start',sys.maxsize) < segment_frame_start:
+                    segment_frame_start = segment['frame_start']
+                if last_io[0] + last_io[1] == segment['offset']:
+                    # merge contigous blocks
+                    sc_graph[len(sc_graph)-1] = (last_io[0], last_io[1] + segment['size'])
+                else:
+                    # A new block
+                    sc_graph.append((segment['offset'], segment['size']))
+
+            lookup[frame] = (segment_frame_start, temp_video)
+
+            logger.info(f"Scatter gather graph = {sc_graph}")
+            with open(self._video_file, "r+b") as vid_fp:
+                mm = mmap.mmap(vid_fp.fileno(),0)
+                with open(temp_video, "wb") as out_fp:
+                    for scatter in sc_graph:
+                        out_fp.write(mm[scatter[0]:scatter[0]+scatter[1]])
+
+        return lookup
+
+
+    def _frameToTimeStr(self, frame, relativeTo=None):
+        if relativeTo:
+            frame -= relativeTo
+        total_seconds = frame / self._fps
         hours = math.floor(total_seconds / 3600)
         minutes = math.floor((total_seconds % 3600) / 60)
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
-    def _generateFrameImages(self, frames, rois=None):
+    def _generateFrameImages(self, frames, rois=None, render_format="jpg", force_scale=None):
+        """ Generate a jpg for each requested frame and store in the working directory """
+        frames=[int(frame) for frame in frames]
         crop_filter = None
         if rois:
-            crop_filter = [f"crop={round(c[0]*self._width)}:{round(c[1]*self._height)}:{round(c[2]*self._width)}:{round(c[3]*self._height)}" for c in rois]
+            crop_filter=[]
+            for c in rois:
+                w = max(0,min(round(c[0]*self._width),self._width))
+                h = max(0,min(round(c[1]*self._height),self._height))
+                x = max(0,min(round(c[2]*self._width),self._width))
+                y = max(0,min(round(c[3]*self._height),self._height))
+                if force_scale:
+                    scale_w=force_scale[0]
+                    scale_h=force_scale[1]
+                    crop_filter.append(f"crop={w}:{h}:{x}:{y},scale={scale_w}:{scale_h}")
+                else:
+                    crop_filter.append(f"crop={w}:{h}:{x}:{y}")
 
         logger.info(f"Processing {self._video_file}")
         args = ["ffmpeg"]
         inputs = []
         outputs = []
+
+        # attempt to make a temporary file in a fast manner to speed up AWS access
+        impactedSegments = self._getImpactedSegments(frames)
+        lookup = {}
+        if impactedSegments:
+            lookup = self.makeTemporaryVideos(impactedSegments)
+
         for frame_idx,frame in enumerate(frames):
             outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
             if crop_filter:
                 outputs.extend(["-vf", crop_filter[frame_idx]])
 
-            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.jpg"))
-            inputs.extend(["-ss", self.frameToTimeStr(frame), "-i", self._video_file])
+            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
+            if frame in lookup:
+                inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
+            else:
+                # If we didn't make per segment mp4s, use the big one
+                inputs.extend(["-ss", self._frameToTimeStr(frame), "-i", self._video_file])
 
         # Now add all the cmds in
         args.extend(inputs)
         args.extend(outputs)
+        logger.info(args)
         proc = subprocess.run(args, check=True, capture_output=True)
         return proc.returncode == 0
 
-    def getTileImage(self, frames, rois=None, tile_size=None):
+    def getClip(self, frameRanges):
+        """ Given a list of frame ranges generate a temporary mp4
+
+            :param frameRanges: tuple or list of tuples representing (begin,end) -- range is inclusive!
+        """
+        if type(frameRanges) is tuple:
+            frameRanges = [frameRanges]
+
+        impactedSegments=self._getImpactedSegmentsFromRanges(frameRanges)
+        assert not impactedSegments is None, "Unable to calculate impacted video segments"
+        lookup = self.makeTemporaryVideos(impactedSegments)
+
+        logger.info(f"Lookup = {lookup}")
+        with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
+            for idx,(_,fp) in enumerate(lookup.values()):
+                mux_0 = os.path.join(self._temp_dir, f"{idx}_0.mp4")
+                args = ["ffmpeg",
+                        "-i", fp,
+                        "-c", "copy",
+                        "-muxpreload", "0",
+                        "-muxdelay", "0",
+                        mux_0]
+                proc = subprocess.run(args, check=True, capture_output=True)
+                vid_list.write(f"file '{mux_0}'\n")
+
+        output_file = os.path.join(self._temp_dir, "concat.mp4")
+        args = ["ffmpeg",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", os.path.join(self._temp_dir, "vid_list.txt"),
+                "-c", "copy",
+                output_file]
+        proc = subprocess.run(args, check=True, capture_output=True)
+        return output_file
+
+
+    def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg", force_scale=None):
         """ Generate a tile jpeg of the given frame/rois """
         # Compute tile size if not supplied explicitly
         try:
@@ -254,28 +448,28 @@ class MediaUtil:
             height = math.ceil(len(frames) / width)
             tile_size = f"{width}x{height}"
 
-        if self._generateFrameImages(frames, rois) == False:
+        if self._generateFrameImages(frames, rois, render_format=render_format, force_scale=force_scale) == False:
             return None
 
         output_file = None
         if len(frames) > 1:
             # Make a tiled jpeg
             tile_args = ["ffmpeg",
-                         "-i", os.path.join(self._temp_dir, f"%d.jpg"),
+                         "-i", os.path.join(self._temp_dir, f"%d.{render_format}"),
                          "-vf", f"tile={tile_size}",
                          "-q:v", "3",
-                         os.path.join(self._temp_dir,"tile.jpg")]
+                         os.path.join(self._temp_dir,f"tile.{render_format}")]
             logger.info(tile_args)
             proc = subprocess.run(tile_args, check=True, capture_output=True)
             if proc.returncode == 0:
-                output_file = os.path.join(self._temp_dir,"tile.jpg")
+                output_file = os.path.join(self._temp_dir,f"tile.{render_format}")
         else:
-            output_file = os.path.join(self._temp_dir,f"0.jpg")
+            output_file = os.path.join(self._temp_dir,f"0.{render_format}")
 
         return output_file
 
-    def getAnimation(self,frames, roi, fps, render_format):
-        if self._generateFrameImages(frames, roi) == False:
+    def getAnimation(self,frames, roi, fps, render_format, force_scale):
+        if self._generateFrameImages(frames, roi, render_format="jpg", force_scale=force_scale) == False:
             return None
 
         mp4_args = ["ffmpeg",
@@ -328,7 +522,7 @@ class MediaUtil:
 class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
     """ Interact with individual media.
 
-        A media may be an image or a video. Media are a type of entity in Tator, 
+        A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
     """
     schema = MediaDetailSchema()
@@ -365,7 +559,7 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
                 media_object.last_edit_end = params['last_edit_end']
 
             media_object.save()
-                
+
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
@@ -379,15 +573,14 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
 
 class GetFrameAPI(APIView):
     schema = GetFrameSchema()
-    renderer_classes = (JpegRenderer,)
-    renderer_classes = (JpegRenderer, GifRenderer, Mp4Renderer)
+    renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
         return EntityBase.objects.all()
 
     def get(self, request, **kwargs):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of 
+        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
             frames based on the input parameter
         """
         try:
@@ -398,6 +591,7 @@ class GetFrameAPI(APIView):
             tile = params.get('tile', None)
             animate = params.get('animate', None)
             roi = params.get('roi', None)
+            quality = params.get('quality', None)
 
             for frame in frames:
                 if int(frame) >= video.num_frames:
@@ -439,7 +633,7 @@ class GetFrameAPI(APIView):
 
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                media_util = MediaUtil(video, temp_dir)
+                media_util = MediaUtil(video, temp_dir, quality)
                 if len(frames) > 1 and animate:
                     # Default to gif for animate, but mp4 is also supported
                     if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
@@ -450,17 +644,73 @@ class GetFrameAPI(APIView):
                     with open(gif_fp, 'rb') as data_file:
                         response = Response(data_file.read())
                 else:
-                    tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size)
+                    logger.info(f"Accepted format = {request.accepted_renderer.format}")
+                    tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size, render_format=request.accepted_renderer.format)
                     with open(tiled_fp, 'rb') as data_file:
                         response = Response(data_file.read())
 
 
         except ObjectDoesNotExist as dne:
+            request.accepted_renderer.format = "jpg"
             response=Response(MediaUtil.generate_error_image(404, "No Media Found"),
                               status=status.HTTP_404_NOT_FOUND)
             logger.warning(traceback.format_exc())
         except Exception as e:
+            request.accepted_renderer.format = "jpg"
             response=Response(MediaUtil.generate_error_image(400, str(e)),
+                              status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(traceback.format_exc())
+        finally:
+            return response
+
+class GetClipAPI(APIView):
+    schema = GetClipSchema()
+    permission_classes = [ProjectViewOnlyPermission]
+
+    def get_serializer(self):
+        """ This allows the AutoSchema to fill in the response details nicely"""
+        return TemporaryFileSerializer()
+
+    def get_queryset(self):
+        return EntityBase.objects.all()
+
+    def get(self, request, **kwargs):
+        """ Facility to get a clip from the server. Returns a temporary file object that expires in 24 hours.
+        """
+        try:
+            # upon success we can return an image
+            params = parse(request)
+            video = EntityMediaVideo.objects.get(pk=params['id'])
+            project = video.project
+            frameRangesStr = params.get('frameRanges', None)
+            frameRangesTuple=[frameRange.split(':') for frameRange in frameRangesStr]
+            frameRanges=[]
+            for t in frameRangesTuple:
+                frameRanges.append((int(t[0]), int(t[1])))
+
+            quality = params.get('quality', None)
+            h = hashlib.new('md5', f"{params}".encode())
+            lookup = h.hexdigest()
+
+            # Check to see if we already made this clip
+            matches=TemporaryFile.objects.filter(project=project, lookup=lookup)
+            if matches.exists():
+                temp_file = matches[0]
+            else:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    media_util = MediaUtil(video, temp_dir, quality)
+                    fp = media_util.getClip(frameRanges)
+
+                    temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, request.user, lookup=lookup, hours=24)
+
+            responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
+            response = Response(responseData)
+        except ObjectDoesNotExist as dne:
+            response=Response({"message": "Video Not Found"},
+                              status=status.HTTP_404_NOT_FOUND)
+            logger.warning(traceback.format_exc())
+        except Exception as e:
+            response=Response({"message" :str(e), "details": traceback.format_exc()},
                               status=status.HTTP_400_BAD_REQUEST)
             logger.warning(traceback.format_exc())
         finally:

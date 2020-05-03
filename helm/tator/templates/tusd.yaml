@@ -25,6 +25,10 @@ spec:
           command: ["tusd"]
           args: ["-behind-proxy","-upload-dir","/data/uploads"]
           imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
           ports:
             - containerPort: 1080
           volumeMounts:

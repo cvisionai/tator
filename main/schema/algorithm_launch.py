@@ -3,6 +3,7 @@ from rest_framework.schemas.openapi import AutoSchema
 class AlgorithmLaunchSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        operation['operationId'] = 'CreateAlgorithmLaunch'
         operation['tags'] = ['Algorithm']
         return operation
 
@@ -31,8 +32,8 @@ class AlgorithmLaunchSchema(AutoSchema):
                             'type': 'string',
                         },
                         'media_query': {
-                            'description': 'Query string used to filter media IDs. Must '
-                                           'supply media_query or media_ids.',
+                            'description': 'Query string used to filter media IDs. If '
+                                           'supplied, media_ids will be ignored.',
                             'type': 'string',
                         },
                         'media_ids': {
@@ -64,14 +65,44 @@ class AlgorithmLaunchSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = {}
-        responses['404'] = {'description': 'Failure to find the algorithm with the given name.'}
-        responses['400'] = {'description': 'Bad request.'}
         if method == 'POST':
-            responses['201'] = {
-                'description': 'Successful update of attribute type.',
+            responses['404'] = {
+                'description': 'Failure to find the algorithm with the given name.',
                 'content': {'application/json': {'schema': {
                     'type': 'object',
                     'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message explaining not found error.',
+                        },
+                    },
+                }}},
+            }
+            responses['400'] = {
+                'description': 'Bad request.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Error message for bad request.',
+                        },
+                        'details': {
+                            'type': 'string',
+                            'description': 'Detailed error message for bad request.',
+                        },
+                    },
+                }}},
+            }
+            responses['201'] = {
+                'description': 'Successful launch of algorithm.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful launch.',
+                        },
                         'run_uids': {
                             'type': 'array',
                             'description': 'A list of uuid1 strings identifying each job '

@@ -90,15 +90,18 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
 
         search = query_params.get('search', None)
         if search != None:
-            query['query']['bool']['should'] = [
-                {'query_string': {'query': search}},
-                {'has_child': {
-                        'type': 'annotation',
-                        'query': {'query_string': {'query': search}},
+            search_query = {'bool': {
+                'should': [
+                    {'query_string': {'query': search}},
+                    {'has_child': {
+                            'type': 'annotation',
+                            'query': {'query_string': {'query': search}},
+                        },
                     },
-                },
-            ]
-            query['query']['bool']['minimum_should_match'] = 1
+                ],
+                'minimum_should_match': 1,
+            }}
+            query['query']['bool']['filter'].append(search_query)
     else:
         # Construct query for annotations
         has_parent = False
@@ -119,35 +122,31 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
 
         search = query_params.get('search', None)
         if search != None:
-            query['query']['bool']['should'] = [
-                {'query_string': {'query': search}},
-                {'has_parent': {
-                        'parent_type': 'media',
-                        'query': {'query_string': {'query': search}},
+            search_query = {'bool': {
+                'should': [
+                    {'query_string': {'query': search}},
+                    {'has_parent': {
+                            'parent_type': 'media',
+                            'query': {'query_string': {'query': search}},
+                        },
                     },
-                },
-            ]
-            query['query']['bool']['minimum_should_match'] = 1
+                ],
+                'minimum_should_match': 1,
+            }}
+            query['query']['bool']['filter'].append(search_query)
 
         if modified != None:
             # Get modified + null or not modified + null
-            modified_query = [{
-                'bool': {
-                    'must_not': [{
+            modified_query = {'bool': {
+                'should': [
+                    {'bool': {'must_not': [{
                         'exists': {'field': '_modified'},
-                    }],
-                },
-            }, {
-                'match': {
-                    '_modified': bool(int(modified)),
-                },
-            }]
-            if search != None:
-                query['query']['bool']['should'] += modified_query
-                query['query']['bool']['minimum_should_match'] += 1
-            else:
-                query['query']['bool']['should'] = modified_query
-                query['query']['bool']['minimum_should_match'] = 1
+                    }]}},
+                    {'match': {'_modified': bool(int(modified))}},
+                ],
+                'minimum_should_match': 1,
+            }}
+            query['query']['bool']['filter'].append(modified_query)
 
     return query
 

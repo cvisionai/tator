@@ -3,12 +3,14 @@ import re
 from rest_framework import serializers
 from rest_polymorphic.serializers import PolymorphicSerializer
 
+from django.conf import settings
 from django.db import models
 from django.db.models.functions import Cast
 
 from .models import *
 import logging
 import datetime
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,31 @@ class EnumField(serializers.ChoiceField):
             return self.enum[data]
         except:
             self.fail('invalid_choice', input=data)
+
+class TemporaryFileSerializer(serializers.ModelSerializer):
+    """ Basic serializer for outputting temporary files """
+    path = serializers.SerializerMethodField()
+    def get_path(self, obj):
+        url = ""
+        try: # Can fail if project has no media
+            relpath = os.path.relpath(obj.path, settings.MEDIA_ROOT)
+            urlpath = os.path.join(settings.MEDIA_URL, relpath)
+            url = self.context['view'].request.build_absolute_uri(urlpath)
+        except Exception as e:
+            logger.warning(f"Exception {e}")
+            logger.warning(traceback.format_exc())
+        return url
+
+    class Meta:
+        model = TemporaryFile
+        fields = ['id',
+                  'name',
+                  'project',
+                  'user',
+                  'path',
+                  'lookup',
+                  'created_datetime',
+                  'eol_datetime']
 
 class UserSerializerBasic(serializers.ModelSerializer):
     """ Specify a basic serializer for outputting users."""
@@ -475,7 +502,7 @@ class TreeLeafSerializer(serializers.ModelSerializer):
 class AlgorithmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Algorithm
-        fields = ['name', 'description', 'pk']
+        fields = ['id', 'name', 'description']
 
 Analysis_baseFields=[ 'project', 'name' ]
 class AnalysisBaseSerializer(serializers.ModelSerializer):

@@ -273,6 +273,7 @@ class TatorTranscode(JobManagerMixin):
 
         self.transcode_task = {
             'name': 'transcode',
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','transcoded'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
@@ -291,7 +292,7 @@ class TatorTranscode(JobManagerMixin):
                 'resources': {
                     'limits': {
                         'memory': '2Gi',
-                        'cpu': '4000m',
+                        'cpu': os.getenv("TRANSCODER_CPU_LIMIT"),
                     },
                 },
             },
@@ -301,6 +302,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
+                'nodeSelector' : {'cpuWorker' : 'yes'},
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -843,16 +845,16 @@ class TatorAlgorithm(JobManagerMixin):
             self.corev1 = CoreV1Api()
             self.custom = CustomObjectsApi()
 
-        # Read in the mainfest.
+        # Read in the manifest.
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
-        if 'volumeClaimTemplates' in self.manifest['spec']:
-            for claim in self.manifest['spec']['volumeClaimTemplates']:
-                storage_class_name = claim['spec'].get('storageClassName',None)
-                if storage_class_name is None:
-                    claim['storageClassName'] = 'nfs-client'
-                    logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
+            if 'volumeClaimTemplates' in self.manifest['spec']:
+                for claim in self.manifest['spec']['volumeClaimTemplates']:
+                    storage_class_name = claim['spec'].get('storageClassName',None)
+                    if storage_class_name is None:
+                        claim['storageClassName'] = 'nfs-client'
+                        logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
 
         # Save off the algorithm name.
         self.name = alg.name

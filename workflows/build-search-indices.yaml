@@ -52,6 +52,10 @@ spec:
         value: "{{workflow.parameters.elasticsearchHost}}"
       - name: MAIN_HOST
         value: "{{workflow.parameters.domain}}"
+      - name: TATOR_DEBUG
+        value: "{{workflow.parameters.tatorDebug}}"
+      - name: TATOR_USE_MIN_JS
+        value: "{{workflow.parameters.useMinJs}}"
     outputs:
       parameters:
       - name: projects
@@ -133,4 +137,8 @@ spec:
         value: "{{workflow.parameters.elasticsearchHost}}"
       - name: MAIN_HOST
         value: "{{workflow.parameters.domain}}"
+      - name: TATOR_DEBUG
+        value: "{{workflow.parameters.tatorDebug}}"
+      - name: TATOR_USE_MIN_JS
+        value: "{{workflow.parameters.useMinJs}}"
     

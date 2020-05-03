@@ -10,6 +10,28 @@ function getCookie(name) {
 
 class Utilities
 {
+
+  static warningAlert(message, color)
+  {
+    const el = window.tator_warning_light;
+    if (el)
+    {
+      el.message(message, color);
+    }
+    else
+    {
+      console.warn("Couldn't find element!");
+    }
+  }
+
+  static hideAlert()
+  {
+    const el = window.tator_warning_light;
+    if (el)
+    {
+      el.hide();
+    }
+  }
   // Get the download request object
   static getDownloadRequest(media_element, session_headers)
   {

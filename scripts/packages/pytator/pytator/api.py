@@ -103,6 +103,12 @@ class APIElement:
                return None
 
         """
+        allObjects=self.filter(params)
+        if allObjects:
+            return pd.DataFrame(data=allObjects,
+                                columns=allObjects[0].keys())
+        else:
+            return None
     def all(self):
         """ Get list of all the elements of an endpoint as a list
 
@@ -458,8 +464,11 @@ class Media(APIElement):
                     else:
                         print("Waiting for transcode...")
                         time.sleep(2.5)
-
-        return media['id']
+            #return media id if we waited for it
+            return media['id']
+        # return true for async calls
+        # TODO: Make this less hokey
+        return True
 
     def byMd5(self, md5):
         """ Returns a media element with a matching md5
@@ -768,6 +777,75 @@ class TreeLeafType(APIElement):
     def __init__(self, api):
         super().__init__(api, "TreeLeafTypes", "TreeLeafType")
 
+class StateGraphic:
+    """ Interface for fetching frames from media server """
+    def __init__(self, api):
+        self.url = api[0].rstrip('/')
+        self.token = str(api[1])
+        self.project = str(api[2])
+        self.headers={"Authorization" : "Token {}".format(self.token),
+                      "Accept-Encoding": "gzip"}
+
+
+    def get_bgr(self, state_element_or_id):
+        """ Return a list of np.arrays representing bgr data for each requested
+            frame
+
+            state_element_or_id : dict or int
+                   Represents the media to fetch (either a dict with 'id' or
+                   just the integer itself)
+
+        """
+        code, jpg_data = self.get_encoded_img(state_element_or_id,
+                                              mode="tile")
+        if code != 200:
+            return code,None
+
+        if state_element_or_id is dict:
+            state_element = state_element_or_id
+        else:
+            state = State((self.url, self.token, self.project))
+            state_element = state.get(state_element_or_id)
+
+        bgr_data = cv2.imdecode(np.asarray(bytearray(jpg_data)), cv2.IMREAD_COLOR)
+        frame_data=[]
+
+        num_localizations = len(state_element['association']['localizations'])
+        width = int(bgr_data.shape[1]/num_localizations)
+        for idx in range(num_localizations):
+            start_x = idx*width
+            end_x = width+(idx*width)
+            frame = bgr_data[:,start_x:end_x,:]
+            frame_data.append(frame)
+
+        return code, frame_data
+
+    def get_encoded_img(self, state_element_or_id,
+                        mode="tile"):
+        """ Return an encoded image (jpg,gif) from the media server
+
+            media_element_or_id : dict or int
+                   Represents the media to fetch (either a dict with 'id' or
+                   just the integer itself)
+        """
+
+        if type(state_element_or_id) == dict:
+            state_id = state_element_or_id['id']
+        else:
+            state_id = state_element_or_id
+
+        params={"mode" : mode}
+
+        ep = self.url + "/StateGraphic" + f"/{state_id}"
+
+        response = requests.get(ep,
+                                params=params,
+                                headers=self.headers)
+
+        if response.status_code != 200:
+            print(f"ERROR {response.status_code} from {ep}")
+        return response.status_code, response.content
+
 class GetFrame():
     """ Interface for fetching frames from media server """
     def __init__(self, api):
@@ -855,7 +933,7 @@ class GetFrame():
         else:
             media_id = media_element_or_id
 
-        params={"frames" : frames}
+        params={"frames" : ",".join([str(frame) for frame in frames])}
 
         if roi:
             if type(roi) is tuple:
@@ -885,3 +963,47 @@ class GetFrame():
         if response.status_code != 200:
             print(f"ERROR {response.status_code} from GetFrame")
         return response.status_code, response.content
+
+class TemporaryFile(APIElement):
+    """ Defines interactions to Media elements at `/rest/TemporaryFiles` """
+    def __init__(self, api):
+        super().__init__(api, "TemporaryFiles", "TemporaryFile")
+        split=urlsplit(self.url)
+        self.tusURL=urljoin("https://"+split.netloc, "files/")
+
+    def uploadFile(self, filePath, lookup=None, hours=24, name=None):
+        """ Upload a file to the temporary file storage location """
+        if name is None:
+            name = os.path.basename(filePath)
+
+        if lookup is None:
+            lookup = name
+
+        tus = TusClient(self.tusURL)
+        chunk_size=100*1024*1024 # 100 Mb
+        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        for _ in range(num_chunks):
+            uploader.upload_chunk()
+
+        return self.new({"url": uploader.url,
+                         "name": name,
+                         "lookup": lookup,
+                         "hours": 24})
+
+    def downloadFile(self, element, out_path):
+        """ Download a media file from Tator to an off-line location
+
+        :param dict element: Dictionary from :func:`TemporaryFile.filter`
+        :param path-like out_path: Path to where to download
+        """
+
+        url=element['path']
+
+        # Supply token here for eventual media authorization
+        with requests.get(url, stream=True, headers=self.headers) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)

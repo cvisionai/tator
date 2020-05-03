@@ -87,6 +87,7 @@ class VideoBufferDemux
     this._seekVideo = document.createElement("VIDEO");
     this._seekBuffer = null;
     this._seekSource = new MediaSource();
+    this._seekReady = false;
     this._pendingSeeks = [];
 
     var mime_str='video/mp4; codecs="avc1.64001e"';
@@ -94,6 +95,12 @@ class VideoBufferDemux
     this._seekSource.onsourceopen=() => {
       this._seekSource.onsourceopen = null;
       this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
+      if (this._pendingSeeks.length > 0)
+      {
+        console.info("Applying pending seek data.");
+        var pending = this._pendingSeeks.shift();
+        this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
+      }
     };
 
     this._seekVideo.src = URL.createObjectURL(this._seekSource);
@@ -218,8 +225,9 @@ class VideoBufferDemux
     {
       // If the time is comfortably in the range don't bother getting
       // additional data
-      if (time >= this._seekVideo.buffered.start(idx) &&
-          time < this._seekVideo.buffered.end(idx) *0.90)
+      let timeFromStart = time - this._seekVideo.buffered.start(idx);
+      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.90;
+      if (timeFromStart <= bufferedLength && timeFromStart > 0)
       {
         return this._seekVideo;
       }
@@ -313,7 +321,7 @@ class VideoBufferDemux
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
-    if (this._seekBuffer.updating == false)
+    if (this._seekBuffer.updating == false && this._seekReady == true)
     {
       this._seekBuffer.onupdateend = () => {
 
@@ -437,7 +445,7 @@ class VideoBufferDemux
     this._seekBuffer.onupdateend=() =>
       {
         this._seekBuffer.onupdateend = null;
-
+        this._seekReady = true;
         // Handle any pending seeks
         if (this._pendingSeeks.length > 0)
         {
@@ -1519,14 +1527,13 @@ class VideoCanvas extends AnnotationCanvas {
     if (this._direction != Direction.STOPPED)
     {
       this._pauseCb.forEach(cb => {cb();});
+
+      this._direction=Direction.STOPPED;
+      this._videoElement[this._play_idx].pause();
+
+      // force a redraw at the currently displayed frame
+      return this.seekFrame(this._dispFrame, this.drawFrame, true);
     }
-
-    this._direction=Direction.STOPPED;
-    this._videoElement[this._play_idx].pause();
-
-
-    // force a redraw at the currently displayed frame
-    return this.seekFrame(this._dispFrame, this.drawFrame, true);
   }
 
   back()

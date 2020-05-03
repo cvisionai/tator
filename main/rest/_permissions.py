@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 
 from rest_framework.permissions import BasePermission
 from rest_framework.permissions import SAFE_METHODS
@@ -7,6 +8,7 @@ from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from redis import Redis
 
 from ..models import Permission
 from ..models import Project
@@ -46,16 +48,16 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
-            project = TatorTranscode().find_project(f"uid={uid}")
-            if not project:
-                for alg in Algorithm.objects.all():
-                    project = TatorAlgorithm(alg).find_project(f"uid={uid}")
+            rds = Redis(host=os.getenv('REDIS_HOST'))
+            if rds.hexists('uids', uid):
+                msg = json.loads(rds.hget('uids', uid))
+                project = msg['project_id']
         elif 'group_id' in view.kwargs:
-            uid = view.kwargs['group_id']
-            project = TatorTranscode().find_project(f"gid={uid}")
-            if not project:
-                for alg in Algorithm.objects.all():
-                    project = TatorAlgorithm(alg).find_project(f"gid={uid}")
+            group_id = view.kwargs['group_id']
+            rds = Redis(host=os.getenv('REDIS_HOST'))
+            if rds.hexists('gids', group_id):
+                msg = json.loads(rds.hget('gids', group_id))
+                project = msg['project_id']
         else:
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)

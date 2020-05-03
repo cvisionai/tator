@@ -53,6 +53,19 @@ pvc:
   rawSize: 6Ti
   backupSize: 100Gi
   migrationsSize: 1Gi
+hpa:
+  nginxMinReplicas: 2
+  nginxMaxReplicas: 10
+  nginxCpuPercent: 50
+  gunicornMinReplicas: 4
+  gunicornMaxReplicas: 10
+  gunicornCpuPercent: 50
+  daphneMinReplicas: 2
+  daphneMaxReplicas: 10
+  daphneCpuPercent: 50
+  tusdMinReplicas: 2
+  tusdMaxReplicas: 10
+  tusdCpuPercent: 50
 metallb:
   # A load balancer implementation is provided by AWS.
   enabled: false
@@ -76,12 +89,32 @@ elasticsearch:
   enabled: false
 filebeat:
   enabled: true
+  image: docker.elastic.co/beats/filebeat-oss
+  imageTag: 7.4.2
+  extraEnvs:
+  - name: ELASTICSEARCH_HOSTS
+    value: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+      - type: docker
+        containers.ids:
+        - '*'
+        processors:
+        - add_kubernetes_metadata:
+            in_cluster: true
+      output.elasticsearch:
+        hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
+      setup.ilm.enabled: false
 kibana:
   enabled: true
+  image: docker.elastic.co/kibana/kibana-oss
+  imageTag: 7.4.2
   kibanaConfig:
     kibana.yml: |
       server:
         basePath: /logs
+  elasticsearchHosts: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
 cluster-autoscaler:
   enabled: true
 awsStorage:

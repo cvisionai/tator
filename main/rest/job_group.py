@@ -1,10 +1,13 @@
 import traceback
+import os
+import json
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
+from redis import Redis
 
 from ..models import Algorithm
 from ..kube import TatorTranscode
@@ -32,16 +35,39 @@ class JobGroupDetailAPI(APIView):
         response=Response({})
 
         try:
-            # Find the job and delete it.
+            # Parse parameters
             params = parse(request)
             group_id = params['group_id']
-            transcode_cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
-            if not transcode_cancelled:
-                for alg in Algorithm.objects.all():
-                    algorithm_cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
-                    if algorithm_cancelled:
-                        break
-            if not (transcode_cancelled or algorithm_cancelled):
+
+            # Find the gid in redis.
+            rds = Redis(host=os.getenv('REDIS_HOST'))
+            if rds.hexists('gids', group_id):
+                msg = json.loads(rds.hget('gids', group_id))
+
+                # Attempt to cancel.
+                cancelled = False
+                if msg['prefix'] == 'upload':
+                    cancelled = TatorTranscode().cancel_jobs(f'gid={group_id}')
+                elif msg['prefix'] == 'algorithm':
+                    alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
+                    cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
+
+                # If cancel did not go through, attempt to delete any stale progress messages.
+                if not cancelled:
+                    jobs = {}
+                    if rds.hexists(f'{group_id}:started'):
+                        jobs = rds.hgetall(f'{group_id}:started')
+                    for key in jobs:
+                        job = json.loads(jobs[key])
+                        prog = ProgressProducer(
+                            job['prefix'],
+                            job['project_id'],
+                            job['uid'],
+                            job['uid_gid'],
+                            job['name'],
+                            self.request.user,
+                        )
+            else:
                 raise Http404
 
             response = Response({'message': f"Jobs with group ID {group_id} deleted!"})

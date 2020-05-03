@@ -16,7 +16,7 @@ class UploadElement extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === "project-id") {
       // Get all media types for this project.
-      fetch("/rest/EntityTypeMedias/" + newValue, {
+      fetch("/rest/MediaTypes/" + newValue, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -75,14 +75,14 @@ class UploadElement extends TatorElement {
       // wrong media type.
       const mediaType = this._mediaTypes[idx];
       let fileOk = false;
-      if (mediaType.file_format === null) {
-        if (mediaType.resourcetype == "EntityTypeMediaImage" && isImage) {
+      if (mediaType.type.file_format === null) {
+        if (mediaType.type.resourcetype == "EntityTypeMediaImage" && isImage) {
           fileOk = true;
-        } else if (mediaType.resourcetype == "EntityTypeMediaVideo" && isVideo) {
+        } else if (mediaType.type.resourcetype == "EntityTypeMediaVideo" && isVideo) {
           fileOk = true;
         }
       } else {
-        fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
+        fileOk = ext.toLowerCase() === mediaType.type.file_format.toLowerCase();
         if (isArchive)
         {
           fileOk = true;
@@ -96,7 +96,7 @@ class UploadElement extends TatorElement {
           "gid": gid,
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
-          "mediaTypeId": (isArchive ? -1 : mediaType.id),
+          "mediaTypeId": (isArchive ? -1 : mediaType.type.id),
           "token": this._token,
           "isImage": isImage,
           "isArchive": isArchive

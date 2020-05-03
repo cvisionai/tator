@@ -56,6 +56,8 @@ class EntityTypeListAPIMixin(APIView):
                 dataurl=None
                 count=0
                 if media_id:
+                    if type(media_id) is int:
+                        media_id=[media_id]
                     dataurl=request.build_absolute_uri(
                         reverse_queryArgs(self.entity_endpoint,
                                           kwargs={'project': self.kwargs['project']},

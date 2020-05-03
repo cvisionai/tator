@@ -22,7 +22,7 @@ from ..models import LocalizationAssociation
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import EntityBase
-from ..renderers import JpegRenderer,GifRenderer,Mp4Renderer
+from ..renderers import PngRenderer,JpegRenderer,GifRenderer,Mp4Renderer
 from ..rest.media import MediaUtil
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
@@ -38,9 +38,9 @@ from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._attributes import convert_attribute
 from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
+from ._util import check_required_fields
 from ._util import Array
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
@@ -57,10 +57,10 @@ class StateListAPI(APIView, AttributeFilterMixin):
 
         This endpoint supports bulk patch of user-defined state attributes and bulk delete.
         Both are accomplished using the same query parameters used for a GET request.
-    
-        It is importarant to know the fields required for a given entity_type_id as they are 
-        expected in the request data for this function. As an example, if the entity_type_id has 
-        attribute types associated with it named time and position, the JSON object must have 
+
+        It is importarant to know the fields required for a given entity_type_id as they are
+        expected in the request data for this function. As an example, if the entity_type_id has
+        attribute types associated with it named time and position, the JSON object must have
         them specified as keys.
     """
     schema=StateListSchema()
@@ -72,6 +72,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
         annotation_ids, annotation_count, _ = get_annotation_queryset(
             params['project'],
             params,
+            'state',
         )
         queryset = EntityState.objects.filter(pk__in=annotation_ids)
         return queryset
@@ -84,6 +85,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, _ = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             allStates = EntityState.objects.filter(pk__in=annotation_ids)
             if self.operation:
@@ -201,15 +203,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
 
             reqFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
 
-            attrs={}
-            for key, attrType in zip(reqAttributes, attrTypes):
-                if key in params:
-                    convert_attribute(attrType, params[key]) # Validates attr value
-                    attrs[key] = params[key];
-                else:
-                    # missing a key
-                    raise Exception('Missing attribute value for "{}". Required for = "{}"'.
-                                   format(key,entityType.name));
+            attrs = check_required_fields(reqFields, attrTypes, params)
 
             obj = EntityState(project=project,
                               meta=entityType,
@@ -268,6 +262,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -293,6 +288,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
             annotation_ids, annotation_count, query = get_annotation_queryset(
                 params['project'],
                 params,
+                'state',
             )
             if len(annotation_ids) == 0:
                 raise ObjectDoesNotExist
@@ -382,7 +378,7 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
 
 class StateGraphicAPI(APIView):
     schema = StateGraphicSchema()
-    renderer_classes = (JpegRenderer,GifRenderer,Mp4Renderer)
+    renderer_classes = (PngRenderer,JpegRenderer,GifRenderer,Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
 
     def get_queryset(self):
@@ -391,7 +387,7 @@ class StateGraphicAPI(APIView):
     def get(self, request, **kwargs):
         """ Get frame(s) of a given localization-associated state.
 
-            Use the mode argument to control whether it is an animated gif or a tiled jpg. 
+            Use the mode argument to control whether it is an animated gif or a tiled jpg.
         """
         # TODO: Add logic for all state types
         try:
@@ -401,6 +397,10 @@ class StateGraphicAPI(APIView):
 
             mode = params['mode']
             fps = params['fps']
+            force_scale = None
+            if 'forceScale' in params:
+                force_scale = params['forceScale'].split('x')
+                assert len(force_scale) == 2
 
             typeObj = state.meta
             if typeObj.association != 'Localization':
@@ -417,7 +417,7 @@ class StateGraphicAPI(APIView):
                         pass
                     else:
                         request.accepted_renderer = GifRenderer()
-                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format)
+                    gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format, force_scale=force_scale)
                     with open(gif_fp, 'rb') as data_file:
                         request.accepted_renderer = GifRenderer()
                         response = Response(data_file.read())
@@ -430,14 +430,25 @@ class StateGraphicAPI(APIView):
                         if el[1] > max_h:
                             max_h = el[1]
 
-                    # rois have to be the same size box for tile to work
-                    new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
-                    for idx,r in enumerate(roi):
-                        print(f"{r} corrected to {new_rois[idx]}")
                     print(f"{max_w} {max_h}")
-                    tiled_fp = media_util.getTileImage(frames, new_rois)
+                    # rois have to be the same size box for tile to work
+                    if force_scale is None:
+                        new_rois = [(max_w,max_h, r[2]+((r[0]-max_w)/2), r[3]+((r[1]-max_h)/2)) for r in roi]
+                        for idx,r in enumerate(roi):
+                            print(f"{r} corrected to {new_rois[idx]}")
+                    else:
+                        new_rois = roi
+                        print(f"Using a forced scale")
+
+
+                    # Get a tiled fp as a film strip
+                    tile_size=f"{len(frames)}x1"
+                    tiled_fp = media_util.getTileImage(frames,
+                                                       new_rois,
+                                                       tile_size,
+                                                       render_format=request.accepted_renderer.format,
+                                                       force_scale=force_scale)
                     with open(tiled_fp, 'rb') as data_file:
-                        request.accepted_renderer = JpegRenderer()
                         response = Response(data_file.read())
 
 

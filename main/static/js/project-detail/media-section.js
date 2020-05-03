@@ -199,177 +199,72 @@ class MediaSection extends TatorElement {
         if (evt.detail.mediaIds) {
           mediaFilter = "&media_id=" + evt.detail.mediaIds;
         }
-        fetch("/rest/EntityMedias/" + projectId + this._sectionFilter() + mediaFilter, {
+        const getUrl = endpoint => {
+          return "/rest/" + endpoint + "/" + projectId + this._sectionFilter() + mediaFilter;
+        };
+        const headers = {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        };
+        fetchRetry(getUrl("MediaSections"), {
           method: "GET",
           credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
+          headers: headers,
         })
         .then(response => response.json())
-        .then(medias => {
-          let fileIndex = 0;
-          let numQueued = 0;
+        .then(mediaCount => {
+          let lastFilename = null;
+          let numImages = 0;
+          let numVideos = 0;
+          for (const key in mediaCount) {
+            numImages += mediaCount[key]["num_images"];
+            numVideos += mediaCount[key]["num_videos"];
+          }
+          const batchSize = numImages > numVideos ? 20 : 2;
           const filenames = new Set();
           const re = /(?:\.([^.]+))?$/;
-          const headers = {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Content-Type": "application/json"
-          };
           const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
           const readableZipStream = new ZIP({
             async pull(ctrl) {
-              if (fileIndex < medias.length) {
-                const media = medias[fileIndex];
-                const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
-                const ext = re.exec(media.name)[0];
-                let basename = basenameOrig;
-                let vers = 1;
-                while (filenames.has(basename)) {
-                  basename = basenameOrig + " (" + vers + ")";
-                  vers++;
+              let url = getUrl("Medias") + "&stop=" + batchSize;
+              if (lastFilename != null) {
+                url += "&after=" + lastFilename;
+              }
+              await fetchRetry(url, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => response.json())
+              .then(async medias => {
+                if (medias.length == 0) {
+                  ctrl.close();
                 }
-                filenames.add(basename);
-                if (evt.detail.annotations) {
-                  console.log("Downloading metadata for " + media.name + "...");
-
-                  // Download media metadata
-                  const p0 = fetch("/rest/EntityMedia/" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const stream = () => response.body;
-                    const name = basename + "__media.json";
-                    ctrl.enqueue({name, stream});
-                  });
-
-                  // Download localizations
-                  const p1 = fetch("/rest/LocalizationTypes/" + projectId + "?media_id=" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const clone = response.clone();
-                    const stream = () => response.body;
-                    const name = basename + "__localization_types.json";
-                    ctrl.enqueue({name, stream});
-                    return clone.json();
-                  })
-                  .then(locTypes => {
-                    const promises = [];
-                    for (const locType of locTypes) {
-                      const typeId = locType.type.id;
-                      const locName = locType.type.name.toLowerCase();
-                      const params = "?media_id=" + media.id + "&type=" + typeId;
-                      promises.push(fetch("/rest/Localizations/" + projectId + params, {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__localizations__" + locName + ".json";
-                        ctrl.enqueue({name, stream});
-                      }));
-                      promises.push(fetch("/rest/Localizations/" + projectId + params + "&format=csv", {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__localizations__" + locName + ".csv";
-                        ctrl.enqueue({name, stream});
-                      }));
-                    }
-                    return Promise.all(promises);
-                  });
-
-                  // Download states
-                  const p2 = fetch("/rest/EntityStateTypes/" + projectId + "?media_id=" + media.id, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: headers,
-                  })
-                  .then(response => {
-                    const clone = response.clone();
-                    const stream = () => response.body;
-                    const name = basename + "__state_types.json";
-                    ctrl.enqueue({name, stream});
-                    return clone.json();
-                  })
-                  .then(stateTypes => {
-                    const promises = [];
-                    for (const stateType of stateTypes) {
-                      const typeId = stateType.type.id;
-                      const stateName = stateType.type.name.toLowerCase();
-                      const assoc = stateType.type.association;
-                      let entityName;
-                      if (assoc == "Localization") {
-                        entityName = "tracks";
-                      } else if (assoc == "Media") {
-                        entityName = "media";
-                      } else if (assoc == "Frame") {
-                        entityName = "events";
-                      }
-                      const params = "?media_id=" + media.id + "&type=" + typeId;
-                      promises.push(fetch("/rest/EntityStates/" + projectId + params, {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__" + entityName + "__" + stateName + ".json";
-                        ctrl.enqueue({name, stream});
-                      }));
-                      promises.push(fetch("/rest/EntityStates/" + projectId + params + "&format=csv", {
-                        method: "GET",
-                        credentials: "same-origin",
-                        headers: headers,
-                      })
-                      .then(response => {
-                        const stream = () => response.body;
-                        const name = basename + "__" + entityName + "__" + stateName + ".csv";
-                        ctrl.enqueue({name, stream});
-                      }));
-                    }
-                    return Promise.all(promises);
-                  });
-
-                  // Add to number of queued.
-                  await Promise.all([p0, p1, p2])
-                  .then(() => {
-                    numQueued++;
-                    if (numQueued >= medias.length) {
-                      ctrl.close();
-                    }
-                  });
-
-                } else {
+                for (const media of medias) {
+                  lastFilename = media.name;
+                  const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
+                  const ext = re.exec(media.name)[0];
+                  let basename = basenameOrig;
+                  let vers = 1;
+                  while (filenames.has(basename)) {
+                    basename = basenameOrig + " (" + vers + ")";
+                    vers++;
+                  }
+                  filenames.add(basename);
 
                   let request = Utilities.getDownloadRequest(media, headers);
 
                   // Download media file.
                   console.log("Downloading " + media.name + " from " + request.url + "...");
-                  await fetch(request)
+                  await fetchRetry(request)
                   .then(response => {
                     const stream = () => response.body;
                     const name = basename + ext;
                     ctrl.enqueue({name, stream});
-                    numQueued++;
-                    if (numQueued >= medias.length) {
-                      ctrl.close();
-                    }
                   });
                 }
-                fileIndex++;
-              }
+              });
             }
           });
           if (window.WritableStream && readableZipStream.pipeTo) {
@@ -382,6 +277,185 @@ class MediaSection extends TatorElement {
             pump();
           }
         })
+      });
+
+      Number.prototype.pad = function(size) {
+        var s = String(this);
+        while (s.length < (size || 2)) {s = "0" + s;}
+        return s;
+      }
+
+      this._files.addEventListener("downloadAnnotations", evt => {
+        const projectId = this.getAttribute("project-id");
+        let mediaFilter = "";
+        if (evt.detail.mediaIds) {
+          mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        }
+        const getUrl = endpoint => {
+          return "/rest/" + endpoint + "/" + projectId + "?media_query="
+                 + this._sectionFilter() + mediaFilter;
+        };
+        const mediaUrl = "/rest/Medias/" + projectId + this._sectionFilter() + mediaFilter;
+        const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
+        let mediaTypes = null;
+        let mediaFetcher = null;
+        let mediaDone = false;
+        let localizationTypes = null;
+        let localizationFetcher = null;
+        let localizationsDone = false;
+        let stateTypes = null;
+        let stateFetcher = null;
+        let statesDone = false;
+        const headers = {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Content-Type": "application/json"
+        };
+        const readableZipStream = new ZIP({
+          async pull(ctrl) {
+  
+            // Function for dumping types to file.
+            const getTypes = (endpoint, fname) => {
+              return fetchRetry("/rest/" + endpoint + "/" + projectId, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const clone = response.clone();
+                const stream = () => response.body;
+                const name = fname;
+                ctrl.enqueue({name, stream});
+                return clone.json();
+              });
+            };
+
+            // Function for dumping single batch of metadata to file.
+            const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
+                                            baseFilename, lastId) => {
+              let url = baseUrl + "&type=" + type.type.id + "&stop=" + batchSize;
+              if (lastId != null) {
+                url += "&after=" + lastId;
+              }
+
+              // Fetch csv data first.
+              await fetchRetry(url + "&format=csv", {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const stream = () => response.body;
+                const batch_str = "__batch_" + Number(batchNum).pad(5);
+                const name = baseFilename + type.type.name + batch_str + ".csv";
+                ctrl.enqueue({name, stream});
+              });
+
+              // Fetch and return json data.
+              return fetchRetry(url, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: headers,
+              })
+              .then(response => {
+                const clone = response.clone();
+                const stream = () => response.body;
+                const batch_str = "__batch_" + Number(batchNum).pad(5);
+                const name = baseFilename + type.type.name + batch_str + ".json";
+                ctrl.enqueue({name, stream});
+                return clone.json();
+              });
+            };
+
+            // Class for fetching batches of metadata.
+            class MetadataFetcher {
+              constructor(types, baseUrl, baseFilename, lastField) {
+                this._types = types;
+                this._baseUrl = baseUrl;
+                this._baseFilename = baseFilename;
+                this._lastField = lastField;
+                this._batchNum = 0;
+                this._lastId = null;
+                this._typeIndex = 0;
+                this._batchSize = 1000;
+              }
+
+              async next() {
+                // Fetches next batch of metadata, iterating over types. Returns
+                // whether all metadata has been fetched.
+                let done = false;
+                if (this._types.length == 0) {
+                  done = true;
+                } else {
+                  const entities = await getMetadataBatch(
+                    this._baseUrl,
+                    this._types[this._typeIndex],
+                    this._batchSize,
+                    this._batchNum,
+                    this._baseFilename,
+                    this._lastId,
+                  )
+                  this._batchNum++;
+                  if (entities.length == 0) {
+                    this._typeIndex++;
+                    if (this._typeIndex == this._types.length) {
+                      done = true;
+                    } else {
+                      this._batchNum = 0;
+                      this._lastId = null;
+                    }
+                  } else {
+                    this._lastId = entities[entities.length - 1][this._lastField];
+                  }
+                }
+                return done;
+              }
+            }
+
+            if (mediaTypes == null) {
+              // Get media types.
+              mediaTypes = await getTypes("MediaTypes", "media_types.json");
+              mediaFetcher = new MetadataFetcher(mediaTypes, mediaUrl, "medias__", "name");
+            }
+            else if (localizationTypes == null) {
+              // Get localization types.
+              const localizationsUrl = getUrl("Localizations");
+              localizationTypes = await getTypes("LocalizationTypes", "localization_types.json");
+              localizationFetcher = new MetadataFetcher(localizationTypes, localizationsUrl,
+                                                        "localizations__", "id");
+            }
+            else if (stateTypes == null) {
+              // Get state types.
+              const statesUrl = getUrl("States");
+              stateTypes = await getTypes("StateTypes", "state_types.json");
+              stateFetcher = new MetadataFetcher(stateTypes, statesUrl, "states__", "id");
+            }
+            else if (mediaDone == false) {
+              // Get next batch of media metadata.
+              mediaDone = await mediaFetcher.next();
+            }
+            else if (localizationsDone == false) {
+              // Get next batch of localization metadata.
+              localizationsDone = await localizationFetcher.next();
+            }
+            else if (statesDone == false) {
+              // Get next batch of state metadata.
+              statesDone = await stateFetcher.next();
+            }
+            else {
+              // Close the zip file.
+              ctrl.close();
+            }
+          }
+        });
+        if (window.WritableStream && readableZipStream.pipeTo) {
+          readableZipStream.pipeTo(fileStream);
+        } else {
+          const writer = fileStream.getWriter();
+          const reader = readableZipStream.getReader();
+          const pump = () => reader.read()
+            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+          pump();
+        }
       });
 
       this._files.addEventListener("rename", evt => {
@@ -409,7 +483,7 @@ class MediaSection extends TatorElement {
               this._sectionName = evt.target.value;
             }
             const projectId = this.getAttribute("project-id");
-            fetch("/rest/EntityMedias/" + projectId + this._sectionFilter(), {
+            fetch("/rest/Medias/" + projectId + this._sectionFilter(), {
               method: "PATCH",
               credentials: "same-origin",
               headers: {

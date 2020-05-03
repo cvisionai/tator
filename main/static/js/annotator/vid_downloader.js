@@ -22,15 +22,20 @@ class VideoDownloader
 
   initializeInfoObjects()
   {
+    let init_promises = [];
     for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
     {
       let url=this._media_files[buf_idx].path;
       let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
       const info = new Request(info_url);
-      fetch(info).then((info_resp) => {
-        this.processInitResponses(buf_idx,info_resp);
-      });
+      init_promises.push(fetch(info));
     }
+    Promise.all(init_promises).then((responses) => {
+      for (let buf_idx = 0; buf_idx < responses.length; buf_idx++)
+      {
+        this.processInitResponses(buf_idx,responses[buf_idx]);
+      }
+    });
   }
 
   processInitResponses(buf_idx,info)

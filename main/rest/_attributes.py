@@ -128,7 +128,7 @@ def extract_attribute(kv_pair, meta, filter_op):
 
         # If meta is none, we treat this as a string/enum type.
         attr_type = attr_name
-        if meta is not None:
+        if meta is not None and attr_name != 'tator_user_sections':
             attr_type_qs = AttributeTypeBase.objects.filter(
                 name=attr_name).filter(applies_to=meta)
             if attr_type_qs.count() != 1:

@@ -116,6 +116,9 @@ _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
 	kubectl logs $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
 
+django_shell:
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py shell
+
 
 #####################################
 ## Custom rules below:
@@ -138,6 +141,7 @@ cluster-install:
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade: main/version.py images
+	kubectl delete cronjobs --all
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -269,6 +273,7 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
+    components/warning-light.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
@@ -452,3 +457,8 @@ python-bindings:
 	rm schema.json
 
 
+TOKEN=$(shell cat token.txt)
+URL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"] + "/rest")')
+.PHONY: pytest
+pytest:
+	cd scripts/packages/pytator/test && pytest --url $(URL) --token $(TOKEN)
