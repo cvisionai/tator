@@ -38,9 +38,9 @@ from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._attributes import convert_attribute
 from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
+from ._util import check_required_fields
 from ._util import Array
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
@@ -203,15 +203,7 @@ class StateListAPI(APIView, AttributeFilterMixin):
 
             reqFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
 
-            attrs={}
-            for key, attrType in zip(reqAttributes, attrTypes):
-                if key in params:
-                    convert_attribute(attrType, params[key]) # Validates attr value
-                    attrs[key] = params[key];
-                else:
-                    # missing a key
-                    raise Exception('Missing attribute value for "{}". Required for = "{}"'.
-                                   format(key,entityType.name));
+            attrs = check_required_fields(reqFields, attrTypes, params)
 
             obj = EntityState(project=project,
                               meta=entityType,

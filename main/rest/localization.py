@@ -36,9 +36,9 @@ from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._attributes import convert_attribute
 from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
+from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
@@ -177,9 +177,7 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         else:
             requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
 
-        for field in {**requiredFields,**reqAttributes}:
-            if field not in reqObject:
-                raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
+        attrs = check_required_fields(requiredFields, attrTypes, reqObject)
 
         stage[4] = time.time()
         # Build required keys based on object type (box, line, etc.)
@@ -188,10 +186,6 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         for field in requiredFields:
             localizationFields[field] = reqObject[field]
 
-        attrs={}
-        for field, attrType in zip(reqAttributes, attrTypes):
-            convert_attribute(attrType, reqObject[field]) # Validates the attribute value
-            attrs[field] = reqObject[field];
 
         stage[5] = time.time()
         # Finally make the object, filling in all the info we've collected

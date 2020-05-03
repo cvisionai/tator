@@ -25,9 +25,9 @@ from ._attributes import count_by_attribute
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._attributes import convert_attribute
 from ._util import paginate
 from ._util import computeRequiredFields
+from ._util import check_required_fields
 from ._permissions import ProjectViewOnlyPermission
 from ._permissions import ProjectFullControlPermission
 
@@ -123,7 +123,6 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
             parent = params.get('parent', None)
             name = params['name']
             entityTypeId = params['type']
-            attr = params.get('attributes', None)
             project = Project.objects.get(pk=params['project'])
 
             try:
@@ -131,18 +130,16 @@ class TreeLeafListAPI(ListAPIView, AttributeFilterMixin):
             except:
                 raise Exception(f'Entity type ID {entityTypeId} does not exist!')
 
+            if 'attributes' in params:
+                params = {**params, **params['attributes']}
+
             requiredFields, reqAttributes, attrTypes = computeRequiredFields(entityType)
 
-            for field in {**requiredFields, **reqAttributes}:
-                if field not in params:
-                    raise Exception('Missing key "{}". Required for = "{}"'.format(field,entityType.name));
-
-            for attrType, field in zip(attrTypes, reqAttributes):
-                convert_attribute(attrType, params[field]) # Validates attribute value
+            attrs = check_required_fields(requiredFields, attrTypes, params)
 
             tl=TreeLeaf(name=name,
                         project=project,
-                        attributes=attr,
+                        attributes=attrs,
                         meta=entityType)
             if parent:
                 tl.parent=TreeLeaf.objects.get(pk=parent)
