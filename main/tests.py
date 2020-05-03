@@ -11,6 +11,7 @@ from math import sin, cos, sqrt, atan2, radians
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
+from django.contrib.gis.geos import Point
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -30,6 +31,7 @@ from .models import EntityTypeLocalizationLine
 from .models import EntityTypeLocalizationDot
 from .models import EntityTypeState
 from .models import EntityTypeTreeLeaf
+from .models import EntityBase
 from .models import EntityMediaVideo
 from .models import EntityMediaImage
 from .models import EntityLocalizationBox
@@ -40,6 +42,7 @@ from .models import LocalizationAssociation
 from .models import FrameAssociation
 from .models import TreeLeaf
 from .models import MediaAssociation
+from .models import AttributeTypeBase
 from .models import AttributeTypeBool
 from .models import AttributeTypeInt
 from .models import AttributeTypeFloat
@@ -214,39 +217,45 @@ def create_test_attribute_types(entity_type, project):
         'bool': AttributeTypeBool.objects.create(
             name='bool_test',
             applies_to=entity_type,
-            project=project
+            project=project,
+            default=False,
         ),
         'int': AttributeTypeInt.objects.create(
             name='int_test',
             applies_to=entity_type,
-            project=project
+            project=project,
+            default=42,
         ),
         'float': AttributeTypeFloat.objects.create(
             name='float_test',
             applies_to=entity_type,
-            project=project
+            project=project,
+            default=42.0,
         ),
         'enum': AttributeTypeEnum.objects.create(
             name='enum_test',
             choices=['enum_val1', 'enum_val2', 'enum_val3'],
             applies_to=entity_type,
-            project=project
+            project=project,
+            default='enum_val1',
         ),
         'string': AttributeTypeString.objects.create(
             name='string_test',
             applies_to=entity_type,
-            project=project
+            project=project,
+            default='asdf_default',
         ),
         'datetime': AttributeTypeDatetime.objects.create(
             name='datetime_test',
-            use_current=False,
+            use_current=True,
             applies_to=entity_type,
-            project=project
+            project=project,
         ),
         'geoposition': AttributeTypeGeoposition.objects.create(
             name='geoposition_test',
             applies_to=entity_type,
-            project=project
+            project=project,
+            default=Point(-179.0, -89.0),
         ),
     }
 
@@ -288,6 +297,48 @@ permission_levels = [
     Permission.FULL_CONTROL
 ]
 
+class DefaultCreateTestMixin:
+    def _check_object(self, response, is_default):
+        # Get the created objects.
+        if isinstance(response.data['id'], list):
+            id_ = response.data['id'][0]
+        else:
+            id_ = response.data['id']
+        obj = EntityBase.objects.get(pk=id_)
+        # Assert it has all the expected values.
+        attr_types = AttributeTypeBase.objects.filter(applies_to=obj.meta)
+        for attr_type in attr_types:
+            field = attr_type.name
+            if is_default:
+                if not isinstance(attr_type, AttributeTypeDatetime):
+                    default = attr_type.default
+                    if isinstance(default, Point):
+                        default = [default.x, default.y]
+                    self.assertTrue(obj.attributes[field]==default)
+            else:
+                self.assertTrue(obj.attributes[field]==self.create_json[field])
+        # Delete the object
+        obj.delete()
+
+    def test_create_default(self):
+        endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
+        # Remove attribute values.
+        create_json = dict(self.create_json)
+        delete_fields = []
+        for key in create_json:
+            if key.endswith('_test'):
+                delete_fields.append(key)
+        for field in delete_fields:
+            del create_json[field]
+        # Post the json with no attribute values.
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._check_object(response, True)
+        # Post the json with attribute values.
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._check_object(response, False)
+
 class PermissionCreateTestMixin:
     def test_create_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
@@ -300,7 +351,6 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -1046,6 +1096,7 @@ class LocalizationBoxTestCase(
         APITestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
         PermissionCreateTestMixin,
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
@@ -1108,6 +1159,7 @@ class LocalizationLineTestCase(
         APITestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
         PermissionCreateTestMixin,
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
@@ -1170,6 +1222,7 @@ class LocalizationDotTestCase(
         APITestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
         PermissionCreateTestMixin,
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
@@ -1230,6 +1283,7 @@ class StateTestCase(
         APITestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
         PermissionCreateTestMixin,
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,
@@ -1303,6 +1357,7 @@ class StateTestCase(
 class TreeLeafTestCase(
         APITestCase,
         AttributeTestMixin,
+        DefaultCreateTestMixin,
         PermissionCreateTestMixin,
         PermissionListTestMixin,
         PermissionListMembershipTestMixin,

@@ -1,10 +1,19 @@
+import datetime
+import logging
+
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 
 from ..models import AttributeTypeBase
+from ..models import AttributeTypeDatetime
+from ..models import AttributeTypeGeoposition
 from ..models import type_to_obj
+
+from ._attributes import convert_attribute
+
+logger = logging.getLogger(__name__)
 
 class Array(Subquery):
     """ Class to expose ARRAY SQL function to ORM """
@@ -41,6 +50,46 @@ def computeRequiredFields(typeObj):
         attributes[str(column)] = column.description
 
     return (datafields, attributes, attributeTypes)
+
+def check_required_fields(datafields, attr_types, body):
+    """ Given the output of computeRequiredFields and a request body, assert that required
+        fields exist and that attributes are present. Fill in default values if they exist.
+        Returns a dictionary containing attribute values.
+    """
+    # Check for required fields.
+    for field in datafields:
+        if field not in body:
+            raise Exception(f'Missing required field in request body "{field}".')
+
+    # Check for required attributes. Fill in defaults if available.
+    attrs = {}
+    for attr_type in attr_types:
+        field = attr_type.name
+        if field in body:
+            convert_attribute(attr_type, body[field]) # Validates attr value
+            attrs[field] = body[field];
+        elif isinstance(attr_type, AttributeTypeDatetime):
+            if attr_type.use_current:
+                # Fill in current datetime.
+                attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            else:
+                # Missing a datetime.
+                raise Exception(f'Missing attribute value for "{field}". Required for = '
+                                f'"{attr_type.applies_to.name}". Set to `use_current` to '
+                                f'True or supply a value.')
+        else:
+            if attr_type.default is not None:
+                # Fill in default for missing field.
+                if isinstance(attr_type, AttributeTypeGeoposition):
+                    attrs[field] = [attr_type.default.x, attr_type.default.y]
+                else:
+                    attrs[field] = attr_type.default
+            else:
+                # Missing a field and no default.
+                raise Exception(f'Missing attribute value for "{field}". Required for = '
+                                f'"{attr_type.applies_to.name}". Set a `default` on '
+                                f'the attribute type or supply a value.')
+    return attrs
 
 def paginate(query_params, queryset):
     start = query_params.get('start', None)
