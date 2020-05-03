@@ -1,5 +1,3 @@
-# License for Software
-
 Copyright (c) 2019 CVision AI, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,9 +17,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
------------
-
-# Creative Common declarations and attributions
-
-[Computer Icon](main/static/images/computer.jpg) is a derivative work of [Adawaita Icon](https://github.com/GNOME/adwaita-icon-theme/blob/mainline/Adwaita/512x512/devices/computer.png) used under [CC BY](https://creativecommons.org/licenses/by-sa/3.0/)
