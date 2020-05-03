@@ -243,7 +243,7 @@ def create_test_attribute_types(entity_type, project):
             name='string_test',
             applies_to=entity_type,
             project=project,
-            default='asdf',
+            default='asdf_default',
         ),
         'datetime': AttributeTypeDatetime.objects.create(
             name='datetime_test',
@@ -298,6 +298,28 @@ permission_levels = [
 ]
 
 class DefaultCreateTestMixin:
+    def _check_object(self, response, is_default):
+        # Get the created objects.
+        if isinstance(response.data['id'], list):
+            id_ = response.data['id'][0]
+        else:
+            id_ = response.data['id']
+        obj = EntityBase.objects.get(pk=id_)
+        # Assert it has all the expected values.
+        attr_types = AttributeTypeBase.objects.filter(applies_to=obj.meta)
+        for attr_type in attr_types:
+            field = attr_type.name
+            if is_default:
+                if not isinstance(attr_type, AttributeTypeDatetime):
+                    default = attr_type.default
+                    if isinstance(default, Point):
+                        default = [default.x, default.y]
+                    self.assertTrue(obj.attributes[field]==default)
+            else:
+                self.assertTrue(obj.attributes[field]==self.create_json[field])
+        # Delete the object
+        obj.delete()
+
     def test_create_default(self):
         endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
         # Remove attribute values.
@@ -309,30 +331,13 @@ class DefaultCreateTestMixin:
         for field in delete_fields:
             del create_json[field]
         # Post the json with no attribute values.
-        response_default = self.client.post(endpoint, create_json, format='json')
-        self.assertEqual(response_default.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self._check_object(response, True)
         # Post the json with attribute values.
         response = self.client.post(endpoint, self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # Get the created objects.
-        if isinstance(response_default.data['id'], list):
-            default_id = response_default.data['id'][0]
-            normal_id = response.data['id'][0]
-        else:
-            default_id = response_default.data['id']
-            normal_id = response.data['id']
-        default_obj = EntityBase.objects.get(pk=default_id)
-        normal_obj = EntityBase.objects.get(pk=normal_id)
-        # Assert it has all the default values.
-        attr_types = AttributeTypeBase.objects.filter(applies_to=default_obj.meta)
-        for attr_type in attr_types:
-            field = attr_type.name
-            if not isinstance(attr_type, AttributeTypeDatetime):
-                default = attr_type.default
-                if isinstance(default, Point):
-                    default = [default.x, default.y]
-                self.assertTrue(default_obj.attributes[field]==default)
-            self.assertTrue(normal_obj.attributes[field]==self.create_json[field])
+        self._check_object(response, False)
 
 class PermissionCreateTestMixin:
     def test_create_permissions(self):
