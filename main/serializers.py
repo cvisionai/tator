@@ -502,7 +502,7 @@ class TreeLeafSerializer(serializers.ModelSerializer):
 class AlgorithmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Algorithm
-        fields = ['name', 'description', 'pk']
+        fields = ['id', 'name', 'description']
 
 Analysis_baseFields=[ 'project', 'name' ]
 class AnalysisBaseSerializer(serializers.ModelSerializer):
