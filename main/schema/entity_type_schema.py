@@ -3,6 +3,8 @@ from rest_framework.schemas.openapi import AutoSchema
 class EntityTypeSchemaSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetEntityTypeSchema'
         operation['tags'] = ['EntityTypeSchema']
         return operation
 

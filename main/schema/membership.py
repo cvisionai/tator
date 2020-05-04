@@ -16,8 +16,10 @@ membership_properties = {
 class MembershipListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        if method == 'GET':
-            operation['operationId'] = 'RetrieveMembershipList'
+        if method == 'POST':
+            operation['operationId'] = 'CreateMembership'
+        elif method == 'GET':
+            operation['operationId'] = 'GetMembershipList'
         operation['tags'] = ['Membership']
         return operation
 
@@ -62,6 +64,12 @@ class MembershipListSchema(AutoSchema):
 class MembershipDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetMembership'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMembership'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMembership'
         operation['tags'] = ['Membership']
         return operation
 

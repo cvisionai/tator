@@ -3,6 +3,10 @@ from rest_framework.schemas.openapi import AutoSchema
 class VersionListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateVersion'
+        elif method == 'GET':
+            operation['operationId'] = 'GetVersionList'
         operation['tags'] = ['Version']
         if method == 'GET':
             operation['operationId'] = 'RetrieveVersionList'
@@ -65,6 +69,12 @@ class VersionListSchema(AutoSchema):
 class VersionDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetVersion'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateVersion'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteVersion'
         operation['tags'] = ['Version']
         return operation
 

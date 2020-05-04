@@ -133,6 +133,8 @@ save_video_properties = {
 class SaveVideoSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'SaveVideo'
         operation['tags'] = ['SaveVideo']
         return operation
 

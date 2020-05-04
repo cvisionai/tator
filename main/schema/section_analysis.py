@@ -5,6 +5,8 @@ from ._attributes import attribute_filter_parameter_schema
 class SectionAnalysisSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetSectionAnalysis'
         operation['tags'] = ['SectionAnalysis']
         return operation
 

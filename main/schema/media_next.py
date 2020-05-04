@@ -6,6 +6,8 @@ from ._attributes import attribute_filter_parameter_schema
 class MediaNextSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetMediaNext'
         operation['tags'] = ['Media']
         return operation
 

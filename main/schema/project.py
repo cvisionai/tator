@@ -15,6 +15,10 @@ project_properties = {
 class ProjectListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateProject'
+        elif method == 'GET':
+            operation['operationId'] = 'GetProjectList'
         operation['tags'] = ['Project']
         return operation
 
@@ -65,6 +69,12 @@ class ProjectListSchema(AutoSchema):
 class ProjectDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetProject'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateProject'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteProject'
         operation['tags'] = ['Project']
         return operation
 

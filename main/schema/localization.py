@@ -74,6 +74,14 @@ localization_properties = {
 class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateLocalization'
+        elif method == 'GET':
+            operation['operationId'] = 'GetLocalizationList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalizationList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalizationList'
         operation['tags'] = ['Localization']
         return operation
 
@@ -296,6 +304,12 @@ class LocalizationListSchema(AutoSchema):
 class LocalizationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetLocalization'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalization'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalization'
         operation['tags'] = ['Localization']
         return operation
 

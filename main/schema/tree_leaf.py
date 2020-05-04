@@ -5,6 +5,8 @@ from ._attributes import attribute_filter_parameter_schema
 class TreeLeafSuggestionSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'TreeLeafSuggestion'
         operation['tags'] = ['TreeLeaf']
         return operation
 
@@ -82,11 +84,13 @@ tree_leaf_properties = {
 class TreeLeafListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        if method == 'GET':
-            operation['operationId'] = 'RetrieveTreeLeafList'
-        if method == 'PATCH':
-            operation['operationId'] = 'PartialUpdateTreeLeafList'
-        if method == 'DELETE':
+        if method == 'POST':
+            operation['operationId'] = 'CreateTreeLeaf'
+        elif method == 'GET':
+            operation['operationId'] = 'GetTreeLeafList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateTreeLeafList'
+        elif method == 'DELETE':
             operation['operationId'] = 'DeleteTreeLeafList'
         operation['tags'] = ['TreeLeaf']
         return operation
@@ -176,6 +180,12 @@ class TreeLeafListSchema(AutoSchema):
 class TreeLeafDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetTreeLeaf'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateTreeLeaf'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteTreeLeaf'
         operation['tags'] = ['TreeLeaf']
         return operation
 

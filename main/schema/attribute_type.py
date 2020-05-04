@@ -199,6 +199,10 @@ attribute_type_schema = {
 class AttributeTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateAttributeType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetAttributeTypeList'
         operation['tags'] = ['AttributeType']
         return operation
 
@@ -317,6 +321,12 @@ class AttributeTypeListSchema(AutoSchema):
 class AttributeTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetAttributeType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateAttributeType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteAttributeType'
         operation['tags'] = ['AttributeType']
         return operation
 

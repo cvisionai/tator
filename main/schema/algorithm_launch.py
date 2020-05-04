@@ -4,7 +4,7 @@ class AlgorithmLaunchSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateAlgorithmLaunch'
+            operation['operationId'] = 'AlgorithmLaunch'
         operation['tags'] = ['Algorithm']
         return operation
 

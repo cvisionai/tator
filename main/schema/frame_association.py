@@ -3,6 +3,12 @@ from rest_framework.schemas.openapi import AutoSchema
 class FrameAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetFrameAssociation'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateFrameAssociation'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteFrameAssociation'
         operation['tags'] = ['FrameAssociation']
         return operation
 

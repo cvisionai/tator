@@ -1,11 +1,5 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-class TemporaryFileDetailSchema(AutoSchema):
-    def get_operation(self, path, method):
-        operation = super().get_operation(path, method)
-        operation['tags'] = ['TemporaryFile']
-        return operation
-
 save_properties = {
     'name': {
         'description': 'Unique name for the temporary file',
@@ -31,6 +25,12 @@ save_properties = {
 class TemporaryFileListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateTemporaryFile'
+        elif method == 'GET':
+            operation['operationId'] = 'GetTemporaryFileList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteTemporaryFileList'
         operation['tags'] = ['TemporaryFiles']
         return operation
     def _get_path_parameters(self, path, method):
@@ -71,3 +71,16 @@ class TemporaryFileListSchema(AutoSchema):
                 },
             }}}
         return body
+
+class TemporaryFileDetailSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetTemporaryFile'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateTemporaryFile'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteTemporaryFile'
+        operation['tags'] = ['TemporaryFile']
+        return operation
+

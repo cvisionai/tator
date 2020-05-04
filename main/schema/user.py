@@ -3,6 +3,12 @@ from rest_framework.schemas.openapi import AutoSchema
 class UserDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetUser'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateUser'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteUser'
         operation['tags'] = ['User']
         return operation
 
@@ -21,6 +27,8 @@ class UserDetailSchema(AutoSchema):
 class CurrentUserSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'WhoAmI'
         operation['tags'] = ['User']
         return operation
 

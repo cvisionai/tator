@@ -43,6 +43,10 @@ media_properties = {
 class MediaTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateMediaType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetMediaTypeList'
         operation['tags'] = ['MediaType']
         return operation
 
@@ -87,6 +91,12 @@ class MediaTypeListSchema(AutoSchema):
 class MediaTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetMediaType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMediaType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMediaType'
         operation['tags'] = ['MediaType']
         return operation
 

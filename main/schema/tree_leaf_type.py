@@ -17,6 +17,10 @@ tree_leaf_properties = {
 class TreeLeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateTreeLeafType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetTreeLeafTypeList'
         operation['tags'] = ['TreeLeafType']
         return operation
 
@@ -60,6 +64,12 @@ class TreeLeafTypeListSchema(AutoSchema):
 class TreeLeafTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetTreeLeafType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateTreeLeafType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteTreeLeafType'
         operation['tags'] = ['TreeLeafType']
         return operation
 

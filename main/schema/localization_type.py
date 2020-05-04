@@ -5,6 +5,10 @@ from ._entity_type_mixins import entity_type_filter_parameters_schema
 class LocalizationTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateLocalizationType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetLocalizationTypeList'
         operation['tags'] = ['LocalizationType']
         return operation
 
@@ -77,6 +81,12 @@ class LocalizationTypeListSchema(AutoSchema):
 class LocalizationTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetLocalizationType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalizationType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalizationType'
         operation['tags'] = ['LocalizationType']
         return operation
 

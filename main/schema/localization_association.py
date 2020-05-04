@@ -3,6 +3,12 @@ from rest_framework.schemas.openapi import AutoSchema
 class LocalizationAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetLocalizationAssociation'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalizationAssociation'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalizationAssociation'
         operation['tags'] = ['LocalizationAssociation']
         return operation
 

@@ -5,6 +5,10 @@ from ._entity_type_mixins import entity_type_filter_parameters_schema
 class StateTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateStateType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetStateTypeList'
         operation['tags'] = ['StateType']
         return operation
 
@@ -77,6 +81,12 @@ class StateTypeListSchema(AutoSchema):
 class StateTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetStateType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateStateType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteStateType'
         operation['tags'] = ['StateType']
         return operation
 

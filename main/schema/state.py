@@ -28,6 +28,14 @@ state_properties = {
 class StateListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'POST':
+            operation['operationId'] = 'CreateState'
+        elif method == 'GET':
+            operation['operationId'] = 'GetStateList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateStateList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteStateList'
         operation['tags'] = ['State']
         return operation
 
@@ -147,6 +155,12 @@ class StateListSchema(AutoSchema):
 class StateDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetState'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateState'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteState'
         operation['tags'] = ['State']
         return operation
 

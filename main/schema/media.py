@@ -111,6 +111,12 @@ class MediaListSchema(AutoSchema):
 class MediaDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetMedia'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMedia'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMedia'
         operation['tags'] = ['Media']
         return operation
 
