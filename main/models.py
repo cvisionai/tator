@@ -630,7 +630,7 @@ class EntityState(EntityBase):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
-    association = ForeignKey(AssociationType, on_delete=CASCADE)
+    association = ForeignKey(AssociationType, on_delete=CASCADE, unique=True)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
@@ -648,6 +648,7 @@ def state_save(sender, instance, created, **kwargs):
 
 @receiver(pre_delete, sender=EntityState)
 def state_delete(sender, instance, **kwargs):
+    instance.association.delete()
     TatorSearch().delete_document(instance)
 
 # Tree data type
