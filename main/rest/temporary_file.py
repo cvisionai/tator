@@ -25,15 +25,12 @@ import shutil
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
-class TemporaryFileAPI(generics.RetrieveDestroyAPIView):
-    """ Access a detailed view of a temporary file given an id """
-    queryset = TemporaryFile.objects.all()
-    serializer_class = TemporaryFileSerializer
-    permission_classes = [ProjectEditPermission]
-    schema = TemporaryFileDetailSchema()
-
 class TemporaryFileListAPI(generics.ListAPIView):
-    """ Access a list of temporary files associated with a project """
+    """ Interact with temporary file list.
+
+        Temporary files are files stored server side for a defined duration. The file must
+        first be uploaded via tus, and can subsequently be saved using this endpoint.
+    """
     schema = TemporaryFileListSchema()
     permission_classes = [ProjectEditPermission]
     serializer_class = TemporaryFileSerializer
@@ -98,3 +95,14 @@ class TemporaryFileListAPI(generics.ListAPIView):
                 if os.path.exists(info_path):
                     os.remove(info_path)
             return response;
+
+class TemporaryFileDetailAPI(generics.RetrieveDestroyAPIView):
+    """ Interact with temporary file.
+
+        Temporary files are files stored server side for a defined duration. The file must
+        first be uploaded via tus, and can subsequently be saved using this endpoint.
+    """
+    queryset = TemporaryFile.objects.all()
+    serializer_class = TemporaryFileSerializer
+    permission_classes = [ProjectEditPermission]
+    schema = TemporaryFileDetailSchema()
