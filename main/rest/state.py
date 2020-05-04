@@ -320,6 +320,7 @@ class StateDetailAPI(RetrieveUpdateDestroyAPIView):
     queryset = EntityState.objects.all()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def delete(self, request, **kwargs):
         response = Response({}, status=status.HTTP_204_NO_CONTENT)

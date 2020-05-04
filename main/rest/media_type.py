@@ -82,6 +82,7 @@ class MediaTypeDetailAPI(EntityTypeDetailAPIMixin):
     serializer_class = EntityTypeMediaSerializer
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, format=None, **kwargs):
         response = Response({})

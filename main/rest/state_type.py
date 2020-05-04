@@ -92,6 +92,7 @@ class StateTypeDetailAPI(EntityTypeDetailAPIMixin):
     baseObj=EntityState
     entityTypeAttrSerializer=EntityTypeStateAttrSerializer
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     schema = StateTypeDetailSchema()
     serializer_class = EntityTypeStateAttrSerializer

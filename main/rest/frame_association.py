@@ -24,6 +24,7 @@ class FrameAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
     permission_classes = [ProjectEditPermission]
     schema = FrameAssociationDetailSchema()
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, format=None, **kwargs):
         response=Response({})

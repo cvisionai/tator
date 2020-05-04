@@ -17,6 +17,7 @@ class UserDetailAPI(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
 class CurrentUserAPI(APIView):
     """ Returns the current user.

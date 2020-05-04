@@ -235,6 +235,7 @@ class TreeLeafDetailAPI(RetrieveUpdateDestroyAPIView):
     queryset = TreeLeaf.objects.all()
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, **kwargs):
         response = Response({})

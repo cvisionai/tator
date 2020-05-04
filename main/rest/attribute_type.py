@@ -36,6 +36,7 @@ class AttributeTypeListAPI(APIView):
     serializer_class = AttributeTypeSerializer
     permission_classes = [ProjectFullControlPermission]
     schema = AttributeTypeListSchema()
+    http_method_names = ['get', 'post']
 
     def get(self, request, format=None, **kwargs):
         response=Response({})
@@ -118,6 +119,7 @@ class AttributeTypeDetailAPI(RetrieveUpdateDestroyAPIView):
     permission_classes = [ProjectFullControlPermission]
     schema = AttributeTypeDetailSchema()
     lookup_field='id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, format=None, **kwargs):
         """ Updates a localization type.

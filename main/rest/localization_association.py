@@ -27,6 +27,7 @@ class LocalizationAssociationDetailAPI(RetrieveUpdateDestroyAPIView):
     queryset = LocalizationAssociation.objects.all()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, format=None, **kwargs):
         response=Response({})
