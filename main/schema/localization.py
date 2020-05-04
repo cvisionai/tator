@@ -4,18 +4,26 @@ from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
 localization_properties = {
+    'frame': {
+        'description': 'Frame number of this localization if it is in a video.',
+        'type': 'integer',
+    },
+    'attributes': {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': True,
+    }
+}
+
+box_properties = {
     'x': {
-        'description': 'Normalized horizontal position of left edge of bounding box for '
-                       '`box` localization types, or horizontal position of dot for `dot` '
-                       'annotation types.',
+        'description': 'Normalized horizontal position of left edge of bounding box.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
     'y': {
-        'description': 'Normalized vertical position of top edge of bounding box for '
-                       '`box` localization types, or vertical position of dot for `dot` '
-                       'annotation types.',
+        'description': 'Normalized vertical position of top edge of bounding box.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
@@ -32,6 +40,9 @@ localization_properties = {
         'minimum': 0.0,
         'maximum': 1.0,
     },
+}
+
+line_properties = {
     'x0': {
         'description': 'Normalized horizontal position of start of line for `line` '
                        'localization types.',
@@ -60,15 +71,43 @@ localization_properties = {
         'minimum': 0.0,
         'maximum': 1.0,
     },
-    'frame': {
-        'description': 'Frame number of this localization if it is in a video.',
+}
+
+dot_properties = {
+    'x': {
+        'description': 'Normalized horizontal position of dot.',
+        'type': 'number',
+        'minimum': 0.0,
+        'maximum': 1.0,
+    },
+    'y': {
+        'description': 'Normalized vertical position of dot.',
+        'type': 'number',
+        'minimum': 0.0,
+        'maximum': 1.0,
+    },
+}
+
+post_properties = {
+    'media_id': {
+        'description': 'Unique integer identifying a media. Required if '
+                       '`many` is not given.',
         'type': 'integer',
     },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
+    'type': {
+        'description': 'Unique integer identifying a localization type.'
+                       'Required if `many` is not given.',
+        'type': 'integer',
+    },
+    'version': {
+        'description': 'Unique integer identifying the version.',
+        'type': 'integer',
+    },
+    'modified': {
+        'description': 'Whether this localization was created in the web UI.',
+        'type': 'boolean',
+        'default': False,
+    },
 }
 
 class LocalizationListSchema(AutoSchema):
@@ -105,40 +144,76 @@ class LocalizationListSchema(AutoSchema):
         if method == 'POST':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'additionalProperties': True,
-                    'properties': {
-                        'media_id': {
-                            'description': 'Unique integer identifying a media. Required if '
-                                           '`many` is not given.',
-                            'type': 'integer',
+                    'oneOf': [
+                        {
+                            'type': 'object',
+                            'description': 'Single box localization.',
+                            'required': ['media_id', 'type', 'x', 'y', 'width', 'height', 'frame'],
+                            'additionalProperties': True,
+                            'properties': {
+                                **post_properties,
+                                **box_properties,
+                            },
                         },
-                        'type': {
-                            'description': 'Unique integer identifying a localization type.'
-                                           'Required if `many` is not given.',
-                            'type': 'integer',
+                        {
+                            'type': 'object',
+                            'description': 'Single line localization.',
+                            'required': ['media_id', 'type', 'x0', 'y0', 'x1', 'y1', 'frame'],
+                            'additionalProperties': True,
+                            'properties': {
+                                **post_properties,
+                                **line_properties,
+                            },
                         },
-                        'many': {
-                            'description': 'List of localizations if this request is for bulk'
-                                           'create.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'object',
-                                'additionalProperties': True,
-                                'properties': localization_properties,
-                            }
+                        {
+                            'type': 'object',
+                            'description': 'Single dot localization.',
+                            'required': ['media_id', 'type', 'x', 'y', 'frame'],
+                            'additionalProperties': True,
+                            'properties': {
+                                **post_properties,
+                                **dot_properties,
+                            },
                         },
-                        'version': {
-                            'description': 'Unique integer identifying the version.',
-                            'type': 'integer',
+                        {
+                            'type': 'object',
+                            'description': 'Many localizations.',
+                            'required': ['media_id', 'type', 'many'],
+                            'properties': {
+                                **post_properties,
+                                'many': {
+                                    'description': 'List of localizations if this request is for bulk'
+                                                   'create.',
+                                    'type': 'array',
+                                    'items': {
+                                        'oneOf': [
+                                            {
+                                                'type': 'object',
+                                                'description': 'Box localization.',
+                                                'required': ['x', 'y', 'width', 'height', 'frame'],
+                                                'additionalProperties': True,
+                                                'properties': box_properties,
+                                            },
+                                            {
+                                                'type': 'object',
+                                                'description': 'Line localization.',
+                                                'required': ['x0', 'y0', 'x1', 'y1', 'frame'],
+                                                'additionalProperties': True,
+                                                'properties': line_properties,
+                                            },
+                                            {
+                                                'type': 'object',
+                                                'description': 'Dot localization.',
+                                                'required': ['x', 'y', 'frame'],
+                                                'additionalProperties': True,
+                                                'properties': dot_properties,
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
                         },
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                            'default': False,
-                        },
-                        **localization_properties,
-                    },
+                    ],
                 },
                 'examples': {
                     'box': {
@@ -330,8 +405,29 @@ class LocalizationDetailSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'properties': localization_properties,
+                    'oneOf': [
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_properties,
+                                **box_properties,
+                            },
+                        },
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_properties,
+                                **line_properties,
+                            },
+                        },
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_properties,
+                                **dot_properties,
+                            },
+                        },
+                    ]
                 },
                 'example': {
                     'x': 0.25,
