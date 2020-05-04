@@ -1,5 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
@@ -362,9 +363,7 @@ class LocalizationListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
             responses['200'] = {'description': 'Successful retrieval of localization list.'}
         elif method == 'POST':
@@ -439,12 +438,42 @@ class LocalizationDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find localization with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'PATCH':
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of localization list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'oneOf': [
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_properties,
+                                    **box_properties,
+                                },
+                            },
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_properties,
+                                    **line_properties,
+                                },
+                            },
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_properties,
+                                    **dot_properties,
+                                },
+                            },
+                        ]
+                    }
+                }}},
+            }
+        elif method == 'PATCH':
             responses['200'] = {'description': 'Successful update of localization.'}
-        if method == 'DELETE':
+        elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization.'}
         return responses
 
