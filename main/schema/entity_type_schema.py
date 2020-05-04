@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class EntityTypeSchemaSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -24,10 +26,28 @@ class EntityTypeSchemaSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find entity type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of entity type schema.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of entity type schema.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'name': {
+                            'type': 'string',
+                            'description': 'Name of the entity type.',
+                        },
+                        'description': {
+                            'type': 'string',
+                            'description': 'Description of the entity type.',
+                        },
+                        'required_fields': {
+                            'type': 'object',
+                            'additionalProperties': True,
+                            'description': 'Description of required fields.',
+                        },
+                    },
+                }}},
+            }
         return responses
 
