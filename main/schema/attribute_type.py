@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 attribute_type_properties = {
     'name': {
         'description': 'Name of the attribute.',
@@ -311,11 +313,32 @@ class AttributeTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful creation of attribute type.'}
+            responses['201'] = {
+                'description': 'Successful creation.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful creation.',
+                        },
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying created object.',
+                        },
+                    },
+                }}}
+            }
+        elif method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of attribute type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': attribute_type_schema,
+                }}}
+            }
         return responses
 
 class AttributeTypeDetailSchema(AutoSchema):
@@ -367,11 +390,25 @@ class AttributeTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of attribute type.',
+                'content': {'application/json': {'schema': attribute_type_schema}},
+            }
         if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of attribute type.'}
+            responses['200'] = {
+                'description': 'Successful update of attribute type.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful update.',
+                        },
+                    },
+                }}},
+            }
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of attribute type.'}
         return responses
