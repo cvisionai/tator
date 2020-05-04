@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class JobDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -24,9 +26,7 @@ class JobDetailSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find the job with given uuid.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful cancellation of the job.'}
         return responses

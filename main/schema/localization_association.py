@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class LocalizationAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -53,10 +55,8 @@ class LocalizationAssociationDetailSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find localization association with '
-                                           'given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
         if method == 'PATCH':
+            responses = error_responses()
             responses['200'] = {'description': 'Successful update of localization association.'}
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful delete of localization association.'}
