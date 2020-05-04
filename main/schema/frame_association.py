@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class FrameAssociationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -49,9 +51,16 @@ class FrameAssociationDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find frame association with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of frame association.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'description': 'Frame association object.',
+                    'additionalProperties': True,
+                }}},
+            }
         if method == 'PATCH':
             responses['200'] = {'description': 'Successful update of frame association.'}
         elif method == 'DELETE':
