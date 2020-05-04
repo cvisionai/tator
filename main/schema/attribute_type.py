@@ -1,5 +1,201 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+attribute_type_properties = {
+    'name': {
+        'description': 'Name of the attribute.',
+        'type': 'string',
+    },
+    'description': {
+        'description': 'Description of the attribute.',
+        'type': 'string',
+        'default': '',
+    },
+    'applies_to': {
+        'description': 'Unique integer identifying the entity type that '
+                       'this attribute describes.',
+        'type': 'integer',
+    },
+    'order': {
+        'description': 'Integer specifying relative order this attribute '
+                       'is displayed in the UI. Negative values are hidden '
+                       'by default.',
+        'type': 'integer',
+        'default': 0,
+    },
+}
+
+bool_schema = {
+    'type': 'object',
+    'description': 'Boolean attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['bool'],
+        },
+        'default': {
+            'description': 'Default value for the attribute.',
+            'type': 'boolean',
+        },
+    },
+}
+
+int_schema = {
+    'type': 'object',
+    'description': 'Integer attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['int'],
+        },
+        'default': {
+            'description': 'Default value for the attribute.',
+            'type': 'integer',
+        },
+        'lower_bound': {
+            'description': 'Lower bound.',
+            'type': 'integer',
+        },
+        'upper_bound': {
+            'description': 'Upper bound.',
+            'type': 'integer',
+        },
+    },
+}
+
+float_schema = {
+    'type': 'object',
+    'description': 'Float attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['float'],
+        },
+        'default': {
+            'description': 'Default value for the attribute.',
+            'type': 'number',
+        },
+        'lower_bound': {
+            'description': 'Lower bound.',
+            'type': 'number',
+        },
+        'upper_bound': {
+            'description': 'Upper bound.',
+            'type': 'number',
+        },
+    },
+}
+
+string_schema = {
+    'type': 'object',
+    'description': 'String attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['string'],
+        },
+        'default': {
+            'description': 'Default value for the attribute.',
+            'type': 'string',
+        },
+        'autocomplete': {
+            'description': 'Object indicating URL of autocomplete service '
+                           'for string dtype.',
+            'type': 'object',
+        },
+    },
+}
+
+enum_schema = {
+    'type': 'object',
+    'description': 'Enum attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['enum'],
+        },
+        'default': {
+            'description': 'Default value for the attribute.',
+            'type': 'string',
+        },
+        'choices': {
+            'description': 'Array of possible values.',
+            'type': 'array',
+            'items': {'type': 'string'},
+        },
+        'labels': {
+            'description': 'Array of labels.',
+            'type': 'array',
+            'items': {'type': 'string'},
+        },
+    },
+}
+    
+datetime_schema = {
+    'type': 'object',
+    'description': 'Datetime attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['datetime'],
+        },
+        'use_current': {
+            'description': 'True to use current datetime as default for '
+                           'datetime dtype.',
+            'type': 'boolean',
+        },
+    },
+}
+
+geopos_schema = {
+    'type': 'object',
+    'description': 'Geoposition attribute type.',
+    'required': ['name', 'dtype', 'applies_to'],
+    'properties': {
+        **attribute_type_properties,
+        'dtype': {
+            'description': 'Data type of the attribute.',
+            'type': 'string',
+            'enum': ['geopos'],
+        },
+        'default': {
+            'description': 'Default value for the attribute. Order is lon, lat.',
+            'type': 'array',
+            'items': {'type': 'number'},
+            'minLength': 2,
+            'maxLength': 2,
+        },
+    },
+}
+attribute_type_schema = {
+    'oneOf': [
+        bool_schema,
+        int_schema,
+        float_schema,
+        string_schema,
+        enum_schema,
+        datetime_schema,
+        geopos_schema,
+    ],
+}
+
 class AttributeTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -32,76 +228,7 @@ class AttributeTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype', 'applies_to'],
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the attribute.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the attribute.',
-                            'type': 'string',
-                            'default': '',
-                        },
-                        'dtype': {
-                            'description': 'Data type of the attribute.',
-                            'type': 'string',
-                            'enum': ['bool', 'int', 'float', 'enum', 'str',
-                                     'datetime', 'geopos'],
-                        },
-                        'applies_to': {
-                            'description': 'Unique integer identifying the entity type that '
-                                           'this attribute describes.',
-                            'type': 'integer',
-                        },
-                        'order': {
-                            'description': 'Integer specifying relative order this attribute '
-                                           'is displayed in the UI. Negative values are hidden '
-                                           'by default.',
-                            'type': 'integer',
-                            'default': 0,
-                        },
-                        'default': {
-                            'description': 'Default value for the attribute.',
-                            'oneOf': [
-                                {'type': 'boolean'},
-                                {'type': 'number'},
-                                {'type': 'string'},
-                                {'type': 'array', 'items': {'type': 'number'}, 'minLength': 2, 'maxLength': 2},
-                            ]
-                        },
-                        'lower_bound': {
-                            'description': 'Lower bound for int or float dtype.',
-                            'type': 'number',
-                        },
-                        'upper_bound': {
-                            'description': 'Upper bound for int or float dtype.',
-                            'type': 'number',
-                        },
-                        'choices': {
-                            'description': 'Array of possible values for enum dtype.',
-                            'type': 'array',
-                            'items': {'type': 'string'},
-                        },
-                        'labels': {
-                            'description': 'Array of labels for enum dtype.',
-                            'type': 'array',
-                            'items': {'type': 'string'},
-                        },
-                        'autocomplete': {
-                            'description': 'Object indicating URL of autocomplete service '
-                                           'for string dtype.',
-                            'type': 'object',
-                        },
-                        'use_current': {
-                            'description': 'True to use current datetime as default for '
-                                           'datetime dtype.',
-                            'type': 'boolean',
-                        },
-                    },
-                },
+                'schema': attribute_type_schema,
                 'examples': {
                     'bool': {
                         'summary': 'Boolean attribute type',
