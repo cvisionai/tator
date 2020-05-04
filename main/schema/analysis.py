@@ -1,8 +1,30 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+analysis_properties = {
+    'name': {
+        'description': 'Name of analysis.',
+        'type': 'string',
+    },
+    'data_type': {
+        'description': 'A unique integer identifying an entity type '
+                       'to analyze.',
+        'type': 'integer',
+    },
+    'data_query': {
+        'description': 'Lucene query string used to retrieve entities '
+                       'to analyze.',
+        'type': 'string',
+        'default': '*',
+    },
+}
+
 class AnalysisListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetAnalysisList'
+        elif method == 'POST':
+            operation['operationId'] = 'CreateAnalysis'
         operation['tags'] = ['Analysis']
         return operation
 
@@ -25,23 +47,7 @@ class AnalysisListSchema(AutoSchema):
                 'schema': {
                     'type': 'object',
                     'required': ['name', 'data_type'],
-                    'properties': {
-                        'name': {
-                            'description': 'Name of analysis.',
-                            'type': 'string',
-                        },
-                        'data_type': {
-                            'description': 'A unique integer identifying an entity type '
-                                           'to analyze.',
-                            'type': 'integer',
-                        },
-                        'data_query': {
-                            'description': 'Lucene query string used to retrieve entities '
-                                           'to analyze.',
-                            'type': 'string',
-                            'default': '*',
-                        },
-                    },
+                    'properties': analysis_properties,
                 },
                 'examples': {
                     'count_all': {
@@ -64,9 +70,74 @@ class AnalysisListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'POST':
-            responses['201'] = {'description': 'Successful creation of analysis.'}
+        responses = {}
+        if method == 'GET':
+            responses['404'] = {'description': 'Failure to find project with given ID.'}
+            responses['400'] = {'description': 'Bad request.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of analyses.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            **analysis_properties,
+                            'project': {
+                                'type': 'integer',
+                                'description': 'Unique integer identifying a project.',
+                            },
+                            'resourcetype': {
+                                'type': 'string',
+                                'description': 'Analysis type.',
+                                'enum': ['AnalysisCount',],
+                            },
+                        },
+                    },
+                }}},
+            }
+        elif method == 'POST':
+            responses['404'] = {
+                'description': 'Not found.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message explaining not found error.',
+                        },
+                    },
+                }}},
+            }
+            responses['400'] = {
+                'description': 'Bad request.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Error message for bad request.',
+                        },
+                        'details': {
+                            'type': 'string',
+                            'description': 'Detailed error message for bad request.',
+                        },
+                    },
+                }}},
+            }
+            responses['201'] = {
+                'description': 'Successful creation of analysis.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful creation.',
+                        },
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying the created object.',
+                        },
+                    },
+                }}}
+            }
         return responses
