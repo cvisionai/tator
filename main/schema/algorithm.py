@@ -3,7 +3,8 @@ from rest_framework.schemas.openapi import AutoSchema
 class AlgorithmListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['operationId'] = 'GetAlgorithmList'
+        if method == 'GET':
+            operation['operationId'] = 'GetAlgorithmList'
         operation['tags'] = ['Algorithm']
         return operation
 
