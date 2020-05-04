@@ -16,7 +16,7 @@ from ..schema import parse
 from ._permissions import ProjectFullControlPermission
 
 class AnalysisListAPI(ListCreateAPIView):
-    """ Define and list analyses for a project.
+    """ List analyses for a project.
 
         Analysis objects are used to display information about filtered media lists
         and/or annotations on the project detail page of the web UI. Currently only
@@ -32,6 +32,12 @@ class AnalysisListAPI(ListCreateAPIView):
         return qs
 
     def post(self, request, format=None, **kwargs):
+        """ Create analysis for a project.
+
+            Analysis objects are used to display information about filtered media lists
+            and/or annotations on the project detail page of the web UI. Currently only
+            counting analysis is supported.
+        """
         response = Response({})
         try:
             # Get the parameters.
