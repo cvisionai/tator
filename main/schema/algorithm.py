@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class AlgorithmListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -24,31 +26,12 @@ class AlgorithmListSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
+        responses = error_responses()
         if method == 'GET':
-            responses['404'] = {'description': 'Failure to find project with given ID.'}
-            responses['400'] = {'description': 'Bad request.'}
             responses['200'] = {
                 'description': 'Successful retrieval of registered algorithms.',
                 'content': {'application/json': {'schema': {
-                    'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'id': {
-                                'type': 'integer',
-                                'description': 'Unique integer identifying the algorithm.',
-                            },
-                            'name': {
-                                'type': 'string',
-                                'description': 'Name of the algorithm.',
-                            },
-                            'description': {
-                                'type': 'string',
-                                'description': 'Description of the algorithm.',
-                            },
-                        },
-                    },
+                    '$ref': '#/components/schemas/AlgorithmList',
                 }}},
             }
         return responses
