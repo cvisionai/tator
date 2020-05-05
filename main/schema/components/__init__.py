@@ -10,6 +10,11 @@ from .attribute_type import attribute_type_update
 from .entity_type_schema import entity_type_schema
 from .localization_association import localization_association_update
 from .localization_association import localization_association
+from .localization import localization_spec
+from .localization import localization_list_update
+from .localization import localization_list
+from .localization import localization_update
+from .localization import localization
 
 from .save_video import video_spec
 from .save_video import video_update
