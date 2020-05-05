@@ -1,6 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-from ._message import message
+from ._message import message_schema
 from ._errors import error_responses
 
 class LocalizationAssociationDetailSchema(AutoSchema):
@@ -66,7 +66,7 @@ class LocalizationAssociationDetailSchema(AutoSchema):
                 }}},
             }
         elif method == 'PATCH':
-            responses['200'] = message('update', 'localization association')
+            responses['200'] = message_schema('update', 'localization association')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful delete of localization association.'}
         return responses

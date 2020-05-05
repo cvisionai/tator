@@ -1,6 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-from ._message import message
+from ._message import message_schema
 from ._errors import error_responses
 
 class FrameAssociationDetailSchema(AutoSchema):
@@ -63,7 +63,7 @@ class FrameAssociationDetailSchema(AutoSchema):
                 }}},
             }
         if method == 'PATCH':
-            responses['200'] = message('update', 'frame association')
+            responses['200'] = message_schema('update', 'frame association')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful delete of frame association.'}
         return responses

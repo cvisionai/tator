@@ -1,6 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-from ._message import message
+from ._message import message_schema
 from ._errors import error_responses
 
 class JobGroupDetailSchema(AutoSchema):
@@ -29,6 +29,6 @@ class JobGroupDetailSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'DELETE':
-            responses['204'] = message('cancellation', 'job group')
+            responses['204'] = message_schema('cancellation', 'job group')
         return responses
 
