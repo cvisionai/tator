@@ -787,7 +787,7 @@ class StateGraphic:
                       "Accept-Encoding": "gzip"}
 
 
-    def get_bgr(self, state_element_or_id):
+    def get_bgr(self, state_element_or_id, **kwargs):
         """ Return a list of np.arrays representing bgr data for each requested
             frame
 
@@ -795,9 +795,16 @@ class StateGraphic:
                    Represents the media to fetch (either a dict with 'id' or
                    just the integer itself)
 
+            kwargs : Maps to argument of `StateGraphic` endpoint.
+                     mode : [tile, animate], default = tile
+                     forceScale : WxH default = None
+
         """
+        args = {"mode": "tile"}
+        for key in kwargs:
+            args.update({key: kwargs[key]})
         code, jpg_data = self.get_encoded_img(state_element_or_id,
-                                              mode="tile")
+                                              **args)
         if code != 200:
             return code,None
 
@@ -821,7 +828,8 @@ class StateGraphic:
         return code, frame_data
 
     def get_encoded_img(self, state_element_or_id,
-                        mode="tile"):
+                        mode="tile",
+                        forceScale=None):
         """ Return an encoded image (jpg,gif) from the media server
 
             media_element_or_id : dict or int
@@ -835,6 +843,8 @@ class StateGraphic:
             state_id = state_element_or_id
 
         params={"mode" : mode}
+        if forceScale:
+            params.update({"forceScale": forceScale})
 
         ep = self.url + "/StateGraphic" + f"/{state_id}"
 
