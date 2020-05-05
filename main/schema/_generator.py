@@ -56,6 +56,8 @@ class CustomGenerator(SchemaGenerator):
                 },
             },
             'schemas': {
+                'AlgorithmLaunchSpec': algorithm_launch_spec,
+                'AlgorithmLaunchResponse': algorithm_launch_response,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
             },
