@@ -2,24 +2,6 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 
-analysis_properties = {
-    'name': {
-        'description': 'Name of analysis.',
-        'type': 'string',
-    },
-    'data_type': {
-        'description': 'A unique integer identifying an entity type '
-                       'to analyze.',
-        'type': 'integer',
-    },
-    'data_query': {
-        'description': 'Lucene query string used to retrieve entities '
-                       'to analyze.',
-        'type': 'string',
-        'default': '*',
-    },
-}
-
 class AnalysisListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -46,11 +28,7 @@ class AnalysisListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'data_type'],
-                    'properties': analysis_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/AnalysisSpec'},
                 'examples': {
                     'count_all': {
                         'summary': 'Count all entities of the given type',
@@ -79,22 +57,7 @@ class AnalysisListSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of analyses.',
                 'content': {'application/json': {'schema': {
-                    'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            **analysis_properties,
-                            'project': {
-                                'type': 'integer',
-                                'description': 'Unique integer identifying a project.',
-                            },
-                            'resourcetype': {
-                                'type': 'string',
-                                'description': 'Analysis type.',
-                                'enum': ['AnalysisCount',],
-                            },
-                        },
-                    },
+                    '$ref': '#/components/schemas/AnalysisList',
                 }}},
             }
         elif method == 'POST':
@@ -102,17 +65,7 @@ class AnalysisListSchema(AutoSchema):
             responses['201'] = {
                 'description': 'Successful creation of analysis.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'message': {
-                            'type': 'string',
-                            'description': 'Message indicating successful creation.',
-                        },
-                        'id': {
-                            'type': 'integer',
-                            'description': 'Unique integer identifying the created object.',
-                        },
-                    },
+                    '$ref': '#/components/schemas/CreateResponse',
                 }}}
             }
         return responses

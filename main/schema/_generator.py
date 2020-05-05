@@ -59,8 +59,11 @@ class CustomGenerator(SchemaGenerator):
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunchResponse': algorithm_launch_response,
                 'AlgorithmList': algorithm_list,
+                'AnalysisSpec': analysis_spec,
+                'AnalysisList': analysis_list,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
+                'CreateResponse': create_response,
             },
         }
         schema['security'] = [
