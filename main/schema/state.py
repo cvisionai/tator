@@ -1,5 +1,8 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_with_id_schema
+from ._message import message_schema
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
@@ -23,6 +26,33 @@ state_properties = {
         'type': 'object',
         'additionalProperties': True,
     }
+}
+
+version_properties = {
+    'version': {
+        'description': 'Unique integer identifying the version.',
+        'type': 'integer',
+    },
+    'modified': {
+        'description': 'Whether this localization was created in the web UI.',
+        'type': 'boolean',
+        'default': False,
+    },
+}
+
+state_get_properties = {
+    'id': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the state.',
+    },
+    'meta': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the entity type.',
+    },
+    'association': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the state association.',
+    },
 }
 
 class StateListSchema(AutoSchema):
@@ -67,15 +97,7 @@ class StateListSchema(AutoSchema):
                             'description': 'Unique integer identifying a state type.',
                             'type': 'integer',
                         },
-                        'version': {
-                            'description': 'Unique integer identifying the version.',
-                            'type': 'integer',
-                        },
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                            'default': False,
-                        },
+                        **version_properties,
                         **state_properties,
                     },
                 },
@@ -138,18 +160,28 @@ class StateListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of state list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of state list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            **state_get_properties,
+                            **version_properties,
+                            **state_properties,
+                        },
+                    },
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of state(s).'}
+            responses['201'] = message_with_id_schema('state(s)')
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of state '
-                                               'attributes.'}
+            responses['200'] = message_schema('update', 'state list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of states.'}
+            responses['204'] = message_schema('deletion', 'state list')
         return responses
 
 class StateDetailSchema(AutoSchema):
@@ -191,11 +223,9 @@ class StateDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find state with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of state.'}
+            responses['200'] = message_schema('update', 'state')
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of state.'}
         return responses
