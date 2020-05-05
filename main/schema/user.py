@@ -32,3 +32,35 @@ class CurrentUserSchema(AutoSchema):
         operation['tags'] = ['User']
         return operation
 
+    def _get_responses(self, path, method):
+        responses = {
+            '200': {
+                'description': 'Successful retrieval of user who sent request.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying current user.',
+                        },
+                        'username': {
+                            'type': 'string',
+                            'description': 'Username of current user.',
+                        },
+                        'first_name': {
+                            'type': 'string',
+                            'description': 'First name of current user.',
+                        },
+                        'last_name': {
+                            'type': 'string',
+                            'description': 'Last name of current user.',
+                        },
+                        'email': {
+                            'type': 'string',
+                            'description': 'Email address of current user.',
+                        },
+                    },
+                }}},
+            },
+        }
+        return responses
