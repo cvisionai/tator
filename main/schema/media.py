@@ -4,7 +4,7 @@ from ._message import message_schema
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
-from .save_video import save_video_properties
+from .components.save_video import save_video_properties
 
 media_properties = {
     'name': {
