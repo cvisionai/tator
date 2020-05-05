@@ -36,10 +36,15 @@ if os.getenv("TATOR_USE_MIN_JS").lower() == "true":
 else:
     USE_MIN_JS = False
 
-ALLOWED_HOSTS = [
-    os.getenv('MAIN_HOST'),
-    socket.gethostbyname('nginx-svc'), # Allows internal cluster access
-]
+try:
+    ALLOWED_HOSTS = [
+        os.getenv('MAIN_HOST'),
+        socket.gethostbyname('nginx-svc'), # Allows internal cluster access
+    ]
+except: # Support standalone `docker run`
+    ALLOWED_HOSTS = [
+        os.getenv('MAIN_HOST'),
+    ]
 
 # Application definition
 
@@ -257,3 +262,5 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 TATOR_SLACK_TOKEN = os.getenv('TATOR_SLACK_TOKEN')
 TATOR_SLACK_CHANNEL = os.getenv('TATOR_SLACK_CHANNEL')
+
+SILENCED_SYSTEM_CHECKS = ['fields.W342']
