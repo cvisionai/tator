@@ -32,6 +32,7 @@ class SectionAnalysisAPI(APIView):
             response_data = {}
             for analysis in analyses:
                 media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+                media_query['query']['bool']['filter'] = []
                 media_query = get_attribute_query(params, media_query, [], kwargs['project'])
                 query_str = f'{analysis.data_query} AND _meta:{analysis.data_type.pk}'
                 if mediaId is not None:
