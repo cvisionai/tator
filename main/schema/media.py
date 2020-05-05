@@ -318,10 +318,28 @@ class GetFrameSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = {}
-        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of frame image.'}
+            responses['404'] = {
+                'description': 'Not found.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+            responses['400'] = {
+                'description': 'Bad request.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+            responses['200'] = {
+                'description': 'Successful retrieval of frame image.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
         return responses
 
 
@@ -373,3 +391,15 @@ class GetClipSchema(AutoSchema):
 
     def _get_request_body(self, path, method):
         return {}
+
+    def _get_responses(self, path, method):
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of video clip.',
+                'content': {'video/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+        return responses
