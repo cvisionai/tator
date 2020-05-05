@@ -1,5 +1,64 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
+
+version_schema = {
+    'type': 'object',
+    'description': 'Version object.',
+    'properties': {
+        'id': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a membership.',
+        },
+        'name': {
+            'description': 'Name of the version.',
+            'type': 'string',
+        },
+        'description': {
+            'type': 'string',
+            'description': 'Description of the version.',
+        },
+        'number': {
+            'type': 'integer',
+            'description': 'Version number.',
+        },
+        'project': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a project.',
+        },
+        'show_empty': {
+            'type': 'boolean',
+            'description': 'Whether to show this version on media for which no annotations exist.',
+        },
+        'num_created': {
+            'type': 'integer',
+            'description': 'Number of created annotations in this version.',
+        },
+        'created_datetime': {
+            'type': 'string',
+            'description': 'Datetime when the last unmodified annotation was created.',
+        },
+        'created_by': {
+            'type': 'string',
+            'description': 'Name of user who created the last unmodified annotation in this version.',
+        },
+        'num_modified': {
+            'type': 'integer',
+            'description': 'Number of modified annotations in this version.',
+        },
+        'modified_datetime': {
+            'type': 'string',
+            'description': 'Datetime when last annotation was modified in the web interface.',
+        },
+        'modified_by': {
+            'type': 'string',
+            'description': 'Name of user who modified annotations in this version most recently.',
+        },
+    },
+}
+
 class VersionListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -59,11 +118,17 @@ class VersionListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful creation of the version.'}
+            responses['201'] = message_with_id_schema('version')
+        elif method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of version list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': version_schema,
+                }}},
+            }
         return responses
 
 class VersionDetailSchema(AutoSchema):
@@ -115,11 +180,14 @@ class VersionDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find version with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of version.'}
-        if method == 'DELETE':
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of version.',
+                'content': {'application/json': {'schema': version_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'version')
+        elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of version.'}
         return responses
