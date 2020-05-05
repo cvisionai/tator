@@ -29,11 +29,11 @@ class SaveVideoSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': video_spec,
+                'schema': {'$ref': '#/components/schemas/VideoSpec'},
             }}}
         elif method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': video_update,
+                'schema': {'$ref': '#/components/schemas/VideoUpdate'},
             }}}
         return body
 

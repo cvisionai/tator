@@ -1,6 +1,7 @@
 from rest_framework.schemas.openapi import SchemaGenerator
-import logging
-logger = logging.getLogger(__name__)
+
+from .components import *
+
 class CustomGenerator(SchemaGenerator):
     """ Schema generator for Swagger UI.
     """
@@ -53,7 +54,11 @@ class CustomGenerator(SchemaGenerator):
                     'in': 'header',
                     'name': 'Authorization',
                 },
-            }
+            },
+            'schemas': {
+                'VideoSpec': video_spec,
+                'VideoUpdate': video_update,
+            },
         }
         schema['security'] = [
             {'TokenAuth': []},
