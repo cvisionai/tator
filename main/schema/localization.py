@@ -1,5 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
 from ._errors import error_responses
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
@@ -108,6 +109,41 @@ post_properties = {
         'description': 'Whether this localization was created in the web UI.',
         'type': 'boolean',
         'default': False,
+    },
+}
+
+localization_get_properties = {
+    'id': {
+        'type': 'integer',
+        'description': 'Unique integer identifying this localization.',
+    },
+    'project': {
+        'type': 'integer',
+        'description': 'Unique integer identifying project of this localization.',
+    },
+    'meta': {
+        'type': 'integer',
+        'description': 'Unique integer identifying entity type of this localization.',
+    },
+    'media': {
+        'type': 'integer',
+        'description': 'Unique integer identifying media of this localization.',
+    },
+    'thumbnail_image': {
+        'type': 'string',
+        'description': 'URL of thumbnail corresponding to this localization.',
+    },
+    'modified': {
+        'type': 'boolean',
+        'description': 'Indicates whether this localization has been modified in the web UI.',
+    },
+    'version': {
+        'type': 'integer',
+        'description': 'Unique integer identifying a version.',
+    },
+    'email': {
+        'type': 'string',
+        'description': 'Email of last user who modified/created this localization.',
     },
 }
 
@@ -365,14 +401,46 @@ class LocalizationListSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of localization list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'oneOf': [
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_get_properties,
+                                    **localization_properties,
+                                    **box_properties,
+                                }
+                            },
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_get_properties,
+                                    **localization_properties,
+                                    **line_properties,
+                                },
+                            },
+                            {
+                                'type': 'object',
+                                'properties': {
+                                    **localization_get_properties,
+                                    **localization_properties,
+                                    **dot_properties,
+                                },
+                            },
+                        ],
+                    },
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of localization(s).'}
+            responses['201'] = message_schema('created', 'localization(s)')
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of localization '
-                                               'attributes.'}
+            responses['200'] = message_schema('updated', 'localization list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of localizations.'}
+            responses['204'] = message_schema('deleted', 'localization list')
         return responses
 
 class LocalizationDetailSchema(AutoSchema):
@@ -441,7 +509,7 @@ class LocalizationDetailSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of localization list.',
+                'description': 'Successful retrieval of localization.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
                     'items': {
@@ -449,6 +517,7 @@ class LocalizationDetailSchema(AutoSchema):
                             {
                                 'type': 'object',
                                 'properties': {
+                                    **localization_get_properties,
                                     **localization_properties,
                                     **box_properties,
                                 },
@@ -456,6 +525,7 @@ class LocalizationDetailSchema(AutoSchema):
                             {
                                 'type': 'object',
                                 'properties': {
+                                    **localization_get_properties,
                                     **localization_properties,
                                     **line_properties,
                                 },
@@ -463,6 +533,7 @@ class LocalizationDetailSchema(AutoSchema):
                             {
                                 'type': 'object',
                                 'properties': {
+                                    **localization_get_properties,
                                     **localization_properties,
                                     **dot_properties,
                                 },
@@ -472,7 +543,7 @@ class LocalizationDetailSchema(AutoSchema):
                 }}},
             }
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of localization.'}
+            responses['200'] = message_schema('updated', 'localization')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization.'}
         return responses
