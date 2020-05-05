@@ -1,6 +1,9 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from .attribute_type import attribute_type_schema
 
 media_properties = {
     'name': {
@@ -37,6 +40,33 @@ media_properties = {
                        'use the transcoded videos.',
         'type': 'boolean',
         'default': True,
+    },
+}
+
+media_type_schema = {
+    'type': 'object',
+    'description': 'Media type.',
+    'properties': {
+        'type': {
+            'type': 'object',
+            'properties': {
+                'id': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying a media type.',
+                },
+                **media_properties,
+                'resourcetype': {
+                    'type': 'string',
+                    'description': 'Type of the media.',
+                    'enum': ['EntityTypeMediaImage', 'EntityTypeMediaVideo'],
+                },
+            },
+        },
+        'columns': {
+            'type': 'array',
+            'description': 'Attribute types associated with this localization type.',
+            'items': attribute_type_schema,
+        },
     },
 }
 
@@ -79,13 +109,32 @@ class MediaTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media type list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': media_type_schema,
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of media type.'}
+            responses['201'] = {
+                'description': 'Successful creation of media type.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful creation.',
+                        },
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying created object.',
+                        },
+                    },
+                }}}
+            }
         return responses
 
 class MediaTypeDetailSchema(AutoSchema):
@@ -134,13 +183,14 @@ class MediaTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find media type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media type.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of media type.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media type.',
+                'content': {'application/json': {'schema': media_type_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'media type')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of media type.'}
         return responses
