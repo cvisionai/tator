@@ -182,9 +182,9 @@ class MediaListSchema(AutoSchema):
                 }}},
             }
         elif method == 'PATCH':
-            responses['200'] = message_schema('updated', 'media list')
+            responses['200'] = message_schema('update', 'media list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deleted', 'media list')
+            responses['204'] = message_schema('deletion', 'media list')
         return responses
 
 class MediaDetailSchema(AutoSchema):
@@ -233,7 +233,7 @@ class MediaDetailSchema(AutoSchema):
                 }}},
             }
         if method == 'PATCH':
-            responses['200'] = message_schema('updated', 'media')
+            responses['200'] = message_schema('update', 'media')
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of media.'}
         return responses

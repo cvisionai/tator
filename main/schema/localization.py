@@ -436,11 +436,11 @@ class LocalizationListSchema(AutoSchema):
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = message_schema('created', 'localization(s)')
+            responses['201'] = message_schema('creation', 'localization(s)')
         elif method == 'PATCH':
-            responses['200'] = message_schema('updated', 'localization list')
+            responses['200'] = message_schema('update', 'localization list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deleted', 'localization list')
+            responses['204'] = message_schema('deletion', 'localization list')
         return responses
 
 class LocalizationDetailSchema(AutoSchema):
@@ -543,7 +543,7 @@ class LocalizationDetailSchema(AutoSchema):
                 }}},
             }
         elif method == 'PATCH':
-            responses['200'] = message_schema('updated', 'localization')
+            responses['200'] = message_schema('update', 'localization')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization.'}
         return responses

@@ -151,7 +151,7 @@ class MembershipDetailSchema(AutoSchema):
                 'content': {'application/json': {'schema': membership_schema}},
             }
         elif method == 'PATCH':
-            responses['200'] = message_schema('updated', 'membership')
+            responses['200'] = message_schema('update', 'membership')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of membership.'}
         return responses
