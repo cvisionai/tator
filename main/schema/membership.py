@@ -1,5 +1,8 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+
 membership_properties = {
     'user': {
         'description': 'Unique integer identifying a user.',
@@ -10,6 +13,26 @@ membership_properties = {
         'description': 'User permission level for the project.',
         'type': 'string',
         'enum': ['View Only', 'Can Edit', 'Can Transfer', 'Can Execute', 'Full Control'],
+    },
+}
+
+membership_schema = {
+    'type': 'object',
+    'description': 'Membership object.',
+    'properties': {
+        'id': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a membership.',
+        },
+        'username': {
+            'description': 'Username for the membership.',
+            'type': 'string',
+        },
+        'permission': {
+            'description': 'User permission level for the project.',
+            'type': 'string',
+            'enum': ['view_only', 'can_edit', 'can_transfer', 'can_execute', 'full_control'],
+        },
     },
 }
 
@@ -52,13 +75,32 @@ class MembershipListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of membership list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of membership list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': membership_schema,
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of membership.'}
+            responses['201'] = {
+                'description': 'Successful creation of membership.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful creation of membership.',
+                        },
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying created membership.',
+                        },
+                    },
+                }}},
+            }
         return responses
 
 class MembershipDetailSchema(AutoSchema):
@@ -102,13 +144,14 @@ class MembershipDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find membership with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of membership.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of membership.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of membership.',
+                'content': {'application/json': {'schema': membership_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('updated', 'membership')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of membership.'}
         return responses
