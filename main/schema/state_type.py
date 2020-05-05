@@ -52,6 +52,7 @@ state_type_schema = {
         },
     },
 }
+
 class StateTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)

@@ -1,19 +1,48 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from .attribute_type import attribute_type_schema
 
 tree_leaf_properties = {
     'name': {
-        'description': 'Name of the tree_leaf type.',
+        'description': 'Name of the tree leaf type.',
         'type': 'string',
     },
     'description': {
-        'description': 'Description of the tree_leaf type.',
+        'description': 'Description of the tree leaf type.',
         'type': 'string',
         'default': '',
     },
 }
 
+tree_leaf_type_schema = {
+    'type': 'object',
+    'description': 'Tree leaf type.',
+    'properties': {
+        'type': {
+            'type': 'object',
+            'properties': {
+                'id': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying a tree leaf type.',
+                },
+                'project': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying project for this tree leaf type.',
+                },
+                **tree_leaf_properties,
+            },
+        },
+        'columns': {
+            'type': 'array',
+            'description': 'Attribute types associated with this tree leaf type.',
+            'items': attribute_type_schema,
+        },
+    },
+}
 class TreeLeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -52,13 +81,17 @@ class TreeLeafTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of tree_leaf type list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of tree leaf type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': tree_leaf_type_schema,
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of tree_leaf type.'}
+            responses['201'] = message_with_id_schema('tree leaf type')
         return responses
 
 class TreeLeafTypeDetailSchema(AutoSchema):
@@ -101,13 +134,14 @@ class TreeLeafTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find tree_leaf type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of tree_leaf type.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of tree_leaf type.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of tree leaf type.',
+                'content': {'application/json': {'schema': tree_leaf_type_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'tree leaf type')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of tree_leaf type.'}
+            responses['204'] = {'description': 'Successful deletion of tree leaf type.'}
         return responses
