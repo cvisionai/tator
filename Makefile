@@ -451,10 +451,9 @@ lazyPush:
 
 .PHONY: python-bindings
 python-bindings:
-	mkdir -p scripts/packages/pytator/pytator/swagger
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py getschema > schema.json
-	docker run -it --rm -v $(shell pwd):/pwd swaggerapi/swagger-codegen-cli-v3 generate -c /pwd/scripts/packages/pytator/config.json -i /pwd/schema.json -l python -o /pwd/scripts/packages/pytator/pytator/swagger
-	rm schema.json
+	mkdir -p scripts/packages/tator-py
+	docker run -it --rm  -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > schema.json
+	docker run -it --rm -v $(shell pwd):/pwd swaggerapi/swagger-codegen-cli-v3 generate -c /pwd/scripts/packages/python-config.json -i /pwd/schema.json -l python -o /pwd/scripts/packages/tator-py
 
 
 TOKEN=$(shell cat token.txt)
