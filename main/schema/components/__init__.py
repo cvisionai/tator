@@ -8,7 +8,8 @@ from .attribute_type import attribute_type
 from .attribute_type import attribute_type_list
 from .attribute_type import attribute_type_update
 from .entity_type_schema import entity_type_schema
-
+from .localization_association import localization_association_update
+from .localization_association import localization_association
 
 from .save_video import video_spec
 from .save_video import video_update

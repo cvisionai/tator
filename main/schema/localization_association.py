@@ -30,22 +30,8 @@ class LocalizationAssociationDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'localizations': {
-                            'description': 'List of localization IDs.',
-                            'type': 'array',
-                            'items': {'type': 'integer'},
-                        },
-                        'color': {
-                            'description': 'A six digit hex-code Color to represent this '
-                                           'association in the UI. If not given a color is '
-                                           'used from a predefined progression.',
-                            'type': 'string',
-                        },
-                    },
+            body = {'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/LocalizationAssociationUpdate',
                 },
                 'example': {
                     'localizations': [1, 5, 10],
@@ -60,9 +46,7 @@ class LocalizationAssociationDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of localization association.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'description': 'Localization association object.',
-                    'additionalProperties': True,
+                    '$ref': '#/components/schemas/LocalizationAssociation',
                 }}},
             }
         elif method == 'PATCH':
