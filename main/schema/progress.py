@@ -1,5 +1,8 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
+
 class ProgressSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -131,10 +134,8 @@ class ProgressSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Project not found.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['200'] = {'description': 'Progress message(s) sent successfully.'}
+            responses['200'] = message_schema('creation', 'progress message')
         return responses
 
