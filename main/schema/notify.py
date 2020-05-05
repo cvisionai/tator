@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from _errors import error_responses
+
 class NotifySchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -36,11 +38,9 @@ class NotifySchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['503'] = {'description': 'Service not available.'}
-        responses['404'] = {'description': 'Not found.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
+            responses['503'] = {'description': 'Service not available.'}
             responses['201'] = {'description': 'Message sent successfully.'}
         return responses
 
