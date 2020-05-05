@@ -7,6 +7,8 @@ from .attribute_type import attribute_type_spec
 from .attribute_type import attribute_type
 from .attribute_type import attribute_type_list
 from .attribute_type import attribute_type_update
+from .entity_type_schema import entity_type_schema
+
 
 from .save_video import video_spec
 from .save_video import video_update

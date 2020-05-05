@@ -31,22 +31,7 @@ class EntityTypeSchemaSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of entity type schema.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {
-                            'type': 'string',
-                            'description': 'Name of the entity type.',
-                        },
-                        'description': {
-                            'type': 'string',
-                            'description': 'Description of the entity type.',
-                        },
-                        'required_fields': {
-                            'type': 'object',
-                            'additionalProperties': True,
-                            'description': 'Description of required fields.',
-                        },
-                    },
+                    '$ref': '#/components/schemas/EntityTypeSchema',
                 }}},
             }
         return responses

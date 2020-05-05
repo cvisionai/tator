@@ -65,6 +65,7 @@ class CustomGenerator(SchemaGenerator):
                 'AttributeType': attribute_type,
                 'AttributeTypeList': attribute_type_list,
                 'AttributeTypeUpdate': attribute_type_update,
+                'EntityTypeSchema': entity_type_schema,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
