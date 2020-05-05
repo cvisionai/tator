@@ -14,6 +14,9 @@ from .localization import localization_spec
 from .localization import localization_list_update
 from .localization import localization_list
 from .localization import localization_update
+from .localization import box
+from .localization import line
+from .localization import dot
 from .localization import localization
 
 from .save_video import video_spec

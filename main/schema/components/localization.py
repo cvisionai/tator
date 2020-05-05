@@ -291,31 +291,37 @@ localization_update = {
     ],
 }
 
+box = {
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+        **box_properties,
+    },
+}
+
+line = {
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+        **line_properties,
+    },
+}
+
+dot = {
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+        **dot_properties,
+    },
+}
+
 localization = {
     'oneOf': [
-        {
-            'type': 'object',
-            'properties': {
-                **localization_get_properties,
-                **localization_properties,
-                **box_properties,
-            },
-        },
-        {
-            'type': 'object',
-            'properties': {
-                **localization_get_properties,
-                **localization_properties,
-                **line_properties,
-            },
-        },
-        {
-            'type': 'object',
-            'properties': {
-                **localization_get_properties,
-                **localization_properties,
-                **dot_properties,
-            },
-        },
+        {'$ref': '#/components/schemas/Box'},
+        {'$ref': '#/components/schemas/Line'},
+        {'$ref': '#/components/schemas/Dot'},
     ],
 }
