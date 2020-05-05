@@ -8,7 +8,7 @@ class ProgressSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'POST':
             operation['operationId'] = 'Progress'
-        operation['tags'] = ['Progress']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

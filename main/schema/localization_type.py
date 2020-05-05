@@ -61,7 +61,7 @@ class LocalizationTypeListSchema(AutoSchema):
             operation['operationId'] = 'CreateLocalizationType'
         elif method == 'GET':
             operation['operationId'] = 'GetLocalizationTypeList'
-        operation['tags'] = ['LocalizationType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -158,7 +158,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateLocalizationType'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLocalizationType'
-        operation['tags'] = ['LocalizationType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

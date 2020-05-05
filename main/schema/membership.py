@@ -43,7 +43,7 @@ class MembershipListSchema(AutoSchema):
             operation['operationId'] = 'CreateMembership'
         elif method == 'GET':
             operation['operationId'] = 'GetMembershipList'
-        operation['tags'] = ['Membership']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -112,7 +112,7 @@ class MembershipDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateMembership'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteMembership'
-        operation['tags'] = ['Membership']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

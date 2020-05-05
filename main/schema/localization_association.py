@@ -12,7 +12,7 @@ class LocalizationAssociationDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateLocalizationAssociation'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLocalizationAssociation'
-        operation['tags'] = ['LocalizationAssociation']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -10,7 +10,7 @@ class TreeLeafSuggestionSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'TreeLeafSuggestion'
-        operation['tags'] = ['TreeLeaf']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -140,7 +140,7 @@ class TreeLeafListSchema(AutoSchema):
             operation['operationId'] = 'UpdateTreeLeafList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteTreeLeafList'
-        operation['tags'] = ['TreeLeaf']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -237,7 +237,7 @@ class TreeLeafDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateTreeLeaf'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteTreeLeaf'
-        operation['tags'] = ['TreeLeaf']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -50,7 +50,7 @@ class TreeLeafTypeListSchema(AutoSchema):
             operation['operationId'] = 'CreateTreeLeafType'
         elif method == 'GET':
             operation['operationId'] = 'GetTreeLeafTypeList'
-        operation['tags'] = ['TreeLeafType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -103,7 +103,7 @@ class TreeLeafTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateTreeLeafType'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteTreeLeafType'
-        operation['tags'] = ['TreeLeafType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

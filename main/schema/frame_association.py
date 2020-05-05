@@ -12,7 +12,7 @@ class FrameAssociationDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateFrameAssociation'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteFrameAssociation'
-        operation['tags'] = ['FrameAssociation']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

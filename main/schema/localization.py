@@ -158,7 +158,7 @@ class LocalizationListSchema(AutoSchema):
             operation['operationId'] = 'UpdateLocalizationList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLocalizationList'
-        operation['tags'] = ['Localization']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -452,7 +452,7 @@ class LocalizationDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateLocalization'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLocalization'
-        operation['tags'] = ['Localization']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -511,35 +511,32 @@ class LocalizationDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of localization.',
                 'content': {'application/json': {'schema': {
-                    'type': 'array',
-                    'items': {
-                        'oneOf': [
-                            {
-                                'type': 'object',
-                                'properties': {
-                                    **localization_get_properties,
-                                    **localization_properties,
-                                    **box_properties,
-                                },
+                    'oneOf': [
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_get_properties,
+                                **localization_properties,
+                                **box_properties,
                             },
-                            {
-                                'type': 'object',
-                                'properties': {
-                                    **localization_get_properties,
-                                    **localization_properties,
-                                    **line_properties,
-                                },
+                        },
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_get_properties,
+                                **localization_properties,
+                                **line_properties,
                             },
-                            {
-                                'type': 'object',
-                                'properties': {
-                                    **localization_get_properties,
-                                    **localization_properties,
-                                    **dot_properties,
-                                },
+                        },
+                        {
+                            'type': 'object',
+                            'properties': {
+                                **localization_get_properties,
+                                **localization_properties,
+                                **dot_properties,
                             },
-                        ]
-                    }
+                        },
+                    ],
                 }}},
             }
         elif method == 'PATCH':

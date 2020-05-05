@@ -7,7 +7,7 @@ class NotifySchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'POST':
             operation['operationId'] = 'Notify'
-        operation['tags'] = ['Notify']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -9,7 +9,7 @@ class MediaNextSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'GetMediaNext'
-        operation['tags'] = ['Media']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

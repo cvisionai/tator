@@ -8,7 +8,7 @@ class JobDetailSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'DELETE':
             operation['operationId'] = 'DeleteJob'
-        operation['tags'] = ['Job']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -205,7 +205,7 @@ class AttributeTypeListSchema(AutoSchema):
             operation['operationId'] = 'CreateAttributeType'
         elif method == 'GET':
             operation['operationId'] = 'GetAttributeTypeList'
-        operation['tags'] = ['AttributeType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -350,7 +350,7 @@ class AttributeTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateAttributeType'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteAttributeType'
-        operation['tags'] = ['AttributeType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

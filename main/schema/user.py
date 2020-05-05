@@ -9,7 +9,7 @@ class UserDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateUser'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteUser'
-        operation['tags'] = ['User']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -29,7 +29,7 @@ class CurrentUserSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'WhoAmI'
-        operation['tags'] = ['User']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_responses(self, path, method):

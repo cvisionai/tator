@@ -9,7 +9,7 @@ class MediaSectionsSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'GetMediaSections'
-        operation['tags'] = ['Media']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

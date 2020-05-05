@@ -31,7 +31,7 @@ class TemporaryFileListSchema(AutoSchema):
             operation['operationId'] = 'GetTemporaryFileList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteTemporaryFileList'
-        operation['tags'] = ['TemporaryFile']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -83,6 +83,6 @@ class TemporaryFileDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateTemporaryFile'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteTemporaryFile'
-        operation['tags'] = ['TemporaryFile']
+        operation['tags'] = ['Tator']
         return operation
 

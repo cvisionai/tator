@@ -66,7 +66,7 @@ class StateListSchema(AutoSchema):
             operation['operationId'] = 'UpdateStateList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteStateList'
-        operation['tags'] = ['State']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -193,7 +193,7 @@ class StateDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateState'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteState'
-        operation['tags'] = ['State']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -233,7 +233,7 @@ class StateDetailSchema(AutoSchema):
 class StateGraphicSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['StateGraphic']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

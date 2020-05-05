@@ -27,7 +27,7 @@ class AnalysisListSchema(AutoSchema):
             operation['operationId'] = 'GetAnalysisList'
         elif method == 'POST':
             operation['operationId'] = 'CreateAnalysis'
-        operation['tags'] = ['Analysis']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -57,7 +57,7 @@ class ProjectListSchema(AutoSchema):
             operation['operationId'] = 'CreateProject'
         elif method == 'GET':
             operation['operationId'] = 'GetProjectList'
-        operation['tags'] = ['Project']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -121,7 +121,7 @@ class ProjectDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateProject'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteProject'
-        operation['tags'] = ['Project']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -43,7 +43,7 @@ class CustomGenerator(SchemaGenerator):
             },
             400: {'description': 'Login credentials invalid.'},
         }
-        schema['paths']['/rest/Token']['post']['tags'] = ['Token']
+        schema['paths']['/rest/Token']['post']['tags'] = ['Tator']
 
         # Set security scheme.
         schema['components'] = {

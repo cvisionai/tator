@@ -66,7 +66,7 @@ class VersionListSchema(AutoSchema):
             operation['operationId'] = 'CreateVersion'
         elif method == 'GET':
             operation['operationId'] = 'GetVersionList'
-        operation['tags'] = ['Version']
+        operation['tags'] = ['Tator']
         if method == 'GET':
             operation['operationId'] = 'RetrieveVersionList'
         return operation
@@ -140,7 +140,7 @@ class VersionDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateVersion'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteVersion'
-        operation['tags'] = ['Version']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

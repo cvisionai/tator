@@ -77,7 +77,7 @@ class MediaTypeListSchema(AutoSchema):
             operation['operationId'] = 'CreateMediaType'
         elif method == 'GET':
             operation['operationId'] = 'GetMediaTypeList'
-        operation['tags'] = ['MediaType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -146,7 +146,7 @@ class MediaTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateMediaType'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteMediaType'
-        operation['tags'] = ['MediaType']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):

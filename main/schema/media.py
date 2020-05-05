@@ -120,7 +120,7 @@ class MediaListSchema(AutoSchema):
             operation['operationId'] = 'UpdateMediaList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteMediaList'
-        operation['tags'] = ['Media']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -196,7 +196,7 @@ class MediaDetailSchema(AutoSchema):
             operation['operationId'] = 'UpdateMedia'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteMedia'
-        operation['tags'] = ['Media']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -241,7 +241,9 @@ class MediaDetailSchema(AutoSchema):
 class GetFrameSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['GetFrame']
+        if method == 'GET':
+            operation['operationId'] = 'GetFrame'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -346,7 +348,9 @@ class GetFrameSchema(AutoSchema):
 class GetClipSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['GetClip']
+        if method == 'GET':
+            operation['operationId'] = 'GetClip'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
