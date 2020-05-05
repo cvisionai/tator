@@ -1,7 +1,57 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from .attribute_type import attribute_type_schema
 
+state_type_schema = {
+    'type': 'object',
+    'description': 'State type.',
+    'properties': {
+        'type': {
+            'type': 'object',
+            'properties': {
+                'id': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying a state type.',
+                },
+                'project': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying project for this state type.',
+                },
+                'name': {
+                    'type': 'string',
+                    'description': 'Name of the state type.',
+                },
+                'description': {
+                    'type': 'string',
+                    'description': 'Description of the state type.',
+                },
+                'association': {
+                    'description': 'Type of object this state type is associated with.',
+                    'type': 'string',
+                    'enum': ['Media', 'Frame', 'Localization'],
+                },
+                'interpolation': {
+                    'type': 'string',
+                    'description': 'Interpolation method used by the web interface.',
+                    'enum': ['latest'],
+                },
+                'visible': {
+                    'type': 'boolean',
+                    'description': 'Whether this state type should be displayed.',
+                },
+            },
+        },
+        'columns': {
+            'type': 'array',
+            'description': 'Attribute types associated with this state type.',
+            'items': attribute_type_schema,
+        },
+    },
+}
 class StateTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -69,13 +119,17 @@ class StateTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of state type list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of state type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': state_type_schema,
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of state type.'}
+            responses['201'] = message_with_id_schema('state type')
         return responses
 
 class StateTypeDetailSchema(AutoSchema):
@@ -127,13 +181,14 @@ class StateTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find state type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of state type.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of state type.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of state type.',
+                'content': {'application/json': {'schema': state_type_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'state type')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of state type.'}
         return responses
