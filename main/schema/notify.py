@@ -1,6 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-from _errors import error_responses
+from ._errors import error_responses
 
 class NotifySchema(AutoSchema):
     def get_operation(self, path, method):
