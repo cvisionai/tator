@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
 from ._attributes import attribute_filter_parameter_schema
 
 class TreeLeafSuggestionSchema(AutoSchema):
@@ -56,9 +58,32 @@ class TreeLeafSuggestionSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['400'] = {'description': 'Bad request.'}
-        responses['200'] = {'description': 'Successful retrieval of suggestions.'}
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of suggestions.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'value': {
+                                'type': 'string',
+                                'description': 'Name of the suggestion.',
+                            },
+                            'group': {
+                                'type': 'string',
+                                'description': 'Group of the suggestion.',
+                            },
+                            'data': {
+                                'type': 'object',
+                                'description': 'Auxiliary data associated with the tree leaf.',
+                                'additionalProperties': True,
+                            },
+                        },
+                    },
+                }}},
+            }
         return responses
 
 tree_leaf_properties = {
