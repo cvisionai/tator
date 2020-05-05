@@ -1,5 +1,8 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_with_id_schema
+
 video_definition_array = {
     'type': 'array',
     'items': {
@@ -181,10 +184,8 @@ class SaveVideoSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find the algorithm with the given name.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful save of the video in the database.'}
+            responses['201'] = message_with_id_schema('video')
         return responses
 
