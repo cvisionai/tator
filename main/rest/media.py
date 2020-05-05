@@ -561,6 +561,9 @@ class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
 
             media_object.save()
 
+            response=Response({'message': 'Media updated successfully!'},
+                               status=status.HTTP_200_OK)
+
         except PermissionDenied as err:
             raise
         except ObjectDoesNotExist as dne:
