@@ -11,3 +11,13 @@ create_response = {
         },
     },
 }
+
+message_response = {
+    'type': 'object',
+    'properties': {
+        'message': {
+            'type': 'string',
+            'description': 'Message explaining response.',
+        },
+    },
+}

@@ -3,7 +3,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
-from .attribute_type import attribute_type_schema
+from .components.attribute_type import attribute_type as attribute_type_schema
 
 media_properties = {
     'name': {
