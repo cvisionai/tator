@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+
 class TranscodeSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -87,10 +89,27 @@ class TranscodeSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find the algorithm with the given name.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful save of the video in the database.'}
+            responses['201'] = {
+                'description': 'Successful save of the video in the database.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating transcode started successfully.',
+                        },
+                        'run_uid': {
+                            'type': 'string',
+                            'description': 'UUID identifying the job.',
+                        },
+                        'group_id': {
+                            'type': 'string',
+                            'description': 'UUID identifying the job group.',
+                        },
+                    },
+                }}},
+            }
         return responses
 
