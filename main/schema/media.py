@@ -1,7 +1,10 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
+from .save_video import save_video_properties
 
 media_properties = {
     'name': {
@@ -19,15 +22,92 @@ media_properties = {
         'type': 'string',
         'format': 'date-time',
     },
-    'media_files': {
-        'description': 'Object containing media information.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
+    'media_files': save_video_properties['media_files'],
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',
         'additionalProperties': True,
+    },
+}
+
+media_get_common_properties = {
+    'id': {
+        'type': 'integer',
+        'description': 'Unique integer identifying this media.',
+    },
+    'project': {
+        'type': 'integer',
+        'description': 'Unique integer identifying project of this media.',
+    },
+    'meta': {
+        'type': 'integer',
+        'description': 'Unique integer identifying entity type of this media.',
+    },
+    'url': {
+        'type': 'string',
+        'description': 'URL of the media file.',
+    },
+}
+
+media_list_get_properties = {
+    **media_properties,
+    **media_get_common_properties,
+    'created_datetime': {
+        'type': 'string',
+        'description': 'Datetime when this media was created.',
+    },
+    'created_by_id': {
+        'type': 'integer',
+        'description': 'Unique integer identifying user who created this media.',
+    },
+    'modified_datetime': {
+        'type': 'string',
+        'description': 'Datetime when this media was last modified.',
+    },
+    'modified_by_id': {
+        'type': 'integer',
+        'description': 'Unique integer identifying user who last modified this media.',
+    },
+    'md5': {
+        'type': 'string',
+        'description': 'MD5 checksum of the media file.',
+    },
+    'video_thumbnail': {
+        'type': 'string',
+        'description': 'URL of video thumbnail.',
+    },
+    'image_thumbnail': {
+        'type': 'string',
+        'description': 'URL of image thumbnail.',
+    },
+    'video_thumbnail_gif': {
+        'type': 'string',
+        'description': 'URL of video thumbnail gif.',
+    },
+    'original_url': {
+        'type': 'string',
+        'description': 'URL of original video, if it exists.',
+    },
+}
+
+media_get_properties = {
+    **media_properties,
+    **media_get_common_properties,
+    'thumb_url': {
+        'type': 'string',
+        'description': 'URL of the media.',
+    },
+    'width': {
+        'type': 'integer',
+        'description': 'Width of the media in pixels.',
+    },
+    'height': {
+        'type': 'integer',
+        'description': 'Height of the media in pixels.',
+    },
+    'resourcetype': {
+        'type': 'string',
+        'description': 'Type of this media.',
     },
 }
 
@@ -87,9 +167,7 @@ class MediaListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of media list.',
@@ -97,15 +175,16 @@ class MediaListSchema(AutoSchema):
                     'type': 'array',
                     'items': {
                         'type': 'object',
-                        'additionalProperties': True,
+                        'properties': {
+                            **media_list_get_properties,
+                        }
                     },
                 }}},
             }
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of media '
-                                               'attributes.'}
+            responses['200'] = message_schema('updated', 'media list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of media.'}
+            responses['204'] = message_schema('deleted', 'media list')
         return responses
 
 class MediaDetailSchema(AutoSchema):
@@ -144,13 +223,17 @@ class MediaDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find media with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': media_list_get_properties,
+                }}},
+            }
         if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of media.'}
+            responses['200'] = message_schema('updated', 'media')
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of media.'}
         return responses
