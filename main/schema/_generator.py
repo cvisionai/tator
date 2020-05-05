@@ -5,56 +5,79 @@ from .components import *
 class CustomGenerator(SchemaGenerator):
     """ Schema generator for Swagger UI.
     """
-    def get_schema(self, request=None, public=True, deprecate=True):
+    def get_schema(self, request=None, public=True, parser=False):
         schema = super().get_schema(request, public)
 
         # Add schema for Token endpoint.
-        schema['paths']['/rest/Token']['post']['requestBody'] = {
-            'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['username', 'password'],
-                    'properties': {
-                        'username': {
-                            'description': 'Account username.',
-                            'type': 'string',
-                        },
-                        'password': {
-                            'description': 'Account password.',
-                            'type': 'string',
-                        },
-                    },
-                },
-            }},
-        }
-        schema['paths']['/rest/Token']['post']['responses'] = {
-            '200': {
-                'description': 'Login credentials accepted.',
+        if not parser:
+            schema['paths']['/rest/Token']['post']['requestBody'] = {
                 'content': {'application/json': {
                     'schema': {
                         'type': 'object',
+                        'required': ['username', 'password'],
                         'properties': {
-                            'token': {
-                                'description': 'API token.',
+                            'username': {
+                                'description': 'Account username.',
+                                'type': 'string',
+                            },
+                            'password': {
+                                'description': 'Account password.',
                                 'type': 'string',
                             },
                         },
                     },
                 }},
-            },
-            400: {'description': 'Login credentials invalid.'},
-        }
-        schema['paths']['/rest/Token']['post']['tags'] = ['Tator']
-
-        # Set security scheme.
-        schema['components'] = {
-            'securitySchemes': {
-                'TokenAuth': {
-                    'type': 'apiKey',
-                    'in': 'header',
-                    'name': 'Authorization',
+            }
+            schema['paths']['/rest/Token']['post']['responses'] = {
+                '200': {
+                    'description': 'Login credentials accepted.',
+                    'content': {'application/json': {
+                        'schema': {
+                            'type': 'object',
+                            'properties': {
+                                'token': {
+                                    'description': 'API token.',
+                                    'type': 'string',
+                                },
+                            },
+                        },
+                    }},
                 },
-            },
+                400: {'description': 'Login credentials invalid.'},
+            }
+            schema['paths']['/rest/Token']['post']['tags'] = ['Tator']
+
+            # Set security scheme.
+            schema['components']['securitySchemes'] = {
+                'securitySchemes': {
+                    'TokenAuth': {
+                        'type': 'apiKey',
+                        'in': 'header',
+                        'name': 'Authorization',
+                    },
+                },
+            }
+            schema['security'] = [
+                {'TokenAuth': []},
+            ]
+
+            # Remove deprecated paths.
+            deprecated = [
+                '/rest/EntityTypeMedias/{project}',
+                '/rest/EntityTypeMedia/{id}',
+                '/rest/EntityMedia/{id}',
+                '/rest/EntityMedias/{project}',
+                '/rest/EntityState/{id}',
+                '/rest/EntityStates/{project}',
+                '/rest/EntityStateTypes/{project}',
+                '/rest/EntityStateType/{id}',
+            ]
+            for d in deprecated:
+                if d in schema['paths']:
+                    del schema['paths'][d]
+
+        # Set up schema components.
+        schema['components'] = {
             'schemas': {
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunchResponse': algorithm_launch_response,
@@ -82,24 +105,6 @@ class CustomGenerator(SchemaGenerator):
                 'MessageResponse': message_response,
             },
         }
-        schema['security'] = [
-            {'TokenAuth': []},
-        ]
 
-        # Remove deprecated paths.
-        if deprecate:
-            deprecated = [
-                '/rest/EntityTypeMedias/{project}',
-                '/rest/EntityTypeMedia/{id}',
-                '/rest/EntityMedia/{id}',
-                '/rest/EntityMedias/{project}',
-                '/rest/EntityState/{id}',
-                '/rest/EntityStates/{project}',
-                '/rest/EntityStateTypes/{project}',
-                '/rest/EntityStateType/{id}',
-            ]
-            for d in deprecated:
-                if d in schema['paths']:
-                    del schema['paths'][d]
         return schema
 

@@ -13,7 +13,7 @@ def parse(request):
     """
     if parse.validator is None:
         generator = CustomGenerator(title='Tator REST API')
-        spec = generator.get_schema(deprecate=False)
+        spec = generator.get_schema(parser=True)
         openapi_spec = create_spec(spec)
         parse.validator = RequestValidator(openapi_spec)
     openapi_request = DjangoOpenAPIRequest(request)
