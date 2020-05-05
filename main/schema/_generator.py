@@ -2,9 +2,9 @@ from rest_framework.schemas.openapi import SchemaGenerator
 import logging
 logger = logging.getLogger(__name__)
 class CustomGenerator(SchemaGenerator):
-    """ Schema generator for Swagger UI. Should not be used for request validation.
+    """ Schema generator for Swagger UI.
     """
-    def get_schema(self, request=None, public=True):
+    def get_schema(self, request=None, public=True, deprecate=True):
         schema = super().get_schema(request, public)
 
         # Add schema for Token endpoint.
@@ -60,18 +60,19 @@ class CustomGenerator(SchemaGenerator):
         ]
 
         # Remove deprecated paths.
-        deprecated = [
-            '/rest/EntityTypeMedias/{project}',
-            '/rest/EntityTypeMedia/{id}',
-            '/rest/EntityMedia/{id}',
-            '/rest/EntityMedias/{project}',
-            '/rest/EntityState/{id}',
-            '/rest/EntityStates/{project}',
-            '/rest/EntityStateTypes/{project}',
-            '/rest/EntityStateType/{id}',
-        ]
-        for d in deprecated:
-            if d in schema['paths']:
-                del schema['paths'][d]
+        if deprecate:
+            deprecated = [
+                '/rest/EntityTypeMedias/{project}',
+                '/rest/EntityTypeMedia/{id}',
+                '/rest/EntityMedia/{id}',
+                '/rest/EntityMedias/{project}',
+                '/rest/EntityState/{id}',
+                '/rest/EntityStates/{project}',
+                '/rest/EntityStateTypes/{project}',
+                '/rest/EntityStateType/{id}',
+            ]
+            for d in deprecated:
+                if d in schema['paths']:
+                    del schema['paths'][d]
         return schema
 
