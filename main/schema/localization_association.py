@@ -1,5 +1,6 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message
 from ._errors import error_responses
 
 class LocalizationAssociationDetailSchema(AutoSchema):
@@ -54,10 +55,18 @@ class LocalizationAssociationDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        if method == 'PATCH':
-            responses = error_responses()
-            responses['200'] = {'description': 'Successful update of localization association.'}
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of localization association.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'description': 'Localization association object.',
+                    'additionalProperties': True,
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message('update', 'localization association')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful delete of localization association.'}
         return responses

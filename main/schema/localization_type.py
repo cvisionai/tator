@@ -1,6 +1,58 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+from .attribute_type import attribute_type_schema
+
+localization_type_schema = {
+    'type': 'object',
+    'description': 'Localization type.',
+    'properties': {
+        'type': {
+            'type': 'object',
+            'properties': {
+                'id': {
+                    'type': 'integer',
+                    'description': 'Unique integer identifying a localization type.',
+                },
+                'name': {
+                    'type': 'string',
+                    'description': 'Name of the localization type.',
+                },
+                'description': {
+                    'type': 'string',
+                    'description': 'Description of the localization type.',
+                },
+                'colorMap': {
+                    'type': 'object',
+                    'additionalProperties': True,
+                },
+                'dtype': {
+                    'type': 'string',
+                    'description': 'Shape of this localization type.',
+                    'enum': ['box', 'line', 'dot'],
+                },
+                'line_width': {
+                    'type': 'integer',
+                    'description': 'Width of the line used to draw the localization.',
+                    'minimum': 1,
+                },
+                'resourcetype': {
+                    'type': 'string',
+                    'description': 'Type of the localization.',
+                    'enum': ['EntityTypeLocalizationBox', 'EntityTypeLocalizationLine',
+                             'EntityTypeLocalizationDot'],
+                },
+            },
+        },
+        'columns': {
+            'type': 'array',
+            'description': 'Attribute types associated with this localization type.',
+            'items': attribute_type_schema,
+        },
+    },
+}
 
 class LocalizationTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -69,13 +121,32 @@ class LocalizationTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization type list.'}
-        elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of localization type.'}
+        responses = error_responses()
+        if method == 'POST':
+            responses['201'] = {
+                'description': 'Successful creation of localization type.',
+                'content': {'application/json': {'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'message': {
+                            'type': 'string',
+                            'description': 'Message indicating successful creation.',
+                        },
+                        'id': {
+                            'type': 'integer',
+                            'description': 'Unique integer identifying created object.',
+                        },
+                    },
+                }}}
+            }
+        elif method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of localization type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': localization_type_schema,
+                }}}
+            }
         return responses
 
 class LocalizationTypeDetailSchema(AutoSchema):
@@ -127,13 +198,14 @@ class LocalizationTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find localization type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization type.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of localization type.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of localization type.',
+                'content': {'application/json': {'schema': localization_type_schema}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'localization type')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization type.'}
         return responses
