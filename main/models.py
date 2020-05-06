@@ -449,6 +449,42 @@ class Association(Model):
         associations.union(Association.objects.filter(localizations__in=localizations)
         return State.objects.filter(association__in=list(associations))
 
+class State(Model):
+    """
+    A State is an event that occurs, potentially independent, from that of
+    a media element. It is associated with 0 (1 to be useful) or more media
+    elements. If a frame is supplied it was collected at that time point.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    association = ForeignKey(Association, on_delete=CASCADE)
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    def selectOnMedia(media_id):
+        return Association.states(media_id)
+
+@receiver(post_save, sender=State)
+def state_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=State)
+def state_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
