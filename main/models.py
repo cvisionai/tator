@@ -485,6 +485,59 @@ def state_save(sender, instance, created, **kwargs):
 def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
+class Leaf(Model):
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
+    path=PathField(unique=True)
+    name = CharField(max_length=255)
+
+    class Meta:
+        verbose_name_plural = "Leaves"
+
+    def __str__(self):
+        return str(self.path)
+
+    def depth(self):
+        return Leaf.objects.annotate(depth=Depth('path')).get(pk=self.pk).depth
+
+    def subcategories(self, minLevel=1):
+        return Leaf.objects.select_related('parent').filter(
+            path__descendants=self.path,
+            path__depth__gte=self.depth()+minLevel
+        )
+
+    def computePath(self):
+        """ Returns the string representing the path element """
+        pathStr=self.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+        if self.parent:
+            pathStr=self.parent.computePath()+"."+pathStr
+        elif self.project:
+            projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+            pathStr=projName+"."+pathStr
+        return pathStr
+
+@receiver(post_save, sender=Leaf)
+def leaf_save(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=Leaf)
+def leaf_delete(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+    TatorSearch().delete_document(instance)
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
