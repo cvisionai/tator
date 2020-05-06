@@ -446,7 +446,7 @@ class Association(Model):
     def states(media_id):
         associations = Association.objects.filter(media__in=media_id)
         localizations = Localization.objects.filter(media__in=media_id)
-        associations.union(Association.objects.filter(localizations__in=localizations)
+        associations.union(Association.objects.filter(localizations__in=localizations))
         return State.objects.filter(association__in=list(associations))
 
 class State(Model):
