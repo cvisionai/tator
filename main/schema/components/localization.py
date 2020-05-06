@@ -239,7 +239,7 @@ line_element = {
     'properties': {
         **localization_get_properties,
         **localization_properties,
-        **box_properties,
+        **line_properties,
     },
 }
 
@@ -248,24 +248,15 @@ dot_element = {
     'properties': {
         **localization_get_properties,
         **localization_properties,
-        **box_properties,
+        **dot_properties,
     },
 }
 
-localization_list = {
+localization_element = {
     'oneOf': [
-        {
-            'type': 'array',
-            'items': {'$ref': '#/components/schemas/BoxElement'},
-        },
-        {
-            'type': 'array',
-            'items': {'$ref': '#/components/schemas/LineElement'},
-        },
-        {
-            'type': 'array',
-            'items': {'$ref': '#/components/schemas/DotElement'},
-        },
+        {'$ref': '#/components/schemas/BoxElement'},
+        {'$ref': '#/components/schemas/LineElement'},
+        {'$ref': '#/components/schemas/DotElement'},
     ],
 }
 

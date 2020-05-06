@@ -183,7 +183,8 @@ class LocalizationListSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of localization list.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/LocalizationList',
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/LocalizationElement'},
                 }}},
             }
         elif method == 'POST':
