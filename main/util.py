@@ -444,6 +444,144 @@ def fixVideoDims(project):
         except:
             print(f"Error on {video.pk}")
 
+def attrTypeToDict(type_):
+    """ Convert attribute types that apply to given type to a dict.
+    """
+    attribute_types = []
+    for attr_type in AttributeTypeBase.objects.filter(applies_to=type_):
+        if isinstance(attr_type, AttributeTypeBool):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'bool',
+                'default': attr_type.default,
+            })
+        elif isinstance(attr_type, AttributeTypeInt):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'int',
+                'default': attr_type.default,
+                'lower_bound': attr_type.lower_bound,
+                'upper_bound': attr_type.upper_bound,
+            })
+        elif isinstance(attr_type, AttributeTypeFloat):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'float',
+                'default': attr_type.default,
+                'lower_bound': attr_type.lower_bound,
+                'upper_bound': attr_type.upper_bound,
+            })
+        elif isinstance(attr_type, AttributeTypeString):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'string',
+                  'default': attr_type.default,
+                  'autocomplete': attr_type.autocomplete,
+              })
+        elif isinstance(attr_type, AttributeTypeEnum):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'enum',
+                  'default': attr_type.default,
+                  'choices': attr_type.choices,
+                  'labels': attr_type.labels,
+              })
+        elif isinstance(attr_type, AttributeTypeDatetime):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'datetime',
+                  'use_current': attr_type.use_current,
+                  'default_timezone': attr_type.default_timezone,
+              })
+        elif isinstance(attr_type, AttributeTypeGeoposition):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'datetime',
+                  'default': list(attr_type.default),
+              })
+    return attribute_types
+
+def migrateTypeObj(type_):
+    """ Migrate legacy type object to flat type object.
+    """
+    if isinstance(type_, EntityTypeMediaVideo):
+        MediaType.objects.create(
+            dtype='video',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            editTriggers=type_.editTriggers,
+            file_format=type_.file_format,
+            keep_original=type_.keep_original,
+            attribute_types=attribute_types,
+        )
+    elif isinstance(type_, EntityTypeMediaImage):
+        MediaType.objects.create(
+            dtype='image',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            file_format=type_.file_format,
+            attribute_types=attribute_types,
+        )
+    elif isinstance(type_, EntityTypeLocalizationBox):
+        obj = LocalizationType.objects.create(
+            dtype='box',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            line_width=type_.line_width,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*type_.media.all())
+    elif isinstance(type_, EntityTypeLocalizationLine):
+        obj = LocalizationType.objects.create(
+            dtype='line',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            line_width=type_.line_width,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*type_.media.all())
+    elif isinstance(type_, EntityTypeLocalizationDot):
+        obj = LocalizationType.objects.create(
+            dtype='dot',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*type_.media.all())
+  elif isinstance(type_, EntityTypeState):
+      obj = StateType.objects.create(
+            dtype='state',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            interpolation=type_.interpolation,
+            association=type_.association,
+            attribute_types=attribute_types,
+      )
+      obj.media.add(*type_.media.all())
+  elif isinstance(type_, EntityTypeTreeLeaf):
+      obj = LeafType.objects.create(
+            dtype='leaf',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+      )
+
 def migrateToFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
         section must be one of:
@@ -465,134 +603,9 @@ def migrateToFlat(project, section):
                 continue
 
             # Convert attributes type schema to a dict.
-            attribute_types = []
-            for attr_type in AttributeTypeBase.objects.filter(applies_to=type_):
-                if isinstance(attr_type, AttributeTypeBool):
-                    attribute_types.append({
-                        'name': attr_type.name,
-                        'description': attr_type.description,
-                        'dtype': 'bool',
-                        'default': attr_type.default,
-                    })
-                elif isinstance(attr_type, AttributeTypeInt):
-                    attribute_types.append({
-                        'name': attr_type.name,
-                        'description': attr_type.description,
-                        'dtype': 'int',
-                        'default': attr_type.default,
-                        'lower_bound': attr_type.lower_bound,
-                        'upper_bound': attr_type.upper_bound,
-                    })
-                elif isinstance(attr_type, AttributeTypeFloat):
-                    attribute_types.append({
-                        'name': attr_type.name,
-                        'description': attr_type.description,
-                        'dtype': 'float',
-                        'default': attr_type.default,
-                        'lower_bound': attr_type.lower_bound,
-                        'upper_bound': attr_type.upper_bound,
-                    })
-                elif isinstance(attr_type, AttributeTypeString):
-                      attribute_types.append({
-                          'name': attr_type.name,
-                          'description': attr_type.description,
-                          'dtype': 'string',
-                          'default': attr_type.default,
-                          'autocomplete': attr_type.autocomplete,
-                      })
-                elif isinstance(attr_type, AttributeTypeEnum):
-                      attribute_types.append({
-                          'name': attr_type.name,
-                          'description': attr_type.description,
-                          'dtype': 'enum',
-                          'default': attr_type.default,
-                          'choices': attr_type.choices,
-                          'labels': attr_type.labels,
-                      })
-                elif isinstance(attr_type, AttributeTypeDatetime):
-                      attribute_types.append({
-                          'name': attr_type.name,
-                          'description': attr_type.description,
-                          'dtype': 'datetime',
-                          'use_current': attr_type.use_current,
-                          'default_timezone': attr_type.default_timezone,
-                      })
-                elif isinstance(attr_type, AttributeTypeGeoposition):
-                      attribute_types.append({
-                          'name': attr_type.name,
-                          'description': attr_type.description,
-                          'dtype': 'datetime',
-                          'default': list(attr_type.default),
-                      })
+            attribute_types = attrTypeToDict(type_)
 
             # Create type objects.
-            if isinstance(type_, EntityTypeMediaVideo):
-                MediaType.objects.create(
-                    dtype='video',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    editTriggers=type_.editTriggers,
-                    file_format=type_.file_format,
-                    keep_original=type_.keep_original,
-                    attribute_types=attribute_types,
-                )
-            elif isinstance(type_, EntityTypeMediaImage):
-                MediaType.objects.create(
-                    dtype='image',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    file_format=type_.file_format,
-                    attribute_types=attribute_types,
-                )
-            elif isinstance(type_, EntityTypeLocalizationBox):
-                obj = LocalizationType.objects.create(
-                    dtype='box',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    colorMap=type_.colorMap,
-                    line_width=type_.line_width,
-                    attribute_types=attribute_types,
-                )
-                obj.media.add(*type_.media.all())
-            elif isinstance(type_, EntityTypeLocalizationLine):
-                obj = LocalizationType.objects.create(
-                    dtype='line',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    colorMap=type_.colorMap,
-                    line_width=type_.line_width,
-                    attribute_types=attribute_types,
-                )
-                obj.media.add(*type_.media.all())
-            elif isinstance(type_, EntityTypeLocalizationDot):
-                obj = LocalizationType.objects.create(
-                    dtype='dot',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    colorMap=type_.colorMap,
-                    attribute_types=attribute_types,
-                )
-                obj.media.add(*type_.media.all())
-          elif isinstance(type_, EntityTypeState):
-              obj = StateType.objects.create(
-                    dtype='state',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-                    interpolation=type_.interpolation,
-                    association=type_.association,
-                    attribute_types=attribute_types,
-              )
-              obj.media.add(*type_.media.all())
-          elif isinstance(type_, EntityTypeTreeLeaf):
-              obj = LeafType.objects.create(
-                    dtype='leaf',
-                    project=type_.project,
-                    name=type_.name,
-                    description=type_.description,
-              )
+            migrateTypeObj(type_)
+
+        
