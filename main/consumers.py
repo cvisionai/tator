@@ -3,7 +3,7 @@ import json
 import logging
 import datetime
 import redis
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
 from channels.consumer import SyncConsumer
 from channels.layers import get_channel_layer
 from channels.exceptions import StopConsumer
@@ -127,7 +127,7 @@ class ProgressProducer:
 # Initialize global redis connection
 ProgressProducer.setup_redis()
 
-class ProgressConsumer(AsyncJsonWebsocketConsumer):
+class ProgressConsumer(JsonWebsocketConsumer):
     """Consumer for all progress messages
     """
 
@@ -162,7 +162,7 @@ class ProgressConsumer(AsyncJsonWebsocketConsumer):
         self.prog_grp = prefix + '_prog_' + str(pid)
         self.latest_grp = prefix + '_latest_' + str(pid)
         # Add this consumer to group corresponding to media type.
-        self.channel_layer.group_add(
+        async_to_sync(self.channel_layer.group_add)(
             self.prog_grp,
             self.channel_name,
         )
