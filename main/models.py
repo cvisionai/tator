@@ -224,6 +224,60 @@ class Membership(Model):
 
 # Entity types
 
+class MediaType(Model):
+    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    editTriggers = JSONField(null=True,
+                             blank=True)
+    file_format = CharField(max_length=4,
+                            null=True,
+                            blank=True,
+                            default=None)
+    keep_original = BooleanField(default=True)
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class LocalizationType(Model):
+    dtype = CharField(max_length=16,
+                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    media = ManyToManyField(MediaType)
+    bounded = BooleanField(default=True)
+    colorMap = JSONField(null=True, blank=True)
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class StateType(Model):
+    dtype = 'state'
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    media = ManyToManyField(MediaType)
+    markers = BooleanField(default=False)
+    interpolation = EnumField(
+        InterpolationMethods,
+        default=InterpolationMethods.NONE
+    )
+    association = CharField(max_length=64,
+                            choices=AssociationTypes,
+                            default=AssociationTypes[0][0])
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class LeafType(Model):
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
