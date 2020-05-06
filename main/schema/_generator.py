@@ -35,6 +35,7 @@ class CustomGenerator(SchemaGenerator):
                 'DotElement': dot_element,
                 'DotUpdate': dot_update,
                 'Dot': dot,
+                'ManySpec': many_spec,
                 'LocalizationSpec': localization_spec,
                 'LocalizationList': localization_list,
                 'LocalizationUpdate': localization_update,

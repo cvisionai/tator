@@ -22,6 +22,7 @@ from .localization import dot_spec
 from .localization import dot_element
 from .localization import dot_update
 from .localization import dot
+from .localization import many_spec
 from .localization import localization_spec
 from .localization import localization_list
 from .localization import localization_update
