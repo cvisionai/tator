@@ -538,6 +538,11 @@ def leaf_delete(sender, instance, **kwargs):
         TatorCache().invalidate_treeleaf_list_cache(ancestor)
     TatorSearch().delete_document(instance)
 
+class Analysis(Model):
+    project = ForeignKey(Project, on_delete=CASCADE)
+    name = CharField(max_length=64)
+    data_query = CharField(max_length=1024, default='*')
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
