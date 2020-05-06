@@ -582,6 +582,22 @@ def migrateTypeObj(type_):
               description=type_.description,
         )
 
+def migrateBulk(from_type, to_type):
+    """ Uses bulk_create to migrate one object type to another.
+    """
+    # Get field names from both types.
+    from_fields = [str(field).rsplit('.', 1)[1] for field in from_type]
+    to_fields = [str(field).rsplit('.', 1)[1] for field in to_type]
+
+    # Find intersection between fields and remove id.
+    fields = list(set(from_fields) & set(to_fields))
+    fields.remove('id')
+
+    # Do the migration.
+    qs = from_type.objects.filter(project=project).values(*fields)
+    flat = [to_type(**obj) for obj in qs]
+    to_type.objects.bulk_create(flat)
+
 def migrateToFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
         section must be one of:
@@ -607,5 +623,14 @@ def migrateToFlat(project, section):
 
             # Create type objects.
             migrateTypeObj(type_)
-
+    elif section == 'media':
+        migrateBulk(EntityMediaBase, Media)
+    elif section == 'localization':
+        migrateBulk(EntityLocalizationBase, Localization)
+    elif section == 'state':
+        migrateBulk(EntityState, State)
+    elif section == 'treeleaves':
+        migrateBulk(TreeLeaf, Leaf)
+    elif section == 'analyses':
+        migrateBulk(AnalysisBase, Analysis)
         
