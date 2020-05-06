@@ -247,8 +247,8 @@ class LocalizationType(Model):
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     media = ManyToManyField(MediaType)
-    bounded = BooleanField(default=True)
     colorMap = JSONField(null=True, blank=True)
+    line_width = PositiveIntegerField(default=3)
     attribute_types = JSONField()
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -259,7 +259,6 @@ class StateType(Model):
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     media = ManyToManyField(MediaType)
-    markers = BooleanField(default=False)
     interpolation = EnumField(
         InterpolationMethods,
         default=InterpolationMethods.NONE
