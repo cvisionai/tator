@@ -8,6 +8,36 @@ class CustomGenerator(SchemaGenerator):
     def get_schema(self, request=None, public=True, parser=False):
         schema = super().get_schema(request, public)
 
+        # Set up schema components.
+        schema['components'] = {
+            'schemas': {
+                'AlgorithmLaunchSpec': algorithm_launch_spec,
+                'AlgorithmLaunchResponse': algorithm_launch_response,
+                'AlgorithmList': algorithm_list,
+                'AnalysisSpec': analysis_spec,
+                'AnalysisList': analysis_list,
+                'AttributeTypeSpec': attribute_type_spec,
+                'AttributeType': attribute_type,
+                'AttributeTypeList': attribute_type_list,
+                'AttributeTypeUpdate': attribute_type_update,
+                'EntityTypeSchema': entity_type_schema,
+                'LocalizationAssociationUpdate': localization_association_update,
+                'LocalizationAssociation': localization_association,
+                'LocalizationSpec': localization_spec,
+                'LocalizationListUpdate': localization_list_update,
+                'LocalizationList': localization_list,
+                'LocalizationUpdate': localization_update,
+                #'Box': box,
+                #'Line': line,
+                #'Dot': dot,
+                'Localization': localization,
+                'VideoSpec': video_spec,
+                'VideoUpdate': video_update,
+                'CreateResponse': create_response,
+                'MessageResponse': message_response,
+            },
+        }
+
         # Add schema for Token endpoint.
         if not parser:
             schema['paths']['/rest/Token']['post']['requestBody'] = {
@@ -75,36 +105,6 @@ class CustomGenerator(SchemaGenerator):
             for d in deprecated:
                 if d in schema['paths']:
                     del schema['paths'][d]
-
-        # Set up schema components.
-        schema['components'] = {
-            'schemas': {
-                'AlgorithmLaunchSpec': algorithm_launch_spec,
-                'AlgorithmLaunchResponse': algorithm_launch_response,
-                'AlgorithmList': algorithm_list,
-                'AnalysisSpec': analysis_spec,
-                'AnalysisList': analysis_list,
-                'AttributeTypeSpec': attribute_type_spec,
-                'AttributeType': attribute_type,
-                'AttributeTypeList': attribute_type_list,
-                'AttributeTypeUpdate': attribute_type_update,
-                'EntityTypeSchema': entity_type_schema,
-                'LocalizationAssociationUpdate': localization_association_update,
-                'LocalizationAssociation': localization_association,
-                'LocalizationSpec': localization_spec,
-                'LocalizationListUpdate': localization_list_update,
-                'LocalizationList': localization_list,
-                'LocalizationUpdate': localization_update,
-                'Box': box,
-                'Line': line,
-                'Dot': dot,
-                'Localization': localization,
-                'VideoSpec': video_spec,
-                'VideoUpdate': video_update,
-                'CreateResponse': create_response,
-                'MessageResponse': message_response,
-            },
-        }
 
         return schema
 
