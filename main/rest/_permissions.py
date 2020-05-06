@@ -31,7 +31,7 @@ def _for_schema_view(request, view):
         view.kwargs == {}
         and type(request.authenticators[0]) == SessionAuthentication
         and request.META['HTTP_HOST'] == f"{os.getenv('MAIN_HOST')}"
-        and request.META['RAW_URI'] == '/schema/'
+        and request.META['RAW_URI'].startswith('/schema/')
     )
 
 class ProjectPermissionBase(BasePermission):
