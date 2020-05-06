@@ -433,6 +433,22 @@ def localization_delete(sender, instance, **kwargs):
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
+class Association(Model):
+    media = ManyToManyField(Media)
+    localizations = ManyToManyField(Localization)
+    segments = JSONField(null=True)
+    color = CharField(null=True,blank=True,max_length=8)
+    frame = PositiveIntegerField()
+    extracted = ForeignKey(Media,
+                           on_delete=SET_NULL,
+                           null=True,
+                           blank=True)
+    def states(media_id):
+        associations = Association.objects.filter(media__in=media_id)
+        localizations = Localization.objects.filter(media__in=media_id)
+        associations.union(Association.objects.filter(localizations__in=localizations)
+        return State.objects.filter(association__in=list(associations))
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
