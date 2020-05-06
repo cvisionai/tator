@@ -27,9 +27,9 @@ class CustomGenerator(SchemaGenerator):
                 'LocalizationListUpdate': localization_list_update,
                 'LocalizationList': localization_list,
                 'LocalizationUpdate': localization_update,
-                #'Box': box,
-                #'Line': line,
-                #'Dot': dot,
+                'Box': box,
+                'Line': line,
+                'Dot': dot,
                 'Localization': localization,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
@@ -79,12 +79,10 @@ class CustomGenerator(SchemaGenerator):
 
             # Set security scheme.
             schema['components']['securitySchemes'] = {
-                'securitySchemes': {
-                    'TokenAuth': {
-                        'type': 'apiKey',
-                        'in': 'header',
-                        'name': 'Authorization',
-                    },
+                'TokenAuth': {
+                    'type': 'apiKey',
+                    'in': 'header',
+                    'name': 'Authorization',
                 },
             }
             schema['security'] = [
