@@ -1,4 +1,4 @@
-import json
+import yaml
 
 from django.core.management.base import BaseCommand
 
@@ -8,4 +8,4 @@ class Command(BaseCommand):
     def handle(self, **options):
         generator = CustomGenerator(title='Tator REST API')
         spec = generator.get_schema()
-        print(json.dumps(spec, indent=4))
+        print(yaml.dump(spec))
