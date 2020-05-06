@@ -563,24 +563,24 @@ def migrateTypeObj(type_):
             attribute_types=attribute_types,
         )
         obj.media.add(*type_.media.all())
-  elif isinstance(type_, EntityTypeState):
-      obj = StateType.objects.create(
-            dtype='state',
-            project=type_.project,
-            name=type_.name,
-            description=type_.description,
-            interpolation=type_.interpolation,
-            association=type_.association,
-            attribute_types=attribute_types,
-      )
-      obj.media.add(*type_.media.all())
-  elif isinstance(type_, EntityTypeTreeLeaf):
-      obj = LeafType.objects.create(
-            dtype='leaf',
-            project=type_.project,
-            name=type_.name,
-            description=type_.description,
-      )
+    elif isinstance(type_, EntityTypeState):
+        obj = StateType.objects.create(
+              dtype='state',
+              project=type_.project,
+              name=type_.name,
+              description=type_.description,
+              interpolation=type_.interpolation,
+              association=type_.association,
+              attribute_types=attribute_types,
+        )
+        obj.media.add(*type_.media.all())
+    elif isinstance(type_, EntityTypeTreeLeaf):
+        obj = LeafType.objects.create(
+              dtype='leaf',
+              project=type_.project,
+              name=type_.name,
+              description=type_.description,
+        )
 
 def migrateToFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
