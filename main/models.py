@@ -384,6 +384,55 @@ def media_delete(sender, instance, **kwargs):
         path = str(instance.original)
         safe_delete(path)
 
+class Localization(Model):
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(LocalizationType, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given LocalizationType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    user = ForeignKey(User, on_delete=PROTECT)
+    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+    frame = PositiveIntegerField(null=True)
+    thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
+                                 null=True,blank=True,
+                                 related_name='thumbnail_image')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    x = FloatField()
+    y = FloatField()
+    x0 = FloatField()
+    y0 = FloatField()
+    x1 = FloatField()
+    y1 = FloatField()
+    width = FloatField()
+    height = FloatField()
+
+@receiver(post_save, sender=Localization)
+def localization_save(sender, instance, created, **kwargs):
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        pass
+
+@receiver(pre_delete, sender=Localization)
+def localization_delete(sender, instance, **kwargs):
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
+    TatorSearch().delete_document(instance)
+    if instance.thumbnail_image:
+        instance.thumbnail_image.delete()
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
