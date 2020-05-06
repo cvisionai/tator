@@ -21,3 +21,16 @@ message_response = {
         },
     },
 }
+
+attribute_bulk_update = {
+    'type': 'object',
+    'required': ['attributes'],
+    'properties': {
+        'attributes': {
+            'description': 'Attribute values to bulk update an entity list.',
+            'type': 'object',
+            'additionalProperties': True,
+        },
+    },
+}
+

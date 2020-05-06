@@ -162,7 +162,7 @@ class LocalizationListSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/LocalizationListUpdate',
+                    '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
                 'examples': {
                     'single': {

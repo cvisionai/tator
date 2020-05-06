@@ -214,80 +214,86 @@ many_spec = {
 
 localization_spec = {
     'oneOf': [
-        box_spec,
-        line_spec,
-        dot_spec,
-        many_spec,
+        {'$ref': 'BoxSpec'},
+        {'$ref': 'LineSpec'},
+        {'$ref': 'DotSpec'},
+        {'$ref': 'ManySpec'},
     ],
 }
 
-localization_list_update = {
+box_element = {
     'type': 'object',
-    'required': ['attributes'],
     'properties': {
-        'attributes': {
-            'description': 'Attribute values to bulk update.',
-            'type': 'object',
-            'additionalProperties': True,
-        },
+        **localization_get_properties,
+        **localization_properties,
+        **box_properties,
+    },
+}
+
+line_element = {
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+        **box_properties,
+    },
+}
+
+dot_element = {
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+        **box_properties,
     },
 }
 
 localization_list = {
-    'type': 'array',
-    'items': {
-        'oneOf': [
-            {
-                'type': 'object',
-                'properties': {
-                    **localization_get_properties,
-                    **localization_properties,
-                    **box_properties,
-                }
-            },
-            {
-                'type': 'object',
-                'properties': {
-                    **localization_get_properties,
-                    **localization_properties,
-                    **line_properties,
-                },
-            },
-            {
-                'type': 'object',
-                'properties': {
-                    **localization_get_properties,
-                    **localization_properties,
-                    **dot_properties,
-                },
-            },
-        ],
+    'oneOf': [
+        {
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/BoxElement'},
+        },
+        {
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/LineElement'},
+        },
+        {
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/DotElement'},
+        },
+    ],
+}
+
+box_update = {
+    'type': 'object',
+    'properties': {
+        **localization_properties,
+        **box_properties,
+    },
+}
+
+line_update = {
+    'type': 'object',
+    'properties': {
+        **localization_properties,
+        **line_properties,
+    },
+}
+
+dot_update = {
+    'type': 'object',
+    'properties': {
+        **localization_properties,
+        **dot_properties,
     },
 }
 
 localization_update = {
     'oneOf': [
-        {
-            'type': 'object',
-            'properties': {
-                **localization_properties,
-                **box_properties,
-            },
-        },
-        {
-            'type': 'object',
-            'properties': {
-                **localization_properties,
-                **line_properties,
-            },
-        },
-        {
-            'type': 'object',
-            'properties': {
-                **localization_properties,
-                **dot_properties,
-            },
-        },
+        {'$ref': '#/components/schemas/BoxUpdate'},
+        {'$ref': '#/components/schemas/LineUpdate'},
+        {'$ref': '#/components/schemas/DotUpdate'},
     ],
 }
 
