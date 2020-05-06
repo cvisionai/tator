@@ -222,318 +222,6 @@ class Membership(Model):
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
 
-# Entity types
-
-class MediaType(Model):
-    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    name = CharField(max_length=64)
-    description = CharField(max_length=256, blank=True)
-    editTriggers = JSONField(null=True,
-                             blank=True)
-    file_format = CharField(max_length=4,
-                            null=True,
-                            blank=True,
-                            default=None)
-    keep_original = BooleanField(default=True, null=True, blank=True)
-    attribute_types = JSONField()
-    def __str__(self):
-        return f'{self.name} | {self.project}'
-
-class LocalizationType(Model):
-    dtype = CharField(max_length=16,
-                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    name = CharField(max_length=64)
-    description = CharField(max_length=256, blank=True)
-    media = ManyToManyField(MediaType)
-    colorMap = JSONField(null=True, blank=True)
-    line_width = PositiveIntegerField(default=3)
-    attribute_types = JSONField()
-    def __str__(self):
-        return f'{self.name} | {self.project}'
-
-class StateType(Model):
-    dtype = 'state'
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    name = CharField(max_length=64)
-    description = CharField(max_length=256, blank=True)
-    media = ManyToManyField(MediaType)
-    interpolation = EnumField(
-        InterpolationMethods,
-        default=InterpolationMethods.NONE
-    )
-    association = CharField(max_length=64,
-                            choices=AssociationTypes,
-                            default=AssociationTypes[0][0])
-    attribute_types = JSONField()
-    def __str__(self):
-        return f'{self.name} | {self.project}'
-
-class LeafType(Model):
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    name = CharField(max_length=64)
-    description = CharField(max_length=256, blank=True)
-    def __str__(self):
-        return f'{self.name} | {self.project}'
-
-# Entities (stores actual data)
-
-class Media(Model):
-    """
-    Fields:
-
-    original: Originally uploaded file. Users cannot interact with it except
-              by downloading it.
-
-              .. deprecated :: Use media_files object
-
-    segment_info: File for segment files to support MSE playback.
-
-                  .. deprecated :: Use meda_files instead
-
-    media_files: Dictionary to contain a map of all files for this media.
-                 The schema looks like this:
-
-                 .. code-block ::
-
-                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
-                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
-                     video_def = {"path": <path_to_disk>,
-                                  "codec": <human readable codec>,
-                                  "resolution": [<vertical pixel count, e.g. 720>, width]
-
-
-                                  ###################
-                                  # Optional Fields #
-                                  ###################
-
-                                  # Path to the segments.json file for streaming files.
-                                  # not expected/required for archival. Required for
-                                  # MSE playback with seek support for streaming files.
-                                  segment_info = <path_to_json>
-
-                                  # If supplied will use this instead of currently
-                                  # connected host. e.g. https://example.com
-                                  "host": <host url>
-                                  # If specified will be used for HTTP authorization
-                                  # in the request for media. I.e. "bearer <token>"
-                                  "http_auth": <http auth header>
-
-                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
-                                  # Only relevant for straming files, will assume
-                                  # example above if not present.
-                                  "codec_mime": <mime for MSE decode>
-
-                                  "codec_description": <description other than codec>}
-
-
-    """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(MediaType, on_delete=CASCADE)
-    """ Meta points to the defintion of the attribute field. That is
-        a handful of AttributeTypes are associated to a given MediaType
-        that is pointed to by this value. That set describes the `attribute`
-        field of this structure. """
-    attributes = JSONField(null=True, blank=True)
-    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
-    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
-    name = CharField(max_length=256)
-    md5 = SlugField(max_length=32)
-    """ md5 hash of the originally uploaded file. """
-    file = FileField()
-    last_edit_start = DateTimeField(null=True, blank=True)
-    """ Start datetime of a session in which the media's annotations were edited.
-    """
-    last_edit_end = DateTimeField(null=True, blank=True)
-    """ End datetime of a session in which the media's annotations were edited.
-    """
-    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    thumbnail = ImageField()
-    thumbnail_gif = ImageField()
-    num_frames = IntegerField(null=True)
-    fps = FloatField(null=True)
-    codec = CharField(null=True,max_length=256)
-    width=IntegerField(null=True)
-    height=IntegerField(null=True)
-    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
-                                 blank=True)
-    media_files = JSONField(null=True, blank=True)
-
-@receiver(post_save, sender=Media)
-def media_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().create_document(instance)
-
-def safe_delete(path):
-    try:
-        logger.info(f"Deleting {path}")
-        os.remove(path)
-    except:
-        logger.warning(f"Could not remove {path}")
-
-@receiver(pre_delete, sender=Media)
-def media_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
-    instance.file.delete(False)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
-class Localization(Model):
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(LocalizationType, on_delete=CASCADE)
-    """ Meta points to the defintion of the attribute field. That is
-        a handful of AttributeTypes are associated to a given LocalizationType
-        that is pointed to by this value. That set describes the `attribute`
-        field of this structure. """
-    attributes = JSONField(null=True, blank=True)
-    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
-    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
-    user = ForeignKey(User, on_delete=PROTECT)
-    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
-    frame = PositiveIntegerField(null=True)
-    thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
-                                 null=True,blank=True,
-                                 related_name='thumbnail_image')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
-    modified = BooleanField(null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
-    x = FloatField()
-    y = FloatField()
-    x0 = FloatField()
-    y0 = FloatField()
-    x1 = FloatField()
-    y1 = FloatField()
-    width = FloatField()
-    height = FloatField()
-
-@receiver(post_save, sender=Localization)
-def localization_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=Localization)
-def localization_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
-    if instance.thumbnail_image:
-        instance.thumbnail_image.delete()
-
-class State(Model):
-    """
-    A State is an event that occurs, potentially independent, from that of
-    a media element. It is associated with 0 (1 to be useful) or more media
-    elements. If a frame is supplied it was collected at that time point.
-    """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
-    """ Meta points to the defintion of the attribute field. That is
-        a handful of AttributeTypes are associated to a given EntityType
-        that is pointed to by this value. That set describes the `attribute`
-        field of this structure. """
-    attributes = JSONField(null=True, blank=True)
-    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
-    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
-    modified = BooleanField(null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
-    media = ManyToManyField(Media)
-    localizations = ManyToManyField(Localization)
-    segments = JSONField(null=True)
-    color = CharField(null=True,blank=True,max_length=8)
-    frame = PositiveIntegerField(null=True, blank=True)
-    extracted = ForeignKey(Media,
-                           on_delete=SET_NULL,
-                           null=True,
-                           blank=True)
-    def selectOnMedia(media_id):
-        return State.objects.filter(media__in=media_id)
-
-@receiver(post_save, sender=State)
-def state_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=State)
-def state_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
-
-class Leaf(Model):
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
-    """ Meta points to the defintion of the attribute field. That is
-        a handful of AttributeTypes are associated to a given EntityType
-        that is pointed to by this value. That set describes the `attribute`
-        field of this structure. """
-    attributes = JSONField(null=True, blank=True)
-    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
-    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
-    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
-    path=PathField(unique=True)
-    name = CharField(max_length=255)
-
-    class Meta:
-        verbose_name_plural = "Leaves"
-
-    def __str__(self):
-        return str(self.path)
-
-    def depth(self):
-        return Leaf.objects.annotate(depth=Depth('path')).get(pk=self.pk).depth
-
-    def subcategories(self, minLevel=1):
-        return Leaf.objects.select_related('parent').filter(
-            path__descendants=self.path,
-            path__depth__gte=self.depth()+minLevel
-        )
-
-    def computePath(self):
-        """ Returns the string representing the path element """
-        pathStr=self.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
-        if self.parent:
-            pathStr=self.parent.computePath()+"."+pathStr
-        elif self.project:
-            projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
-            pathStr=projName+"."+pathStr
-        return pathStr
-
-@receiver(post_save, sender=Leaf)
-def leaf_save(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=Leaf)
-def leaf_delete(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().delete_document(instance)
-
-class Analysis(Model):
-    project = ForeignKey(Project, on_delete=CASCADE)
-    name = CharField(max_length=64)
-    data_query = CharField(max_length=1024, default='*')
-
 class EntityTypeBase(PolymorphicModel):
     """ .. deprecated :: Use MediaType, LocalizationType, or StateType object """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -1205,3 +893,334 @@ class TemporaryFile(Model):
 def temporary_file_delete(sender, instance, **kwargs):
     if os.path.exists(instance.path):
         os.remove(instance.path)
+
+# Entity types
+
+class MediaType(Model):
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    editTriggers = JSONField(null=True,
+                             blank=True)
+    file_format = CharField(max_length=4,
+                            null=True,
+                            blank=True,
+                            default=None)
+    keep_original = BooleanField(default=True, null=True, blank=True)
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class LocalizationType(Model):
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16,
+                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    media = ManyToManyField(MediaType)
+    colorMap = JSONField(null=True, blank=True)
+    line_width = PositiveIntegerField(default=3)
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class StateType(Model):
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    dtype = 'state'
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    media = ManyToManyField(MediaType)
+    interpolation = EnumField(
+        InterpolationMethods,
+        default=InterpolationMethods.NONE
+    )
+    association = CharField(max_length=64,
+                            choices=AssociationTypes,
+                            default=AssociationTypes[0][0])
+    attribute_types = JSONField()
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+class LeafType(Model):
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+# Entities (stores actual data)
+
+class Media(Model):
+    """
+    Fields:
+
+    original: Originally uploaded file. Users cannot interact with it except
+              by downloading it.
+
+              .. deprecated :: Use media_files object
+
+    segment_info: File for segment files to support MSE playback.
+
+                  .. deprecated :: Use meda_files instead
+
+    media_files: Dictionary to contain a map of all files for this media.
+                 The schema looks like this:
+
+                 .. code-block ::
+
+                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                     video_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>,
+                                  "resolution": [<vertical pixel count, e.g. 720>, width]
+
+
+                                  ###################
+                                  # Optional Fields #
+                                  ###################
+
+                                  # Path to the segments.json file for streaming files.
+                                  # not expected/required for archival. Required for
+                                  # MSE playback with seek support for streaming files.
+                                  segment_info = <path_to_json>
+
+                                  # If supplied will use this instead of currently
+                                  # connected host. e.g. https://example.com
+                                  "host": <host url>
+                                  # If specified will be used for HTTP authorization
+                                  # in the request for media. I.e. "bearer <token>"
+                                  "http_auth": <http auth header>
+
+                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
+                                  # Only relevant for straming files, will assume
+                                  # example above if not present.
+                                  "codec_mime": <mime for MSE decode>
+
+                                  "codec_description": <description other than codec>}
+
+
+    """
+    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(MediaType, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given MediaType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    name = CharField(max_length=256)
+    md5 = SlugField(max_length=32)
+    """ md5 hash of the originally uploaded file. """
+    file = FileField()
+    last_edit_start = DateTimeField(null=True, blank=True)
+    """ Start datetime of a session in which the media's annotations were edited.
+    """
+    last_edit_end = DateTimeField(null=True, blank=True)
+    """ End datetime of a session in which the media's annotations were edited.
+    """
+    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
+    thumbnail = ImageField()
+    thumbnail_gif = ImageField()
+    num_frames = IntegerField(null=True)
+    fps = FloatField(null=True)
+    codec = CharField(null=True,max_length=256)
+    width=IntegerField(null=True)
+    height=IntegerField(null=True)
+    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
+                                 blank=True)
+    media_files = JSONField(null=True, blank=True)
+
+@receiver(post_save, sender=Media)
+def media_save(sender, instance, created, **kwargs):
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
+    TatorSearch().create_document(instance)
+
+def safe_delete(path):
+    try:
+        logger.info(f"Deleting {path}")
+        os.remove(path)
+    except:
+        logger.warning(f"Could not remove {path}")
+
+@receiver(pre_delete, sender=Media)
+def media_delete(sender, instance, **kwargs):
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
+    TatorSearch().delete_document(instance)
+    instance.file.delete(False)
+    if instance.original != None:
+        path = str(instance.original)
+        safe_delete(path)
+
+class Localization(Model):
+    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(LocalizationType, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given LocalizationType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    user = ForeignKey(User, on_delete=PROTECT)
+    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+    frame = PositiveIntegerField(null=True)
+    thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
+                                 null=True,blank=True,
+                                 related_name='thumbnail_image')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    x = FloatField()
+    y = FloatField()
+    x0 = FloatField()
+    y0 = FloatField()
+    x1 = FloatField()
+    y1 = FloatField()
+    width = FloatField()
+    height = FloatField()
+
+@receiver(post_save, sender=Localization)
+def localization_save(sender, instance, created, **kwargs):
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        pass
+
+@receiver(pre_delete, sender=Localization)
+def localization_delete(sender, instance, **kwargs):
+    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
+    TatorSearch().delete_document(instance)
+    if instance.thumbnail_image:
+        instance.thumbnail_image.delete()
+
+class State(Model):
+    """
+    A State is an event that occurs, potentially independent, from that of
+    a media element. It is associated with 0 (1 to be useful) or more media
+    elements. If a frame is supplied it was collected at that time point.
+    """
+    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    media = ManyToManyField(Media)
+    localizations = ManyToManyField(Localization)
+    segments = JSONField(null=True)
+    color = CharField(null=True,blank=True,max_length=8)
+    frame = PositiveIntegerField(null=True, blank=True)
+    extracted = ForeignKey(Media,
+                           on_delete=SET_NULL,
+                           null=True,
+                           blank=True)
+    def selectOnMedia(media_id):
+        return State.objects.filter(media__in=media_id)
+
+@receiver(post_save, sender=State)
+def state_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=State)
+def state_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
+class Leaf(Model):
+    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
+    path=PathField(unique=True)
+    name = CharField(max_length=255)
+
+    class Meta:
+        verbose_name_plural = "Leaves"
+
+    def __str__(self):
+        return str(self.path)
+
+    def depth(self):
+        return Leaf.objects.annotate(depth=Depth('path')).get(pk=self.pk).depth
+
+    def subcategories(self, minLevel=1):
+        return Leaf.objects.select_related('parent').filter(
+            path__descendants=self.path,
+            path__depth__gte=self.depth()+minLevel
+        )
+
+    def computePath(self):
+        """ Returns the string representing the path element """
+        pathStr=self.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+        if self.parent:
+            pathStr=self.parent.computePath()+"."+pathStr
+        elif self.project:
+            projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+            pathStr=projName+"."+pathStr
+        return pathStr
+
+@receiver(post_save, sender=Leaf)
+def leaf_save(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=Leaf)
+def leaf_delete(sender, instance, **kwargs):
+    for ancestor in instance.computePath().split('.'):
+        TatorCache().invalidate_treeleaf_list_cache(ancestor)
+    TatorSearch().delete_document(instance)
+
+class Analysis(Model):
+    polymorphic = ForeignKey(AnalysisBase, on_delete=SET_NULL, null=True, blank=True)
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    name = CharField(max_length=64)
+    data_query = CharField(max_length=1024, default='*')
+
