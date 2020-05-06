@@ -214,10 +214,10 @@ many_spec = {
 
 localization_spec = {
     'oneOf': [
-        {'$ref': 'BoxSpec'},
-        {'$ref': 'LineSpec'},
-        {'$ref': 'DotSpec'},
-        {'$ref': 'ManySpec'},
+        {'$ref': '#/components/schemas/BoxSpec'},
+        {'$ref': '#/components/schemas/LineSpec'},
+        {'$ref': '#/components/schemas/DotSpec'},
+        {'$ref': '#/components/schemas/ManySpec'},
     ],
 }
 
