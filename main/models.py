@@ -235,7 +235,7 @@ class MediaType(Model):
                             null=True,
                             blank=True,
                             default=None)
-    keep_original = BooleanField(default=True)
+    keep_original = BooleanField(default=True, null=True, blank=True)
     attribute_types = JSONField()
     def __str__(self):
         return f'{self.name} | {self.project}'
