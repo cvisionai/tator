@@ -177,7 +177,39 @@ dot_spec = {
     },
 }
 
-many_spec = {
+box_props = {
+    'type': 'object',
+    'description': 'Box localization properties.',
+    'required': ['x', 'y', 'width', 'height', 'frame'],
+    'additionalProperties': True,
+    'properties': box_properties,
+}
+
+line_props = {
+    'type': 'object',
+    'description': 'Line localization properties.',
+    'required': ['x0', 'y0', 'x1', 'y1', 'frame'],
+    'additionalProperties': True,
+    'properties': line_properties,
+}
+
+dot_props = {
+    'type': 'object',
+    'description': 'Dot localization properties.',
+    'required': ['x', 'y', 'frame'],
+    'additionalProperties': True,
+    'properties': dot_properties,
+}
+
+localization_props = {
+    'oneOf': [
+        {'$ref': '#/components/schemas/BoxProps'},
+        {'$ref': '#/components/schemas/LineProps'},
+        {'$ref': '#/components/schemas/DotProps'},
+    ],
+}
+
+localization_many_spec = {
     'type': 'object',
     'description': 'Many localizations.',
     'required': ['media_id', 'type', 'many'],
@@ -187,31 +219,7 @@ many_spec = {
             'description': 'List of localizations if this request is for bulk'
                            'create.',
             'type': 'array',
-            'items': {
-                'oneOf': [
-                    {
-                        'type': 'object',
-                        'description': 'Box localization.',
-                        'required': ['x', 'y', 'width', 'height', 'frame'],
-                        'additionalProperties': True,
-                        'properties': box_properties,
-                    },
-                    {
-                        'type': 'object',
-                        'description': 'Line localization.',
-                        'required': ['x0', 'y0', 'x1', 'y1', 'frame'],
-                        'additionalProperties': True,
-                        'properties': line_properties,
-                    },
-                    {
-                        'type': 'object',
-                        'description': 'Dot localization.',
-                        'required': ['x', 'y', 'frame'],
-                        'additionalProperties': True,
-                        'properties': dot_properties,
-                    },
-                ],
-            },
+            'items': {'$ref': '#/components/schemas/LocalizationProps'},
         },
     },
 }
@@ -221,7 +229,7 @@ localization_spec = {
         {'$ref': '#/components/schemas/BoxSpec'},
         {'$ref': '#/components/schemas/LineSpec'},
         {'$ref': '#/components/schemas/DotSpec'},
-        {'$ref': '#/components/schemas/ManySpec'},
+        {'$ref': '#/components/schemas/LocalizationManySpec'},
     ],
 }
 
