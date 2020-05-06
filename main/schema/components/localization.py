@@ -103,6 +103,10 @@ post_properties = {
         'type': 'boolean',
         'default': False,
     },
+    'frame': {
+        'description': 'Frame number of this localization if it is in a video.',
+        'type': 'integer',
+    },
 }
 
 localization_get_properties = {
