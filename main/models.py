@@ -432,22 +432,6 @@ def localization_delete(sender, instance, **kwargs):
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
-class Association(Model):
-    media = ManyToManyField(Media)
-    localizations = ManyToManyField(Localization)
-    segments = JSONField(null=True)
-    color = CharField(null=True,blank=True,max_length=8)
-    frame = PositiveIntegerField()
-    extracted = ForeignKey(Media,
-                           on_delete=SET_NULL,
-                           null=True,
-                           blank=True)
-    def states(media_id):
-        associations = Association.objects.filter(media__in=media_id)
-        localizations = Localization.objects.filter(media__in=media_id)
-        associations.union(Association.objects.filter(localizations__in=localizations))
-        return State.objects.filter(association__in=list(associations))
-
 class State(Model):
     """
     A State is an event that occurs, potentially independent, from that of
@@ -465,7 +449,6 @@ class State(Model):
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
-    association = ForeignKey(Association, on_delete=CASCADE)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
@@ -473,8 +456,17 @@ class State(Model):
         false: Original upload, but was modified or deleted.
         true: Modified since upload or created via web interface.
     """
+    media = ManyToManyField(Media)
+    localizations = ManyToManyField(Localization)
+    segments = JSONField(null=True)
+    color = CharField(null=True,blank=True,max_length=8)
+    frame = PositiveIntegerField()
+    extracted = ForeignKey(Media,
+                           on_delete=SET_NULL,
+                           null=True,
+                           blank=True)
     def selectOnMedia(media_id):
-        return Association.states(media_id)
+        return State.objects.filter(media__in=media_id)
 
 @receiver(post_save, sender=State)
 def state_save(sender, instance, created, **kwargs):
