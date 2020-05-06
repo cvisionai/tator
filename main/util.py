@@ -582,7 +582,7 @@ def migrateTypeObj(type_):
               description=type_.description,
         )
 
-def migrateBulk(from_type, to_type):
+def migrateBulk(project, from_type, to_type, field_mapping={}):
     """ Uses bulk_create to migrate one object type to another.
     """
     # Get field names from both types.
@@ -594,8 +594,9 @@ def migrateBulk(from_type, to_type):
     fields.remove('id')
 
     # Do the migration.
-    qs = from_type.objects.filter(project=project).values(*fields)
-    flat = [to_type(**obj) for obj in qs]
+    qs = from_type.objects.filter(project=project)
+    values = qs.extra(select=field_mapping).values(*fields)
+    flat = [to_type(**obj) for obj in values]
     to_type.objects.bulk_create(flat)
 
 def migrateToFlat(project, section):
@@ -624,13 +625,18 @@ def migrateToFlat(project, section):
             # Create type objects.
             migrateTypeObj(type_)
     elif section == 'media':
-        migrateBulk(EntityMediaBase, Media)
+        migrateBulk(project, EntityMediaBase, Media)
     elif section == 'localization':
-        migrateBulk(EntityLocalizationBase, Localization)
+        migrateBulk(project, EntityLocalizationBase, Localization)
     elif section == 'state':
-        migrateBulk(EntityState, State)
+        migrateStates(project, EntityState, State, field_mapping={
+            'association__segments': 'segments',
+            'association__color': 'color',
+            'association__frame': 'frame',
+            'association__extracted': 'extracted',
+        })
     elif section == 'treeleaves':
-        migrateBulk(TreeLeaf, Leaf)
+        migrateBulk(project, TreeLeaf, Leaf)
     elif section == 'analyses':
         migrateBulk(AnalysisBase, Analysis)
         
