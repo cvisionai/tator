@@ -648,7 +648,6 @@ def state_save(sender, instance, created, **kwargs):
 
 @receiver(pre_delete, sender=EntityState)
 def state_delete(sender, instance, **kwargs):
-    instance.association.delete()
     TatorSearch().delete_document(instance)
 
 # Tree data type
