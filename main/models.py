@@ -278,6 +278,112 @@ class LeafType(Model):
     def __str__(self):
         return f'{self.name} | {self.project}'
 
+# Entities (stores actual data)
+
+class Media(Model):
+    """
+    Fields:
+
+    original: Originally uploaded file. Users cannot interact with it except
+              by downloading it.
+
+              .. deprecated :: Use media_files object
+
+    segment_info: File for segment files to support MSE playback.
+
+                  .. deprecated :: Use meda_files instead
+
+    media_files: Dictionary to contain a map of all files for this media.
+                 The schema looks like this:
+
+                 .. code-block ::
+
+                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                     video_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>,
+                                  "resolution": [<vertical pixel count, e.g. 720>, width]
+
+
+                                  ###################
+                                  # Optional Fields #
+                                  ###################
+
+                                  # Path to the segments.json file for streaming files.
+                                  # not expected/required for archival. Required for
+                                  # MSE playback with seek support for streaming files.
+                                  segment_info = <path_to_json>
+
+                                  # If supplied will use this instead of currently
+                                  # connected host. e.g. https://example.com
+                                  "host": <host url>
+                                  # If specified will be used for HTTP authorization
+                                  # in the request for media. I.e. "bearer <token>"
+                                  "http_auth": <http auth header>
+
+                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
+                                  # Only relevant for straming files, will assume
+                                  # example above if not present.
+                                  "codec_mime": <mime for MSE decode>
+
+                                  "codec_description": <description other than codec>}
+
+
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    meta = ForeignKey(MediaType, on_delete=CASCADE)
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given MediaType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    name = CharField(max_length=256)
+    md5 = SlugField(max_length=32)
+    """ md5 hash of the originally uploaded file. """
+    file = FileField()
+    last_edit_start = DateTimeField(null=True, blank=True)
+    """ Start datetime of a session in which the media's annotations were edited.
+    """
+    last_edit_end = DateTimeField(null=True, blank=True)
+    """ End datetime of a session in which the media's annotations were edited.
+    """
+    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
+    thumbnail = ImageField()
+    thumbnail_gif = ImageField()
+    num_frames = IntegerField(null=True)
+    fps = FloatField(null=True)
+    codec = CharField(null=True,max_length=256)
+    width=IntegerField(null=True)
+    height=IntegerField(null=True)
+    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
+                                 blank=True)
+    media_files = JSONField(null=True, blank=True)
+
+@receiver(post_save, sender=Media)
+def media_save(sender, instance, created, **kwargs):
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
+    TatorSearch().create_document(instance)
+
+def safe_delete(path):
+    try:
+        logger.info(f"Deleting {path}")
+        os.remove(path)
+    except:
+        logger.warning(f"Could not remove {path}")
+
+@receiver(pre_delete, sender=Media)
+def media_delete(sender, instance, **kwargs):
+    TatorCache().invalidate_media_list_cache(instance.project.pk)
+    TatorSearch().delete_document(instance)
+    instance.file.delete(False)
+    if instance.original != None:
+        path = str(instance.original)
+        safe_delete(path)
+
 class EntityTypeBase(PolymorphicModel):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
