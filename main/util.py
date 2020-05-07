@@ -505,7 +505,7 @@ def attrTypeToDict(type_):
                   'name': attr_type.name,
                   'description': attr_type.description,
                   'dtype': 'datetime',
-                  'default': list(attr_type.default),
+                  'default': list(attr_type.default) if attr_type.default is not None else None,
               })
     return attribute_types
 
