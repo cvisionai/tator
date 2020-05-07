@@ -639,8 +639,8 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     """ Uses bulk_create to migrate one object type to another.
     """
     # Get field names from both types.
-    from_fields = [str(field).rsplit('.', 1)[1] for field in from_type]
-    to_fields = [str(field).rsplit('.', 1)[1] for field in to_type]
+    from_fields = [str(field).rsplit('.', 1)[1] for field in from_type._meta.fields]
+    to_fields = [str(field).rsplit('.', 1)[1] for field in to_type._meta.fields]
 
     # Find intersection between fields and remove id.
     fields = list(set(from_fields) & set(to_fields))
