@@ -508,7 +508,7 @@ def attrTypeToDict(type_):
               })
     return attribute_types
 
-def migrateTypeObj(type_):
+def migrateTypeObj(type_, attribute_types):
     """ Migrate legacy type object to flat type object.
     """
     if isinstance(type_, EntityTypeMediaVideo):
@@ -541,7 +541,7 @@ def migrateTypeObj(type_):
             line_width=type_.line_width,
             attribute_types=attribute_types,
         )
-        obj.media.add(*type_.media.all())
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeLocalizationLine):
         obj = LocalizationType.objects.create(
             dtype='line',
@@ -552,7 +552,7 @@ def migrateTypeObj(type_):
             line_width=type_.line_width,
             attribute_types=attribute_types,
         )
-        obj.media.add(*type_.media.all())
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeLocalizationDot):
         obj = LocalizationType.objects.create(
             dtype='dot',
@@ -562,7 +562,7 @@ def migrateTypeObj(type_):
             colorMap=type_.colorMap,
             attribute_types=attribute_types,
         )
-        obj.media.add(*type_.media.all())
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeState):
         obj = StateType.objects.create(
               dtype='state',
@@ -573,7 +573,7 @@ def migrateTypeObj(type_):
               association=type_.association,
               attribute_types=attribute_types,
         )
-        obj.media.add(*type_.media.all())
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeTreeLeaf):
         obj = LeafType.objects.create(
               dtype='leaf',
@@ -613,7 +613,7 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
         flat = [to_type(**obj) for obj in values]
         to_type.objects.bulk_create(flat)
 
-def migrateToFlat(project, section):
+def migrateFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
         section must be one of:
         'types' - migrate entity types
@@ -624,8 +624,7 @@ def migrateToFlat(project, section):
         'analyses' - migrate analyses
     """
     if section == 'types':
-        # Migrate media types.
-        types = EntityTypeMediaBase.objects.filter(project=project)
+        types = EntityTypeBase.objects.filter(project=project)
         for type_ in types:
             # Skip types that have already been created.
             if (MediaType.objects.filter(project=type_.project, name=type_.name).exists()
@@ -637,7 +636,8 @@ def migrateToFlat(project, section):
             attribute_types = attrTypeToDict(type_)
 
             # Create type objects.
-            migrateTypeObj(type_)
+            migrateTypeObj(type_, attribute_types)
+            logger.info(f"Migrated type {type_.name}...")
     elif section == 'media':
         migrateBulk(project, EntityMediaBase, Media)
     elif section == 'localization':
