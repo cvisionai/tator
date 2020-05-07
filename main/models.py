@@ -1092,9 +1092,9 @@ class Localization(Model):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='localization_modified_by')
     user = ForeignKey(User, on_delete=PROTECT)
-    media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
+    media = ForeignKey(Media, on_delete=CASCADE)
     frame = PositiveIntegerField(null=True, blank=True)
-    thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
+    thumbnail_image = ForeignKey(Media, on_delete=SET_NULL,
                                  null=True, blank=True,
                                  related_name='localization_thumbnail_image')
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
@@ -1138,7 +1138,7 @@ class State(Model):
                                 related_name='state_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    meta = ForeignKey(StateType, on_delete=CASCADE)
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1183,7 +1183,7 @@ class Leaf(Model):
                                 related_name='leaf_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
+    meta = ForeignKey(LeafType, on_delete=CASCADE)
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
