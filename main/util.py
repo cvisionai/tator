@@ -589,7 +589,51 @@ def migrateTypeObj(type_, attribute_types):
             description=type_.description,
         )
 
+def convertObject(obj):
+    if isinstance(obj, EntityMediaVideo):
+        flat = Media(
+            project=obj.project,
+            meta=MediaType.objects.get(polymorphic=obj.meta),
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            name=obj.name,
+            md5=obj.md5,
+            last_edit_start=obj.last_edit_start,
+            last_edit_end=obj.last_edit_end,
+            original=obj.original,
+            num_frames=obj.num_frames,
+            fps=obj.fps,
+            codec=obj.codec,
+            width=obj.width,
+            height=obj.height,
+            segment_info=obj.segment_info,  
+            media_files=obj.media_files,
         )
+        flat.file.name = obj.file.name
+        flat.thumbnail.name = obj.thumbnail.name
+        flat.thumbnail_gif.name = obj.thumbnail_gif.name
+    elif isinstance(obj, EntityMediaImage):
+        flat = Media(
+            project=obj.project,
+            meta=MediaType.objects.get(polymorphic=obj.meta),
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            name=obj.name,
+            md5=obj.md5,
+            last_edit_start=obj.last_edit_start,
+            last_edit_end=obj.last_edit_end,
+            width=obj.width,
+            height=obj.height,
+        )
+        flat.file.name = obj.file.name
+        flat.thumbnail.name = obj.thumbnail.name
+    return flat
 
 def migrateBulk(project, from_type, to_type, field_mapping={}):
     """ Uses bulk_create to migrate one object type to another.
