@@ -897,7 +897,8 @@ def temporary_file_delete(sender, instance, **kwargs):
 # Entity types
 
 class MediaType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='media_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -915,7 +916,8 @@ class MediaType(Model):
         return f'{self.name} | {self.project}'
 
 class LocalizationType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='localization_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16,
                       choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
@@ -930,7 +932,8 @@ class LocalizationType(Model):
         return f'{self.name} | {self.project}'
 
 class StateType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='state_type_polymorphic')
     """ Temporary field for migration. """
     dtype = 'state'
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -949,7 +952,8 @@ class StateType(Model):
         return f'{self.name} | {self.project}'
 
 class LeafType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='leaf_type_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
@@ -1009,7 +1013,8 @@ class Media(Model):
 
 
     """
-    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='media_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(MediaType, on_delete=CASCADE)
@@ -1066,7 +1071,8 @@ def media_delete(sender, instance, **kwargs):
         safe_delete(path)
 
 class Localization(Model):
-    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='localization_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(LocalizationType, on_delete=CASCADE)
@@ -1086,7 +1092,7 @@ class Localization(Model):
     frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
                                  null=True, blank=True,
-                                 related_name='thumbnail_image')
+                                 related_name='localization_thumbnail_image')
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
@@ -1124,7 +1130,8 @@ class State(Model):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
-    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='state_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
@@ -1134,9 +1141,11 @@ class State(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='state_created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='state_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='state_modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='state_modified_by')
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
@@ -1144,7 +1153,7 @@ class State(Model):
         false: Original upload, but was modified or deleted.
         true: Modified since upload or created via web interface.
     """
-    media = ManyToManyField(Media)
+    media = ManyToManyField(Media, related_name='media')
     localizations = ManyToManyField(Localization)
     segments = JSONField(null=True)
     color = CharField(null=True,blank=True,max_length=8)
@@ -1152,7 +1161,8 @@ class State(Model):
     extracted = ForeignKey(Media,
                            on_delete=SET_NULL,
                            null=True,
-                           blank=True)
+                           blank=True,
+                           related_name='extracted')
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -1165,7 +1175,8 @@ def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
 class Leaf(Model):
-    polymorphic = ForeignKey(EntityBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='leaf_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
@@ -1175,9 +1186,11 @@ class Leaf(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='leaf_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='leaf_modified_by')
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
     path=PathField(unique=True)
     name = CharField(max_length=255)
@@ -1220,7 +1233,8 @@ def leaf_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
 class Analysis(Model):
-    polymorphic = ForeignKey(AnalysisBase, on_delete=SET_NULL, null=True, blank=True)
+    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='analysis_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE)
     name = CharField(max_length=64)
