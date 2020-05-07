@@ -646,6 +646,16 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     fields = list(set(from_fields) & set(to_fields))
     fields.remove('id')
 
+    # Get meta type.
+    if isinstance(to_type, Media):
+        meta_type = MediaType
+    elif isinstance(to_type, Localization):
+        meta_type = LocalizationType
+    elif isinstance(to_type, State):
+        meta_type = StateType
+    elif isinstance(to_type, Leaf):
+        meta_type = LeafType
+
     # Migrate objects in chunks.
     total = 0
     while True:
