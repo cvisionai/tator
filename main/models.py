@@ -1066,10 +1066,12 @@ def safe_delete(path):
 def media_delete(sender, instance, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().delete_document(instance)
+    """
     instance.file.delete(False)
     if instance.original != None:
         path = str(instance.original)
         safe_delete(path)
+    """
 
 class Localization(Model):
     polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
