@@ -1034,10 +1034,10 @@ class Media(Model):
     """
     original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
     thumbnail = ImageField()
-    thumbnail_gif = ImageField()
-    num_frames = IntegerField(null=True)
-    fps = FloatField(null=True)
-    codec = CharField(null=True,max_length=256)
+    thumbnail_gif = ImageField(null=True, blank=True)
+    num_frames = IntegerField(null=True, blank=True)
+    fps = FloatField(null=True, blank=True)
+    codec = CharField(null=True, blank=True, max_length=256)
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
@@ -1076,9 +1076,11 @@ class Localization(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='state_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='state_modified_by')
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
     frame = PositiveIntegerField(null=True)
@@ -1092,14 +1094,14 @@ class Localization(Model):
         false: Original upload, but was modified or deleted.
         true: Modified since upload or created via web interface.
     """
-    x = FloatField()
-    y = FloatField()
-    x0 = FloatField()
-    y0 = FloatField()
-    x1 = FloatField()
-    y1 = FloatField()
-    width = FloatField()
-    height = FloatField()
+    x = FloatField(null=True, blank=True)
+    y = FloatField(null=True, blank=True)
+    x0 = FloatField(null=True, blank=True)
+    y0 = FloatField(null=True, blank=True)
+    x1 = FloatField(null=True, blank=True)
+    y1 = FloatField(null=True, blank=True)
+    width = FloatField(null=True, blank=True)
+    height = FloatField(null=True, blank=True)
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
