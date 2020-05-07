@@ -3,6 +3,7 @@ import os
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
 from django.contrib.gis.db.models import ManyToManyField
+from django.contrib.gis.db.models import OneToOneField
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import TextField
 from django.contrib.gis.db.models import URLField
@@ -897,8 +898,8 @@ def temporary_file_delete(sender, instance, **kwargs):
 # Entity types
 
 class MediaType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='media_type_polymorphic')
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='media_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -916,8 +917,8 @@ class MediaType(Model):
         return f'{self.name} | {self.project}'
 
 class LocalizationType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='localization_type_polymorphic')
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='localization_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16,
                       choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
@@ -932,8 +933,8 @@ class LocalizationType(Model):
         return f'{self.name} | {self.project}'
 
 class StateType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='state_type_polymorphic')
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='state_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('state', 'state')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -952,8 +953,8 @@ class StateType(Model):
         return f'{self.name} | {self.project}'
 
 class LeafType(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='leaf_type_polymorphic')
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='leaf_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('treeleaf', 'treeleaf')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
@@ -1014,8 +1015,8 @@ class Media(Model):
 
 
     """
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='media_polymorphic')
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='media_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(MediaType, on_delete=CASCADE)
@@ -1074,8 +1075,8 @@ def media_delete(sender, instance, **kwargs):
     """
 
 class Localization(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='localization_polymorphic')
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='localization_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(LocalizationType, on_delete=CASCADE)
@@ -1133,8 +1134,8 @@ class State(Model):
     a media element. It is associated with 0 (1 to be useful) or more media
     elements. If a frame is supplied it was collected at that time point.
     """
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='state_polymorphic')
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='state_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
@@ -1178,8 +1179,8 @@ def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
 class Leaf(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='leaf_polymorphic')
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='leaf_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
@@ -1236,8 +1237,8 @@ def leaf_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
 class Analysis(Model):
-    polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='analysis_polymorphic')
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='analysis_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE)
     name = CharField(max_length=64)
