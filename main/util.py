@@ -594,6 +594,7 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     fields.remove('id')
 
     # Migrate objects in chunks.
+    total = 0
     while True:
         # Find batch of objects that have not been migrated yet.
         existing = to_type.objects.filter(project=project)
@@ -601,8 +602,11 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
         qs = qs.exclude(polymorphic__in=existing)[:10000]
 
         # Exit when qs is empty.
-        if qs.count() == 0:
+        count = qs.count()
+        if count == 0:
             break
+        total += count
+        logger.info(f"Migrated {count} records of {from_type.__name__} to {to_type.__name__}...")
 
         # Convert objects to dict values.
         values = qs.extra(select=field_mapping).values(*fields)
