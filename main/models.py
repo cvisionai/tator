@@ -935,7 +935,7 @@ class StateType(Model):
     polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_type_polymorphic')
     """ Temporary field for migration. """
-    dtype = 'state'
+    dtype = CharField(max_length=16, choices=[('state', 'state')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
@@ -955,6 +955,7 @@ class LeafType(Model):
     polymorphic = ForeignKey(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
                              related_name='leaf_type_polymorphic')
     """ Temporary field for migration. """
+    dtype = CharField(max_length=16, choices=[('treeleaf', 'treeleaf')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
