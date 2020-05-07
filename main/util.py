@@ -593,8 +593,9 @@ def migrateTypeObj(type_, attribute_types):
 def convertObject(obj):
     if isinstance(obj, EntityMediaVideo):
         flat = Media(
+            polymorphic=obj,
             project=obj.project,
-            meta=MediaType.objects.get(polymorphic=obj.meta),
+            meta=obj.meta.media_type_polymorphic,
             attributes=obj.attributes,
             created_datetime=obj.created_datetime,
             created_by=obj.created_by,
@@ -618,8 +619,9 @@ def convertObject(obj):
         flat.thumbnail_gif.name = obj.thumbnail_gif.name
     elif isinstance(obj, EntityMediaImage):
         flat = Media(
+            polymorphic=obj,
             project=obj.project,
-            meta=MediaType.objects.get(polymorphic=obj.meta),
+            meta=obj.meta.media_type_polymorphic,
             attributes=obj.attributes,
             created_datetime=obj.created_datetime,
             created_by=obj.created_by,
@@ -661,23 +663,21 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     total = 0
     while True:
         # Find batch of objects that have not been migrated yet.
-        existing = to_type.objects.filter(project=project)
+        existing = to_type.objects.filter(project=project).values('polymorphic')
         qs = from_type.objects.filter(project=project)
-        qs = qs.annotate(polymorphic=F('pk'))\
-               .exclude(polymorphic__in=existing)\
-               .extra(select=field_mapping)
-        chunk = qs[:10000]
+        qs = qs.exclude(pk__in=existing).extra(select=field_mapping)
+        chunk = qs[:1000]
 
         # Exit when qs is empty.
         count = chunk.count()
         if count == 0:
             break
         total += count
-        logger.info(f"Migrated {count} records of {from_type.__name__} to {to_type.__name__}...")
 
-        # Resolve foreign keys.
+        # Convert the objects and bulk create.
         flat = [convertObject(obj) for obj in chunk]
         to_type.objects.bulk_create(flat)
+        logger.info(f"Migrated {total} records of {from_type.__name__} to {to_type.__name__}...")
 
 def migrateFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
