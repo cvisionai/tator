@@ -1019,9 +1019,9 @@ class Media(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='media_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='media_modified_by')
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
@@ -1077,15 +1077,15 @@ class Localization(Model):
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                            related_name='state_created_by')
+                            related_name='localization_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='state_modified_by')
+                             related_name='localization_modified_by')
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
-    frame = PositiveIntegerField(null=True)
+    frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(EntityMediaImage, on_delete=SET_NULL,
-                                 null=True,blank=True,
+                                 null=True, blank=True,
                                  related_name='thumbnail_image')
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
@@ -1134,9 +1134,9 @@ class State(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='state_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='state_modified_by')
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
