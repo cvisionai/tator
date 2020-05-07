@@ -10,6 +10,7 @@ from main.models import *
 from main.search import TatorSearch
 
 from django.conf import settings
+from django.db.models import F
 
 from elasticsearch.helpers import streaming_bulk
 
@@ -661,19 +662,21 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     while True:
         # Find batch of objects that have not been migrated yet.
         existing = to_type.objects.filter(project=project)
-        qs = from_type.object.filter(project=project)
-        qs = qs.exclude(polymorphic__in=existing)[:10000]
+        qs = from_type.objects.filter(project=project)
+        qs = qs.annotate(polymorphic=F('pk'))\
+               .exclude(polymorphic__in=existing)\
+               .extra(select=field_mapping)
+        chunk = qs[:10000]
 
         # Exit when qs is empty.
-        count = qs.count()
+        count = chunk.count()
         if count == 0:
             break
         total += count
         logger.info(f"Migrated {count} records of {from_type.__name__} to {to_type.__name__}...")
 
-        # Convert objects to dict values.
-        values = qs.extra(select=field_mapping).values(*fields)
-        flat = [to_type(**obj) for obj in values]
+        # Resolve foreign keys.
+        flat = [convertObject(obj) for obj in chunk]
         to_type.objects.bulk_create(flat)
 
 def migrateFlat(project, section):
