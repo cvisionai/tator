@@ -810,8 +810,7 @@ def migrateBulk(project, from_type, to_type):
     while True:
         # Find batch of objects that have not been migrated yet.
         existing = to_type.objects.filter(project=project).values('polymorphic')
-        qs = from_type.objects.filter(project=project)
-        qs = qs.exclude(pk__in=existing).extra(select=field_mapping)
+        qs = from_type.objects.filter(project=project).exclude(pk__in=existing)
         chunk = qs[:1000]
 
         # Exit when qs is empty.
