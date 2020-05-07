@@ -854,14 +854,11 @@ def migrateFlat(project, section):
     elif section == 'localization':
         migrateBulk(project, EntityLocalizationBase, Localization)
     elif section == 'state':
-        migrateStates(project, EntityState, State, field_mapping={
-            'association__segments': 'segments',
-            'association__color': 'color',
-            'association__frame': 'frame',
-            'association__extracted': 'extracted',
-        })
+        migrateBulk(project, EntityState, State)
+        backfillRelations(project, State)
     elif section == 'treeleaves':
         migrateBulk(project, TreeLeaf, Leaf)
+        backfillRelations(project, Leaf)
     elif section == 'analyses':
         migrateBulk(AnalysisBase, Analysis)
         
