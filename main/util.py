@@ -593,11 +593,21 @@ def migrateBulk(project, from_type, to_type, field_mapping={}):
     fields = list(set(from_fields) & set(to_fields))
     fields.remove('id')
 
-    # Do the migration.
-    qs = from_type.objects.filter(project=project)
-    values = qs.extra(select=field_mapping).values(*fields)
-    flat = [to_type(**obj) for obj in values]
-    to_type.objects.bulk_create(flat)
+    # Migrate objects in chunks.
+    while True:
+        # Find batch of objects that have not been migrated yet.
+        existing = to_type.objects.filter(project=project)
+        qs = from_type.object.filter(project=project)
+        qs = qs.exclude(polymorphic__in=existing)[:10000]
+
+        # Exit when qs is empty.
+        if qs.count() == 0:
+            break
+
+        # Convert objects to dict values.
+        values = qs.extra(select=field_mapping).values(*fields)
+        flat = [to_type(**obj) for obj in values]
+        to_type.objects.bulk_create(flat)
 
 def migrateToFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
