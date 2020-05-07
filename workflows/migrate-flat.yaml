@@ -7,7 +7,7 @@ spec:
     parameters:
     - name: sections
       value: |
-        ["types", "media", "localizations", "states", "treeleaves"]
+        ["types", "media", "localizations", "states", "treeleaves", "analyses"]
   entrypoint: migrate-all
   templates:
 
