@@ -636,6 +636,28 @@ def convertObject(obj):
         )
         flat.file.name = obj.file.name
         flat.thumbnail.name = obj.thumbnail.name
+    elif isinstance(obj, EntityLocalizationBox):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x=obj.x,
+            y=obj.y,
+            width=obj.width,
+            height=obj.height,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
     return flat
 
 def migrateBulk(project, from_type, to_type, field_mapping={}):
