@@ -700,6 +700,38 @@ def convertObject(obj):
         )
         if obj.thumbnail_image:
             thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityState):
+        flat = State(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.state_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            version=obj.version,
+            modified=obj.modified,
+        )
+        if isinstance(obj.association, FrameAssociation):
+            flat.frame = obj.association.frame
+            flat.extracted = obj.association.extracted
+        elif isinstance(obj.association, LocalizationAssociation):
+            flat.segments = obj.association.segments
+            flat.color = obj.association.color
+    elif isinstance(obj, TreeLeaf):
+        flat = Leaf(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.leaf_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            path=obj.path,
+            name=obj.name,
+        )
     return flat
 
 def migrateBulk(project, from_type, to_type, field_mapping={}):
