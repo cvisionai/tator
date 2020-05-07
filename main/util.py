@@ -734,7 +734,57 @@ def convertObject(obj):
         )
     return flat
 
-def migrateBulk(project, from_type, to_type, field_mapping={}):
+def backfillRelations(project, flat_type):
+    """ Fills in relations using polymorphic field in a flat object.
+    """
+    if flat_type == State:
+        # Fill in media relations.
+        relations = []
+        for obj in State.objects.filter(project=project):
+            for media in obj.polymorphic.association.media.all():
+                media_states = State.media.through(
+                    state_id=obj.id,
+                    media_id=media.media_polymorphic.id,
+                )
+                relations.append(media_states)
+            if len(relations) > 1000:
+                State.media.through.objects.bulk_create(relations)
+                logger.info(f"Created {len(relations)} many-to-many relations from State to Media...")
+                relations = []
+        State.media.through.objects.bulk_create(relations)
+        logger.info(f"Created {len(relations)} many-to-many relations from State to Media...")
+
+        # Fill in localization relations.
+        relations = []
+        for obj in State.objects.filter(project=project):
+            if isinstance(obj.polymorphic.association, LocalizationAssociation):
+                for localization in obj.polymorphic.association.localizations.all():
+                    localization_states = State.localizations.through(
+                        state_id=obj.id,
+                        localization_id=localization.localization_polymorphic.id,
+                    )
+                    relations.append(localization_states)
+            if len(relations) > 1000:
+                State.localizations.through.objects.bulk_create(relations)
+                logger.info(f"Created {len(relations)} many-to-many relations from State to Localization...")
+                relations = []
+        State.localizations.through.objects.bulk_create(relations)
+        logger.info(f"Created {len(relations)} many-to-many relations from State to Localization...")
+
+    if flat_type == Leaf:
+        # Fill in parent relations.
+        leaves = []
+        for obj in Leaf.objects.filter(project=project):
+            obj.parent = obj.polymorphic.parent.leaf_polymorphic
+            leaves.append(obj)
+            if len(leaves) > 1000:
+                Leaf.objects.bulk_update(leaves, ['parent'])
+                logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
+                leaves = []
+        Leaf.objects.bulk_update(leaves, ['parent'])
+        logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
+
+def migrateBulk(project, from_type, to_type):
     """ Uses bulk_create to migrate one object type to another.
     """
     # Get field names from both types.
