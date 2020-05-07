@@ -658,6 +658,48 @@ def convertObject(obj):
         )
         if obj.thumbnail_image:
             thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityLocalizationLine):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x0=obj.x0,
+            y0=obj.y0,
+            x1=obj.x1,
+            y1=obj.y1,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityLocalizationDot):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x=obj.x,
+            y=obj.y,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
     return flat
 
 def migrateBulk(project, from_type, to_type, field_mapping={}):
