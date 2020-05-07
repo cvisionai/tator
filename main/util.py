@@ -513,6 +513,7 @@ def migrateTypeObj(type_, attribute_types):
     """
     if isinstance(type_, EntityTypeMediaVideo):
         MediaType.objects.create(
+            polymorphic=type_,
             dtype='video',
             project=type_.project,
             name=type_.name,
@@ -524,6 +525,7 @@ def migrateTypeObj(type_, attribute_types):
         )
     elif isinstance(type_, EntityTypeMediaImage):
         MediaType.objects.create(
+            polymorphic=type_,
             dtype='image',
             project=type_.project,
             name=type_.name,
@@ -533,6 +535,7 @@ def migrateTypeObj(type_, attribute_types):
         )
     elif isinstance(type_, EntityTypeLocalizationBox):
         obj = LocalizationType.objects.create(
+            polymorphic=type_,
             dtype='box',
             project=type_.project,
             name=type_.name,
@@ -544,6 +547,7 @@ def migrateTypeObj(type_, attribute_types):
         obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeLocalizationLine):
         obj = LocalizationType.objects.create(
+            polymorphic=type_,
             dtype='line',
             project=type_.project,
             name=type_.name,
@@ -555,6 +559,7 @@ def migrateTypeObj(type_, attribute_types):
         obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeLocalizationDot):
         obj = LocalizationType.objects.create(
+            polymorphic=type_,
             dtype='dot',
             project=type_.project,
             name=type_.name,
@@ -565,21 +570,25 @@ def migrateTypeObj(type_, attribute_types):
         obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeState):
         obj = StateType.objects.create(
-              dtype='state',
-              project=type_.project,
-              name=type_.name,
-              description=type_.description,
-              interpolation=type_.interpolation,
-              association=type_.association,
-              attribute_types=attribute_types,
+            polymorphic=type_,
+            dtype='state',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            interpolation=type_.interpolation,
+            association=type_.association,
+            attribute_types=attribute_types,
         )
         obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
     elif isinstance(type_, EntityTypeTreeLeaf):
         obj = LeafType.objects.create(
-              dtype='leaf',
-              project=type_.project,
-              name=type_.name,
-              description=type_.description,
+            polymorphic=type_,
+            dtype='leaf',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+        )
+
         )
 
 def migrateBulk(project, from_type, to_type, field_mapping={}):
