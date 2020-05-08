@@ -862,5 +862,5 @@ def migrateFlat(project, section):
         migrateBulk(project, TreeLeaf, Leaf)
         backfillRelations(project, Leaf)
     elif section == 'analyses':
-        migrateBulk(AnalysisBase, Analysis)
+        migrateBulk(project, AnalysisBase, Analysis)
         
