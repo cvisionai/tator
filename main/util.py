@@ -775,12 +775,13 @@ def backfillRelations(project, flat_type):
         # Fill in parent relations.
         leaves = []
         for obj in Leaf.objects.filter(project=project):
-            obj.parent = obj.polymorphic.parent.leaf_polymorphic
-            leaves.append(obj)
-            if len(leaves) > 1000:
-                Leaf.objects.bulk_update(leaves, ['parent'])
-                logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
-                leaves = []
+            if obj.polymorphic.parent:
+                obj.parent = obj.polymorphic.parent.leaf_polymorphic
+                leaves.append(obj)
+                if len(leaves) > 1000:
+                    Leaf.objects.bulk_update(leaves, ['parent'])
+                    logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
+                    leaves = []
         Leaf.objects.bulk_update(leaves, ['parent'])
         logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
 
