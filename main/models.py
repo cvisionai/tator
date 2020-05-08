@@ -1237,7 +1237,7 @@ def leaf_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
 class Analysis(Model):
-    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+    polymorphic = OneToOneField(AnalysisBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='analysis_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=CASCADE)
