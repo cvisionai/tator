@@ -804,15 +804,15 @@ def migrateBulk(project, from_type, to_type):
     fields.remove('id')
 
     # Get reverse lookup.
-    if isinstance(to_type, Media):
+    if to_type == Media:
         reverse_lookup = {'media_polymorphic__isnull': True}
-    elif isinstance(to_type, Localization):
+    elif to_type == Localization:
         reverse_lookup = {'localization_polymorphic__isnull': True}
-    elif isinstance(to_type, State):
+    elif to_type == State:
         reverse_lookup = {'state_polymorphic__isnull': True}
-    elif isinstance(to_type, Leaf):
+    elif to_type == Leaf:
         reverse_lookup = {'leaf_polymorphic__isnull': True}
-    elif isinstance(to_type, Analysis):
+    elif to_type == Analysis:
         reverse_lookup = {'analysis_polymorphic__isnull': True}
 
     # Migrate objects in chunks.
