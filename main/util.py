@@ -803,23 +803,23 @@ def migrateBulk(project, from_type, to_type):
     fields = list(set(from_fields) & set(to_fields))
     fields.remove('id')
 
-    # Get meta type.
+    # Get reverse lookup.
     if isinstance(to_type, Media):
-        meta_type = MediaType
+        reverse_lookup = {'media_polymorphic__isnull': True}
     elif isinstance(to_type, Localization):
-        meta_type = LocalizationType
+        reverse_lookup = {'localization_polymorphic__isnull': True}
     elif isinstance(to_type, State):
-        meta_type = StateType
+        reverse_lookup = {'state_polymorphic__isnull': True}
     elif isinstance(to_type, Leaf):
-        meta_type = LeafType
+        reverse_lookup = {'leaf_polymorphic__isnull': True}
+    elif isinstance(to_type, Analysis):
+        reverse_lookup = {'analysis_polymorphic__isnull': True}
 
     # Migrate objects in chunks.
     total = 0
     while True:
         # Find batch of objects that have not been migrated yet.
-        existing = to_type.objects.filter(project=project).values('polymorphic')
-        qs = from_type.objects.filter(project=project).exclude(pk__in=existing)
-        chunk = qs[:1000]
+        chunk = from_type.objects.filter(project=project, **reverse_lookup)[:1000]
 
         # Exit when qs is empty.
         count = chunk.count()
