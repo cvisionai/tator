@@ -841,7 +841,8 @@ def migrateFlat(project, section):
             # Skip types that have already been created.
             if (MediaType.objects.filter(project=type_.project, name=type_.name).exists()
                 or LocalizationType.objects.filter(project=type_.project, name=type_.name).exists()
-                or StateType.objects.filter(project=type_.project, name=type_.name).exists()):
+                or StateType.objects.filter(project=type_.project, name=type_.name).exists()
+                or LeafType.objects.filter(project=type_.project, name=type_.name).exists()):
                 continue
 
             # Convert attributes type schema to a dict.
