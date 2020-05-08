@@ -781,7 +781,7 @@ def backfillRelations(project, flat_type):
     if flat_type == Leaf:
         # Fill in parent relations.
         leaves = []
-        for obj in Leaf.objects.filter(project=project):
+        for obj in Leaf.objects.filter(project=project).iterator():
             if obj.polymorphic.parent:
                 obj.parent = obj.polymorphic.parent.leaf_polymorphic
                 leaves.append(obj)
