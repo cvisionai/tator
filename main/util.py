@@ -732,6 +732,13 @@ def convertObject(obj):
             path=obj.path,
             name=obj.name,
         )
+    elif isinstance(obj, AnalysisCount):
+        flat = Analysis(
+            polymorphic=obj,
+            project=obj.project,
+            name=obj.name,
+            data_query=obj.data_query,
+        )
     return flat
 
 def backfillRelations(project, flat_type):
