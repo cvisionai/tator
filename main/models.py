@@ -913,6 +913,27 @@ class MediaType(Model):
                             default=None)
     keep_original = BooleanField(default=True, null=True, blank=True)
     attribute_types = JSONField()
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings, 
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -929,6 +950,27 @@ class LocalizationType(Model):
     colorMap = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
     attribute_types = JSONField()
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings, 
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -949,6 +991,27 @@ class StateType(Model):
                             choices=AssociationTypes,
                             default=AssociationTypes[0][0])
     attribute_types = JSONField()
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings, 
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -960,6 +1023,28 @@ class LeafType(Model):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
+    attribute_types = JSONField()
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings, 
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -1025,6 +1110,7 @@ class Media(Model):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='media_created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
@@ -1085,6 +1171,7 @@ class Localization(Model):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                             related_name='localization_created_by')
@@ -1144,6 +1231,7 @@ class State(Model):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                             related_name='state_created_by')
@@ -1189,6 +1277,7 @@ class Leaf(Model):
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                             related_name='leaf_created_by')
