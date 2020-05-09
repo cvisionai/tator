@@ -673,10 +673,10 @@ def convertObject(obj):
             frame=obj.frame,
             version=obj.version,
             modified=obj.modified,
-            x0=obj.x0,
-            y0=obj.y0,
-            x1=obj.x1,
-            y1=obj.y1,
+            x=obj.x0,
+            y=obj.y0,
+            u=obj.x1 - obj.x0,
+            v=obj.y1 - obj.y0,
         )
         if obj.thumbnail_image:
             thumbnail_image=obj.thumbnail_image.media_polymorphic,
