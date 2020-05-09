@@ -10,6 +10,7 @@ from main.models import *
 from main.search import TatorSearch
 
 from django.conf import settings
+from django.db.models import F
 
 from elasticsearch.helpers import streaming_bulk
 
@@ -443,3 +444,431 @@ def fixVideoDims(project):
                 video.save()
         except:
             print(f"Error on {video.pk}")
+
+def attrTypeToDict(type_):
+    """ Convert attribute types that apply to given type to a dict.
+    """
+    attribute_types = []
+    for attr_type in AttributeTypeBase.objects.filter(applies_to=type_):
+        if isinstance(attr_type, AttributeTypeBool):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'bool',
+                'default': attr_type.default,
+            })
+        elif isinstance(attr_type, AttributeTypeInt):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'int',
+                'default': attr_type.default,
+                'lower_bound': attr_type.lower_bound,
+                'upper_bound': attr_type.upper_bound,
+            })
+        elif isinstance(attr_type, AttributeTypeFloat):
+            attribute_types.append({
+                'name': attr_type.name,
+                'description': attr_type.description,
+                'dtype': 'float',
+                'default': attr_type.default,
+                'lower_bound': attr_type.lower_bound,
+                'upper_bound': attr_type.upper_bound,
+            })
+        elif isinstance(attr_type, AttributeTypeString):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'string',
+                  'default': attr_type.default,
+                  'autocomplete': attr_type.autocomplete,
+              })
+        elif isinstance(attr_type, AttributeTypeEnum):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'enum',
+                  'default': attr_type.default,
+                  'choices': attr_type.choices,
+                  'labels': attr_type.labels,
+              })
+        elif isinstance(attr_type, AttributeTypeDatetime):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'datetime',
+                  'use_current': attr_type.use_current,
+                  'default_timezone': attr_type.default_timezone,
+              })
+        elif isinstance(attr_type, AttributeTypeGeoposition):
+              attribute_types.append({
+                  'name': attr_type.name,
+                  'description': attr_type.description,
+                  'dtype': 'datetime',
+                  'default': list(attr_type.default) if attr_type.default is not None else None,
+              })
+    return attribute_types
+
+def migrateTypeObj(type_, attribute_types):
+    """ Migrate legacy type object to flat type object.
+    """
+    if isinstance(type_, EntityTypeMediaVideo):
+        MediaType.objects.create(
+            polymorphic=type_,
+            dtype='video',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            editTriggers=type_.editTriggers,
+            file_format=type_.file_format,
+            keep_original=type_.keep_original,
+            attribute_types=attribute_types,
+        )
+    elif isinstance(type_, EntityTypeMediaImage):
+        MediaType.objects.create(
+            polymorphic=type_,
+            dtype='image',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            file_format=type_.file_format,
+            attribute_types=attribute_types,
+        )
+    elif isinstance(type_, EntityTypeLocalizationBox):
+        obj = LocalizationType.objects.create(
+            polymorphic=type_,
+            dtype='box',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            line_width=type_.line_width,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
+    elif isinstance(type_, EntityTypeLocalizationLine):
+        obj = LocalizationType.objects.create(
+            polymorphic=type_,
+            dtype='line',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            line_width=type_.line_width,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
+    elif isinstance(type_, EntityTypeLocalizationDot):
+        obj = LocalizationType.objects.create(
+            polymorphic=type_,
+            dtype='dot',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            colorMap=type_.colorMap,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
+    elif isinstance(type_, EntityTypeState):
+        obj = StateType.objects.create(
+            polymorphic=type_,
+            dtype='state',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+            interpolation=type_.interpolation,
+            association=type_.association,
+            attribute_types=attribute_types,
+        )
+        obj.media.add(*MediaType.objects.filter(polymorphic__in=type_.media.all()))
+    elif isinstance(type_, EntityTypeTreeLeaf):
+        obj = LeafType.objects.create(
+            polymorphic=type_,
+            dtype='leaf',
+            project=type_.project,
+            name=type_.name,
+            description=type_.description,
+        )
+
+def convertObject(obj):
+    if isinstance(obj, EntityMediaVideo):
+        flat = Media(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.media_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            name=obj.name,
+            md5=obj.md5,
+            last_edit_start=obj.last_edit_start,
+            last_edit_end=obj.last_edit_end,
+            original=obj.original,
+            num_frames=obj.num_frames,
+            fps=obj.fps,
+            codec=obj.codec,
+            width=obj.width,
+            height=obj.height,
+            segment_info=obj.segment_info,  
+            media_files=obj.media_files,
+        )
+        flat.file.name = obj.file.name
+        flat.thumbnail.name = obj.thumbnail.name
+        flat.thumbnail_gif.name = obj.thumbnail_gif.name
+    elif isinstance(obj, EntityMediaImage):
+        flat = Media(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.media_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            name=obj.name,
+            md5=obj.md5,
+            last_edit_start=obj.last_edit_start,
+            last_edit_end=obj.last_edit_end,
+            width=obj.width,
+            height=obj.height,
+        )
+        flat.file.name = obj.file.name
+        flat.thumbnail.name = obj.thumbnail.name
+    elif isinstance(obj, EntityLocalizationBox):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x=obj.x,
+            y=obj.y,
+            width=obj.width,
+            height=obj.height,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityLocalizationLine):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x=obj.x0,
+            y=obj.y0,
+            u=obj.x1 - obj.x0,
+            v=obj.y1 - obj.y0,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityLocalizationDot):
+        flat = Localization(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.localization_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            user=obj.user,
+            media=obj.media.media_polymorphic,
+            frame=obj.frame,
+            version=obj.version,
+            modified=obj.modified,
+            x=obj.x,
+            y=obj.y,
+        )
+        if obj.thumbnail_image:
+            thumbnail_image=obj.thumbnail_image.media_polymorphic,
+    elif isinstance(obj, EntityState):
+        flat = State(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.state_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            version=obj.version,
+            modified=obj.modified,
+        )
+        if isinstance(obj.association, FrameAssociation):
+            flat.frame = obj.association.frame
+            if obj.association.extracted:
+                flat.extracted = obj.association.extracted.media_polymorphic
+        elif isinstance(obj.association, LocalizationAssociation):
+            flat.segments = obj.association.segments
+            flat.color = obj.association.color
+    elif isinstance(obj, TreeLeaf):
+        flat = Leaf(
+            polymorphic=obj,
+            project=obj.project,
+            meta=obj.meta.leaf_type_polymorphic,
+            attributes=obj.attributes,
+            created_datetime=obj.created_datetime,
+            created_by=obj.created_by,
+            modified_datetime=obj.modified_datetime,
+            modified_by=obj.modified_by,
+            path=obj.path,
+            name=obj.name,
+        )
+    elif isinstance(obj, AnalysisCount):
+        flat = Analysis(
+            polymorphic=obj,
+            project=obj.project,
+            name=obj.name,
+            data_query=obj.data_query,
+        )
+    return flat
+
+def backfillRelations(project, flat_type):
+    """ Fills in relations using polymorphic field in a flat object.
+    """
+    if flat_type == State:
+        # Fill in media relations.
+        relations = []
+        for obj in State.objects.filter(project=project):
+            for media in obj.polymorphic.association.media.all():
+                media_states = State.media.through(
+                    state_id=obj.id,
+                    media_id=media.media_polymorphic.id,
+                )
+                relations.append(media_states)
+            if len(relations) > 1000:
+                State.media.through.objects.bulk_create(relations)
+                logger.info(f"Created {len(relations)} many-to-many relations from State to Media...")
+                relations = []
+        State.media.through.objects.bulk_create(relations)
+        logger.info(f"Created {len(relations)} many-to-many relations from State to Media...")
+
+        # Fill in localization relations.
+        relations = []
+        for obj in State.objects.filter(project=project):
+            if isinstance(obj.polymorphic.association, LocalizationAssociation):
+                for localization in obj.polymorphic.association.localizations.all():
+                    localization_states = State.localizations.through(
+                        state_id=obj.id,
+                        localization_id=localization.localization_polymorphic.id,
+                    )
+                    relations.append(localization_states)
+            if len(relations) > 1000:
+                State.localizations.through.objects.bulk_create(relations)
+                logger.info(f"Created {len(relations)} many-to-many relations from State to Localization...")
+                relations = []
+        State.localizations.through.objects.bulk_create(relations)
+        logger.info(f"Created {len(relations)} many-to-many relations from State to Localization...")
+
+    if flat_type == Leaf:
+        # Fill in parent relations.
+        leaves = []
+        for obj in Leaf.objects.filter(project=project).iterator():
+            if obj.polymorphic.parent:
+                obj.parent = obj.polymorphic.parent.leaf_polymorphic
+                leaves.append(obj)
+                if len(leaves) > 1000:
+                    Leaf.objects.bulk_update(leaves, ['parent'])
+                    logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
+                    leaves = []
+        Leaf.objects.bulk_update(leaves, ['parent'])
+        logger.info(f"Updated {len(leaves)} parent relations for Leaf...")
+
+def migrateBulk(project, from_type, to_type):
+    """ Uses bulk_create to migrate one object type to another.
+    """
+    # Get field names from both types.
+    from_fields = [str(field).rsplit('.', 1)[1] for field in from_type._meta.fields]
+    to_fields = [str(field).rsplit('.', 1)[1] for field in to_type._meta.fields]
+
+    # Find intersection between fields and remove id.
+    fields = list(set(from_fields) & set(to_fields))
+    fields.remove('id')
+
+    # Get reverse lookup.
+    if to_type == Media:
+        reverse_lookup = {'media_polymorphic__isnull': True}
+    elif to_type == Localization:
+        reverse_lookup = {'localization_polymorphic__isnull': True}
+    elif to_type == State:
+        reverse_lookup = {'state_polymorphic__isnull': True}
+    elif to_type == Leaf:
+        reverse_lookup = {'leaf_polymorphic__isnull': True}
+    elif to_type == Analysis:
+        reverse_lookup = {'analysis_polymorphic__isnull': True}
+
+    # Migrate objects in chunks.
+    total = 0
+    while True:
+        # Find batch of objects that have not been migrated yet.
+        chunk = from_type.objects.filter(project=project, **reverse_lookup)[:1000]
+
+        # Exit when qs is empty.
+        count = chunk.count()
+        if count == 0:
+            break
+        total += count
+
+        # Convert the objects and bulk create.
+        flat = [convertObject(obj) for obj in chunk]
+        to_type.objects.bulk_create(flat)
+        logger.info(f"Migrated {total} records of {from_type.__name__} to {to_type.__name__}...")
+
+def migrateFlat(project, section):
+    """ Migrates legacy data models to new, flat data models.
+        section must be one of:
+        'types' - migrate entity types
+        'media' - migrate media
+        'localizations' - migrate media
+        'states' - migrate states
+        'treeleaves' - migrate treeleaves
+        'analyses' - migrate analyses
+    """
+    if section == 'types':
+        types = EntityTypeBase.objects.filter(project=project)
+        for type_ in types:
+            # Skip types that have already been created.
+            if (MediaType.objects.filter(project=type_.project, name=type_.name).exists()
+                or LocalizationType.objects.filter(project=type_.project, name=type_.name).exists()
+                or StateType.objects.filter(project=type_.project, name=type_.name).exists()
+                or LeafType.objects.filter(project=type_.project, name=type_.name).exists()):
+                continue
+
+            # Convert attributes type schema to a dict.
+            attribute_types = attrTypeToDict(type_)
+
+            # Create type objects.
+            migrateTypeObj(type_, attribute_types)
+            logger.info(f"Migrated type {type_.name}...")
+    elif section == 'media':
+        migrateBulk(project, EntityMediaBase, Media)
+    elif section == 'localizations':
+        migrateBulk(project, EntityLocalizationBase, Localization)
+    elif section == 'states':
+        migrateBulk(project, EntityState, State)
+        backfillRelations(project, State)
+    elif section == 'treeleaves':
+        migrateBulk(project, TreeLeaf, Leaf)
+        backfillRelations(project, Leaf)
+    elif section == 'analyses':
+        migrateBulk(project, AnalysisBase, Analysis)
+        
