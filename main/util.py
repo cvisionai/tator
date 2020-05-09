@@ -860,9 +860,9 @@ def migrateFlat(project, section):
             logger.info(f"Migrated type {type_.name}...")
     elif section == 'media':
         migrateBulk(project, EntityMediaBase, Media)
-    elif section == 'localization':
+    elif section == 'localizations':
         migrateBulk(project, EntityLocalizationBase, Localization)
-    elif section == 'state':
+    elif section == 'states':
         migrateBulk(project, EntityState, State)
         backfillRelations(project, State)
     elif section == 'treeleaves':
