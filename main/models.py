@@ -1192,13 +1192,17 @@ class Localization(Model):
         true: Modified since upload or created via web interface.
     """
     x = FloatField(null=True, blank=True)
+    """ Horizontal position."""
     y = FloatField(null=True, blank=True)
-    x0 = FloatField(null=True, blank=True)
-    y0 = FloatField(null=True, blank=True)
-    x1 = FloatField(null=True, blank=True)
-    y1 = FloatField(null=True, blank=True)
+    """ Vertical position."""
+    u = FloatField(null=True, blank=True)
+    """ Horizontal vector component for lines."""
+    v = FloatField(null=True, blank=True)
+    """ Vertical vector component for lines. """
     width = FloatField(null=True, blank=True)
+    """ Width for boxes."""
     height = FloatField(null=True, blank=True)
+    """ Height for boxes."""
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
