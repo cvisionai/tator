@@ -715,7 +715,8 @@ def convertObject(obj):
         )
         if isinstance(obj.association, FrameAssociation):
             flat.frame = obj.association.frame
-            flat.extracted = obj.association.extracted.media_polymorphic
+            if obj.association.extracted:
+                flat.extracted = obj.association.extracted.media_polymorphic
         elif isinstance(obj.association, LocalizationAssociation):
             flat.segments = obj.association.segments
             flat.color = obj.association.color
