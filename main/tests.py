@@ -18,40 +18,7 @@ from rest_framework.test import APITestCase
 
 from dateutil.parser import parse as dateutil_parse
 
-from .models import User
-from .models import Project
-from .models import Membership
-from .models import Permission
-from .models import Algorithm
-from .models import JobResult
-from .models import EntityTypeMediaVideo
-from .models import EntityTypeMediaImage
-from .models import EntityTypeLocalizationBox
-from .models import EntityTypeLocalizationLine
-from .models import EntityTypeLocalizationDot
-from .models import EntityTypeState
-from .models import EntityTypeTreeLeaf
-from .models import EntityBase
-from .models import EntityMediaVideo
-from .models import EntityMediaImage
-from .models import EntityLocalizationBox
-from .models import EntityLocalizationLine
-from .models import EntityLocalizationDot
-from .models import EntityState
-from .models import LocalizationAssociation
-from .models import FrameAssociation
-from .models import TreeLeaf
-from .models import MediaAssociation
-from .models import AttributeTypeBase
-from .models import AttributeTypeBool
-from .models import AttributeTypeInt
-from .models import AttributeTypeFloat
-from .models import AttributeTypeEnum
-from .models import AttributeTypeString
-from .models import AttributeTypeDatetime
-from .models import AttributeTypeGeoposition
-from .models import AnalysisCount
-from .models import Version
+from .models import *
 
 from .search import TatorSearch
 
@@ -337,6 +304,7 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -402,6 +370,7 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
@@ -934,7 +903,6 @@ class ProjectDeleteTestCase(APITestCase):
         self.video_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.box_type = EntityTypeLocalizationBox.objects.create(
@@ -1024,7 +992,6 @@ class VideoTestCase(
         self.entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
@@ -1059,7 +1026,6 @@ class ImageTestCase(
         self.entity_type = EntityTypeMediaImage.objects.create(
             name="images",
             project=self.project,
-            uploadable=False,
         )
         self.entities = [
             create_test_image(self.user, f'asdf{idx}', self.entity_type, self.project)
@@ -1096,7 +1062,6 @@ class LocalizationBoxTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entity_type = EntityTypeLocalizationBox.objects.create(
@@ -1159,7 +1124,6 @@ class LocalizationLineTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entity_type = EntityTypeLocalizationLine.objects.create(
@@ -1222,7 +1186,6 @@ class LocalizationDotTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entity_type = EntityTypeLocalizationDot.objects.create(
@@ -1284,7 +1247,6 @@ class StateTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entity_type = EntityTypeState.objects.create(
@@ -1425,7 +1387,6 @@ class StateTypeTestCase(
         self.media_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
@@ -1467,27 +1428,24 @@ class MediaTypeTestCase(
         self.detail_uri = 'MediaType'
         self.list_uri = 'MediaTypes'
         self.entities = [
-            EntityTypeMediaVideo.objects.create(
+            MediaType.objects.create(
                 name="videos",
-                uploadable=True,
                 keep_original=True,
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeMediaImage.objects.create(
+            MediaType.objects.create(
                 name="images",
-                uploadable=True,
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             'name': 'asdf',
         }
         self.create_json = {
             'name': 'videos',
-            'uploadable': True,
             'keep_original': True,
             'dtype': 'video',
         }
@@ -1507,13 +1465,11 @@ class EntityTypeSchemaTestCase(
         self.entities = [
             EntityTypeMediaVideo.objects.create(
                 name="videos",
-                uploadable=True,
                 keep_original=True,
                 project=self.project,
             ),
             EntityTypeMediaImage.objects.create(
                 name="images",
-                uploadable=True,
                 project=self.project,
             ),
         ]
@@ -1535,7 +1491,6 @@ class LocalizationAssociationTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.media_entities = [
@@ -1592,13 +1547,11 @@ class FrameAssociationTestCase(
         media_entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         image_type = EntityTypeMediaImage.objects.create(
             name="images",
             project=self.project,
-            uploadable=False,
         )
         image = create_test_image(self.user, "asdf", image_type, self.project)
         self.media_entities = [
@@ -1644,7 +1597,6 @@ class LocalizationTypeTestCase(
         self.media_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
@@ -1800,7 +1752,6 @@ class TranscodeTestCase(
         self.entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.create_json = {
@@ -1829,7 +1780,6 @@ class AnalysisCountTestCase(
         self.entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
@@ -1873,7 +1823,6 @@ class VersionTestCase(
         self.entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
@@ -1911,7 +1860,6 @@ class AttributeTypeTestCase(
         self.entity_type = EntityTypeMediaVideo.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         attribute_types = create_test_attribute_types(self.entity_type, self.project)
