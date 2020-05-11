@@ -210,52 +210,38 @@ def create_test_treeleaf(name, entity_type, project):
         path=''.join(random.choices(string.ascii_lowercase, k=10)),
     )
         
-def create_test_attribute_types(entity_type, project):
+def create_test_attribute_types():
     """Create one of each attribute type.
     """
     return {
-        'bool': AttributeTypeBool.objects.create(
+        'bool': dict(
             name='bool_test',
-            applies_to=entity_type,
-            project=project,
             default=False,
         ),
-        'int': AttributeTypeInt.objects.create(
+        'int': dict(
             name='int_test',
-            applies_to=entity_type,
-            project=project,
             default=42,
         ),
-        'float': AttributeTypeFloat.objects.create(
+        'float': dict(
             name='float_test',
-            applies_to=entity_type,
-            project=project,
             default=42.0,
         ),
-        'enum': AttributeTypeEnum.objects.create(
+        'enum': dict(
             name='enum_test',
             choices=['enum_val1', 'enum_val2', 'enum_val3'],
-            applies_to=entity_type,
-            project=project,
             default='enum_val1',
         ),
-        'string': AttributeTypeString.objects.create(
+        'string': dict(
             name='string_test',
-            applies_to=entity_type,
-            project=project,
             default='asdf_default',
         ),
-        'datetime': AttributeTypeDatetime.objects.create(
+        'datetime': dict(
             name='datetime_test',
             use_current=True,
-            applies_to=entity_type,
-            project=project,
         ),
-        'geoposition': AttributeTypeGeoposition.objects.create(
+        'geoposition': dict(
             name='geoposition_test',
-            applies_to=entity_type,
-            project=project,
-            default=Point(-179.0, -89.0),
+            default=[-179.0, -89.0],
         ),
     }
 
