@@ -229,7 +229,8 @@ class AnnotationPlayer extends TatorElement {
     this._mediaInfo = val;
     const dims = [val.width, val.height];
     this._slider.setAttribute("min", 0);
-    this._slider.setAttribute("max", val.num_frames);
+    // Max value on slider is 1 less the frame count.
+    this._slider.setAttribute("max", Number(val.num_frames)-1);
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
