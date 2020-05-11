@@ -1384,23 +1384,25 @@ class StateTypeTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.media_type = EntityTypeMediaVideo.objects.create(
+        self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
             keep_original=False,
         )
         self.entities = [
-            EntityTypeState.objects.create(
+            StateType.objects.create(
                 name="state1",
                 project=self.project,
+                association='Localization',
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeState.objects.create(
+            StateType.objects.create(
                 name="state2",
                 project=self.project,
+                association='Media',
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'StateTypes'
         self.detail_uri = 'StateType'
         self.create_json = {
