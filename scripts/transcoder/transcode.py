@@ -93,7 +93,7 @@ def transcode(path, outpath):
         cmd.extend([*per_res,
                     "-filter_complex",
                     # Scale the black mp4 to the input resolution prior to concating and scaling back down.
-                    f"[1:v:0]scale={vid_dims[1]}:{vid_dims[0]}[bv{ridx}];[0:v:0][bv{ridx}]concat=n=2:v=1:a=0[rv{ridx}];[rv{ridx}]scale=-2:{resolution}[outv{ridx}]",
+                    f"[1:v:0]scale={vid_dims[1]}:{vid_dims[0]}[bv{ridx}];[0:v:0][bv{ridx}]concat=n=2:v=1:a=0[rv{ridx}];[rv{ridx}]scale=-2:{resolution}[catv{ridx}];[catv{ridx}]pad=ceil(iw/2)*2:ceil(ih/2)*2[outv{ridx}]",
                     "-map", f"[outv{ridx}]",
                     output_file])
     logger.info('ffmpeg cmd = {}'.format(cmd))
