@@ -1113,6 +1113,25 @@ class VideoCanvas extends AnnotationCanvas {
       detail: {frame: this._dispFrame},
       composed: true
     }));
+
+    let ended = false;
+    if (this._direction == Direction.FORWARD &&
+        this._dispFrame >= this._numFrames)
+    {
+      ended = true;
+    }
+    else if (this._direction == Direction.BACKARD &&
+             this._dispFrame <= 0)
+    {
+      ended = true;
+    }
+
+    if (ended == true)
+    {
+      this.dispatchEvent(new CustomEvent("playbackEnded", {
+      composed: true
+      }));
+    }
   }
 
   // Push a given frame into the drawGL buffer
