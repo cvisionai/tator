@@ -134,17 +134,19 @@ class AnnotationPlayer extends TatorElement {
     rewind.addEventListener("click", () => {
       this._video.pause();
       this._video.rateChange(this._rate);
-      this._video._playCb.forEach(cb => {cb();});
-      this._video._playGeneric(Direction.BACKWARDS);
-      play.removeAttribute("is-paused");
+      if (this._video.playBackwards())
+      {
+        play.removeAttribute("is-paused");
+      }
     });
 
     fastForward.addEventListener("click", () => {
       this._video.pause();
       this._video.rateChange(2 * this._rate);
-      this._video._playCb.forEach(cb => {cb();});
-      this._video._playGeneric(Direction.FORWARD);
-      play.removeAttribute("is-paused");
+      if (this._video.play())
+      {
+        play.removeAttribute("is-paused");
+      }
     });
 
     framePrev.addEventListener("click", () => {
