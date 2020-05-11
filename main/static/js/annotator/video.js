@@ -1116,11 +1116,11 @@ class VideoCanvas extends AnnotationCanvas {
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
-        this._dispFrame >= this._numFrames)
+        this._dispFrame >= (this._numFrames - 1))
     {
       ended = true;
     }
-    else if (this._direction == Direction.BACKARD &&
+    else if (this._direction == Direction.BACKARDS &&
              this._dispFrame <= 0)
     {
       ended = true;
@@ -1316,6 +1316,7 @@ class VideoCanvas extends AnnotationCanvas {
   _playGeneric(direction)
   {
     var that = this;
+    console.log("Setting direction " + direction);
     this._direction=direction;
 
     // Reset the GPU buffer on a new play action
@@ -1413,7 +1414,6 @@ class VideoCanvas extends AnnotationCanvas {
         else
         {
           that._loaderTimeout=null;
-          that._direction=Direction.STOPPED;
         }
       }
 
@@ -1505,14 +1505,30 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    this._playCb.forEach(cb => {cb();});
-    this._playGeneric(Direction.FORWARD);
+    if (this._dispFrame >= (this._numFrames - 1))
+    {
+      return false;
+    }
+    else
+    {
+      this._playCb.forEach(cb => {cb();});
+      this._playGeneric(Direction.FORWARD);
+      return true;
+    }
   }
 
   playBackwards()
   {
-    this._playCb.forEach(cb => {cb();});
-    this._playGeneric(Direction.BACKWARDS);
+    if (this._dispFrame <= 0)
+    {
+      return false;
+    }
+    else
+    {
+      this._playCb.forEach(cb => {cb();});
+      this._playGeneric(Direction.BACKWARDS);
+      return true;
+    }
   }
 
   // If running will clear player context
