@@ -183,6 +183,10 @@ class AnnotationPlayer extends TatorElement {
       currentFrame.style.width = (15 * String(frame).length) + "px";
     });
 
+    this._video.addEventListener("playbackEnded", evt => {
+      this.pause();
+    });
+
     this._video.addEventListener("safeMode", () => {
       this.safeMode();
     });
@@ -280,8 +284,10 @@ class AnnotationPlayer extends TatorElement {
     const paused = this.is_paused();
     if (paused) {
       this._video.rateChange(this._rate);
-      this._video.play();
-      this._play.removeAttribute("is-paused");
+      if (this._video.play())
+      {
+        this._play.removeAttribute("is-paused");
+      }
     }
   }
 
