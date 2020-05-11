@@ -1113,6 +1113,25 @@ class VideoCanvas extends AnnotationCanvas {
       detail: {frame: this._dispFrame},
       composed: true
     }));
+
+    let ended = false;
+    if (this._direction == Direction.FORWARD &&
+        this._dispFrame >= (this._numFrames - 1))
+    {
+      ended = true;
+    }
+    else if (this._direction == Direction.BACKARDS &&
+             this._dispFrame <= 0)
+    {
+      ended = true;
+    }
+
+    if (ended == true)
+    {
+      this.dispatchEvent(new CustomEvent("playbackEnded", {
+      composed: true
+      }));
+    }
   }
 
   // Push a given frame into the drawGL buffer
@@ -1211,8 +1230,16 @@ class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
+        let timeout_id = setTimeout(() => {
+          console.info("Playback stalled out");
+          that.dispatchEvent(new CustomEvent("playbackEnded", {
+            composed: true
+          }));
+        }, 1000);
+
         video.oncanplay=function()
         {
+          clearTimeout(timeout_id);
           // Don't do anything busy in the canplay interrupt as it holds up the GUI
           // rasterizer.
           // Need to bind the member function to the result handler
@@ -1297,6 +1324,7 @@ class VideoCanvas extends AnnotationCanvas {
   _playGeneric(direction)
   {
     var that = this;
+    console.log("Setting direction " + direction);
     this._direction=direction;
 
     // Reset the GPU buffer on a new play action
@@ -1394,7 +1422,6 @@ class VideoCanvas extends AnnotationCanvas {
         else
         {
           that._loaderTimeout=null;
-          that._direction=Direction.STOPPED;
         }
       }
 
@@ -1486,14 +1513,30 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    this._playCb.forEach(cb => {cb();});
-    this._playGeneric(Direction.FORWARD);
+    if (this._dispFrame >= (this._numFrames - 1))
+    {
+      return false;
+    }
+    else
+    {
+      this._playCb.forEach(cb => {cb();});
+      this._playGeneric(Direction.FORWARD);
+      return true;
+    }
   }
 
   playBackwards()
   {
-    this._playCb.forEach(cb => {cb();});
-    this._playGeneric(Direction.BACKWARDS);
+    if (this._dispFrame <= 0)
+    {
+      return false;
+    }
+    else
+    {
+      this._playCb.forEach(cb => {cb();});
+      this._playGeneric(Direction.BACKWARDS);
+      return true;
+    }
   }
 
   // If running will clear player context

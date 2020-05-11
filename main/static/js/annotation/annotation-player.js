@@ -134,17 +134,19 @@ class AnnotationPlayer extends TatorElement {
     rewind.addEventListener("click", () => {
       this._video.pause();
       this._video.rateChange(this._rate);
-      this._video._playCb.forEach(cb => {cb();});
-      this._video._playGeneric(Direction.BACKWARDS);
-      play.removeAttribute("is-paused");
+      if (this._video.playBackwards())
+      {
+        play.removeAttribute("is-paused");
+      }
     });
 
     fastForward.addEventListener("click", () => {
       this._video.pause();
       this._video.rateChange(2 * this._rate);
-      this._video._playCb.forEach(cb => {cb();});
-      this._video._playGeneric(Direction.FORWARD);
-      play.removeAttribute("is-paused");
+      if (this._video.play())
+      {
+        play.removeAttribute("is-paused");
+      }
     });
 
     framePrev.addEventListener("click", () => {
@@ -181,6 +183,10 @@ class AnnotationPlayer extends TatorElement {
       currentFrame.textContent = frame;
       currentTime.style.width = 10 * (time.length - 1) + 5 + "px";
       currentFrame.style.width = (15 * String(frame).length) + "px";
+    });
+
+    this._video.addEventListener("playbackEnded", evt => {
+      this.pause();
     });
 
     this._video.addEventListener("safeMode", () => {
@@ -280,8 +286,10 @@ class AnnotationPlayer extends TatorElement {
     const paused = this.is_paused();
     if (paused) {
       this._video.rateChange(this._rate);
-      this._video.play();
-      this._play.removeAttribute("is-paused");
+      if (this._video.play())
+      {
+        this._play.removeAttribute("is-paused");
+      }
     }
   }
 
