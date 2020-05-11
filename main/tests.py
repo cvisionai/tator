@@ -1409,6 +1409,7 @@ class StateTypeTestCase(
             'name': 'frame state type',
             'association': 'Frame',
             'media_types': [self.media_type.pk],
+            'attribute_types': create_test_attribute_types(),
         }
         self.patch_json = {'name': 'state asdf'}
         self.edit_permission = Permission.FULL_CONTROL
@@ -1450,6 +1451,7 @@ class MediaTypeTestCase(
             'name': 'videos',
             'keep_original': True,
             'dtype': 'video',
+            'attribute_types': create_test_attribute_types(),
         }
 
     def tearDown(self):
@@ -1596,33 +1598,38 @@ class LocalizationTypeTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.media_type = EntityTypeMediaVideo.objects.create(
+        self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
             keep_original=False,
         )
         self.entities = [
-            EntityTypeLocalizationBox.objects.create(
+            LocalizationType.objects.create(
                 name="box",
+                dtype='box',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeLocalizationLine.objects.create(
+            LocalizationType.objects.create(
                 name="line",
+                dtype='line',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeLocalizationLine.objects.create(
-                name="line1",
+            LocalizationType.objects.create(
+                name="dot asdf",
+                dtype='dot',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'LocalizationTypes'
         self.detail_uri = 'LocalizationType'
         self.create_json = {
             'name': 'box type',
             'dtype': 'box',
             'media_types': [self.media_type.pk],
+            'attribute_types': create_test_attribute_types(),
         }
         self.patch_json = {'name': 'box asdf'}
         self.edit_permission = Permission.FULL_CONTROL
