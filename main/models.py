@@ -983,10 +983,9 @@ class StateType(Model):
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     media = ManyToManyField(MediaType)
-    interpolation = EnumField(
-        InterpolationMethods,
-        default=InterpolationMethods.NONE
-    )
+    interpolation = CharField(max_length=16,
+                              choices=[('none', 'none'), ('latest', 'latest')],
+                              default='latest')
     association = CharField(max_length=64,
                             choices=AssociationTypes,
                             default=AssociationTypes[0][0])
