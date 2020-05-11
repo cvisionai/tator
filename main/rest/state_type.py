@@ -9,7 +9,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['project', 'name', 'description', 'dtype', 'attribute_types', 'media']
+fields = ['project', 'name', 'description', 'dtype', 'attribute_types', 'media', 'interpolation',
+          'association']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
