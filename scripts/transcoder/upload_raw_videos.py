@@ -88,7 +88,7 @@ if __name__=="__main__":
                                    formatter_class=argparse.RawTextHelpFormatter)
     pytator.tator.cli_parser(parser)
     parser.add_argument("--work-dir", help="temporary scratch space")
-    parser.add_argument("--batch-size", default=8, type=int,help="parallel files to process")
+    parser.add_argument("--batch-size", default=2, type=int,help="parallel files to process")
     parser.add_argument("source_dir", help="directory containing mp4s (can be nested tree)")
     args = parser.parse_args()
 
