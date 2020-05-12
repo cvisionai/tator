@@ -918,7 +918,7 @@ class MediaType(Model):
         An array of objects, each containing the following fields:
 
         name: Name of the attribute.
-        description: Description of the attribute.
+        description: (optional) Description of the attribute.
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
@@ -936,6 +936,10 @@ class MediaType(Model):
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=MediaType)
+def media_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
 
 class LocalizationType(Model):
     polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
@@ -973,6 +977,10 @@ class LocalizationType(Model):
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=LocalizationType)
+def localization_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
 
 class StateType(Model):
     polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
@@ -1014,6 +1022,10 @@ class StateType(Model):
     def __str__(self):
         return f'{self.name} | {self.project}'
 
+@receiver(post_save, sender=StateType)
+def state_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
 class LeafType(Model):
     polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='leaf_type_polymorphic')
@@ -1046,6 +1058,11 @@ class LeafType(Model):
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=LeafType)
+def leaf_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
 
 # Entities (stores actual data)
 

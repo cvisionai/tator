@@ -87,30 +87,32 @@ class TatorSearch:
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
 
-    def create_mapping(self, attribute_type):
-        if attribute_type.dtype == 'bool':
-            dtype='boolean'
-        elif attribute_type.dtype == 'int':
-            dtype='integer'
-        elif attribute_type.dtype == 'float':
-            dtype='float'
-        elif attribute_type.dtype == 'enum':
-            dtype='text'
-        elif attribute_type.dtype == 'str':
-            dtype='text'
-        elif attribute_type.dtype == 'datetime':
-            dtype='date'
-        elif attribute_type.dtype == 'geopos':
-            dtype='geo_point'
-        self.es.indices.put_mapping(
-            index=self.index_name(attribute_type.project.pk),
-            body={'properties': {
-                attribute_type.name: {'type': dtype},
-            }},
-        )
+    def create_mapping(self, entity_type):
+        for attribute_type in entity_type.attribute_types:
+            if attribute_type['dtype'] == 'bool':
+                dtype='boolean'
+            elif attribute_type['dtype'] == 'int':
+                dtype='integer'
+            elif attribute_type['dtype'] == 'float':
+                dtype='float'
+            elif attribute_type['dtype'] == 'enum':
+                dtype='text'
+            elif attribute_type['dtype'] == 'str':
+                dtype='text'
+            elif attribute_type['dtype'] == 'datetime':
+                dtype='date'
+            elif attribute_type['dtype'] == 'geopos':
+                dtype='geo_point'
+            self.es.indices.put_mapping(
+                index=self.index_name(entity_type.project.pk),
+                body={'properties': {
+                    attribute_type['name']: {'type': dtype},
+                }},
+            )
 
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False)
+
     def create_document(self, entity, wait=False):
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
