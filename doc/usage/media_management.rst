@@ -144,3 +144,11 @@ of locally stored archival video to the **Tator** platform.
    $host> docker run --rm -ti -v <path_to_videos>:/source -v <path_to_scratch>:/work cvisionai/tator_transcoder:latest bash
    # Bash shell is now in the container itself
    $container> python3 /scripts/upload_raw_videos.py --url https://www.tatorapp.com/rest --project <proj_id> --token <token> --work-dir /work --batch-size <num> /source
+
+
+The ``<source>`` folder can contain arbitrary nested mp4 files to upload. The
+script converts to archival quality h265 (hvc1) files while creating the
+multi-resolution streaming files, using all local resources. When complete
+all video files are uploaded to the cloud platform.
+
+Section names are inferred from the filename. ``Section_File_Name_Components.mp4``
