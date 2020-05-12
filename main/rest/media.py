@@ -52,17 +52,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
-
-            This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
-            Both are accomplished using the same query parameters used for a GET request.
-
-            This endpoint does not include a POST method. Creating media must be preceded by an
-            upload, after which a separate media creation endpoint must be called. The media creation
-            endpoints are `Transcode` to launch a transcode of an uploaded video and `SaveImage` to
-            save an uploaded image. If you would like to perform transcodes on local assets, you can
-            use the `SaveVideo` endpoint to save an already transcoded video. Local transcodes may be
-            performed with the script at `scripts/transcoder/transcodePipeline.py` in the Tator source
-            code.
         """
         use_es = self.validate_attribute_filter(params)
         response_data = []
@@ -70,7 +59,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             self.kwargs['project'],
             params,
         )
-        if len(media_ids) > 0:
+        if self.operation == 'count':
+            response_data = {'count': media_count}
+        elif media_count > 0:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
             qs = Media.objects.filter(pk__in=media_ids).order_by(preserved).values(*fields)
             response_data = list(qs)
@@ -157,28 +148,29 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        media_object = Media.objects.get(pk=params['id'])
+        obj = Media.objects.get(pk=params['id'])
         if 'attributes' in params:
-            new_attrs = validate_attributes(params, media_object)
-            patch_attributes(new_attrs, media_object)
+            new_attrs = validate_attributes(params, obj)
+            obj = patch_attributes(new_attrs, obj)
 
-            if media_object.meta.dtype == 'image':
-                for localization in media_object.localization_thumbnail_image.all():
-                    patch_attributes(new_attrs, localization)
+            if obj.meta.dtype == 'image':
+                for localization in obj.localization_thumbnail_image.all():
+                    localization = patch_attributes(new_attrs, localization)
+                    localization.save()
         if 'media_files' in params:
             # TODO: for now just pass through, eventually check URL
-            media_object.media_files = params['media_files']
+            obj.media_files = params['media_files']
 
         if 'name' in params:
-            media_object.name = params['name']
+            obj.name = params['name']
 
         if 'last_edit_start' in params:
-            media_object.last_edit_start = params['last_edit_start']
+            obj.last_edit_start = params['last_edit_start']
 
         if 'last_edit_end' in params:
-            media_object.last_edit_end = params['last_edit_end']
+            obj.last_edit_end = params['last_edit_end']
 
-        media_object.save()
+        obj.save()
         return {'message': 'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
