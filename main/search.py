@@ -97,27 +97,28 @@ class TatorSearch:
             self.es.indices.delete(index)
 
     def create_mapping(self, entity_type):
-        for attribute_type in entity_type.attribute_types:
-            if attribute_type['dtype'] == 'bool':
-                dtype='boolean'
-            elif attribute_type['dtype'] == 'int':
-                dtype='integer'
-            elif attribute_type['dtype'] == 'float':
-                dtype='float'
-            elif attribute_type['dtype'] == 'enum':
-                dtype='text'
-            elif attribute_type['dtype'] == 'str':
-                dtype='text'
-            elif attribute_type['dtype'] == 'datetime':
-                dtype='date'
-            elif attribute_type['dtype'] == 'geopos':
-                dtype='geo_point'
-            self.es.indices.put_mapping(
-                index=self.index_name(entity_type.project.pk),
-                body={'properties': {
-                    attribute_type['name']: {'type': dtype},
-                }},
-            )
+        if entity_type.attribute_types:
+            for attribute_type in entity_type.attribute_types:
+                if attribute_type['dtype'] == 'bool':
+                    dtype='boolean'
+                elif attribute_type['dtype'] == 'int':
+                    dtype='integer'
+                elif attribute_type['dtype'] == 'float':
+                    dtype='float'
+                elif attribute_type['dtype'] == 'enum':
+                    dtype='text'
+                elif attribute_type['dtype'] == 'str':
+                    dtype='text'
+                elif attribute_type['dtype'] == 'datetime':
+                    dtype='date'
+                elif attribute_type['dtype'] == 'geopos':
+                    dtype='geo_point'
+                self.es.indices.put_mapping(
+                    index=self.index_name(entity_type.project.pk),
+                    body={'properties': {
+                        attribute_type['name']: {'type': dtype},
+                    }},
+                )
 
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False)
@@ -156,7 +157,7 @@ class TatorSearch:
         elif entity.meta.dtype in ['box', 'line', 'dot']:
             aux['_media_relation'] = {
                 'name': 'annotation',
-                'parent': entity.media.pk,
+                'parent': f"{entity.media.meta.dtype}_{entity.media.pk}",
             }
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
@@ -242,7 +243,7 @@ class TatorSearch:
                 **corrected_attributes,
                 **aux,
             },
-            '_id': entity.pk,
+            '_id': f"{aux['_dtype']}_{entity.pk}",
             '_routing': 1,
         })
 
@@ -261,7 +262,7 @@ class TatorSearch:
                 **corrected_attributes,
                 **duplicate,
             },
-            '_id': duplicate_id,
+            '_id': f"{aux['_dtype']}_{duplicate_id}",
             '_routing': 1,
             })
         return results
@@ -280,7 +281,7 @@ class TatorSearch:
             stored_fields=[],
         )
 
-    def search(self, project, query, getSource=False):
+    def search(self, project, query, getSource=True):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
         size = query.get('size', None)
@@ -301,7 +302,7 @@ class TatorSearch:
 
             if size:
                 count = size
-            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
+            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
             documents.extend(data)
 
             while len(ids) < count:
@@ -309,7 +310,7 @@ class TatorSearch:
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += drop_dupes([int(obj['_id']) & id_mask for obj in result['hits']['hits']])
+                ids += drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in result['hits']['hits']])
                 documents.extend(result['hits']['hits'])
             ids = ids[:count]
             self.es.clear_scroll(scroll_id)
@@ -320,7 +321,7 @@ class TatorSearch:
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
+            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
             documents.extend(data)
         return ids, count
 
