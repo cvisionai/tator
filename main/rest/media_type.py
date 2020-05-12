@@ -8,7 +8,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['project', 'name', 'description', 'dtype', 'attribute_types']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types']
 
 class MediaTypeListAPI(BaseListView):
     """ Create or retrieve media types.
@@ -20,6 +20,7 @@ class MediaTypeListAPI(BaseListView):
     schema = MediaTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
     queryset = MediaType.objects.all()
+    http_method_names = ['get', 'post']
 
     def _get(self, params):
         """ Retrieve media types.
@@ -52,7 +53,7 @@ class MediaTypeListAPI(BaseListView):
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}
 
-BaseListView.copy_docstrings(MediaTypeListAPI)
+MediaTypeListAPI.copy_docstrings()
 
 class MediaTypeDetailAPI(BaseDetailView):
     """ Interact with an individual media type.
@@ -112,4 +113,4 @@ class MediaTypeDetailAPI(BaseDetailView):
     def get_queryset(self):
         return MediaType.objects.all()
 
-BaseDetailView.copy_docstrings(MediaTypeDetailAPI)
+MediaTypeDetailAPI.copy_docstrings()

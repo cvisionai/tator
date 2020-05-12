@@ -9,8 +9,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['project', 'name', 'description', 'dtype', 'attribute_types', 'media', 'interpolation',
-          'association']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
+          'interpolation', 'association']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
@@ -21,6 +21,7 @@ class StateTypeListAPI(BaseListView):
     """
     permission_classes = [ProjectFullControlPermission]
     schema = StateTypeListSchema()
+    http_method_names = ['get', 'post']
 
     def _get(self, params):
         """ Retrieve state types.
@@ -72,7 +73,7 @@ class StateTypeListAPI(BaseListView):
 
         return {'message': 'State type created successfully!', 'id': obj.id}
 
-BaseListView.copy_docstrings(StateTypeListAPI)
+StateTypeListAPI.copy_docstrings()
 
 class StateTypeDetailAPI(BaseDetailView):
     """ Interact with an individual state type.
@@ -126,4 +127,4 @@ class StateTypeDetailAPI(BaseDetailView):
     def get_queryset(self):
         return StateType.objects.all()
 
-BaseDetailView.copy_docstrings(StateTypeDetailAPI)
+StateTypeDetailAPI.copy_docstrings()

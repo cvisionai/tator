@@ -9,7 +9,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['project', 'name', 'description', 'dtype', 'attribute_types', 'media', 'colorMap',
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media', 'colorMap',
           'line_width']
 
 class LocalizationTypeListAPI(BaseListView):
@@ -21,6 +21,7 @@ class LocalizationTypeListAPI(BaseListView):
     """
     permission_classes = [ProjectFullControlPermission]
     schema = LocalizationTypeListSchema()
+    http_method_names = ['get', 'post']
 
     def _get(self, params):
         media_id = params.get('media_id', None)
@@ -56,6 +57,8 @@ class LocalizationTypeListAPI(BaseListView):
         obj.save()
 
         return {'message': 'Localization type created successfully!', 'id': obj.id}
+
+LocalizationTypeListAPI.copy_docstrings()
 
 class LocalizationTypeDetailAPI(BaseDetailView):
     """ Interact with an individual localization type.
@@ -108,3 +111,5 @@ class LocalizationTypeDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return LocalizationType.objects.all()
+
+LocalizationTypeDetailAPI.copy_docstrings()
