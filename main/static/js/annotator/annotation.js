@@ -1154,7 +1154,6 @@ class AnnotationCanvas extends TatorElement
               this._emphasis != localization)
           {
             this._emphasis = localization;
-            this.describeLocalization(localization);
             this.emphasizeLocalization(localization);
           }
         }
@@ -1237,39 +1236,6 @@ class AnnotationCanvas extends TatorElement
       cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
       this._canvas.classList.add("select-crosshair");
     }
-  }
-
-
-  describeLocalization(localization)
-  {
-    var msg ="";
-    var keys = Object.keys(localization.attributes);
-
-    // Use localization attributes, unless we are in a track
-    var attributes = localization.attributes;
-    if (localization.id in this._data._trackDb)
-    {
-      attributes=this._data._trackDb[localization.id].attributes;
-    }
-    for (var idx = 0; idx < Math.min(2,keys.length); idx++)
-    {
-      var key = keys[idx];
-      var descriptor=
-          Object.getOwnPropertyDescriptor(attributes,
-                                          key);
-      if (idx != 0)
-      {
-        msg += ", ";
-      }
-      msg+= `${key} = ${descriptor.value}`;
-    }
-
-    var className = "primary";
-    if (msg != "")
-    {
-      var msgDiv = updateStatus(msg, className, -1);
-    }
-
   }
 
   // if the user releases their mouse over an animation handle accordingly
@@ -1475,7 +1441,6 @@ class AnnotationCanvas extends TatorElement
     {
       this._mouseMode = MouseMode.SELECT;
     }
-    this.describeLocalization(localization);
 
     if (this.activeLocalization && this.activeLocalization.id == localization.id)
     {
