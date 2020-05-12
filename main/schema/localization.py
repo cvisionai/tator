@@ -6,16 +6,16 @@ from ._annotation_query import annotation_filter_parameter_schema
 localization_properties = {
     'x': {
         'description': 'Normalized horizontal position of left edge of bounding box for '
-                       '`box` localization types, or horizontal position of dot for `dot` '
-                       'annotation types.',
+                       '`box` localization types, start of line for `line` localization '
+                       'types, or position of dot for `dot` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
     'y': {
         'description': 'Normalized vertical position of top edge of bounding box for '
-                       '`box` localization types, or vertical position of dot for `dot` '
-                       'annotation types.',
+                       '`box` localization types, start of line for `line` localization '
+                       'types, or position of dot for `dot` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
@@ -32,30 +32,14 @@ localization_properties = {
         'minimum': 0.0,
         'maximum': 1.0,
     },
-    'x0': {
-        'description': 'Normalized horizontal position of start of line for `line` '
-                       'localization types.',
+    'u': {
+        'description': 'Horizontal vector component for `line` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
-    'y0': {
-        'description': 'Normalized vertical position of start of line for `line` '
-                       'localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-    },
-    'x1': {
-        'description': 'Normalized horizontal position of end of line for `line` '
-                       'localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-    },
-    'y1': {
-        'description': 'Normalized vertical position of end of line for `line` '
-                       'localization types.',
+    'v': {
+        'description': 'Vertical vector component for `line` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
@@ -97,39 +81,32 @@ class LocalizationListSchema(AutoSchema):
         if method == 'POST':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'additionalProperties': True,
-                    'properties': {
-                        'media_id': {
-                            'description': 'Unique integer identifying a media. Required if '
-                                           '`many` is not given.',
-                            'type': 'integer',
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                        'properties': {
+                            'media_id': {
+                                'description': 'Unique integer identifying a media. Required if '
+                                               '`many` is not given.',
+                                'type': 'integer',
+                            },
+                            'type': {
+                                'description': 'Unique integer identifying a localization type.'
+                                               'Required if `many` is not given.',
+                                'type': 'integer',
+                            },
+                            'version': {
+                                'description': 'Unique integer identifying the version.',
+                                'type': 'integer',
+                            },
+                            'modified': {
+                                'description': 'Whether this localization was created in the web UI.',
+                                'type': 'boolean',
+                                'default': False,
+                            },
+                            **localization_properties,
                         },
-                        'type': {
-                            'description': 'Unique integer identifying a localization type.'
-                                           'Required if `many` is not given.',
-                            'type': 'integer',
-                        },
-                        'many': {
-                            'description': 'List of localizations if this request is for bulk'
-                                           'create.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'object',
-                                'additionalProperties': True,
-                                'properties': localization_properties,
-                            }
-                        },
-                        'version': {
-                            'description': 'Unique integer identifying the version.',
-                            'type': 'integer',
-                        },
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                            'default': False,
-                        },
-                        **localization_properties,
                     },
                 },
                 'examples': {
