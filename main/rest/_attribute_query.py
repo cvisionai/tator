@@ -1,10 +1,14 @@
 from collections import defaultdict
+import itertools
 import copy
+import logging
 
-from ..models import Project
-from ..models import EntityTypeMediaBase
+from ..models import LocalizationType
+from ..models import StateType
 
 from ._attributes import kv_separator
+
+logger = logging.getLogger(__name__)
 
 def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[], modified=None):
 
@@ -19,8 +23,12 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
         'attribute_distance': query_params.get('attribute_distance', None),
         'attribute_null': query_params.get('attribute_null', None),
     }
-    project_attrs = Project.objects.get(pk=project).attributetypebase_set.all()
-    child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
+    child_attrs = []
+    for state_type in StateType.objects.filter(project=project).iterator():
+        child_attrs += state_type.attribute_types
+    for localization_type in LocalizationType.objects.filter(project=project).iterator():
+        child_attrs += localization_type.attribute_types
+    child_attrs = [attr['name'] for attr in child_attrs]
     attr_query = {
         'media': {
             'must_not': [],
