@@ -1,59 +1,31 @@
-import tempfile
-import traceback
 import logging
-import os
-import json
-import subprocess
-import math
-import io
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
-import mmap
-import sys
-import hashlib
 
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.exceptions import PermissionDenied
 from django.db.models import Case, When
-from django.db import connection
-from django.conf import settings
 
-from ..models import EntityBase
-from ..models import EntityMediaBase
-from ..models import EntityMediaImage
-from ..models import EntityMediaVideo
-from ..models import TemporaryFile
-from ..serializers import EntityMediaSerializer
-from ..serializers import TemporaryFileSerializer
+from ..models import Media
+from ..models import MediaType
 from ..search import TatorSearch
-from ..renderers import PngRenderer
-from ..renderers import JpegRenderer
-from ..renderers import GifRenderer
-from ..renderers import Mp4Renderer
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
-from ..schema import GetFrameSchema
-from ..schema import GetClipSchema
 from ..schema import parse
 
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import AttributeFilterMixin
 from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
-from ._util import delete_polymorphic_qs
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
+fields = ['id', 'project', 'name', 'meta', 'attributes', 'created_datetime', 'created_by',
+          'modified_datetime', 'modified_by', 'md5', 'file', 'last_edit_start',
+          'last_edit_end', 'thumbnail', 'thumbnail_gif', 'num_frames', 'fps', 'codec',
+          'width', 'height', 'media_files', 'segment_info']
 
-class MediaListAPI(ListAPIView, AttributeFilterMixin):
+class MediaListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of media.
 
         A media may be an image or a video. Media are a type of entity in Tator,
@@ -71,66 +43,50 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
         code.
     """
     schema = MediaListSchema()
-    serializer_class = EntityMediaSerializer
     permission_classes = [ProjectEditPermission]
+    http_method_names = ['get', 'patch', 'delete']
+    entity_type = MediaType # Needed by attribute filter mixin
 
-    def get(self, request, *args, **kwargs):
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            media_ids, media_count, _ = get_media_queryset(
-                self.kwargs['project'],
-                params,
-            )
-            if len(media_ids) > 0:
-                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
-                qs = EntityMediaBase.objects.filter(pk__in=media_ids).order_by(preserved)
-                # We are doing a full query; so we should bypass the ORM and
-                # use the SQL cursor directly.
-                # TODO: See if we can do this using queryset into a custom serializer instead
-                # of naked SQL.
-                original_sql,params = qs.query.sql_with_params()
-                root_url = request.build_absolute_uri("/").strip("/")
-                media_url = request.build_absolute_uri(settings.MEDIA_URL)
-                raw_url = request.build_absolute_uri(settings.RAW_ROOT)
-                # Modify original sql to have aliases to match JSON output
-                original_sql = original_sql.replace('"main_entitybase"."id,"', '"main_entitybase"."id" AS id,',1)
-                original_sql = original_sql.replace('"main_entitybase"."polymorphic_ctype_id",', '',1)
-                original_sql = original_sql.replace('"main_entitybase"."project_id",', '"main_entitybase"."project_id" AS project,',1)
-                original_sql = original_sql.replace('"main_entitybase"."meta_id",', '"main_entitybase"."meta_id" AS meta,',1)
-                original_sql = original_sql.replace('"main_entitymediabase"."file",', f'CONCAT(\'{media_url}\',"main_entitymediabase"."file") AS url,',1)
+    def _get(self, params):
+        use_es = self.validate_attribute_filter(params)
+        response_data = []
+        media_ids, media_count, _ = get_media_queryset(
+            self.kwargs['project'],
+            params,
+        )
+        if len(media_ids) > 0:
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
+            qs = Media.objects.filter(pk__in=media_ids).order_by(preserved).values(*fields)
+            response_data = list(qs)
+        return response_data
 
-                new_selections =  f'NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail"),\'{media_url}\') AS video_thumbnail'
-                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediaimage"."thumbnail"),\'{media_url}\') AS image_thumbnail'
-                new_selections += f', NULLIF(CONCAT(\'{media_url}\',"main_entitymediavideo"."thumbnail_gif"),\'{media_url}\') AS video_thumbnail_gif'
-                new_selections += f', NULLIF(CONCAT(\'{root_url}\',"main_entitymediavideo"."original"),\'{root_url}\') AS original_url'
-                new_selections += f', "main_entitymediavideo"."media_files" AS media_files'
-                original_sql = original_sql.replace(" FROM ", f",{new_selections} FROM ",1)
+    def _delete(self, params):
+        self.validate_attribute_filter(params)
+        media_ids, media_count, query = get_media_queryset(
+            params['project'],
+            params,
+        )
+        count = len(media_ids)
+        if count > 0:
+            qs = Media.objects.filter(pk__in=media_ids)
+            qs._raw_delete(qs.db)
+            TatorSearch().delete(self.kwargs['project'], query)
+        return {'message': f'Successfully deleted {count} medias!'}
 
-                #Add new joins
-                new_joins = f'LEFT JOIN "main_entitymediaimage" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediaimage"."entitymediabase_ptr_id")'
-                new_joins += f' LEFT JOIN "main_entitymediavideo" ON ("main_entitymediabase"."entitybase_ptr_id" = "main_entitymediavideo"."entitymediabase_ptr_id")'
-                original_sql = original_sql.replace(" INNER JOIN ", f" {new_joins} INNER JOIN ",1)
-
-                # Generate JSON serialization string
-                json_sql = f"SELECT json_agg(r) FROM ({original_sql}) r"
-                logger.info(json_sql)
-
-                with connection.cursor() as cursor:
-                    cursor.execute(json_sql,params)
-                    result = cursor.fetchone()
-                    responseData=result[0]
-                    if responseData is None:
-                        responseData=[]
-            else:
-                responseData = []
-        except Exception as e:
-            logger.error(traceback.format_exc())
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-            return response;
-
-        return Response(responseData)
+    def _patch(self, params):
+        self.validate_attribute_filter(params)
+        media_ids, media_count, query = get_media_queryset(
+            params['project'],
+            params,
+        )
+        count = len(media_ids)
+        if count > 0:
+            qs = Media.objects.filter(pk__in=media_ids)
+            new_attrs = validate_attributes(params, qs[0])
+            bulk_patch_attributes(new_attrs, qs)
+            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+        return {'message': f'Successfully patched {count} medias!'}
+        
 
     def get_queryset(self):
         params = parse(self.request)
@@ -138,126 +94,55 @@ class MediaListAPI(ListAPIView, AttributeFilterMixin):
             params['project'],
             params,
         )
-        queryset = EntityMediaBase.objects.filter(pk__in=media_ids).order_by('name')
+        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
+        queryset = Media.objects.filter(pk__in=media_ids).order_by(preserved)
         return queryset
 
-    def delete(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            media_ids, media_count, query = get_media_queryset(
-                params['project'],
-                params,
-            )
-            if len(media_ids) == 0:
-                raise ObjectDoesNotExist
-            qs = EntityBase.objects.filter(pk__in=media_ids)
-            delete_polymorphic_qs(qs)
-            TatorSearch().delete(self.kwargs['project'], query)
-            response=Response({'message': 'Batch delete successful!'},
-                              status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+MediaListAPI.copy_docstrings()
 
-    def patch(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            media_ids, media_count, query = get_media_queryset(
-                params['project'],
-                params,
-            )
-            if len(media_ids) == 0:
-                raise ObjectDoesNotExist
-            qs = EntityBase.objects.filter(pk__in=media_ids)
-            new_attrs = validate_attributes(request, qs[0])
-            bulk_patch_attributes(new_attrs, qs)
-            TatorSearch().update(self.kwargs['project'], query, new_attrs)
-            response=Response({'message': 'Attribute patch successful!'},
-                              status=status.HTTP_200_OK)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
-
-
-        img_buf = io.BytesIO()
-        img.save(img_buf, "jpeg", quality=95)
-        return img_buf.getvalue()
-
-class MediaDetailAPI(RetrieveUpdateDestroyAPIView):
+class MediaDetailAPI(BaseDetailView):
     """ Interact with individual media.
 
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
     """
     schema = MediaDetailSchema()
-    serializer_class = EntityMediaSerializer
-    queryset = EntityMediaBase.objects.all()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
 
-    def patch(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            media_object = EntityMediaBase.objects.get(pk=params['id'])
-            if 'attributes' in params:
-                self.check_object_permissions(request, media_object)
-                new_attrs = validate_attributes(request, media_object)
-                patch_attributes(new_attrs, media_object)
+    def _get(self, params):
+        return Media.objects.values(*fields).get(pk=params['id'])
 
-                if type(media_object) == EntityMediaImage:
-                    for localization in media_object.thumbnail_image.all():
-                        patch_attributes(new_attrs, localization)
-            if 'media_files' in params:
-                # TODO: for now just pass through, eventually check URL
-                media_object.media_files = params['media_files']
-                logger.info(f"Media files = {media_object.media_files}")
+    def _patch(self, params):
+        media_object = Media.objects.get(pk=params['id'])
+        if 'attributes' in params:
+            new_attrs = validate_attributes(params, media_object)
+            patch_attributes(new_attrs, media_object)
 
-            if 'name' in params:
-                media_object.name = params['name']
+            if media_object.meta.dtype == 'image':
+                for localization in media_object.localization_thumbnail_image.all():
+                    patch_attributes(new_attrs, localization)
+        if 'media_files' in params:
+            # TODO: for now just pass through, eventually check URL
+            media_object.media_files = params['media_files']
 
-            if 'last_edit_start' in params:
-                media_object.last_edit_start = params['last_edit_start']
+        if 'name' in params:
+            media_object.name = params['name']
 
-            if 'last_edit_end' in params:
-                media_object.last_edit_end = params['last_edit_end']
+        if 'last_edit_start' in params:
+            media_object.last_edit_start = params['last_edit_start']
 
-            media_object.save()
+        if 'last_edit_end' in params:
+            media_object.last_edit_end = params['last_edit_end']
 
-        except PermissionDenied as err:
-            raise
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+        media_object.save()
+        return {'message': 'Media {params["id"]} successfully updated!'}
 
-
-
-
-
-
-
-
-
+    def _delete(self, params):
+        Media.objects.get(pk=params['id']).delete()
+        return {'message': 'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
+        return Media.objects.all()
 
+MediaDetailAPI.copy_docstrings()
