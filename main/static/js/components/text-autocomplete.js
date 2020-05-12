@@ -219,7 +219,8 @@ class WormsAutoComplete {
     {
       if (result['taxonRankID'] >= this._minLevel)
       {
-        if (preresults.has(result['AphiaID']) == false)
+        if (preresults.has(result['AphiaID']) == false &&
+            result['status'] == 'accepted')
         {
           preresults.set(result['AphiaID'], result);
         }
