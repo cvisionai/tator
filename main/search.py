@@ -69,7 +69,7 @@ class TatorSearch:
                             '_exact_name': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
                             '_md5': {'type': 'keyword'},
                             '_meta': {'type': 'integer'},
-                            '_dtype': {'type': 'text'},
+                            '_dtype': {'type': 'keyword'},
                             'tator_user_sections': {'type': 'keyword'},
                         }
                     },
