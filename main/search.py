@@ -47,6 +47,15 @@ class TatorSearch:
                     'settings': {
                         'number_of_shards': 1,
                         'number_of_replicas': 1,
+                        'analysis': {
+                            'normalizer': {
+                                'lower_normalizer': {
+                                    'type': 'custom',
+                                    'char_filter': [],
+                                    'filter': ['lowercase', 'asciifolding'],
+                                },
+                            },
+                        },
                     },
                     'mappings': {
                         'properties': {
@@ -57,7 +66,7 @@ class TatorSearch:
                                 }
                             },
                             'tator_media_name': {'type': 'text'},
-                            '_exact_name': {'type': 'keyword'},
+                            '_exact_name': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
                             '_md5': {'type': 'keyword'},
                             '_meta': {'type': 'integer'},
                             '_dtype': {'type': 'text'},
