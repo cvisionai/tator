@@ -125,7 +125,7 @@ def create_test_box(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
     h = random.uniform(0.0, float(media.height) - y)
-    return EntityLocalizationBox.objects.create(
+    return Localization.objects.create(
         user=user,
         meta=entity_type,
         project=project,
@@ -143,19 +143,21 @@ def create_test_line(user, entity_type, project, media, frame):
     y0 = random.uniform(0.0, float(media.height))
     x1 = random.uniform(0.0, float(media.width) - x0)
     y1 = random.uniform(0.0, float(media.height) - y0)
-    return EntityLocalizationLine.objects.create(
+    return Localization.objects.create(
+        dtype='line',
         user=user,
         meta=entity_type,
         project=project,
         media=media,
         frame=frame,
-        x0=x0, y0=y0, x1=x1, y1=y1,
+        x=x0, y=y0, u=(x1 - x0), v=(y1 - y0),
     )
         
 def create_test_dot(user, entity_type, project, media, frame):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
-    return EntityLocalizationDot.objects.create(
+    return Localization.objects.create(
+        dtype='dot',
         user=user,
         meta=entity_type,
         project=project,
@@ -260,34 +262,44 @@ class DefaultCreateTestMixin:
             id_ = response.data['id'][0]
         else:
             id_ = response.data['id']
-        obj = EntityBase.objects.get(pk=id_)
         # Assert it has all the expected values.
-        attr_types = AttributeTypeBase.objects.filter(applies_to=obj.meta)
-        for attr_type in attr_types:
-            field = attr_type.name
+        obj = type(self.entities[0]).objects.get(pk=id_)
+        for attr_type in self.entity_type.attribute_types:
+            field = attr_type['name']
             if is_default:
-                if not isinstance(attr_type, AttributeTypeDatetime):
-                    default = attr_type.default
-                    if isinstance(default, Point):
-                        default = [default.x, default.y]
+                if not attr_type['dtype'] == 'datetime':
+                    default = attr_type['default']
                     self.assertTrue(obj.attributes[field]==default)
             else:
-                self.assertTrue(obj.attributes[field]==self.create_json[field])
+                if isinstance(self.create_json, dict):
+                    self.assertTrue(obj.attributes[field]==self.create_json[field])
+                else:
+                    for create_json in self.create_json:
+                        create_json[field]
+                        obj.attributes[field]
+                        self.assertTrue(obj.attributes[field]==create_json[field])
         # Delete the object
         obj.delete()
 
     def test_create_default(self):
         endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
         # Remove attribute values.
-        create_json = dict(self.create_json)
-        delete_fields = []
-        for key in create_json:
-            if key.endswith('_test'):
-                delete_fields.append(key)
-        for field in delete_fields:
-            del create_json[field]
+        def clear_attributes(obj):
+            delete_fields = []
+            cpy = dict(obj)
+            for key in cpy:
+                if key.endswith('_test'):
+                    delete_fields.append(key)
+            for field in delete_fields:
+                del cpy[field]
+            return cpy
+        if isinstance(self.create_json, dict):
+            create_json = clear_attributes(self.create_json)
+        else:
+            create_json = [clear_attributes(obj) for obj in self.create_json]
         # Post the json with no attribute values.
         response = self.client.post(endpoint, create_json, format='json')
+        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._check_object(response, True)
         # Post the json with attribute values.
@@ -593,6 +605,7 @@ class AttributeTestMixin:
             self.assertEqual(response.data['attributes']['bool_test'], test_val)
         TatorSearch().refresh(self.project.pk)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=bool_test::true&type={self.entity_type.pk}&format=json')
+        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=bool_test::false&type={self.entity_type.pk}&format=json')
@@ -1063,14 +1076,17 @@ class LocalizationBoxTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationBox.objects.create(
+        self.entity_type = LocalizationType.objects.create(
             name="boxes",
+            dtype='box',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1081,12 +1097,11 @@ class LocalizationBoxTestCase(
             create_test_box(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_box, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1101,10 +1116,10 @@ class LocalizationBoxTestCase(
             'enum_test': 'enum_val1',
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'geoposition_test': [0.0, 0.0],
-        }
+            'geoposition_test': [179.0, -89.0],
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'box1', 'resourcetype': 'EntityLocalizationBox'}
+        self.patch_json = {'name': 'box1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
