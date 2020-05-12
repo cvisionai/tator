@@ -212,14 +212,19 @@ class WormsAutoComplete {
     let preresults = new Map();
     for (let result of vernacular_matches)
     {
-      preresults.set(result['AphiaID'], result);
+      if (result['taxonRankID'] >= this._minLevel &&
+          result['status'] == 'accepted')
+      {
+        preresults.set(result['AphiaID'], result);
+      }
     }
 
     for (let result of scientificName_matches)
     {
       if (result['taxonRankID'] >= this._minLevel)
       {
-        if (preresults.has(result['AphiaID']) == false)
+        if (preresults.has(result['AphiaID']) == false &&
+            result['status'] == 'accepted')
         {
           preresults.set(result['AphiaID'], result);
         }
