@@ -48,6 +48,22 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
     entity_type = MediaType # Needed by attribute filter mixin
 
     def _get(self, params):
+        """ Retrieve list of media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+
+            This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
+            Both are accomplished using the same query parameters used for a GET request.
+
+            This endpoint does not include a POST method. Creating media must be preceded by an
+            upload, after which a separate media creation endpoint must be called. The media creation
+            endpoints are `Transcode` to launch a transcode of an uploaded video and `SaveImage` to
+            save an uploaded image. If you would like to perform transcodes on local assets, you can
+            use the `SaveVideo` endpoint to save an already transcoded video. Local transcodes may be
+            performed with the script at `scripts/transcoder/transcodePipeline.py` in the Tator source
+            code.
+        """
         use_es = self.validate_attribute_filter(params)
         response_data = []
         media_ids, media_count, _ = get_media_queryset(
@@ -61,6 +77,14 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         return response_data
 
     def _delete(self, params):
+        """ Delete list of media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+
+            This method performs a bulk delete on all media matching a query. It is 
+            recommended to use a GET request first to check what is being deleted.
+        """
         self.validate_attribute_filter(params)
         media_ids, media_count, query = get_media_queryset(
             params['project'],
@@ -74,6 +98,15 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully deleted {count} medias!'}
 
     def _patch(self, params):
+        """ Update list of media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+
+            This method performs a bulk update on all media matching a query. It is 
+            recommended to use a GET request first to check what is being updated.
+            Only attributes are eligible for bulk patch operations.
+        """
         self.validate_attribute_filter(params)
         media_ids, media_count, query = get_media_queryset(
             params['project'],
@@ -111,9 +144,19 @@ class MediaDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
+        """ Retrieve individual media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+        """
         return Media.objects.values(*fields).get(pk=params['id'])
 
     def _patch(self, params):
+        """ Update individual media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+        """
         media_object = Media.objects.get(pk=params['id'])
         if 'attributes' in params:
             new_attrs = validate_attributes(params, media_object)
@@ -139,6 +182,11 @@ class MediaDetailAPI(BaseDetailView):
         return {'message': 'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
+        """ Delete individual media.
+
+            A media may be an image or a video. Media are a type of entity in Tator,
+            meaning they can be described by user defined attributes.
+        """
         Media.objects.get(pk=params['id']).delete()
         return {'message': 'Media {params["id"]} successfully deleted!'}
 
