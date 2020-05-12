@@ -796,23 +796,6 @@ class Algorithm(Model):
     def __str__(self):
         return self.name
 
-def type_to_obj(typeObj):
-    """Returns a data object for a given type object"""
-    _dict = {
-        EntityTypeLocalizationBox : EntityLocalizationBox,
-        EntityTypeLocalizationLine : EntityLocalizationLine,
-        EntityTypeLocalizationDot : EntityLocalizationDot,
-        EntityTypeState : EntityState,
-        EntityTypeMediaVideo : EntityMediaVideo,
-        EntityTypeMediaImage : EntityMediaImage,
-        EntityTypeTreeLeaf : TreeLeaf,
-        }
-
-    if typeObj in _dict:
-        return _dict[typeObj]
-    else:
-        return None
-
 class AnalysisBase(PolymorphicModel):
     """ .. deprecated :: Use Analysis object """
     project = ForeignKey(Project, on_delete=CASCADE)
@@ -1352,4 +1335,19 @@ class Analysis(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     name = CharField(max_length=64)
     data_query = CharField(max_length=1024, default='*')
+
+def type_to_obj(typeObj):
+    """Returns a data object for a given type object"""
+    _dict = {
+        MediaType: Media,
+        LocalizationType: Localization,
+        StateType: State,
+        LeafType: Leaf,
+    }
+
+    if typeObj in _dict:
+        return _dict[typeObj]
+    else:
+        return None
+
 
