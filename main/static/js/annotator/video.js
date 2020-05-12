@@ -1230,16 +1230,8 @@ class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
-        let timeout_id = setTimeout(() => {
-          console.info("Playback stalled out");
-          that.dispatchEvent(new CustomEvent("playbackEnded", {
-            composed: true
-          }));
-        }, 1000);
-
         video.oncanplay=function()
         {
-          clearTimeout(timeout_id);
           // Don't do anything busy in the canplay interrupt as it holds up the GUI
           // rasterizer.
           // Need to bind the member function to the result handler
