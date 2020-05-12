@@ -23,7 +23,6 @@ from ..models import Version
 from ..models import InterpolationMethods
 from ..models import EntityBase
 from ..renderers import PngRenderer,JpegRenderer,GifRenderer,Mp4Renderer
-from ..rest.media import MediaUtil
 from ..serializers import EntityStateSerializer
 from ..serializers import EntityStateFrameSerializer
 from ..serializers import EntityStateLocalizationSerializer
@@ -33,6 +32,7 @@ from ..schema import StateDetailSchema
 from ..schema import StateGraphicSchema
 from ..schema import parse
 
+from ._media_util import MediaUtil
 from ._annotation_query import get_annotation_queryset
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
