@@ -256,8 +256,7 @@ def patch_attributes(new_attrs, obj):
         else:
             for attr_name in new_attrs:
                 obj.attributes[attr_name] = new_attrs[attr_name]
-        # TODO We shouldn't save here (in higher order function instead)
-        obj.save()
+    return obj
 
 def bulk_patch_attributes(new_attrs, qs):
     """Updates attribute values.
