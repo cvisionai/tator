@@ -111,12 +111,10 @@ def create_test_video(user, name, entity_type, project):
     )
 
 def create_test_image(user, name, entity_type, project):
-    return EntityMediaImage.objects.create(
+    return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        uploader=user,
-        upload_datetime=datetime.datetime.now(datetime.timezone.utc),
         md5='',
         file=create_test_image_file(),
         thumbnail=create_test_image_file(),
@@ -180,37 +178,44 @@ def create_test_treeleaf(name, entity_type, project):
 def create_test_attribute_types():
     """Create one of each attribute type.
     """
-    return {
-        'bool': dict(
+    return [
+        dict(
             name='bool_test',
+            dtype='bool',
             default=False,
         ),
-        'int': dict(
+        dict(
             name='int_test',
+            dtype='int',
             default=42,
         ),
-        'float': dict(
+        dict(
             name='float_test',
+            dtype='float',
             default=42.0,
         ),
-        'enum': dict(
+        dict(
             name='enum_test',
+            dtype='enum',
             choices=['enum_val1', 'enum_val2', 'enum_val3'],
             default='enum_val1',
         ),
-        'string': dict(
+        dict(
             name='string_test',
+            dtype='string',
             default='asdf_default',
         ),
-        'datetime': dict(
+        dict(
             name='datetime_test',
+            dtype='datetime',
             use_current=True,
         ),
-        'geoposition': dict(
+        dict(
             name='geoposition_test',
+            dtype='geopos',
             default=[-179.0, -89.0],
         ),
-    }
+    ]
 
 def create_test_version(name, description, number, project, media):
     return Version.objects.create(
@@ -304,7 +309,6 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -370,7 +374,6 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
@@ -501,6 +504,7 @@ class AttributeTestMixin:
             f'?type={self.entity_type.pk}',
             {'attributes': {'bool_test': test_val}},
             format='json')
+        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for entity in self.entities:
             response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
@@ -680,7 +684,7 @@ class AttributeTestMixin:
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_enum_attr(self):
-        test_vals = [random.choice(self.attribute_types['enum'].choices) for _ in range(len(self.entities))]
+        test_vals = [random.choice(['enum_val1', 'enum_val2', 'enum_val3']) for _ in range(len(self.entities))]
         # Test setting an invalid choice
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
@@ -1023,22 +1027,23 @@ class ImageTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaImage.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="images",
+            dtype='image',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_image(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Medias'
         self.detail_uri = 'Media'
         self.create_entity = functools.partial(
             create_test_image, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'image1', 'resourcetype': 'EntityMediaImage'}
+        self.patch_json = {'name': 'image1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
