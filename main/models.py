@@ -912,7 +912,7 @@ class MediaType(Model):
                             blank=True,
                             default=None)
     keep_original = BooleanField(default=True, null=True, blank=True)
-    attribute_types = JSONField(null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -953,7 +953,7 @@ class LocalizationType(Model):
     media = ManyToManyField(MediaType)
     colorMap = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
-    attribute_types = JSONField(null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -997,7 +997,7 @@ class StateType(Model):
     association = CharField(max_length=64,
                             choices=AssociationTypes,
                             default=AssociationTypes[0][0])
-    attribute_types = JSONField(null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
