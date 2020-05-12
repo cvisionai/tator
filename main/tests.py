@@ -92,12 +92,10 @@ def create_test_image_file():
                               content_type='image/png')
 
 def create_test_video(user, name, entity_type, project):
-    return EntityMediaVideo.objects.create(
+    return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        uploader=user,
-        upload_datetime=datetime.datetime.now(datetime.timezone.utc),
         original='',
         md5='',
         file=SimpleUploadedFile(name='asdf.mp4', content=b'asdfasdf'),
@@ -993,17 +991,18 @@ class VideoTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Medias'
         self.detail_uri = 'Media'
         self.create_entity = functools.partial(
