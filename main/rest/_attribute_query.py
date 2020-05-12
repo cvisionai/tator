@@ -40,7 +40,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
                     attr_query[relation]['filter'].append({
                         'geo_distance': {
                             'distance': f'{dist_km}km',
-                            key: {'lat': lat, 'lon': lon},
+                            key: {'lat': float(lat), 'lon': float(lon)},
                         }
                     })
                 else:
