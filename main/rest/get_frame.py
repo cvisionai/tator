@@ -1,6 +1,6 @@
 import tempfile
-import traceback
 
+from ..models import Media
 from ..renderers import PngRenderer
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
