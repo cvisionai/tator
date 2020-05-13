@@ -332,11 +332,9 @@ class AttributeFilterMixin:
             self.meta = get_object_or_404(self.entity_type, pk=meta_id)
         # Iterate through filter params and extract pairs of attribute type
         # and filter value.
-        use_es = False
         self.filter_type_and_vals = []
         for filter_op in self.attr_filter_params:
             if self.attr_filter_params[filter_op] != None:
-                use_es = True
                 for kv_pair in self.attr_filter_params[filter_op].split(","):
                     # Check if we should use type for this filter op.
                     filter_value, attr_type, typeOk = extract_attribute(kv_pair, self.meta, filter_op)
@@ -345,9 +343,6 @@ class AttributeFilterMixin:
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
         self.operation = query_params.get('operation', None)
-        # Return whether elasticsearch should be used for query lookup.
-        use_es = use_es or ('search' in query_params)
-        return use_es
 
     def filter_by_attribute(self, qs):
         """Filters objects of the specified type by attribute.
