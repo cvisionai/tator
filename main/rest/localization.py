@@ -71,7 +71,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:
-                response_data = database_qs(qs)
+                response_data = database_qs(qs.order_by('id'))
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == 'csv':
@@ -271,10 +271,7 @@ class LocalizationDetailAPI(BaseDetailView):
             pass
 
         new_attrs = validate_attributes(params, obj)
-        logger.info(f"NEW ATTRS: {new_attrs}")
-        logger.info(f"OBJ BEFORE PATCH: {obj.attributes}")
         obj = patch_attributes(new_attrs, obj)
-        logger.info(f"OBJ AFTER PATCH: {obj.attributes}")
 
         # Patch the thumbnail attributes
         if obj.thumbnail_image:
