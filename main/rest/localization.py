@@ -8,6 +8,7 @@ from ..models import MediaType
 from ..models import User
 from ..models import Project
 from ..models import Version
+from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
@@ -25,9 +26,6 @@ from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
-fields = ['id', 'project', 'meta', 'attributes', 'created_datetime', 'created_by',
-          'modified_datetime', 'modified_by', 'user', 'media', 'frame',
-          'thumbnail_image', 'version', 'modified', 'x', 'y', 'u', 'v', 'width', 'height']
 
 class LocalizationListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of localizations.
@@ -46,44 +44,62 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        response_data = []
-        annotation_ids, annotation_count, _ = get_annotation_queryset(
-            params['project'],
-            params,
-            'localization',
-        )
-        if self.operation == 'count':
-            response_data = {'count': annotation_count}
-        elif annotation_count > 0:
-            qs = Localization.objects.filter(pk__in=annotation_ids).order_by('id').values(*fields)
-            response_data = list(qs)
-            format_ = params.get('format', None)
-            if format_ == 'csv':
-                # CSV creation requires a bit more
-                user_ids = set([d['user'] for d in response_data])
-                users = list(User.objects.filter(id__in=user_ids).values('id','email'))
-                email_dict = {}
-                for user in users:
-                    email_dict[user['id']] = user['email']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation']
+        use_es = any([key not in postgres_params for key in params])
 
-                media_ids = set([d['media'] for d in response_data])
-                medias = list(Media.objects.filter(id__in=media_ids).values('id','name'))
-                filename_dict = {}
-                for media in medias:
-                    filename_dict[media['id']] = media['name']
+        # Get the localization list.
+        if use_es:
+            response_data = []
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                params['project'],
+                params,
+                'localization',
+            )
+            if self.operation == 'count':
+                response_data = {'count': len(annotation_ids)}
+            elif len(annotation_ids) > 0:
+                qs = Localization.objects.filter(pk__in=annotation_ids).order_by('id')
+                response_data = database_qs(qs)
+        else:
+            qs = Localization.objects.filter(project=params['project'])
+            if 'media_id' in params:
+                qs = qs.filter(media=params['media_id'])
+            if 'version' in params:
+                qs = qs.filter(version=params['version'])
+            if 'modified' in params:
+                qs = qs.exclude(modified=(not params['modified']))
+            if self.operation == 'count':
+                response_data = {'count': qs.count()}
+            else:
+                response_data = database_qs(qs)
 
-                for element in response_data:
-                    del element['meta']
+        # Adjust fields for csv output.
+        if self.request.accepted_renderer.format == 'csv':
+            # CSV creation requires a bit more
+            user_ids = set([d['user'] for d in response_data])
+            users = list(User.objects.filter(id__in=user_ids).values('id','email'))
+            email_dict = {}
+            for user in users:
+                email_dict[user['id']] = user['email']
 
-                    oldAttributes = element['attributes']
-                    del element['attributes']
-                    element.update(oldAttributes)
+            media_ids = set([d['media'] for d in response_data])
+            medias = list(Media.objects.filter(id__in=media_ids).values('id','name'))
+            filename_dict = {}
+            for media in medias:
+                filename_dict[media['id']] = media['name']
 
-                    user_id = element['user']
-                    media_id = element['media']
+            for element in response_data:
+                del element['meta']
 
-                    element['user'] = email_dict[user_id]
-                    element['media'] = filename_dict[media_id]
+                oldAttributes = element['attributes']
+                del element['attributes']
+                element.update(oldAttributes)
+
+                user_id = element['user']
+                media_id = element['media']
+
+                element['user'] = email_dict[user_id]
+                element['media'] = filename_dict[media_id]
         return response_data
 
     def _post(self, params):
@@ -203,7 +219,7 @@ class LocalizationDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return Localization.objects.values(*fields).get(pk=params['id'])
+        return Localization.objects.values().get(pk=params['id'])
 
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'])
