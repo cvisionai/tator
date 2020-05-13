@@ -60,8 +60,8 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             params,
         )
         if self.operation == 'count':
-            response_data = {'count': media_count}
-        elif media_count > 0:
+            response_data = {'count': len(media_ids)}
+        elif len(media_ids) > 0:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
             qs = Media.objects.filter(pk__in=media_ids).order_by(preserved).values(*fields)
             response_data = list(qs)
