@@ -1350,4 +1350,25 @@ def type_to_obj(typeObj):
     else:
         return None
 
+def make_dict(keys, row):
+    d={}
+    for idx,col in enumerate(keys):
+        d[col.name] = row[idx]
+    return d
 
+def database_qs(qs):
+    return database_query(str(qs.query))
+
+def database_query(query):
+    from django.db import connection
+    import datetime
+    with connection.cursor() as d_cursor:
+        cursor = d_cursor.cursor
+        bq=datetime.datetime.now()
+        cursor.execute(query)
+        aq=datetime.datetime.now()
+        l=[make_dict(cursor.description, x) for x in cursor]
+        af=datetime.datetime.now()
+        print(f"Query = {aq-bq}")
+        print(f"List = {af-aq}")
+    return l
