@@ -148,8 +148,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         for state_spec, attrs in zip(state_specs, attr_specs):
             state = State(project=project,
                           meta=metas[state_spec['type']],
-                          media=medias[state_spec['media_id']],
-                          user=self.request.user,
                           attributes=attrs,
                           modified=state_spec.get('modified', None),
                           created_by=self.request.user,
@@ -195,7 +193,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         documents = []
         for state in states:
             documents += ts.build_document(state)
-            if len(documents > 1000):
+            if len(documents) > 1000:
                 ts.bulk_add_documents(documents)
                 documents = []
         ts.bulk_add_documents(documents)
