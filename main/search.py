@@ -186,7 +186,7 @@ class TatorSearch:
                 aux['_x'] = entity.x
                 aux['_y'] = entity.y
         elif entity.meta.dtype in ['state']:
-            media = entity.association.media.all()
+            media = entity.media.all()
             if media.exists():
                 aux['_media_relation'] = {
                     'name': 'annotation',
