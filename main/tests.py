@@ -144,7 +144,6 @@ def create_test_line(user, entity_type, project, media, frame):
     x1 = random.uniform(0.0, float(media.width) - x0)
     y1 = random.uniform(0.0, float(media.height) - y0)
     return Localization.objects.create(
-        dtype='line',
         user=user,
         meta=entity_type,
         project=project,
@@ -157,7 +156,6 @@ def create_test_dot(user, entity_type, project, media, frame):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
     return Localization.objects.create(
-        dtype='dot',
         user=user,
         meta=entity_type,
         project=project,
@@ -1139,14 +1137,17 @@ class LocalizationLineTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationLine.objects.create(
+        self.entity_type = LocalizationType.objects.create(
             name="lines",
+            dtype='line',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1157,12 +1158,11 @@ class LocalizationLineTestCase(
             create_test_line(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_line, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1178,9 +1178,9 @@ class LocalizationLineTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        } 
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'line1', 'resourcetype': 'EntityLocalizationLine'}
+        self.patch_json = {'name': 'line1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1201,14 +1201,17 @@ class LocalizationDotTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationDot.objects.create(
-            name="lines",
+        self.entity_type = LocalizationType.objects.create(
+            name="dots",
+            dtype='dot',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1224,7 +1227,7 @@ class LocalizationDotTestCase(
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_dot, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1238,9 +1241,9 @@ class LocalizationDotTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        } 
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'dot1', 'resourcetype': 'EntityLocalizationDot'}
+        self.patch_json = {'name': 'dot1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
