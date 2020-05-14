@@ -211,7 +211,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             qs = State.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {annotation_count} localizations!'}
+        return {'message': f'Successfully deleted {len(annotation_ids)} localizations!'}
 
     def _patch(self, params):
         self.validate_attribute_filter(params)
@@ -225,7 +225,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], query, new_attrs)
-        return {'message': f'Successfully updated {annotation_count} localizations!'}
+        return {'message': f'Successfully updated {len(annotation_ids)} localizations!'}
 
     def get_queryset(self):
         params = parse(self.request)
