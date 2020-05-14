@@ -116,7 +116,7 @@ class AnnotationData extends HTMLElement {
       }
     }
 
-    // Patching the modified field may be treated as post/delete as it could 
+    // Patching the modified field may be treated as post/delete as it could
     // change versions.
     if (method == "PATCH" && "modified" in body) {
       if (body.modified == null) {
@@ -125,7 +125,7 @@ class AnnotationData extends HTMLElement {
         method = "DELETE";
       }
     }
-    
+
     const attributeNames = typeObj.columns.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
@@ -180,15 +180,15 @@ class AnnotationData extends HTMLElement {
       return;
     }
 
-    let url = this._updateUrls.get(typeId);
+    let url = new URL(this._updateUrls.get(typeId));
+    let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
-      url += "&search=";
-      url += query;
+        searchParams.set('search',query);
     }
-    url += "&version=";
-    url += this._version.id;
-    url += "&modified=";
-    url += Number(this._edited);
+
+    searchParams.set('version',[...this._version.bases,this._version.id]);
+    searchParams.set('modified', Number(this._edited));
+    url.search = searchParams;
 
     // Fetch new ones from server
     fetchRetry(url)
