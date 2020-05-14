@@ -51,24 +51,27 @@ class StateListSchema(AutoSchema):
         if method == 'POST':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['media_ids', 'type'],
-                    'additionalProperties': True,
-                    'properties': {
-                        'type': {
-                            'description': 'Unique integer identifying a state type.',
-                            'type': 'integer',
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'required': ['media_ids', 'type'],
+                        'additionalProperties': True,
+                        'properties': {
+                            'type': {
+                                'description': 'Unique integer identifying a state type.',
+                                'type': 'integer',
+                            },
+                            'version': {
+                                'description': 'Unique integer identifying the version.',
+                                'type': 'integer',
+                            },
+                            'modified': {
+                                'description': 'Whether this localization was created in the web UI.',
+                                'type': 'boolean',
+                                'default': False,
+                            },
+                            **state_properties,
                         },
-                        'version': {
-                            'description': 'Unique integer identifying the version.',
-                            'type': 'integer',
-                        },
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                            'default': False,
-                        },
-                        **state_properties,
                     },
                 },
                 'examples': {
