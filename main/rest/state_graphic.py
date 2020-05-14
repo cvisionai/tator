@@ -53,7 +53,7 @@ class StateGraphicAPI(BaseDetailView):
                 gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format, force_scale=force_scale)
                 with open(gif_fp, 'rb') as data_file:
                     request.accepted_renderer = GifRenderer()
-                    response = Response(data_file.read())
+                    response_data = data_file.read()
             else:
                 max_w = 0
                 max_h = 0
@@ -82,5 +82,5 @@ class StateGraphicAPI(BaseDetailView):
                                                    render_format=request.accepted_renderer.format,
                                                    force_scale=force_scale)
                 with open(tiled_fp, 'rb') as data_file:
-                    response = Response(data_file.read())
-
+                    response_data = data_file.read()
+        return response_data
