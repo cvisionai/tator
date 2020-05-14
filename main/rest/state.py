@@ -77,24 +77,24 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                     response_data = {'count': qs.count()}
                 else:
                     response_data = database_qs(qs.order_by('id'))
-            if 'type' in params:
-                type_ = params.get('type', None)
-            if request.accepted_renderer.format == 'csv':
-                type_object=StateType.objects.get(pk=type_)
-                if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
-                    for idx,el in enumerate(response_data):
-                        mediaEl=Media.objects.get(pk=el['association']['media'])
-                        endFrame=0
-                        if idx + 1 < len(response_data):
-                            next_element=response_data[idx+1]
-                            endFrame=next_element['association']['frame']
-                        else:
-                            endFrame=mediaEl.num_frames
-                        el['media']=mediaEl.name
+        if (self.request.accepted_renderer.format == 'csv'
+            and self.operation != 'count'
+            and 'type' in params):
+            type_object=StateType.objects.get(pk=params['type'])
+            if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
+                for idx,el in enumerate(response_data):
+                    mediaEl=Media.objects.get(pk=el['association']['media'])
+                    endFrame=0
+                    if idx + 1 < len(response_data):
+                        next_element=response_data[idx+1]
+                        endFrame=next_element['association']['frame']
+                    else:
+                        endFrame=mediaEl.num_frames
+                    el['media']=mediaEl.name
 
-                        el['endFrame'] = endFrame
-                        el['startSeconds'] = int(el['association']['frame']) * mediaEl.fps
-                        el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
+                    el['endFrame'] = endFrame
+                    el['startSeconds'] = int(el['association']['frame']) * mediaEl.fps
+                    el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
         return response_data
 
     def _post(self, params):
