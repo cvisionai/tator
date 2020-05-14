@@ -167,8 +167,12 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
         # Build ES documents.
         ts = TatorSearch()
-        documents = [ts.build_document(loc) for loc in localizations]
-        documents = list(itertools.chain(*documents))
+        documents = []
+        for loc in localizations:
+            documents += ts.build_document(loc)
+            if len(documents > 1000):
+                ts.bulk_add_documents(documents)
+                documents = []
         ts.bulk_add_documents(documents)
 
         # Return created IDs.

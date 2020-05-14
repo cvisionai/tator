@@ -183,8 +183,12 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
         # Build ES documents.
         ts = TatorSearch()
-        documents = [ts.build_document(state) for state in states]
-        documents = list(itertools.chain(*documents))
+        documents = []
+        for state in states:
+            documents += ts.build_document(state)
+            if len(documents > 1000):
+                ts.bulk_add_documents(documents)
+                documents = []
         ts.bulk_add_documents(documents)
 
         # Return created IDs.
