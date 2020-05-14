@@ -251,6 +251,8 @@ class AnnotationPage extends TatorPage {
 
     this._versionDialog.addEventListener("versionSelect", evt => {
       this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
+        this._settings.setAttribute("version", evt.detail.version.id);
+        this._settings.setAttribute("edited", evt.detail.edited);
         this._canvas.refresh();
       });
       this._browser.version = evt.detail.version;
@@ -446,6 +448,7 @@ class AnnotationPage extends TatorPage {
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
           save.init(projectId, mediaId, dataType, this._undo, this._version);
+          this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.type.id] = save;
 
