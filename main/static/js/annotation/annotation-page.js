@@ -302,6 +302,8 @@ class AnnotationPage extends TatorPage {
           versions = [versions[0]];
         }
 
+        // TODO: Probably want a sensible default here more than
+        // just 'the last one'.
         this._versionDialog.init(versions);
         this._version = versions[versions.length - 1];
         if (versions.length == 0) {
