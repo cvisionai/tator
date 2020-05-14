@@ -155,6 +155,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _setupInitHandlers(canvas) {
+    this._canvas = canvas;
     const _handleQueryParams = () => {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
@@ -236,7 +237,9 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
-      this._data.setVersion(evt.detail.version, evt.detail.edited);
+      this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
+        this._canvas.refresh();
+      });
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
       this._version = evt.detail.version;
@@ -302,6 +305,8 @@ class AnnotationPage extends TatorPage {
           versions = [versions[0]];
         }
 
+        // TODO: Probably want a sensible default here more than
+        // just 'the last one'.
         this._versionDialog.init(versions);
         this._version = versions[versions.length - 1];
         if (versions.length == 0) {
