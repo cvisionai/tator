@@ -1263,37 +1263,31 @@ class StateTestCase(
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
             project=self.project,
             keep_original=False,
         )
-        self.entity_type = EntityTypeState.objects.create(
+        self.entity_type = StateType.objects.create(
             name="lines",
+            dtype='state',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf', media_entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
-        media_associations = [
-            MediaAssociation.objects.create()
-            for _ in range(random.randint(6, 10))
-        ]
         self.entities = []
-        for media_association in media_associations:
-            for media in random.choices(self.media_entities):
-                media_association.media.add(media)
-            self.entities.append(
-                EntityState.objects.create(
-                    meta=self.entity_type,
-                    project=self.project,
-                    association=media_association,
-                    version=self.version,
-                )
+        for _ in range(random.randint(6, 10)):
+            state = State.objects.create(
+                meta=self.entity_type,
+                project=self.project,
+                version=self.version,
             )
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
+            for media in random.choices(self.media_entities):
+                state.media.add(media)
         self.list_uri = 'States'
         self.detail_uri = 'State'
         self.create_entity = functools.partial(EntityState.objects.create,
@@ -1302,7 +1296,7 @@ class StateTestCase(
             association=media_association,
             version=self.version
         )
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_ids': [m.id for m in random.choices(self.media_entities)],
@@ -1313,7 +1307,7 @@ class StateTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        }
+        }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
