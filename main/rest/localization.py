@@ -144,18 +144,23 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                       for loc in loc_specs]
        
         # Create the localization objects.
-        localizations = [
-            Localization(project=project,
-                         meta=metas[loc['type']],
-                         media=medias[loc['media_id']],
-                         user=self.request.user,
-                         attributes=attrs,
-                         modified=loc.get('modified', None),
-                         created_by=self.request.user,
-                         modified_by=self.request.user,
-                         version=versions[loc.get('version', None)])
-            for loc, attrs in zip(loc_specs, attr_specs)]
-        localizations = Localization.objects.bulk_create(localizations)
+        localizations = []
+        create_buffer = []
+        for loc_spec, attrs in zip(loc_specs, attr_specs):
+            loc = Localization(project=project,
+                               meta=metas[loc_spec['type']],
+                               media=medias[loc_spec['media_id']],
+                               user=self.request.user,
+                               attributes=attrs,
+                               modified=loc_spec.get('modified', None),
+                               created_by=self.request.user,
+                               modified_by=self.request.user,
+                               version=versions[loc_spec.get('version', None)])
+            create_buffer.append(loc)
+            if len(localizations) > 1000:
+                localizations += Localization.objects.bulk_create(create_buffer)
+                create_buffer = []
+        localizations += Localization.objects.bulk_create(create_buffer)
 
         # Build ES documents.
         ts = TatorSearch()
