@@ -1250,8 +1250,8 @@ class State(Model):
     """
     media = ManyToManyField(Media, related_name='media')
     localizations = ManyToManyField(Localization)
-    segments = JSONField(null=True)
-    color = CharField(null=True,blank=True,max_length=8)
+    segments = JSONField(null=True, blank=True)
+    color = CharField(null=True, blank=True, max_length=8)
     frame = PositiveIntegerField(null=True, blank=True)
     extracted = ForeignKey(Media,
                            on_delete=SET_NULL,
