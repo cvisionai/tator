@@ -74,7 +74,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 response_data = database_qs(qs.order_by('id'))
 
         # Adjust fields for csv output.
-        if self.request.accepted_renderer.format == 'csv':
+        if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
             # CSV creation requires a bit more
             user_ids = set([d['user'] for d in response_data])
             users = list(User.objects.filter(id__in=user_ids).values('id','email'))
