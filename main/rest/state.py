@@ -1,5 +1,4 @@
 import logging
-import itertools
 
 from ..models import State
 from ..models import StateType
@@ -67,20 +66,19 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 qs = State.objects.filter(pk__in=annotation_ids).order_by('id')
                 response_data = database_qs(qs)
         else:
+            qs = State.objects.filter(project=params['project'])
+            if 'media_id' in params:
+                qs = qs.filter(media=params['media_id'])
+            if 'type' in params:
+                qs = qs.filter(meta=params['type'])
+            if 'version' in params:
+                qs = qs.filter(version=params['version'])
+            if 'modified' in params:
+                qs = qs.exclude(modified=(not params['modified']))
             if self.operation == 'count':
-                response_data = {'count': all_states.count()}
+                response_data = {'count': qs.count()}
             else:
-                qs = State.objects.filter(project=params['project'])
-                if 'media_id' in params:
-                    qs = qs.filter(media=params['media_id'])
-                if 'version' in params:
-                    qs = qs.filter(version=params['version'])
-                if 'modified' in params:
-                    qs = qs.exclude(modified=(not params['modified']))
-                if self.operation == 'count':
-                    response_data = {'count': qs.count()}
-                else:
-                    response_data = database_qs(qs.order_by('id'))
+                response_data = database_qs(qs.order_by('id'))
         if (self.request.accepted_renderer.format == 'csv'
             and self.operation != 'count'
             and 'type' in params):
@@ -154,7 +152,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                           modified_by=self.request.user,
                           version=versions[state_spec.get('version', None)])
             create_buffer.append(state)
-            if len(states) > 1000:
+            if len(create_buffer) > 1000:
                 states += State.objects.bulk_create(create_buffer)
                 create_buffer = []
         states += State.objects.bulk_create(create_buffer)
@@ -209,7 +207,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             params,
             'state',
         )
-        if annotation_count > 0:
+        if len(annotation_ids) > 0:
             qs = State.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
@@ -222,7 +220,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             params,
             'state',
         )
-        if annotation_count > 0:
+        if len(annotation_ids) > 0:
             qs = State.objects.filter(pk__in=annotation_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)

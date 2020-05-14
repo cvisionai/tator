@@ -1,5 +1,4 @@
 import logging
-import itertools
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -64,6 +63,8 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             qs = Localization.objects.filter(project=params['project'])
             if 'media_id' in params:
                 qs = qs.filter(media=params['media_id'])
+            if 'type' in params:
+                qs = qs.filter(meta=params['type'])
             if 'version' in params:
                 qs = qs.filter(version=params['version'])
             if 'modified' in params:
@@ -160,7 +161,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                                modified_by=self.request.user,
                                version=versions[loc_spec.get('version', None)])
             create_buffer.append(loc)
-            if len(localizations) > 1000:
+            if len(create_buffer) > 1000:
                 localizations += Localization.objects.bulk_create(create_buffer)
                 create_buffer = []
         localizations += Localization.objects.bulk_create(create_buffer)
@@ -170,7 +171,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         documents = []
         for loc in localizations:
             documents += ts.build_document(loc)
-            if len(documents > 1000):
+            if len(documents) > 1000:
                 ts.bulk_add_documents(documents)
                 documents = []
         ts.bulk_add_documents(documents)
@@ -186,7 +187,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             params,
             'localization',
         )
-        if annotation_count > 0:
+        if len(annotation_ids) > 0:
             qs = Localization.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
@@ -199,7 +200,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             params,
             'localization',
         )
-        if annotation_count > 0:
+        if len(annotation_ids) > 0:
             qs = Localization.objects.filter(pk__in=annotation_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
