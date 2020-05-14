@@ -5,6 +5,7 @@ class AnnotationPage extends TatorPage {
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/loading.svg");
     this._shadow.appendChild(this._loading);
+    this._versionLookup = {};
 
     document.body.setAttribute("class", "no-padding-bottom");
 
@@ -163,6 +164,7 @@ class AnnotationPage extends TatorPage {
         const haveEntityType = searchParams.has("selected_entity_type");
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
+        const haveVersion = searchParams.has("version");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -180,6 +182,17 @@ class AnnotationPage extends TatorPage {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
           this._browser._openForTypeId(typeId);
+        }
+        if (haveVersion)
+        {
+          let edited = true;
+          let version_id = searchParams.get("version");
+          if(searchParams.has("edited") && searchParams.get("edited") == 0)
+          {
+            edited = false;
+          }
+          let evt = {"detail": {"version": this._versionLookup[version_id], "edited": edited}};
+          this._versionDialog._handleSelect(evt);
         }
       }
     }
@@ -238,6 +251,8 @@ class AnnotationPage extends TatorPage {
 
     this._versionDialog.addEventListener("versionSelect", evt => {
       this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
+        this._settings.setAttribute("version", evt.detail.version.id);
+        this._settings.setAttribute("edited", evt.detail.edited);
         this._canvas.refresh();
       });
       this._browser.version = evt.detail.version;
@@ -291,6 +306,10 @@ class AnnotationPage extends TatorPage {
       const versionData = versionResponse.json();
       Promise.all([localizationData, stateData, versionData])
       .then(([localizationTypes, stateTypes, versions]) => {
+        for (let version of versions)
+        {
+          this._versionLookup[version['id']] = version;
+        }
         // Skip version if number of annotations is zero and show_empty is false.
         const dispVersions = versions.filter(version => {
           return !(
@@ -429,6 +448,7 @@ class AnnotationPage extends TatorPage {
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
           save.init(projectId, mediaId, dataType, this._undo, this._version);
+          this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.type.id] = save;
 
