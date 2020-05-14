@@ -107,7 +107,7 @@ class TatorSearch:
                     dtype='float'
                 elif attribute_type['dtype'] == 'enum':
                     dtype='text'
-                elif attribute_type['dtype'] == 'str':
+                elif attribute_type['dtype'] == 'string':
                     dtype='text'
                 elif attribute_type['dtype'] == 'datetime':
                     dtype='date'
