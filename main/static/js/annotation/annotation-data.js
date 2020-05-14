@@ -24,12 +24,14 @@ class AnnotationData extends HTMLElement {
     }
   }
 
+  // Returns a promise when done
   setVersion(version, edited) {
     this._version = version;
     this._edited = edited;
-    this.updateAll(this._dataTypesRaw, version);
+    return this.updateAll(this._dataTypesRaw, version);
   }
 
+  // Returns a promise when done
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
     const localTypeIds=[];
