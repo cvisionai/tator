@@ -178,15 +178,16 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         # Create localization relations.
         loc_relations = []
         for state, state_spec in zip(states, state_specs):
-            for localization_id in state_spec['localization_ids']:
-                loc_states = State.localizations.through(
-                    state_id=state.id,
-                    localization_id=localization_id,
-                )
-                loc_relations.append(loc_states)
-                if len(loc_relations) > 1000:
-                    State.localizations.through.objects.bulk_create(loc_relations)
-                    loc_relations = []
+            if 'localization_ids' in state_spec:
+                for localization_id in state_spec['localization_ids']:
+                    loc_states = State.localizations.through(
+                        state_id=state.id,
+                        localization_id=localization_id,
+                    )
+                    loc_relations.append(loc_states)
+                    if len(loc_relations) > 1000:
+                        State.localizations.through.objects.bulk_create(loc_relations)
+                        loc_relations = []
         State.localizations.through.objects.bulk_create(loc_relations)
 
         # Build ES documents.
