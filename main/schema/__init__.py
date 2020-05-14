@@ -7,6 +7,9 @@ from .entity_type_schema import EntityTypeSchemaSchema
 from .frame_association import FrameAssociationDetailSchema
 from .job_group import JobGroupDetailSchema
 from .job import JobDetailSchema
+from .leaf import LeafSuggestionSchema
+from .leaf import LeafListSchema
+from .leaf import LeafDetailSchema
 from .leaf_type import LeafTypeListSchema
 from .leaf_type import LeafTypeDetailSchema
 from .localization_association import LocalizationAssociationDetailSchema
@@ -40,9 +43,6 @@ from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema
 from .temporary_file import TemporaryFileListSchema
 from .transcode import TranscodeSchema
-from .tree_leaf import TreeLeafSuggestionSchema
-from .tree_leaf import TreeLeafListSchema
-from .tree_leaf import TreeLeafDetailSchema
 from .user import UserDetailSchema
 from .user import CurrentUserSchema
 from .version import VersionListSchema

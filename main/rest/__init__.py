@@ -9,6 +9,9 @@ from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .job_group import JobGroupDetailAPI
 from .job import JobDetailAPI
+from .leaf import LeafSuggestionAPI
+from .leaf import LeafListAPI
+from .leaf import LeafDetailAPI
 from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization_association import LocalizationAssociationDetailAPI
@@ -40,9 +43,6 @@ from .state_type import StateTypeDetailAPI
 from .temporary_file import TemporaryFileAPI
 from .temporary_file import TemporaryFileListAPI
 from .transcode import TranscodeAPI
-from .tree_leaf import TreeLeafSuggestionAPI
-from .tree_leaf import TreeLeafListAPI
-from .tree_leaf import TreeLeafDetailAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI
 from .version import VersionListAPI
