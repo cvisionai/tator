@@ -54,5 +54,7 @@ class CustomGenerator(SchemaGenerator):
         del schema['paths']['/rest/EntityStates/{project}']
         del schema['paths']['/rest/EntityStateTypes/{project}']
         del schema['paths']['/rest/EntityStateType/{id}']
+        del schema['paths']['/rest/TreeLeafTypes/{id}']
+        del schema['paths']['/rest/TreeLeafType/{id}']
         return schema
 

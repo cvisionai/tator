@@ -1361,7 +1361,7 @@ class TreeLeafTestCase(
     def tearDown(self):
         self.project.delete()
 
-class TreeLeafTypeTestCase(
+class LeafTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
@@ -1373,15 +1373,15 @@ class TreeLeafTypeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.entities = [
-            EntityTypeTreeLeaf.objects.create(project=self.project)
+            LeafType.objects.create(project=self.project)
             for _ in range(random.randint(6, 10))
         ]
-        self.list_uri = 'TreeLeafTypes'
-        self.detail_uri = 'TreeLeafType'
+        self.list_uri = 'LeafTypes'
+        self.detail_uri = 'LeafType'
         self.create_json = {
-            'name': 'tree leaf type',
+            'name': 'leaf type',
         }
-        self.patch_json = {'name': 'tree leaf asdf'}
+        self.patch_json = {'name': 'leaf asdf'}
         self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):

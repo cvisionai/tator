@@ -98,6 +98,14 @@ urlpatterns += [
         JobGroupDetailAPI.as_view(),
     ),
     path(
+        'rest/LeafTypes/<int:project>',
+        LeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/LeafType/<int:id>',
+        LeafTypeDetailAPI.as_view(),
+    ),
+    path(
         'rest/LocalizationAssociation/<int:id>',
         LocalizationAssociationDetailAPI.as_view(),
     ),
@@ -240,14 +248,6 @@ urlpatterns += [
         TreeLeafDetailAPI.as_view(),
     ),
     path(
-        'rest/TreeLeafTypes/<int:project>',
-        TreeLeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:id>',
-        TreeLeafTypeDetailAPI.as_view(),
-    ),
-    path(
         'rest/User/<int:id>',
         UserDetailAPI.as_view(),
     ),
@@ -302,5 +302,13 @@ urlpatterns += [
     path(
         'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafTypes/<int:project>',
+        LeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafType/<int:id>',
+        LeafTypeDetailAPI.as_view(),
     ),
 ]

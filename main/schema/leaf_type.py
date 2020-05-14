@@ -2,19 +2,19 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 
-tree_leaf_properties = {
+leaf_properties = {
     'name': {
-        'description': 'Name of the tree_leaf type.',
+        'description': 'Name of the leaf type.',
         'type': 'string',
     },
     'description': {
-        'description': 'Description of the tree_leaf type.',
+        'description': 'Description of the leaf type.',
         'type': 'string',
         'default': '',
     },
 }
 
-class TreeLeafTypeListSchema(AutoSchema):
+class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         operation['tags'] = ['TreeLeafType']
@@ -39,10 +39,10 @@ class TreeLeafTypeListSchema(AutoSchema):
                 'schema': {
                     'type': 'object',
                     'required': ['name'],
-                    'properties': tree_leaf_properties,
+                    'properties': leaf_properties,
                 },
                 'example': {
-                    'name': 'My tree leaf type',
+                    'name': 'My leaf type',
                 },
             }}}
         return body
@@ -52,12 +52,12 @@ class TreeLeafTypeListSchema(AutoSchema):
         responses['404'] = {'description': 'Failure to find project with given ID.'}
         responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of tree_leaf type list.'}
+            responses['200'] = {'description': 'Successful retrieval of leaf type list.'}
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of tree_leaf type.'}
+            responses['201'] = {'description': 'Successful creation of leaf type.'}
         return responses
 
-class TreeLeafTypeDetailSchema(AutoSchema):
+class LeafTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         operation['tags'] = ['TreeLeafType']
@@ -68,7 +68,7 @@ class TreeLeafTypeDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying an tree_leaf type.',
+            'description': 'A unique integer identifying an leaf type.',
             'schema': {'type': 'integer'},
         }]
 
@@ -81,7 +81,7 @@ class TreeLeafTypeDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'properties': tree_leaf_properties,
+                    'properties': leaf_properties,
                 },
                 'example': {
                     'name': 'New name',
@@ -92,12 +92,12 @@ class TreeLeafTypeDetailSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find tree_leaf type with given ID.'}
+        responses['404'] = {'description': 'Failure to find leaf type with given ID.'}
         responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of tree_leaf type.'}
+            responses['200'] = {'description': 'Successful retrieval of leaf type.'}
         elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of tree_leaf type.'}
+            responses['200'] = {'description': 'Successful update of leaf type.'}
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of tree_leaf type.'}
+            responses['204'] = {'description': 'Successful deletion of leaf type.'}
         return responses
