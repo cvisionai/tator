@@ -5,6 +5,7 @@ class AnnotationPage extends TatorPage {
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/loading.svg");
     this._shadow.appendChild(this._loading);
+    this._versionLookup = {};
 
     document.body.setAttribute("class", "no-padding-bottom");
 
@@ -291,6 +292,10 @@ class AnnotationPage extends TatorPage {
       const versionData = versionResponse.json();
       Promise.all([localizationData, stateData, versionData])
       .then(([localizationTypes, stateTypes, versions]) => {
+        for (let version of versions)
+        {
+          this._versionLookup[version['id']] = version;
+        }
         // Skip version if number of annotations is zero and show_empty is false.
         const dispVersions = versions.filter(version => {
           return !(
