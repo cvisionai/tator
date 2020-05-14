@@ -127,16 +127,19 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         media_ids = set([loc['media_id'] for loc in loc_specs])
         version_ids = set([loc.get('version', None) for loc in loc_specs])
 
-        # Get foreign key objects.
+        # Make foreign key querysets.
+        meta_qs = LocalizationType.objects.filter(pk__in=meta_ids)
+        media_qs = Media.objects.filter(pk__in=media_ids)
+        version_qs = Version.objects.filter(pk__in=version_ids)
+
+        # Construct foreign key dictionaries.
         project = Project.objects.get(pk=params['project'])
-        metas = {id_:LocalizationType.objects.get(pk=id_) for id_ in meta_ids}
-        medias = {id_:Media.objects.get(pk=id_) for id_ in media_ids}
-        versions = {id_:default_version if id_ is None else Version.objects.get(pk=id_)
-                    for id_ in version_ids}
+        metas = {obj.id:obj for obj in meta_qs.iterator()}
+        medias = {obj.id:obj for obj in media_qs.iterator()}
+        versions = {obj.id:obj for obj in version_qs.iterator()}
+        versions[None] = default_version
 
         # Get required fields for attributes.
-        logger.info(f"METAS: {metas}")
-        logger.info(f"META IDS: {meta_ids}")
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
         attr_specs = [check_required_fields(required_fields[loc['type']][0],
                                             required_fields[loc['type']][2],
