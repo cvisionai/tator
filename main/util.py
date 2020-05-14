@@ -277,9 +277,18 @@ def buildSearchIndices(project_number, section, mode='index'):
 
     if section == 'mappings':
         # Create mappings
-        logger.info("Building mappings...")
-        for attribute_type in progressbar(list(AttributeTypeBase.objects.filter(project=project_number))):
-            TatorSearch().create_mapping(attribute_type)
+        logger.info("Building mappings for media types...")
+        for type_ in progressbar(list(MediaType.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(type_)
+        logger.info("Building mappings for localization types...")
+        for type_ in progressbar(list(LocalizationType.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(type_)
+        logger.info("Building mappings for state types...")
+        for type_ in progressbar(list(StateType.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(type_)
+        logger.info("Building mappings for leaf types...")
+        for type_ in progressbar(list(LeafType.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(type_)
         logger.info("Build mappings complete!")
         return
 
@@ -294,22 +303,22 @@ def buildSearchIndices(project_number, section, mode='index'):
     if section == 'media':
         # Create media documents
         logger.info("Building media documents...")
-        qs = EntityMediaBase.objects.filter(project=project_number)
+        qs = Media.objects.filter(project=project_number)
 
     if section == 'localizations':
         # Create localization documents
         logger.info("Building localization documents")
-        qs = EntityLocalizationBase.objects.filter(project=project_number)
+        qs = Localization.objects.filter(project=project_number)
 
     if section == 'states':
         # Create state documents
         logger.info("Building state documents...")
-        qs = EntityState.objects.filter(project=project_number)
+        qs = State.objects.filter(project=project_number)
 
     if section == 'treeleaves':
         # Create treeleaf documents
         logger.info("Building tree leaf documents...")
-        qs = TreeLeaf.objects.filter(project=project_number)
+        qs = Leaf.objects.filter(project=project_number)
 
     batch_size = 500
     count = 0
