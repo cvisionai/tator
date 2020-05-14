@@ -23,13 +23,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
-    media_bools = [{'bool': {
-        'should': [
-            {'match': {'_dtype': 'image'}},
-            {'match': {'_dtype': 'video'}},
-        ],
-        'minimum_should_match': 1,
-    }}]
+    media_bools = []
     if annotation_type == 'localization':
         annotation_bools = [{'bool': {
             'should': [

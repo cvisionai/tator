@@ -123,6 +123,17 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
         if has_parent:
             parent_query['parent_type'] = 'media'
             attr_query['annotation']['filter'].append({'has_parent': parent_query})
+            parent_type_check = [{'bool': {
+                'should': [
+                    {'match': {'_dtype': 'image'}},
+                    {'match': {'_dtype': 'video'}},
+                ],
+                'minimum_should_match': 1,
+            }}]
+            if 'filter' in parent_query['query']['bool']:
+                parent_query['query']['bool']['filter'].append(parent_type_check)
+            else:
+                parent_query['query']['bool']['filter'] = [parent_type_check]
 
         for key in ['must_not', 'filter']:
             if len(attr_query['annotation'][key]) > 0:
