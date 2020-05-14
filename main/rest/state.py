@@ -43,6 +43,8 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
     """
     schema=StateListSchema()
     permission_classes = [ProjectEditPermission]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    entity_type = StateType # Needed by attribute filter mixin
 
     def _get(self, params):
         self.validate_attribute_filter(params)
@@ -64,7 +66,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 response_data = database_qs(qs)
         else:
             if self.operation == 'count':
-                return {'count': all_states.count()}
+                response_data = {'count': all_states.count()}
             else:
                 qs = State.objects.filter(project=params['project'])
                 if 'media_id' in params:
@@ -266,7 +268,7 @@ class StateDetailAPI(BaseDetailView):
             localizations = Localization.objects.filter(pk__in=params['localization_ids'])
             obj.localizations.set(localizations)
 
-        new_attrs = validate_attributes(request, obj)
+        new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         obj.save()
         return {'message': 'State {params["id"]} successfully updated!'}
