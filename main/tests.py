@@ -167,8 +167,8 @@ def create_test_dot(user, entity_type, project, media, frame):
         y=y,
     )
 
-def create_test_treeleaf(name, entity_type, project):
-    return TreeLeaf.objects.create(
+def create_test_leaf(name, entity_type, project):
+    return Leaf.objects.create(
         name=name,
         meta=entity_type,
         project=project,
@@ -514,7 +514,6 @@ class AttributeTestMixin:
             f'?type={self.entity_type.pk}',
             {'attributes': {'bool_test': test_val}},
             format='json')
-        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for entity in self.entities:
             response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
@@ -1316,7 +1315,7 @@ class StateTestCase(
     def tearDown(self):
         self.project.delete()
 
-class TreeLeafTestCase(
+class LeafTestCase(
         APITestCase,
         AttributeTestMixin,
         DefaultCreateTestMixin,
@@ -1330,19 +1329,19 @@ class TreeLeafTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeTreeLeaf.objects.create(
+        self.entity_type = LeafType.objects.create(
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
-            create_test_treeleaf(f'leaf{idx}', self.entity_type, self.project)
+            create_test_leaf(f'leaf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.list_uri = 'TreeLeaves'
-        self.detail_uri = 'TreeLeaf'
+        self.list_uri = 'Leaves'
+        self.detail_uri = 'Leaf'
         self.create_entity = functools.partial(
-            create_test_treeleaf, 'leafasdf', self.entity_type, self.project)
-        self.create_json = {
+            create_test_leaf, 'leafasdf', self.entity_type, self.project)
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'path': 'asdf',
@@ -1353,9 +1352,9 @@ class TreeLeafTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        }
+        }]
         self.edit_permission = Permission.FULL_CONTROL 
-        self.patch_json = {'name': 'leaf1', 'resourcetype': 'TreeLeaf'}
+        self.patch_json = {'name': 'leaf1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
