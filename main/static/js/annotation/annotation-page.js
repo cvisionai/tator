@@ -164,6 +164,7 @@ class AnnotationPage extends TatorPage {
         const haveEntityType = searchParams.has("selected_entity_type");
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
+        const haveVersion = searchParams.has("version");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -181,6 +182,17 @@ class AnnotationPage extends TatorPage {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
           this._browser._openForTypeId(typeId);
+        }
+        if (haveVersion)
+        {
+          let edited = true;
+          let version_id = searchParams.get("version");
+          if(searchParams.has("edited") && searchParams.get("edited") == 0)
+          {
+            edited = false;
+          }
+          let evt = {"detail": {"version": this._versionLookup[version_id], "edited": edited}};
+          this._versionDialog._handleSelect(evt);
         }
       }
     }
