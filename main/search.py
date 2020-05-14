@@ -202,7 +202,7 @@ class TatorSearch:
             try:
                 # If the state has an extracted image, its a
                 # duplicated entry in ES.
-                extracted_image = entity.association.extracted
+                extracted_image = entity.extracted
                 if extracted_image:
                     duplicate = deepcopy(aux)
                     duplicate['_media_relation'] = {
