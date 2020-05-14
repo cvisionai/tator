@@ -1294,7 +1294,6 @@ class StateTestCase(
         self.detail_uri = 'State'
         self.create_entity = functools.partial(State.objects.create,
             meta=self.entity_type,
-            dtype='state',
             project=self.project,
             version=self.version
         )
