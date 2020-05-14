@@ -1,4 +1,7 @@
+from collections import defaultdict
 import logging
+
+from ..search import TatorSearch
 
 from ._attributes import kv_separator
 
@@ -94,7 +97,7 @@ def get_leaf_queryset(query_params):
 
     for key in ['must_not', 'filter']:
         if len(attr_query[key]) > 0:
-            query['query']['bool'][key] = attr_query['annotation'][key]
+            query['query']['bool'][key] = attr_query[key]
 
     search = query_params.get('search', None)
     if search != None:
@@ -102,3 +105,4 @@ def get_leaf_queryset(query_params):
         query['query']['bool']['filter'].append(search_query)
 
     leaf_ids, leaf_count = TatorSearch().search(project, query)
+    return leaf_ids, leaf_count, query

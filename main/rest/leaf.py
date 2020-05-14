@@ -4,6 +4,7 @@ from collections import defaultdict
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
+from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
@@ -79,15 +80,16 @@ class LeafSuggestionAPI(BaseDetailView):
         suggestions.sort(key=functor)
         return suggestions
 
-class LeafListAPI(ListAPIView, AttributeFilterMixin):
+class LeafListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with a list of leaves.
 
         Tree leaves are used to define label hierarchies that can be used for autocompletion
         of string attribute types.
     """
-    serializer_class = TreeLeafSerializer
-    schema=TreeLeafListSchema()
+    schema = LeafListSchema()
     permission_classes = [ProjectFullControlPermission]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    entity_type = LeafType # Needed by attribute filter mixin
 
     def _get(self, params):
         self.validate_attribute_filter(params)
@@ -101,7 +103,7 @@ class LeafListAPI(ListAPIView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(leaf_ids)}
             elif len(leaf_ids) > 0:
-                qs = Leaf.objects.filter(pk__in=Leaf).order_by('id')
+                qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
                 response_data = database_qs(qs)
         else:
             qs = Leaf.objects.filter(project=params['project'])
@@ -120,14 +122,14 @@ class LeafListAPI(ListAPIView, AttributeFilterMixin):
         return response_data
 
     def _post(self, params):
-        # Check that we are getting a localization list.
+        # Check that we are getting a leaf list.
         if 'body' in params:
-            loc_specs = params['body']
+            leaf_specs = params['body']
         else:
             raise Exception('Leaf creation requires list of leaves!')
 
         # Find unique foreign keys.
-        meta_ids = set([loc['type'] for loc in loc_specs])
+        meta_ids = set([leaf['type'] for leaf in leaf_specs])
 
         # Make foreign key querysets.
         meta_qs = LeafType.objects.filter(pk__in=meta_ids)
@@ -138,21 +140,21 @@ class LeafListAPI(ListAPIView, AttributeFilterMixin):
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        attr_specs = [check_required_fields(required_fields[loc['type']][0],
-                                            required_fields[loc['type']][2],
-                                            loc)
-                      for loc in loc_specs]
+        attr_specs = [check_required_fields(required_fields[leaf['type']][0],
+                                            required_fields[leaf['type']][2],
+                                            leaf)
+                      for leaf in leaf_specs]
        
         # Create the leaf objects.
         leaves = []
         create_buffer = []
         for leaf_spec, attrs in zip(leaf_specs, attr_specs):
             leaf = Leaf(project=project,
-                        meta=metas[loc_spec['type']],
+                        meta=metas[leaf_spec['type']],
                         attributes=attrs,
                         created_by=self.request.user,
                         modified_by=self.request.user)
-            create_buffer.append(loc)
+            create_buffer.append(leaf)
             if len(create_buffer) > 1000:
                 leaves += Leaf.objects.bulk_create(create_buffer)
                 create_buffer = []
@@ -174,22 +176,22 @@ class LeafListAPI(ListAPIView, AttributeFilterMixin):
 
     def _delete(self, params):
         self.validate_attribute_filter(params)
-        leaf_ids, leaf_count, _ = get_leaf_queryset(params)
+        leaf_ids, leaf_count, query = get_leaf_queryset(params)
         if len(leaf_ids) > 0:
             qs = Leaf.objects.filter(pk__in=leaf_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {annotation_count} localizations!'}
+        return {'message': f'Successfully deleted {len(leaf_ids)} leaves!'}
 
     def _patch(self, params):
         self.validate_attribute_filter(params)
-        leaf_ids, leaf_count, _ = get_leaf_queryset(params)
+        leaf_ids, leaf_count, query = get_leaf_queryset(params)
         if len(leaf_ids) > 0:
             qs = Leaf.objects.filter(pk__in=leaf_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], query, new_attrs)
-        return {'message': f'Successfully updated {annotation_count} localizations!'}
+        return {'message': f'Successfully updated {len(leaf_ids)} leaves!'}
 
     def get_queryset(self):
         params = parse(self.request)
@@ -207,7 +209,7 @@ class LeafDetailAPI(BaseDetailView):
         of string attribute types.
     """
     schema = LeafDetailSchema()
-    permission_classes = [ProjectEditPermission]
+    permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
 
     def _get(self, params):
