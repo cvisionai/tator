@@ -29,6 +29,7 @@ annotation_filter_parameter_schema = [
         'name': 'version',
         'in': 'query',
         'required': False,
+        'explode': False,
         'description': 'List of integers representing versions to fetch',
         'schema': {
             'type': 'array',
