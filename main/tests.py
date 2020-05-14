@@ -1265,11 +1265,12 @@ class StateTestCase(
         self.membership = create_test_membership(self.user, self.project)
         media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
         self.entity_type = StateType.objects.create(
-            name="lines",
+            name="states",
             dtype='state',
             project=self.project,
             attribute_types=create_test_attribute_types(),
@@ -1288,12 +1289,13 @@ class StateTestCase(
             )
             for media in random.choices(self.media_entities):
                 state.media.add(media)
+            self.entities.append(state)
         self.list_uri = 'States'
         self.detail_uri = 'State'
-        self.create_entity = functools.partial(EntityState.objects.create,
+        self.create_entity = functools.partial(State.objects.create,
             meta=self.entity_type,
+            dtype='state',
             project=self.project,
-            association=media_association,
             version=self.version
         )
         self.create_json = [{
