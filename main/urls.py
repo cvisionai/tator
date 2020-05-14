@@ -235,17 +235,17 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
-        'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
-        TreeLeafSuggestionAPI.as_view(),
+        'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
+        LeafSuggestionAPI.as_view(),
     ),
     path(
-        'rest/TreeLeaves/<int:project>',
-        TreeLeafListAPI.as_view(),
-        name='TreeLeaves',
+        'rest/Leaves/<int:project>',
+        LeafListAPI.as_view(),
+        name='Leaves',
     ),
     path(
-        'rest/TreeLeaf/<int:id>',
-        TreeLeafDetailAPI.as_view(),
+        'rest/Leaf/<int:id>',
+        LeafDetailAPI.as_view(),
     ),
     path(
         'rest/User/<int:id>',
@@ -310,5 +310,18 @@ urlpatterns += [
     path(
         'rest/TreeLeafType/<int:id>',
         LeafTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
+        LeafSuggestionAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeaves/<int:project>',
+        LeafListAPI.as_view(),
+        name='TreeLeaves',
+    ),
+    path(
+        'rest/TreeLeaf/<int:id>',
+        LeafDetailAPI.as_view(),
     ),
 ]
