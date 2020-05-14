@@ -5,8 +5,10 @@ from ..models import State
 from ..models import StateType
 from ..models import Media
 from ..models import Localization
+from ..models import Project
 from ..models import Version
 from ..models import InterpolationMethods
+from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
@@ -123,6 +125,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         meta_ids = set([state['type'] for state in state_specs])
         version_ids = set([state.get('version', None) for state in state_specs])
 
+        # Make foreign key querysets.
+        meta_qs = StateType.objects.filter(pk__in=meta_ids)
+        version_qs = Version.objects.filter(pk__in=version_ids)
+
         # Construct foreign key dictionaries.
         project = Project.objects.get(pk=params['project'])
         metas = {obj.id:obj for obj in meta_qs.iterator()}
@@ -131,9 +137,9 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        attr_specs = [check_required_fields(required_fields[loc['type']][0],
-                                            required_fields[loc['type']][2],
-                                            loc)
+        attr_specs = [check_required_fields(required_fields[state['type']][0],
+                                            required_fields[state['type']][2],
+                                            state)
                       for state in state_specs]
        
         # Create the state objects.
