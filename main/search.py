@@ -187,14 +187,14 @@ class TatorSearch:
             if media.exists():
                 aux['_media_relation'] = {
                     'name': 'annotation',
-                    'parent': media[0].pk,
+                    'parent': f"{media[0].meta.dtype}_{media[0].pk}",
                 }
                 for media_idx in range(1, media.count()):
                     duplicate = deepcopy(aux)
                     duplicate['_media_relation'] = {
                         'name': 'annotation',
-                        'parent': media[media_idx].pk,
-                        }
+                        'parent': f"{media[media_idx].meta.dtype}_{media[media_idx].pk}",
+                    }
                     duplicates.append(duplicate)
             try:
                 # If the state has an extracted image, its a
@@ -204,8 +204,8 @@ class TatorSearch:
                     duplicate = deepcopy(aux)
                     duplicate['_media_relation'] = {
                         'name': 'annotation',
-                        'parent': extracted_image.pk,
-                        }
+                        'parent': f"{extracted_image.meta.dtype}_{extracted_image.pk}",
+                    }
                     duplicates.append(duplicate)
             except:
                 pass
