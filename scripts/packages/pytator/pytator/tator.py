@@ -38,7 +38,6 @@ class Tator:
         self._url = url
         self._token = token
         self.Algorithm = apiImpl.Algorithm((url,token,project))
-        self.AttributeType = apiImpl.AttributeType((url,token,project))
         self.Localization = apiImpl.Localization((url,token,project))
         self.LocalizationType = apiImpl.LocalizationType((url,token,project))
         self.Media = apiImpl.Media((url,token,project))
