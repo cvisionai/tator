@@ -62,7 +62,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         else:
             qs = Localization.objects.filter(project=params['project'])
             if 'media_id' in params:
-                qs = qs.filter(media=params['media_id'])
+                qs = qs.filter(media__in=params['media_id'])
             if 'type' in params:
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
@@ -292,11 +292,11 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.thumbnail_image.save()
 
         obj.save()
-        return {'message': 'Localization {params["id"]} successfully updated!'}
+        return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         Localization.objects.get(pk=params['id']).delete()
-        return {'message': 'Localization {params["id"]} successfully deleted!'}
+        return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Localization.objects.all()
