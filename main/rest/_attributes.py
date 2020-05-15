@@ -1,22 +1,8 @@
-import traceback
 import logging
 
-from rest_framework.response import Response
-from rest_framework import status
-from django.db.models.expressions import RawSQL
-from django.db.models.expressions import ExpressionWrapper
-from django.db.models import Count
 from django.db.models.expressions import Func
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import IntegerField
-from django.contrib.gis.db.models import FloatField
-from django.contrib.gis.db.models import CharField
-from django.contrib.gis.db.models import DateTimeField
-from django.contrib.gis.db.models import PointField
 from django.contrib.gis.measure import D as GisDistance
 from django.contrib.gis.geos import Point
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from dateutil.parser import parse as dateutil_parse
 
@@ -163,75 +149,6 @@ def extract_attribute(kv_pair, meta, filter_op):
 
     return filter_value, attr_type, typeOk
 
-def annotate_attribute(qs, attr_type):
-    """Does type conversion of attributes in a queryset, adding a field
-       'attr_value' that can be used for filtering.
-    """
-    if isinstance(attr_type, (AttributeTypeString, AttributeTypeEnum)):
-        raise Exception("Cannot call annotate on strings/enums!")
-    attr_name = attr_type.name
-    annotation_name = attr_type.name + 'annotation'
-
-    # If the annotation has been done already, don't do it again.
-    if qs.count() > 0:
-        if hasattr(qs[0], annotation_name):
-            return (qs, annotation_name)
-
-    # Create a dict with the new field.
-    if isinstance(attr_type, AttributeTypeBool):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::bool", []
-            ), output_field=BooleanField())
-        }
-    elif isinstance(attr_type, AttributeTypeInt):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::int", []
-            ), output_field=IntegerField())
-        }
-    elif isinstance(attr_type, AttributeTypeFloat):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::float", []
-            ), output_field=FloatField())
-        }
-    elif isinstance(attr_type, AttributeTypeDatetime):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "to_timestamp((main_entitybase.attributes->>'" +
-                attr_name + "'), 'YYYY-MM-DD HH24:MI:SS.US')", []
-            ), output_field=DateTimeField())
-        }
-    elif isinstance(attr_type, AttributeTypeGeoposition):
-        query_str = ("ST_PointFromText('POINT(' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",0}') || " +
-            "' ' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
-            "')')"
-        )
-        new_field = {
-            annotation_name: ExpressionWrapper(
-                RawSQL(query_str, []),
-                output_field=PointField()
-            )
-        }
-    qs = qs.annotate(**new_field)
-    return (qs, annotation_name)
-
-def ids_by_attribute(qs, attr_name):
-    field = 'attributes__' + attr_name
-    out = qs.values(field).order_by(field).annotate(ids=ArrayAgg('id', ordering='name'))
-    return {item[field]:item['ids'] for item in out}
-
-def count_by_attribute(qs, attr_name):
-    field = 'attributes__' + attr_name
-    out = qs.values(field).order_by(field).annotate(attr_count=Count(field))
-    return {item[field]:item['attr_count'] for item in out}
-
 def validate_attributes(params, obj):
     """Validates attributes by looking up attribute type and attempting
        a type conversion.
@@ -347,24 +264,4 @@ class AttributeFilterMixin:
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
         self.operation = query_params.get('operation', None)
-
-    def filter_by_attribute(self, qs):
-        """Filters objects of the specified type by attribute.
-        """
-        # Assuming validate has been called, if no attribute parameters
-        # were passed then return the input queryset.
-        if not hasattr(self, 'filter_type_and_vals'):
-            return qs
-        if self.filter_type_and_vals == []:
-            return qs
-
-        # Apply the filters.
-        for attr_type, filter_value, filter_op in self.filter_type_and_vals:
-            suffix = AttributeFilterMixin.operator_suffixes[filter_op]
-            if isinstance(attr_type, str):
-                annotation_name = 'attributes__' + attr_type
-            else:
-                qs, annotation_name = annotate_attribute(qs, attr_type)
-            qs = qs.filter(**{annotation_name + suffix: filter_value})
-        return qs
 
