@@ -115,11 +115,15 @@ def extract_attribute(kv_pair, meta, filter_op):
         attr_type = {'dtype': 'bool', 'name': attr_name}
         typeOk = True
         meta = 'dummy'
+    elif attr_name == 'tator_user_sections':
+        attr_type = {'dtype': 'string', 'name': attr_name}
+        typeOk = True
+        meta = 'dummy'
     else:
 
         # If meta is none, we treat this as a string/enum type.
         found = False
-        if meta is not None and attr_name != 'tator_user_sections':
+        if meta is not None:
             for attr_type in meta.attribute_types:
                 if attr_type['name'] == attr_name:
                     found = True
