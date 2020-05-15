@@ -2331,7 +2331,19 @@ class AnnotationCanvas extends TatorElement
               var keyvalue=localization.attributes[keyname];
               if (keyvalue in meta.colorMap.map)
               {
-                drawColor = color.hexToRgb(meta.colorMap.map[keyvalue])
+                let value = meta.colorMap.map[keyvalue];
+                if (typeof(value) == "string")
+                {
+                  drawColor = color.hexToRgb(value)
+                }
+                else
+                {
+                  drawColor = value.slice(0,3);
+                  if (value.length == 4)
+                  {
+                    alpha = value[3];
+                  }
+                }
               }
             }
           }
