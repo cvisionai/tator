@@ -1,4 +1,5 @@
 import traceback
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,6 +7,8 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..schema import parse
+
+logger = logging.getLogger(__name__)
 
 class GetMixin:
     def get(self, request, format=None, **kwargs):
@@ -15,9 +18,11 @@ class GetMixin:
             response_data = self._get(params)
             response = Response(response_data, status=status.HTTP_200_OK)
         except ObjectDoesNotExist as dne:
+            logger.error(f"Not found in GET request: {str(dne)}")
             response=Response({'message' : str(dne)},
                               status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.error(f"Exception in GET request: {traceback.format_exc()}")
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
         return response
