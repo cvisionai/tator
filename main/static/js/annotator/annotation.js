@@ -1988,7 +1988,8 @@ class AnnotationCanvas extends TatorElement
       that._draw.beginDraw();
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
-                          colorReq);
+                          colorReq,
+                          defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     if (this._mouseMode == MouseMode.PAN)
