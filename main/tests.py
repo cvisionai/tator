@@ -1473,34 +1473,6 @@ class MediaTypeTestCase(
     def tearDown(self):
         self.project.delete()
 
-class EntityTypeSchemaTestCase(
-        APITestCase,
-        PermissionDetailMembershipTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.detail_uri = 'EntityTypeSchema'
-        self.entities = [
-            MediaType.objects.create(
-                name="videos",
-                dtype='video',
-                keep_original=True,
-                project=self.project,
-                attribute_types=create_test_attribute_types(),
-            ),
-            MediaType.objects.create(
-                name="images",
-                dtype='image',
-                project=self.project,
-                attribute_types=create_test_attribute_types(),
-            ),
-        ]
-
-    def tearDown(self):
-        self.project.delete()
-
 class LocalizationTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,

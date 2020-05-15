@@ -79,6 +79,19 @@ urlpatterns += [
         JobGroupDetailAPI.as_view(),
     ),
     path(
+        'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
+        LeafSuggestionAPI.as_view(),
+    ),
+    path(
+        'rest/Leaves/<int:project>',
+        LeafListAPI.as_view(),
+        name='Leaves',
+    ),
+    path(
+        'rest/Leaf/<int:id>',
+        LeafDetailAPI.as_view(),
+    ),
+    path(
         'rest/LeafTypes/<int:project>',
         LeafTypeListAPI.as_view(),
     ),
@@ -210,19 +223,6 @@ urlpatterns += [
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
-    ),
-    path(
-        'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
-        LeafSuggestionAPI.as_view(),
-    ),
-    path(
-        'rest/Leaves/<int:project>',
-        LeafListAPI.as_view(),
-        name='Leaves',
-    ),
-    path(
-        'rest/Leaf/<int:id>',
-        LeafDetailAPI.as_view(),
     ),
     path(
         'rest/User/<int:id>',
