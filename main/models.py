@@ -273,6 +273,7 @@ class EntityTypeLocalizationBase(EntityTypeBase):
     colorMap allows for a mapping of an attribute value to a specific color
     {"key": "attribute_name",
      "map": {"attribute_value": <color>, ...}
+     "default": <color>
 
     <color> can either be a hex string for RRGGBB or a list for
     RRGGBBAA components, e.g. (255,0,0,255) for solid red.

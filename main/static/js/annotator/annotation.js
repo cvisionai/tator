@@ -2325,14 +2325,8 @@ class AnnotationCanvas extends TatorElement
           }
           else if (meta.colorMap != null)
           {
-            var keyname = meta.colorMap.key;
-            if (keyname && keyname in localization.attributes)
-            {
-              var keyvalue=localization.attributes[keyname];
-              if (keyvalue in meta.colorMap.map)
-              {
-                let value = meta.colorMap.map[keyvalue];
-                if (typeof(value) == "string")
+            let decodeColor = (value) => {
+              if (typeof(value) == "string")
                 {
                   drawColor = color.hexToRgb(value)
                 }
@@ -2344,6 +2338,18 @@ class AnnotationCanvas extends TatorElement
                     alpha = value[3];
                   }
                 }
+            };
+            var keyname = meta.colorMap.key;
+            if (keyname && keyname in localization.attributes)
+            {
+              var keyvalue=localization.attributes[keyname];
+              if (keyvalue in meta.colorMap.map)
+              {
+                decodeColor(meta.colorMap.map[keyvalue]);
+              }
+              else if (meta.colorMap.default)
+              {
+                decodeColor(meta.colorMap.default);
               }
             }
           }
