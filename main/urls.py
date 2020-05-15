@@ -64,11 +64,6 @@ urlpatterns += [
         'rest/Analyses/<int:project>',
         AnalysisListAPI.as_view(),
     ),
-    path(
-        'rest/EntityTypeSchema/<int:id>',
-        EntityTypeSchemaAPI.as_view(),
-        name='EntityTypeSchema'
-    ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
