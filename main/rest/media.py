@@ -4,6 +4,7 @@ from django.db.models import Case, When
 
 from ..models import Media
 from ..models import MediaType
+from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
@@ -20,10 +21,6 @@ from ._permissions import ProjectEditPermission
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
-fields = ['id', 'project', 'name', 'meta', 'attributes', 'created_datetime', 'created_by',
-          'modified_datetime', 'modified_by', 'md5', 'file', 'last_edit_start',
-          'last_edit_end', 'thumbnail', 'thumbnail_gif', 'num_frames', 'fps', 'codec',
-          'width', 'height', 'media_files', 'segment_info']
 
 class MediaListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of media.
@@ -63,8 +60,8 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             response_data = {'count': len(media_ids)}
         elif len(media_ids) > 0:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
-            qs = Media.objects.filter(pk__in=media_ids).order_by(preserved).values(*fields)
-            response_data = list(qs)
+            qs = Media.objects.filter(pk__in=media_ids).order_by(preserved)
+            response_data = database_qs(qs)
         return response_data
 
     def _delete(self, params):
@@ -140,7 +137,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        return Media.objects.values(*fields).get(pk=params['id'])
+        return Media.objects.values().get(pk=params['id'])
 
     def _patch(self, params):
         """ Update individual media.
