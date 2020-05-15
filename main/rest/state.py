@@ -68,7 +68,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         else:
             qs = State.objects.filter(project=params['project'])
             if 'media_id' in params:
-                qs = qs.filter(media=params['media_id'])
+                qs = qs.filter(media__in=params['media_id'])
             if 'type' in params:
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
@@ -85,17 +85,17 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             type_object=StateType.objects.get(pk=params['type'])
             if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
                 for idx,el in enumerate(response_data):
-                    mediaEl=Media.objects.get(pk=el['association']['media'])
+                    mediaEl=Media.objects.get(pk=el['media'])
                     endFrame=0
                     if idx + 1 < len(response_data):
                         next_element=response_data[idx+1]
-                        endFrame=next_element['association']['frame']
+                        endFrame=next_element['frame']
                     else:
                         endFrame=mediaEl.num_frames
                     el['media']=mediaEl.name
 
                     el['endFrame'] = endFrame
-                    el['startSeconds'] = int(el['association']['frame']) * mediaEl.fps
+                    el['startSeconds'] = int(el['frame']) * mediaEl.fps
                     el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
         return response_data
 
@@ -211,7 +211,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             qs = State.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {len(annotation_ids)} localizations!'}
+        return {'message': f'Successfully deleted {len(annotation_ids)} states!'}
 
     def _patch(self, params):
         self.validate_attribute_filter(params)
@@ -225,7 +225,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], query, new_attrs)
-        return {'message': f'Successfully updated {len(annotation_ids)} localizations!'}
+        return {'message': f'Successfully updated {len(annotation_ids)} states!'}
 
     def get_queryset(self):
         params = parse(self.request)
@@ -261,7 +261,7 @@ class StateDetailAPI(BaseDetailView):
             obj.modified = params['modified']
 
         if 'frame' in params:
-            obj.association.frame = params['frame']
+            obj.frame = params['frame']
 
         if 'media_ids' in params:
             media_elements = Media.objects.filter(pk__in=params['media_ids'])
