@@ -113,7 +113,7 @@ class ImageCanvas extends AnnotationCanvas
     this._imageScale = this.clientWidth / dims[0];
     this._dims=[Math.round(dims[0]*this._imageScale),
                 Math.round(dims[1]*this._imageScale)];
-    this._draw.resizeViewport(dims[0], dims[1]);
+    this._draw.resizeViewport(this._dims[0], this._dims[1]);
     this._imageElement.setAttribute("src", URL);
     this.setupResizeHandler(dims);
     return this._imageElement.decode();
