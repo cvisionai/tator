@@ -1683,7 +1683,7 @@ class AnnotationCanvas extends TatorElement
           }
           else if (meta.type.dtype == 'dot')
           {
-            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+            const dotWidth = Math.round(defaultDotWidth*that._draw.displayToViewportScale()[0]);
             var dotline = that.localizationToDot(localization);
             that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth);
           }
@@ -2059,11 +2059,14 @@ class AnnotationCanvas extends TatorElement
         {
           drawBox(dragEvent.start,
                   dragEvent.end);
+          console.info(window.performance.now());
           dragEvent.url = this._draw.viewport.toDataURL();
+          console.info(window.performance.now());
           this.makeModalCreationPrompt(this.draft,
                                        dragEvent,
                                        null,
                                        null);
+          console.info(window.performance.now());
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
