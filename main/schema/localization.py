@@ -87,13 +87,11 @@ class LocalizationListSchema(AutoSchema):
                         'additionalProperties': True,
                         'properties': {
                             'media_id': {
-                                'description': 'Unique integer identifying a media. Required if '
-                                               '`many` is not given.',
+                                'description': 'Unique integer identifying a media.',
                                 'type': 'integer',
                             },
                             'type': {
-                                'description': 'Unique integer identifying a localization type.'
-                                               'Required if `many` is not given.',
+                                'description': 'Unique integer identifying a localization type.',
                                 'type': 'integer',
                             },
                             'version': {
@@ -112,7 +110,7 @@ class LocalizationListSchema(AutoSchema):
                 'examples': {
                     'box': {
                         'summary': 'Single box localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 1,
                             'x': 0.1,
@@ -122,38 +120,38 @@ class LocalizationListSchema(AutoSchema):
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'boxes': {
                         'summary': 'Many box localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 1,
-                            'many': [
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'width': 0.3,
-                                    'height': 0.4,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'width': 0.3,
-                                    'height': 0.4,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'width': 0.3,
+                                'height': 0.4,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'width': 0.3,
+                                'height': 0.4,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                     'line': {
                         'summary': 'Single line localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 2,
                             'x': 0.1,
@@ -163,38 +161,36 @@ class LocalizationListSchema(AutoSchema):
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'lines': {
                         'summary': 'Many line localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 2,
-                            'many': [
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'u': 0.3,
-                                    'v': 0.4,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'u': 0.3,
-                                    'v': 0.4,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 2,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'u': 0.3,
+                                'v': 0.4,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'x': 0.1,
+                                'y': 0.2,
+                                'u': 0.3,
+                                'v': 0.4,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                     'dot': {
                         'summary': 'Single dot localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 1,
                             'x': 0.1,
@@ -202,30 +198,28 @@ class LocalizationListSchema(AutoSchema):
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'dots': {
                         'summary': 'Many dot localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 1,
-                            'many': [
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'x': 0.1,
+                                'y': 0.2,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                 }
             }}}
