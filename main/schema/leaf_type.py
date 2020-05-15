@@ -17,7 +17,7 @@ leaf_properties = {
 class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['TreeLeafType']
+        operation['tags'] = ['LeafType']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -60,7 +60,7 @@ class LeafTypeListSchema(AutoSchema):
 class LeafTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['TreeLeafType']
+        operation['tags'] = ['LeafType']
         return operation
 
     def _get_path_parameters(self, path, method):

@@ -317,6 +317,7 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
+            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -535,6 +536,7 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
             f'&attribute=string_test::DELETE ME!!!')
+        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
@@ -1221,7 +1223,6 @@ class LocalizationDotTestCase(
             create_test_dot(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
@@ -1487,13 +1488,13 @@ class EntityTypeSchemaTestCase(
                 dtype='video',
                 keep_original=True,
                 project=self.project,
-                attribute_types=create_test_entity_types(),
+                attribute_types=create_test_attribute_types(),
             ),
             MediaType.objects.create(
                 name="images",
                 dtype='image',
                 project=self.project,
-                attribute_types=create_test_entity_types(),
+                attribute_types=create_test_attribute_types(),
             ),
         ]
 
@@ -1714,13 +1715,11 @@ class AnalysisCountTestCase(
         self.analysis = Analysis.objects.create(
             project=self.project,
             name="count_test",
-            data_type=self.entity_type,
             data_query='enum_test:enum_val1',
         )
         self.list_uri = 'Analyses'
         self.create_json = {
             'name': 'count_create_test',
-            'data_type': self.entity_type.pk,
             'data_query': 'enum_test:enum_val2',
         }
         self.edit_permission = Permission.FULL_CONTROL
