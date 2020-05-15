@@ -8,7 +8,6 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import mmap
 import sys
-import hashlib
 
 from django.conf import settings
 

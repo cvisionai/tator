@@ -1,7 +1,9 @@
 import tempfile
 import traceback
+import hashlib
 
 from ..models import TemporaryFile
+from ..models import Media
 from ..serializers import TemporaryFileSerializer
 from ..schema import GetClipSchema
 
@@ -25,7 +27,6 @@ class GetClipAPI(BaseDetailView):
         """ Facility to get a clip from the server. Returns a temporary file object that expires in 24 hours.
         """
         # upon success we can return an image
-        params = parse(request)
         video = Media.objects.get(pk=params['id'])
         project = video.project
         frameRangesStr = params.get('frameRanges', None)
@@ -47,7 +48,7 @@ class GetClipAPI(BaseDetailView):
                 media_util = MediaUtil(video, temp_dir, quality)
                 fp = media_util.getClip(frameRanges)
 
-                temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, request.user, lookup=lookup, hours=24)
+                temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, self.request.user, lookup=lookup, hours=24)
 
         responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
         return responseData
