@@ -912,18 +912,22 @@ class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.project = create_test_project(self.user)
-        self.video_type = EntityTypeMediaVideo.objects.create(
+        self.video_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
-        self.box_type = EntityTypeLocalizationBox.objects.create(
+        self.box_type = LocalizationType.objects.create(
             name="boxes",
+            dtype='box',
             project=self.project,
         )
-        self.state_type = EntityTypeState.objects.create(
+        self.state_type = StateType.objects.create(
             name="state_type",
+            dtype='state',
             project=self.project,
+            association='Media',
         )
         self.videos = [
             create_test_video(self.user, f'asdf{idx}', self.video_type, self.project)
@@ -933,21 +937,16 @@ class ProjectDeleteTestCase(APITestCase):
             create_test_box(self.user, self.box_type, self.project, random.choice(self.videos), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.associations = [
-            MediaAssociation.objects.create()
+        self.states = [
+            State.objects.create(
+                meta=self.state_type,
+                project=self.project,
+            )
             for _ in range(random.randint(6, 10))
         ]
-        self.states = []
-        for media_association in self.associations:
+        for state in self.states:
             for media in random.choices(self.videos):
-                media_association.media.add(media)
-            self.states.append(
-                EntityState.objects.create(
-                    meta=self.state_type,
-                    project=self.project,
-                    association=media_association,
-                )
-            )
+                state.media.add(media)
 
     def test_delete(self):
         self.client.delete(f'/rest/Project/{self.project.pk}')
@@ -1483,22 +1482,20 @@ class EntityTypeSchemaTestCase(
         self.membership = create_test_membership(self.user, self.project)
         self.detail_uri = 'EntityTypeSchema'
         self.entities = [
-            EntityTypeMediaVideo.objects.create(
+            MediaType.objects.create(
                 name="videos",
+                dtype='video',
                 keep_original=True,
                 project=self.project,
+                attribute_types=create_test_entity_types(),
             ),
-            EntityTypeMediaImage.objects.create(
+            MediaType.objects.create(
                 name="images",
+                dtype='image',
                 project=self.project,
+                attribute_types=create_test_entity_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
-
-    def tearDown(self):
-        self.project.delete()
-
 
     def tearDown(self):
         self.project.delete()
@@ -1674,8 +1671,9 @@ class TranscodeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.list_uri = 'Transcode'
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
@@ -1702,26 +1700,22 @@ class AnalysisCountTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
-        self.analysis = AnalysisCount.objects.create(
+        self.analysis = Analysis.objects.create(
             project=self.project,
             name="count_test",
             data_type=self.entity_type,
             data_query='enum_test:enum_val1',
-        )
-        self.attribute_type = AttributeTypeEnum.objects.create(
-            name='enum_test',
-            choices=['enum_val1', 'enum_val2', 'enum_val3'],
-            applies_to=self.entity_type,
-            project=self.project,
         )
         self.list_uri = 'Analyses'
         self.create_json = {
@@ -1745,8 +1739,9 @@ class VersionTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
             keep_original=False,
         )
