@@ -214,7 +214,7 @@ class TatorSearch:
             aux['_modified'] = entity.modified
             aux['_modified_datetime'] = entity.modified_datetime.isoformat()
             aux['_modified_by'] = str(entity.modified_by)
-        elif entity.meta.dtype in ['treeleaf']:
+        elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
             aux['_treeleaf_depth'] = entity.depth()

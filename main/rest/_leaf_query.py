@@ -19,7 +19,7 @@ def get_leaf_queryset(query_params):
     # Set up initial query.
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
-    bools = [{'match': {'_dtype': 'treeleaf'}}]
+    bools = [{'match': {'_dtype': 'leaf'}}]
 
     if filterType != None:
         bools.append({'match': {'_meta': {'query': int(filterType)}}})

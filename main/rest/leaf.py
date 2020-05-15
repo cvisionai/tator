@@ -42,7 +42,7 @@ class LeafSuggestionAPI(BaseDetailView):
         query['size'] = 10
         query['sort']['_exact_treeleaf_name'] = 'asc'
         query['query']['bool']['filter'] = [
-            {'match': {'_dtype': {'query': 'treeleaf'}}},
+            {'match': {'_dtype': {'query': 'leaf'}}},
             {'range': {'_treeleaf_depth': {'gte': minLevel}}},
             {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
         ]
@@ -107,14 +107,8 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
                 response_data = database_qs(qs)
         else:
             qs = Leaf.objects.filter(project=params['project'])
-            if 'media_id' in params:
-                qs = qs.filter(media=params['media_id'])
             if 'type' in params:
                 qs = qs.filter(meta=params['type'])
-            if 'version' in params:
-                qs = qs.filter(version=params['version'])
-            if 'modified' in params:
-                qs = qs.exclude(modified=(not params['modified']))
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:

@@ -1013,7 +1013,7 @@ class LeafType(Model):
     polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='leaf_type_polymorphic')
     """ Temporary field for migration. """
-    dtype = CharField(max_length=16, choices=[('treeleaf', 'treeleaf')], default='treeleaf')
+    dtype = CharField(max_length=16, choices=[('leaf', 'leaf')], default='leaf')
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
