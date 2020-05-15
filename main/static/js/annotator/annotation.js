@@ -1,6 +1,7 @@
 
 var statusAnimator=null;
 var defaultDotWidth=10;
+var defaultDrawWidth=3;
 
 function clearStatus()
 {
@@ -1967,7 +1968,8 @@ class AnnotationCanvas extends TatorElement
 
       that._draw.beginDraw();
       that._draw.drawPolygon(boxCoords,
-                             colorReq);
+                             colorReq,
+                             defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     var drawLine=function(dragStart, dragEnd, colorReq)
