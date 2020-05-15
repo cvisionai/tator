@@ -10,6 +10,8 @@ import mmap
 import sys
 import hashlib
 
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 class MediaUtil:

@@ -78,16 +78,18 @@ class GetFrameAPI(BaseDetailView):
             media_util = MediaUtil(video, temp_dir, quality)
             if len(frames) > 1 and animate:
                 # Default to gif for animate, but mp4 is also supported
-                if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                if any(x is self.request.accepted_renderer.format for x in ['mp4','gif']):
                     pass
                 else:
-                    request.accepted_renderer = GifRenderer()
-                gif_fp = media_util.getAnimation(frames, roi_arg, fps=animate, render_format=request.accepted_renderer.format)
+                    self.request.accepted_renderer = GifRenderer()
+                gif_fp = media_util.getAnimation(frames, roi_arg, fps=animate,
+                                                 render_format=self.request.accepted_renderer.format)
                 with open(gif_fp, 'rb') as data_file:
                     response_data = data_file.read()
             else:
-                logger.info(f"Accepted format = {request.accepted_renderer.format}")
-                tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size, render_format=request.accepted_renderer.format)
+                logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
+                tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size,
+                                                   render_format=self.request.accepted_renderer.format)
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data

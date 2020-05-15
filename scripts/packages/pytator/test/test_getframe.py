@@ -8,8 +8,6 @@ def test_get_frame(url, token, project, video):
 
     frames = [50,100,150]
     code,frame_bgr = tator.GetFrame.get_bgr(video, frames)
-    if code != 200:
-        print(f"GetFrame response: {frame_bgr}")
 
     assert(code == 200)
     assert(len(frame_bgr) == 3)
