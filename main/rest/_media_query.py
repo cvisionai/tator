@@ -30,7 +30,8 @@ def get_media_queryset(project, query_params, dry_run=False):
     }}]
 
     if mediaId != None:
-        bools.append({'ids': {'values': mediaId}})
+        ids = [f'image_{id_}' for id_ in mediaId] + [f'video_{id_}' for id_ in mediaId]
+        bools.append({'ids': {'values': ids}})
 
     if filterType != None:
         bools.append({'match': {'_meta': {'query': int(filterType)}}})
