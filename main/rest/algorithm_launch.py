@@ -12,7 +12,7 @@ from django.db.models import When
 from django.http import Http404
 
 from ..models import Algorithm
-from ..models import EntityMediaBase
+from ..models import Media
 from ..kube import TatorAlgorithm
 from ..consumers import ProgressProducer
 from ..schema import AlgorithmLaunchSchema
@@ -68,7 +68,7 @@ class AlgorithmLaunchAPI(APIView):
             elif 'media_ids' in params:
                 media_ids = params['media_ids']
             else:
-                media = EntityMediaBase.objects.filter(project=project_id)
+                media = Media.objects.filter(project=project_id)
                 media_ids = list(media.values_list("id", flat=True))
             media_ids = [str(a) for a in media_ids]
 
@@ -83,7 +83,7 @@ class AlgorithmLaunchAPI(APIView):
                 batch_str = ','.join(batch)
                 batch_int = [int(pk) for pk in batch]
                 batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
-                qs = EntityMediaBase.objects.filter(pk__in=batch_int).order_by(batch_order)
+                qs = Media.objects.filter(pk__in=batch_int).order_by(batch_order)
                 sections = qs.values_list('attributes__tator_user_sections', flat=True)
                 sections = ','.join(list(sections))
                 alg_response = submitter.start_algorithm(
