@@ -1,4 +1,5 @@
 import tempfile
+import logging
 
 from ..models import Media
 from ..renderers import PngRenderer
@@ -10,6 +11,8 @@ from ..schema import GetFrameSchema
 from ._base_views import BaseDetailView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
+
+logger = logging.getLogger(__name__)
 
 class GetFrameAPI(BaseDetailView):
     schema = GetFrameSchema()
