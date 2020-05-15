@@ -208,6 +208,15 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             'state',
         )
         if len(annotation_ids) > 0:
+            # Delete media many to many
+            media_qs = State.media.through.objects.filter(state__in=annotation_ids)
+            media_qs._raw_delete(media_qs.db)
+
+            # Delete localization many to many
+            loc_qs = State.localizations.through.objects.filter(state__in=annotation_ids)
+            loc_qs._raw_delete(loc_qs.db)
+
+            # Delete states.
             qs = State.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
