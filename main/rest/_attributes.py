@@ -49,11 +49,27 @@ def convert_attribute(attr_type, attr_val):
             val = int(attr_val)
         except:
             raise Exception(f"Invalid attribute value {attr_val} for integer attribute {attr_type['name']}")
+        if 'minimum' in attr_type:
+            if val < attr_type['minimum']:
+                raise Exception(f"{attr_val} is below minimum {attr_type['minimum']} for "
+                                f"int attribute {attr_type['name']}!")
+        if 'maximum' in attr_type:
+            if val > attr_type['maximum']:
+                raise Exception(f"{attr_val} is above maximum {attr_type['maximum']} for "
+                                f"int attribute {attr_type['name']}!")
     elif dtype == 'float':
         try:
             val = float(attr_val)
         except:
             raise Exception(f"Invalid attribute value {attr_val} for float attribute {attr_type['name']}")
+        if 'minimum' in attr_type:
+            if val < attr_type['minimum']:
+                raise Exception(f"{attr_val} is below minimum {attr_type['minimum']} for "
+                                f"float attribute {attr_type['name']}!")
+        if 'maximum' in attr_type:
+            if val > attr_type['maximum']:
+                raise Exception(f"{attr_val} is above maximum {attr_type['maximum']} for "
+                                f"float attribute {attr_type['name']}!")
     elif dtype == 'enum':
         if attr_val in attr_type['choices']:
             val = attr_val
