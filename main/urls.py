@@ -65,16 +65,6 @@ urlpatterns += [
         AnalysisListAPI.as_view(),
     ),
     path(
-        'rest/AttributeTypes/<int:project>',
-        AttributeTypeListAPI.as_view(),
-        name='AttributeTypes'
-    ),
-    path(
-        'rest/AttributeType/<int:id>',
-        AttributeTypeDetailAPI.as_view(),
-        name='AttributeType'
-    ),
-    path(
         'rest/EntityTypeSchema/<int:id>',
         EntityTypeSchemaAPI.as_view(),
         name='EntityTypeSchema'
@@ -84,10 +74,6 @@ urlpatterns += [
     ),
     path('rest/GetClip/<int:id>',
          GetClipAPI.as_view(),
-    ),
-    path(
-        'rest/FrameAssociation/<int:id>',
-        FrameAssociationDetailAPI.as_view(),
     ),
     path(
         'rest/Job/<str:run_uid>',
@@ -104,10 +90,6 @@ urlpatterns += [
     path(
         'rest/LeafType/<int:id>',
         LeafTypeDetailAPI.as_view(),
-    ),
-    path(
-        'rest/LocalizationAssociation/<int:id>',
-        LocalizationAssociationDetailAPI.as_view(),
     ),
     path(
         'rest/Localizations/<int:project>',
