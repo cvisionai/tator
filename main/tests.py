@@ -186,11 +186,15 @@ def create_test_attribute_types():
             name='int_test',
             dtype='int',
             default=42,
+            minimum=-10000,
+            maximum=10000,
         ),
         dict(
             name='float_test',
             dtype='float',
             default=42.0,
+            minimum=-10000.0,
+            maximum=10000.0,
         ),
         dict(
             name='enum_test',
@@ -641,6 +645,16 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['int_test'], test_val)
+            # Test that attribute maximum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'int_test': 100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # Test that attribute minimum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'int_test': -100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         TatorSearch().refresh(self.project.pk)
         for test_val in test_vals:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=int_test::{test_val}&type={self.entity_type.pk}&format=json')
@@ -676,6 +690,16 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['float_test'], test_val)
+            # Test that attribute maximum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'float_test': 100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # Test that attribute minimum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'float_test': -100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         TatorSearch().refresh(self.project.pk)
         # Equality on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=float_test::{test_val}&type={self.entity_type.pk}&format=json')
