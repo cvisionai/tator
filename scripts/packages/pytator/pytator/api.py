@@ -562,35 +562,9 @@ class State(APIElement):
         if version:
             obj["version"] = version
         obj.update(attrs)
-        (code, json) = self.newSingleElement("States", [obj])
+        (code, json) = self.newSingleElement("States", obj)
         # TODO: Should we return something more than 200 back from serfver?
         return code == 200
-
-    def addMany(self, listObj):
-        """ Add many states to a media element.
-
-        This is a shortcut function that allows to the bulk ingestion of
-        many annotations on a media element, without there having to be a
-        request for each state. Each element of the list needs
-        to match the syntax for :func:`APIElement.new` for a state
-        """
-        response=requests.post(self.url+"/States/"+self.project,
-                               json=listObj,
-                               headers=self.headers)
-
-        if response.status_code < 200 or response.status_code >= 300:
-            try:
-                msg=response.json()
-                print("Error {}: {}\nDetails: {}".format(response.status_code,
-                                                         msg['message'],
-                                                         msg['details']))
-            except:
-                # message wasn't json
-                msg = response.text
-                print(f"Error {response.status_code}: {msg}")
-                return (response.status_code, None)
-
-        return (response.status_code, response.json())
 
     def dataframe(self, params):
         """ State objects are nested, this function will flatten them prior to
@@ -670,7 +644,7 @@ class Localization(APIElement):
         obj={"media_id" : mediaId,
              "type" : typeId}
         obj.update(attrs)
-        (code, json) = self.newSingleElement("Localizations", [obj])
+        (code, json) = self.newSingleElement("Localizations", obj)
         if code == 200:
             return json
         else:
@@ -683,9 +657,11 @@ class Localization(APIElement):
         many annotations on a media element, without there having to be a
         request for each box, line or dot. Each element of the list needs
         to match the syntax for :func:`APIElement.new` for a localization
+
+        .. deprecated:: 0.0.15
         """
         response=requests.post(self.url+"/Localizations"+"/"+self.project,
-                               json={"many":listObj},
+                               json=listObj,
                                headers=self.headers)
 
         if response.status_code < 200 or response.status_code >= 300:
