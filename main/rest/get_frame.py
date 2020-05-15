@@ -15,6 +15,7 @@ class GetFrameAPI(BaseDetailView):
     schema = GetFrameSchema()
     renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
+    http_method_names = ['get']
 
     def get_queryset(self):
         return Media.objects.all()
