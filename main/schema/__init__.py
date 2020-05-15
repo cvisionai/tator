@@ -4,7 +4,6 @@ from .analysis import AnalysisListSchema
 from .attribute_type import AttributeTypeListSchema
 from .attribute_type import AttributeTypeDetailSchema
 from .entity_type_schema import EntityTypeSchemaSchema
-from .frame_association import FrameAssociationDetailSchema
 from .job_group import JobGroupDetailSchema
 from .job import JobDetailSchema
 from .leaf import LeafSuggestionSchema
@@ -12,7 +11,6 @@ from .leaf import LeafListSchema
 from .leaf import LeafDetailSchema
 from .leaf_type import LeafTypeListSchema
 from .leaf_type import LeafTypeDetailSchema
-from .localization_association import LocalizationAssociationDetailSchema
 from .localization import LocalizationListSchema
 from .localization import LocalizationDetailSchema
 from .localization_type import LocalizationTypeListSchema

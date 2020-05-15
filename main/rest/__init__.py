@@ -4,7 +4,6 @@ from .analysis import AnalysisListAPI
 from .attribute_type import AttributeTypeListAPI
 from .attribute_type import AttributeTypeDetailAPI
 from .entity_type_schema import EntityTypeSchemaAPI
-from .frame_association import FrameAssociationDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .job_group import JobGroupDetailAPI
@@ -14,7 +13,6 @@ from .leaf import LeafListAPI
 from .leaf import LeafDetailAPI
 from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
-from .localization_association import LocalizationAssociationDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
 from .localization_type import LocalizationTypeListAPI
