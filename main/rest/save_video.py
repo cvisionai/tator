@@ -13,8 +13,8 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 
-from ..models import EntityMediaVideo
-from ..models import EntityTypeMediaVideo
+from ..models import Media
+from ..models import MediaType
 from ..models import getVideoDefinition
 from ..models import Project
 from ..consumers import ProgressProducer
@@ -71,7 +71,7 @@ class SaveVideoAPI(APIView):
             uid = params['uid']
             new_media_files = params['media_files']
             media_id = params['id']
-            media_element = EntityMediaVideo.objects.get(pk=media_id)
+            media_element = Media.objects.get(pk=media_id)
             project = params['project']
             progress_name = media_element.name
             project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
@@ -203,7 +203,7 @@ class SaveVideoAPI(APIView):
             # If entity_type is -1, figure it out on the server
             # Use the first video type available
             if int(entity_type) == -1:
-                media_types = EntityTypeMediaVideo.objects.filter(
+                media_types = MediaType.objects.filter(
                     project=project)
                 if media_types.count() > 0:
                     media_type = media_types[0]
@@ -211,7 +211,7 @@ class SaveVideoAPI(APIView):
                 else:
                     raise Exception('No Video types for project')
             else:
-                media_type = EntityTypeMediaVideo.objects.get(pk=int(entity_type))
+                media_type = MediaType.objects.get(pk=int(entity_type))
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
@@ -276,9 +276,9 @@ class SaveVideoAPI(APIView):
 
 
             # Create the video object.
-            media_obj = EntityMediaVideo(
+            media_obj = Media(
                 project=Project.objects.get(pk=project),
-                meta=EntityTypeMediaVideo.objects.get(pk=entity_type),
+                meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 uploader=request.user,
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
