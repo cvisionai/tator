@@ -50,27 +50,17 @@ class StateTypeListAPI(BaseListView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        name = params['name']
-        description = params.get('description', '')
-        media_types = params['media_types']
-        association = params['association']
-        project = params['project']
-
-        obj = StateType(
-            name=name,
-            description=description,
-            project=Project.objects.get(pk=project),
-            association=association,
-        )
+        params['project'] = Project.objects.get(pk=params['project'])
+        media_types = params.pop('media_types')
+        obj = StateType(**params)
         obj.save()
-        media_qs = MediaType.objects.filter(project=project, pk__in=media_types)
+        media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
         if media_qs.count() != len(media_types):
             obj.delete()
             raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating state type!")
         for media in media_qs:
             obj.media.add(media)
         obj.save()
-
         return {'message': 'State type created successfully!', 'id': obj.id}
 
 StateTypeListAPI.copy_docstrings()
