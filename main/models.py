@@ -269,7 +269,14 @@ class EntityTypeLocalizationBase(EntityTypeBase):
     media = ManyToManyField(EntityTypeMediaBase)
     bounded = BooleanField(default=True)
     colorMap = JSONField(null=True, blank=True)
+    """
+    colorMap allows for a mapping of an attribute value to a specific color
+    {"key": "attribute_name",
+     "map": {"attribute_value": <color>, ...}
 
+    <color> can either be a hex string for RRGGBB or a list for
+    RRGGBBAA components, e.g. (255,0,0,255) for solid red.
+    """
 class EntityTypeLocalizationDot(EntityTypeLocalizationBase):
     """ .. deprecated :: Use LocalizationType object """
     entity_name = 'Dot'
@@ -927,7 +934,7 @@ class MediaType(Model):
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
-                 The type should correspond to the dtype (string/enum are strings, 
+                 The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
         minimum: (optional) Minimum value. Valid for int and float dtypes.
         maximum: (optional) Maximum value. Valid for int and float dtypes.
@@ -964,7 +971,7 @@ class LocalizationType(Model):
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
-                 The type should correspond to the dtype (string/enum are strings, 
+                 The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
         minimum: (optional) Minimum value. Valid for int and float dtypes.
         maximum: (optional) Maximum value. Valid for int and float dtypes.
@@ -1005,7 +1012,7 @@ class StateType(Model):
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
-                 The type should correspond to the dtype (string/enum are strings, 
+                 The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
         minimum: (optional) Minimum value. Valid for int and float dtypes.
         maximum: (optional) Maximum value. Valid for int and float dtypes.
@@ -1038,7 +1045,7 @@ class LeafType(Model):
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
-                 The type should correspond to the dtype (string/enum are strings, 
+                 The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
         minimum: (optional) Minimum value. Valid for int and float dtypes.
         maximum: (optional) Maximum value. Valid for int and float dtypes.
@@ -1341,4 +1348,3 @@ class Analysis(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     name = CharField(max_length=64)
     data_query = CharField(max_length=1024, default='*')
-
