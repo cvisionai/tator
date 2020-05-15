@@ -11,9 +11,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.authentication import TokenAuthentication
 from .models import Project
-from .models import EntityMediaBase
-from .models import EntityMediaImage
-from .models import EntityMediaVideo
+from .models import Media
 from .models import Membership
 from .notify import Notify
 from .cache import TatorCache
@@ -74,7 +72,7 @@ class AnnotationView(ProjectBase, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        media = get_object_or_404(EntityMediaBase, pk=self.kwargs['id'])
+        media = get_object_or_404(Media, pk=self.kwargs['id'])
         context['media'] = media
         return context
 
