@@ -1111,7 +1111,7 @@ class AnnotationCanvas extends TatorElement
 
     if (width == undefined)
     {
-      width = defaultDotWidth;
+      width = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
     }
 
     //Scale box dimenisons
@@ -1556,8 +1556,9 @@ class AnnotationCanvas extends TatorElement
                                   }
                                   else if (meta.type.dtype == 'dot')
                                   {
-                                    var line = this.localizationToDot(localization, defaultDotWidth);
-                                    this._draw.drawLine(line[0], line[1], drawColor, defaultDotWidth);
+                                    const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+                                    var line = this.localizationToDot(localization, dotWidth);
+                                    this._draw.drawLine(line[0], line[1], drawColor, dotWidth);
                                   }
                                   // Handle case when localization is in a track
                                   if (localization.id in this._data._trackDb)
@@ -1681,8 +1682,9 @@ class AnnotationCanvas extends TatorElement
           }
           else if (meta.type.dtype == 'dot')
           {
-            var dotline = that.localizationToDot(localization, defaultDotWidth);
-            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), defaultDotWidth);
+            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+            var dotline = that.localizationToDot(localization);
+            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth);
           }
           that._draw.dispImage(true);
         }
@@ -2342,8 +2344,9 @@ class AnnotationCanvas extends TatorElement
           }
           else if (type == 'dot')
           {
-            var line = this.localizationToDot(localization, defaultDotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, defaultDotWidth, alpha);
+            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+            var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, alpha);
           }
           else
           {
