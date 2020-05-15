@@ -94,8 +94,6 @@ class SaveImageAPI(APIView):
                 project=Project.objects.get(pk=project),
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
-                uploader=request.user,
-                upload_datetime=datetime.datetime.now(datetime.timezone.utc),
                 md5=md5,
                 attributes={'tator_user_sections': section},
                 created_by=self.request.user,
