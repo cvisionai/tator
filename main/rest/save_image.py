@@ -12,8 +12,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from PIL import Image
 
-from ..models import EntityMediaImage
-from ..models import EntityTypeMediaImage
+from ..models import Media
+from ..models import MediaType
 from ..models import Project
 from ..consumers import ProgressProducer
 from ..schema import SaveImageSchema
@@ -48,14 +48,14 @@ class SaveImageAPI(APIView):
             project = params['project']
 
             if int(entity_type) == -1:
-                media_types = EntityTypeMediaImage.objects.filter(project=project)
+                media_types = MediaType.objects.filter(project=project)
                 if media_types.count() > 0:
                     media_type = media_types[0]
                     entity_type = media_type.pk
                 else:
                     raise Exception('No image types for project')
             else:
-                media_type = EntityTypeMediaImage.objects.get(pk=int(entity_type))
+                media_type = MediaType.objects.get(pk=int(entity_type))
                 if media_type.project.pk != project:
                     raise Exception('Media type is not part of project')
 
@@ -90,9 +90,9 @@ class SaveImageAPI(APIView):
                 raise RuntimeError(fail_msg)
 
             # Create the media object.
-            media_obj = EntityMediaImage(
+            media_obj = Media(
                 project=Project.objects.get(pk=project),
-                meta=EntityTypeMediaImage.objects.get(pk=entity_type),
+                meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 uploader=request.user,
                 upload_datetime=datetime.datetime.now(datetime.timezone.utc),
