@@ -159,7 +159,14 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                                modified=loc_spec.get('modified', None),
                                created_by=self.request.user,
                                modified_by=self.request.user,
-                               version=versions[loc_spec.get('version', None)])
+                               version=versions[loc_spec.get('version', None)],
+                               x=loc_spec.get('x', None),
+                               y=loc_spec.get('y', None),
+                               u=loc_spec.get('u', None),
+                               v=loc_spec.get('v', None),
+                               width=loc_spec.get('width', None),
+                               height=loc_spec.get('height', None),
+                               frame=loc_spec.get('frame', None))
             create_buffer.append(loc)
             if len(create_buffer) > 1000:
                 localizations += Localization.objects.bulk_create(create_buffer)
