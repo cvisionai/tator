@@ -37,8 +37,8 @@ def test_stategraphic(url, token, project, video, box_type, track_type):
     # Get state graphic.
     code, stategraphic = tator.StateGraphic.get_bgr(track_id)
     assert(code == 200)
-    assert(len(frame_bgr) == 3)
-    for frame_data in frame_bgr:
+    assert(len(stategraphic) == 10)
+    for frame_data in stategraphic:
         assert_vector_equal(frame_data.shape, (720,1280,3))
     
 
