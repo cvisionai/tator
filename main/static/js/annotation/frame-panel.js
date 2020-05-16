@@ -31,9 +31,9 @@ class FramePanel extends TatorElement {
   }
 
   set dataType(val) {
-    this._name.textContent = val.type.name;
-    this._typeId = val.type.id;
-    this._method = val.type.interpolation;
+    this._name.textContent = val.name;
+    this._typeId = val.id;
+    this._method = val.interpolation;
     this._attributes.dataType = val;
     this._attributes.addEventListener("input", () => {
       if (this._blockingWrites) {
@@ -42,13 +42,13 @@ class FramePanel extends TatorElement {
       const values = this._attributes.getValues();
       if (values !== null) {
         this._blockingUpdates = true;
-        const data = this._data._dataByType.get(val.type.id);
+        const data = this._data._dataByType.get(val.id);
         const index = data.findIndex(elem => elem.association.frame === this._frame);
         if (index === -1) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
-            type: val.type.id,
-            name: val.type.name,
+            type: val.id,
+            name: val.name,
             media_ids: [mediaId],
             frame: this._frame,
             modified: true,
@@ -64,21 +64,21 @@ class FramePanel extends TatorElement {
     });
     this._data.addEventListener("freshData", evt => {
       const typeObj = evt.detail.typeObj;
-      if ((typeObj.type.id === val.type.id) && (this._frame !== null)) {
+      if ((typeObj.id === val.id) && (this._frame !== null)) {
         this._updateAttributes(evt.detail.data);
 
         // If there are no annotations for this type, make a default one at frame 0.
-        if (this._data._dataByType.get(typeObj.type.id).length == 0) {
+        if (this._data._dataByType.get(typeObj.id).length == 0) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
-            type: val.type.id,
-            name: val.type.name,
+            type: val.id,
+            name: val.name,
             media_ids: [mediaId],
             frame: 0,
             modified: true,
             version: this._version.id,
           }
-          for (const column of val.columns) {
+          for (const column of val.attribute_types) {
             let defaultValue;
             if (column.default !== null) {
               defaultValue = column.default;

@@ -315,7 +315,7 @@ class AnnotationPage extends TatorPage {
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
-          (sec[obj.type.dtype] = sec[obj.type.dtype] || []).push(obj);
+          (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           return sec;
         }, {});
         this._sidebar.localizationTypes = byType;

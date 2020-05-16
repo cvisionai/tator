@@ -78,7 +78,7 @@ class MediaPanel extends TatorElement {
     if (dataDefined && typesDefined) {
       let first = true;
       for (const dataType of this._dataTypes) {
-        if (dataType.type.visible) {
+        if (dataType.visible) {
           const button = document.createElement("entity-button");
           button.dataType = dataType;
           button.annotationData = this._annotationData;
@@ -90,7 +90,7 @@ class MediaPanel extends TatorElement {
           this._entities.appendChild(button);
           button.addEventListener("click", evt => {
             this.dispatchEvent(new CustomEvent("open", {
-              detail: {typeId: dataType.type.id},
+              detail: {typeId: dataType.id},
               composed: true,
             }));
           });
