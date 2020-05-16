@@ -55,10 +55,10 @@ class FramePanel extends TatorElement {
             version: this._version.id,
             ...values,
           };
-          this._undo.post("EntityStates", body, val);
+          this._undo.post("States", body, val);
         } else {
           const state = data[index];
-          this._undo.patch("EntityState", state.id, {"attributes": values}, val);
+          this._undo.patch("State", state.id, {"attributes": values}, val);
         }
       }
     });
@@ -104,7 +104,7 @@ class FramePanel extends TatorElement {
             }
             body[column.name] = defaultValue;
           }
-          this._undo.post("EntityStates", body, typeObj);
+          this._undo.post("States", body, typeObj);
         }
       }
     });

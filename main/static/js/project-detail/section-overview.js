@@ -44,7 +44,7 @@ class SectionOverview extends TatorElement {
   updateForMedia(media) {
     this._header.textContent = media.name;
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedia/" + media.id;
+    const url = "/rest/Media/" + media.id;
     const mediaPromise = fetch(url, {
       method: "GET",
       credentials: "same-origin",

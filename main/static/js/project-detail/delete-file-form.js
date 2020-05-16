@@ -24,7 +24,7 @@ class DeleteFileForm extends ModalDialog {
 
     this._accept.addEventListener("click", async evt => {
       const mediaId = this.getAttribute("media-id");
-      fetch("/rest/EntityMedia/" + mediaId, {
+      fetch("/rest/Media/" + mediaId, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {

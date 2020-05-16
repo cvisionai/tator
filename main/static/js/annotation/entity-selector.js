@@ -136,7 +136,7 @@ class EntitySelector extends TatorElement {
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
       } else {
-        endpoint = "EntityState";
+        endpoint = "State";
       }
       const index = parseInt(this._current.textContent) - 1;
       this._undo.del(endpoint, this._data[index].id, this._dataType);

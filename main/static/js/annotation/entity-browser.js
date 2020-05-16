@@ -158,7 +158,7 @@ class EntityBrowser extends TatorElement {
                   if (this._dataType.isLocalization) {
                     endpoint = "Localization";
                   } else {
-                    endpoint = "EntityState";
+                    endpoint = "State";
                   }
                   const id = selector.data.id;
                   this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);

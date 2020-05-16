@@ -26,12 +26,11 @@ class UndoBuffer extends HTMLElement {
     window.addEventListener("beforeunload", () => {
       if (this._editsMade) {
         const sessionEnd = new Date();
-        fetchRetry("/rest/EntityMedia/" + this._media.id, {
+        fetchRetry("/rest/Media/" + this._media.id, {
           method: "PATCH",
           body: JSON.stringify({
             last_edit_start: this._sessionStart.toISOString(),
             last_edit_end: sessionEnd.toISOString(),
-            resourcetype: this._media.resourcetype,
           }),
           ...this._headers(),
         })
@@ -71,14 +70,14 @@ class UndoBuffer extends HTMLElement {
   static get detailToList() {
     return {
       "Localization": "Localizations",
-      "EntityState": "EntityStates",
+      "State": "States",
     };
   }
 
   static get listToDetail() {
     return {
       "Localizations": "Localization",
-      "EntityStates": "EntityState",
+      "States": "State",
     };
   }
 

@@ -222,7 +222,7 @@ class SectionData {
       this._emitUpdate();
     }
     if (start < stop) {
-      const url = "/rest/EntityMedias/" + self.projectId + 
+      const url = "/rest/Medias/" + self.projectId + 
         this.getSectionFilter() +
         "&start=" + start + "&stop=" + stop;
       console.log("Fetching media " + start + " to " + stop);
@@ -560,7 +560,7 @@ function newSectionName() {
 }
 
 function saveMediaSection(mediaId, sectionName) {
-  return fetchRetry("/rest/EntityMedia/" + mediaId, {
+  return fetchRetry("/rest/Media/" + mediaId, {
     method: "PATCH",
     credentials: "omit",
     headers: self.headers,

@@ -68,7 +68,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/EntityMedia/" + newValue, {
+        fetch("/rest/Media/" + newValue, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -85,7 +85,7 @@ class AnnotationPage extends TatorPage {
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;
 
-          fetch("/rest/EntityTypeMedia/" + data.meta, {
+          fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -279,7 +279,7 @@ class AnnotationPage extends TatorPage {
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
-      getMetadataType("EntityStateTypes"),
+      getMetadataType("StateTypes"),
       versionPromise,
     ])
     .then(([localizationResponse, stateResponse, versionResponse]) => {

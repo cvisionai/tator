@@ -1909,7 +1909,6 @@ class AnnotationCanvas extends TatorElement
     var requestObj = {};
     var patchObj = {};
 
-    patchObj.resourcetype = objDescription.type.resourcetype.replace("EntityType", "Entity");
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
     if (objDescription.type.dtype=='box')
     {

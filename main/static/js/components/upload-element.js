@@ -76,9 +76,9 @@ class UploadElement extends TatorElement {
       const mediaType = this._mediaTypes[idx];
       let fileOk = false;
       if (mediaType.type.file_format === null) {
-        if (mediaType.type.resourcetype == "EntityTypeMediaImage" && isImage) {
+        if (mediaType.dtype == "image" && isImage) {
           fileOk = true;
-        } else if (mediaType.type.resourcetype == "EntityTypeMediaVideo" && isVideo) {
+        } else if (mediaType.dtype == "video" && isVideo) {
           fileOk = true;
         }
       } else {

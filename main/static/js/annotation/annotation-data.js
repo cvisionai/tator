@@ -37,9 +37,8 @@ class AnnotationData extends HTMLElement {
       let isLocalization=false;
       let isTrack=false;
       let isTLState=false;
-      if ("resourcetype" in dataType.type) {
-        isLocalization = dataType.type.
-            resourcetype.includes("EntityTypeLocalization");
+      if ("dtype" in dataType) {
+        isLocalization = dataType.dtype in ["box", "line", "dot"];
       }
       if ("association" in dataType.type) {
         isTrack = (dataType.type.association == "Localization");

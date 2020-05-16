@@ -315,7 +315,7 @@ class Upload {
         // Salt in the file size
         this.md5 = SparkMD5.hash(md5 + this.file.size);
         fetchRetry(
-            "/rest/EntityMedias/" + this.projectId + "?format=json&type=" + 
+            "/rest/Media/" + this.projectId + "?format=json&type=" + 
             this.mediaTypeId + "&md5=" + this.md5)
           .then(response => response.json())
           .then(json => {
