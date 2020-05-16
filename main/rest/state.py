@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from django.contrib.postgres.aggregates import ArrayAgg
 
@@ -55,6 +56,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         use_es = any([key not in postgres_params for key in params])
 
         # Get the state list.
+        t0 = datetime.datetime.now()
         if use_es:
             response_data = []
             annotation_ids, annotation_count, _ = get_annotation_queryset(
@@ -82,22 +84,24 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 response_data = {'count': qs.count()}
             else:
                 response_data = database_qs(qs.order_by('id'))
-        if operation != 'count':
+        t1 = datetime.datetime.now()
+        if self.operation != 'count':
             # Get many to many fields.
+            state_ids = [state['id'] for state in response_data]
             localizations = {obj['state_id']:obj['localizations'] for obj in
                 State.localizations.through.objects\
-                .filter(state__in=annotation_ids)\
+                .filter(state__in=state_ids)\
                 .values('state_id').order_by('state_id')\
                 .annotate(localizations=ArrayAgg('localization_id')).iterator()}
             media = {obj['state_id']:obj['media'] for obj in 
                 State.media.through.objects\
-                .filter(state__in=annotation_ids)\
+                .filter(state__in=state_ids)\
                 .values('state_id').order_by('state_id')\
                 .annotate(media=ArrayAgg('media_id')).iterator()}
             # Copy many to many fields into response data.
             for state in response_data:
-                state['localizations'] = localizations[state['id']]
-                state['media'] = media[state['id']]
+                state['localizations'] = localizations.get(state['id'], [])
+                state['media'] = media.get(state['id'], [])
         if (self.request.accepted_renderer.format == 'csv'
             and self.operation != 'count'
             and 'type' in params):
@@ -116,6 +120,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                     el['endFrame'] = endFrame
                     el['startSeconds'] = int(el['frame']) * mediaEl.fps
                     el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
+        t2 = datetime.datetime.now()
+        logger.info(f"Number of states: {len(response_data)}")
+        logger.info(f"Time to get states: {t1-t0}")
+        logger.info(f"Time to get states many to many fields: {t2-t1}")
         return response_data
 
     def _post(self, params):
