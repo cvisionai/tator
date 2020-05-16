@@ -989,10 +989,10 @@ class VideoCanvas extends AnnotationCanvas {
     // Handle cases when there are no streaming files in the set
     if (play_idx == -1)
     {
-      videoUrl = videoObject.url;
+      videoUrl = "/media/" + videoObject.file;
       dims = [videoObject.width,videoObject.height];
       console.warn("Using old access method!");
-      streaming_files = [{"path": videoObject.url,
+      streaming_files = [{"path": "/media/" + videoObject.file,
                           "resolution": [videoObject.height,videoObject.width]}];
       play_idx = 0;
       scrub_idx = 0;

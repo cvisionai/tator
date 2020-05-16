@@ -38,7 +38,7 @@ class MediaPanel extends TatorElement {
 
   set mediaType(val)
   {
-    if (val.columns.length == 0)
+    if (val.attribute_types.length == 0)
     {
       // Hide the attribute viewer is there are none.
       this._attrs.style.display="none";

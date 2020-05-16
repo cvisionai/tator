@@ -133,7 +133,7 @@ class AnnotationPage extends TatorPage {
                   player._image.captureFrame(e.detail.localizations);
                 });
           }
-          fetch("/rest/Project/" + data.project, {
+          fetch("/rest/Project/" + data.project_id, {
             method: "GET",
             credentials: "same-origin",
             headers: {
