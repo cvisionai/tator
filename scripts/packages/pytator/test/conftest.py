@@ -145,3 +145,21 @@ def state_type(request, project, video_type):
     state_type_id = response['id']
     yield state_type_id
     status = tator.StateType.delete(state_type_id)
+
+@pytest.fixture(scope='session')
+def track_type(request, project, video_type):
+    import pytator
+    url = request.config.option.url
+    token = request.config.option.token
+    tator = pytator.Tator(url, token, project)
+    status, response = tator.StateType.new({
+        'name': 'track_type',
+        'description': 'Test track type',
+        'project': project,
+        'media_types': [video_type],
+        'association': 'Localization',
+        'attribute_types': make_attribute_types(),
+    })
+    state_type_id = response['id']
+    yield state_type_id
+    status = tator.StateType.delete(state_type_id)
