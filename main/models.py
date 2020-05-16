@@ -902,6 +902,8 @@ class MediaType(Model):
 
         name: Name of the attribute.
         description: (optional) Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
@@ -943,6 +945,8 @@ class LocalizationType(Model):
 
         name: Name of the attribute.
         description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
@@ -987,6 +991,8 @@ class StateType(Model):
 
         name: Name of the attribute.
         description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
@@ -1024,6 +1030,8 @@ class LeafType(Model):
 
         name: Name of the attribute.
         description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
                string, enum, datetime, geopos.
         default: (optional) Default value. Valid for all dtypes except datetime.
