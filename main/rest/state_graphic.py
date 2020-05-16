@@ -1,4 +1,5 @@
 import tempfile
+import logging
 
 from ..models import State
 from ..renderers import PngRenderer
@@ -10,6 +11,8 @@ from ..schema import StateGraphicSchema
 from ._base_views import BaseDetailView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
+
+logger = logging.getLogger(__name__)
 
 class StateGraphicAPI(BaseDetailView):
     schema = StateGraphicSchema()
@@ -47,13 +50,13 @@ class StateGraphicAPI(BaseDetailView):
         with tempfile.TemporaryDirectory() as temp_dir:
             media_util = MediaUtil(video, temp_dir)
             if mode == "animate":
-                if any(x is request.accepted_renderer.format for x in ['mp4','gif']):
+                if any(x is self.request.accepted_renderer.format for x in ['mp4','gif']):
                     pass
                 else:
-                    request.accepted_renderer = GifRenderer()
-                gif_fp = media_util.getAnimation(frames, roi, fps,request.accepted_renderer.format, force_scale=force_scale)
+                    self.request.accepted_renderer = GifRenderer()
+                gif_fp = media_util.getAnimation(frames, roi, fps, self.request.accepted_renderer.format, force_scale=force_scale)
                 with open(gif_fp, 'rb') as data_file:
-                    request.accepted_renderer = GifRenderer()
+                    self.request.accepted_renderer = GifRenderer()
                     response_data = data_file.read()
             else:
                 max_w = 0
@@ -80,7 +83,7 @@ class StateGraphicAPI(BaseDetailView):
                 tiled_fp = media_util.getTileImage(frames,
                                                    new_rois,
                                                    tile_size,
-                                                   render_format=request.accepted_renderer.format,
+                                                   render_format=self.request.accepted_renderer.format,
                                                    force_scale=force_scale)
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()

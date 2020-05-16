@@ -814,7 +814,7 @@ class StateGraphic:
         bgr_data = cv2.imdecode(np.asarray(bytearray(jpg_data)), cv2.IMREAD_COLOR)
         frame_data=[]
 
-        num_localizations = len(state_element['association']['localizations'])
+        num_localizations = len(state_element['localizations'])
         width = int(bgr_data.shape[1]/num_localizations)
         for idx in range(num_localizations):
             start_x = idx*width
