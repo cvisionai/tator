@@ -85,7 +85,7 @@ class AnnotationPage extends TatorPage {
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;
 
-          fetch("/rest/MediaType/" + data.meta, {
+          fetch("/rest/MediaType/" + data.meta_id, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -101,7 +101,7 @@ class AnnotationPage extends TatorPage {
             this._player.mediaTypes = data['type'];
           });
           let player;
-          if ("thumb_gif_url" in data) {
+          if ("thumbnail_gif" in data) {
             player = document.createElement("annotation-player");
             this._player = player;
             player.addDomParent({"object": this._headerDiv,
