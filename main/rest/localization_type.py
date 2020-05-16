@@ -1,3 +1,4 @@
+from ..models import Media
 from ..models import MediaType
 from ..models import LocalizationType
 from ..models import Localization
@@ -26,9 +27,10 @@ class LocalizationTypeListAPI(BaseListView):
         if media_id != None:
             if len(media_id) != 1:
                 raise Exception('Entity type list endpoints expect only one media ID!')
-            localizations = LocalizationType.objects.filter(media__in=media_id)
+            media_element = Media.objects.get(pk=media_id[0])
+            localizations = LocalizationType.objects.filter(media=media_element.meta)
             for localization in localizations:
-                if state.project.id != self.kwargs['project']:
+                if localization.project.id != self.kwargs['project']:
                     raise Exception('Localization not in project!')
             response_data = database_qs(localizations)
         else:
