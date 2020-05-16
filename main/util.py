@@ -880,4 +880,17 @@ def migrateFlat(project, section):
         backfillRelations(project, Leaf)
     elif section == 'analyses':
         migrateBulk(project, AnalysisBase, Analysis)
+
+def fixMigrateFlatAnnotationTypes():
+    """ Fixes foreign keys to media in original flat migration.
+    """
+    # Make sure state and localization types have foreign keys to media types.
+    for loc_type in LocalizationType.objects.all():
+        for media_type in loc_type.polymorphic.media.all():
+            loc_type.media.add(media_type.media_type_polymorphic)
+        loc_type.save()
+    for state_type in StateType.objects.all():
+        for media_type in state_type.polymorphic.media.all():
+            state_type.media.add(media_type.media_type_polymorphic)
+        state_type.save()
         
