@@ -1,5 +1,7 @@
 import logging
 
+from django.contrib.postgres.aggregates import ArrayAgg
+
 from ..models import State
 from ..models import StateType
 from ..models import Media
@@ -65,6 +67,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             elif len(annotation_ids) > 0:
                 qs = State.objects.filter(pk__in=annotation_ids).order_by('id')
                 response_data = database_qs(qs)
+                    
         else:
             qs = State.objects.filter(project=params['project'])
             if 'media_id' in params:
@@ -79,6 +82,22 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 response_data = {'count': qs.count()}
             else:
                 response_data = database_qs(qs.order_by('id'))
+        if operation != 'count':
+            # Get many to many fields.
+            localizations = {obj['state_id']:obj['localizations'] for obj in
+                State.localizations.through.objects\
+                .filter(state__in=annotation_ids)\
+                .values('state_id').order_by('state_id')\
+                .annotate(localizations=ArrayAgg('localization_id')).iterator()}
+            media = {obj['state_id']:obj['media'] for obj in 
+                State.media.through.objects\
+                .filter(state__in=annotation_ids)\
+                .values('state_id').order_by('state_id')\
+                .annotate(media=ArrayAgg('media_id')).iterator()}
+            # Copy many to many fields into response data.
+            for state in response_data:
+                state['localizations'] = localizations[state['id']]
+                state['media'] = media[state['id']]
         if (self.request.accepted_renderer.format == 'csv'
             and self.operation != 'count'
             and 'type' in params):
@@ -261,7 +280,17 @@ class StateDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return State.objects.values().get(pk=params['id'])
+        state = State.objects.values().get(pk=params['id'])
+        # Get many to many fields.
+        state['localizations'] = list(State.localizations.through.objects\
+                                      .filter(state_id=state['id'])\
+                                      .aggregate(localizations=ArrayAgg('localization_id'))\
+                                      ['localizations'])
+        state['media'] = list(State.media.through.objects\
+                              .filter(state_id=state['id'])\
+                              .aggregate(media=ArrayAgg('media_id'))\
+                              ['media'])
+        return state
 
     def _patch(self, params):
         obj = State.objects.get(pk=params['id'])
