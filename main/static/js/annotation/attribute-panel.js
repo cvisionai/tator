@@ -50,7 +50,7 @@ class AttributePanel extends TatorElement {
         }
       });
     }
-    const sorted = val.columns.sort((a, b) => {
+    const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
     for (const column of sorted) {

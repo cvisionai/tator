@@ -562,7 +562,7 @@ class AnnotationCanvas extends TatorElement
         let currentFrame = this.currentFrame();
         // Clean out old annotations for the type
         this._framedData.forEach((frameObj, frameIdx, map) => {
-          frameObj.delete(typeObj.type.id);
+          frameObj.delete(typeObj.id);
         }, this);
 
         this.insertIntoFramedData(evt.detail.data, evt.detail.typeObj);
@@ -570,7 +570,7 @@ class AnnotationCanvas extends TatorElement
         // Reset auto track
         this._lastAutoTrackColor = null;
         this._data._trackDb.forEach((trackObj, localizationIdx, map) => {
-          if (trackObj.meta == typeObj.type.id) {
+          if (trackObj.meta == typeObj.id) {
             this._data._trackDb.delete(localizationIdx);
           }
         }, this);
@@ -810,7 +810,7 @@ class AnnotationCanvas extends TatorElement
         var meta=this.getObjectDescription(this.activeLocalization);
         var objType = this.getObjectDescription(this.activeLocalization);
 
-        if (objType.type.dtype == 'box')
+        if (objType.dtype == 'box')
         {
           var poly = this.localizationToPoly(this.activeLocalization);
           for (var idx = 0; idx < 4; idx++)
@@ -826,7 +826,7 @@ class AnnotationCanvas extends TatorElement
           this.activeLocalization.width = boxCoords[2];
           this.activeLocalization.height = boxCoords[3];
         }
-        else if (objType.type.dtype == 'line')
+        else if (objType.dtype == 'line')
         {
           var line = this.localizationToLine(this.activeLocalization);
           for (var idx = 0; idx < 2; idx++)
@@ -843,7 +843,7 @@ class AnnotationCanvas extends TatorElement
           this.activeLocalization.y1 = expLine[3];
           this.modifyLocalization();
         }
-        else if (objType.type.dtype == 'dot')
+        else if (objType.dtype == 'dot')
         {
           // Add to current localization first
           if (coord == 0)
@@ -958,7 +958,7 @@ class AnnotationCanvas extends TatorElement
             let localization = localizations[idx]
             var meta = that.getObjectDescription(localization);
             if (match) return;
-            if (meta.type.dtype == "box")
+            if (meta.dtype == "box")
             {
               var nw = [localization.x,localization.y];
               var sw = [localization.x,localization.y+localization.height];
@@ -980,7 +980,7 @@ class AnnotationCanvas extends TatorElement
             }
             // Thershold is a width
             var t = that.scaleToRelative([0,0,10])[2];
-            if (meta.type.dtype == "dot")
+            if (meta.dtype == "dot")
             {
               var pos = [localization.x, localization.y];
               var distance = distance_func(pos, loc);
@@ -990,7 +990,7 @@ class AnnotationCanvas extends TatorElement
                                   "data": localization});
               }
             }
-            if (meta.type.dtype == "line")
+            if (meta.dtype == "line")
             {
               var y2=localization.y1;
               var y1=localization.y0;
@@ -1172,7 +1172,7 @@ class AnnotationCanvas extends TatorElement
     if (this._mouseMode == MouseMode.SELECT && this._canEdit)
     {
       var resizeType=null;
-      var type = this.getObjectDescription(this.activeLocalization).type.dtype;
+      var type = this.getObjectDescription(this.activeLocalization).dtype;
       if (type == 'box')
       {
         var poly = this.localizationToPoly(this.activeLocalization);
@@ -1324,7 +1324,7 @@ class AnnotationCanvas extends TatorElement
 
       if (clickEvent.button == 0)
       {
-        if (this.draft.type.dtype == "dot")
+        if (this.draft.dtype == "dot")
         {
           const dragEvent = {};
           dragEvent.start = {x: clickLocation[0], y: clickLocation[1]};
@@ -1368,7 +1368,7 @@ class AnnotationCanvas extends TatorElement
     {
       var resizeType = null;
       if (this._canEdit) {
-        var type = this.getObjectDescription(this.activeLocalization).type.dtype;
+        var type = this.getObjectDescription(this.activeLocalization).dtype;
         if (type == 'box')
         {
           var poly = this.localizationToPoly(this.activeLocalization);
@@ -1567,7 +1567,7 @@ class AnnotationCanvas extends TatorElement
                                   var localization = pair.obj;
                                   var userColor = pair.color;
                                   var meta = this.getObjectDescription(localization);
-                                  var width = meta.type.line_width;
+                                  var width = meta.line_width;
                                   // Make the line width appear as monitor pixels
                                   width *= this._draw.displayToViewportScale()[0];
                                   width = Math.round(width);
@@ -1579,17 +1579,17 @@ class AnnotationCanvas extends TatorElement
                                     var drawColor = emphasisColor(localization);
                                   }
 
-                                  if (meta.type.dtype == "box")
+                                  if (meta.dtype == "box")
                                   {
                                     var poly = this.localizationToPoly(localization);
                                     this._draw.drawPolygon(poly, drawColor, width);
                                   }
-                                  else if (meta.type.dtype == "line")
+                                  else if (meta.dtype == "line")
                                   {
                                     var line = this.localizationToLine(localization);
                                     this._draw.drawLine(line[0], line[1], drawColor, width);
                                   }
-                                  else if (meta.type.dtype == 'dot')
+                                  else if (meta.dtype == 'dot')
                                   {
                                     var line = this.localizationToDot(localization, defaultDotWidth);
                                     this._draw.drawLine(line[0], line[1], drawColor, defaultDotWidth);
@@ -1661,7 +1661,7 @@ class AnnotationCanvas extends TatorElement
     }
 
     var meta = this.getObjectDescription(localization);
-    var width = meta.type.line_width;
+    var width = meta.line_width;
     width *= this._draw.displayToViewportScale()[0];
     width = Math.round(width);
     var poly = this.localizationToPoly(localization);
@@ -1706,15 +1706,15 @@ class AnnotationCanvas extends TatorElement
           }
 
           frameIdx++;
-          if (meta.type.dtype == 'box')
+          if (meta.dtype == 'box')
           {
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width);
           }
-          else if (meta.type.dtype == 'line')
+          else if (meta.dtype == 'line')
           {
             that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width);
           }
-          else if (meta.type.dtype == 'dot')
+          else if (meta.dtype == 'dot')
           {
             var dotline = that.localizationToDot(localization, defaultDotWidth);
             that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), defaultDotWidth);
@@ -1826,7 +1826,7 @@ class AnnotationCanvas extends TatorElement
       let lineInfo = dragToLine(dragInfo);
       let dotInfo = [dragInfo.start.x, dragInfo.start.y];
       let localization=null;
-      if (objDescription.type.dtype=="box")
+      if (objDescription.dtype=="box")
       {
         localization=this.scaleToRelative(boxInfo);
         requestObj.x = localization[0];
@@ -1834,7 +1834,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.width = localization[2];
         requestObj.height = localization[3];
       }
-      else if (objDescription.type.dtype=="line")
+      else if (objDescription.dtype=="line")
       {
         localization=this.scaleToRelative(lineInfo, true);
         requestObj.x0 = localization[0];
@@ -1842,7 +1842,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.x1 = localization[2];
         requestObj.y1 = localization[3];
       }
-      else if (objDescription.type.dtype=='dot')
+      else if (objDescription.dtype=='dot')
       {
         var previewSize=50;
         localization=this.scaleToRelative(dotInfo);
@@ -1910,21 +1910,21 @@ class AnnotationCanvas extends TatorElement
     var patchObj = {};
 
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
-    if (objDescription.type.dtype=='box')
+    if (objDescription.dtype=='box')
     {
       patchObj.x = this.activeLocalization.x;
       patchObj.y = this.activeLocalization.y;
       patchObj.width = this.activeLocalization.width;
       patchObj.height = this.activeLocalization.height;
     }
-    else if (objDescription.type.dtype=='line')
+    else if (objDescription.dtype=='line')
     {
       patchObj.x0 = this.activeLocalization.x0;
       patchObj.y0 = this.activeLocalization.y0;
       patchObj.x1 = this.activeLocalization.x1;
       patchObj.y1 = this.activeLocalization.y1;
     }
-    else if (objDescription.type.dtype=='dot')
+    else if (objDescription.dtype=='dot')
     {
       patchObj.x = this.activeLocalization.x;
       patchObj.y = this.activeLocalization.y;
@@ -2080,7 +2080,7 @@ class AnnotationCanvas extends TatorElement
     else if (this.draft)
     {
       // We are drawing
-      var type=this.draft.type.dtype;
+      var type=this.draft.dtype;
 
       if (type == "box")
       {
@@ -2189,7 +2189,7 @@ class AnnotationCanvas extends TatorElement
           console.log("Moved = " + JSON.stringify(dragEvent));
           // TODO: Handle move event
           cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
-          if (objType.type.dtype == 'box')
+          if (objType.dtype == 'box')
           {
             var localization=this.scaleToRelative(polyToBox(translatedPoly(dragEvent.start, dragEvent.end)));
             this.activeLocalization.x = localization[0];
@@ -2197,7 +2197,7 @@ class AnnotationCanvas extends TatorElement
             this.activeLocalization.width = localization[2];
             this.activeLocalization.height = localization[3];
           }
-          else if (objType.type.dtype == 'line')
+          else if (objType.dtype == 'line')
           {
             var line=translatedLine(dragEvent.start, dragEvent.end);
             var lineScaled=this.scaleToRelative([line[0][0], line[0][1], line[1][0], line[1][1]]);
@@ -2206,7 +2206,7 @@ class AnnotationCanvas extends TatorElement
             this.activeLocalization.x1 = lineScaled[2];
             this.activeLocalization.y1 = lineScaled[3];
           }
-          else if (objType.type.dtype == 'dot')
+          else if (objType.dtype == 'dot')
           {
             var newXY = this.scaleToRelative([dragEvent.end.x, dragEvent.end.y]);
             this.activeLocalization.x = newXY[0];
@@ -2216,15 +2216,15 @@ class AnnotationCanvas extends TatorElement
         }
         else
         {
-          if (objType.type.dtype == 'box')
+          if (objType.dtype == 'box')
           {
             this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE,
-                                   Math.round(objType.type.line_width * this._draw.displayToViewportScale()[0]));
+                                   Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
-          else if (objType.type.dtype == 'line')
+          else if (objType.dtype == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.type.line_width * this._draw.displayToViewportScale()[0]));
+            this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else
           {
@@ -2238,7 +2238,7 @@ class AnnotationCanvas extends TatorElement
       {
         clearTimeout(this._animator);
         var type =
-            this.getObjectDescription(this.activeLocalization).type.dtype;
+            this.getObjectDescription(this.activeLocalization).dtype;
 
         var translatedLine = function(begin, end)
         {
@@ -2286,12 +2286,12 @@ class AnnotationCanvas extends TatorElement
         {
           if (type == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, this.getObjectDescription(this.activeLocalization).type.line_width);
+            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
           }
           else (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0],line[1], color.WHITE, this.getObjectDescription(this.activeLocalization).type.line_width);
+            this._draw.drawLine(line[0],line[1], color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
           }
           this._draw.dispImage(true, true);
         }
@@ -2321,15 +2321,15 @@ class AnnotationCanvas extends TatorElement
         {
           var localization=localList[localIdx];
           var typeObject=this.getObjectDescription(localization);
-          var type=typeObject.type.dtype;
-          var width=typeObject.type.line_width;
+          var type=typeObject.dtype;
+          var width=typeObject.line_width;
           // Make the line width appear as monitor pixels
           width *= this._draw.displayToViewportScale()[0];
           width = Math.round(width);
 
           // Default to blue
           var drawColor = color.BLUE;
-          var meta = this.getObjectDescription(localization).type;
+          var meta = this.getObjectDescription(localization);
           var trackColor = null;
           var alpha = annotation_alpha;
 

@@ -425,7 +425,7 @@ class AnnotationPage extends TatorPage {
           const save = document.createElement("save-dialog");
           save.init(projectId, mediaId, dataType, this._undo, this._version);
           this._main.appendChild(save);
-          this._saves[dataType.type.id] = save;
+          this._saves[dataType.id] = save;
 
           save.addEventListener("cancel", () => {
             this._closeModal(save);
@@ -484,7 +484,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
-    const save = this._saves[objDescription.type.id];
+    const save = this._saves[objDescription.id];
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
@@ -495,7 +495,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _getSave(objDescription) {
-    return this._saves[objDescription.type.id];
+    return this._saves[objDescription.id];
   }
 
   clearMetaCaches() {

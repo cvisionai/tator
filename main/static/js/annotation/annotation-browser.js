@@ -22,7 +22,7 @@ class AnnotationBrowser extends TatorElement {
     this._version = version;
     this._media.dataTypes = dataTypes;
     for (const dataType of dataTypes) {
-      if (dataType.type.visible) {
+      if (dataType.visible) {
         const entity = document.createElement("entity-browser");
         entity.dataType = dataType;
         if (typeof this._permission !== "undefined") {
@@ -32,7 +32,7 @@ class AnnotationBrowser extends TatorElement {
         entity.annotationData = this._data;
         entity.style.display = "none";
         this._panels.appendChild(entity);
-        this._entityPanels[dataType.type.id] = entity;
+        this._entityPanels[dataType.id] = entity;
         entity.addEventListener("close", evt => {
           this._media.style.display = "block";
           for (const typeId in this._framePanels) {
@@ -42,8 +42,8 @@ class AnnotationBrowser extends TatorElement {
       }
     }
     for (const dataType of dataTypes) {
-      const isFrameState = dataType.type.association == "Frame";
-      const isInterpolated = dataType.type.interpolation !== "none";
+      const isFrameState = dataType.association == "Frame";
+      const isInterpolated = dataType.interpolation !== "none";
       if (isFrameState && isInterpolated) {
         const frame = document.createElement("frame-panel");
         frame.setAttribute("media-id", this._mediaId);
@@ -55,7 +55,7 @@ class AnnotationBrowser extends TatorElement {
           frame.permission = this._permission;
         }
         this._panels.appendChild(frame);
-        this._framePanels[dataType.type.id] = frame;
+        this._framePanels[dataType.id] = frame;
       }
     }
   }

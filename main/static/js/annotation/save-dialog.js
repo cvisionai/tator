@@ -71,7 +71,7 @@ class SaveDialog extends TatorElement {
     this._dataType = dataType;
     this._undo = undo;
     this._version = version;
-    this._span.textContent = dataType.type.name;
+    this._span.textContent = dataType.name;
     this._attributes.dataType = dataType;
     this._recents.dataType = dataType;
     this._attributes.dispatchEvent(new Event("change"));
@@ -91,8 +91,8 @@ class SaveDialog extends TatorElement {
     }));
     this._recents.store(this._values);
     const body = {
-      type: this._dataType.type.id,
-      name: this._dataType.type.name,
+      type: this._dataType.id,
+      name: this._dataType.name,
       media_id: this._mediaId,
       modified: true,
       version: this._version.id,

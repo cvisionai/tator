@@ -125,7 +125,7 @@ class AnnotationData extends HTMLElement {
       }
     }
     
-    const attributeNames = typeObj.columns.map(column => column.name);
+    const attributeNames = typeObj.attribute_types.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
       obj.meta = typeId;

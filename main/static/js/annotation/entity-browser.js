@@ -132,7 +132,7 @@ class EntityBrowser extends TatorElement {
             li.appendChild(selector);
             this._selectors[group] = selector;
 
-            const haveAttributes = this._dataType.columns.length > 0;
+            const haveAttributes = this._dataType.attribute_types.length > 0;
             if ((!this._dataType.isTLState) && haveAttributes) {
               const attributes = document.createElement("attribute-panel");
               attributes.dataType = evt.detail.typeObj;
