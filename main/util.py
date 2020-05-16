@@ -893,4 +893,16 @@ def fixMigrateFlatAnnotationTypes():
         for media_type in state_type.polymorphic.media.all():
             state_type.media.add(media_type.media_type_polymorphic)
         state_type.save()
+
+def fixMigrateFlatAttributeTypeOrder():
+    """ Includes order of attribute types.
+    """
+    for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        for type_ in type_class.objects.all():
+            attribute_types = AttributeTypeBase.objects.filter(applies_to=type_.polymorphic)
+            for attr_type in attribute_types:
+                for flat_attr_type in type_.attribute_types:
+                    if flat_attr_type['name'] == attr_type.name:
+                        flat_attr_type['order'] = attr_type.order
+            type_.save()
         
