@@ -34,7 +34,7 @@ class StateTypeListAPI(BaseListView):
         if media_id != None:
             if len(media_id) != 1:
                 raise Exception('Entity type list endpoints expect only one media ID!')
-            states = StateType.objects.filter(media__in=media_id[0])
+            states = StateType.objects.filter(media__in=media_id)
             for state in states:
                 if state.project.id != self.kwargs['project']:
                     raise Exception('State not in project!')
