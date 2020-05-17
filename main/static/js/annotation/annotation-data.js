@@ -40,7 +40,7 @@ class AnnotationData extends HTMLElement {
       let isTrack=false;
       let isTLState=false;
       if ("dtype" in dataType) {
-        isLocalization = dataType.dtype in ["box", "line", "dot"];
+        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
       }
       if ("association" in dataType) {
         isTrack = (dataType.association == "Localization");
