@@ -885,7 +885,7 @@ class MediaType(Model):
                                 related_name='media_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     editTriggers = JSONField(null=True,
@@ -932,7 +932,7 @@ class LocalizationType(Model):
     """ Temporary field for migration. """
     dtype = CharField(max_length=16,
                       choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     media = ManyToManyField(MediaType)
@@ -974,7 +974,7 @@ class StateType(Model):
                                 related_name='state_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('state', 'state')], default='state')
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     media = ManyToManyField(MediaType)
@@ -1020,7 +1020,7 @@ class LeafType(Model):
                                 related_name='leaf_type_polymorphic')
     """ Temporary field for migration. """
     dtype = CharField(max_length=16, choices=[('leaf', 'leaf')], default='leaf')
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
     attribute_types = JSONField(null=True, blank=True)
@@ -1110,8 +1110,8 @@ class Media(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='media_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(MediaType, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(MediaType, on_delete=CASCADE, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
@@ -1119,9 +1119,11 @@ class Media(Model):
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='media_created_by')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='media_created_by', db_column='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='media_modified_by')
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='media_modified_by', db_column='modified_by')
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
@@ -1171,8 +1173,8 @@ class Localization(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='localization_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(LocalizationType, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -1181,17 +1183,18 @@ class Localization(Model):
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                            related_name='localization_created_by')
+                            related_name='localization_created_by', db_column='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='localization_modified_by')
-    user = ForeignKey(User, on_delete=PROTECT)
-    media = ForeignKey(Media, on_delete=CASCADE)
+                             related_name='localization_modified_by', db_column='modified_by')
+    user = ForeignKey(User, on_delete=PROTECT, db_column='user')
+    media = ForeignKey(Media, on_delete=CASCADE, db_column='media')
     frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(Media, on_delete=SET_NULL,
                                  null=True, blank=True,
-                                 related_name='localization_thumbnail_image')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+                                 related_name='localization_thumbnail_image',
+                                 db_column='thumbnail_image')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -1235,8 +1238,8 @@ class State(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='state_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(StateType, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(StateType, on_delete=CASCADE, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1245,11 +1248,11 @@ class State(Model):
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                            related_name='state_created_by')
+                            related_name='state_created_by', db_column='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='state_modified_by')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
+                             related_name='state_modified_by', db_column='modified_by')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -1265,7 +1268,8 @@ class State(Model):
                            on_delete=SET_NULL,
                            null=True,
                            blank=True,
-                           related_name='extracted')
+                           related_name='extracted',
+                           db_column='extracted')
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -1281,8 +1285,8 @@ class Leaf(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='leaf_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
-    meta = ForeignKey(LeafType, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LeafType, on_delete=CASCADE, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1291,11 +1295,11 @@ class Leaf(Model):
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                            related_name='leaf_created_by')
+                            related_name='leaf_created_by', db_column='created_by')
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='leaf_modified_by')
-    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
+                             related_name='leaf_modified_by', db_column='modified_by')
+    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField(unique=True)
     name = CharField(max_length=255)
 
@@ -1340,7 +1344,7 @@ class Analysis(Model):
     polymorphic = OneToOneField(AnalysisBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='analysis_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     name = CharField(max_length=64)
     data_query = CharField(max_length=1024, default='*')
 
