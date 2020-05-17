@@ -85,7 +85,7 @@ class AnnotationPage extends TatorPage {
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;
 
-          fetch("/rest/MediaType/" + data.meta_id, {
+          fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -133,7 +133,7 @@ class AnnotationPage extends TatorPage {
                   player._image.captureFrame(e.detail.localizations);
                 });
           }
-          fetch("/rest/Project/" + data.project_id, {
+          fetch("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
             headers: {
