@@ -22,24 +22,22 @@ class AnnotationBrowser extends TatorElement {
     this._version = version;
     this._media.dataTypes = dataTypes;
     for (const dataType of dataTypes) {
-      if (dataType.visible) {
-        const entity = document.createElement("entity-browser");
-        entity.dataType = dataType;
-        if (typeof this._permission !== "undefined") {
-          entity.permission = this._permission;
-        }
-        entity.undoBuffer = this._undo;
-        entity.annotationData = this._data;
-        entity.style.display = "none";
-        this._panels.appendChild(entity);
-        this._entityPanels[dataType.id] = entity;
-        entity.addEventListener("close", evt => {
-          this._media.style.display = "block";
-          for (const typeId in this._framePanels) {
-            this._framePanels[typeId].style.display = "block";
-          }
-        });
+      const entity = document.createElement("entity-browser");
+      entity.dataType = dataType;
+      if (typeof this._permission !== "undefined") {
+        entity.permission = this._permission;
       }
+      entity.undoBuffer = this._undo;
+      entity.annotationData = this._data;
+      entity.style.display = "none";
+      this._panels.appendChild(entity);
+      this._entityPanels[dataType.id] = entity;
+      entity.addEventListener("close", evt => {
+        this._media.style.display = "block";
+        for (const typeId in this._framePanels) {
+          this._framePanels[typeId].style.display = "block";
+        }
+      });
     }
     for (const dataType of dataTypes) {
       const isFrameState = dataType.association == "Frame";
