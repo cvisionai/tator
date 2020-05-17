@@ -10,6 +10,7 @@ from django.http import Http404
 from redis import Redis
 
 from ..models import Algorithm
+from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobDetailSchema
@@ -54,6 +55,8 @@ class JobDetailAPI(APIView):
 
                 # If cancel did not go through, attempt to delete stale progress messages.
                 if not cancelled:
+                    if msg['prefix'] == 'upload':
+                        aux = {'section': msg['section']}
                     prog = ProgressProducer(
                         msg['prefix'],
                         msg['project_id'],
@@ -61,7 +64,9 @@ class JobDetailAPI(APIView):
                         msg['uid_gid'],
                         msg['name'],
                         self.request.user,
+                        aux,
                     )
+                    prog.failed("Aborted by user!")
             else:
                 raise Http404
 
