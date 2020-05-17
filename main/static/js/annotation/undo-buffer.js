@@ -163,27 +163,41 @@ class UndoBuffer extends HTMLElement {
     const promise = this._get(detailUri, id, dataType.id);
     if (promise) {
       return promise.then(data => {
-        let other;
-        if (detailUri == "Localization") {
-          other = {
+        let body;
+        if (['box', 'line', 'dot'].includes(dataType.dtype)) {
+          body = {
             media_id: data.media,
             frame: data.frame,
+            type: dataType.id,
+            version: data.version,
+            x: data.x,
+            y: data.y,
+            ...data.attributes,
           };
-        } else {
-          other = {
+          if (dataType.dtype == 'box') {
+            body = {
+              ...body,
+              width: data.width,
+              height: data.height,
+            };
+          } else if (dataType.dtype == 'line') {
+            body = {
+              ...body,
+              u: data.u,
+              v: data.v,
+            };
+          }
+        } else if (dataType.dtype == 'state') {
+          body = {
             media_ids: data.media,
+            localization_ids: data.localizations,
             frame: data.frame,
-            type: data.meta,
+            type: dataType.id,
+            version: data.version,
+            ...data.attributes,
           };
         }
-        const body = {
-          type: dataType.id,
-          name: dataType.name,
-          version: data.version,
-          ...other,
-          ...data,
-          ...data.attributes,
-        }
+
         const projectId = this.getAttribute("project-id");
         const listUri = UndoBuffer.detailToList[detailUri];
         this._resetFromNow();
