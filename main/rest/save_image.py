@@ -130,7 +130,7 @@ class SaveImageAPI(APIView):
             info = {
                 "id": media_obj.id,
                 "url": media_obj.file.url,
-                "thumb_url": media_obj.thumbnail.url,
+                "thumbnail": str(media_obj.thumbnail),
                 "name": media_obj.name,
                 "section": section,
             }
