@@ -62,13 +62,7 @@ class ProgressProducer:
             msg['progress'] = progress
         if aux is not None:
             msg = {**msg, **aux}
-        try:
-            async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
-        except:
-            # TODO: this is a workaround to handle intermittent errors stating:
-            # "You cannot use AsyncToSync in the same thread as an async event loop 
-            # - just await the async function directly."
-            self.channel_layer.group_send(self.prog_grp, msg)
+        async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
         json_msg = json.dumps(msg)
         self.rds.hset(self.latest_grp, self.uid, json_msg)
         self.rds.hset('uids', self.uid, json_msg)
@@ -87,10 +81,7 @@ class ProgressProducer:
             'num_complete': num_complete,
         }
         if num_procs >= num_complete:
-            try:
-                async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
-            except:
-                self.channel_layer.group_send(self.prog_grp, msg)
+            async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
         if num_procs <= num_complete:
             self.rds.hdel(self.latest_grp, self.gid)
             self.rds.delete(self.gid + ':started')
@@ -175,16 +166,10 @@ class ProgressConsumer(JsonWebsocketConsumer):
         self.prog_grp = prefix + '_prog_' + str(pid)
         self.latest_grp = prefix + '_latest_' + str(pid)
         # Add this consumer to group corresponding to media type.
-        try:
-            async_to_sync(self.channel_layer.group_add)(
-                self.prog_grp,
-                self.channel_name,
-            )
-        except:
-            self.channel_layer.group_add(
-                self.prog_grp,
-                self.channel_name,
-            )
+        async_to_sync(self.channel_layer.group_add)(
+            self.prog_grp,
+            self.channel_name,
+        )
         # Get the latest updates from redis.
         for uid, msg in self.rds.hgetall(self.latest_grp).items():
             self.send_json(json.loads(msg))
