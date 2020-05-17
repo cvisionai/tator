@@ -56,7 +56,7 @@ class EntityBrowser extends TatorElement {
       this.style.display = "none";
       this._closeAll();
       this.dispatchEvent(new CustomEvent("close", {
-        detail: {typeId: this._dataType.type.id},
+        detail: {typeId: this._dataType.id},
         composed: true,
       }));
     });
@@ -75,7 +75,7 @@ class EntityBrowser extends TatorElement {
   set dataType(val) {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
-    this._title.textContent = this._dataType.type.name;
+    this._title.textContent = this._dataType.name;
   }
 
   set undoBuffer(val) {
@@ -85,7 +85,7 @@ class EntityBrowser extends TatorElement {
   set annotationData(val) {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
-      if (evt.detail.typeObj.type.id === this._dataType.type.id) {
+      if (evt.detail.typeObj.id === this._dataType.id) {
         let groups;
         if (this._identifier) {
           const key = this._identifier.name;

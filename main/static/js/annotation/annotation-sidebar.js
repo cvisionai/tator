@@ -83,7 +83,7 @@ class AnnotationSidebar extends TatorElement {
       this._box.addEventListener("click", (evt) => {
         this._selectButton(this._box, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
-          detail: {typeId: val.box[0].type.id,
+          detail: {typeId: val.box[0].id,
                    metaMode: evt.shiftKey} // TODO: handle multiple box types
         }));
       });
@@ -103,7 +103,7 @@ class AnnotationSidebar extends TatorElement {
       this._line.addEventListener("click", (evt) => {
         this._selectButton(this._line, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
-          detail: {typeId: val.line[0].type.id,
+          detail: {typeId: val.line[0].id,
                    metaMode: evt.shiftKey} // TODO: handle multiple line types
         }));
       });
@@ -123,7 +123,7 @@ class AnnotationSidebar extends TatorElement {
       this._point.addEventListener("click", (evt) => {
         this._selectButton(this._point, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
-          detail: {typeId: val.dot[0].type.id,
+          detail: {typeId: val.dot[0].id,
                    metaMode: evt.shiftKey} // TODO: handle multiple point types
         }));
       });

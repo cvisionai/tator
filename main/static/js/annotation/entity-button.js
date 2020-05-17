@@ -53,8 +53,8 @@ class EntityButton extends TatorElement {
 
   set annotationData(val) {
     val.addEventListener("freshData", evt => {
-      if (evt.detail.typeObj.type.id === this._dataType.type.id) {
-        const name = this._dataType.type.name;
+      if (evt.detail.typeObj.id === this._dataType.id) {
+        const name = this._dataType.name;
         const count = evt.detail.data.length;
         this._text.textContent = count + " " + name;
       }
@@ -65,10 +65,10 @@ class EntityButton extends TatorElement {
     this._dataType = val;
     this._button.addEventListener("click", evt => {
       this.dispatchEvent(new CustomEvent("open", {
-        detail: {id: val.type.id}
+        detail: {id: val.id}
       }));
     });
-    this._text.textContent = val.count + " " + val.type.name;
+    this._text.textContent = val.count + " " + val.name;
   }
 }
 

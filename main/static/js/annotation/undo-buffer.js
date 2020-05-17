@@ -44,7 +44,7 @@ class UndoBuffer extends HTMLElement {
         });
 
         // Launch any edit trigger algorithms
-        var edit_triggers=this._mediaType.type.editTriggers;
+        var edit_triggers=this._mediaType.editTriggers;
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{

@@ -151,7 +151,7 @@ class EntitySelector extends TatorElement {
         }
         // Enable snapshots for boxes
         if (this._dataType.isLocalization &&
-            this._dataType.type.dtype == "box") {
+            this._dataType.dtype == "box") {
           capture.style.display = null;
         }
       } else {
