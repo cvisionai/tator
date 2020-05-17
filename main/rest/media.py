@@ -137,7 +137,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        return Media.objects.values().get(pk=params['id'])
+        return database_qs(Media.objects.filter(pk=params['id']))[0]
 
     def _patch(self, params):
         """ Update individual media.

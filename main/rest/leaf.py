@@ -207,7 +207,7 @@ class LeafDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return Leaf.objects.values().get(pk=params['id'])
+        return database_qs(Leaf.objects.filter(pk=params['id']))[0]
 
     def _patch(self, params):
         obj = Leaf.objects.get(pk=params['id'])

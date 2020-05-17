@@ -239,7 +239,7 @@ class LocalizationDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return Localization.objects.values().get(pk=params['id'])
+        return database_qs(Localization.objects.filter(pk=params['id']))[0]
 
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'])
