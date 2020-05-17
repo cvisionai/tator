@@ -73,7 +73,7 @@ class ProgressProducer:
     def _summary(self):
         """Broadcasts progress summary and stores message in redis.
         """
-        num_procs = self.rds.hlen(self.gid + ':started')
+        num_procs = self.rds.hlen(self.gid + ':started') + self.rds.hlen(self.gid + ':done')
         num_complete = self.rds.hlen(self.gid + ':done')
         msg = {
             **self.group_header,
