@@ -72,7 +72,7 @@ spec:
                 print(f"media = {media}, media_id = {media_id}")
                 time.sleep(2)
                 # Download media to working directory.
-                fname = media['url'].split('/')[-1]
+                fname = media['file'].split('/')[-1]
                 out_path = os.path.join(work_dir, fname)
                 medias.downloadFile(media, out_path)
   - name: find-edges
