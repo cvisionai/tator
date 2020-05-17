@@ -992,10 +992,10 @@ class AnnotationCanvas extends TatorElement
             }
             if (meta.dtype == "line")
             {
-              var y2=localization.y1;
-              var y1=localization.y0;
-              var x2=localization.x1;
-              var x1=localization.x0;
+              var y2=localization.y + localization.v;
+              var y1=localization.y;
+              var x2=localization.x + localization.u;
+              var x1=localization.x;
 
               var x_min=Math.min(x1,x2);
               var y_min=Math.min(y1,y2);
@@ -1085,10 +1085,10 @@ class AnnotationCanvas extends TatorElement
                      drawCtx.clientHeight/roi[3]];
 
     //Scale box dimenisons
-    var actX0 = (localization.x0 - roi[0]) *scaleFactor[0];
-    var actY0 = (localization.y0 - roi[1])*scaleFactor[1];
-    var actX1 = (localization.x1 - roi[0]) *scaleFactor[0];
-    var actY1 = (localization.y1 - roi[1])*scaleFactor[1];
+    var actX0 = (localization.x - roi[0]) *scaleFactor[0];
+    var actY0 = (localization.y - roi[1])*scaleFactor[1];
+    var actX1 = (localization.x + localization.u - roi[0]) *scaleFactor[0];
+    var actY1 = (localization.y + localization.v - roi[1])*scaleFactor[1];
 
     var line = [[actX0,actY0], [actX1,actY1]];
     return line;
@@ -1837,10 +1837,11 @@ class AnnotationCanvas extends TatorElement
       else if (objDescription.dtype=="line")
       {
         localization=this.scaleToRelative(lineInfo, true);
-        requestObj.x0 = localization[0];
-        requestObj.y0 = localization[1];
-        requestObj.x1 = localization[2];
-        requestObj.y1 = localization[3];
+        const [x0, y0, x1, y1] = localization;
+        requestObj.x = x0;
+        requestObj.y = y0;
+        requestObj.u = x1 - x0;
+        requestObj.v = y1 - y0;
       }
       else if (objDescription.dtype=='dot')
       {
@@ -1919,10 +1920,10 @@ class AnnotationCanvas extends TatorElement
     }
     else if (objDescription.dtype=='line')
     {
-      patchObj.x0 = this.activeLocalization.x0;
-      patchObj.y0 = this.activeLocalization.y0;
-      patchObj.x1 = this.activeLocalization.x1;
-      patchObj.y1 = this.activeLocalization.y1;
+      patchObj.x = this.activeLocalization.x0;
+      patchObj.y = this.activeLocalization.y0;
+      patchObj.u = this.activeLocalization.x1 - this.activeLocalization.x0;
+      patchObj.v = this.activeLocalization.y1 - this.activeLocalization.y0;
     }
     else if (objDescription.dtype=='dot')
     {
