@@ -96,7 +96,7 @@ class FramePanel extends TatorElement {
                 case "enum":
                   defaultValue = "";
                   break;
-                case "str":
+                case "string":
                   defaultValue = "";
                   break;
                 // TODO: Handle default datetime and geopos
