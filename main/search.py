@@ -267,8 +267,8 @@ class TatorSearch:
 
     def delete_document(self, entity):
         index = self.index_name(entity.project.pk)
-        if self.es.exists(index=index, id=entity.pk):
-            self.es.delete(index=index, id=entity.pk)
+        if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
+            self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
 
     def search_raw(self, project, query, getSource=False):
         return self.es.search(
