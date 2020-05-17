@@ -93,7 +93,7 @@ class UndoBuffer extends HTMLElement {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
     this._resetFromNow();
-    this._forwardOps.push([["POST", listUri, projectId, body]]);
+    this._forwardOps.push([["POST", listUri, projectId, [body]]]);
     this._backwardOps.push([["DELETE", detailUri, null, null]]);
     this._dataTypes.push(dataType);
     return this.redo();
@@ -137,9 +137,9 @@ class UndoBuffer extends HTMLElement {
           // This was an original annotation, patch the original and post
           // an edited one.
           this._forwardOps.push([
-            ["POST", listUri, projectId, {
+            ["POST", listUri, projectId, [{
               ...data, ...data.attributes, ...original, ...other, modified: false,
-            }],
+            }]],
             ["PATCH", detailUri, id, {...body, modified: true}],
           ]);
           this._backwardOps.push([
