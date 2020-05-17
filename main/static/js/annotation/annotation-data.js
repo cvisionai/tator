@@ -146,7 +146,8 @@ class AnnotationData extends HTMLElement {
         }
       }
       if (typeObj.isTLState) {
-        obj.association = {
+        obj = {
+          ...obj,
           frame: body.frame,
           media: [Number(body.media_ids)],
         };

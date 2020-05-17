@@ -370,7 +370,7 @@ class AnnotationPage extends TatorPage {
                 frame = undefined;
               }
               else {
-                frame = parseInt(evt.detail.data.association.frame);
+                frame = parseInt(evt.detail.data.frame);
               }
               // Only jump to a frame if it is known
               if (frame != undefined)

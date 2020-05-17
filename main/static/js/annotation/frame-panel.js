@@ -43,7 +43,7 @@ class FramePanel extends TatorElement {
       if (values !== null) {
         this._blockingUpdates = true;
         const data = this._data._dataByType.get(val.id);
-        const index = data.findIndex(elem => elem.association.frame === this._frame);
+        const index = data.findIndex(elem => elem.frame === this._frame);
         if (index === -1) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
@@ -134,13 +134,13 @@ class FramePanel extends TatorElement {
   }
 
   _getInterpolated(data) {
-    data.sort((a, b) => a.association.frame - b.association.frame);
+    data.sort((a, b) => a.frame - b.frame);
     const frameDiffs = data.map(
-      (elem, idx) => [Math.abs(elem.association.frame - this._frame), idx]
+      (elem, idx) => [Math.abs(elem.frame - this._frame), idx]
     );
     const nearestIdx = frameDiffs.reduce((r, a) => (a[0] < r[0] ? a : r))[1];
     let beforeIdx, afterIdx;
-    const frameDiff = data[nearestIdx].association.frame - this._frame;
+    const frameDiff = data[nearestIdx].frame - this._frame;
     if (frameDiff < 0) {
       beforeIdx = nearestIdx;
       afterIdx = Math.min(beforeIdx + 1, data.length - 1);

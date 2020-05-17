@@ -587,17 +587,17 @@ class AnnotationCanvas extends TatorElement
           }
         });
         evt.detail.data.forEach(track => {
-          track.association.localizations.forEach(localId => {
+          track.localizations.forEach(localId => {
             this._data._trackDb[localId] = track;
           });
 
-          if (track.association.color == null) {
+          if (track.color == null) {
             //Make a local color determination using color progression
             var drawColor = color.nextColor(this._lastAutoTrackColor);
             // Set the last auto color
             this._lastAutoTrackColor = drawColor;
             // Cache the downloaded copy of the track with the color value
-            track.association.color = color.rgbToHex(drawColor);
+            track.color = color.rgbToHex(drawColor);
           }
         });
       }
@@ -1523,7 +1523,7 @@ class AnnotationCanvas extends TatorElement
     let frame = frameHint;
     if (frame == undefined)
     {
-      frame = track.association.segments[0][0];
+      frame = track.segments[0][0];
     }
 
     let trackSelectFunctor = () => {
@@ -2335,14 +2335,14 @@ class AnnotationCanvas extends TatorElement
 
           if (localization.id in this._data._trackDb)
           {
-            if (this._activeTrack && this._activeTrack.association.localizations.includes(localization.id))
+            if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
             {
               alpha = 1.0*255;
               trackColor = "FFFFFF";
             }
             else
             {
-              trackColor = this._data._trackDb[localization.id].association.color;
+              trackColor = this._data._trackDb[localization.id].color;
             }
             if (trackColor)
             {
@@ -2418,15 +2418,15 @@ class AnnotationCanvas extends TatorElement
     }
     if (this._activeTrack)
     {
-      let numSegments = this._activeTrack.association.segments.length;
+      let numSegments = this._activeTrack.segments.length;
       let trackStillValid = false;
       let currentFrame = this.currentFrame();
       let minFrame = Number.MAX_SAFE_INTEGER;
       let maxFrame = 0;
       for (let idx = 0; idx < numSegments; idx++)
       {
-        let segStart = this._activeTrack.association.segments[idx][0];
-        let segEnd = this._activeTrack.association.segments[idx][1];
+        let segStart = this._activeTrack.segments[idx][0];
+        let segEnd = this._activeTrack.segments[idx][1];
         if (segStart < minFrame)
         {
           minFrame = segStart;

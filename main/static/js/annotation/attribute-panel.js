@@ -139,7 +139,7 @@ class AttributePanel extends TatorElement {
     
     if (this._slider) {
       this._frames = [];
-      for (const [start, end] of values.association.segments) {
+      for (const [start, end] of values.segments) {
         for (let i = start; i <= end; i++) {
           this._frames.push(i);
         }

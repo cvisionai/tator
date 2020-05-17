@@ -91,7 +91,7 @@ class TimelineCanvas extends TatorElement {
     const frames = [];
     for (const elem of data) {
       const value = elem.attributes[attributeName];
-      const frame = elem.association.frame;
+      const frame = elem.frame;
       if (value) {
         //Alternate based on col number
         if (col_idx % 2 == 0) {
