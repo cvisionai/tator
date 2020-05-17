@@ -288,7 +288,7 @@ class StateDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        state = database_qs(Localization.objects.filter(pk=params['id']))[0]
+        state = database_qs(State.objects.filter(pk=params['id']))[0]
         # Get many to many fields.
         state['localizations'] = list(State.localizations.through.objects\
                                       .filter(state_id=state['id'])\
