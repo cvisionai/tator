@@ -8,9 +8,11 @@ class AnnotationData extends HTMLElement {
     this._edited = true;
   }
 
-  init(dataTypes, version) {
+  init(dataTypes, version, projectId, mediaId) {
     this._dataTypesRaw = dataTypes;
     this._version = version;
+    this._projectId = projectId;
+    this._mediaId = mediaId;
 
     this.updateAll(dataTypes, version)
     .then(() => {
@@ -56,6 +58,14 @@ class AnnotationData extends HTMLElement {
       }
     }
 
+    // Define function for getting data url.
+    const getDataUrl = dataType => {
+      const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
+      const dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" + 
+                      this._mediaId + "&type=" + dataType.id;
+      return dataUrl;
+    };
+
     // Update tracks first
     const tracksDone = new Promise(resolve => {
       if (trackTypeIds.length == 0) {
@@ -72,7 +82,7 @@ class AnnotationData extends HTMLElement {
       };
 
       trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(dataTypes[typeIdx].id, dataTypes[typeIdx].data);
+        this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
         this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
@@ -92,7 +102,7 @@ class AnnotationData extends HTMLElement {
       //Update localizations after
       tracksDone.then(() => {
         localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(dataTypes[typeIdx].id, dataTypes[typeIdx].data);
+          this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
           this.updateType(dataTypes[typeIdx], semaphore);
         });
       });

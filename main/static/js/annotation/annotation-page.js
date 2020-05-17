@@ -310,7 +310,7 @@ class AnnotationPage extends TatorPage {
           this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.init(dataTypes, this._version);
+        this._data.init(dataTypes, this._version, projectId, mediaId);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
