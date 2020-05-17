@@ -314,8 +314,8 @@ class SaveVideoAPI(APIView):
             # Send a message saying upload successful.
             info = {
                 "id": media_obj.id,
-                "thumb_url": media_obj.thumbnail.url,
-                "thumb_gif_url": media_obj.thumbnail_gif.url,
+                "thumbnail": str(media_obj.thumbnail),
+                "thumbnail_gif": str(media_obj.thumbnail_gif),
                 "name": progress_name,
                 "section": section,
             }
