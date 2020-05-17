@@ -174,13 +174,13 @@ class TatorSearch:
                 aux['_thumbnail_image'] = entity.thumbnail_image.pk
             else:
                 aux['_thumbnail_image'] = None
-            if entity.meta.dtype is 'box':
+            if entity.meta.dtype == 'box':
                 aux['_width'] = entity.width
                 aux['_height'] = entity.height
-            elif entity.meta.dtype is 'line':
+            elif entity.meta.dtype == 'line':
                 aux['_u'] = entity.u
                 aux['_v'] = entity.v
-            elif entity.meta.dtype is 'dot':
+            elif entity.meta.dtype == 'dot':
                 pass
         elif entity.meta.dtype in ['state']:
             media = entity.media.all()
