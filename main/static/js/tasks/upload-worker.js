@@ -317,9 +317,8 @@ class Upload {
         fetchRetry(
             "/rest/Media/" + this.projectId + "?format=json&type=" + 
             this.mediaTypeId + "&md5=" + this.md5)
-          .then(response => response.json())
-          .then(json => {
-            if (json.length === 0) {
+          .then(response => {
+            if (response.status == 404) {
               this.tus.start();
             } else {
               removeFromActive(this.upload_uid);
