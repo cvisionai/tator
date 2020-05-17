@@ -110,10 +110,10 @@ class EntityBrowser extends TatorElement {
             });
           } else {
             groups[group].sort((item_a, item_b) => {
-              if (item_a.association.frame === item_b.association.frame) {
+              if (item_a.frame === item_b.frame) {
                 return item_a.id - item_b.id;
               }
-              return item_a.association.frame - item_b.association.frame;
+              return item_a.frame - item_b.frame;
             });
           }
           if (group in this._selectors) {
