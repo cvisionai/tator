@@ -93,7 +93,7 @@ class UndoBuffer extends HTMLElement {
     const projectId = this.getAttribute("project-id");
     const detailUri = UndoBuffer.listToDetail[listUri];
     this._resetFromNow();
-    this._forwardOps.push([["POST", listUri, projectId, [body]]]);
+    this._forwardOps.push([["POST", listUri, projectId, body]]);
     this._backwardOps.push([["DELETE", detailUri, null, null]]);
     this._dataTypes.push(dataType);
     return this.redo();
@@ -137,9 +137,9 @@ class UndoBuffer extends HTMLElement {
           // This was an original annotation, patch the original and post
           // an edited one.
           this._forwardOps.push([
-            ["POST", listUri, projectId, [{
+            ["POST", listUri, projectId, {
               ...data, ...data.attributes, ...original, ...other, modified: false,
-            }]],
+            }],
             ["PATCH", detailUri, id, {...body, modified: true}],
           ]);
           this._backwardOps.push([
@@ -208,7 +208,7 @@ class UndoBuffer extends HTMLElement {
         } else if (data.modified == true) {
           // This was an annotation created via web interface, actually delete it.
           this._forwardOps.push([["DELETE", detailUri, id, null]]);
-          this._backwardOps.push([["POST", listUri, projectId, [{...body, modified: true}]]]); 
+          this._backwardOps.push([["POST", listUri, projectId, {...body, modified: true}]]); 
         } else if (data.modified == false) {
           console.error("Attempted to delete an original version!");
           return null;
@@ -308,7 +308,11 @@ class UndoBuffer extends HTMLElement {
       ...this._headers(),
     };
     if (body) {
-      obj.body = JSON.stringify(body);
+      if (method == "POST") {
+        obj.body = JSON.stringify([body]);
+      } else {
+        obj.body = JSON.stringify(body);
+      }
     }
     return fetchRetry(url, obj)
     .then(response => {
