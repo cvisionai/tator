@@ -3,13 +3,15 @@ from ..models import MediaType
 from ..models import LocalizationType
 from ..models import Localization
 from ..models import Project
-from ..models import database_qs
 from ..schema import LocalizationTypeListSchema
 from ..schema import LocalizationTypeDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
+          'colorMap', 'line_width']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
@@ -32,9 +34,9 @@ class LocalizationTypeListAPI(BaseListView):
             for localization in localizations:
                 if localization.project.id != self.kwargs['project']:
                     raise Exception('Localization not in project!')
-            response_data = database_qs(localizations)
+            response_data = localizations.values(*fields)
         else:
-            response_data = database_qs(LocalizationType.objects.filter(project=self.kwargs['project']))
+            response_data = LocalizationType.objects.filter(project=params['project']).values(*fields)
         return list(response_data)
 
     def _post(self, params):
@@ -78,7 +80,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             shape, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        return LocalizationType.objects.values().get(pk=params['id'])
+        return LocalizationType.objects.values(*fields).get(pk=params['id'])
 
     def _patch(self, params):
         """ Update a localization type.
