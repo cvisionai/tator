@@ -104,7 +104,7 @@ class ProgressProducer:
         """Broadcast a queued message, add to group processes.
         """
         self._broadcast('started', msg, 0)
-        self.rds.hset(self.gid + ':started', self.uid, self.uid)
+        self.rds.hset(self.gid + ':started', self.uid, json.dumps(msg))
         self._summary()
 
     def progress(self, msg, progress, aux=None):
@@ -116,12 +116,16 @@ class ProgressProducer:
         """Broadcast a failure message.
         """
         self._broadcast('failed', msg, 100)
+        self.rds.hdel(self.gid + ':started', self.uid)
+        self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
 
     def finished(self, msg, aux=None):
         """Broadcast a finished message.
         """
         self._broadcast('finished', msg, 100, aux)
+        self.rds.hdel(self.gid + ':started', self.uid)
+        self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
 
 # Initialize global redis connection
