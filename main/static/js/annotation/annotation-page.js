@@ -101,7 +101,7 @@ class AnnotationPage extends TatorPage {
             this._player.mediaTypes = data['type'];
           });
           let player;
-          if ("thumbnail_gif" in data) {
+          if (data.thumbnail_gif) {
             player = document.createElement("annotation-player");
             this._player = player;
             player.addDomParent({"object": this._headerDiv,
