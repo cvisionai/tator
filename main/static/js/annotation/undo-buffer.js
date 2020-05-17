@@ -113,10 +113,10 @@ class UndoBuffer extends HTMLElement {
           };
         } else {
           other = {
-            media_ids: data.association.media,
-            frame: data.association.frame,
+            media_ids: data.media,
+            frame: data.frame,
             type: data.meta,
-            localization_ids: data.association.localizations,
+            localization_ids: data.localizations,
           };
         }
         const original = {};
@@ -171,14 +171,14 @@ class UndoBuffer extends HTMLElement {
           };
         } else {
           other = {
-            media_ids: data.association.media,
-            frame: data.association.frame,
+            media_ids: data.media,
+            frame: data.frame,
             type: data.meta,
           };
         }
         const body = {
-          type: data.meta.id,
-          name: data.meta.name,
+          type: dataType.id,
+          name: dataType.name,
           version: data.version,
           ...other,
           ...data,
@@ -194,7 +194,7 @@ class UndoBuffer extends HTMLElement {
         } else if (data.modified == true) {
           // This was an annotation created via web interface, actually delete it.
           this._forwardOps.push([["DELETE", detailUri, id, null]]);
-          this._backwardOps.push([["POST", listUri, projectId, {...body, modified: true}]]); 
+          this._backwardOps.push([["POST", listUri, projectId, [{...body, modified: true}]]]); 
         } else if (data.modified == false) {
           console.error("Attempted to delete an original version!");
           return null;
