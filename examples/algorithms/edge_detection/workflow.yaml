@@ -24,7 +24,7 @@ spec:
         template: teardown
   - name: setup
     script:
-      image: cvisionai/tator_algo_marshal
+      image: localhost:5000/tator_algo_marshal
       resources:
         limits:
           cpu: 250m
@@ -76,7 +76,7 @@ spec:
                 medias.downloadFile(media, out_path)
   - name: find-edges
     script:
-      image: jrtcppv/find_edges
+      image: localhost:5000/find_edges
       resources:
         limits:
           cpu: 1000m
@@ -99,7 +99,7 @@ spec:
       args: [/find_edges.py]
   - name: teardown
     script:
-      image: cvisionai/tator_algo_marshal
+      image: localhost:5000/tator_algo_marshal
       resources:
         limits:
           cpu: 250m
