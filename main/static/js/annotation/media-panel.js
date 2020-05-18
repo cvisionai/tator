@@ -78,21 +78,23 @@ class MediaPanel extends TatorElement {
     if (dataDefined && typesDefined) {
       let first = true;
       for (const dataType of this._dataTypes) {
-        const button = document.createElement("entity-button");
-        button.dataType = dataType;
-        button.annotationData = this._annotationData;
-        if (first) {
-          this._entities.style.display = "block";
-          button.setAttribute("label", "Entities");
-          first = false;
+        if (dataType.visible) {
+          const button = document.createElement("entity-button");
+          button.dataType = dataType;
+          button.annotationData = this._annotationData;
+          if (first) {
+            this._entities.style.display = "block";
+            button.setAttribute("label", "Entities");
+            first = false;
+          }
+          this._entities.appendChild(button);
+          button.addEventListener("click", evt => {
+            this.dispatchEvent(new CustomEvent("open", {
+              detail: {typeId: dataType.id},
+              composed: true,
+            }));
+          });
         }
-        this._entities.appendChild(button);
-        button.addEventListener("click", evt => {
-          this.dispatchEvent(new CustomEvent("open", {
-            detail: {typeId: dataType.id},
-            composed: true,
-          }));
-        });
       }
     }
   }
