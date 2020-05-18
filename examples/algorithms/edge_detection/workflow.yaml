@@ -12,7 +12,6 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storageClass: nfs-client
           storage: 100Mi
   templates:
   - name: pipeline
