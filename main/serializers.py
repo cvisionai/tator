@@ -68,7 +68,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_thumb(self, obj):
         url = ""
         try: # Can fail if project has no media
-            media = EntityMediaBase.objects.filter(project=obj)[0]
+            media = Media.objects.filter(project=obj)[0]
             url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
         except:
             pass
