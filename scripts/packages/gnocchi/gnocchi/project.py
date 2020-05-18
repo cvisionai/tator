@@ -118,8 +118,7 @@ class ProjectDetail(QtWidgets.QWidget):
         project_data = self.tator.Project.get(self.project_id)
         self.ui.sectionTree.clear()
         self.sections = {}
-        section_data = self.tator.Media.filter({"operation":
-                                                "attribute_count::tator_user_sections"})
+        section_data = self.tator.MediaSection.all()
         for section in section_data:
             section_tree = QtWidgets.QTreeWidgetItem(self.ui.sectionTree)
             section_tree.setText(0,section)
@@ -127,7 +126,7 @@ class ProjectDetail(QtWidgets.QWidget):
             self.ui.sectionTree.addTopLevelItem(section_tree)
 
         self.parentWidget().repaint()
-        number_of_sections = len(project_data['section_order'])
+        number_of_sections = len(section_data)
 
         progress_dialog = QtWidgets.QProgressDialog("Loading project...",
                                                     "Cancel",
