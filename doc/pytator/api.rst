@@ -29,14 +29,15 @@ function. The *params* object is often type specific; and maps to the
 REST endpoints documented at
 `Tator REST API Details <https://cvision.tatorapp.com/rest>`_.
 
-When dealing with a user-defined type it is useful to use the
-`EntityTypeSchema` endpoint, to determine required fields for a `.new()` or
+When dealing with a user-defined type it is useful to inspect the 
+`attribute_types` field of the `MediaType`, `LocalizationType`, `StateType`, 
+or `LeafType` endpoints, to determine required fields for a `.new()` or
 `.patch()` operation.
 
 Searching for media
 -------------------
 
-To search for media, the `EntityMedias` endpoint accepts lucene style searches
+To search for media, the `Medias` endpoint accepts lucene style searches
 using the `search` parameter. An example usage of this is: ::
 
   results = tator.Media.filter({"search": "<LUCENE QUERY HERE">})
