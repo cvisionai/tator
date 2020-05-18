@@ -886,40 +886,51 @@ def fixMigrateFlatAnnotationTypes():
     """
     # Make sure state and localization types have foreign keys to media types.
     for loc_type in LocalizationType.objects.all():
-        for media_type in loc_type.polymorphic.media.all():
-            loc_type.media.add(media_type.media_type_polymorphic)
-        loc_type.save()
+        if loc_type.polymorphic:
+            for media_type in loc_type.polymorphic.media.all():
+                loc_type.media.add(media_type.media_type_polymorphic)
+        else:
+            logger.info(f"Could not update media m2m for type {loc_type.name}, no foreign key to polymorphic type!")
     for state_type in StateType.objects.all():
-        for media_type in state_type.polymorphic.media.all():
-            state_type.media.add(media_type.media_type_polymorphic)
-        state_type.save()
+        if state_type.polymorphic:
+            for media_type in state_type.polymorphic.media.all():
+                state_type.media.add(media_type.media_type_polymorphic)
+        else:
+            logger.info(f"Could not update media m2m for type {state_type.name}, no foreign key to polymorphic type!")
 
 def fixMigrateFlatLeafTypeAttributes():
     """ Add leaf type attribute types.
     """
+    leaf_types = []
     for type_ in LeafType.objects.all():
         type_.attribute_types = attrTypeToDict(type_.polymorphic)
-        type_.save()
+        leaf_types.append(type_)
+    LeafType.objects.bulk_update(leaf_types, ['attribute_types'])
 
 def fixMigrateFlatAttributeTypeOrder():
     """ Includes order of attribute types.
     """
     for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        types = []
         for type_ in type_class.objects.all():
             attribute_types = AttributeTypeBase.objects.filter(applies_to=type_.polymorphic)
             for attr_type in attribute_types:
                 for flat_attr_type in type_.attribute_types:
                     if flat_attr_type['name'] == attr_type.name:
                         flat_attr_type['order'] = attr_type.order
-            type_.save()
+                types.append(type_)
+        type_class.objects.bulk_update(types, ['attribute_types'])
         
 def fixMigrateFlatVisible():
     """ Set visible field on entity types.
     """
     for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        types = []
         for type_ in type_class.objects.all():
             if type_.polymorphic:
                 type_.visible = type_.polymorphic.visible
                 type_.save()
             else:
                 logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
+            types.append(type_)
+        type_class.objects.bulk_update(types, ['attribute_types'])
