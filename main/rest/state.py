@@ -3,6 +3,7 @@ import datetime
 import itertools
 
 from django.contrib.postgres.aggregates import ArrayAgg
+import numpy as np
 
 from ..models import State
 from ..models import StateType
@@ -12,7 +13,6 @@ from ..models import Project
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import database_qs
-from ..models import calc_segments
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
@@ -129,7 +129,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         return response_data
 
     def _post(self, params):
-        t0 = datetime.datetime.now()
         # Check that we are getting a state list.
         if 'body' in params:
             state_specs = params['body']
@@ -217,7 +216,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         State.localizations.through.objects.bulk_create(loc_relations)
        
         # Calculate segments (this is not triggered for bulk created m2m).
-        t1 = datetime.datetime.now()
         localization_ids = itertools.chain(*[state_spec.get('localization_ids', []) 
                                              for state_spec in state_specs])
         loc_id_to_frame = {loc['id']:loc['frame'] for loc in 
@@ -225,30 +223,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                            .values('id', 'frame').iterator()}
         for state, state_spec in zip(states, state_specs):
             frames = [loc_id_to_frame[loc_id] for loc_id in state_spec.get('localization_ids', [])]
-            segmentList=[]
-            current=[None,None]
-            last=None
-            for frame in sorted(frames):
-                if current[0] is None:
-                    current[0] = frame
-                    last = current[0]
-                else:
-                    if frame - 1 == last:
-                        last = frame
-                    else:
-                        current[1] = last
-                        segmentList.append(current.copy())
-                        current[0] = frame
-                        current[1] = None
-                        last = frame
-            if current[1] is None:
-                current[1] = last
-                segmentList.append(current)
-            state.segments = segmentList
-            logger.info(f"SEGMENTS: {segmentList}")
+            frames = np.sort(frames)
+            segments = np.split(frames, np.where(np.diff(frames) != 1)[0] + 1)
+            state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
         State.objects.bulk_update(states, ['segments'])
-        t2 = datetime.datetime.now()
-        logger.info(f"TIME TO UPDATE SEGMENTS: {t2-t1}")
 
         # Build ES documents.
         ts = TatorSearch()
@@ -262,8 +240,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
         # Return created IDs.
         ids = [state.id for state in states]
-        t3 = datetime.datetime.now()
-        logger.info(f"TIME TO CREATE STATES: {t3-t0}")
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
 
     def _delete(self, params):
