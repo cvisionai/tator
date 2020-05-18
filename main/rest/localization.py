@@ -66,7 +66,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if 'type' in params:
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
-                qs = qs.filter(version=params['version'])
+                qs = qs.filter(version__in=params['version'])
             if 'modified' in params:
                 qs = qs.exclude(modified=(not params['modified']))
             if self.operation == 'count':
