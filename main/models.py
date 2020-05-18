@@ -332,31 +332,11 @@ class EntityMediaBase(EntityBase):
     """ End datetime of a session in which the media's annotations were edited.
     """
 
-@receiver(post_save, sender=EntityMediaBase)
-def entity_media_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityMediaBase)
-def entity_media_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
-
 class EntityMediaImage(EntityMediaBase):
     """ .. deprecated :: Use Media object """
     thumbnail = ImageField()
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-
-@receiver(post_save, sender=EntityMediaImage)
-def image_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityMediaImage)
-def image_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
-    instance.file.delete(False)
-    instance.thumbnail.delete(False)
 
 def getVideoDefinition(path, codec, resolution, **kwargs):
     """ Convenience function to generate video definiton dictionary """
@@ -388,41 +368,6 @@ class EntityMediaVideo(EntityMediaBase):
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
 
-@receiver(post_save, sender=EntityMediaVideo)
-def video_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().create_document(instance)
-
-def safe_delete(path):
-    try:
-        logger.info(f"Deleting {path}")
-        os.remove(path)
-    except:
-        logger.warning(f"Could not remove {path}")
-
-@receiver(pre_delete, sender=EntityMediaVideo)
-def video_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
-    instance.file.delete(False)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
-    # Delete all the files referenced in media_files
-    if not instance.media_files is None:
-        files = instance.media_files.get('streaming', [])
-        for obj in files:
-            path = "/data" + obj['path']
-            safe_delete(path)
-            path = "/data" + obj['segment_info']
-            safe_delete(path)
-        files = instance.media_files.get('archival', [])
-        for obj in files:
-            safe_delete(obj['path'])
-    instance.thumbnail.delete(False)
-    instance.thumbnail_gif.delete(False)
-
 class EntityLocalizationBase(EntityBase):
     """ .. deprecated :: Use Localization object """
     user = ForeignKey(User, on_delete=PROTECT)
@@ -442,37 +387,10 @@ class EntityLocalizationBase(EntityBase):
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
 
-@receiver(post_save, sender=EntityLocalizationBase)
-def entity_localization_save(sender, instance, created, **kwargs):
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationBase)
-def entity_localization_delete(sender, instance, **kwargs):
-    """ Delete generated thumbnails if a localization box is deleted """
-    TatorSearch().delete_document(instance)
-    if instance.thumbnail_image:
-        instance.thumbnail_image.delete()
-
 class EntityLocalizationDot(EntityLocalizationBase):
     """ .. deprecated :: Use Localization object """
     x = FloatField()
     y = FloatField()
-
-@receiver(post_save, sender=EntityLocalizationDot)
-def dot_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationDot)
-def dot_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
 
 class EntityLocalizationLine(EntityLocalizationBase):
     """ .. deprecated :: Use Localization object """
@@ -481,38 +399,12 @@ class EntityLocalizationLine(EntityLocalizationBase):
     x1 = FloatField()
     y1 = FloatField()
 
-@receiver(post_save, sender=EntityLocalizationLine)
-def line_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        logger.info("Inhibited ES insertion")
-
-@receiver(pre_delete, sender=EntityLocalizationLine)
-def line_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
-
 class EntityLocalizationBox(EntityLocalizationBase):
     """ .. deprecated :: Use Localization object """
     x = FloatField()
     y = FloatField()
     width = FloatField()
     height = FloatField()
-
-@receiver(post_save, sender=EntityLocalizationBox)
-def box_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationBox)
-def box_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
 
 class AssociationType(PolymorphicModel):
     """ .. deprecated :: Use Association object """
@@ -553,34 +445,6 @@ class LocalizationAssociation(AssociationType):
         localizationAssociations=LocalizationAssociation.objects.filter(localizations__in=localizationsForMedia).distinct()
         return EntityState.objects.filter(association__in=localizationAssociations)
 
-@receiver(m2m_changed, sender=LocalizationAssociation.localizations.through)
-def calcSegments(sender, **kwargs):
-    instance=kwargs['instance']
-    sortedLocalizations=EntityLocalizationBase.objects.filter(pk__in=instance.localizations.all()).order_by('frame')
-
-    #Bring up related media to association
-    instance.media.set(sortedLocalizations.all().values_list('media', flat=True))
-    segmentList=[]
-    current=[None,None]
-    last=None
-    for localization in sortedLocalizations:
-        if current[0] is None:
-            current[0] = localization.frame
-            last = current[0]
-        else:
-            if localization.frame - 1 == last:
-                last = localization.frame
-            else:
-                current[1] = last
-                segmentList.append(current.copy())
-                current[0] = localization.frame
-                current[1] = None
-                last = localization.frame
-    if current[1] is None:
-        current[1] = last
-        segmentList.append(current)
-    instance.segments = segmentList
-
 class FrameAssociation(AssociationType):
     """ .. deprecated :: Use Association object """
     frame = PositiveIntegerField()
@@ -606,14 +470,6 @@ class EntityState(EntityBase):
 
     def selectOnMedia(media_id):
         return AssociationType.states(media_id)
-
-@receiver(post_save, sender=EntityState)
-def entity_state_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityState)
-def entity_state_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 # Tree data type
 class TreeLeaf(EntityBase):
@@ -647,18 +503,6 @@ class TreeLeaf(EntityBase):
             pathStr=projName+"."+pathStr
         return pathStr
 
-@receiver(post_save, sender=TreeLeaf)
-def treeleaf_save(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=TreeLeaf)
-def treeleaf_delete(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().delete_document(instance)
-
 # Attribute types
 # These table structures are used to describe the structure of
 # an Entity's JSON-B attribute field
@@ -679,19 +523,11 @@ class AttributeTypeBase(PolymorphicModel):
     def __str__(self):
         return self.name
 
-@receiver(post_save, sender=AttributeTypeBase)
-def base_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeBool(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Boolean"
     dtype = "bool"
     default = BooleanField(null=True, blank=True)
-
-@receiver(post_save, sender=AttributeTypeBool)
-def bool_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
 
 class AttributeTypeInt(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
@@ -701,10 +537,6 @@ class AttributeTypeInt(AttributeTypeBase):
     lower_bound = IntegerField(null=True, blank=True)
     upper_bound = IntegerField(null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeInt)
-def int_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeFloat(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Float"
@@ -712,10 +544,6 @@ class AttributeTypeFloat(AttributeTypeBase):
     default = FloatField(null=True, blank=True)
     lower_bound = FloatField(null=True, blank=True)
     upper_bound = FloatField(null=True, blank=True)
-
-@receiver(post_save, sender=AttributeTypeFloat)
-def float_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
 
 class AttributeTypeEnum(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
@@ -725,20 +553,12 @@ class AttributeTypeEnum(AttributeTypeBase):
     labels = ArrayField(CharField(max_length=64), null=True, blank=True)
     default = CharField(max_length=64, null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeEnum)
-def enum_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeString(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "String"
     dtype = "str"
     default = CharField(max_length=256, null=True, blank=True)
     autocomplete = JSONField(null=True, blank=True)
-
-@receiver(post_save, sender=AttributeTypeString)
-def string_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
 
 class AttributeTypeDatetime(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
@@ -747,19 +567,11 @@ class AttributeTypeDatetime(AttributeTypeBase):
     use_current = BooleanField()
     default_timezone = CharField(max_length=3, null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeDatetime)
-def datetime_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeGeoposition(AttributeTypeBase):
     """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Geoposition"
     dtype = "geopos"
     default = PointField(null=True, blank=True)
-
-@receiver(post_save, sender=AttributeTypeGeoposition)
-def geopos_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
 
 def ProjectBasedFileLocation(instance, filename):
     return os.path.join(f"{instance.project.id}", filename)
@@ -1162,12 +974,24 @@ def safe_delete(path):
 def media_delete(sender, instance, **kwargs):
     TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().delete_document(instance)
-    """
     instance.file.delete(False)
     if instance.original != None:
         path = str(instance.original)
         safe_delete(path)
-    """
+
+    # Delete all the files referenced in media_files
+    if not instance.media_files is None:
+        files = instance.media_files.get('streaming', [])
+        for obj in files:
+            path = "/data" + obj['path']
+            safe_delete(path)
+            path = "/data" + obj['segment_info']
+            safe_delete(path)
+        files = instance.media_files.get('archival', [])
+        for obj in files:
+            safe_delete(obj['path'])
+    instance.thumbnail.delete(False)
+    instance.thumbnail_gif.delete(False)
 
 class Localization(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
