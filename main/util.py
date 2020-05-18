@@ -36,7 +36,7 @@ def updateProjectTotals(force=False):
     projects=Project.objects.all()
     for project in projects:
         temp_files = TemporaryFile.objects.filter(project=project)
-        files = EntityMediaBase.objects.filter(project=project)
+        files = Media.objects.filter(project=project)
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
             project.size = 0
@@ -50,7 +50,7 @@ def updateProjectTotals(force=False):
                         project.size += file.file.size
                 if os.path.exists(file.thumbnail.path):
                     project.size += file.thumbnail.size
-                if isinstance(file, EntityMediaVideo):
+                if file.meta.dtype == 'video':
                     if file.original:
                         if os.path.exists(file.original):
                             statinfo = os.stat(file.original)
@@ -174,10 +174,10 @@ def makeDefaultVersion(project_number):
     else:
         version = make_default_version(project)
     logger.info("Updating localizations...")
-    qs = EntityLocalizationBase.objects.filter(project=project)
+    qs = Localization.objects.filter(project=project)
     qs.update(version=version)
     logger.info("Updating states...")
-    qs = EntityState.objects.filter(project=project)
+    qs = State.objects.filter(project=project)
     qs.update(version=version)
 
 def associateExtractions(project, section_names):
@@ -230,8 +230,9 @@ def make_video_definition(disk_file, url_path):
             codec_description=stream["codec_long_name"])
 
         return video_def
+
 def migrateVideosToNewSchema(project):
-    videos = EntityMediaVideo.objects.filter(project=project)
+    videos = Media.objects.filter(project=project, meta__dtype='video')
     for video in progressbar(videos):
         streaming_definition = make_video_definition(
             os.path.join(settings.MEDIA_ROOT,
@@ -254,7 +255,7 @@ def migrateVideosToNewSchema(project):
         video.save()
 
 def fixVideoDims(project):
-    videos = EntityMediaVideo.objects.filter(project=project)
+    videos = Media.objects.filter(project=project, meta__dtype='video')
     for video in progressbar(videos):
         try:
             if video.original:
