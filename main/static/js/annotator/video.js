@@ -376,10 +376,10 @@ class VideoBufferDemux
       }
       else
       {
-        // If we are 2% away from the end, start overlapping
+        // If we are 5% away from the end, start overlapping
         // Except for the last buffer because then we are
         // SoL.
-        if (newSize > (this._bufferSize *0.98) &&
+        if (newSize > (this._bufferSize *0.95) &&
             latest != (this._numBuffers - 1))
         {
           this._updateBuffers([latest,latest+1],data,callback);
