@@ -913,3 +913,13 @@ def fixMigrateFlatAttributeTypeOrder():
                         flat_attr_type['order'] = attr_type.order
             type_.save()
         
+def fixMigrateFlatVisible():
+    """ Set visible field on entity types.
+    """
+    for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        for type_ in type_class.objects.all():
+            if type_.polymorphic:
+                type_.visible = type_.polymorphic.visible
+                type_.save()
+            else:
+                logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
