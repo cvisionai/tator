@@ -8,7 +8,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible']
 
 class LeafTypeListAPI(BaseListView):
     """ Interact with leaf type list.

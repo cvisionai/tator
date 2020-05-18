@@ -11,7 +11,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
-          'colorMap', 'line_width']
+          'colorMap', 'line_width', 'visible']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
