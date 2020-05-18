@@ -918,7 +918,7 @@ def fixMigrateFlatAttributeTypeOrder():
                 for flat_attr_type in type_.attribute_types:
                     if flat_attr_type['name'] == attr_type.name:
                         flat_attr_type['order'] = attr_type.order
-                types.append(type_)
+            types.append(type_)
         type_class.objects.bulk_update(types, ['attribute_types'])
         
 def fixMigrateFlatVisible():
@@ -929,8 +929,7 @@ def fixMigrateFlatVisible():
         for type_ in type_class.objects.all():
             if type_.polymorphic:
                 type_.visible = type_.polymorphic.visible
-                type_.save()
+                types.append(type_)
             else:
                 logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
-            types.append(type_)
         type_class.objects.bulk_update(types, ['attribute_types'])
