@@ -700,6 +700,8 @@ class MediaType(Model):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
     editTriggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
@@ -747,6 +749,8 @@ class LocalizationType(Model):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
     media = ManyToManyField(MediaType)
     colorMap = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
@@ -789,6 +793,8 @@ class StateType(Model):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
     media = ManyToManyField(MediaType)
     interpolation = CharField(max_length=16,
                               choices=[('none', 'none'), ('latest', 'latest')],
@@ -835,6 +841,8 @@ class LeafType(Model):
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
     attribute_types = JSONField(null=True, blank=True)
     """ User defined attributes.
 
