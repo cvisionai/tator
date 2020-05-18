@@ -192,7 +192,7 @@ class AnnotationData extends HTMLElement {
       return;
     }
 
-    let url = new URL(this._updateUrls.get(typeId));
+    let url = new URL(this._updateUrls.get(typeId), location.protocol + '//' + location.host);
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
         searchParams.set('search',query);
