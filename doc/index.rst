@@ -17,7 +17,7 @@ Tator is maintained and supported by `CVision AI <https://www.cvisionai.com>`_.
    Setup a cluster <setup_tator/cluster.rst>
    Administrative Functions <administration/admin.md>
    Utilizing an AWS deployment <aws.md>
-   Archive Based Uploads <usage/archive_based_uploads.rst>
+   Media Management <usage/media_management.rst>
 
 Python API
 ++++++++++

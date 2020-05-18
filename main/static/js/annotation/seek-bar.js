@@ -8,6 +8,7 @@ class SeekBar extends TatorElement {
     this.handle = document.createElement("div");
     this.handle.setAttribute("class", "range-handle");
     this.handle.setAttribute("tabindex", "0");
+    this.handle.style.cursor = "pointer";
     this.bar.appendChild(this.handle);
     this._loadedPercentage = 0;
 

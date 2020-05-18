@@ -50,7 +50,8 @@ def get_annotation_queryset(project, query_params, annotation_type):
         annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})
 
     if version != None:
-        annotation_bools.append({'match': {'_annotation_version': {'query': int(version)}}})
+        logger.info(f"version = {version}")
+        annotation_bools.append({'terms': {'_annotation_version': version}})
 
     if start != None:
         query['from'] = int(start)

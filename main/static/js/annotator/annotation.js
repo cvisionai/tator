@@ -1,6 +1,7 @@
 
 var statusAnimator=null;
 var defaultDotWidth=10;
+var defaultDrawWidth=3;
 
 function clearStatus()
 {
@@ -1111,7 +1112,7 @@ class AnnotationCanvas extends TatorElement
 
     if (width == undefined)
     {
-      width = defaultDotWidth;
+      width = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
     }
 
     //Scale box dimenisons
@@ -1154,7 +1155,6 @@ class AnnotationCanvas extends TatorElement
               this._emphasis != localization)
           {
             this._emphasis = localization;
-            this.describeLocalization(localization);
             this.emphasizeLocalization(localization);
           }
         }
@@ -1237,39 +1237,6 @@ class AnnotationCanvas extends TatorElement
       cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
       this._canvas.classList.add("select-crosshair");
     }
-  }
-
-
-  describeLocalization(localization)
-  {
-    var msg ="";
-    var keys = Object.keys(localization.attributes);
-
-    // Use localization attributes, unless we are in a track
-    var attributes = localization.attributes;
-    if (localization.id in this._data._trackDb)
-    {
-      attributes=this._data._trackDb[localization.id].attributes;
-    }
-    for (var idx = 0; idx < Math.min(2,keys.length); idx++)
-    {
-      var key = keys[idx];
-      var descriptor=
-          Object.getOwnPropertyDescriptor(attributes,
-                                          key);
-      if (idx != 0)
-      {
-        msg += ", ";
-      }
-      msg+= `${key} = ${descriptor.value}`;
-    }
-
-    var className = "primary";
-    if (msg != "")
-    {
-      var msgDiv = updateStatus(msg, className, -1);
-    }
-
   }
 
   // if the user releases their mouse over an animation handle accordingly
@@ -1475,7 +1442,6 @@ class AnnotationCanvas extends TatorElement
     {
       this._mouseMode = MouseMode.SELECT;
     }
-    this.describeLocalization(localization);
 
     if (this.activeLocalization && this.activeLocalization.id == localization.id)
     {
@@ -1591,8 +1557,9 @@ class AnnotationCanvas extends TatorElement
                                   }
                                   else if (meta.dtype == 'dot')
                                   {
-                                    var line = this.localizationToDot(localization, defaultDotWidth);
-                                    this._draw.drawLine(line[0], line[1], drawColor, defaultDotWidth);
+                                    const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+                                    var line = this.localizationToDot(localization, dotWidth);
+                                    this._draw.drawLine(line[0], line[1], drawColor, dotWidth);
                                   }
                                   // Handle case when localization is in a track
                                   if (localization.id in this._data._trackDb)
@@ -1716,8 +1683,9 @@ class AnnotationCanvas extends TatorElement
           }
           else if (meta.dtype == 'dot')
           {
-            var dotline = that.localizationToDot(localization, defaultDotWidth);
-            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), defaultDotWidth);
+            const dotWidth = Math.round(defaultDotWidth*that._draw.displayToViewportScale()[0]);
+            var dotline = that.localizationToDot(localization);
+            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth);
           }
           that._draw.dispImage(true);
         }
@@ -2000,7 +1968,8 @@ class AnnotationCanvas extends TatorElement
 
       that._draw.beginDraw();
       that._draw.drawPolygon(boxCoords,
-                             colorReq);
+                             colorReq,
+                             defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     var drawLine=function(dragStart, dragEnd, colorReq)
@@ -2019,7 +1988,8 @@ class AnnotationCanvas extends TatorElement
       that._draw.beginDraw();
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
-                          colorReq);
+                          colorReq,
+                          defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     if (this._mouseMode == MouseMode.PAN)
@@ -2089,11 +2059,14 @@ class AnnotationCanvas extends TatorElement
         {
           drawBox(dragEvent.start,
                   dragEvent.end);
+          console.info(window.performance.now());
           dragEvent.url = this._draw.viewport.toDataURL();
+          console.info(window.performance.now());
           this.makeModalCreationPrompt(this.draft,
                                        dragEvent,
                                        null,
                                        null);
+          console.info(window.performance.now());
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
@@ -2352,16 +2325,50 @@ class AnnotationCanvas extends TatorElement
           }
           else if (meta.colorMap != null)
           {
+            let decodeColor = (value) => {
+              if (typeof(value) == "string")
+                {
+                  drawColor = color.hexToRgb(value)
+                }
+                else
+                {
+                  drawColor = value.slice(0,3);
+                  if (value.length == 4)
+                  {
+                    alpha = value[3];
+                  }
+                }
+            };
             var keyname = meta.colorMap.key;
             if (keyname && keyname in localization.attributes)
             {
               var keyvalue=localization.attributes[keyname];
+              if (meta.colorMap.default)
+              {
+                decodeColor(meta.colorMap.default);
+              }
               if (keyvalue in meta.colorMap.map)
               {
-                drawColor = color.hexToRgb(meta.colorMap.map[keyvalue])
+                decodeColor(meta.colorMap.map[keyvalue]);
               }
             }
-          }
+            // If we define a alpha_ranges routine
+            if (meta.colorMap.alpha_ranges)
+            {
+              keyname = meta.colorMap.alpha_ranges.key;
+              var keyvalue=localization.attributes[keyname];
+              if (keyvalue)
+              {
+                for (let ranges of meta.colorMap.alpha_ranges.alphas)
+                {
+                  if (keyvalue >= ranges[0] && keyvalue < ranges[1])
+                  {
+                    alpha = ranges[2];
+                  }
+                }
+              }
+            }
+          } //end colormap
 
           localization.color = drawColor;
 
@@ -2377,8 +2384,9 @@ class AnnotationCanvas extends TatorElement
           }
           else if (type == 'dot')
           {
-            var line = this.localizationToDot(localization, defaultDotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, defaultDotWidth, alpha);
+            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+            var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, alpha);
           }
           else
           {

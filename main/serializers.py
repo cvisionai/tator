@@ -131,4 +131,4 @@ class AlgorithmSerializer(serializers.ModelSerializer):
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
-        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty']
+        fields = ['id', 'name', 'description', 'number', 'project', 'show_empty', 'bases']

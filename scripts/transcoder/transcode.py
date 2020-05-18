@@ -49,19 +49,21 @@ def determine_transcode(path):
 
     # Handle up to but not exceeding FHD
     height = int(stream["height"])
+    width = int(stream["width"])
     print(f"Height of video is : {height}")
     resolutions=[resolution for resolution in STREAMING_RESOLUTIONS if resolution < height]
     if height <= MAX_RESOLUTION:
         resolutions.append(height)
-    return resolutions
+    return resolutions, (height,width)
 
 def transcode(path, outpath):
     """Starts a transcode for the given media file.
     """
 
     if args.resolutions is None:
-        resolutions = determine_transcode(path)
+        resolutions,vid_dims = determine_transcode(path)
     else:
+        _, vid_dims = determine_transcode(path)
         resolutions = args.resolutions.split(',')
 
     logger.info(f"Transcoding {path} to {outpath}...")
@@ -70,7 +72,8 @@ def transcode(path, outpath):
 
     cmd = [
         "ffmpeg", "-y",
-        "-i", path
+        "-i", path,
+        "-i", "/scripts/black.mp4"
     ]
 
     per_res = ["-an",
@@ -79,18 +82,19 @@ def transcode(path, outpath):
         "-g", "25",
         "-preset", "fast",
         "-pix_fmt", "yuv420p",
-        "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
         "-movflags",
         "faststart+frag_keyframe+empty_moov+default_base_moof",
-        "-tune", "fastdecode"]
+        "-tune", "fastdecode",]
 
     logger.info(f"Transcoding to {resolutions}")
-    for resolution in resolutions:
+    for ridx, resolution in enumerate(resolutions):
         logger.info(f"Generating resolution @ {resolution}")
         output_file = os.path.join(outpath, f"{resolution}.mp4")
         cmd.extend([*per_res,
-                    "-vf",
-                    f"scale=-2:{resolution}",
+                    "-filter_complex",
+                    # Scale the black mp4 to the input resolution prior to concating and scaling back down.
+                    f"[1:v:0]scale={vid_dims[1]}:{vid_dims[0]}[bv{ridx}];[0:v:0][bv{ridx}]concat=n=2:v=1:a=0[rv{ridx}];[rv{ridx}]scale=-2:{resolution}[catv{ridx}];[catv{ridx}]pad=ceil(iw/2)*2:ceil(ih/2)*2[outv{ridx}]",
+                    "-map", f"[outv{ridx}]",
                     output_file])
     logger.info('ffmpeg cmd = {}'.format(cmd))
     subprocess.run(cmd, check=True)

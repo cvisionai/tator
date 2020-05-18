@@ -105,8 +105,17 @@ class ImageCanvas extends AnnotationCanvas
 
   loadFromURL(URL, dims)
   {
-    this._dims=dims;
-    this._draw.resizeViewport(dims[0], dims[1]);
+    // The browser can't handle 4k images for various overlay
+    // effects (notable preview dim). Because we only display the image
+    // at the client width, we can scale the dims here to be more efficient
+    // from a graphics pipeline perspective.
+    // Note: dims[0] is width.
+    // Because we don't display using full screen (approx 70% max out the
+    // viewport at that)
+    this._imageScale = (window.screen.width*0.70) / dims[0];
+    this._dims=[Math.round(dims[0]*this._imageScale),
+                Math.round(dims[1]*this._imageScale)];
+    this._draw.resizeViewport(this._dims[0], this._dims[1]);
     this._imageElement.setAttribute("src", URL);
     this.setupResizeHandler(dims);
     return this._imageElement.decode();
