@@ -40,7 +40,10 @@ class Download(QObject):
             full_directory = os.path.join(self.output_dir, section_name)
             os.makedirs(full_directory, exist_ok=True)
             full_name = os.path.join(full_directory, media['name'])
-            self.tator.Media.downloadFile(media, full_name)
+            for chunk in self.tator.Media.downloadFile(media, full_name):
+                if self._terminated:
+                    return
+                self.progress.emit(f"{media['name']} ({idx}/{total})", chunk*10)
 
             # Fetch state types and for this media
             state_types = self.tator.StateType.filter({"media_id": media['id']})
