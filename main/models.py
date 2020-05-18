@@ -1308,9 +1308,6 @@ def calc_segments(sender, **kwargs):
         current[1] = last
         segmentList.append(current)
     instance.segments = segmentList
-    if 'save' in kwargs:
-        if kwargs['save']:
-            instance.save()
 
 class Leaf(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
