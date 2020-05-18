@@ -372,10 +372,11 @@ class Media(APIElement):
         :param path-like out_path: Path to where to download
         """
         #Use streaming mp4 unless original is present
-        url=element['url']
-        if 'original_url' in element:
-            if element['original_url']:
-                url=element['original_url']
+        path = element['file']
+        if 'original' in element:
+            if element['original']:
+                path = element['original']
+        url = self.url.rsplit('/', 1)[0] + '/media/' + path
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:

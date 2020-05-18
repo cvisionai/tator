@@ -141,7 +141,7 @@ spec:
                 "ingestor.py",
                 "media",
                 "--directory", work_dir,
-                "--typeId", "8",
+                "--typeId", "59",
                 "--url", rest_svc,
                 "--token", token,
                 "--project", project_id,
