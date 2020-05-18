@@ -894,6 +894,13 @@ def fixMigrateFlatAnnotationTypes():
             state_type.media.add(media_type.media_type_polymorphic)
         state_type.save()
 
+def fixMigrateFlatLeafTypeAttributes():
+    """ Add leaf type attribute types.
+    """
+    for type_ in LeafType.objects.all():
+        type_.attribute_types = attrTypeToDict(type_.polymorphic)
+        type_.save()
+
 def fixMigrateFlatAttributeTypeOrder():
     """ Includes order of attribute types.
     """
