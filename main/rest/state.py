@@ -11,6 +11,7 @@ from ..models import Project
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import database_qs
+from ..models import calc_segments
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
@@ -212,6 +213,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                         State.localizations.through.objects.bulk_create(loc_relations)
                         loc_relations = []
         State.localizations.through.objects.bulk_create(loc_relations)
+       
+        # Calculate segments (this is not triggered for bulk created m2m).
+        for state in states:
+            calc_segments(None, instance=state, save=True)
 
         # Build ES documents.
         ts = TatorSearch()
