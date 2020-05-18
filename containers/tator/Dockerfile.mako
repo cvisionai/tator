@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install pip packages
 RUN pip3 --no-cache-dir install wheel
+RUN pip3 --no-cache-dir install pyyaml==5.3.1
 RUN pip3 --no-cache-dir install \
         django==2.2.7 django-enumfields==1.0.0 \
         django-polymorphic==2.1.2 channels==2.1.7 \
