@@ -1281,6 +1281,37 @@ def state_save(sender, instance, created, **kwargs):
 def state_delete(sender, instance, **kwargs):
     TatorSearch().delete_document(instance)
 
+@receiver(m2m_changed, sender=State.localizations.through)
+def calc_segments(sender, **kwargs):
+    instance=kwargs['instance']
+    sortedLocalizations=Localization.objects.filter(pk__in=instance.localizations.all()).order_by('frame')
+
+    #Bring up related media to association
+    instance.media.set(sortedLocalizations.all().values_list('media', flat=True))
+    segmentList=[]
+    current=[None,None]
+    last=None
+    for localization in sortedLocalizations:
+        if current[0] is None:
+            current[0] = localization.frame
+            last = current[0]
+        else:
+            if localization.frame - 1 == last:
+                last = localization.frame
+            else:
+                current[1] = last
+                segmentList.append(current.copy())
+                current[0] = localization.frame
+                current[1] = None
+                last = localization.frame
+    if current[1] is None:
+        current[1] = last
+        segmentList.append(current)
+    instance.segments = segmentList
+    if 'save' in kwargs:
+        if kwargs['save']:
+            instance.save()
+
 class Leaf(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='leaf_polymorphic')
