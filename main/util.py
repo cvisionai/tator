@@ -25,11 +25,11 @@ def clearDataAboutMedia(id):
     :param id: The id of the media element to purge metadata about.
     """
     #Delete all states by hitting associations which auto delete states
-    qs=AssociationType.objects.filter(media__in=[id])
+    qs=State.objects.filter(media__in=[id])
     qs.delete()
 
     #Delete all localizations
-    qs=EntityLocalizationBase.objects.filter(media=id)
+    qs=Localization.objects.filter(media=id)
     qs.delete()
 
 def updateProjectTotals(force=False):
