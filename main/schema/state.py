@@ -77,32 +77,32 @@ class StateListSchema(AutoSchema):
                 'examples': {
                     'frame': {
                         'summary': 'Frame associated state',
-                        'value': {
+                        'value': [{
                             'type': 1,
                             'media_ids': [1],
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'localization': {
                         'summary': 'Localization associated state',
-                        'value': {
+                        'value': [{
                             'type': 1,
                             'media_ids': [1],
                             'localization_ids': [1, 5, 10],
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'media': {
                         'summary': 'Media associated state',
-                        'value': {
+                        'value': [{
                             'type': 1,
                             'media_ids': [1, 5, 10],
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                 },
             }}}
