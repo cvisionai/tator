@@ -227,7 +227,7 @@ def start():
     parser = argparse.ArgumentParser(description='Gnocchi --- The PyTator GUI')
     parser.add_argument('--theme', default='dark',
                         choices=['dark', 'light'])
-    parser.add_argument('--url', default='https://cvision.tatorapp.com/rest')
+    parser.add_argument('--url', default='https://www.tatorapp.com/rest')
     args = parser.parse_args()
     """ Starts the camera control UI """
     app = QtWidgets.QApplication(sys.argv)
