@@ -223,9 +223,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                            .values('id', 'frame').iterator()}
         for state, state_spec in zip(states, state_specs):
             frames = [loc_id_to_frame[loc_id] for loc_id in state_spec.get('localization_ids', [])]
-            frames = np.sort(frames)
-            segments = np.split(frames, np.where(np.diff(frames) != 1)[0] + 1)
-            state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
+            if len(frames) > 0:
+                frames = np.sort(frames)
+                segments = np.split(frames, np.where(np.diff(frames) != 1)[0] + 1)
+                state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
         State.objects.bulk_update(states, ['segments'])
 
         # Build ES documents.
