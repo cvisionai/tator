@@ -301,7 +301,6 @@ class DefaultCreateTestMixin:
             create_json = [clear_attributes(obj) for obj in self.create_json]
         # Post the json with no attribute values.
         response = self.client.post(endpoint, create_json, format='json')
-        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self._check_object(response, True)
         # Post the json with attribute values.
@@ -321,7 +320,6 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
-            print(f"RESPONSE: {response.data}")
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
@@ -540,7 +538,6 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
             f'&attribute=string_test::DELETE ME!!!')
-        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
@@ -608,7 +605,6 @@ class AttributeTestMixin:
             self.assertEqual(response.data['attributes']['bool_test'], test_val)
         TatorSearch().refresh(self.project.pk)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=bool_test::true&type={self.entity_type.pk}&format=json')
-        print(f"RESPONSE: {response.data}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=bool_test::false&type={self.entity_type.pk}&format=json')
