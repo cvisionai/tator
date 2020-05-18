@@ -337,6 +337,11 @@ class AttributeType(APIElement):
     def __init__(self, api):
         super().__init__(api, "AttributeTypes", "AttributeType")
 
+class MediaSection(APIElement):
+    """ Describes elements from `rest/Memberships` """
+    def __init__(self, api):
+        super().__init__(api, "MediaSections", None)
+
 class MediaType(APIElement):
     """ Describes elements from `rest/MediaTypes` """
     def __init__(self, api):
