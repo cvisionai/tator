@@ -418,6 +418,57 @@ class Media(APIElement):
                             last_progress = this_progress
             yield 100
 
+    def uploadFile_v2(self,filePath,
+                      typeId=-1,
+                      md5=None,
+                      section=None,
+                      fname=None):
+        if md5==None:
+            md5 = md5_sum(filePath)
+        upload_uid = str(uuid1())
+        upload_gid = str(uuid1())
+        if fname is None:
+            fname=os.path.basename(filePath)
+        if section is None:
+            section="New Files"
+
+        tus = TusClient(self.tusURL)
+        chunk_size=100*1024*1024 # 100 Mb
+        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        last_progress = 0
+        yield last_progress
+
+        for chunk_count in range(num_chunks):
+            uploader.upload_chunk()
+            this_progress = round((chunk_count / total_chunks) *100,1)
+            if this_progress != last_progress:
+                yield this_progress
+                last_progress = this_progress
+
+        if mediaType['type']['dtype'] == 'video':
+            endpoint = 'Transcode'
+        else:
+            endpoint = 'SaveImage'
+
+        # Initiate transcode.
+        out = requests.post(f'{self.url}/{endpoint}/{self.project}',
+                            headers=self.headers,
+                            json={
+                                'type': typeId,
+                                'uid': upload_uid,
+                                'gid': upload_gid,
+                                'url': uploader.url,
+                                'name': fname,
+                                'section': section,
+                                'md5': md5,
+        })
+        print("{}, {}".format(fname, out.json()['message']))
+        out.raise_for_status()
+        yield 100
+
+
+
     def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None, fname=None):
         """ Upload a new file to Tator """
         if md5==None:
