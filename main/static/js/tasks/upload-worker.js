@@ -158,7 +158,7 @@ self.addEventListener("message", async msgEvent => {
 // Define function for starting an upload.
 async function startUpload() {
   sinceLastAdd = Date.now() - lastUploadAdded;
-  if (sinceLastAdd > 250) {
+  if (sinceLastAdd > 0) {
     // Begin uploading the files.
     const belowMax = Object.keys(activeUploads).length < maxUploads;
     const haveUploads = uploadBuffer.length > 0;
