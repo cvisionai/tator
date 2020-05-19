@@ -314,18 +314,7 @@ class Upload {
 
         // Salt in the file size
         this.md5 = SparkMD5.hash(md5 + this.file.size);
-        fetchRetry(
-            "/rest/EntityMedias/" + this.projectId + "?format=json&type=" + 
-            this.mediaTypeId + "&md5=" + this.md5)
-          .then(response => response.json())
-          .then(json => {
-            if (json.length === 0) {
-              this.tus.start();
-            } else {
-              removeFromActive(this.upload_uid);
-              this.progress("failed", "Already uploaded!", 0);
-            }
-          });
+        this.tus.start();
       }
     };
     reader.onerror = error => {
