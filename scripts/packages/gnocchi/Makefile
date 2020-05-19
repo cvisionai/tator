@@ -12,7 +12,7 @@ gnocchi/ui_project.py: gnocchi/assets/project.ui
 gnocchi/ui_projectDetail.py: gnocchi/assets/project-detail.ui
 	pyuic5 gnocchi/assets/project-detail.ui -o gnocchi/ui_projectDetail.py
 
-gnocchi/ui_uploadDialog.py: gnocchi/assets/project.ui
+gnocchi/ui_uploadDialog.py: gnocchi/assets/upload-dialog.ui
 	pyuic5 gnocchi/assets/upload-dialog.ui -o gnocchi/ui_uploadDialog.py
 
 .PHONY: install
