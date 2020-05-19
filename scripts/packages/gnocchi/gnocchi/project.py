@@ -35,6 +35,16 @@ class UploadDialog(QtWidgets.QDialog):
         else:
             super(UploadDialog,self).keyPressEvent(evt)
 
+    @pyqtSlot()
+    def on_browseBtn_clicked(self):
+        my_documents=Qt.QStandardPaths.writableLocation(
+            Qt.QStandardPaths.DocumentsLocation)
+        media_files=QtWidgets.QFileDialog.getOpenFileNames(
+            self,
+            f"Select files to upload",
+            my_documents,
+            "Videos (*.mp4 *.mov);;Images (*.png *.jpg *.jpe *.gif);;All Files (*)")
+
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
         super(ProjectDetail, self).__init__(parent)
