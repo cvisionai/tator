@@ -10,6 +10,7 @@ from PyQt5 import Qt,QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtSlot
 from gnocchi.ui_project import Ui_Project
 from gnocchi.ui_projectDetail import Ui_ProjectDetail
+from gnocchi.ui_uploadDialog import Ui_UploadDialog
 from gnocchi.download import Download
 import qdarkstyle
 
@@ -18,6 +19,12 @@ QT_ICON_PATH = os.path.join(DIRNAME, 'assets', 'cvision_no_text.ico')
 QT_DOWNLOAD_PATH = os.path.join(DIRNAME, 'assets', 'download.svg')
 QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
+
+class UploadDialog(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super(ProjectDetail, self).__init__(parent)
+        self.ui = Ui_UploadDioalog()
+        self.ui.setupUi(self)
 
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
