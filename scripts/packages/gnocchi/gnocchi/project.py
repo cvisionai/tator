@@ -21,11 +21,19 @@ QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class UploadDialog(QtWidgets.QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, sectionNames):
         super(UploadDialog, self).__init__(parent)
         self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
         self.setModal(True)
+        self.ui.sectionSelection.addItem("New Section")
+        self.ui.sectionSelection.addItems(sectionNames)
+
+    def keyPressEvent(self, evt):
+        if (evt.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]):
+            return
+        else:
+            super(UploadDialog,self).keyPressEvent(evt)
 
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
@@ -63,7 +71,8 @@ class ProjectDetail(QtWidgets.QWidget):
 
     @pyqtSlot()
     def on_uploadBtn_clicked(self):
-        upload_dialog = UploadDialog(self)
+        upload_dialog = UploadDialog(self,
+                                     list(self.sections.keys()))
         upload_dialog.show()
 
     @pyqtSlot()
