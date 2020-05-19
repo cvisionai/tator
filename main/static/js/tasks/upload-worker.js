@@ -97,17 +97,6 @@ self.addEventListener("message", async msgEvent => {
     lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
-    bufferMessage(msg.projectId, msg.token, upload_uid, {
-      job_type: "upload",
-      gid: msg.gid,
-      uid: upload_uid,
-      swid: serviceWorkerId,
-      section: msg.section,
-      name: msg.file.name,
-      state: "queued",
-      message: "Queued...",
-      progress: 0,
-    });
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
