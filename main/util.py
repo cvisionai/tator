@@ -611,7 +611,7 @@ def convertObject(obj):
             codec=obj.codec,
             width=obj.width,
             height=obj.height,
-            segment_info=obj.segment_info,  
+            segment_info=obj.segment_info,
             media_files=obj.media_files,
         )
         flat.file.name = obj.file.name
@@ -817,21 +817,26 @@ def migrateBulk(project, from_type, to_type):
         reverse_lookup = {'analysis_polymorphic__isnull': True}
 
     # Migrate objects in chunks.
+    all_objs = from_type.objects.all().iterator()
+    flat = []
     total = 0
-    while True:
-        # Find batch of objects that have not been migrated yet.
-        chunk = from_type.objects.filter(project=project, **reverse_lookup)[:1000]
-
-        # Exit when qs is empty.
-        count = chunk.count()
-        if count == 0:
-            break
-        total += count
-
+    exists = [obj.polymorphic.pk for obj in to_type.objects.all().iterator()]
+    for obj in all_objs:
         # Convert the objects and bulk create.
-        flat = [convertObject(obj) for obj in chunk.iterator()]
+        if obj.pk in exists:
+            continue
+        total+=1
+
+        flat.append(convertObject(obj))
+        if len(flat) == 1000:
+            to_type.objects.bulk_create(flat)
+            logger.info(f"Migrated {total} records of {from_type.__name__} to {to_type.__name__}...")
+            flat = []
+
+    if len(flat) > 0:
         to_type.objects.bulk_create(flat)
         logger.info(f"Migrated {total} records of {from_type.__name__} to {to_type.__name__}...")
+        flat = []
 
 def migrateFlat(project, section):
     """ Migrates legacy data models to new, flat data models.
@@ -871,4 +876,3 @@ def migrateFlat(project, section):
         backfillRelations(project, Leaf)
     elif section == 'analyses':
         migrateBulk(project, AnalysisBase, Analysis)
-        
