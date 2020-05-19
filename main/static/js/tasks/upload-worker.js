@@ -47,6 +47,7 @@ self.setInterval(() => {
     const messages = Object.values(progressBuffer[key]);
     let start = 0;
     while (start < messages.length) {
+      const sendMe = messages.slice(start, start + maxMessages);
       fetchRetry("/rest/Progress/" + projectId, {
         method: "POST",
         headers: {
@@ -54,11 +55,11 @@ self.setInterval(() => {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(messages.slice(start, start + maxMessages)),
+        body: JSON.stringify(sendMe),
         credentials: "omit",
       })
       .catch(err => console.error("Error while broadcasting progress:" + err));
-      start += maxMessages;
+      start += sendMe.length;
     }
   }
   progressBuffer = {};
