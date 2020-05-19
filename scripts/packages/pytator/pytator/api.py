@@ -401,11 +401,6 @@ class Media(APIElement):
         if section is None:
             section="New Files"
 
-        found=self.byMd5(md5)
-        if found:
-            print(f"File with {md5} found in db ({found['name']})")
-            return False
-
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
