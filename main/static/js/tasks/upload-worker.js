@@ -177,6 +177,12 @@ async function startUpload() {
 // Removes upload from list of active uploads.
 function removeFromActive(uid) {
   if (uid in activeUploads) {
+    const key = [activeUploads[uid].projectId, activeUploads[uid].token].join();
+    if (key in progressBuffer) {
+      if (uid in progressBuffer) {
+        delete progressBuffer[key][uid];
+      }
+    }
     delete activeUploads[uid];
   }
   startUpload();
