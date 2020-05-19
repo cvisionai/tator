@@ -829,7 +829,7 @@ def migrateBulk(project, from_type, to_type):
         total += count
 
         # Convert the objects and bulk create.
-        flat = [convertObject(obj) for obj in chunk]
+        flat = [convertObject(obj) for obj in chunk.iterator()]
         to_type.objects.bulk_create(flat)
         logger.info(f"Migrated {total} records of {from_type.__name__} to {to_type.__name__}...")
 
