@@ -817,14 +817,11 @@ def migrateBulk(project, from_type, to_type):
         reverse_lookup = {'analysis_polymorphic__isnull': True}
 
     # Migrate objects in chunks.
-    all_objs = from_type.objects.filter(project=project).iterator()
     flat = []
     total = 0
-    logger.info(f"Constructing list of existing {to_type} for project {project}")
-    exists = [obj.polymorphic.pk for obj in to_type.objects.filter(project=project).iterator()]
-    for obj in all_objs:
+    for obj in from_type.objects.filter(project=project).iterator():
         # Convert the objects and bulk create.
-        if obj.pk in exists:
+        if to_type.objects.filter(polymorphic=obj.id).exists():
             continue
         total+=1
 
