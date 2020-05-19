@@ -12,6 +12,7 @@ from gnocchi.ui_project import Ui_Project
 from gnocchi.ui_projectDetail import Ui_ProjectDetail
 from gnocchi.ui_uploadDialog import Ui_UploadDialog
 from gnocchi.download import Download
+from gnocchi.upload import Upload
 import qdarkstyle
 
 DIRNAME = os.path.dirname(os.path.abspath(__file__))
@@ -21,13 +22,16 @@ QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class UploadDialog(QtWidgets.QDialog):
-    def __init__(self, parent, sectionNames):
+    def __init__(self, parent, tator, sectionNames):
         super(UploadDialog, self).__init__(parent)
         self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
+        self.tator = tator
         self.setModal(True)
         self.ui.sectionSelection.addItem("New Section")
         self.ui.sectionSelection.addItems(sectionNames)
+        self.setMode('select')
+        self.section = None
 
     def keyPressEvent(self, evt):
         if (evt.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]):
@@ -35,16 +39,49 @@ class UploadDialog(QtWidgets.QDialog):
         else:
             super(UploadDialog,self).keyPressEvent(evt)
 
+    def setMode(self,mode):
+        if mode not in ['upload', 'select']:
+            raise Exception('Unknown Mode')
+
+        if mode == 'upload':
+            upload=True
+            select=False
+            self.setWindowTitle(f"Ready to Upload to '{self.section}'")
+        else:
+            upload=False
+            select=True
+            self.setWindowTitle("Select files for Upload")
+
+        self.ui.fileUploadProgress.setVisible(upload)
+        self.ui.fileProgress_label.setVisible(upload)
+        self.ui.totalProgress.setVisible(upload)
+        self.ui.totalProgress_label.setVisible(upload)
+
+        self.ui.files_label.setVisible(select)
+        self.ui.section_label.setVisible(select)
+        self.ui.sectionSelection.setVisible(select)
+        self.ui.browseBtn.setVisible(select)
+        
+        
+        
+
     @pyqtSlot()
     def on_browseBtn_clicked(self):
         my_documents=Qt.QStandardPaths.writableLocation(
             Qt.QStandardPaths.DocumentsLocation)
-        media_files=QtWidgets.QFileDialog.getOpenFileNames(
+        self.media_files=QtWidgets.QFileDialog.getOpenFileNames(
             self,
             f"Select files to upload",
             my_documents,
             "Videos (*.mp4 *.mov);;Images (*.png *.jpg *.jpe *.gif);;All Files (*)")
-
+        if self.media_files:
+            uploadBtn = self.ui.buttonBox.addButton("Upload", QtWidgets.QDialogButtonBox.ActionRole)
+            uploadBtn.clicked.connect(self.on_upload_clicked)
+            self.section = self.ui.sectionSelection.currentText()
+            self.setMode('upload')
+            
+    def on_upload_clicked(self):
+        pass
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
         super(ProjectDetail, self).__init__(parent)
@@ -82,6 +119,7 @@ class ProjectDetail(QtWidgets.QWidget):
     @pyqtSlot()
     def on_uploadBtn_clicked(self):
         upload_dialog = UploadDialog(self,
+                                     self.tator,
                                      list(self.sections.keys()))
         upload_dialog.show()
 
