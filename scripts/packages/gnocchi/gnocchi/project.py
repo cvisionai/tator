@@ -20,11 +20,12 @@ QT_DOWNLOAD_PATH = os.path.join(DIRNAME, 'assets', 'download.svg')
 QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
-class UploadDialog(QtWidgets.QWidget):
+class UploadDialog(QtWidgets.QDialog):
     def __init__(self, parent):
-        super(ProjectDetail, self).__init__(parent)
-        self.ui = Ui_UploadDioalog()
+        super(UploadDialog, self).__init__(parent)
+        self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
+        self.setModal(True)
 
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
@@ -44,8 +45,8 @@ class ProjectDetail(QtWidgets.QWidget):
         self.ui.uploadBtn.setIcon(QtGui.QIcon(QT_UPLOAD_PATH))
         self.ui.searchBtn.setIcon(QtGui.QIcon(QT_SEARCH_PATH))
         
-        #Disable upload button for now
-        self.ui.uploadBtn.setEnabled(False)
+        # Upload button is always active, download requires selection
+        self.ui.uploadBtn.setEnabled(True)
         self.ui.downloadBtn.setEnabled(False)
 
         self.ui.sectionTree.itemSelectionChanged.connect(self.onSelectionChanged)
@@ -59,6 +60,11 @@ class ProjectDetail(QtWidgets.QWidget):
             self.ui.downloadBtn.setEnabled(True)
         else:
             self.ui.downloadBtn.setEnabled(False)
+
+    @pyqtSlot()
+    def on_uploadBtn_clicked(self):
+        upload_dialog = UploadDialog(self)
+        upload_dialog.show()
 
     @pyqtSlot()
     def on_downloadBtn_clicked(self):
