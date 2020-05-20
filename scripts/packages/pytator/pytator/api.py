@@ -21,6 +21,7 @@ import progressbar
 import pandas as pd
 import numpy as np
 import math
+import mimetypes
 
 from pytator.md5sum import md5_sum
 from itertools import count
@@ -422,7 +423,8 @@ class Media(APIElement):
                       typeId=-1,
                       md5=None,
                       section=None,
-                      fname=None):
+                      fname=None,
+                      chunk_size=2*1024*1024):
         if md5==None:
             md5 = md5_sum(filePath)
         upload_uid = str(uuid1())
@@ -433,20 +435,21 @@ class Media(APIElement):
             section="New Files"
 
         tus = TusClient(self.tusURL)
-        chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
         num_chunks=math.ceil(uploader.file_size/chunk_size)
+
         last_progress = 0
         yield last_progress
 
         for chunk_count in range(num_chunks):
             uploader.upload_chunk()
-            this_progress = round((chunk_count / total_chunks) *100,1)
+            this_progress = round((chunk_count / num_chunks) *100,1)
             if this_progress != last_progress:
                 yield this_progress
                 last_progress = this_progress
 
-        if mediaType['type']['dtype'] == 'video':
+        mime,_ = mimetypes.guess_type(fname)
+        if mime.find('video') >= 0:
             endpoint = 'Transcode'
         else:
             endpoint = 'SaveImage'
