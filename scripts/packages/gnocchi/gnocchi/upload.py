@@ -38,6 +38,7 @@ class Upload(QObject):
     def _process(self):
         total = len(self.mediaList)
         chunk_size = 20 * 1024 * 1024
+        upload_gid = str(uuid1())
         try:
             for idx,media in enumerate(self.mediaList):
                 self.progress.emit(os.path.basename(media), 0, idx)
@@ -58,6 +59,7 @@ class Upload(QObject):
                 for chunk in self.tator.Media.uploadFile_v2(media,
                                                             typeId=type_id,
                                                             section=self.section,
+                                                            upload_gid=upload_gid,
                                                             chunk_size=chunk_size):
                     if self._terminated:
                         return
