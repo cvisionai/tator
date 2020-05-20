@@ -249,13 +249,14 @@ FILES = \
     util/fetch-retry.js \
     util/has-permission.js \
     components/tator-element.js \
-    components/upload-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
     components/modal-warning.js \
     components/modal-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
+    components/big-upload-form.js \
+    components/upload-element.js \
     components/progress-job.js \
     components/progress-summary.js \
     components/header-notification.js \

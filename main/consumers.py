@@ -10,7 +10,7 @@ from channels.exceptions import StopConsumer
 from asgiref.sync import async_to_sync
 from .models import Project
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class ProgressProducer:
     """Interface for generating progress messages.
@@ -62,7 +62,10 @@ class ProgressProducer:
             msg['progress'] = progress
         if aux is not None:
             msg = {**msg, **aux}
-        async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
+        try:
+            async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
+        except Exception as e:
+            logger.info(f"Failed to send individual progress message! {str(e)}")
         json_msg = json.dumps(msg)
         self.rds.hset(self.latest_grp, self.uid, json_msg)
         self.rds.hset('uids', self.uid, json_msg)
@@ -73,32 +76,49 @@ class ProgressProducer:
     def _summary(self):
         """Broadcasts progress summary and stores message in redis.
         """
-        num_procs = self.rds.hlen(self.gid + ':started') + self.rds.hlen(self.gid + ':done')
-        num_complete = self.rds.hlen(self.gid + ':done')
+        # Hash 'num_jobs' is created by POSTing to JobGroup endpoint.
+        if self.rds.hexists('num_jobs', self.gid):
+            num_procs = int(self.rds.hget('num_jobs', self.gid))
+            num_complete = int(self.rds.hget('num_complete', self.gid))
+            # TODO Make a cronjob that cleans these up.
+        else:
+            num_procs = self.rds.hlen(self.gid + ':started') + self.rds.hlen(self.gid + ':done')
+            num_complete = self.rds.hlen(self.gid + ':done')
         msg = {
             **self.group_header,
             'num_procs': num_procs,
             'num_complete': num_complete,
         }
-        if num_procs >= num_complete:
-            async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
         if num_procs <= num_complete:
             self.rds.hdel(self.latest_grp, self.gid)
             self.rds.delete(self.gid + ':started')
             self.rds.delete(self.gid + ':done')
             self.rds.hdel('gids', self.gid)
+            """
+            if self.rds.hexists('num_jobs', self.gid):
+                self.rds.hdel('num_jobs', self.gid)
+            if self.rds.hexists('num_complete', self.gid):
+                self.rds.hdel('num_complete', self.gid)
+            """
         else:
             json_msg = json.dumps(msg)
             self.rds.hset(self.latest_grp, self.gid, json_msg)
             self.rds.hset('gids', self.gid, json_msg)
+        if num_procs >= num_complete:
+            try:
+                async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
+            except:
+                logger.info(f"Failed to send summary progress message! {str(e)}")
+
+    def _increment_summary(self, msg):
+        if self.rds.hexists('num_complete', self.gid):
+            self.rds.hincrby('num_complete', self.gid, 1)
+        self.rds.hdel(self.gid + ':started', self.uid)
+        self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
 
     def _clear_latest(self):
-        """Clears the latest queue from redis.
-        """
-        self.rds.hset(self.gid + ':done', self.uid, self.uid)
         self.rds.hdel(self.latest_grp, self.uid)
         self.rds.hdel('uids', self.uid)
-        self._summary()
 
     def queued(self, msg):
         """Broadcast a queued message, add to group processes.
@@ -115,18 +135,22 @@ class ProgressProducer:
     def failed(self, msg):
         """Broadcast a failure message.
         """
+        self._increment_summary(msg)
         self._broadcast('failed', msg, 100)
         self.rds.hdel(self.gid + ':started', self.uid)
         self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
+        self._summary()
 
     def finished(self, msg, aux=None):
         """Broadcast a finished message.
         """
+        self._increment_summary(msg)
         self._broadcast('finished', msg, 100, aux)
         self.rds.hdel(self.gid + ':started', self.uid)
         self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
+        self._summary()
 
 # Initialize global redis connection
 ProgressProducer.setup_redis()
@@ -143,12 +167,12 @@ class ProgressConsumer(JsonWebsocketConsumer):
         )
 
     def __init__(self, *args, **kwargs):
-        log.info("Creating progress consumer.")
+        logger.info("Creating progress consumer.")
         super().__init__(*args, **kwargs)
 
     def connect(self):
         self.accept()
-        log.info("Connecting to progress consumer.")
+        logger.info("Connecting to progress consumer.")
         # Join all project groups that this user is a member of
         projects = Project.objects.filter(membership__user=self.scope['user'])
         for project in projects:
@@ -159,7 +183,7 @@ class ProgressConsumer(JsonWebsocketConsumer):
         self.send_json(content)
 
     def disconnect(self, close_code):
-        log.info("Progress consumer closed with code {}".format(close_code))
+        logger.info("Progress consumer closed with code {}".format(close_code))
         raise StopConsumer
 
     def _join_and_update(self, prefix, pid):
@@ -172,7 +196,21 @@ class ProgressConsumer(JsonWebsocketConsumer):
         )
         # Get the latest updates from redis.
         for uid, msg in self.rds.hgetall(self.latest_grp).items():
-            self.send_json(json.loads(msg))
+            data = json.loads(msg)
+            blacklisted = False
+            if 'uid' in data:
+                if self.rds.hexists('uid_blacklist', data['uid']):
+                    blacklisted = True
+            if 'uid_gid' in data:
+                if self.rds.hexists('gid_blacklist', data['uid_gid']):
+                    blacklisted = True
+            if 'gid' in data:
+                if self.rds.hexists('gid_blacklist', data['gid']):
+                    blacklisted = True
+            if blacklisted:
+                self.rds.hdel(self.latest_grp, uid)
+            else:
+                self.send_json(data)
 
 # Initialize global redis connection
 ProgressConsumer.setup_redis()
