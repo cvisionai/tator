@@ -28,7 +28,7 @@ class BigUploadForm extends ModalDialog {
 
     this._accept.addEventListener("click", evt => {
       this._confirm = true;
-      this._closeCallback;
+      this._closeCallback();
     });
   }
 
