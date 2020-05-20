@@ -25,6 +25,11 @@ class CancelConfirm extends ModalDialog {
     this._title.nodeValue = "Stop Jobs";
 
     this._accept.addEventListener("click", async evt => {
+      window._uploader.postMessage({
+        "command": "cancelGroupUpload",
+        "gid": this._gid,
+      });
+      await new Promise(resolve => setTimeout(resolve, 300));
       fetch("/rest/JobGroup/" + this._gid, {
         method: "DELETE",
         credentials: "same-origin",
@@ -36,10 +41,6 @@ class CancelConfirm extends ModalDialog {
       })
       .catch(err => console.log(err));
       this.dispatchEvent(new Event("confirmGroupCancel"));
-      window._uploader.postMessage({
-        "command": "cancelGroupUpload",
-        "gid": this._gid,
-      });
     });
   }
 
