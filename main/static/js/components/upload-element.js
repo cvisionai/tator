@@ -125,6 +125,7 @@ class UploadElement extends TatorElement {
     let numSkipped = 0;
     let numStarted = 0;
     let totalFiles = 0;
+    let totalSize = 0;
     if (typeof ev.dataTransfer === "undefined") {
       const files = ev.target.files;
       totalFiles = files.length;
@@ -139,13 +140,37 @@ class UploadElement extends TatorElement {
           totalFiles++;
           item.file(file => {
             const added = this._checkFile(file, gid);
-            if (added) { numStarted++; } else { numSkipped++; }
+            if (added) {
+              numStarted++;
+              totalSize += file.size;
+            } else {
+              numSkipped++;
+            }
           });
         }
       }
     }
     while (numSkipped + numStarted < totalFiles) {
       await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    if (totalSize > 60000000000 || numStarted > 5000) {
+      const bigUpload = document.createElement("big-upload-form");
+      const page = document.getElementsByTagName("project-detail")[0];
+      page._projects.appendChild(bigUpload);
+      bigUpload.setAttribute("is-open", "");
+      page.setAttribute("has-open-modal", "");
+      bigUpload.addEventListener("close", evt => {
+        page.removeAttribute("has-open-modal", "");
+        page._projects.removeChild(bigUpload);
+      });
+      while (bigUpload.hasAttribute("is-open")) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      if (!bigUpload._confirm) {
+        page._leaveConfirmOk = false;
+        return;
+      }
     }
 
     if (numStarted > 0) {
@@ -174,13 +199,16 @@ class UploadElement extends TatorElement {
     }
 
 
+    console.log("GOT TO FILES ADDED");
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
       composed: true
     }));
+    console.log("GOT TO POSTING MESSAGES");
     for (const msg of this._messages) {
       window._uploader.postMessage(msg);
     }
+    console.log("GOT TO ALL SET");
     if (numStarted > 0) {
       this.dispatchEvent(new Event("allset", {composed: true}));
     }

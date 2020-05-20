@@ -1,19 +1,23 @@
-class CancelConfirm extends ModalDialog {
+class BigUploadForm extends ModalDialog {
   constructor() {
     super();
 
     const icon = document.createElement("modal-warning");
     this._header.insertBefore(icon, this._titleDiv);
+    this._title.nodeValue = "That's a big upload!";
 
     const warning = document.createElement("p");
     warning.setAttribute("class", "text-semibold py-3");
-    warning.textContent = "Warning: This will stop jobs in progress";
+    warning.textContent = "Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try pytator or gnocchi.";
     this._main.appendChild(warning);
 
     this._accept = document.createElement("button");
     this._accept.setAttribute("class", "btn btn-clear btn-red");
-    this._accept.textContent = "Stop Jobs";
+    this._accept.textContent = "Upload Anyway";
     this._footer.appendChild(this._accept);
+
+    // Indicates whether big upload was accepted.
+    this._confirm = false;
     
     const cancel = document.createElement("button");
     cancel.setAttribute("class", "btn btn-clear btn-charcoal");
@@ -22,30 +26,10 @@ class CancelConfirm extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._title.nodeValue = "Stop Jobs";
-
-    this._accept.addEventListener("click", async evt => {
-      window._uploader.postMessage({
-        "command": "cancelGroupUpload",
-        "gid": this._gid,
-      });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      fetch("/rest/JobGroup/" + this._gid, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .catch(err => console.log(err));
-      this.dispatchEvent(new Event("confirmGroupCancel"));
+    this._accept.addEventListener("click", evt => {
+      this._confirm = true;
+      this._closeCallback();
     });
-  }
-
-  set gid(val) {
-    this._gid = val;
   }
 
   static get observedAttributes() {
@@ -54,7 +38,11 @@ class CancelConfirm extends ModalDialog {
 
   attributeChangedCallback(name, oldValue, newValue) {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    switch (name) {
+      case "is-open":
+        break;
+    }
   }
 }
 
-customElements.define("cancel-confirm", CancelConfirm);
+customElements.define("big-upload-form", BigUploadForm);

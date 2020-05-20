@@ -26,9 +26,6 @@ let uploadBuffer = [];
 // Buffer of progress messages.
 let progressBuffer = {};
 
-// Time of last upload added.
-let lastUploadAdded = Date.now();
-
 // Define function for sending message to client.
 const emitMessage = msg => {
   self.clients.matchAll({includeUncontrolled: true})
@@ -77,24 +74,12 @@ const bufferMessage = (projectId, token, uid, msg) => {
 // Define function to remove a queued upload.
 const removeQueued = index => {
   const record = uploadBuffer.splice(index, 1)[0];
-  bufferMessage(record.projectId, record.token, record.uid, {
-    job_type: "upload",
-    gid: record.gid,
-    uid: record.uid,
-    swid: serviceWorkerId,
-    section: record.section,
-    name: record.file.name,
-    state: "failed",
-    message: "Aborted!",
-    progress: 100,
-  });
 }
 
 // Add an event listener that saves the upload info in the buffer.
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
   if (msg.command == "addUpload") {
-    lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
@@ -147,23 +132,20 @@ self.addEventListener("message", async msgEvent => {
 
 // Define function for starting an upload.
 async function startUpload() {
-  sinceLastAdd = Date.now() - lastUploadAdded;
-  if (sinceLastAdd > 0) {
-    // Begin uploading the files.
-    const belowMax = Object.keys(activeUploads).length < maxUploads;
-    const haveUploads = uploadBuffer.length > 0;
-    if (belowMax && haveUploads) {
-      // Grab uploads from buffer.
-      const upload = uploadBuffer.shift();
-      if (!(upload.uid in activeUploads)) {
-        // Start the upload.
-        activeUploads[upload.uid] = new Upload(upload);
-        activeUploads[upload.uid].computeMd5();
-      }
+  // Begin uploading the files.
+  const belowMax = Object.keys(activeUploads).length < maxUploads;
+  const haveUploads = uploadBuffer.length > 0;
+  if (belowMax && haveUploads) {
+    // Grab uploads from buffer.
+    const upload = uploadBuffer.shift();
+    if (!(upload.uid in activeUploads)) {
+      // Start the upload.
+      activeUploads[upload.uid] = new Upload(upload);
+      activeUploads[upload.uid].computeMd5();
     }
-    if (!haveUploads) {
-      self.postMessage({command: "uploadsDone"});
-    }
+  }
+  if (!haveUploads) {
+    self.postMessage({command: "uploadsDone"});
   }
 }
 

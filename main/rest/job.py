@@ -1,6 +1,7 @@
 import traceback
 import os
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from ..schema import JobDetailSchema
 from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class JobDetailAPI(APIView):
     """ Cancel a background job.
@@ -42,6 +45,7 @@ class JobDetailAPI(APIView):
 
             # Find the gid in redis.
             rds = Redis(host=os.getenv('REDIS_HOST'))
+            rds.hset('uid_blacklist', run_uid, run_uid)
             if rds.hexists('uids', run_uid):
                 msg = json.loads(rds.hget('uids', run_uid))
 

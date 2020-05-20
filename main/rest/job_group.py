@@ -1,6 +1,7 @@
 import traceback
 import os
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from ..schema import JobGroupDetailSchema
 from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class JobGroupDetailAPI(APIView):
     """ Cancel a group of background jobs.
@@ -42,6 +45,7 @@ class JobGroupDetailAPI(APIView):
 
             # Find the gid in redis.
             rds = Redis(host=os.getenv('REDIS_HOST'))
+            rds.hset('gid_blacklist', group_id, group_id)
             if rds.hexists('gids', group_id):
                 msg = json.loads(rds.hget('gids', group_id))
 
