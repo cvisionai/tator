@@ -192,7 +192,21 @@ class ProgressConsumer(JsonWebsocketConsumer):
         )
         # Get the latest updates from redis.
         for uid, msg in self.rds.hgetall(self.latest_grp).items():
-            self.send_json(json.loads(msg))
+            data = json.loads(msg)
+            blacklisted = False
+            if 'uid' in data:
+                if self.rds.hexists('uid_blacklist', data['uid']):
+                    blacklisted = True
+            if 'uid_gid' in data:
+                if self.rds.hexists('gid_blacklist', data['uid_gid']):
+                    blacklisted = True
+            if 'gid' in data:
+                if self.rds.hexists('gid_blacklist', data['gid']):
+                    blacklisted = True
+            if blacklisted:
+                self.rds.hdel(self.latest_grp, uid)
+            else:
+                self.send_json(data)
 
 # Initialize global redis connection
 ProgressConsumer.setup_redis()
