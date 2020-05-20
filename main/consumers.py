@@ -64,8 +64,8 @@ class ProgressProducer:
             msg = {**msg, **aux}
         try:
             async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
-        except:
-            logger.info("Failed to send individual progress message!")
+        except Exception as e:
+            logger.info(f"Failed to send individual progress message! {str(e)}")
         json_msg = json.dumps(msg)
         self.rds.hset(self.latest_grp, self.uid, json_msg)
         self.rds.hset('uids', self.uid, json_msg)
@@ -108,7 +108,7 @@ class ProgressProducer:
             try:
                 async_to_sync(self.channel_layer.group_send)(self.prog_grp, msg)
             except:
-                logger.info("Failed to send summary progress message!")
+                logger.info(f"Failed to send summary progress message! {str(e)}")
 
     def _increment_summary(self, msg):
         if self.rds.hexists('num_complete', self.gid):
