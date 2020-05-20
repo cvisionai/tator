@@ -17,7 +17,7 @@ setup(
     # installed or upgraded on the target machine
     install_requires=['requests>=2.21.0',
                       'progressbar2>=3.42.0',
-                      'tuspy>=0.2.4',
+                      'tuspy @ git+git://github.com/cvisionai/tus-py-client@v0.2.5',
                       'pandas>=0.24.2',
                       'opencv-python>=4.1.0',
                       'numpy>=1.16.0'],
