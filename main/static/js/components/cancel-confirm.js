@@ -36,7 +36,7 @@ class CancelConfirm extends ModalDialog {
       })
       .catch(err => console.log(err));
       this.dispatchEvent(new Event("confirmGroupCancel"));
-      window._serviceWorker.postMessage({
+      window._uploader.postMessage({
         "command": "cancelGroupUpload",
         "gid": this._gid,
       });

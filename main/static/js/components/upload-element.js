@@ -179,7 +179,7 @@ class UploadElement extends TatorElement {
       composed: true
     }));
     for (const msg of this._messages) {
-      window._serviceWorker.postMessage(msg);
+      window._uploader.postMessage(msg);
     }
     if (numStarted > 0) {
       this.dispatchEvent(new Event("allset", {composed: true}));

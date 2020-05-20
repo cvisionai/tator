@@ -97,6 +97,7 @@ self.addEventListener("message", async msgEvent => {
     lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
+    startUpload();
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
@@ -104,7 +105,7 @@ self.addEventListener("message", async msgEvent => {
     const numUploads = numActive + numBuffered;
     console.log("Responding with " + numUploads + " uploads.");
     emitMessage({msg: "numUploads", count: numUploads});
-  } else if (msg.command == "wake") {
+  } else if (msg.command == "startUpload") {
     startUpload();
   } else if (msg.command == "cancelUpload") {
     if (msg.uid in activeUploads) {

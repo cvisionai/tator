@@ -4,6 +4,8 @@ class ProjectDetail extends TatorPage {
 
     this._worker = new Worker("/static/js/project-detail/media-worker.js");
 
+    window._uploader = new Worker("/static/js/tasks/upload-worker.js");
+
     const main = document.createElement("main");
     main.setAttribute("class", "layout-max py-4");
     this._shadow.appendChild(main);
@@ -342,7 +344,7 @@ class ProjectDetail extends TatorPage {
       });
     });
     newSection.addEventListener("cancelUpload", evt => {
-      window._serviceWorker.postMessage({
+      window._uploader.postMessage({
         "command": "cancelUpload",
         "uid": evt.detail.uid,
       });
