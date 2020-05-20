@@ -420,7 +420,7 @@ class Media(APIElement):
             yield 100
 
     def uploadFile_v2(self,filePath,
-                      typeId=-1,
+                      typeId,
                       md5=None,
                       section=None,
                       fname=None,
