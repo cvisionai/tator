@@ -9,6 +9,7 @@ import json
 import traceback
 
 import datetime
+import mimetypes
 
 class Upload(QObject):
     """ Background thread to handle uploading content """
@@ -40,8 +41,22 @@ class Upload(QObject):
         try:
             for idx,media in enumerate(self.mediaList):
                 self.progress.emit(os.path.basename(media), 0, idx)
+
+                # Deduce the media type via the project listing
+                # TODO: Use default media type from project
+                mime,_ = mimetypes.guess_type(media)
+                if mime.find('video') >= 0:
+                    dtype = 'video'
+                else:
+                    dtype = 'image'
+                types=self.tator.MediaType.all()
+                for type_obj in types:
+                    print(type_obj)
+                    if type_obj['type']['dtype'] == dtype:
+                        type_id = type_obj['type']['id']
                 last=None
                 for chunk in self.tator.Media.uploadFile_v2(media,
+                                                            typeId=type_id,
                                                             section=self.section,
                                                             chunk_size=chunk_size):
                     if self._terminated:
