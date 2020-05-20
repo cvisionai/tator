@@ -42,6 +42,7 @@ class Tator:
         self.Localization = apiImpl.Localization((url,token,project))
         self.LocalizationType = apiImpl.LocalizationType((url,token,project))
         self.Media = apiImpl.Media((url,token,project))
+        self.MediaSection = apiImpl.MediaSection((url,token,project))
         self.MediaType = apiImpl.MediaType((url,token,project))
         self.Membership = apiImpl.Membership((url,token,project))
         self.Project = apiImpl.Project((url,token,None))
