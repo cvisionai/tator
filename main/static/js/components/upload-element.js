@@ -154,7 +154,7 @@ class UploadElement extends TatorElement {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    //if (totalSize > 60000000000 || numStarted > 5000) {
+    if (totalSize > 60000000000 || numStarted > 5000) {
       const bigUpload = document.createElement("big-upload-form");
       const page = document.getElementsByTagName("project-detail")[0];
       page._projects.appendChild(bigUpload);
@@ -171,7 +171,7 @@ class UploadElement extends TatorElement {
         page._leaveConfirmOk = false;
         return;
       }
-    //}
+    }
 
     if (numStarted > 0) {
       // Set the number of jobs in this job group.
@@ -199,13 +199,16 @@ class UploadElement extends TatorElement {
     }
 
 
+    console.log("GOT TO FILES ADDED");
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
       composed: true
     }));
+    console.log("GOT TO POSTING MESSAGES");
     for (const msg of this._messages) {
       window._uploader.postMessage(msg);
     }
+    console.log("GOT TO ALL SET");
     if (numStarted > 0) {
       this.dispatchEvent(new Event("allset", {composed: true}));
     }
