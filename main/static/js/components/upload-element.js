@@ -125,6 +125,7 @@ class UploadElement extends TatorElement {
     let numSkipped = 0;
     let numStarted = 0;
     let totalFiles = 0;
+    let totalSize = 0;
     if (typeof ev.dataTransfer === "undefined") {
       const files = ev.target.files;
       totalFiles = files.length;
@@ -139,7 +140,12 @@ class UploadElement extends TatorElement {
           totalFiles++;
           item.file(file => {
             const added = this._checkFile(file, gid);
-            if (added) { numStarted++; } else { numSkipped++; }
+            if (added) {
+              numStarted++;
+              totalSize += file.size;
+            } else {
+              numSkipped++;
+            }
           });
         }
       }
