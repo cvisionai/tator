@@ -155,6 +155,7 @@ class UploadElement extends TatorElement {
     }
 
     //if (totalSize > 60000000000 || numStarted > 5000) {
+      let bigUploadOk 
       const bigUpload = document.createElement("big-upload-form");
       const page = document.getElementsByTagName("project-detail")[0];
       page._projects.appendChild(bigUpload);
@@ -164,6 +165,13 @@ class UploadElement extends TatorElement {
         page.removeAttribute("has-open-modal", "");
         page._projects.removeChild(evt.target);
       });
+      while (bigUpload.hasAttribute("is-open")) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      if (!bigUpload._confirm) {
+        this._leaveConfirmOk = false;
+        return;
+      }
     //}
 
     if (numStarted > 0) {
