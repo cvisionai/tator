@@ -424,11 +424,15 @@ class Media(APIElement):
                       md5=None,
                       section=None,
                       fname=None,
+                      upload_gid=None,
+                      upload_uid=None,
                       chunk_size=2*1024*1024):
         if md5==None:
             md5 = md5_sum(filePath)
-        upload_uid = str(uuid1())
-        upload_gid = str(uuid1())
+        if upload_uid is None:
+            upload_uid = str(uuid1())
+        if upload_gid is None:
+            upload_gid = str(uuid1())
         if fname is None:
             fname=os.path.basename(filePath)
         if section is None:
