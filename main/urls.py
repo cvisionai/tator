@@ -170,6 +170,10 @@ urlpatterns += [
         ProgressAPI.as_view(),
     ),
     path(
+        'rest/ProgressSummary/<int:project>',
+        ProgressSummaryAPI.as_view(),
+    ),
+    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),

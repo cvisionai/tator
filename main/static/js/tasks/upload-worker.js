@@ -47,6 +47,7 @@ self.setInterval(() => {
     const messages = Object.values(progressBuffer[key]);
     let start = 0;
     while (start < messages.length) {
+      const sendMe = messages.slice(start, start + maxMessages);
       fetchRetry("/rest/Progress/" + projectId, {
         method: "POST",
         headers: {
@@ -54,11 +55,11 @@ self.setInterval(() => {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(messages.slice(start, start + maxMessages)),
+        body: JSON.stringify(sendMe),
         credentials: "omit",
       })
       .catch(err => console.error("Error while broadcasting progress:" + err));
-      start += maxMessages;
+      start += sendMe.length;
     }
   }
   progressBuffer = {};
@@ -96,17 +97,6 @@ self.addEventListener("message", async msgEvent => {
     lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
-    bufferMessage(msg.projectId, msg.token, upload_uid, {
-      job_type: "upload",
-      gid: msg.gid,
-      uid: upload_uid,
-      swid: serviceWorkerId,
-      section: msg.section,
-      name: msg.file.name,
-      state: "queued",
-      message: "Queued...",
-      progress: 0,
-    });
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
@@ -157,7 +147,7 @@ self.addEventListener("message", async msgEvent => {
 // Define function for starting an upload.
 async function startUpload() {
   sinceLastAdd = Date.now() - lastUploadAdded;
-  if (sinceLastAdd > 250) {
+  if (sinceLastAdd > 0) {
     // Begin uploading the files.
     const belowMax = Object.keys(activeUploads).length < maxUploads;
     const haveUploads = uploadBuffer.length > 0;
@@ -176,6 +166,12 @@ async function startUpload() {
 // Removes upload from list of active uploads.
 function removeFromActive(uid) {
   if (uid in activeUploads) {
+    const key = [activeUploads[uid].projectId, activeUploads[uid].token].join();
+    if (key in progressBuffer) {
+      if (uid in progressBuffer) {
+        delete progressBuffer[key][uid];
+      }
+    }
     delete activeUploads[uid];
   }
   startUpload();
