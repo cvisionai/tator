@@ -38,7 +38,7 @@ class Upload(QObject):
     @pyqtSlot()
     def _process(self):
         total = len(self.mediaList)
-        chunk_size = 20 * 1024 * 1024
+        chunk_size =  2 * 1024 * 1024
         upload_gid = str(uuid.uuid1())
         try:
             for idx,media in enumerate(self.mediaList):
@@ -53,7 +53,6 @@ class Upload(QObject):
                     dtype = 'image'
                 types=self.tator.MediaType.all()
                 for type_obj in types:
-                    print(type_obj)
                     if type_obj['type']['dtype'] == dtype:
                         type_id = type_obj['type']['id']
                 last=None
