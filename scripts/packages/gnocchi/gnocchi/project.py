@@ -22,16 +22,18 @@ QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class UploadDialog(QtWidgets.QDialog):
-    def __init__(self, parent, tator, sectionNames):
+    def __init__(self, parent, tator, sectionNames, backgroundThread):
         super(UploadDialog, self).__init__(parent)
         self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
+        self.background_thread = backgroundThread
         self.tator = tator
         self.setModal(True)
         self.ui.sectionSelection.addItem("New Section")
         self.ui.sectionSelection.addItems(sectionNames)
         self.setMode('select')
         self.section = None
+        self.upload = None
 
     def keyPressEvent(self, evt):
         if (evt.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]):
@@ -46,7 +48,7 @@ class UploadDialog(QtWidgets.QDialog):
         if mode == 'upload':
             upload=True
             select=False
-            self.setWindowTitle(f"Ready to Upload to '{self.section}'")
+            self.setWindowTitle(f"Ready to Upload {len(self.media_files)} to '{self.section}'")
         else:
             upload=False
             select=True
@@ -61,27 +63,66 @@ class UploadDialog(QtWidgets.QDialog):
         self.ui.section_label.setVisible(select)
         self.ui.sectionSelection.setVisible(select)
         self.ui.browseBtn.setVisible(select)
-        
-        
-        
+
+
+    def hideEvent(self, evt):
+        if self.upload:
+            self.upload.stop()
+            del self.upload
 
     @pyqtSlot()
     def on_browseBtn_clicked(self):
         my_documents=Qt.QStandardPaths.writableLocation(
             Qt.QStandardPaths.DocumentsLocation)
-        self.media_files=QtWidgets.QFileDialog.getOpenFileNames(
+        self.media_files,_ =QtWidgets.QFileDialog.getOpenFileNames(
             self,
             f"Select files to upload",
             my_documents,
             "Videos (*.mp4 *.mov);;Images (*.png *.jpg *.jpe *.gif);;All Files (*)")
         if self.media_files:
-            uploadBtn = self.ui.buttonBox.addButton("Upload", QtWidgets.QDialogButtonBox.ActionRole)
-            uploadBtn.clicked.connect(self.on_upload_clicked)
+            print(f"Uploading {self.media_files}")
+            self.uploadBtn = self.ui.buttonBox.addButton("Upload", QtWidgets.QDialogButtonBox.ActionRole)
+            self.uploadBtn.clicked.connect(self.on_upload_clicked)
             self.section = self.ui.sectionSelection.currentText()
             self.setMode('upload')
-            
+            self.ui.totalProgress.setMaximum(len(self.media_files))
+
     def on_upload_clicked(self):
-        pass
+        self.uploadBtn.setEnabled(False)
+        self.upload = Upload(self.tator,
+                             self.media_files,
+                             self.section)
+        self.upload.progress.connect(self.on_progress)
+        self.upload.finished.connect(self.on_finish)
+        self.upload.error.connect(self.on_error)
+        self.upload.moveToThread(self.background_thread)
+        self.upload.start()
+
+    @pyqtSlot(str, int, int)
+    def on_progress(self, msg, progress_type, count):
+        if progress_type == 0:
+            self.ui.totalProgress.setValue(count)
+            self.ui.fileUploadProgress.reset()
+            self.ui.fileUploadProgress.setValue(0)
+            self.ui.fileUploadProgress.setFormat("%p%")
+            self.ui.fileUploadProgress.text = None
+        elif progress_type == 1:
+            self.ui.fileUploadProgress.setFormat(f"{msg} (%p%)")
+            self.ui.fileUploadProgress.setValue(count)
+
+    @pyqtSlot(int)
+    def on_finish(self, count):
+        self.ui.totalProgress.setValue(count)
+        QtWidgets.QMessageBox.information(self, "Upload Finished", f"{count} files uploaded.")
+        del self.upload
+        self.upload = None
+        self.hide()
+
+    @pyqtSlot(str)
+    def on_error(self, msg):
+        QtWidgets.QMessageBox.critical(self, "Upload Failed!", msg)
+
+
 class ProjectDetail(QtWidgets.QWidget):
     def __init__(self, parent, backgroundThread, url, token, projectId):
         super(ProjectDetail, self).__init__(parent)
@@ -99,7 +140,7 @@ class ProjectDetail(QtWidgets.QWidget):
         self.ui.downloadBtn.setIcon(QtGui.QIcon(QT_DOWNLOAD_PATH))
         self.ui.uploadBtn.setIcon(QtGui.QIcon(QT_UPLOAD_PATH))
         self.ui.searchBtn.setIcon(QtGui.QIcon(QT_SEARCH_PATH))
-        
+
         # Upload button is always active, download requires selection
         self.ui.uploadBtn.setEnabled(True)
         self.ui.downloadBtn.setEnabled(False)
@@ -120,7 +161,8 @@ class ProjectDetail(QtWidgets.QWidget):
     def on_uploadBtn_clicked(self):
         upload_dialog = UploadDialog(self,
                                      self.tator,
-                                     list(self.sections.keys()))
+                                     list(self.sections.keys()),
+                                     self.background_thread)
         upload_dialog.show()
 
     @pyqtSlot()
@@ -208,6 +250,7 @@ class ProjectDetail(QtWidgets.QWidget):
         progress_dialog.setWindowTitle("Loading Project...")
         progress_dialog.setMinimumDuration(0)
         progress_dialog.setValue(33)
+        progress_dialog.setModal(True)
         progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
         self.progress_dialog = progress_dialog
         QtCore.QTimer.singleShot(50,self.load_media)
