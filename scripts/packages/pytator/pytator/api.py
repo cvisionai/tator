@@ -440,7 +440,7 @@ class Media(APIElement):
 
         tus = TusClient(self.tusURL)
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
 
         last_progress = 0
         yield last_progress
@@ -490,7 +490,7 @@ class Media(APIElement):
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         if progressBars:
             bar=progressbar.ProgressBar(prefix="Upload",redirect_stdout=True)
         else:
@@ -1073,7 +1073,7 @@ class TemporaryFile(APIElement):
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         for _ in range(num_chunks):
             uploader.upload_chunk()
 
