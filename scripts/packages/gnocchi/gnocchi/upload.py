@@ -39,7 +39,7 @@ class Upload(QObject):
     def _process(self):
         total = len(self.mediaList)
         chunk_size = 20 * 1024 * 1024
-        upload_gid = str(uuid1())
+        upload_gid = str(uuid.uuid1())
         try:
             for idx,media in enumerate(self.mediaList):
                 self.progress.emit(os.path.basename(media), 0, idx)
