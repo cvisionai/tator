@@ -120,6 +120,13 @@ class ProjectDetail extends TatorPage {
       }
     });
 
+    window._uploader.addEventListener("message", evt => {
+      const msg = evt.data;
+      if (msg.command == "uploadsDone") {
+        this._leaveConfirmOk = false;
+      }
+    });
+
     this._removeCallback = evt => {
       deleteSection.setAttribute("section-filter", evt.detail.sectionFilter);
       deleteSection.setAttribute("section-name", evt.detail.sectionName);
@@ -412,7 +419,6 @@ class ProjectDetail extends TatorPage {
 
   _allSetCallback() {
     this._progress.notify("Upload started!", true);
-    this._leaveConfirmOk = false;
   }
 
 }

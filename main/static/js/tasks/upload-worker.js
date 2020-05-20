@@ -161,6 +161,9 @@ async function startUpload() {
         activeUploads[upload.uid].computeMd5();
       }
     }
+    if (!haveUploads) {
+      self.postMessage({command: "uploadsDone"});
+    }
   }
 }
 
