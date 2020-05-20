@@ -417,8 +417,12 @@ class ProjectDetail extends TatorPage {
     this._newSection.close();
   };
 
-  _allSetCallback() {
-    this._progress.notify("Upload started!", true);
+  async _allSetCallback() {
+    this._progress.notify("Please wait, uploads starting...", true);
+    await new Promise(resolve => setTimeout(resolve, 7000));
+    if (this._leaveConfirmOk) {
+      this._progress.notify("To keep working, open a new tab...", true);
+    }
   }
 
 }
