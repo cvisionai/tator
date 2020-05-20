@@ -154,6 +154,18 @@ class UploadElement extends TatorElement {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    //if (totalSize > 60000000000 || numStarted > 5000) {
+      const bigUpload = document.createElement("big-upload-form");
+      const page = document.getElementsByTagName("project-detail")[0];
+      page._projects.appendChild(bigUpload);
+      bigUpload.setAttribute("is-open", "");
+      page.setAttribute("has-open-modal", "");
+      bigUpload.addEventListener("close", evt => {
+        page.removeAttribute("has-open-modal", "");
+        page._projects.removeChild(evt.target);
+      });
+    //}
+
     if (numStarted > 0) {
       // Set the number of jobs in this job group.
       fetchRetry("/rest/ProgressSummary/" + this.getAttribute("project-id"), {
