@@ -22,6 +22,8 @@ import pandas as pd
 import numpy as np
 import math
 import mimetypes
+import tarfile
+import io
 
 from pytator.md5sum import md5_sum
 from itertools import count
@@ -415,16 +417,56 @@ class Media(APIElement):
                             last_progress = this_progress
             yield 100
 
+    def uploadFiles(self, fileList, section=None,chunk_size=2*1024*1024):
+        upload_uid = str(uuid1())
+        upload_gid = str(uuid1())
+        in_mem_buf = io.BytesIO()
+        tus = TusClient(self.tusURL)
+        in_mem_tar = tarfile.TarFile(mode='w', fileobj=in_mem_buf)
+        for idx,fp in enumerate(fileList):
+            in_mem_tar.add(fp, os.path.basename(fp))
+
+        uploader = tus.uploader(file_stream=in_mem_buf, chunk_size=chunk_size)
+        last_progress = 0
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
+        yield last_progress
+        for chunk_count in range(num_chunks):
+            uploader.upload_chunk()
+            this_progress = round((chunk_count / num_chunks) *100,1)
+            if this_progress != last_progress:
+                yield this_progress
+                last_progress = this_progress
+
+
+        # Initiate transcode.
+        out = requests.post(f'{self.url}/Transcode/{self.project}',
+                            headers=self.headers,
+                            json={
+                                'type': -1, #Tar-based inport
+                                'uid': upload_uid,
+                                'gid': upload_gid,
+                                'url': uploader.url,
+                                'name': "archive.tar",
+                                'section': section,
+                                'md5': "N/A",
+        })
+
+        out.raise_for_status()
+        yield 100
     def uploadFile_v2(self,filePath,
-                      typeId=-1,
+                      typeId,
                       md5=None,
                       section=None,
                       fname=None,
+                      upload_gid=None,
+                      upload_uid=None,
                       chunk_size=2*1024*1024):
         if md5==None:
             md5 = md5_sum(filePath)
-        upload_uid = str(uuid1())
-        upload_gid = str(uuid1())
+        if upload_uid is None:
+            upload_uid = str(uuid1())
+        if upload_gid is None:
+            upload_gid = str(uuid1())
         if fname is None:
             fname=os.path.basename(filePath)
         if section is None:
@@ -432,7 +474,7 @@ class Media(APIElement):
 
         tus = TusClient(self.tusURL)
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
 
         last_progress = 0
         yield last_progress
@@ -482,7 +524,7 @@ class Media(APIElement):
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         if progressBars:
             bar=progressbar.ProgressBar(prefix="Upload",redirect_stdout=True)
         else:
@@ -1067,7 +1109,7 @@ class TemporaryFile(APIElement):
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         for _ in range(num_chunks):
             uploader.upload_chunk()
 
