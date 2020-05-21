@@ -133,7 +133,7 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        if (data.modified == null) {
+        if ((data.modified == null) && (detailUri != "EntityMedia")) {
           // This was an original annotation, patch the original and post
           // an edited one.
           const listUri = UndoBuffer.detailToList[detailUri];
