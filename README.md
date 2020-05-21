@@ -1,13 +1,26 @@
-Tator
-=====
+What is Tator?
+==============
 
-**IMPORTANT**: Currently only Chrome browser is supported. Tator is still in an alpha stage of development; we are still working toward a stable version, so expect big changes in the meantime.
+**Tator** is a web-based video analytics platform.
 
-**Documentation**: [Read the docs](https://tator.readthedocs.io/en/latest/)
+* Upload - Videos or images
+* View - Advanced frame-accurate player with many features
+* Annotate - Draw boxes, lines, dots, or specify activities
+* Describe - Define and set attributes on media and annotations
+* Automate - Launch algorithms on media from the browser
+* Search - Use attribute values to find media and annotations
+* Analyze - Use the API (REST, Python) to write analysis scripts
+* Download - Save media and metadata locally
+* Collaborate - Invite team members and manage permissions
 
-**Tator** is a web-based media management and curation project. It has three main components: Media Streaming, Media Annotation and Analysis, and Algorithm Inference, which feeds back into the annotation and analysis aspect. Built on [Kubernetes][kube], Tator consists of a core container that provides a REST API and facilities for asynchronous processing of transcodes and generic algorithms in conjunction with [Redis][redis], [tus][tus] and [Postgresql][postgresql]. Using the latest web standards, Tator provides responsive, frame accurate media playback in a variety of deployment scenarios. From a single node meant to deploy in an isolated lab, to a full-scale cloud deployment, Tator maintains the same architecture, interface, as well as the ability to seamlessly transfer data between deployment types.
+**Documentation** is hosted at [read the docs](https://tator.readthedocs.io/en/latest/).
 
-Tator is maintained and supported by [CVision AI](https://www.cvisionai.com).
+**Tator** is developed by [CVision AI](https://www.cvisionai.com).
+
+**IMPORTANT**: Only Chromium-based browsers are supported (Chrome and Edge).
+
+Screenshots
+===========
 
 ![projects](https://user-images.githubusercontent.com/7937658/65167417-83f95c00-da10-11e9-83aa-eec9db99c730.png)
 
@@ -15,8 +28,4 @@ Tator is maintained and supported by [CVision AI](https://www.cvisionai.com).
 
 ![annotation](https://user-images.githubusercontent.com/7937658/65167423-878ce300-da10-11e9-88e8-8c8926f45c6b.png)
 
-[kube]: https://kubernetes.io
-[redis]: https://redis.io
-[tus]: https://tus.io
-[postgresql]: https://www.postgresql.org
 
