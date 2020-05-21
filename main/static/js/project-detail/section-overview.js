@@ -67,7 +67,7 @@ class SectionOverview extends TatorElement {
     Promise.all([mediaPromise, analysisPromise])
     .then(responses => Promise.all(responses.map(resp => resp.json())))
     .then(([data, analysisData]) => {
-      if (typeof data.thumb_gif_url === "undefined") {
+      if (typeof data.thumbnail_gif === "undefined") {
         this._updateText({'counts': {
           "num_videos": 0,
           "num_images": 1,
