@@ -27,7 +27,6 @@ class ProgressProducer:
         """
         self.channel_layer = get_channel_layer()
         self.prog_grp = prefix + '_prog_' + str(project_id)
-        self.latest_grp = prefix + '_latest_' + str(project_id)
         self.prefix = prefix
         self.gid = gid
         self.uid = uid
@@ -67,7 +66,6 @@ class ProgressProducer:
         except Exception as e:
             logger.info(f"Failed to send individual progress message! {str(e)}")
         json_msg = json.dumps(msg)
-        self.rds.hset(self.latest_grp, self.uid, json_msg)
         self.rds.hset('uids', self.uid, json_msg)
         if 'swid' in msg:
             now = datetime.datetime.now(datetime.timezone.utc)
@@ -90,19 +88,11 @@ class ProgressProducer:
             'num_complete': num_complete,
         }
         if num_procs <= num_complete:
-            self.rds.hdel(self.latest_grp, self.gid)
             self.rds.delete(self.gid + ':started')
             self.rds.delete(self.gid + ':done')
             self.rds.hdel('gids', self.gid)
-            """
-            if self.rds.hexists('num_jobs', self.gid):
-                self.rds.hdel('num_jobs', self.gid)
-            if self.rds.hexists('num_complete', self.gid):
-                self.rds.hdel('num_complete', self.gid)
-            """
         else:
             json_msg = json.dumps(msg)
-            self.rds.hset(self.latest_grp, self.gid, json_msg)
             self.rds.hset('gids', self.gid, json_msg)
         if num_procs >= num_complete:
             try:
@@ -117,7 +107,6 @@ class ProgressProducer:
         self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
 
     def _clear_latest(self):
-        self.rds.hdel(self.latest_grp, self.uid)
         self.rds.hdel('uids', self.uid)
 
     def queued(self, msg):
@@ -184,29 +173,11 @@ class ProgressConsumer(JsonWebsocketConsumer):
 
     def _join_and_update(self, prefix, pid):
         self.prog_grp = prefix + '_prog_' + str(pid)
-        self.latest_grp = prefix + '_latest_' + str(pid)
         # Add this consumer to group corresponding to media type.
         async_to_sync(self.channel_layer.group_add)(
             self.prog_grp,
             self.channel_name,
         )
-        # Get the latest updates from redis.
-        for uid, msg in self.rds.hgetall(self.latest_grp).items():
-            data = json.loads(msg)
-            blacklisted = False
-            if 'uid' in data:
-                if self.rds.hexists('uid_blacklist', data['uid']):
-                    blacklisted = True
-            if 'uid_gid' in data:
-                if self.rds.hexists('gid_blacklist', data['uid_gid']):
-                    blacklisted = True
-            if 'gid' in data:
-                if self.rds.hexists('gid_blacklist', data['gid']):
-                    blacklisted = True
-            if blacklisted:
-                self.rds.hdel(self.latest_grp, uid)
-            else:
-                self.send_json(data)
 
 # Initialize global redis connection
 ProgressConsumer.setup_redis()
