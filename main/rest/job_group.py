@@ -45,7 +45,6 @@ class JobGroupDetailAPI(APIView):
 
             # Find the gid in redis.
             rds = Redis(host=os.getenv('REDIS_HOST'))
-            rds.hset('gid_blacklist', group_id, group_id)
             if rds.hexists('gids', group_id):
                 msg = json.loads(rds.hget('gids', group_id))
 
@@ -56,26 +55,6 @@ class JobGroupDetailAPI(APIView):
                 elif msg['prefix'] == 'algorithm':
                     alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
                     cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
-
-                # If cancel did not go through, attempt to delete any stale progress messages.
-                if not cancelled:
-                    jobs = {}
-                    if rds.exists(f'{group_id}:started'):
-                        jobs = rds.hgetall(f'{group_id}:started')
-                    for key in jobs:
-                        job = json.loads(jobs[key])
-                        if msg['prefix'] == 'upload':
-                            aux = {'section': job['section']}
-                        prog = ProgressProducer(
-                            job['prefix'],
-                            job['project_id'],
-                            job['uid'],
-                            job['uid_gid'],
-                            job['name'],
-                            self.request.user,
-                            aux,
-                        )
-                        prog.failed("Aborted by user!")
             else:
                 raise Http404
 
