@@ -120,6 +120,9 @@ class SaveImageAPI(APIView):
                 if os.path.exists(info_path):
                     os.remove(info_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+                image = Image.open(upload_path)
+                media_obj.width, media_obj.height = image.size
+                image.close()
 
 
             # Save the image.
