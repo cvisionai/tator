@@ -112,7 +112,7 @@ class UndoBuffer extends HTMLElement {
             frame: data.frame,
             type: data.meta.id,
           };
-        } else {
+        } else if (detailUri == "EntityState") {
           other = {
             media_ids: data.association.media,
             frame: data.association.frame,
@@ -133,10 +133,10 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        const listUri = UndoBuffer.detailToList[detailUri];
         if (data.modified == null) {
           // This was an original annotation, patch the original and post
           // an edited one.
+          const listUri = UndoBuffer.detailToList[detailUri];
           this._forwardOps.push([
             ["POST", listUri, projectId, {
               ...data, ...data.attributes, ...original, ...other, modified: false,
