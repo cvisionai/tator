@@ -172,8 +172,10 @@ if __name__=="__main__":
     work=[make_workflow_video(vid) for vid in videos if is_valid(vid)]
     split_list_into_k8s_chunks(work,"videos")
 
+    # don't split images into work packets
     work=[make_workflow_video(img) for img in images if is_valid(img)]
-    split_list_into_k8s_chunks(work,"images")
+    with open(os.path.join(args.directory, f"images.json"), 'w') as packet_file:
+        json.dump(work, packet_file)
 
     split_list_into_k8s_chunks(localization_files,"localizations")
 
