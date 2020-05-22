@@ -380,6 +380,9 @@ class Media(APIElement):
         self.mediaTypeApi = MediaType(api)
 
     def downloadFile(self, element, out_path):
+        for _ in self.downloadFile_v2(element, out_path):
+            pass
+    def downloadFile_v2(self, element, out_path):
         """ Download a media file from Tator to an off-line location
 
         TODO: Support which file to download
@@ -387,12 +390,6 @@ class Media(APIElement):
         :param dict element: Dictionary from :func:`Media.filter`
         :param path-like out_path: Path to where to download
         """
-        #Use streaming mp4 unless original is present
-        url=element['url']
-        if 'original_url' in element:
-            if element['original_url']:
-                url=element['original_url']
-
         if element['media_files'] is not None:
             archival = element['media_files'].get('archival',[])
             streaming = element['media_files'].get('streaming',[])
@@ -401,6 +398,12 @@ class Media(APIElement):
                 url = urljoin("https://"+split.netloc, archival[0]['path'])
             elif len(streaming) > 0:
                 url = urljoin("https://"+split.netloc, streaming[0]['path'])
+        else:
+            # Legacy way of using streaming prior to streaming
+            url=element['url']
+            if 'original_url' in element:
+                if element['original_url']:
+                    url=element['original_url']
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:
