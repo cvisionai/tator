@@ -44,9 +44,9 @@ if __name__ == "__main__":
         images = json.load(fp)
         for image in images:
             image_args = [*image_upload_args,
-                          '--original_path', os.path.join(image['dir'],
+                          '--original_path', os.path.join(image['dirname'],
                                                           image['name']),
-                          '--type', image['type'],
+                          '--type', image['entity_type'],
                           '--name', image['name'],
                           "--md5", image['md5']]
             status = subprocess.run(image_args).returncode

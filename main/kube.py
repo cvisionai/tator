@@ -211,9 +211,8 @@ class TatorTranscode(JobManagerMixin):
         # dags or steps
         unpack_params = [{'name': f'videos-{x}',
                           'valueFrom': {'path': f'/work/videos_{x}.json'}} for x in range(NUM_WORK_PACKETS)]
-        unpack_params.extend([{'name': f'images-{x}',
-                               'valueFrom': {'path': f'/work/images_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
 
+        # TODO: Don't make work packets for localizations / states
         unpack_params.extend([{'name': f'localizations-{x}',
                                'valueFrom': {'path': f'/work/localizations_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
 
@@ -327,31 +326,21 @@ class TatorTranscode(JobManagerMixin):
 
         self.image_upload_task = {
             'name': 'image-upload',
-            'inputs': {'parameters' : spell_out_params(['url',
-                                                        'original',
-                                                        'entity_type',
-                                                        'name',
-                                                        'md5'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
-                    'uploadImage.py',
-                    '--original_path', '{{inputs.parameters.original}}',
-                    '--original_url', '{{inputs.parameters.url}}',
+                    'imageLoop.py',
                     '--tus_url', '{{workflow.parameters.tus_url}}',
                     '--url', '{{workflow.parameters.rest_url}}',
                     '--token', '{{workflow.parameters.token}}',
                     '--project', '{{workflow.parameters.project}}',
-                    '--type', '{{inputs.parameters.entity_type}}',
                     '--gid', '{{workflow.parameters.gid}}',
                     '--uid', '{{workflow.parameters.uid}}',
                     # TODO: If we made section a DAG argument, we could
                     # conceviably import a tar across multiple sections
                     '--section', '{{workflow.parameters.section}}',
-                    '--name', '{{inputs.parameters.name}}',
-                    '--md5', '{{inputs.parameters.md5}}',
                     '--progressName', '{{workflow.parameters.upload_name}}',
                 ],
                 'workingDir': '/scripts',
@@ -546,14 +535,12 @@ class TatorTranscode(JobManagerMixin):
                                              'arguments' : item_parameters,
                                              'withParam' : f'{{{{tasks.unpack-task.outputs.parameters.videos-{x}}}}}',
                                              'dependencies' : ['unpack-task']} for x in range(NUM_WORK_PACKETS)])
-        unpack_task['dag']['tasks'].extend([{'name': f'image-upload-task-{x}',
+        unpack_task['dag']['tasks'].append({'name': f'image-upload-task',
                                              'template': 'image-upload',
-                                             'arguments' : item_parameters,
-                                             'withParam' : f'{{{{tasks.unpack-task.outputs.parameters.images-{x}}}}}',
-                                             'dependencies' : ['unpack-task']} for x in range(NUM_WORK_PACKETS)])
+                                             'dependencies' : ['unpack-task']})
 
         deps = [f'transcode-task-{x}' for x in range(NUM_WORK_PACKETS)]
-        deps.extend([f'image-upload-task-{x}' for x in range(NUM_WORK_PACKETS)])
+        deps.append('image-upload-task')
         unpack_task['dag']['tasks'].extend([{'name': f'state-import-task-{x}',
                                              'template': 'data-import',
                                              'arguments' : state_import_parameters,
