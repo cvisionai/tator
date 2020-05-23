@@ -18,40 +18,7 @@ from rest_framework.test import APITestCase
 
 from dateutil.parser import parse as dateutil_parse
 
-from .models import User
-from .models import Project
-from .models import Membership
-from .models import Permission
-from .models import Algorithm
-from .models import JobResult
-from .models import EntityTypeMediaVideo
-from .models import EntityTypeMediaImage
-from .models import EntityTypeLocalizationBox
-from .models import EntityTypeLocalizationLine
-from .models import EntityTypeLocalizationDot
-from .models import EntityTypeState
-from .models import EntityTypeTreeLeaf
-from .models import EntityBase
-from .models import EntityMediaVideo
-from .models import EntityMediaImage
-from .models import EntityLocalizationBox
-from .models import EntityLocalizationLine
-from .models import EntityLocalizationDot
-from .models import EntityState
-from .models import LocalizationAssociation
-from .models import FrameAssociation
-from .models import TreeLeaf
-from .models import MediaAssociation
-from .models import AttributeTypeBase
-from .models import AttributeTypeBool
-from .models import AttributeTypeInt
-from .models import AttributeTypeFloat
-from .models import AttributeTypeEnum
-from .models import AttributeTypeString
-from .models import AttributeTypeDatetime
-from .models import AttributeTypeGeoposition
-from .models import AnalysisCount
-from .models import Version
+from .models import *
 
 from .search import TatorSearch
 
@@ -125,12 +92,10 @@ def create_test_image_file():
                               content_type='image/png')
 
 def create_test_video(user, name, entity_type, project):
-    return EntityMediaVideo.objects.create(
+    return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        uploader=user,
-        upload_datetime=datetime.datetime.now(datetime.timezone.utc),
         original='',
         md5='',
         file=SimpleUploadedFile(name='asdf.mp4', content=b'asdfasdf'),
@@ -144,12 +109,10 @@ def create_test_video(user, name, entity_type, project):
     )
 
 def create_test_image(user, name, entity_type, project):
-    return EntityMediaImage.objects.create(
+    return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        uploader=user,
-        upload_datetime=datetime.datetime.now(datetime.timezone.utc),
         md5='',
         file=create_test_image_file(),
         thumbnail=create_test_image_file(),
@@ -162,7 +125,7 @@ def create_test_box(user, entity_type, project, media, frame):
     y = random.uniform(0.0, float(media.height))
     w = random.uniform(0.0, float(media.width) - x)
     h = random.uniform(0.0, float(media.height) - y)
-    return EntityLocalizationBox.objects.create(
+    return Localization.objects.create(
         user=user,
         meta=entity_type,
         project=project,
@@ -180,19 +143,19 @@ def create_test_line(user, entity_type, project, media, frame):
     y0 = random.uniform(0.0, float(media.height))
     x1 = random.uniform(0.0, float(media.width) - x0)
     y1 = random.uniform(0.0, float(media.height) - y0)
-    return EntityLocalizationLine.objects.create(
+    return Localization.objects.create(
         user=user,
         meta=entity_type,
         project=project,
         media=media,
         frame=frame,
-        x0=x0, y0=y0, x1=x1, y1=y1,
+        x=x0, y=y0, u=(x1 - x0), v=(y1 - y0),
     )
         
 def create_test_dot(user, entity_type, project, media, frame):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
-    return EntityLocalizationDot.objects.create(
+    return Localization.objects.create(
         user=user,
         meta=entity_type,
         project=project,
@@ -202,62 +165,59 @@ def create_test_dot(user, entity_type, project, media, frame):
         y=y,
     )
 
-def create_test_treeleaf(name, entity_type, project):
-    return TreeLeaf.objects.create(
+def create_test_leaf(name, entity_type, project):
+    return Leaf.objects.create(
         name=name,
         meta=entity_type,
         project=project,
         path=''.join(random.choices(string.ascii_lowercase, k=10)),
     )
         
-def create_test_attribute_types(entity_type, project):
+def create_test_attribute_types():
     """Create one of each attribute type.
     """
-    return {
-        'bool': AttributeTypeBool.objects.create(
+    return [
+        dict(
             name='bool_test',
-            applies_to=entity_type,
-            project=project,
+            dtype='bool',
             default=False,
         ),
-        'int': AttributeTypeInt.objects.create(
+        dict(
             name='int_test',
-            applies_to=entity_type,
-            project=project,
+            dtype='int',
             default=42,
+            minimum=-10000,
+            maximum=10000,
         ),
-        'float': AttributeTypeFloat.objects.create(
+        dict(
             name='float_test',
-            applies_to=entity_type,
-            project=project,
+            dtype='float',
             default=42.0,
+            minimum=-10000.0,
+            maximum=10000.0,
         ),
-        'enum': AttributeTypeEnum.objects.create(
+        dict(
             name='enum_test',
+            dtype='enum',
             choices=['enum_val1', 'enum_val2', 'enum_val3'],
-            applies_to=entity_type,
-            project=project,
             default='enum_val1',
         ),
-        'string': AttributeTypeString.objects.create(
+        dict(
             name='string_test',
-            applies_to=entity_type,
-            project=project,
+            dtype='string',
             default='asdf_default',
         ),
-        'datetime': AttributeTypeDatetime.objects.create(
+        dict(
             name='datetime_test',
+            dtype='datetime',
             use_current=True,
-            applies_to=entity_type,
-            project=project,
         ),
-        'geoposition': AttributeTypeGeoposition.objects.create(
+        dict(
             name='geoposition_test',
-            applies_to=entity_type,
-            project=project,
-            default=Point(-179.0, -89.0),
+            dtype='geopos',
+            default=[-179.0, -89.0],
         ),
-    }
+    ]
 
 def create_test_version(name, description, number, project, media):
     return Version.objects.create(
@@ -304,32 +264,41 @@ class DefaultCreateTestMixin:
             id_ = response.data['id'][0]
         else:
             id_ = response.data['id']
-        obj = EntityBase.objects.get(pk=id_)
         # Assert it has all the expected values.
-        attr_types = AttributeTypeBase.objects.filter(applies_to=obj.meta)
-        for attr_type in attr_types:
-            field = attr_type.name
+        obj = type(self.entities[0]).objects.get(pk=id_)
+        for attr_type in self.entity_type.attribute_types:
+            field = attr_type['name']
             if is_default:
-                if not isinstance(attr_type, AttributeTypeDatetime):
-                    default = attr_type.default
-                    if isinstance(default, Point):
-                        default = [default.x, default.y]
+                if not attr_type['dtype'] == 'datetime':
+                    default = attr_type['default']
                     self.assertTrue(obj.attributes[field]==default)
             else:
-                self.assertTrue(obj.attributes[field]==self.create_json[field])
+                if isinstance(self.create_json, dict):
+                    self.assertTrue(obj.attributes[field]==self.create_json[field])
+                else:
+                    for create_json in self.create_json:
+                        create_json[field]
+                        obj.attributes[field]
+                        self.assertTrue(obj.attributes[field]==create_json[field])
         # Delete the object
         obj.delete()
 
     def test_create_default(self):
         endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
         # Remove attribute values.
-        create_json = dict(self.create_json)
-        delete_fields = []
-        for key in create_json:
-            if key.endswith('_test'):
-                delete_fields.append(key)
-        for field in delete_fields:
-            del create_json[field]
+        def clear_attributes(obj):
+            delete_fields = []
+            cpy = dict(obj)
+            for key in cpy:
+                if key.endswith('_test'):
+                    delete_fields.append(key)
+            for field in delete_fields:
+                del cpy[field]
+            return cpy
+        if isinstance(self.create_json, dict):
+            create_json = clear_attributes(self.create_json)
+        else:
+            create_json = [clear_attributes(obj) for obj in self.create_json]
         # Post the json with no attribute values.
         response = self.client.post(endpoint, create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -672,6 +641,16 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['int_test'], test_val)
+            # Test that attribute maximum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'int_test': 100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # Test that attribute minimum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'int_test': -100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         TatorSearch().refresh(self.project.pk)
         for test_val in test_vals:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=int_test::{test_val}&type={self.entity_type.pk}&format=json')
@@ -707,6 +686,16 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['float_test'], test_val)
+            # Test that attribute maximum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'float_test': 100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            # Test that attribute minimum is working.
+            response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
+                                         {'attributes': {'float_test': -100000}},
+                                         format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         TatorSearch().refresh(self.project.pk)
         # Equality on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=float_test::{test_val}&type={self.entity_type.pk}&format=json')
@@ -725,7 +714,7 @@ class AttributeTestMixin:
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_enum_attr(self):
-        test_vals = [random.choice(self.attribute_types['enum'].choices) for _ in range(len(self.entities))]
+        test_vals = [random.choice(['enum_val1', 'enum_val2', 'enum_val3']) for _ in range(len(self.entities))]
         # Test setting an invalid choice
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
@@ -945,19 +934,22 @@ class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.project = create_test_project(self.user)
-        self.video_type = EntityTypeMediaVideo.objects.create(
+        self.video_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
-        self.box_type = EntityTypeLocalizationBox.objects.create(
+        self.box_type = LocalizationType.objects.create(
             name="boxes",
+            dtype='box',
             project=self.project,
         )
-        self.state_type = EntityTypeState.objects.create(
+        self.state_type = StateType.objects.create(
             name="state_type",
+            dtype='state',
             project=self.project,
+            association='Media',
         )
         self.videos = [
             create_test_video(self.user, f'asdf{idx}', self.video_type, self.project)
@@ -967,21 +959,16 @@ class ProjectDeleteTestCase(APITestCase):
             create_test_box(self.user, self.box_type, self.project, random.choice(self.videos), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.associations = [
-            MediaAssociation.objects.create()
+        self.states = [
+            State.objects.create(
+                meta=self.state_type,
+                project=self.project,
+            )
             for _ in range(random.randint(6, 10))
         ]
-        self.states = []
-        for media_association in self.associations:
+        for state in self.states:
             for media in random.choices(self.videos):
-                media_association.media.add(media)
-            self.states.append(
-                EntityState.objects.create(
-                    meta=self.state_type,
-                    project=self.project,
-                    association=media_association,
-                )
-            )
+                state.media.add(media)
 
     def test_delete(self):
         self.client.delete(f'/rest/Project/{self.project.pk}')
@@ -1035,18 +1022,18 @@ class VideoTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Medias'
         self.detail_uri = 'Media'
         self.create_entity = functools.partial(
@@ -1070,23 +1057,23 @@ class ImageTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaImage.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="images",
+            dtype='image',
             project=self.project,
-            uploadable=False,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_image(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
         self.media_entities = self.entities
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Medias'
         self.detail_uri = 'Media'
         self.create_entity = functools.partial(
             create_test_image, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'image1', 'resourcetype': 'EntityMediaImage'}
+        self.patch_json = {'name': 'image1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1107,15 +1094,17 @@ class LocalizationBoxTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationBox.objects.create(
+        self.entity_type = LocalizationType.objects.create(
             name="boxes",
+            dtype='box',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1126,12 +1115,11 @@ class LocalizationBoxTestCase(
             create_test_box(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_box, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1146,10 +1134,10 @@ class LocalizationBoxTestCase(
             'enum_test': 'enum_val1',
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            'geoposition_test': [0.0, 0.0],
-        }
+            'geoposition_test': [179.0, -89.0],
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'box1', 'resourcetype': 'EntityLocalizationBox'}
+        self.patch_json = {'name': 'box1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1170,15 +1158,17 @@ class LocalizationLineTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationLine.objects.create(
+        self.entity_type = LocalizationType.objects.create(
             name="lines",
+            dtype='line',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1189,12 +1179,11 @@ class LocalizationLineTestCase(
             create_test_line(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_line, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1210,9 +1199,9 @@ class LocalizationLineTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        } 
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'line1', 'resourcetype': 'EntityLocalizationLine'}
+        self.patch_json = {'name': 'line1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1233,15 +1222,17 @@ class LocalizationDotTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
-        self.entity_type = EntityTypeLocalizationDot.objects.create(
-            name="lines",
+        self.entity_type = LocalizationType.objects.create(
+            name="dots",
+            dtype='dot',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
@@ -1252,12 +1243,11 @@ class LocalizationDotTestCase(
             create_test_dot(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
         self.list_uri = 'Localizations'
         self.detail_uri = 'Localization'
         self.create_entity = functools.partial(
             create_test_dot, self.user, self.entity_type, self.project, self.media_entities[0], 0)
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_id': self.media_entities[0].pk,
@@ -1271,9 +1261,9 @@ class LocalizationDotTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        } 
+        }]
         self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {'name': 'dot1', 'resourcetype': 'EntityLocalizationDot'}
+        self.patch_json = {'name': 'dot1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
@@ -1295,47 +1285,41 @@ class StateTestCase(
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
+        media_entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
-        self.entity_type = EntityTypeState.objects.create(
-            name="lines",
+        self.entity_type = StateType.objects.create(
+            name="states",
+            dtype='state',
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf', media_entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
-        media_associations = [
-            MediaAssociation.objects.create()
-            for _ in range(random.randint(6, 10))
-        ]
         self.entities = []
-        for media_association in media_associations:
-            for media in random.choices(self.media_entities):
-                media_association.media.add(media)
-            self.entities.append(
-                EntityState.objects.create(
-                    meta=self.entity_type,
-                    project=self.project,
-                    association=media_association,
-                    version=self.version,
-                )
+        for _ in range(random.randint(6, 10)):
+            state = State.objects.create(
+                meta=self.entity_type,
+                project=self.project,
+                version=self.version,
             )
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
+            for media in random.choices(self.media_entities):
+                state.media.add(media)
+            self.entities.append(state)
         self.list_uri = 'States'
         self.detail_uri = 'State'
-        self.create_entity = functools.partial(EntityState.objects.create,
+        self.create_entity = functools.partial(State.objects.create,
             meta=self.entity_type,
             project=self.project,
-            association=media_association,
             version=self.version
         )
-        self.create_json = {
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'media_ids': [m.id for m in random.choices(self.media_entities)],
@@ -1346,7 +1330,7 @@ class StateTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        }
+        }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
@@ -1354,7 +1338,7 @@ class StateTestCase(
     def tearDown(self):
         self.project.delete()
 
-class TreeLeafTestCase(
+class LeafTestCase(
         APITestCase,
         AttributeTestMixin,
         DefaultCreateTestMixin,
@@ -1368,19 +1352,19 @@ class TreeLeafTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeTreeLeaf.objects.create(
+        self.entity_type = LeafType.objects.create(
             project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
-            create_test_treeleaf(f'leaf{idx}', self.entity_type, self.project)
+            create_test_leaf(f'leaf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
-        self.attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.list_uri = 'TreeLeaves'
-        self.detail_uri = 'TreeLeaf'
+        self.list_uri = 'Leaves'
+        self.detail_uri = 'Leaf'
         self.create_entity = functools.partial(
-            create_test_treeleaf, 'leafasdf', self.entity_type, self.project)
-        self.create_json = {
+            create_test_leaf, 'leafasdf', self.entity_type, self.project)
+        self.create_json = [{
             'type': self.entity_type.pk,
             'name': 'asdf',
             'path': 'asdf',
@@ -1391,15 +1375,15 @@ class TreeLeafTestCase(
             'string_test': 'asdf',
             'datetime_test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'geoposition_test': [0.0, 0.0],
-        }
+        }]
         self.edit_permission = Permission.FULL_CONTROL 
-        self.patch_json = {'name': 'leaf1', 'resourcetype': 'TreeLeaf'}
+        self.patch_json = {'name': 'leaf1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):
         self.project.delete()
 
-class TreeLeafTypeTestCase(
+class LeafTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
@@ -1411,15 +1395,15 @@ class TreeLeafTypeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.entities = [
-            EntityTypeTreeLeaf.objects.create(project=self.project)
+            LeafType.objects.create(project=self.project)
             for _ in range(random.randint(6, 10))
         ]
-        self.list_uri = 'TreeLeafTypes'
-        self.detail_uri = 'TreeLeafType'
+        self.list_uri = 'LeafTypes'
+        self.detail_uri = 'LeafType'
         self.create_json = {
-            'name': 'tree leaf type',
+            'name': 'leaf type',
         }
-        self.patch_json = {'name': 'tree leaf asdf'}
+        self.patch_json = {'name': 'leaf asdf'}
         self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
@@ -1436,30 +1420,32 @@ class StateTypeTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.media_type = EntityTypeMediaVideo.objects.create(
+        self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
-            EntityTypeState.objects.create(
+            StateType.objects.create(
                 name="state1",
                 project=self.project,
+                association='Localization',
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeState.objects.create(
+            StateType.objects.create(
                 name="state2",
                 project=self.project,
+                association='Media',
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'StateTypes'
         self.detail_uri = 'StateType'
         self.create_json = {
             'name': 'frame state type',
             'association': 'Frame',
             'media_types': [self.media_type.pk],
+            'attribute_types': create_test_attribute_types(),
         }
         self.patch_json = {'name': 'state asdf'}
         self.edit_permission = Permission.FULL_CONTROL
@@ -1481,164 +1467,27 @@ class MediaTypeTestCase(
         self.detail_uri = 'MediaType'
         self.list_uri = 'MediaTypes'
         self.entities = [
-            EntityTypeMediaVideo.objects.create(
+            MediaType.objects.create(
                 name="videos",
-                uploadable=True,
                 keep_original=True,
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeMediaImage.objects.create(
+            MediaType.objects.create(
                 name="images",
-                uploadable=True,
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             'name': 'asdf',
         }
         self.create_json = {
             'name': 'videos',
-            'uploadable': True,
             'keep_original': True,
             'dtype': 'video',
-        }
-
-    def tearDown(self):
-        self.project.delete()
-
-class EntityTypeSchemaTestCase(
-        APITestCase,
-        PermissionDetailMembershipTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.detail_uri = 'EntityTypeSchema'
-        self.entities = [
-            EntityTypeMediaVideo.objects.create(
-                name="videos",
-                uploadable=True,
-                keep_original=True,
-                project=self.project,
-            ),
-            EntityTypeMediaImage.objects.create(
-                name="images",
-                uploadable=True,
-                project=self.project,
-            ),
-        ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
-
-    def tearDown(self):
-        self.project.delete()
-
-class LocalizationAssociationTestCase(
-        APITestCase,
-        PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
-            name="video",
-            project=self.project,
-            uploadable=False,
-            keep_original=False,
-        )
-        self.media_entities = [
-            create_test_video(self.user, f'asdf', media_entity_type, self.project)
-            for idx in range(random.randint(3, 10))
-        ]
-        localization_type = EntityTypeLocalizationBox.objects.create(
-            name="boxes",
-            project=self.project,
-        )
-        self.localizations = [
-            create_test_box(
-                self.user, localization_type, self.project,
-                random.choice(self.media_entities), random.randint(0, 1000)
-            ) for _ in range(6, 10)
-        ]
-        self.entities = [
-            LocalizationAssociation.objects.create()
-            for _ in range(random.randint(6, 10))
-        ]
-        state_type = EntityTypeState.objects.create(
-            name="lines",
-            project=self.project,
-        )
-        self.states = [
-            EntityState.objects.create(
-                meta=state_type,
-                project=self.project,
-                association=entity,
-            ) for entity in self.entities
-        ]
-        for entity in self.entities:
-            for localization in random.choices(self.localizations):
-                entity.localizations.add(localization)
-        self.detail_uri = 'LocalizationAssociation'
-        self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {
-            'localizations': [loc.pk for loc in self.localizations[:2]],
-            'color': 'aabbcc',
-        }
-
-    def tearDown(self):
-        self.project.delete()
-
-class FrameAssociationTestCase(
-        APITestCase,
-        PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = EntityTypeMediaVideo.objects.create(
-            name="video",
-            project=self.project,
-            uploadable=False,
-            keep_original=False,
-        )
-        image_type = EntityTypeMediaImage.objects.create(
-            name="images",
-            project=self.project,
-            uploadable=False,
-        )
-        image = create_test_image(self.user, "asdf", image_type, self.project)
-        self.media_entities = [
-            create_test_video(self.user, f'asdf', media_entity_type, self.project)
-            for idx in range(random.randint(3, 10))
-        ]
-        self.entities = [
-            FrameAssociation.objects.create(frame=random.randint(0, 1000))
-            for _ in range(random.randint(6, 10))
-        ]
-        state_type = EntityTypeState.objects.create(
-            name="lines",
-            project=self.project,
-        )
-        self.states = [
-            EntityState.objects.create(
-                meta=state_type,
-                project=self.project,
-                association=entity,
-            ) for entity in self.entities
-        ]
-        self.detail_uri = 'FrameAssociation'
-        self.edit_permission = Permission.CAN_EDIT
-        self.patch_json = {
-            'frame': 100,
-            'extracted': image.pk,
+            'attribute_types': create_test_attribute_types(),
         }
 
     def tearDown(self):
@@ -1655,34 +1504,38 @@ class LocalizationTypeTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.media_type = EntityTypeMediaVideo.objects.create(
+        self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.entities = [
-            EntityTypeLocalizationBox.objects.create(
+            LocalizationType.objects.create(
                 name="box",
+                dtype='box',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeLocalizationLine.objects.create(
+            LocalizationType.objects.create(
                 name="line",
+                dtype='line',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
-            EntityTypeLocalizationLine.objects.create(
-                name="line1",
+            LocalizationType.objects.create(
+                name="dot asdf",
+                dtype='dot',
                 project=self.project,
+                attribute_types=create_test_attribute_types(),
             ),
         ]
-        for entity_type in self.entities:
-            create_test_attribute_types(entity_type, self.project)
         self.list_uri = 'LocalizationTypes'
         self.detail_uri = 'LocalizationType'
         self.create_json = {
             'name': 'box type',
             'dtype': 'box',
             'media_types': [self.media_type.pk],
+            'attribute_types': create_test_attribute_types(),
         }
         self.patch_json = {'name': 'box asdf'}
         self.edit_permission = Permission.FULL_CONTROL
@@ -1811,10 +1664,10 @@ class TranscodeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.list_uri = 'Transcode'
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.create_json = {
@@ -1840,32 +1693,25 @@ class AnalysisCountTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
+            attribute_types=create_test_attribute_types(),
         )
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
-        self.analysis = AnalysisCount.objects.create(
+        self.analysis = Analysis.objects.create(
             project=self.project,
             name="count_test",
-            data_type=self.entity_type,
             data_query='enum_test:enum_val1',
-        )
-        self.attribute_type = AttributeTypeEnum.objects.create(
-            name='enum_test',
-            choices=['enum_val1', 'enum_val2', 'enum_val3'],
-            applies_to=self.entity_type,
-            project=self.project,
         )
         self.list_uri = 'Analyses'
         self.create_json = {
             'name': 'count_create_test',
-            'data_type': self.entity_type.pk,
             'data_query': 'enum_test:enum_val2',
         }
         self.edit_permission = Permission.FULL_CONTROL
@@ -1884,10 +1730,10 @@ class VersionTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
+        self.entity_type = MediaType.objects.create(
             name="video",
+            dtype='video',
             project=self.project,
-            uploadable=False,
             keep_original=False,
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
@@ -1907,43 +1753,6 @@ class VersionTestCase(
             'description': 'asdf123',
         }
         self.edit_permission = Permission.CAN_EDIT
-
-    def tearDown(self):
-        self.project.delete()
-
-class AttributeTypeTestCase(
-        APITestCase,
-        PermissionCreateTestMixin,
-        PermissionListMembershipTestMixin,
-        PermissionDetailMembershipTestMixin,
-        PermissionDetailTestMixin):
-    def setUp(self):
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = EntityTypeMediaVideo.objects.create(
-            name="video",
-            project=self.project,
-            uploadable=False,
-            keep_original=False,
-        )
-        attribute_types = create_test_attribute_types(self.entity_type, self.project)
-        self.entities = list(attribute_types.values())
-        self.list_uri = 'AttributeTypes'
-        self.detail_uri = 'AttributeType'
-        self.create_json = {
-            'project': self.project.pk,
-            'name': 'attribute_type_create_test',
-            'description': 'asdf',
-            'dtype': 'enum',
-            'choices': ['asdf', 'asdfas', 'asdfasaa'],
-            'applies_to': self.entity_type.pk,
-        }
-        self.patch_json = {
-            'description': 'asdf123',
-        }
-        self.edit_permission = Permission.FULL_CONTROL
 
     def tearDown(self):
         self.project.delete()

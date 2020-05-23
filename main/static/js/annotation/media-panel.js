@@ -38,7 +38,7 @@ class MediaPanel extends TatorElement {
 
   set mediaType(val)
   {
-    if (val.columns.length == 0)
+    if (val.attribute_types.length == 0)
     {
       // Hide the attribute viewer is there are none.
       this._attrs.style.display="none";
@@ -51,7 +51,7 @@ class MediaPanel extends TatorElement {
       this._attrs.addEventListener("change", () => {
       const values = this._attrs.getValues();
       if (values !== null) {
-        const endpoint="EntityMedia";
+        const endpoint="Media";
         const id = this._mediaData['id'];
         this._undo.patch(endpoint, id, {"attributes": values}, val);
         this.dispatchEvent(new CustomEvent("save", {
@@ -78,7 +78,7 @@ class MediaPanel extends TatorElement {
     if (dataDefined && typesDefined) {
       let first = true;
       for (const dataType of this._dataTypes) {
-        if (dataType.type.visible) {
+        if (dataType.visible) {
           const button = document.createElement("entity-button");
           button.dataType = dataType;
           button.annotationData = this._annotationData;
@@ -90,7 +90,7 @@ class MediaPanel extends TatorElement {
           this._entities.appendChild(button);
           button.addEventListener("click", evt => {
             this.dispatchEvent(new CustomEvent("open", {
-              detail: {typeId: dataType.type.id},
+              detail: {typeId: dataType.id},
               composed: true,
             }));
           });

@@ -23,13 +23,7 @@ def get_annotation_queryset(project, query_params, annotation_type):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
-    media_bools = [{'bool': {
-        'should': [
-            {'match': {'_dtype': 'image'}},
-            {'match': {'_dtype': 'video'}},
-        ],
-        'minimum_should_match': 1,
-    }}]
+    media_bools = []
     if annotation_type == 'localization':
         annotation_bools = [{'bool': {
             'should': [
@@ -46,9 +40,11 @@ def get_annotation_queryset(project, query_params, annotation_type):
 
     if media_query != None:
         media_ids = query_string_to_media_ids(project, media_query)
-        media_bools.append({'ids': {'values': media_ids}})
+        ids = [f'image_{id_}' for id_ in media_ids] + [f'video_{id_}' for id_ in media_ids]
+        media_bools.append({'ids': {'values': ids}})
     elif mediaId != None:
-        media_bools.append({'ids': {'values': mediaId}})
+        ids = [f'image_{id_}' for id_ in mediaId] + [f'video_{id_}' for id_ in mediaId]
+        media_bools.append({'ids': {'values': ids}})
 
     if filterType != None:
         annotation_bools.append({'match': {'_meta': {'query': int(filterType)}}})

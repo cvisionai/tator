@@ -8,9 +8,11 @@ class AnnotationData extends HTMLElement {
     this._edited = true;
   }
 
-  init(dataTypes, version) {
+  init(dataTypes, version, projectId, mediaId) {
     this._dataTypesRaw = dataTypes;
     this._version = version;
+    this._projectId = projectId;
+    this._mediaId = mediaId;
 
     this.updateAll(dataTypes, version)
     .then(() => {
@@ -20,7 +22,7 @@ class AnnotationData extends HTMLElement {
     // Convert datatypes array to a map for faster access
     this._dataTypes={}
     for (const dataType of dataTypes) {
-      this._dataTypes[dataType.type.id] = dataType;
+      this._dataTypes[dataType.id] = dataType;
     }
   }
 
@@ -39,15 +41,14 @@ class AnnotationData extends HTMLElement {
       let isLocalization=false;
       let isTrack=false;
       let isTLState=false;
-      if ("resourcetype" in dataType.type) {
-        isLocalization = dataType.type.
-            resourcetype.includes("EntityTypeLocalization");
+      if ("dtype" in dataType) {
+        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
       }
-      if ("association" in dataType.type) {
-        isTrack = (dataType.type.association == "Localization");
+      if ("association" in dataType) {
+        isTrack = (dataType.association == "Localization");
       }
-      if ("interpolation" in dataType.type) {
-        isTLState = (dataType.type.interpolation == "latest");
+      if ("interpolation" in dataType) {
+        isTLState = (dataType.interpolation == "latest");
       }
       dataType.isLocalization = isLocalization;
       dataType.isTrack = isTrack;
@@ -58,6 +59,14 @@ class AnnotationData extends HTMLElement {
         localTypeIds.push(idx);
       }
     }
+
+    // Define function for getting data url.
+    const getDataUrl = dataType => {
+      const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
+      const dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" + 
+                      this._mediaId + "&type=" + dataType.id;
+      return dataUrl;
+    };
 
     // Update tracks first
     const tracksDone = new Promise(resolve => {
@@ -75,7 +84,7 @@ class AnnotationData extends HTMLElement {
       };
 
       trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+        this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
         this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
@@ -95,7 +104,7 @@ class AnnotationData extends HTMLElement {
       //Update localizations after
       tracksDone.then(() => {
         localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(dataTypes[typeIdx].type.id, dataTypes[typeIdx].data);
+          this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
           this.updateType(dataTypes[typeIdx], semaphore);
         });
       });
@@ -105,7 +114,7 @@ class AnnotationData extends HTMLElement {
   }
 
   updateTypeLocal(method, id, body, typeObj) {
-    const typeId = typeObj.type.id;
+    const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
@@ -128,7 +137,7 @@ class AnnotationData extends HTMLElement {
       }
     }
 
-    const attributeNames = typeObj.columns.map(column => column.name);
+    const attributeNames = typeObj.attribute_types.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
       obj.meta = typeId;
@@ -139,7 +148,8 @@ class AnnotationData extends HTMLElement {
         }
       }
       if (typeObj.isTLState) {
-        obj.association = {
+        obj = {
+          ...obj,
           frame: body.frame,
           media: [Number(body.media_ids)],
         };
@@ -176,13 +186,13 @@ class AnnotationData extends HTMLElement {
   }
 
   updateType(typeObj, callback, query) {
-    const typeId = typeObj.type.id;
+    const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
     }
 
-    let url = new URL(this._updateUrls.get(typeId));
+    let url = new URL(this._updateUrls.get(typeId), location.protocol + '//' + location.host);
     let searchParams = new URLSearchParams(url.search.slice(1));
     if (query) {
         searchParams.set('search',query);

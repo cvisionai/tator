@@ -44,6 +44,7 @@ annotation_filter_parameter_schema = [
         'schema': {
             'type': 'integer',
             'enum': [0, 1],
+            'default': 1,
         },
     },
     {

@@ -157,19 +157,11 @@ class SectionFiles extends TatorElement {
       card.sections = this._sections;
       card.setAttribute("media-id", media.id);
 
-      // TODO: clean up this as we can send the whole object over
-      // to reduct the amount of code here
-      if (media.video_thumbnail) {
-        card.setAttribute("thumb", media.video_thumbnail);
-      } else if (media.image_thumbnail) {
-        card.setAttribute("thumb", media.image_thumbnail);
-      } else if (media.thumb_url) {
-        card.setAttribute("thumb", media.thumb_url);
+      if (media.thumbnail) {
+        card.setAttribute("thumb", "/media/" + media.thumbnail);
       }
-      if (media.video_thumbnail_gif) {
-        card.setAttribute("thumb-gif", media.video_thumbnail_gif);
-      } else if (media.thumb_gif_url) {
-        card.setAttribute("thumb-gif", media.thumb_gif_url);
+      if (media.thumbnail_gif) {
+        card.setAttribute("thumb-gif", "/media/" + media.thumbnail_gif);
       }else {
         card.removeAttribute("thumb-gif");
       }
@@ -180,11 +172,7 @@ class SectionFiles extends TatorElement {
     }
     const inProgress = media.state == "started" || media.state == "queued";
     if ("uid" in media && inProgress) {
-      if (!(
-          ("thumb_url" in media) || 
-          ("video_thumbnail" in media) || 
-          ("image_thumbnail" in media)
-        )) {
+      if (!("thumbnail" in media)) {
         card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
         card.removeAttribute("thumb-gif");
       }

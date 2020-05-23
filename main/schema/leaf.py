@@ -2,10 +2,10 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._attributes import attribute_filter_parameter_schema
 
-class TreeLeafSuggestionSchema(AutoSchema):
+class LeafSuggestionSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['TreeLeaf']
+        operation['tags'] = ['Leaf']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -79,16 +79,16 @@ tree_leaf_properties = {
     },
 }
 
-class TreeLeafListSchema(AutoSchema):
+class LeafListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'RetrieveTreeLeafList'
+            operation['operationId'] = 'RetrieveLeafList'
         if method == 'PATCH':
-            operation['operationId'] = 'PartialUpdateTreeLeafList'
+            operation['operationId'] = 'PartialUpdateLeafList'
         if method == 'DELETE':
-            operation['operationId'] = 'DeleteTreeLeafList'
-        operation['tags'] = ['TreeLeaf']
+            operation['operationId'] = 'DeleteLeafList'
+        operation['tags'] = ['Leaf']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -136,10 +136,13 @@ class TreeLeafListSchema(AutoSchema):
         if method == 'POST':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['name', 'type'],
-                    'additionalProperties': True,
-                    'properties': tree_leaf_properties,
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'required': ['name', 'type'],
+                        'additionalProperties': True,
+                        'properties': tree_leaf_properties,
+                    },
                 },
             }}}
         if method == 'PATCH':
@@ -173,10 +176,10 @@ class TreeLeafListSchema(AutoSchema):
             responses['204'] = {'description': 'Successful bulk delete of tree leafs.'}
         return responses
 
-class TreeLeafDetailSchema(AutoSchema):
+class LeafDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['TreeLeaf']
+        operation['tags'] = ['Leaf']
         return operation
 
     def _get_path_parameters(self, path, method):

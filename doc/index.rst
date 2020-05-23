@@ -6,9 +6,21 @@
 Tator Documentation
 ===================================
 
-**Tator** is a web-based media management and curation project. It has three main components: Media Streaming, Media Annotation and Analysis, and Algorithm Inference, which feeds back into the annotation and analysis aspect. Built on `Kubernetes <https://kubernetes.io>`_, Tator consists of a core container that provides a REST API and facilities for asynchronous processing of transcodes and generic algorithms in conjunction with `Redis <https://redis.io>`_, `tus <https://tus.io>`_ and `Postgresql <https://www.postgresql.org>`_. Using the latest web standards, Tator provides responsive, frame accurate media playback in a variety of deployment scenarios. From a single node meant to deploy in an isolated lab, to a full-scale cloud deployment, Tator maintains the same architecture, interface, as well as the ability to seamlessly transfer data between deployment types.
+**Tator** is a web-based video analytics platform.
 
-Tator is maintained and supported by `CVision AI <https://www.cvisionai.com>`_.
+* Upload - Videos or images
+* View - Advanced frame-accurate player with many features
+* Annotate - Draw boxes, lines, dots, or specify activities
+* Describe - Define and set attributes on media and annotations
+* Automate - Launch algorithms on media from the browser
+* Search - Use attribute values to find media and annotations
+* Analyze - Use the API (REST, Python) to write analysis scripts
+* Download - Save media and metadata locally
+* Collaborate - Invite team members and manage permissions
+
+Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
+
+**IMPORTANT**: Only Chromium-based browsers are supported (Chrome and Edge).
 
 .. toctree::
    :maxdepth: 2

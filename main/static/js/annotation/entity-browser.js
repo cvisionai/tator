@@ -56,7 +56,7 @@ class EntityBrowser extends TatorElement {
       this.style.display = "none";
       this._closeAll();
       this.dispatchEvent(new CustomEvent("close", {
-        detail: {typeId: this._dataType.type.id},
+        detail: {typeId: this._dataType.id},
         composed: true,
       }));
     });
@@ -75,7 +75,7 @@ class EntityBrowser extends TatorElement {
   set dataType(val) {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
-    this._title.textContent = this._dataType.type.name;
+    this._title.textContent = this._dataType.name;
   }
 
   set undoBuffer(val) {
@@ -85,7 +85,7 @@ class EntityBrowser extends TatorElement {
   set annotationData(val) {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
-      if (evt.detail.typeObj.type.id === this._dataType.type.id) {
+      if (evt.detail.typeObj.id === this._dataType.id) {
         let groups;
         if (this._identifier) {
           const key = this._identifier.name;
@@ -110,10 +110,10 @@ class EntityBrowser extends TatorElement {
             });
           } else {
             groups[group].sort((item_a, item_b) => {
-              if (item_a.association.frame === item_b.association.frame) {
+              if (item_a.frame === item_b.frame) {
                 return item_a.id - item_b.id;
               }
-              return item_a.association.frame - item_b.association.frame;
+              return item_a.frame - item_b.frame;
             });
           }
           if (group in this._selectors) {
@@ -132,7 +132,7 @@ class EntityBrowser extends TatorElement {
             li.appendChild(selector);
             this._selectors[group] = selector;
 
-            const haveAttributes = this._dataType.columns.length > 0;
+            const haveAttributes = this._dataType.attribute_types.length > 0;
             if ((!this._dataType.isTLState) && haveAttributes) {
               const attributes = document.createElement("attribute-panel");
               attributes.dataType = evt.detail.typeObj;
@@ -158,7 +158,7 @@ class EntityBrowser extends TatorElement {
                   if (this._dataType.isLocalization) {
                     endpoint = "Localization";
                   } else {
-                    endpoint = "EntityState";
+                    endpoint = "State";
                   }
                   const id = selector.data.id;
                   this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);

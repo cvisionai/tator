@@ -56,7 +56,7 @@ class TextInput extends TatorElement {
             this._input.setAttribute("placeholder", "Enter a number");
             this.getValue = this._validateFloat;
             break;
-          case "str":
+          case "string":
             this.getValue = this._validateString;
             break;
           case "datetime":

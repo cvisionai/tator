@@ -126,6 +126,8 @@ class ProgressProducer:
         """
         self._increment_summary(msg)
         self._broadcast('failed', msg, 100)
+        self.rds.hdel(self.gid + ':started', self.uid)
+        self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
         self._summary()
 
@@ -134,6 +136,8 @@ class ProgressProducer:
         """
         self._increment_summary(msg)
         self._broadcast('finished', msg, 100, aux)
+        self.rds.hdel(self.gid + ':started', self.uid)
+        self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
         self._clear_latest()
         self._summary()
 

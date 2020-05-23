@@ -47,6 +47,15 @@ class TatorSearch:
                     'settings': {
                         'number_of_shards': 1,
                         'number_of_replicas': 1,
+                        'analysis': {
+                            'normalizer': {
+                                'lower_normalizer': {
+                                    'type': 'custom',
+                                    'char_filter': [],
+                                    'filter': ['lowercase', 'asciifolding'],
+                                },
+                            },
+                        },
                     },
                     'mappings': {
                         'properties': {
@@ -57,10 +66,10 @@ class TatorSearch:
                                 }
                             },
                             'tator_media_name': {'type': 'text'},
-                            '_exact_name': {'type': 'keyword'},
+                            '_exact_name': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
                             '_md5': {'type': 'keyword'},
                             '_meta': {'type': 'integer'},
-                            '_dtype': {'type': 'text'},
+                            '_dtype': {'type': 'keyword'},
                             'tator_user_sections': {'type': 'keyword'},
                         }
                     },
@@ -87,30 +96,33 @@ class TatorSearch:
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
 
-    def create_mapping(self, attribute_type):
-        if attribute_type.dtype == 'bool':
-            dtype='boolean'
-        elif attribute_type.dtype == 'int':
-            dtype='integer'
-        elif attribute_type.dtype == 'float':
-            dtype='float'
-        elif attribute_type.dtype == 'enum':
-            dtype='text'
-        elif attribute_type.dtype == 'str':
-            dtype='text'
-        elif attribute_type.dtype == 'datetime':
-            dtype='date'
-        elif attribute_type.dtype == 'geopos':
-            dtype='geo_point'
-        self.es.indices.put_mapping(
-            index=self.index_name(attribute_type.project.pk),
-            body={'properties': {
-                attribute_type.name: {'type': dtype},
-            }},
-        )
+    def create_mapping(self, entity_type):
+        if entity_type.attribute_types:
+            for attribute_type in entity_type.attribute_types:
+                if attribute_type['dtype'] == 'bool':
+                    dtype='boolean'
+                elif attribute_type['dtype'] == 'int':
+                    dtype='integer'
+                elif attribute_type['dtype'] == 'float':
+                    dtype='float'
+                elif attribute_type['dtype'] == 'enum':
+                    dtype='text'
+                elif attribute_type['dtype'] == 'string':
+                    dtype='text'
+                elif attribute_type['dtype'] == 'datetime':
+                    dtype='date'
+                elif attribute_type['dtype'] == 'geopos':
+                    dtype='geo_point'
+                self.es.indices.put_mapping(
+                    index=self.index_name(entity_type.project.pk),
+                    body={'properties': {
+                        attribute_type['name']: {'type': dtype},
+                    }},
+                )
 
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False)
+
     def create_document(self, entity, wait=False):
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
@@ -145,7 +157,7 @@ class TatorSearch:
         elif entity.meta.dtype in ['box', 'line', 'dot']:
             aux['_media_relation'] = {
                 'name': 'annotation',
-                'parent': entity.media.pk,
+                'parent': f"{entity.media.meta.dtype}_{entity.media.pk}",
             }
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
@@ -156,47 +168,44 @@ class TatorSearch:
             aux['_email'] = entity.user.email
             aux['_meta'] = entity.meta.pk
             aux['_frame'] = entity.frame
+            aux['_x'] = entity.x
+            aux['_y'] = entity.y
             if entity.thumbnail_image:
                 aux['_thumbnail_image'] = entity.thumbnail_image.pk
             else:
                 aux['_thumbnail_image'] = None
-            if entity.meta.dtype is 'box':
-                aux['_x'] = entity.x
-                aux['_y'] = entity.y
+            if entity.meta.dtype == 'box':
                 aux['_width'] = entity.width
                 aux['_height'] = entity.height
-            elif entity.meta.dtype is 'line':
-                aux['_x0'] = entity.x0
-                aux['_y0'] = entity.y0
-                aux['_y1'] = entity.x1
-                aux['_y2'] = entity.y1
-            elif entity.meta.dtype is 'dot':
-                aux['_x'] = entity.x
-                aux['_y'] = entity.y
+            elif entity.meta.dtype == 'line':
+                aux['_u'] = entity.u
+                aux['_v'] = entity.v
+            elif entity.meta.dtype == 'dot':
+                pass
         elif entity.meta.dtype in ['state']:
-            media = entity.association.media.all()
+            media = entity.media.all()
             if media.exists():
                 aux['_media_relation'] = {
                     'name': 'annotation',
-                    'parent': media[0].pk,
+                    'parent': f"{media[0].meta.dtype}_{media[0].pk}",
                 }
                 for media_idx in range(1, media.count()):
                     duplicate = deepcopy(aux)
                     duplicate['_media_relation'] = {
                         'name': 'annotation',
-                        'parent': media[media_idx].pk,
-                        }
+                        'parent': f"{media[media_idx].meta.dtype}_{media[media_idx].pk}",
+                    }
                     duplicates.append(duplicate)
             try:
                 # If the state has an extracted image, its a
                 # duplicated entry in ES.
-                extracted_image = entity.association.extracted
+                extracted_image = entity.extracted
                 if extracted_image:
                     duplicate = deepcopy(aux)
                     duplicate['_media_relation'] = {
                         'name': 'annotation',
-                        'parent': extracted_image.pk,
-                        }
+                        'parent': f"{extracted_image.meta.dtype}_{extracted_image.pk}",
+                    }
                     duplicates.append(duplicate)
             except:
                 pass
@@ -205,7 +214,7 @@ class TatorSearch:
             aux['_modified'] = entity.modified
             aux['_modified_datetime'] = entity.modified_datetime.isoformat()
             aux['_modified_by'] = str(entity.modified_by)
-        elif entity.meta.dtype in ['treeleaf']:
+        elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
             aux['_treeleaf_depth'] = entity.depth()
@@ -231,7 +240,7 @@ class TatorSearch:
                 **corrected_attributes,
                 **aux,
             },
-            '_id': entity.pk,
+            '_id': f"{aux['_dtype']}_{entity.pk}",
             '_routing': 1,
         })
 
@@ -250,7 +259,7 @@ class TatorSearch:
                 **corrected_attributes,
                 **duplicate,
             },
-            '_id': duplicate_id,
+            '_id': f"{aux['_dtype']}_{duplicate_id}",
             '_routing': 1,
             })
         return results
@@ -258,8 +267,8 @@ class TatorSearch:
 
     def delete_document(self, entity):
         index = self.index_name(entity.project.pk)
-        if self.es.exists(index=index, id=entity.pk):
-            self.es.delete(index=index, id=entity.pk)
+        if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
+            self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
 
     def search_raw(self, project, query, getSource=False):
         return self.es.search(
@@ -269,7 +278,7 @@ class TatorSearch:
             stored_fields=[],
         )
 
-    def search(self, project, query, getSource=False):
+    def search(self, project, query, getSource=True):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
         size = query.get('size', None)
@@ -290,7 +299,7 @@ class TatorSearch:
 
             if size:
                 count = size
-            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
+            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
             documents.extend(data)
 
             while len(ids) < count:
@@ -298,7 +307,7 @@ class TatorSearch:
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += drop_dupes([int(obj['_id']) & id_mask for obj in result['hits']['hits']])
+                ids += drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in result['hits']['hits']])
                 documents.extend(result['hits']['hits'])
             ids = ids[:count]
             self.es.clear_scroll(scroll_id)
@@ -309,7 +318,7 @@ class TatorSearch:
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = drop_dupes([int(obj['_id']) & id_mask for obj in data])
+            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
             documents.extend(data)
         return ids, count
 

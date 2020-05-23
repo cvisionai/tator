@@ -22,7 +22,7 @@ class ImageCanvas extends AnnotationCanvas
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      this.loadFromURL(val.url, this._dims).then(() =>
+      this.loadFromURL("/media/" + val.file, this._dims).then(() =>
                                                  {
                                                    this._good = true;
                                                    this.refresh()

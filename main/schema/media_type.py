@@ -24,11 +24,6 @@ media_properties = {
         'type': 'string',
         'maxLength': 4,
     },
-    'uploadable': {
-        'description': 'Whether this media can be uploaded.',
-        'type': 'boolean',
-        'default': True,
-    },
     'keep_original': {
         'description': 'For video dtype, whether to keep the original '
                        'video file for archival purposes after transcoding. '
@@ -112,7 +107,6 @@ class MediaTypeDetailSchema(AutoSchema):
                         'name': media_properties['name'],
                         'description': media_properties['description'],
                         'file_format': media_properties['file_format'],
-                        'uploadable': media_properties['uploadable'],
                         'keep_original': media_properties['keep_original'],
                     },
                 },

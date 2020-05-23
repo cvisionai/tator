@@ -3,7 +3,7 @@ from collections import defaultdict
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from ..models import EntityMediaBase
+from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaNextSchema
 from ..schema import parse
@@ -26,7 +26,7 @@ class MediaNextAPI(APIView):
         
         # Find this object.
         media_id = params['id']
-        media = EntityMediaBase.objects.get(pk=media_id)
+        media = Media.objects.get(pk=media_id)
 
         # Get query associated with media filters.
         _, _, query = get_media_queryset(media.project.pk, params, True)
@@ -47,5 +47,5 @@ class MediaNextAPI(APIView):
         return Response(response_data)
 
     def get_queryset(self):
-        return EntityMediaBase.objects.all()
+        return Media.objects.all()
 

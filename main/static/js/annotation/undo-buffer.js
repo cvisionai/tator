@@ -26,12 +26,11 @@ class UndoBuffer extends HTMLElement {
     window.addEventListener("beforeunload", () => {
       if (this._editsMade) {
         const sessionEnd = new Date();
-        fetchRetry("/rest/EntityMedia/" + this._media.id, {
+        fetchRetry("/rest/Media/" + this._media.id, {
           method: "PATCH",
           body: JSON.stringify({
             last_edit_start: this._sessionStart.toISOString(),
             last_edit_end: sessionEnd.toISOString(),
-            resourcetype: this._media.resourcetype,
           }),
           ...this._headers(),
         })
@@ -45,7 +44,7 @@ class UndoBuffer extends HTMLElement {
         });
 
         // Launch any edit trigger algorithms
-        var edit_triggers=this._mediaType.type.editTriggers;
+        var edit_triggers=this._mediaType.editTriggers;
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{
@@ -71,14 +70,14 @@ class UndoBuffer extends HTMLElement {
   static get detailToList() {
     return {
       "Localization": "Localizations",
-      "EntityState": "EntityStates",
+      "State": "States",
     };
   }
 
   static get listToDetail() {
     return {
       "Localizations": "Localization",
-      "EntityStates": "EntityState",
+      "States": "State",
     };
   }
 
@@ -114,10 +113,10 @@ class UndoBuffer extends HTMLElement {
           };
         } else if (detailUri == "EntityState") {
           other = {
-            media_ids: data.association.media,
-            frame: data.association.frame,
+            media_ids: data.media,
+            frame: data.frame,
             type: data.meta,
-            localization_ids: data.association.localizations,
+            localization_ids: data.localizations,
           };
         }
         const original = {};
@@ -164,27 +163,41 @@ class UndoBuffer extends HTMLElement {
     const promise = this._get(detailUri, id, dataType.id);
     if (promise) {
       return promise.then(data => {
-        let other;
-        if (detailUri == "Localization") {
-          other = {
+        let body;
+        if (['box', 'line', 'dot'].includes(dataType.dtype)) {
+          body = {
             media_id: data.media,
             frame: data.frame,
+            type: dataType.id,
+            version: data.version,
+            x: data.x,
+            y: data.y,
+            ...data.attributes,
           };
-        } else {
-          other = {
-            media_ids: data.association.media,
-            frame: data.association.frame,
-            type: data.meta,
+          if (dataType.dtype == 'box') {
+            body = {
+              ...body,
+              width: data.width,
+              height: data.height,
+            };
+          } else if (dataType.dtype == 'line') {
+            body = {
+              ...body,
+              u: data.u,
+              v: data.v,
+            };
+          }
+        } else if (dataType.dtype == 'state') {
+          body = {
+            media_ids: data.media,
+            localization_ids: data.localizations,
+            frame: data.frame,
+            type: dataType.id,
+            version: data.version,
+            ...data.attributes,
           };
         }
-        const body = {
-          type: data.meta.id,
-          name: data.meta.name,
-          version: data.version,
-          ...other,
-          ...data,
-          ...data.attributes,
-        }
+
         const projectId = this.getAttribute("project-id");
         const listUri = UndoBuffer.detailToList[detailUri];
         this._resetFromNow();
@@ -295,7 +308,11 @@ class UndoBuffer extends HTMLElement {
       ...this._headers(),
     };
     if (body) {
-      obj.body = JSON.stringify(body);
+      if (method == "POST") {
+        obj.body = JSON.stringify([body]);
+      } else {
+        obj.body = JSON.stringify(body);
+      }
     }
     return fetchRetry(url, obj)
     .then(response => {

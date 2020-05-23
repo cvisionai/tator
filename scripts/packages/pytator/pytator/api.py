@@ -336,13 +336,8 @@ class Algorithm(APIElement):
         """ .. warning:: Not supported for algorithms endpoint """
         pass
 
-class AttributeType(APIElement):
-    """ Describes elements from `rest/AttributeTypes` """
-    def __init__(self, api):
-        super().__init__(api, "AttributeTypes", "AttributeType")
-
 class MediaSection(APIElement):
-    """ Describes elements from `rest/Memberships` """
+    """ Describes elements from `rest/MediaSections` """
     def __init__(self, api):
         super().__init__(api, "MediaSections", None)
 
@@ -400,10 +395,10 @@ class Media(APIElement):
                 url = urljoin("https://"+split.netloc, streaming[0]['path'])
         else:
             # Legacy way of using streaming prior to streaming
-            url=element['url']
-            if 'original_url' in element:
-                if element['original_url']:
-                    url=element['original_url']
+            url=element['file']
+            if 'original' in element:
+                if element['original']:
+                    url=element['original']
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:
@@ -542,7 +537,7 @@ class Media(APIElement):
 
         mediaType = self.mediaTypeApi.get(typeId)
 
-        if mediaType['type']['dtype'] == 'video':
+        if mediaType['dtype'] == 'video':
             endpoint = 'Transcode'
         else:
             endpoint = 'SaveImage'
@@ -784,9 +779,11 @@ class Localization(APIElement):
         many annotations on a media element, without there having to be a
         request for each box, line or dot. Each element of the list needs
         to match the syntax for :func:`APIElement.new` for a localization
+
+        .. deprecated:: 0.0.15
         """
         response=requests.post(self.url+"/Localizations"+"/"+self.project,
-                               json={"many":listObj},
+                               json=listObj,
                                headers=self.headers)
 
         if response.status_code < 200 or response.status_code >= 300:
@@ -939,7 +936,7 @@ class StateGraphic:
         bgr_data = cv2.imdecode(np.asarray(bytearray(jpg_data)), cv2.IMREAD_COLOR)
         frame_data=[]
 
-        num_localizations = len(state_element['association']['localizations'])
+        num_localizations = len(state_element['localizations'])
         width = int(bgr_data.shape[1]/num_localizations)
         for idx in range(num_localizations):
             start_x = idx*width

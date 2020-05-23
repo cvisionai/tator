@@ -69,7 +69,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/EntityMedia/" + newValue, {
+        fetch("/rest/Media/" + newValue, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -86,7 +86,7 @@ class AnnotationPage extends TatorPage {
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;
 
-          fetch("/rest/EntityTypeMedia/" + data.meta, {
+          fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -102,7 +102,7 @@ class AnnotationPage extends TatorPage {
             this._player.mediaTypes = data['type'];
           });
           let player;
-          if ("thumb_gif_url" in data) {
+          if (data.thumbnail_gif) {
             player = document.createElement("annotation-player");
             this._player = player;
             player.addDomParent({"object": this._headerDiv,
@@ -297,7 +297,7 @@ class AnnotationPage extends TatorPage {
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
-      getMetadataType("EntityStateTypes"),
+      getMetadataType("StateTypes"),
       versionPromise,
     ])
     .then(([localizationResponse, stateResponse, versionResponse]) => {
@@ -334,12 +334,12 @@ class AnnotationPage extends TatorPage {
           this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.init(dataTypes, this._version);
+        this._data.init(dataTypes, this._version, projectId, mediaId);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
-          (sec[obj.type.dtype] = sec[obj.type.dtype] || []).push(obj);
+          (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           return sec;
         }, {});
         this._sidebar.localizationTypes = byType;
@@ -394,7 +394,7 @@ class AnnotationPage extends TatorPage {
                 frame = undefined;
               }
               else {
-                frame = parseInt(evt.detail.data.association.frame);
+                frame = parseInt(evt.detail.data.frame);
               }
               // Only jump to a frame if it is known
               if (frame != undefined)
@@ -450,7 +450,7 @@ class AnnotationPage extends TatorPage {
           save.init(projectId, mediaId, dataType, this._undo, this._version);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
-          this._saves[dataType.type.id] = save;
+          this._saves[dataType.id] = save;
 
           save.addEventListener("cancel", () => {
             this._closeModal(save);
@@ -509,7 +509,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
-    const save = this._saves[objDescription.type.id];
+    const save = this._saves[objDescription.id];
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
@@ -520,7 +520,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _getSave(objDescription) {
-    return this._saves[objDescription.type.id];
+    return this._saves[objDescription.id];
   }
 
   clearMetaCaches() {

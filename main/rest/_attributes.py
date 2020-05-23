@@ -1,34 +1,10 @@
-import traceback
 import logging
 
-from rest_framework.response import Response
-from rest_framework import status
-from django.db.models.expressions import RawSQL
-from django.db.models.expressions import ExpressionWrapper
-from django.db.models import Count
 from django.db.models.expressions import Func
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.gis.db.models import BooleanField
-from django.contrib.gis.db.models import IntegerField
-from django.contrib.gis.db.models import FloatField
-from django.contrib.gis.db.models import CharField
-from django.contrib.gis.db.models import DateTimeField
-from django.contrib.gis.db.models import PointField
 from django.contrib.gis.measure import D as GisDistance
 from django.contrib.gis.geos import Point
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from dateutil.parser import parse as dateutil_parse
-
-from ..models import AttributeTypeBase
-from ..models import AttributeTypeBool
-from ..models import AttributeTypeInt
-from ..models import AttributeTypeFloat
-from ..models import AttributeTypeEnum
-from ..models import AttributeTypeString
-from ..models import AttributeTypeDatetime
-from ..models import AttributeTypeGeoposition
-from ..models import EntityTypeBase
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +34,8 @@ def convert_attribute(attr_type, attr_val):
     """
     # Verify that attribute value is convertible.
     val = None
-    if isinstance(attr_type, AttributeTypeBool):
+    dtype = attr_type['dtype']
+    if dtype == 'bool':
         if isinstance(attr_val, bool):
             val = attr_val
         elif attr_val.lower() == 'false':
@@ -66,30 +43,46 @@ def convert_attribute(attr_type, attr_val):
         elif attr_val.lower() == 'true':
             val = True
         else:
-            raise Exception(f"Invalid attribute value {attr_val} for boolean attribute {attr_type.name}")
-    elif isinstance(attr_type, AttributeTypeInt):
+            raise Exception(f"Invalid attribute value {attr_val} for boolean attribute {attr_type['name']}")
+    elif dtype == 'int':
         try:
             val = int(attr_val)
         except:
-            raise Exception(f"Invalid attribute value {attr_val} for integer attribute {attr_type.name}")
-    elif isinstance(attr_type, AttributeTypeFloat):
+            raise Exception(f"Invalid attribute value {attr_val} for integer attribute {attr_type['name']}")
+        if 'minimum' in attr_type:
+            if val < attr_type['minimum']:
+                raise Exception(f"{attr_val} is below minimum {attr_type['minimum']} for "
+                                f"int attribute {attr_type['name']}!")
+        if 'maximum' in attr_type:
+            if val > attr_type['maximum']:
+                raise Exception(f"{attr_val} is above maximum {attr_type['maximum']} for "
+                                f"int attribute {attr_type['name']}!")
+    elif dtype == 'float':
         try:
             val = float(attr_val)
         except:
-            raise Exception(f"Invalid attribute value {attr_val} for float attribute {attr_type.name}")
-    elif isinstance(attr_type, AttributeTypeEnum):
-        if attr_val in attr_type.choices:
+            raise Exception(f"Invalid attribute value {attr_val} for float attribute {attr_type['name']}")
+        if 'minimum' in attr_type:
+            if val < attr_type['minimum']:
+                raise Exception(f"{attr_val} is below minimum {attr_type['minimum']} for "
+                                f"float attribute {attr_type['name']}!")
+        if 'maximum' in attr_type:
+            if val > attr_type['maximum']:
+                raise Exception(f"{attr_val} is above maximum {attr_type['maximum']} for "
+                                f"float attribute {attr_type['name']}!")
+    elif dtype == 'enum':
+        if attr_val in attr_type['choices']:
             val = attr_val
         else:
-            raise Exception(f"Invalid attribute value {attr_val} for enum attribute {attr_type.name}. Valid choices are: {attr_type.choices}.")
-    elif isinstance(attr_type, AttributeTypeString):
+            raise Exception(f"Invalid attribute value {attr_val} for enum attribute {attr_type['name']}. Valid choices are: {attr_type['choices']}.")
+    elif dtype == 'string':
         val = attr_val
-    elif isinstance(attr_type, AttributeTypeDatetime):
+    elif dtype == 'datetime':
         try:
             val = dateutil_parse(attr_val)
         except:
-            raise Exception(f"Invalid attribute value {attr_val} for datetime attribute {attr_type.name}")
-    elif isinstance(attr_type, AttributeTypeGeoposition):
+            raise Exception(f"Invalid attribute value {attr_val} for datetime attribute {attr_type['name']}")
+    elif dtype == 'geopos':
         try:
             if isinstance(attr_val, list):
                 lon, lat = attr_val
@@ -121,42 +114,47 @@ def extract_attribute(kv_pair, meta, filter_op):
 
     # If we are checking for non-existence of attribute,
     if filter_op == 'attribute_null':
-        attr_type = AttributeTypeBool(name=attr_name)
+        attr_type = {'dtype': 'bool', 'name': attr_name}
+        typeOk = True
+        meta = 'dummy'
+    elif attr_name == 'tator_user_sections':
+        attr_type = {'dtype': 'string', 'name': attr_name}
         typeOk = True
         meta = 'dummy'
     else:
 
         # If meta is none, we treat this as a string/enum type.
-        attr_type = attr_name
-        if meta is not None and attr_name != 'tator_user_sections':
-            attr_type_qs = AttributeTypeBase.objects.filter(
-                name=attr_name).filter(applies_to=meta)
-            if attr_type_qs.count() != 1:
+        found = False
+        if meta is not None:
+            for attr_type in meta.attribute_types:
+                if attr_type['name'] == attr_name:
+                    found = True
+                    break
+            if not found:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {meta.name}")
-            attr_type = attr_type_qs[0]
 
         # Do we want to convert this type based on the filter op?
-        typeOk = isinstance(attr_type, AttributeFilterMixin.allowed_types[filter_op])
+        typeOk = attr_type['dtype'] in AttributeFilterMixin.allowed_types[filter_op]
 
     def check_length(v, length):
         if len(v) < length:
             raise Exception(f"Invalid filter param {kv_pair} for attribute {attr_name}!")
 
     # Type is geopos and the filter op is appropriate.
-    if typeOk and isinstance(attr_type, AttributeTypeGeoposition):
+    if typeOk and attr_type['dtype'] == 'geopos':
         check_length(vals, 3)
         distance_km, lat, lon = vals
-        point = convert_attribute(attr_type, f"{vals[1]}_{vals[2]}")
-        filter_value = (convert_attribute(attr_type, f"{vals[1]}_{vals[2]}"),
+        point = convert_attribute(attr_type, f"{lat}_{lon}")
+        filter_value = (convert_attribute(attr_type, f"{lat}_{lon}"),
                         GisDistance(km=float(distance_km)))
     elif not typeOk:
-        raise Exception(f"Invalid attribute {attr_name} has incompatible type {type(attr_type)} for operation {filter_op}")
+        raise Exception(f"Invalid attribute {attr_name} has incompatible type {attr_type['dtype']} for operation {filter_op}")
     # We don't have a type, don't have a type suited to this filter op, or
     # the type is string/enum.
-    elif (meta is None) or (not typeOk) or isinstance(attr_type, (AttributeTypeString, AttributeTypeEnum)):
+    elif (meta is None) or (not typeOk) or (attr_type['dtype'] in ('string', 'enum')):
         check_length(vals, 1)
         filter_value = vals[0]
-        attr_type = attr_name # We are skipping annotation
+        attr_type = {'dtype': 'string', 'name': attr_name} # We are skipping annotation
     else:
         check_length(vals, 1)
         filter_value = convert_attribute(attr_type, vals[0])
@@ -167,90 +165,21 @@ def extract_attribute(kv_pair, meta, filter_op):
 
     return filter_value, attr_type, typeOk
 
-def annotate_attribute(qs, attr_type):
-    """Does type conversion of attributes in a queryset, adding a field
-       'attr_value' that can be used for filtering.
-    """
-    if isinstance(attr_type, (AttributeTypeString, AttributeTypeEnum)):
-        raise Exception("Cannot call annotate on strings/enums!")
-    attr_name = attr_type.name
-    annotation_name = attr_type.name + 'annotation'
-
-    # If the annotation has been done already, don't do it again.
-    if qs.count() > 0:
-        if hasattr(qs[0], annotation_name):
-            return (qs, annotation_name)
-
-    # Create a dict with the new field.
-    if isinstance(attr_type, AttributeTypeBool):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::bool", []
-            ), output_field=BooleanField())
-        }
-    elif isinstance(attr_type, AttributeTypeInt):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::int", []
-            ), output_field=IntegerField())
-        }
-    elif isinstance(attr_type, AttributeTypeFloat):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "(main_entitybase.attributes->>'" +
-                attr_name + "')::float", []
-            ), output_field=FloatField())
-        }
-    elif isinstance(attr_type, AttributeTypeDatetime):
-        new_field = {
-            annotation_name: ExpressionWrapper(RawSQL(
-                "to_timestamp((main_entitybase.attributes->>'" +
-                attr_name + "'), 'YYYY-MM-DD HH24:MI:SS.US')", []
-            ), output_field=DateTimeField())
-        }
-    elif isinstance(attr_type, AttributeTypeGeoposition):
-        query_str = ("ST_PointFromText('POINT(' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",0}') || " +
-            "' ' || " +
-            "(main_entitybase.attributes#>>'{" + attr_name + ",1}') || " +
-            "')')"
-        )
-        new_field = {
-            annotation_name: ExpressionWrapper(
-                RawSQL(query_str, []),
-                output_field=PointField()
-            )
-        }
-    qs = qs.annotate(**new_field)
-    return (qs, annotation_name)
-
-def ids_by_attribute(qs, attr_name):
-    field = 'attributes__' + attr_name
-    out = qs.values(field).order_by(field).annotate(ids=ArrayAgg('id', ordering='name'))
-    return {item[field]:item['ids'] for item in out}
-
-def count_by_attribute(qs, attr_name):
-    field = 'attributes__' + attr_name
-    out = qs.values(field).order_by(field).annotate(attr_count=Count(field))
-    return {item[field]:item['attr_count'] for item in out}
-
-def validate_attributes(request, obj):
+def validate_attributes(params, obj):
     """Validates attributes by looking up attribute type and attempting
        a type conversion.
     """
-    attributes = request.data.get("attributes", None)
+    attributes = params.get("attributes", None)
     if attributes:
+        attr_types = {a['name']:a for a in obj.meta.attribute_types}
         for attr_name in attributes:
             if attr_name == 'tator_user_sections':
                 # This is a built-in attribute used for organizing media sections.
                 continue
-            attr_type_qs = AttributeTypeBase.objects.filter(
-                name=attr_name).filter(applies_to=obj.meta)
-            if attr_type_qs.count() != 1:
+            if attr_name in attr_types:
+                attr_type = attr_types[attr_name]
+            else:
                 raise Exception(f"Invalid attribute {attr_name} for entity type {obj.meta.name}")
-            attr_type = attr_type_qs[0]
             convert_attribute(attr_type, attributes[attr_name])
     return attributes
 
@@ -264,8 +193,7 @@ def patch_attributes(new_attrs, obj):
         else:
             for attr_name in new_attrs:
                 obj.attributes[attr_name] = new_attrs[attr_name]
-        # TODO We shouldn't save here (in higher order function instead)
-        obj.save()
+    return obj
 
 def bulk_patch_attributes(new_attrs, qs):
     """Updates attribute values.
@@ -288,16 +216,14 @@ class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.
     """
     allowed_types = {
-        'attribute_eq': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat,
-            AttributeTypeDatetime, AttributeTypeEnum, AttributeTypeString, str),
-        'attribute_lt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
-        'attribute_lte': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
-        'attribute_gt': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
-        'attribute_gte': (AttributeTypeInt, AttributeTypeFloat, AttributeTypeDatetime),
-        'attribute_contains': (AttributeTypeEnum, AttributeTypeString),
-        'attribute_distance': (AttributeTypeGeoposition,),
-        'attribute_null': (AttributeTypeBool, AttributeTypeInt, AttributeTypeFloat, AttributeTypeEnum,
-            AttributeTypeString, AttributeTypeDatetime, AttributeTypeGeoposition,),
+        'attribute_eq': ('bool', 'int', 'float', 'datetime', 'enum', 'string'),
+        'attribute_lt': ('int', 'float', 'datetime'),
+        'attribute_lte': ('int', 'float', 'datetime'),
+        'attribute_gt': ('int', 'float', 'datetime'),
+        'attribute_gte': ('int', 'float', 'datetime'),
+        'attribute_contains': ('enum', 'string'),
+        'attribute_distance': ('geopos',),
+        'attribute_null': ('bool', 'int', 'float', 'enum', 'string', 'datetime', 'geopos')
     }
     operator_suffixes = {
         'attribute_eq': '',
@@ -340,7 +266,7 @@ class AttributeFilterMixin:
             if requiresType:
                 raise Exception("Parameter 'type' is required for numerical attribute filtering!")
         else:
-            self.meta = get_object_or_404(EntityTypeBase, pk=meta_id)
+            self.meta = get_object_or_404(self.entity_type, pk=meta_id)
         # Iterate through filter params and extract pairs of attribute type
         # and filter value.
         self.filter_type_and_vals = []
@@ -354,24 +280,4 @@ class AttributeFilterMixin:
                     self.filter_type_and_vals.append((attr_type, filter_value, filter_op))
         # Check for operations on the data.
         self.operation = query_params.get('operation', None)
-
-    def filter_by_attribute(self, qs):
-        """Filters objects of the specified type by attribute.
-        """
-        # Assuming validate has been called, if no attribute parameters
-        # were passed then return the input queryset.
-        if not hasattr(self, 'filter_type_and_vals'):
-            return qs
-        if self.filter_type_and_vals == []:
-            return qs
-
-        # Apply the filters.
-        for attr_type, filter_value, filter_op in self.filter_type_and_vals:
-            suffix = AttributeFilterMixin.operator_suffixes[filter_op]
-            if isinstance(attr_type, str):
-                annotation_name = 'attributes__' + attr_type
-            else:
-                qs, annotation_name = annotate_attribute(qs, attr_type)
-            qs = qs.filter(**{annotation_name + suffix: filter_value})
-        return qs
 

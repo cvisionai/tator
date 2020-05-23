@@ -1,4 +1,5 @@
 import traceback
+import logging
 from collections import defaultdict
 
 from rest_framework.views import APIView
@@ -16,6 +17,8 @@ from ..schema import VersionDetailSchema
 from ..schema import parse
 
 from ._permissions import ProjectEditPermission
+
+logger = logging.getLogger(__name__)
 
 class VersionListAPI(APIView):
     """ Interact with a list of versions.
@@ -87,7 +90,7 @@ class VersionListAPI(APIView):
                 query['query']['bool']['filter'].append({
                     'has_parent': {
                         'parent_type': 'media',
-                        'query': {'ids': {'values': [media,]}},
+                        'query': {'ids': {'values': [f'image_{media}', f'video_{media}']}},
                     },
                 })
             query['query']['bool']['should'] = []

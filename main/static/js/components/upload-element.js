@@ -75,14 +75,14 @@ class UploadElement extends TatorElement {
       // wrong media type.
       const mediaType = this._mediaTypes[idx];
       let fileOk = false;
-      if (mediaType.type.file_format === null) {
-        if (mediaType.type.resourcetype == "EntityTypeMediaImage" && isImage) {
+      if (mediaType.file_format === null) {
+        if (mediaType.dtype == "image" && isImage) {
           fileOk = true;
-        } else if (mediaType.type.resourcetype == "EntityTypeMediaVideo" && isVideo) {
+        } else if (mediaType.dtype == "video" && isVideo) {
           fileOk = true;
         }
       } else {
-        fileOk = ext.toLowerCase() === mediaType.type.file_format.toLowerCase();
+        fileOk = ext.toLowerCase() === mediaType.file_format.toLowerCase();
         if (isArchive)
         {
           fileOk = true;
@@ -96,7 +96,7 @@ class UploadElement extends TatorElement {
           "gid": gid,
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
-          "mediaTypeId": (isArchive ? -1 : mediaType.type.id),
+          "mediaTypeId": (isArchive ? -1 : mediaType.id),
           "token": this._token,
           "isImage": isImage,
           "isArchive": isArchive

@@ -48,7 +48,7 @@ class AttributeTypeListSchema(AutoSchema):
                         'dtype': {
                             'description': 'Data type of the attribute.',
                             'type': 'string',
-                            'enum': ['bool', 'int', 'float', 'enum', 'str',
+                            'enum': ['bool', 'int', 'float', 'enum', 'string',
                                      'datetime', 'geopos'],
                         },
                         'applies_to': {

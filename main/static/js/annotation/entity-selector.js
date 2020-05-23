@@ -136,7 +136,7 @@ class EntitySelector extends TatorElement {
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
       } else {
-        endpoint = "EntityState";
+        endpoint = "State";
       }
       const index = parseInt(this._current.textContent) - 1;
       this._undo.del(endpoint, this._data[index].id, this._dataType);
@@ -151,7 +151,7 @@ class EntitySelector extends TatorElement {
         }
         // Enable snapshots for boxes
         if (this._dataType.isLocalization &&
-            this._dataType.type.dtype == "box") {
+            this._dataType.dtype == "box") {
           capture.style.display = null;
         }
       } else {
