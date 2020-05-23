@@ -68,7 +68,6 @@ class StateListSchema(AutoSchema):
                             'modified': {
                                 'description': 'Whether this localization was created in the web UI.',
                                 'type': 'boolean',
-                                'default': False,
                             },
                             **state_properties,
                         },

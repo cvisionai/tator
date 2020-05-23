@@ -101,7 +101,6 @@ class LocalizationListSchema(AutoSchema):
                             'modified': {
                                 'description': 'Whether this localization was created in the web UI.',
                                 'type': 'boolean',
-                                'default': False,
                             },
                             **localization_properties,
                         },
