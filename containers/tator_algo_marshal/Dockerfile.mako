@@ -6,7 +6,7 @@
 
   PYTATOR_VERSION=subprocess.run(['python3',
                                   'scripts/packages/pytator/pytator/version.py'],
-                                 capture_output=True).stdout
+                                 stdout=subprocess.PIPE).stdout
   PYTATOR_VERSION=PYTATOR_VERSION.decode().strip()
 %>
 FROM python:3-slim
