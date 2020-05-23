@@ -101,7 +101,16 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             qs = Media.objects.filter(pk__in=media_ids)
             qs._raw_delete(qs.db)
 
+            # Clear elasticsearch entries for both media and its children.
+            # Note that clearing children cannot be done using has_parent because it does
+            # not accept queries with size, and has_parent also does not accept ids queries.
             TatorSearch().delete(self.kwargs['project'], query)
+            loc_ids = [f'box_{id_}' for id_ in loc_qs.iterator()] \
+                    + [f'line_{id_}' for id_ in loc_qs.iterator()] \
+                    + [f'dot_{id_}' for id_ in loc_qs.iterator()]
+            TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
+            state_ids = [f'state_{_id}' for id_ in state_qs.iterator()]
+            TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': state_ids}}})
         return {'message': f'Successfully deleted {count} medias!'}
 
     def _patch(self, params):
