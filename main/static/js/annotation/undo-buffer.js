@@ -111,7 +111,7 @@ class UndoBuffer extends HTMLElement {
             frame: data.frame,
             type: data.meta.id,
           };
-        } else if (detailUri == "EntityState") {
+        } else if (detailUri == "State") {
           other = {
             media_ids: data.media,
             frame: data.frame,
@@ -132,7 +132,7 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        if ((data.modified == null) && (detailUri != "EntityMedia")) {
+        if ((data.modified == null) && (detailUri != "Media")) {
           // This was an original annotation, patch the original and post
           // an edited one.
           const listUri = UndoBuffer.detailToList[detailUri];
