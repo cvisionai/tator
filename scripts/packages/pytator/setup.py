@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
 import os.path
-from pytator.version import __version__
+import pytator
 
 setup(
     name="PyTator",
-    version=__version__,
+    version=pytator.__version__,
     packages=find_packages(),
     scripts=['ingestor.py', 'tator_testHarness.py', 'sendProgress.py'],
 
