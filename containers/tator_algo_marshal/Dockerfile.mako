@@ -2,10 +2,12 @@
   import multiArch
   import os
   import os.path
-  PYTATOR_VERSION_FILE=open('scripts/packages/pytator/version','r')
-  PYTATOR_VERSION=PYTATOR_VERSION_FILE.read()
-  PYTATOR_VERSION=PYTATOR_VERSION.strip()
-  PYTATOR_VERSION_FILE.close()
+  import subprocess
+
+  PYTATOR_VERSION=subprocess.run(['python3',
+                                  'scripts/packages/pytator/pytator/version.py'],
+                                 capture_output=True).stdout
+  PYTATOR_VERSION=PYTATOR_VERSION.decode().strip()
 %>
 FROM python:3-slim
 MAINTAINER CVision AI <info@cvisionai.com>

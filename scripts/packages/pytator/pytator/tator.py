@@ -2,7 +2,11 @@
 
 import pytator.api as apiImpl
 import argparse
-import requests
+
+try:
+    import requests
+except:
+    print("Couldn't required libraries (might be in setup.py)")
 
 def cli_parser(parser=None):
     """ Convenience function to return an argument parser with boiler-plate 
