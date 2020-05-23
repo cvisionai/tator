@@ -44,7 +44,7 @@ class LeafTypeDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return LeafType.objects.values(*fields).get(pk=params['id'])
+        return LeafType.objects.filter(pk=params['id']).values(*fields)[0]
 
     def _patch(self, params):
         name = params.get('name', None)

@@ -74,7 +74,7 @@ class MediaTypeDetailAPI(BaseDetailView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        return MediaType.objects.values(*fields).get(pk=params['id'])
+        return MediaType.objects.filter(pk=params['id']).values(*fields)[0]
 
     def _patch(self, params):
         """ Update media type.

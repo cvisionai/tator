@@ -85,7 +85,7 @@ class StateTypeDetailAPI(BaseDetailView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        return StateType.objects.values(*fields).get(pk=params['id'])
+        return StateType.objects.filter(pk=params['id']).values(*fields)[0]
 
     def _patch(self, params):
         """ Update state type.
