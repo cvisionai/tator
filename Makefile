@@ -162,7 +162,7 @@ externals/build_tools/%.py:
 	@git submodule update --init
 
 # Add specific rule for marshal's .gen because it uses version input file
-containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/version
+containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/pytator/version.py
 	./externals/build_tools/makocc.py -o $@ containers/tator_algo_marshal/Dockerfile.mako
 
 # Dockerfile.gen rules (generic)
@@ -177,7 +177,7 @@ tator-image: containers/tator/Dockerfile.gen
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
-PYTATOR_VERSION=$(shell cat scripts/packages/pytator/version)
+PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
 containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
