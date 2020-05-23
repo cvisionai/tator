@@ -395,10 +395,12 @@ class Media(APIElement):
                 url = urljoin("https://"+split.netloc, streaming[0]['path'])
         else:
             # Legacy way of using streaming prior to streaming
-            url=element['file']
+            url=os.path.join("media", element['file'])
             if 'original' in element:
                 if element['original']:
-                    url=element['original']
+                    url=os.path.join("data/raw", element['original'])
+            split=urlsplit(self.url)
+            url = urljoin("https://"+split.netloc, url)
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:
