@@ -4,6 +4,8 @@ from django.db.models import Case, When
 
 from ..models import Media
 from ..models import MediaType
+from ..models import Localization
+from ..models import State
 from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import MediaListSchema
@@ -80,8 +82,21 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         )
         count = len(media_ids)
         if count > 0:
+            # Delete any state many to many relations to this media.
+            state_qs = State.media.through.objects.filter(media__in=media_ids)
+            state_qs._raw_delete(state_qs.db)
+
+            # Delete any localizations associated to this media
+            loc_qs = Localization.objects.filter(media__in=media_ids)
+            # Delete any state many to many relations to these localizations.
+            state_qs = State.localizations.through.objects.filter(localization__in=loc_qs)
+            state_qs._raw_delete(state_qs.db)
+            loc_qs._raw_delete(loc_qs.db)
+
+            # Delete the media.
             qs = Media.objects.filter(pk__in=media_ids)
             qs._raw_delete(qs.db)
+
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} medias!'}
 

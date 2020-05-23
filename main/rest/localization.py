@@ -4,6 +4,7 @@ from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
 from ..models import MediaType
+from ..models import State
 from ..models import User
 from ..models import Project
 from ..models import Version
@@ -195,6 +196,11 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             'localization',
         )
         if len(annotation_ids) > 0:
+            # Delete any state many to many relations to these localizations.
+            state_qs = State.localizations.through.objects.filter(localization__in=annotation_ids)
+            state_qs._raw_delete(state_qs.db)
+
+            # Delete the localizations.
             qs = Localization.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
             TatorSearch().delete(self.kwargs['project'], query)
