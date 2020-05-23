@@ -11,15 +11,11 @@ These endpoints do not need to be manually constructed and instead can be
 accessed via :class:`pytator.Tator`.
 
  """
-import cv2
 import json
 import math
-import requests
 import time
 import os
 import progressbar
-import pandas as pd
-import numpy as np
 import math
 import mimetypes
 import tarfile
@@ -27,10 +23,23 @@ import io
 
 from pytator.md5sum import md5_sum
 from itertools import count
-from tusclient.client import TusClient
 from urllib.parse import urljoin
 from urllib.parse import urlsplit
 from uuid import uuid1
+
+try:
+    import cv2
+except:
+    # TODO: Soft-disable cv2-features
+    print("Couldn't import CV2, certain functions disabled!")
+
+try:
+    import pandas as pd
+    import numpy as np
+    import requests
+    from tusclient.client import TusClient
+except:
+    print("Couldn't required libraries (might be in setup.py)")
 
 class APIElement:
     """ Base API element that provides generic capability to any of the
