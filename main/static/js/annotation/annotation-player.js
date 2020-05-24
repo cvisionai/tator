@@ -194,7 +194,7 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._timeline.addEventListener("select", evt => {
-      this.goToFrame(evt.detail.association.frame);
+      this.goToFrame(evt.detail.frame);
     });
 
     fullscreen.addEventListener("click", evt => {
