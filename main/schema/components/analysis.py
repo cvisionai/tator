@@ -17,3 +17,13 @@ analysis_spec = {
     'properties': analysis_properties,
 }
 
+analysis = {
+    'type': 'object',
+    'properties': {
+        'id': {
+            'type': 'integer',
+            'description': 'Unique integer identifying the analysis.',
+        },
+        **analysis_properties,
+    },
+}

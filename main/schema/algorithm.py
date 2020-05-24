@@ -31,7 +31,8 @@ class AlgorithmListSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of registered algorithms.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/AlgorithmList',
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Algorithm'},
                 }}},
             }
         return responses

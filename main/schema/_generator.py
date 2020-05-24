@@ -13,9 +13,9 @@ class CustomGenerator(SchemaGenerator):
             'schemas': {
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunchResponse': algorithm_launch_response,
-                'AlgorithmList': algorithm_list,
+                'Algorithm': algorithm,
                 'AnalysisSpec': analysis_spec,
-                'AnalysisList': analysis_list,
+                'Analysis': analysis,
                 'AttributeTypeSpec': attribute_type_spec,
                 'AttributeType': attribute_type,
                 'AttributeTypeList': attribute_type_list,
