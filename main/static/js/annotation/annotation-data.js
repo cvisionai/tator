@@ -33,11 +33,6 @@ class AnnotationData extends HTMLElement {
     return this.updateAll(this._dataTypesRaw, version);
   }
 
-  // Define function for getting a unique type key.
-  _getKey(dataType) {
-    return dataType.dtype + "_" + dataType.id;
-  }
-
   // Returns a promise when done
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
@@ -89,7 +84,7 @@ class AnnotationData extends HTMLElement {
       };
 
       trackTypeIds.forEach(typeIdx => {
-        this._updateUrls.set(this._getKey(dataTypes[typeIdx]), getDataUrl(dataTypes[typeIdx]));
+        this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
         this.updateType(dataTypes[typeIdx], semaphore);
       });
     });
@@ -109,7 +104,7 @@ class AnnotationData extends HTMLElement {
       //Update localizations after
       tracksDone.then(() => {
         localTypeIds.forEach(typeIdx => {
-          this._updateUrls.set(this._getKey(dataTypes[typeIdx]), getDataUrl(dataTypes[typeIdx]));
+          this._updateUrls.set(dataTypes[typeIdx].id, getDataUrl(dataTypes[typeIdx]));
           this.updateType(dataTypes[typeIdx], semaphore);
         });
       });
@@ -119,7 +114,7 @@ class AnnotationData extends HTMLElement {
   }
 
   updateTypeLocal(method, id, body, typeObj) {
-    const typeId = this._getKey(typeObj);
+    const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
@@ -191,7 +186,7 @@ class AnnotationData extends HTMLElement {
   }
 
   updateType(typeObj, callback, query) {
-    const typeId = this._getKey(typeObj);
+    const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {
       console.error("Unregistered type " + typeId);
       return;
