@@ -13,4 +13,7 @@
 ---
 {{- $tempSettings := dict "Values" .Values "name" "prune-temp-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunetemporaryfiles\"]" "schedule" "0 * * * *" }}
 {{include "tatorCron.template" $tempSettings }}
+---
+{{- $mediaSettings := dict "Values" .Values "name" "prune-media-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemedia\"]" "schedule" "0 * * * *" }}
+{{include "tatorCron.template" $mediaSettings }}
 
