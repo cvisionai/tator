@@ -334,6 +334,10 @@ class AnnotationPage extends TatorPage {
           this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
+        // Replace the data type IDs so they are guaranteed to be unique.
+        for (const dataType of dataTypes) {
+          dataType.id = dataType.dtype + "_" + dataType.id;
+        }
         this._data.init(dataTypes, this._version, projectId, mediaId);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;

@@ -70,7 +70,7 @@ class TimelineCanvas extends TatorElement {
         for (const column of sorted_columns) {
           if (column.dtype == "bool") {
             this._currentTypeId = typeId;
-            const data = this._data._dataByType.get(Number(typeId));
+            const data = this._data._dataByType.get(typeId);
             this._plotBoolState(column.name, data, col_idx, col_count);
             col_idx += 1;
           }
