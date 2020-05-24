@@ -1,10 +1,13 @@
 from collections import defaultdict
 import copy
+import logging
 
-from ..models import Project
-from ..models import EntityTypeMediaBase
+from ..models import LocalizationType
+from ..models import StateType
 
 from ._attributes import kv_separator
+
+logger = logging.getLogger(__name__)
 
 def get_attribute_query(query_params, query, bools, project, is_media=True, annotation_bools=[], modified=None):
 
@@ -19,8 +22,12 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
         'attribute_distance': query_params.get('attribute_distance', None),
         'attribute_null': query_params.get('attribute_null', None),
     }
-    project_attrs = Project.objects.get(pk=project).attributetypebase_set.all()
-    child_attrs = [attr.name for attr in project_attrs if not isinstance(attr.applies_to, EntityTypeMediaBase)]
+    child_attrs = []
+    for state_type in StateType.objects.filter(project=project).iterator():
+        child_attrs += state_type.attribute_types
+    for localization_type in LocalizationType.objects.filter(project=project).iterator():
+        child_attrs += localization_type.attribute_types
+    child_attrs = [attr['name'] for attr in child_attrs]
     attr_query = {
         'media': {
             'must_not': [],
@@ -40,7 +47,7 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
                     attr_query[relation]['filter'].append({
                         'geo_distance': {
                             'distance': f'{dist_km}km',
-                            key: {'lat': lat, 'lon': lon},
+                            key: {'lat': float(lat), 'lon': float(lon)},
                         }
                     })
                 else:
@@ -115,6 +122,17 @@ def get_attribute_query(query_params, query, bools, project, is_media=True, anno
         if has_parent:
             parent_query['parent_type'] = 'media'
             attr_query['annotation']['filter'].append({'has_parent': parent_query})
+            parent_type_check = [{'bool': {
+                'should': [
+                    {'match': {'_dtype': 'image'}},
+                    {'match': {'_dtype': 'video'}},
+                ],
+                'minimum_should_match': 1,
+            }}]
+            if 'filter' in parent_query['query']['bool']:
+                parent_query['query']['bool']['filter'].append(parent_type_check)
+            else:
+                parent_query['query']['bool']['filter'] = [parent_type_check]
 
         for key in ['must_not', 'filter']:
             if len(attr_query['annotation'][key]) > 0:

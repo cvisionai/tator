@@ -38,11 +38,14 @@ class LocalizationListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/LocalizationSpec'},
+                'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/LocalizationSpec'},
+                },
                 'examples': {
                     'box': {
                         'summary': 'Single box localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 1,
                             'x': 0.1,
@@ -52,79 +55,77 @@ class LocalizationListSchema(AutoSchema):
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'boxes': {
                         'summary': 'Many box localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 1,
-                            'many': [
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'width': 0.3,
-                                    'height': 0.4,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'width': 0.3,
-                                    'height': 0.4,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'width': 0.3,
+                                'height': 0.4,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'width': 0.3,
+                                'height': 0.4,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                     'line': {
                         'summary': 'Single line localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 2,
-                            'x0': 0.1,
-                            'y0': 0.2,
-                            'x1': 0.3,
-                            'y1': 0.4,
+                            'x': 0.1,
+                            'y': 0.2,
+                            'u': 0.3,
+                            'v': 0.4,
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'lines': {
                         'summary': 'Many line localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 2,
-                            'many': [
-                                {
-                                    'x0': 0.1,
-                                    'y0': 0.2,
-                                    'x1': 0.3,
-                                    'y1': 0.4,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x0': 0.1,
-                                    'y0': 0.2,
-                                    'x1': 0.3,
-                                    'y1': 0.4,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 2,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'u': 0.3,
+                                'v': 0.4,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'x': 0.1,
+                                'y': 0.2,
+                                'u': 0.3,
+                                'v': 0.4,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                     'dot': {
                         'summary': 'Single dot localization',
-                        'value': {
+                        'value': [{
                             'media_id': 1,
                             'type': 1,
                             'x': 0.1,
@@ -132,30 +133,28 @@ class LocalizationListSchema(AutoSchema):
                             'frame': 1000,
                             'My First Attribute': 'value1',
                             'My Second Attribute': 'value2',
-                        },
+                        }],
                     },
                     'dots': {
                         'summary': 'Many dot localizations',
-                        'value': {
-                            'media_id': 1,
-                            'type': 1,
-                            'many': [
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'frame': 100,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                                {
-                                    'x': 0.1,
-                                    'y': 0.2,
-                                    'frame': 1000,
-                                    'My First Attribute': 'value1',
-                                    'My Second Attribute': 'value2',
-                                },
-                            ],
-                        },
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'x': 0.1,
+                                'y': 0.2,
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'x': 0.1,
+                                'y': 0.2,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
                     },
                 }
             }}}
@@ -184,7 +183,7 @@ class LocalizationListSchema(AutoSchema):
                 'description': 'Successful retrieval of localization list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schemas/LocalizationElement'},
+                    'items': {'$ref': '#/components/schemas/Localization'},
                 }}},
             }
         elif method == 'POST':

@@ -119,14 +119,8 @@ if __name__=="__main__":
             state_files.extend(states_for_media(media))
             localization_files.extend(localizations_for_media(media))
 
-    # Remove media that already is in database
-    def is_unique(media):
-        match = tator.Media.filter({"md5": md5_lookup[media]})
-        print(f"MATCH = {match}")
-        if match is not None:
-            print(f"Removing {media} from worklist due to duplication")
-            return False
-
+    # Remove media that is corrupt prior to trying to transcode
+    def is_valid(media):
         # Check to make sure the image/video is not corrupt
         cmd = [
             "ffprobe",
@@ -175,11 +169,13 @@ if __name__=="__main__":
                 json.dump(temp_list, packet_file)
 
     # Initialize all the work files first
-    work=[make_workflow_video(vid) for vid in videos if is_unique(vid)]
+    work=[make_workflow_video(vid) for vid in videos if is_valid(vid)]
     split_list_into_k8s_chunks(work,"videos")
 
-    work=[make_workflow_video(img) for img in images if is_unique(img)]
-    split_list_into_k8s_chunks(work,"images")
+    # don't split images into work packets
+    work=[make_workflow_video(img) for img in images if is_valid(img)]
+    with open(os.path.join(args.directory, f"images.json"), 'w') as packet_file:
+        json.dump(work, packet_file)
 
     split_list_into_k8s_chunks(localization_files,"localizations")
 

@@ -14,9 +14,6 @@ from ..models import Permission
 from ..models import Project
 from ..models import Membership
 from ..models import Algorithm
-from ..models import EntityState
-from ..models import FrameAssociation
-from ..models import LocalizationAssociation
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 
@@ -46,6 +43,8 @@ class ProjectPermissionBase(BasePermission):
             pk = view.kwargs['id']
             obj = get_object_or_404(view.get_queryset(), pk=pk)
             project = self._project_from_object(obj)
+            if project is None:
+                raise Http404
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
             rds = Redis(host=os.getenv('REDIS_HOST'))
@@ -76,13 +75,6 @@ class ProjectPermissionBase(BasePermission):
         # Object is a project
         elif isinstance(obj, Project):
             project = obj
-        elif isinstance(obj, FrameAssociation) or isinstance(obj, LocalizationAssociation):
-            project = None
-            try:
-                parent = EntityState.objects.get(association=obj)
-                project = parent.project
-            except:
-                pass
         return project
 
     def _validate_project(self, request, project):

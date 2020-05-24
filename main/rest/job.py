@@ -1,6 +1,7 @@
 import traceback
 import os
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,12 +11,15 @@ from django.http import Http404
 from redis import Redis
 
 from ..models import Algorithm
+from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobDetailSchema
 from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class JobDetailAPI(APIView):
     """ Cancel a background job.
@@ -51,17 +55,6 @@ class JobDetailAPI(APIView):
                 elif msg['prefix'] == 'algorithm':
                     alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
                     cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
-
-                # If cancel did not go through, attempt to delete stale progress messages.
-                if not cancelled:
-                    prog = ProgressProducer(
-                        msg['prefix'],
-                        msg['project_id'],
-                        msg['uid'],
-                        msg['uid_gid'],
-                        msg['name'],
-                        self.request.user,
-                    )
             else:
                 raise Http404
 

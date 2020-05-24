@@ -5,11 +5,11 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attributes import attribute_filter_parameter_schema
 
-class TreeLeafSuggestionSchema(AutoSchema):
+class LeafSuggestionSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'TreeLeafSuggestion'
+            operation['operationId'] = 'LeafSuggestion'
         operation['tags'] = ['Tator']
         return operation
 
@@ -26,7 +26,7 @@ class TreeLeafSuggestionSchema(AutoSchema):
                 'name': 'ancestor',
                 'in': 'path',
                 'required': True,
-                'description': 'Get descendents of a tree leaf element (inclusive), '
+                'description': 'Get descendents of a leaf element (inclusive), '
                                'by path (i.e. ITIS.Animalia).',
                 'schema': {'type': 'string'},
             },
@@ -78,7 +78,7 @@ class TreeLeafSuggestionSchema(AutoSchema):
                             },
                             'data': {
                                 'type': 'object',
-                                'description': 'Auxiliary data associated with the tree leaf.',
+                                'description': 'Auxiliary data associated with the leaf.',
                                 'additionalProperties': True,
                             },
                         },
@@ -87,13 +87,13 @@ class TreeLeafSuggestionSchema(AutoSchema):
             }
         return responses
 
-tree_leaf_properties = {
+leaf_properties = {
     'name': {
-        'description': 'Name of the tree leaf.',
+        'description': 'Name of the leaf.',
         'type': 'string',
     },
     'type': {
-        'description': 'Unique integer identifying a tree leaf type.',
+        'description': 'Unique integer identifying a leaf type.',
         'type': 'integer',
     },
     'parent': {
@@ -107,13 +107,13 @@ tree_leaf_properties = {
     },
 }
 
-tree_leaf_schema = {
+leaf_schema = {
     'type': 'object',
-    'description': 'Tree leaf object.',
+    'description': 'Leaf object.',
     'properties': {
         'id': {
             'type': 'integer',
-            'description': 'Unique integer identifying the tree leaf.',
+            'description': 'Unique integer identifying the leaf.',
         },
         'project': {
             'type': 'integer',
@@ -123,23 +123,23 @@ tree_leaf_schema = {
             'type': 'string',
             'description': 'Full path to leaf in hierarchy.',
         },
-        'name': tree_leaf_properties['name'],
-        'parent': tree_leaf_properties['parent'],
-        'attributes': tree_leaf_properties['attributes'],
+        'name': leaf_properties['name'],
+        'parent': leaf_properties['parent'],
+        'attributes': leaf_properties['attributes'],
     },
 }
 
-class TreeLeafListSchema(AutoSchema):
+class LeafListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateTreeLeaf'
+            operation['operationId'] = 'CreateLeaf'
         elif method == 'GET':
-            operation['operationId'] = 'GetTreeLeafList'
+            operation['operationId'] = 'GetLeafList'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateTreeLeafList'
+            operation['operationId'] = 'UpdateLeafList'
         elif method == 'DELETE':
-            operation['operationId'] = 'DeleteTreeLeafList'
+            operation['operationId'] = 'DeleteLeafList'
         operation['tags'] = ['Tator']
         return operation
 
@@ -160,7 +160,7 @@ class TreeLeafListSchema(AutoSchema):
                     'name': 'ancestor',
                     'in': 'query',
                     'required': False,
-                    'description': 'Get descendents of a tree leaf element (inclusive), '
+                    'description': 'Get descendents of a leaf element (inclusive), '
                                    'by path (i.e. ITIS.Animalia).',
                     'schema': {'type': 'string'},
                 },
@@ -168,14 +168,14 @@ class TreeLeafListSchema(AutoSchema):
                     'name': 'type',
                     'in': 'query',
                     'required': False,
-                    'description': 'Unique integer identifying a tree leaf type.',
+                    'description': 'Unique integer identifying a leaf type.',
                     'schema': {'type': 'integer'},
                 },
                 {
                     'name': 'name',
                     'in': 'query',
                     'required': False,
-                    'description': 'Name of the tree leaf element.',
+                    'description': 'Name of the leaf element.',
                     'schema': {'type': 'string'},
                 },
             ] + attribute_filter_parameter_schema
@@ -188,10 +188,13 @@ class TreeLeafListSchema(AutoSchema):
         if method == 'POST':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['name', 'type'],
-                    'additionalProperties': True,
-                    'properties': tree_leaf_properties,
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'required': ['name', 'type'],
+                        'additionalProperties': True,
+                        'properties': leaf_properties,
+                    },
                 },
             }}}
         if method == 'PATCH':
@@ -214,29 +217,29 @@ class TreeLeafListSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of tree leaf list.',
+                'description': 'Successful retrieval of leaf list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': tree_leaf_schema,
+                    'items': leaf_schema,
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = message_with_id_schema('tree leaf')
+            responses['201'] = message_with_id_schema('leaf')
         elif method == 'PATCH':
-            responses['200'] = message_schema('update', 'tree leaf list')
+            responses['200'] = message_schema('update', 'leaf list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deletion', 'tree leaf list')
+            responses['204'] = message_schema('deletion', 'leaf list')
         return responses
 
-class TreeLeafDetailSchema(AutoSchema):
+class LeafDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetTreeLeaf'
+            operation['operationId'] = 'GetLeaf'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateTreeLeaf'
+            operation['operationId'] = 'UpdateLeaf'
         elif method == 'DELETE':
-            operation['operationId'] = 'DeleteTreeLeaf'
+            operation['operationId'] = 'DeleteLeaf'
         operation['tags'] = ['Tator']
         return operation
 
@@ -245,7 +248,7 @@ class TreeLeafDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying a tree leaf.',
+            'description': 'A unique integer identifying a leaf.',
             'schema': {'type': 'integer'},
         }]
 
@@ -260,7 +263,7 @@ class TreeLeafDetailSchema(AutoSchema):
                     'type': 'object',
                     'properties': {
                         'name': {
-                            'description': 'Name of the tree leaf.',
+                            'description': 'Name of the leaf.',
                             'type': 'string', 
                         },
                         'attributes': {
@@ -277,12 +280,12 @@ class TreeLeafDetailSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of tree leaf.',
-                'content': {'application/json': {'schema': tree_leaf_schema}},
+                'description': 'Successful retrieval of leaf.',
+                'content': {'application/json': {'schema': leaf_schema}},
             }
         elif method == 'PATCH':
-            responses['200'] = message_schema('update', 'tree leaf')
+            responses['200'] = message_schema('update', 'leaf')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of tree leaf.'}
+            responses['204'] = {'description': 'Successful deletion of leaf.'}
         return responses
 

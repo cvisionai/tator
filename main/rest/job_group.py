@@ -1,6 +1,7 @@
 import traceback
 import os
 import json
+import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,12 +11,15 @@ from django.http import Http404
 from redis import Redis
 
 from ..models import Algorithm
+from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobGroupDetailSchema
 from ..schema import parse
 
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class JobGroupDetailAPI(APIView):
     """ Cancel a group of background jobs.
@@ -51,22 +55,6 @@ class JobGroupDetailAPI(APIView):
                 elif msg['prefix'] == 'algorithm':
                     alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
                     cancelled = TatorAlgorithm(alg).cancel_jobs(f'gid={group_id}')
-
-                # If cancel did not go through, attempt to delete any stale progress messages.
-                if not cancelled:
-                    jobs = {}
-                    if rds.hexists(f'{group_id}:started'):
-                        jobs = rds.hgetall(f'{group_id}:started')
-                    for key in jobs:
-                        job = json.loads(jobs[key])
-                        prog = ProgressProducer(
-                            job['prefix'],
-                            job['project_id'],
-                            job['uid'],
-                            job['uid_gid'],
-                            job['name'],
-                            self.request.user,
-                        )
             else:
                 raise Http404
 

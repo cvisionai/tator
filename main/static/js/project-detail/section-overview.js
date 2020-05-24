@@ -44,7 +44,7 @@ class SectionOverview extends TatorElement {
   updateForMedia(media) {
     this._header.textContent = media.name;
     const project = this.getAttribute("project-id");
-    const url = "/rest/EntityMedia/" + media.id;
+    const url = "/rest/Media/" + media.id;
     const mediaPromise = fetch(url, {
       method: "GET",
       credentials: "same-origin",
@@ -67,7 +67,7 @@ class SectionOverview extends TatorElement {
     Promise.all([mediaPromise, analysisPromise])
     .then(responses => Promise.all(responses.map(resp => resp.json())))
     .then(([data, analysisData]) => {
-      if (typeof data.thumb_gif_url === "undefined") {
+      if (typeof data.thumbnail_gif === "undefined") {
         this._updateText({'counts': {
           "num_videos": 0,
           "num_images": 1,

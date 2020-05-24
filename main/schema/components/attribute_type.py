@@ -196,11 +196,6 @@ attribute_type_spec = {
 
 attribute_type = dict(attribute_type_spec)
 
-attribute_type_list = {
-    'type': 'array',
-    'items': attribute_type_spec,
-}
-
 attribute_type_update = {
     'type': 'object',
     'properties': {

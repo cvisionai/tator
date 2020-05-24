@@ -332,7 +332,7 @@ class MediaSection extends TatorElement {
             // Function for dumping single batch of metadata to file.
             const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
                                             baseFilename, lastId) => {
-              let url = baseUrl + "&type=" + type.type.id + "&stop=" + batchSize;
+              let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
               if (lastId != null) {
                 url += "&after=" + lastId;
               }
@@ -346,7 +346,7 @@ class MediaSection extends TatorElement {
               .then(response => {
                 const stream = () => response.body;
                 const batch_str = "__batch_" + Number(batchNum).pad(5);
-                const name = baseFilename + type.type.name + batch_str + ".csv";
+                const name = baseFilename + type.name + batch_str + ".csv";
                 ctrl.enqueue({name, stream});
               });
 
@@ -360,7 +360,7 @@ class MediaSection extends TatorElement {
                 const clone = response.clone();
                 const stream = () => response.body;
                 const batch_str = "__batch_" + Number(batchNum).pad(5);
-                const name = baseFilename + type.type.name + batch_str + ".json";
+                const name = baseFilename + type.name + batch_str + ".json";
                 ctrl.enqueue({name, stream});
                 return clone.json();
               });

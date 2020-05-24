@@ -14,6 +14,50 @@ def pytest_generate_tests(metafunc):
     if 'token' in metafunc.fixturenames:
           metafunc.parametrize('token', [metafunc.config.getoption('token')])
 
+def make_attribute_types():
+    return [
+        dict(
+            name='test_bool',
+            dtype='bool',
+            default=True,
+        ),
+        dict(
+            name='test_int',
+            dtype='int',
+            default=0,
+            minimum=-1000,
+            maximum=1000,
+        ),
+        dict(
+            name='test_float',
+            dtype='float',
+            default=0.0,
+            minimum=-1000.0,
+            maximum=1000.0,
+        ),
+        dict(
+            name='test_enum',
+            dtype='enum',
+            choices=['a', 'b', 'c'],
+            default='a',
+        ),
+        dict(
+            name='test_string',
+            dtype='string',
+            default='asdf',
+        ),
+        dict(
+            name='test_datetime',
+            dtype='datetime',
+            use_current=True,
+        ),
+        dict(
+            name='test_geopos',
+            dtype='geopos',
+            default=[-179.0, -89.0],
+        ),
+    ]
+
 @pytest.fixture(scope='session')
 def project(request):
     """ Project ID for a created project. """
@@ -78,6 +122,7 @@ def box_type(request, project, video_type):
         'project': project,
         'media_types': [video_type],
         'dtype': 'box',
+        'attribute_types': make_attribute_types(),
     })
     box_type_id = response['id']
     yield box_type_id
@@ -95,53 +140,26 @@ def state_type(request, project, video_type):
         'project': project,
         'media_types': [video_type],
         'association': 'Frame',
+        'attribute_types': make_attribute_types(),
     })
     state_type_id = response['id']
     yield state_type_id
     status = tator.StateType.delete(state_type_id)
 
-def make_attribute_types(request, project, type_id):
-    """ Dict of attribute type ids applied to a box type, one for each dtype. """
+@pytest.fixture(scope='session')
+def track_type(request, project, video_type):
     import pytator
     url = request.config.option.url
     token = request.config.option.token
     tator = pytator.Tator(url, token, project)
-    attribute_type_ids = {}
-    dtypes = ['bool', 'int', 'float', 'str', 'enum', 'datetime', 'geopos']
-    for order, dtype in enumerate(dtypes):
-        aux = {}
-        if dtype == 'bool':
-            aux = {'default': True}
-        elif dtype == 'int':
-            aux = {'default': 0, 'lower_bound': -1000, 'upper_bound': 1000}
-        elif dtype == 'float':
-            aux = {'default': 0.0, 'lower_bound': -1000, 'upper_bound': 1000}
-        elif dtype == 'str':
-            aux = {'default': 'asdf'}
-        elif dtype == 'enum':
-            aux = {'choices': ['a', 'b', 'c'], 'default': 'a'}
-        elif dtype == 'datetime':
-            aux = {'use_current': True}
-        elif dtype == 'geopos':
-            aux = {'default': [-179.0, -89.0]}
-        status, response = tator.AttributeType.new({
-            'name': f'test_{dtype}',
-            'description': 'Test box type',
-            'project': project,
-            'applies_to': type_id,
-            'dtype': dtype,
-            'order': order,
-            **aux,
-        })
-        attribute_type_ids[dtype] = response['id']
-    yield attribute_type_ids
-    for dtype in attribute_type_ids:
-        status = tator.AttributeType.delete(attribute_type_ids[dtype])
-
-@pytest.fixture(scope='session')
-def box_attribute_types(request, project, box_type):
-    yield from make_attribute_types(request, project, box_type)
-    
-@pytest.fixture(scope='session')
-def state_attribute_types(request, project, state_type):
-    yield from make_attribute_types(request, project, state_type)
+    status, response = tator.StateType.new({
+        'name': 'track_type',
+        'description': 'Test track type',
+        'project': project,
+        'media_types': [video_type],
+        'association': 'Localization',
+        'attribute_types': make_attribute_types(),
+    })
+    state_type_id = response['id']
+    yield state_type_id
+    status = tator.StateType.delete(state_type_id)

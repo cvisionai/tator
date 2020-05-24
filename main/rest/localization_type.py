@@ -1,116 +1,118 @@
-import traceback
-
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-
-from ..models import EntityTypeMediaBase
-from ..models import EntityTypeLocalizationBase
-from ..models import EntityTypeLocalizationBox
-from ..models import EntityTypeLocalizationLine
-from ..models import EntityTypeLocalizationDot
-from ..models import EntityLocalizationBase
+from ..models import Media
+from ..models import MediaType
+from ..models import LocalizationType
+from ..models import Localization
 from ..models import Project
-from ..serializers import EntityTypeLocalizationAttrSerializer
 from ..schema import LocalizationTypeListSchema
 from ..schema import LocalizationTypeDetailSchema
-from ..schema import parse
 
-from ._entity_type_mixins import EntityTypeListAPIMixin
-from ._entity_type_mixins import EntityTypeDetailAPIMixin
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-class LocalizationTypeListAPI(EntityTypeListAPIMixin):
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
+          'colorMap', 'line_width', 'visible']
+
+class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
 
         A localization type is the metadata definition object for a localization. It includes
         shape, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
     """
-    pkname='media_id'
-    entity_endpoint='Localizations'
-    entityBaseObj=EntityTypeLocalizationBase
-    baseObj=EntityLocalizationBase
-    entityTypeAttrSerializer=EntityTypeLocalizationAttrSerializer
+    permission_classes = [ProjectFullControlPermission]
     schema = LocalizationTypeListSchema()
+    http_method_names = ['get', 'post']
 
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
+    def _get(self, params):
+        media_id = params.get('media_id', None)
+        if media_id != None:
+            if len(media_id) != 1:
+                raise Exception('Entity type list endpoints expect only one media ID!')
+            media_element = Media.objects.get(pk=media_id[0])
+            localizations = LocalizationType.objects.filter(media=media_element.meta)
+            for localization in localizations:
+                if localization.project.id != self.kwargs['project']:
+                    raise Exception('Localization not in project!')
+            response_data = localizations.values(*fields)
+        else:
+            response_data = LocalizationType.objects.filter(project=params['project']).values(*fields)
+        return list(response_data)
 
-        try:
-            params = parse(request)
-            params['project'] = Project.objects.get(pk=params['project'])
-            dtype = params.pop('dtype')
-            media_types = params.pop('media_types')
-            if dtype == 'box':
-                obj = EntityTypeLocalizationBox(**params)
-            elif dtype == 'line':
-                obj = EntityTypeLocalizationLine(**params)
-            elif dtype == 'dot':
-                obj = EntityTypeLocalizationDot(**params)
-            obj.save()
-            media_qs = EntityTypeMediaBase.objects.filter(project=params['project'], pk__in=media_types)
-            if media_qs.count() != len(media_types):
-                obj.delete()
-                raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating localization type!")
-            for media in media_qs:
-                obj.media.add(media)
-            obj.save()
+    def _post(self, params):
+        """ Create localization types.
 
-            response=Response({'message': 'Localization type created successfully!', 'id': obj.id},
-                              status=status.HTTP_201_CREATED)
+            A localization type is the metadata definition object for a localization. It includes
+            shape, name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        params['project'] = Project.objects.get(pk=params['project'])
+        media_types = params.pop('media_types')
+        obj = LocalizationType(**params)
+        obj.save()
+        media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
+        if media_qs.count() != len(media_types):
+            obj.delete()
+            raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating localization type!")
+        for media in media_qs:
+            obj.media.add(media)
+        obj.save()
 
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+        return {'message': 'Localization type created successfully!', 'id': obj.id}
 
-class LocalizationTypeDetailAPI(EntityTypeDetailAPIMixin):
+LocalizationTypeListAPI.copy_docstrings()
+
+class LocalizationTypeDetailAPI(BaseDetailView):
     """ Interact with an individual localization type.
 
         A localization type is the metadata definition object for a localization. It includes
         shape, name, description, and (like other entity types) may have any number of attribute
         types associated with it.
     """
-    pkname='media_id'
-    entity_endpoint='Localizations'
-    entityBaseObj=EntityTypeLocalizationBase
-    baseObj=EntityLocalizationBase
-    entityTypeAttrSerializer=EntityTypeLocalizationAttrSerializer
-
     schema = LocalizationTypeDetailSchema()
-    serializer_class = EntityTypeLocalizationAttrSerializer
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
-    def patch(self, request, format=None, **kwargs):
-        """ Updates a localization type.
+    def _get(self, params):
+        """ Retrieve a localization type.
+
+            A localization type is the metadata definition object for a localization. It includes
+            shape, name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
         """
-        response = Response({})
-        try:
-            params = parse(request)
-            name = params.get('name', None)
-            description = params.get('description', None)
+        return LocalizationType.objects.filter(pk=params['id']).values(*fields)[0]
 
-            obj = EntityTypeLocalizationBase.objects.get(pk=params['id'])
-            if name is not None:
-                obj.name = name
-            if description is not None:
-                obj.description = description
+    def _patch(self, params):
+        """ Update a localization type.
 
-            obj.save()
-            response=Response({'message': 'Localization type updated successfully!'},
-                              status=status.HTTP_200_OK)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        return response
+            A localization type is the metadata definition object for a localization. It includes
+            shape, name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        name = params.get('name', None)
+        description = params.get('description', None)
 
+        obj = LocalizationType.objects.get(pk=params['id'])
+        if name is not None:
+            obj.name = name
+        if description is not None:
+            obj.description = description
+
+        obj.save()
+        return {'message': 'Localization type updated successfully!'}
+
+    def _delete(self, params):
+        """ Delete a localization type.
+
+            A localization type is the metadata definition object for a localization. It includes
+            shape, name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        LocalizationType.objects.get(pk=params['id']).delete()
+        return {'message': 'Localization type deleted successfully!'}
+
+    def get_queryset(self):
+        return LocalizationType.objects.all()
+
+LocalizationTypeDetailAPI.copy_docstrings()

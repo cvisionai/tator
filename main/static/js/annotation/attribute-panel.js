@@ -50,7 +50,7 @@ class AttributePanel extends TatorElement {
         }
       });
     }
-    const sorted = val.columns.sort((a, b) => {
+    const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
     for (const column of sorted) {
@@ -139,7 +139,7 @@ class AttributePanel extends TatorElement {
     
     if (this._slider) {
       this._frames = [];
-      for (const [start, end] of values.association.segments) {
+      for (const [start, end] of values.segments) {
         for (let i = start; i <= end; i++) {
           this._frames.push(i);
         }

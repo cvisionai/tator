@@ -64,30 +64,11 @@ urlpatterns += [
         'rest/Analyses/<int:project>',
         AnalysisListAPI.as_view(),
     ),
-    path(
-        'rest/AttributeTypes/<int:project>',
-        AttributeTypeListAPI.as_view(),
-        name='AttributeTypes'
-    ),
-    path(
-        'rest/AttributeType/<int:id>',
-        AttributeTypeDetailAPI.as_view(),
-        name='AttributeType'
-    ),
-    path(
-        'rest/EntityTypeSchema/<int:id>',
-        EntityTypeSchemaAPI.as_view(),
-        name='EntityTypeSchema'
-    ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),
     path('rest/GetClip/<int:id>',
          GetClipAPI.as_view(),
-    ),
-    path(
-        'rest/FrameAssociation/<int:id>',
-        FrameAssociationDetailAPI.as_view(),
     ),
     path(
         'rest/Job/<str:run_uid>',
@@ -98,8 +79,25 @@ urlpatterns += [
         JobGroupDetailAPI.as_view(),
     ),
     path(
-        'rest/LocalizationAssociation/<int:id>',
-        LocalizationAssociationDetailAPI.as_view(),
+        'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
+        LeafSuggestionAPI.as_view(),
+    ),
+    path(
+        'rest/Leaves/<int:project>',
+        LeafListAPI.as_view(),
+        name='Leaves',
+    ),
+    path(
+        'rest/Leaf/<int:id>',
+        LeafDetailAPI.as_view(),
+    ),
+    path(
+        'rest/LeafTypes/<int:project>',
+        LeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/LeafType/<int:id>',
+        LeafTypeDetailAPI.as_view(),
     ),
     path(
         'rest/Localizations/<int:project>',
@@ -170,6 +168,10 @@ urlpatterns += [
         ProgressAPI.as_view(),
     ),
     path(
+        'rest/ProgressSummary/<int:project>',
+        ProgressSummaryAPI.as_view(),
+    ),
+    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),
@@ -227,27 +229,6 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
-        'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
-        TreeLeafSuggestionAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeaves/<int:project>',
-        TreeLeafListAPI.as_view(),
-        name='TreeLeaves',
-    ),
-    path(
-        'rest/TreeLeaf/<int:id>',
-        TreeLeafDetailAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafTypes/<int:project>',
-        TreeLeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:id>',
-        TreeLeafTypeDetailAPI.as_view(),
-    ),
-    path(
         'rest/User/<int:id>',
         UserDetailAPI.as_view(),
     ),
@@ -302,5 +283,26 @@ urlpatterns += [
     path(
         'rest/EntityStateType/<int:id>',
         StateTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafTypes/<int:project>',
+        LeafTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeafType/<int:id>',
+        LeafTypeDetailAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
+        LeafSuggestionAPI.as_view(),
+    ),
+    path(
+        'rest/TreeLeaves/<int:project>',
+        LeafListAPI.as_view(),
+        name='TreeLeaves',
+    ),
+    path(
+        'rest/TreeLeaf/<int:id>',
+        LeafDetailAPI.as_view(),
     ),
 ]

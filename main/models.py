@@ -3,6 +3,7 @@ import os
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
 from django.contrib.gis.db.models import ManyToManyField
+from django.contrib.gis.db.models import OneToOneField
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import TextField
 from django.contrib.gis.db.models import URLField
@@ -37,7 +38,6 @@ from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
 
-from .cache import TatorCache
 from .search import TatorSearch
 
 from collections import UserDict
@@ -187,6 +187,11 @@ class Version(Model):
     """ Tells the UI to show this version even if the current media does not
         have any annotations.
     """
+    bases = ManyToManyField('self', symmetrical=False, blank=True)
+    """ This version is a patch to an existing version. A use-case here is using one version
+        for each generation of a state-based inference algorithm; all referencing localizations
+        in another layer.
+    """
 
     def __str__(self):
         out = f"{self.name}"
@@ -204,7 +209,6 @@ def make_default_version(instance):
 
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_project_cache(instance.pk)
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
@@ -222,9 +226,8 @@ class Membership(Model):
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
 
-# Entity types
-
 class EntityTypeBase(PolymorphicModel):
+    """ .. deprecated :: Use MediaType, LocalizationType, or StateType object """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
@@ -233,11 +236,13 @@ class EntityTypeBase(PolymorphicModel):
         return f'{self.name} | {self.project}'
 
 class EntityTypeMediaBase(EntityTypeBase):
+    """ .. deprecated :: Use MediaType object """
     uploadable = BooleanField(default=True)
     editTriggers = JSONField(null=True,
                              blank=True)
 
 class EntityTypeMediaImage(EntityTypeMediaBase):
+    """ .. deprecated :: Use MediaType object """
     entity_name = 'Image'
     dtype = 'image'
     file_format = CharField(max_length=4,
@@ -247,6 +252,7 @@ class EntityTypeMediaImage(EntityTypeMediaBase):
                             default=None)
 
 class EntityTypeMediaVideo(EntityTypeMediaBase):
+    """ .. deprecated :: Use MediaType object """
     entity_name = 'Video'
     dtype = 'video'
     file_format = CharField(max_length=4,
@@ -257,28 +263,66 @@ class EntityTypeMediaVideo(EntityTypeMediaBase):
     keep_original = BooleanField(default=True)
 
 class EntityTypeLocalizationBase(EntityTypeBase):
+    """ .. deprecated :: Use LocalizationType object """
     media = ManyToManyField(EntityTypeMediaBase)
     bounded = BooleanField(default=True)
     colorMap = JSONField(null=True, blank=True)
+    """
+    colorMap allows for a mapping of an attribute value to a specific color
+    {"key": "attribute_name",
+     "map": {"attribute_value": <color>, ...}
+     "alpha_ranges": {"key": "attribute_name",
+                      "alphas": [[<low>,<end>,<alpha>],...]}
+     "default": <color>
 
+    <color> can either be a hex string for RRGGBB or a list for
+    RRGGBBAA components, e.g. (255,0,0,255) for solid red.
+    For alpha ranges each row is evaluated as
+    if (<value> >= <low> && <value> < <end>)
+         alpha = <alpha>
+
+    <alpha> is 0-255
+
+    Example color map:
+    - Makes lobsters Red.
+    - Makes Scallops yellow with default alpha of 50%
+    - Defaults all other boxes to green.
+    - Defines an alpha range based on an attribute "Alpha". If the value
+      is >= 0 and < 0.25 alpha is 10% -- if 0.5 to 1.0 is 100%. Else will
+      fall to either map definition or system default.
+
+    {"default": [0,255,0],
+     "key": "Species",
+     "map": {"Lobster": "#FF0000",
+             "Scallop": [255, 255, 0, 128]},
+     "alpha_ranges": {"key": "Alpha",
+                      "alphas": [[0, 0.25, 25], [0.5, 1.0, 255]]}}
+
+    default, (key,map), and alpha_ranges can all be used independently. Thus
+    {"default": [0,255,0]} is a valid definition.
+
+    """
 class EntityTypeLocalizationDot(EntityTypeLocalizationBase):
+    """ .. deprecated :: Use LocalizationType object """
     entity_name = 'Dot'
     dtype = 'dot'
     marker = EnumField(Marker, max_length=9, default=Marker.CIRCLE)
     marker_size = PositiveIntegerField(default=12)
 
 class EntityTypeLocalizationLine(EntityTypeLocalizationBase):
+    """ .. deprecated :: Use LocalizationType object """
     entity_name = 'Line'
     dtype = 'line'
     line_width = PositiveIntegerField(default=3)
 
 class EntityTypeLocalizationBox(EntityTypeLocalizationBase):
+    """ .. deprecated :: Use LocalizationType object """
     entity_name = 'Box'
     dtype = 'box'
     line_width = PositiveIntegerField(default=3)
 
 class EntityTypeState(EntityTypeBase):
-    """ Used to conglomerate AttributeTypes into a set """
+    """ .. deprecated :: Use StateType object """
     entity_name = 'State'
     dtype = 'state'
     media = ManyToManyField(EntityTypeMediaBase)
@@ -292,12 +336,12 @@ class EntityTypeState(EntityTypeBase):
                             default=AssociationTypes[0][0])
 
 class EntityTypeTreeLeaf(EntityTypeBase):
+    """ .. deprecated :: Use LeafType object """
     entity_name = 'TreeLeaf'
     dtype = 'treeleaf'
 
-# Entities (stores actual data)
-
 class EntityBase(PolymorphicModel):
+    """ .. deprecated :: Use Media, Localization, State, or Leaf object """
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True)
     meta = ForeignKey(EntityTypeBase, on_delete=CASCADE)
     """ Meta points to the defintion of the attribute field. That is
@@ -311,6 +355,7 @@ class EntityBase(PolymorphicModel):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='modified_by')
 
 class EntityMediaBase(EntityBase):
+    """ .. deprecated :: Use Media object """
     name = CharField(max_length=256)
     uploader = ForeignKey(User, on_delete=PROTECT)
     upload_datetime = DateTimeField()
@@ -324,30 +369,11 @@ class EntityMediaBase(EntityBase):
     """ End datetime of a session in which the media's annotations were edited.
     """
 
-@receiver(post_save, sender=EntityMediaBase)
-def media_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityMediaBase)
-def media_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
-
 class EntityMediaImage(EntityMediaBase):
+    """ .. deprecated :: Use Media object """
     thumbnail = ImageField()
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-
-@receiver(post_save, sender=EntityMediaImage)
-def image_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityMediaImage)
-def image_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
-    instance.file.delete(False)
-    instance.thumbnail.delete(False)
 
 def getVideoDefinition(path, codec, resolution, **kwargs):
     """ Convenience function to generate video definiton dictionary """
@@ -366,55 +392,7 @@ def getVideoDefinition(path, codec, resolution, **kwargs):
     return obj
 
 class EntityMediaVideo(EntityMediaBase):
-    """
-    Fields:
-
-    original: Originally uploaded file. Users cannot interact with it except
-              by downloading it.
-
-              .. deprecated :: Use media_files object
-
-    segment_info: File for segment files to support MSE playback.
-
-                  .. deprecated :: Use meda_files instead
-
-    media_files: Dictionary to contain a map of all files for this media.
-                 The schema looks like this:
-
-                 .. code-block ::
-
-                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
-                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
-                     video_def = {"path": <path_to_disk>,
-                                  "codec": <human readable codec>,
-                                  "resolution": [<vertical pixel count, e.g. 720>, width]
-
-
-                                  ###################
-                                  # Optional Fields #
-                                  ###################
-
-                                  # Path to the segments.json file for streaming files.
-                                  # not expected/required for archival. Required for
-                                  # MSE playback with seek support for streaming files.
-                                  segment_info = <path_to_json>
-
-                                  # If supplied will use this instead of currently
-                                  # connected host. e.g. https://example.com
-                                  "host": <host url>
-                                  # If specified will be used for HTTP authorization
-                                  # in the request for media. I.e. "bearer <token>"
-                                  "http_auth": <http auth header>
-
-                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
-                                  # Only relevant for straming files, will assume
-                                  # example above if not present.
-                                  "codec_mime": <mime for MSE decode>
-
-                                  "codec_description": <description other than codec>}
-
-
-    """
+    """ .. deprecated :: Use Media object """
     original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
     thumbnail = ImageField()
     thumbnail_gif = ImageField()
@@ -427,42 +405,8 @@ class EntityMediaVideo(EntityMediaBase):
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
 
-@receiver(post_save, sender=EntityMediaVideo)
-def video_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().create_document(instance)
-
-def safe_delete(path):
-    try:
-        logger.info(f"Deleting {path}")
-        os.remove(path)
-    except:
-        logger.warning(f"Could not remove {path}")
-
-@receiver(pre_delete, sender=EntityMediaVideo)
-def video_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
-    instance.file.delete(False)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
-    # Delete all the files referenced in media_files
-    if not instance.media_files is None:
-        files = instance.media_files.get('streaming', [])
-        for obj in files:
-            path = "/data" + obj['path']
-            safe_delete(path)
-            path = "/data" + obj['segment_info']
-            safe_delete(path)
-        files = instance.media_files.get('archival', [])
-        for obj in files:
-            safe_delete(obj['path'])
-    instance.thumbnail.delete(False)
-    instance.thumbnail_gif.delete(False)
-
 class EntityLocalizationBase(EntityBase):
+    """ .. deprecated :: Use Localization object """
     user = ForeignKey(User, on_delete=PROTECT)
     media = ForeignKey(EntityMediaBase, on_delete=CASCADE)
     frame = PositiveIntegerField(null=True)
@@ -480,76 +424,27 @@ class EntityLocalizationBase(EntityBase):
     def selectOnMedia(media_id):
         return EntityLocalizationBase.objects.filter(media=media_id)
 
-@receiver(post_save, sender=EntityLocalizationBase)
-def localization_save(sender, instance, created, **kwargs):
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationBase)
-def localization_delete(sender, instance, **kwargs):
-    """ Delete generated thumbnails if a localization box is deleted """
-    TatorSearch().delete_document(instance)
-    if instance.thumbnail_image:
-        instance.thumbnail_image.delete()
-
 class EntityLocalizationDot(EntityLocalizationBase):
+    """ .. deprecated :: Use Localization object """
     x = FloatField()
     y = FloatField()
 
-@receiver(post_save, sender=EntityLocalizationDot)
-def dot_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationDot)
-def dot_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
-
 class EntityLocalizationLine(EntityLocalizationBase):
+    """ .. deprecated :: Use Localization object """
     x0 = FloatField()
     y0 = FloatField()
     x1 = FloatField()
     y1 = FloatField()
 
-@receiver(post_save, sender=EntityLocalizationLine)
-def line_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        logger.info("Inhibited ES insertion")
-
-@receiver(pre_delete, sender=EntityLocalizationLine)
-def line_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
-
 class EntityLocalizationBox(EntityLocalizationBase):
+    """ .. deprecated :: Use Localization object """
     x = FloatField()
     y = FloatField()
     width = FloatField()
     height = FloatField()
 
-@receiver(post_save, sender=EntityLocalizationBox)
-def box_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
-@receiver(pre_delete, sender=EntityLocalizationBox)
-def box_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
-    TatorSearch().delete_document(instance)
-
 class AssociationType(PolymorphicModel):
+    """ .. deprecated :: Use Association object """
     media = ManyToManyField(EntityMediaBase)
     def states(media_ids):
         # Get localization associations
@@ -567,11 +462,13 @@ class AssociationType(PolymorphicModel):
 
 
 class MediaAssociation(AssociationType):
+    """ .. deprecated :: Use Association object """
     def states(media_id):
         mediaAssociations=MediaAssociation.objects.filter(media__in=media_id)
         return EntityState.objects.filter(association__in=mediaAssociations)
 
 class LocalizationAssociation(AssociationType):
+    """ .. deprecated :: Use Association object """
     """
     color : "#RRGGBB" or "RRGGBB" to represent track color. If not set, display
             will use automatic color progression.
@@ -585,35 +482,8 @@ class LocalizationAssociation(AssociationType):
         localizationAssociations=LocalizationAssociation.objects.filter(localizations__in=localizationsForMedia).distinct()
         return EntityState.objects.filter(association__in=localizationAssociations)
 
-@receiver(m2m_changed, sender=LocalizationAssociation.localizations.through)
-def calcSegments(sender, **kwargs):
-    instance=kwargs['instance']
-    sortedLocalizations=EntityLocalizationBase.objects.filter(pk__in=instance.localizations.all()).order_by('frame')
-
-    #Bring up related media to association
-    instance.media.set(sortedLocalizations.all().values_list('media', flat=True))
-    segmentList=[]
-    current=[None,None]
-    last=None
-    for localization in sortedLocalizations:
-        if current[0] is None:
-            current[0] = localization.frame
-            last = current[0]
-        else:
-            if localization.frame - 1 == last:
-                last = localization.frame
-            else:
-                current[1] = last
-                segmentList.append(current.copy())
-                current[0] = localization.frame
-                current[1] = None
-                last = localization.frame
-    if current[1] is None:
-        current[1] = last
-        segmentList.append(current)
-    instance.segments = segmentList
-
 class FrameAssociation(AssociationType):
+    """ .. deprecated :: Use Association object """
     frame = PositiveIntegerField()
     extracted = ForeignKey(EntityMediaImage,
                            on_delete=SET_NULL,
@@ -625,12 +495,8 @@ class FrameAssociation(AssociationType):
         return EntityState.objects.filter(association__in=frameAssociations)
 
 class EntityState(EntityBase):
-    """
-    A State is an event that occurs, potentially independent, from that of
-    a media element. It is associated with 0 (1 to be useful) or more media
-    elements. If a frame is supplied it was collected at that time point.
-    """
-    association = ForeignKey(AssociationType, on_delete=CASCADE, unique=True)
+    """ .. deprecated :: Use State object """
+    association = ForeignKey(AssociationType, on_delete=CASCADE)
     version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True)
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
@@ -642,16 +508,9 @@ class EntityState(EntityBase):
     def selectOnMedia(media_id):
         return AssociationType.states(media_id)
 
-@receiver(post_save, sender=EntityState)
-def state_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=EntityState)
-def state_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
-
 # Tree data type
 class TreeLeaf(EntityBase):
+    """ .. deprecated :: Use Leaf object """
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True)
     path=PathField(unique=True)
     name = CharField(max_length=255)
@@ -681,24 +540,12 @@ class TreeLeaf(EntityBase):
             pathStr=projName+"."+pathStr
         return pathStr
 
-@receiver(post_save, sender=TreeLeaf)
-def treeleaf_save(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=TreeLeaf)
-def treeleaf_delete(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
-    TatorSearch().delete_document(instance)
-
 # Attribute types
 # These table structures are used to describe the structure of
 # an Entity's JSON-B attribute field
 
 class AttributeTypeBase(PolymorphicModel):
-    """ Generic entity in a JSON-B field.  """
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     name = CharField(max_length=64)
     """ Name refers to the key in the JSON structure """
     description = CharField(max_length=256, blank=True)
@@ -713,80 +560,55 @@ class AttributeTypeBase(PolymorphicModel):
     def __str__(self):
         return self.name
 
-@receiver(post_save, sender=AttributeTypeBase)
-def base_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeBool(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Boolean"
     dtype = "bool"
     default = BooleanField(null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeBool)
-def bool_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeInt(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Integer"
     dtype = "int"
     default = IntegerField(null=True, blank=True)
     lower_bound = IntegerField(null=True, blank=True)
     upper_bound = IntegerField(null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeInt)
-def int_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeFloat(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Float"
     dtype = "float"
     default = FloatField(null=True, blank=True)
     lower_bound = FloatField(null=True, blank=True)
     upper_bound = FloatField(null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeFloat)
-def float_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeEnum(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Enum"
     dtype = "enum"
     choices = ArrayField(CharField(max_length=64))
     labels = ArrayField(CharField(max_length=64), null=True, blank=True)
     default = CharField(max_length=64, null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeEnum)
-def enum_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeString(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "String"
     dtype = "str"
     default = CharField(max_length=256, null=True, blank=True)
     autocomplete = JSONField(null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeString)
-def string_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeDatetime(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Datetime"
     dtype = "datetime"
     use_current = BooleanField()
     default_timezone = CharField(max_length=3, null=True, blank=True)
 
-@receiver(post_save, sender=AttributeTypeDatetime)
-def datetime_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
 class AttributeTypeGeoposition(AttributeTypeBase):
+    """ .. deprecated :: Use MediaType, LocalizationType, StateType, or LeafType object """
     attr_name = "Geoposition"
     dtype = "geopos"
     default = PointField(null=True, blank=True)
-
-@receiver(post_save, sender=AttributeTypeGeoposition)
-def geopos_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
 
 def ProjectBasedFileLocation(instance, filename):
     return os.path.join(f"{instance.project.id}", filename)
@@ -823,43 +645,31 @@ class Algorithm(Model):
     def __str__(self):
         return self.name
 
-def type_to_obj(typeObj):
-    """Returns a data object for a given type object"""
-    _dict = {
-        EntityTypeLocalizationBox : EntityLocalizationBox,
-        EntityTypeLocalizationLine : EntityLocalizationLine,
-        EntityTypeLocalizationDot : EntityLocalizationDot,
-        EntityTypeState : EntityState,
-        EntityTypeMediaVideo : EntityMediaVideo,
-        EntityTypeMediaImage : EntityMediaImage,
-        EntityTypeTreeLeaf : TreeLeaf,
-        }
-
-    if typeObj in _dict:
-        return _dict[typeObj]
-    else:
-        return None
-
 class AnalysisBase(PolymorphicModel):
+    """ .. deprecated :: Use Analysis object """
     project = ForeignKey(Project, on_delete=CASCADE)
     name = CharField(max_length=64)
 
 class AnalysisCount(AnalysisBase):
+    """ .. deprecated :: Use Analysis object """
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)
     data_query = CharField(max_length=1024, default='*')
 
 class AnalysisPercentage(AnalysisBase):
+    """ .. deprecated :: Use Analysis object """
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)
     numerator_filter = JSONField(null=True, blank=True)
     denominator_filter = JSONField(null=True, blank=True)
 
 class AnalysisHistogram(AnalysisBase):
+    """ .. deprecated :: Use Analysis object """
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)
     data_filter = JSONField(null=True, blank=True)
     attribute = ForeignKey(AttributeTypeBase, on_delete=CASCADE)
     plot_type = EnumField(HistogramPlotType)
 
 class Analysis2D(AnalysisBase):
+    """ .. deprecated :: Use Analysis object """
     data_type = ForeignKey(EntityTypeBase, on_delete=CASCADE)
     data_filter = JSONField(null=True, blank=True)
     attribute_x = ForeignKey(AttributeTypeBase, on_delete=CASCADE, related_name='attribute_x')
@@ -916,3 +726,551 @@ class TemporaryFile(Model):
 def temporary_file_delete(sender, instance, **kwargs):
     if os.path.exists(instance.path):
         os.remove(instance.path)
+
+# Entity types
+
+class MediaType(Model):
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='media_type_polymorphic')
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
+    editTriggers = JSONField(null=True,
+                             blank=True)
+    file_format = CharField(max_length=4,
+                            null=True,
+                            blank=True,
+                            default=None)
+    keep_original = BooleanField(default=True, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: (optional) Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings,
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=MediaType)
+def media_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class LocalizationType(Model):
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='localization_type_polymorphic')
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16,
+                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
+    media = ManyToManyField(MediaType)
+    colorMap = JSONField(null=True, blank=True)
+    line_width = PositiveIntegerField(default=3)
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings,
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=LocalizationType)
+def localization_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class StateType(Model):
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='state_type_polymorphic')
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16, choices=[('state', 'state')], default='state')
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
+    media = ManyToManyField(MediaType)
+    interpolation = CharField(max_length=16,
+                              choices=[('none', 'none'), ('latest', 'latest')],
+                              default='latest')
+    association = CharField(max_length=64,
+                            choices=AssociationTypes,
+                            default=AssociationTypes[0][0])
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings,
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=StateType)
+def state_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class LeafType(Model):
+    polymorphic = OneToOneField(EntityTypeBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='leaf_type_polymorphic')
+    """ Temporary field for migration. """
+    dtype = CharField(max_length=16, choices=[('leaf', 'leaf')], default='leaf')
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    name = CharField(max_length=64)
+    description = CharField(max_length=256, blank=True)
+    visible = BooleanField(default=True)
+    """ Whether this type should be displayed in the UI."""
+    attribute_types = JSONField(null=True, blank=True)
+    """ User defined attributes.
+
+        An array of objects, each containing the following fields:
+
+        name: Name of the attribute.
+        description: Description of the attribute.
+        order: Order that the attribute should appear in web UI. Negative means
+               do not display.
+        dtype: Data type of the attribute. Valid values are bool, int, float,
+               string, enum, datetime, geopos.
+        default: (optional) Default value. Valid for all dtypes except datetime.
+                 The type should correspond to the dtype (string/enum are strings,
+                 int/float are numbers, geopos is a [lon, lat] list).
+        minimum: (optional) Minimum value. Valid for int and float dtypes.
+        maximum: (optional) Maximum value. Valid for int and float dtypes.
+        choices: (optional) Available choices for enum dtype.
+        labels: (optional) Labels for available choices for enum dtype.
+        autocomplete: (optional) Object of the form {'serviceUrl': '<url>'} that
+                      specifies URL of the autocomplete service. Valid for string
+                      dtype only.
+        use_current: (optional) Boolean indicating whether to use the current time
+                     as the default for datetime dtype.
+    """
+    def __str__(self):
+        return f'{self.name} | {self.project}'
+
+@receiver(post_save, sender=LeafType)
+def leaf_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+
+# Entities (stores actual data)
+
+class Media(Model):
+    """
+    Fields:
+
+    original: Originally uploaded file. Users cannot interact with it except
+              by downloading it.
+
+              .. deprecated :: Use media_files object
+
+    segment_info: File for segment files to support MSE playback.
+
+                  .. deprecated :: Use meda_files instead
+
+    media_files: Dictionary to contain a map of all files for this media.
+                 The schema looks like this:
+
+                 .. code-block ::
+
+                     map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                     video_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>,
+                                  "resolution": [<vertical pixel count, e.g. 720>, width]
+
+
+                                  ###################
+                                  # Optional Fields #
+                                  ###################
+
+                                  # Path to the segments.json file for streaming files.
+                                  # not expected/required for archival. Required for
+                                  # MSE playback with seek support for streaming files.
+                                  segment_info = <path_to_json>
+
+                                  # If supplied will use this instead of currently
+                                  # connected host. e.g. https://example.com
+                                  "host": <host url>
+                                  # If specified will be used for HTTP authorization
+                                  # in the request for media. I.e. "bearer <token>"
+                                  "http_auth": <http auth header>
+
+                                  # Example mime: 'video/mp4; codecs="avc1.64001e"'
+                                  # Only relevant for straming files, will assume
+                                  # example above if not present.
+                                  "codec_mime": <mime for MSE decode>
+
+                                  "codec_description": <description other than codec>}
+
+
+    """
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='media_polymorphic')
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(MediaType, on_delete=CASCADE, db_column='meta')
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given MediaType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='media_created_by', db_column='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='media_modified_by', db_column='modified_by')
+    name = CharField(max_length=256)
+    md5 = SlugField(max_length=32)
+    """ md5 hash of the originally uploaded file. """
+    file = FileField()
+    last_edit_start = DateTimeField(null=True, blank=True)
+    """ Start datetime of a session in which the media's annotations were edited.
+    """
+    last_edit_end = DateTimeField(null=True, blank=True)
+    """ End datetime of a session in which the media's annotations were edited.
+    """
+    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
+    thumbnail = ImageField()
+    thumbnail_gif = ImageField(null=True, blank=True)
+    num_frames = IntegerField(null=True, blank=True)
+    fps = FloatField(null=True, blank=True)
+    codec = CharField(null=True, blank=True, max_length=256)
+    width=IntegerField(null=True)
+    height=IntegerField(null=True)
+    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
+                                 blank=True)
+    media_files = JSONField(null=True, blank=True)
+
+@receiver(post_save, sender=Media)
+def media_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+def safe_delete(path):
+    try:
+        logger.info(f"Deleting {path}")
+        os.remove(path)
+    except:
+        logger.warning(f"Could not remove {path}")
+
+@receiver(pre_delete, sender=Media)
+def media_delete(sender, instance, **kwargs):
+    if instance.project:
+        TatorSearch().delete_document(instance)
+    instance.file.delete(False)
+    if instance.original != None:
+        path = str(instance.original)
+        safe_delete(path)
+
+    # Delete all the files referenced in media_files
+    if not instance.media_files is None:
+        files = instance.media_files.get('streaming', [])
+        for obj in files:
+            path = "/data" + obj['path']
+            safe_delete(path)
+            path = "/data" + obj['segment_info']
+            safe_delete(path)
+        files = instance.media_files.get('archival', [])
+        for obj in files:
+            safe_delete(obj['path'])
+    instance.thumbnail.delete(False)
+    instance.thumbnail_gif.delete(False)
+
+class Localization(Model):
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='localization_polymorphic')
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given LocalizationType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='localization_created_by', db_column='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='localization_modified_by', db_column='modified_by')
+    user = ForeignKey(User, on_delete=PROTECT, db_column='user')
+    media = ForeignKey(Media, on_delete=CASCADE, db_column='media')
+    frame = PositiveIntegerField(null=True, blank=True)
+    thumbnail_image = ForeignKey(Media, on_delete=SET_NULL,
+                                 null=True, blank=True,
+                                 related_name='localization_thumbnail_image',
+                                 db_column='thumbnail_image')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    x = FloatField(null=True, blank=True)
+    """ Horizontal position."""
+    y = FloatField(null=True, blank=True)
+    """ Vertical position."""
+    u = FloatField(null=True, blank=True)
+    """ Horizontal vector component for lines."""
+    v = FloatField(null=True, blank=True)
+    """ Vertical vector component for lines. """
+    width = FloatField(null=True, blank=True)
+    """ Width for boxes."""
+    height = FloatField(null=True, blank=True)
+    """ Height for boxes."""
+
+@receiver(post_save, sender=Localization)
+def localization_save(sender, instance, created, **kwargs):
+    if getattr(instance,'_inhibit', False) == False:
+        TatorSearch().create_document(instance)
+    else:
+        pass
+
+@receiver(pre_delete, sender=Localization)
+def localization_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+    if instance.thumbnail_image:
+        instance.thumbnail_image.delete()
+
+class State(Model):
+    """
+    A State is an event that occurs, potentially independent, from that of
+    a media element. It is associated with 0 (1 to be useful) or more media
+    elements. If a frame is supplied it was collected at that time point.
+    """
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='state_polymorphic')
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(StateType, on_delete=CASCADE, db_column='meta')
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='state_created_by', db_column='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='state_modified_by', db_column='modified_by')
+    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
+    modified = BooleanField(null=True, blank=True)
+    """ Indicates whether an annotation is original or modified.
+        null: Original upload, no modifications.
+        false: Original upload, but was modified or deleted.
+        true: Modified since upload or created via web interface.
+    """
+    media = ManyToManyField(Media, related_name='media')
+    localizations = ManyToManyField(Localization)
+    segments = JSONField(null=True, blank=True)
+    color = CharField(null=True, blank=True, max_length=8)
+    frame = PositiveIntegerField(null=True, blank=True)
+    extracted = ForeignKey(Media,
+                           on_delete=SET_NULL,
+                           null=True,
+                           blank=True,
+                           related_name='extracted',
+                           db_column='extracted')
+    def selectOnMedia(media_id):
+        return State.objects.filter(media__in=media_id)
+
+@receiver(post_save, sender=State)
+def state_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=State)
+def state_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
+@receiver(m2m_changed, sender=State.localizations.through)
+def calc_segments(sender, **kwargs):
+    instance=kwargs['instance']
+    sortedLocalizations=Localization.objects.filter(pk__in=instance.localizations.all()).order_by('frame')
+
+    #Bring up related media to association
+    instance.media.set(sortedLocalizations.all().values_list('media', flat=True))
+    segmentList=[]
+    current=[None,None]
+    last=None
+    for localization in sortedLocalizations:
+        if current[0] is None:
+            current[0] = localization.frame
+            last = current[0]
+        else:
+            if localization.frame - 1 == last:
+                last = localization.frame
+            else:
+                current[1] = last
+                segmentList.append(current.copy())
+                current[0] = localization.frame
+                current[1] = None
+                last = localization.frame
+    if current[1] is None:
+        current[1] = last
+        segmentList.append(current)
+    instance.segments = segmentList
+
+class Leaf(Model):
+    polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='leaf_polymorphic')
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LeafType, on_delete=CASCADE, db_column='meta')
+    """ Meta points to the defintion of the attribute field. That is
+        a handful of AttributeTypes are associated to a given EntityType
+        that is pointed to by this value. That set describes the `attribute`
+        field of this structure. """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='leaf_created_by', db_column='created_by')
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='leaf_modified_by', db_column='modified_by')
+    parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
+    path=PathField(unique=True)
+    name = CharField(max_length=255)
+
+    class Meta:
+        verbose_name_plural = "Leaves"
+
+    def __str__(self):
+        return str(self.path)
+
+    def depth(self):
+        return Leaf.objects.annotate(depth=Depth('path')).get(pk=self.pk).depth
+
+    def subcategories(self, minLevel=1):
+        return Leaf.objects.select_related('parent').filter(
+            path__descendants=self.path,
+            path__depth__gte=self.depth()+minLevel
+        )
+
+    def computePath(self):
+        """ Returns the string representing the path element """
+        pathStr=self.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+        if self.parent:
+            pathStr=self.parent.computePath()+"."+pathStr
+        elif self.project:
+            projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
+            pathStr=projName+"."+pathStr
+        return pathStr
+
+@receiver(post_save, sender=Leaf)
+def leaf_save(sender, instance, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=Leaf)
+def leaf_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
+class Analysis(Model):
+    polymorphic = OneToOneField(AnalysisBase, on_delete=SET_NULL, null=True, blank=True,
+                                related_name='analysis_polymorphic')
+    """ Temporary field for migration. """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    name = CharField(max_length=64)
+    data_query = CharField(max_length=1024, default='*')
+
+def type_to_obj(typeObj):
+    """Returns a data object for a given type object"""
+    _dict = {
+        MediaType: Media,
+        LocalizationType: Localization,
+        StateType: State,
+        LeafType: Leaf,
+    }
+
+    if typeObj in _dict:
+        return _dict[typeObj]
+    else:
+        return None
+
+def make_dict(keys, row):
+    d={}
+    for idx,col in enumerate(keys):
+        d[col.name] = row[idx]
+    return d
+
+def database_qs(qs):
+    return database_query(str(qs.query))
+
+def database_query(query):
+    from django.db import connection
+    import datetime
+    with connection.cursor() as d_cursor:
+        cursor = d_cursor.cursor
+        bq=datetime.datetime.now()
+        cursor.execute(query)
+        aq=datetime.datetime.now()
+        l=[make_dict(cursor.description, x) for x in cursor]
+        af=datetime.datetime.now()
+        print(f"Query = {aq-bq}")
+        print(f"List = {af-aq}")
+    return l

@@ -95,13 +95,7 @@ class MediaCard extends TatorElement {
           const full = evt.target.value + this._ext.textContent;
           this._li.setAttribute("title", full);
         }
-        let resourceType;
-        if (this.hasAttribute("thumb-gif")) {
-          resourceType = "EntityMediaVideo";
-        } else {
-          resourceType = "EntityMediaImage";
-        }
-        fetch("/rest/EntityMedia/" + this.getAttribute("media-id"), {
+        fetch("/rest/Media/" + this.getAttribute("media-id"), {
           method: "PATCH",
           credentials: "same-origin",
           headers: {
@@ -111,7 +105,6 @@ class MediaCard extends TatorElement {
           },
           body: JSON.stringify({
             name: this._name.textContent + this._ext.textContent,
-            resourcetype: resourceType
           }),
         })
         .catch(err => console.error("Failed to change name: " + err));

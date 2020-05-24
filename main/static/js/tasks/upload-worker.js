@@ -26,9 +26,6 @@ let uploadBuffer = [];
 // Buffer of progress messages.
 let progressBuffer = {};
 
-// Time of last upload added.
-let lastUploadAdded = Date.now();
-
 // Define function for sending message to client.
 const emitMessage = msg => {
   self.clients.matchAll({includeUncontrolled: true})
@@ -47,6 +44,7 @@ self.setInterval(() => {
     const messages = Object.values(progressBuffer[key]);
     let start = 0;
     while (start < messages.length) {
+      const sendMe = messages.slice(start, start + maxMessages);
       fetchRetry("/rest/Progress/" + projectId, {
         method: "POST",
         headers: {
@@ -54,11 +52,11 @@ self.setInterval(() => {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(messages.slice(start, start + maxMessages)),
+        body: JSON.stringify(sendMe),
         credentials: "omit",
       })
       .catch(err => console.error("Error while broadcasting progress:" + err));
-      start += maxMessages;
+      start += sendMe.length;
     }
   }
   progressBuffer = {};
@@ -76,37 +74,15 @@ const bufferMessage = (projectId, token, uid, msg) => {
 // Define function to remove a queued upload.
 const removeQueued = index => {
   const record = uploadBuffer.splice(index, 1)[0];
-  bufferMessage(record.projectId, record.token, record.uid, {
-    job_type: "upload",
-    gid: record.gid,
-    uid: record.uid,
-    swid: serviceWorkerId,
-    section: record.section,
-    name: record.file.name,
-    state: "failed",
-    message: "Aborted!",
-    progress: 100,
-  });
 }
 
 // Add an event listener that saves the upload info in the buffer.
 self.addEventListener("message", async msgEvent => {
   let msg = msgEvent.data;
   if (msg.command == "addUpload") {
-    lastUploadAdded = Date.now();
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
-    bufferMessage(msg.projectId, msg.token, upload_uid, {
-      job_type: "upload",
-      gid: msg.gid,
-      uid: upload_uid,
-      swid: serviceWorkerId,
-      section: msg.section,
-      name: msg.file.name,
-      state: "queued",
-      message: "Queued...",
-      progress: 0,
-    });
+    startUpload();
   } else if (msg.command == "getNumUploads") {
     console.log("Received get num uploads request.");
     const numActive = Object.keys(activeUploads).length;
@@ -114,7 +90,7 @@ self.addEventListener("message", async msgEvent => {
     const numUploads = numActive + numBuffered;
     console.log("Responding with " + numUploads + " uploads.");
     emitMessage({msg: "numUploads", count: numUploads});
-  } else if (msg.command == "wake") {
+  } else if (msg.command == "startUpload") {
     startUpload();
   } else if (msg.command == "cancelUpload") {
     if (msg.uid in activeUploads) {
@@ -156,26 +132,32 @@ self.addEventListener("message", async msgEvent => {
 
 // Define function for starting an upload.
 async function startUpload() {
-  sinceLastAdd = Date.now() - lastUploadAdded;
-  if (sinceLastAdd > 250) {
-    // Begin uploading the files.
-    const belowMax = Object.keys(activeUploads).length < maxUploads;
-    const haveUploads = uploadBuffer.length > 0;
-    if (belowMax && haveUploads) {
-      // Grab uploads from buffer.
-      const upload = uploadBuffer.shift();
-      if (!(upload.uid in activeUploads)) {
-        // Start the upload.
-        activeUploads[upload.uid] = new Upload(upload);
-        activeUploads[upload.uid].computeMd5();
-      }
+  // Begin uploading the files.
+  const belowMax = Object.keys(activeUploads).length < maxUploads;
+  const haveUploads = uploadBuffer.length > 0;
+  if (belowMax && haveUploads) {
+    // Grab uploads from buffer.
+    const upload = uploadBuffer.shift();
+    if (!(upload.uid in activeUploads)) {
+      // Start the upload.
+      activeUploads[upload.uid] = new Upload(upload);
+      activeUploads[upload.uid].computeMd5();
     }
+  }
+  if (!haveUploads) {
+    self.postMessage({command: "uploadsDone"});
   }
 }
 
 // Removes upload from list of active uploads.
 function removeFromActive(uid) {
   if (uid in activeUploads) {
+    const key = [activeUploads[uid].projectId, activeUploads[uid].token].join();
+    if (key in progressBuffer) {
+      if (uid in progressBuffer) {
+        delete progressBuffer[key][uid];
+      }
+    }
     delete activeUploads[uid];
   }
   startUpload();
@@ -314,18 +296,7 @@ class Upload {
 
         // Salt in the file size
         this.md5 = SparkMD5.hash(md5 + this.file.size);
-        fetchRetry(
-            "/rest/EntityMedias/" + this.projectId + "?format=json&type=" + 
-            this.mediaTypeId + "&md5=" + this.md5)
-          .then(response => response.json())
-          .then(json => {
-            if (json.length === 0) {
-              this.tus.start();
-            } else {
-              removeFromActive(this.upload_uid);
-              this.progress("failed", "Already uploaded!", 0);
-            }
-          });
+        this.tus.start();
       }
     };
     reader.onerror = error => {

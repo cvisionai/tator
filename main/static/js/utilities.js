@@ -68,7 +68,7 @@ class Utilities
       if (media_element.original_url) {
         url = media_element.original_url;
       } else {
-        url = media_element.url;
+        url = "/media/" + media_element.file;
       }
     }
 

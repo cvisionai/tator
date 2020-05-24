@@ -3,4 +3,5 @@ dist
 Gnocchi.egg-info
 gnocchi/ui_project.py
 gnocchi/ui_projectDetail.py
+gnocchi/ui_uploadDialog.py
 *.pyc

@@ -6,50 +6,50 @@ from ._message import message_with_id_schema
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
 
-tree_leaf_properties = {
+leaf_properties = {
     'name': {
-        'description': 'Name of the tree leaf type.',
+        'description': 'Name of the leaf type.',
         'type': 'string',
     },
     'description': {
-        'description': 'Description of the tree leaf type.',
+        'description': 'Description of the leaf type.',
         'type': 'string',
         'default': '',
     },
 }
 
-tree_leaf_type_schema = {
+leaf_type_schema = {
     'type': 'object',
-    'description': 'Tree leaf type.',
+    'description': 'Leaf type.',
     'properties': {
         'type': {
             'type': 'object',
             'properties': {
                 'id': {
                     'type': 'integer',
-                    'description': 'Unique integer identifying a tree leaf type.',
+                    'description': 'Unique integer identifying a leaf type.',
                 },
                 'project': {
                     'type': 'integer',
-                    'description': 'Unique integer identifying project for this tree leaf type.',
+                    'description': 'Unique integer identifying project for this leaf type.',
                 },
-                **tree_leaf_properties,
+                **leaf_properties,
             },
         },
         'columns': {
             'type': 'array',
-            'description': 'Attribute types associated with this tree leaf type.',
+            'description': 'Attribute types associated with this leaf type.',
             'items': attribute_type_schema,
         },
     },
 }
-class TreeLeafTypeListSchema(AutoSchema):
+class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateTreeLeafType'
+            operation['operationId'] = 'CreateLeafType'
         elif method == 'GET':
-            operation['operationId'] = 'GetTreeLeafTypeList'
+            operation['operationId'] = 'GetLeafTypeList'
         operation['tags'] = ['Tator']
         return operation
 
@@ -72,10 +72,10 @@ class TreeLeafTypeListSchema(AutoSchema):
                 'schema': {
                     'type': 'object',
                     'required': ['name'],
-                    'properties': tree_leaf_properties,
+                    'properties': leaf_properties,
                 },
                 'example': {
-                    'name': 'My tree leaf type',
+                    'name': 'My leaf type',
                 },
             }}}
         return body
@@ -84,25 +84,25 @@ class TreeLeafTypeListSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of tree leaf type list.',
+                'description': 'Successful retrieval of leaf type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': tree_leaf_type_schema,
+                    'items': leaf_type_schema,
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = message_with_id_schema('tree leaf type')
+            responses['201'] = message_with_id_schema('leaf type')
         return responses
 
-class TreeLeafTypeDetailSchema(AutoSchema):
+class LeafTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetTreeLeafType'
+            operation['operationId'] = 'GetLeafType'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateTreeLeafType'
+            operation['operationId'] = 'UpdateLeafType'
         elif method == 'DELETE':
-            operation['operationId'] = 'DeleteTreeLeafType'
+            operation['operationId'] = 'DeleteLeafType'
         operation['tags'] = ['Tator']
         return operation
 
@@ -111,7 +111,7 @@ class TreeLeafTypeDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying an tree_leaf type.',
+            'description': 'A unique integer identifying an leaf type.',
             'schema': {'type': 'integer'},
         }]
 
@@ -124,7 +124,7 @@ class TreeLeafTypeDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'properties': tree_leaf_properties,
+                    'properties': leaf_properties,
                 },
                 'example': {
                     'name': 'New name',
@@ -137,11 +137,11 @@ class TreeLeafTypeDetailSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of tree leaf type.',
-                'content': {'application/json': {'schema': tree_leaf_type_schema}},
+                'description': 'Successful retrieval of leaf type.',
+                'content': {'application/json': {'schema': leaf_type_schema}},
             }
         elif method == 'PATCH':
-            responses['200'] = message_schema('update', 'tree leaf type')
+            responses['200'] = message_schema('update', 'leaf type')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of tree leaf type.'}
+            responses['204'] = {'description': 'Successful deletion of leaf type.'}
         return responses

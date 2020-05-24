@@ -53,7 +53,7 @@ class DeleteSectionForm extends ModalDialog {
     this._accept.addEventListener("click", async evt => {
       const projectId = this.getAttribute("project-id");
       const filter = this.getAttribute("section-filter");
-      fetch("/rest/EntityMedias/" + projectId + filter, {
+      fetch("/rest/Medias/" + projectId + filter, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {

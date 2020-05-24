@@ -1,24 +1,16 @@
 localization_properties = {
-    'frame': {
-        'description': 'Frame number of this localization if it is in a video.',
-        'type': 'integer',
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
-}
-
-box_properties = {
     'x': {
-        'description': 'Normalized horizontal position of left edge of bounding box.',
+        'description': 'Normalized horizontal position of left edge of bounding box for '
+                       '`box` localization types, start of line for `line` localization '
+                       'types, or position of dot for `dot` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
     'y': {
-        'description': 'Normalized vertical position of top edge of bounding box.',
+        'description': 'Normalized vertical position of top edge of bounding box for '
+                       '`box` localization types, start of line for `line` localization '
+                       'types, or position of dot for `dot` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
@@ -35,52 +27,27 @@ box_properties = {
         'minimum': 0.0,
         'maximum': 1.0,
     },
-}
-
-line_properties = {
-    'x0': {
-        'description': 'Normalized horizontal position of start of line for `line` '
-                       'localization types.',
+    'u': {
+        'description': 'Horizontal vector component for `line` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
-    'y0': {
-        'description': 'Normalized vertical position of start of line for `line` '
-                       'localization types.',
+    'v': {
+        'description': 'Vertical vector component for `line` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
     },
-    'x1': {
-        'description': 'Normalized horizontal position of end of line for `line` '
-                       'localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
+    'frame': {
+        'description': 'Frame number of this localization if it is in a video.',
+        'type': 'integer',
     },
-    'y1': {
-        'description': 'Normalized vertical position of end of line for `line` '
-                       'localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-    },
-}
-
-dot_properties = {
-    'x': {
-        'description': 'Normalized horizontal position of dot.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-    },
-    'y': {
-        'description': 'Normalized vertical position of dot.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-    },
+    'attributes': {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': True,
+    }
 }
 
 post_properties = {
@@ -144,193 +111,29 @@ localization_get_properties = {
     },
 }
 
-box_spec = {
+localization_spec = {
     'type': 'object',
-    'description': 'Single box localization.',
+    'description': 'Localization creation spec.',
     'required': ['media_id', 'type', 'x', 'y', 'width', 'height', 'frame'],
     'additionalProperties': True,
     'properties': {
         **post_properties,
-        **box_properties,
-    },
-}
-
-line_spec = {
-    'type': 'object',
-    'description': 'Single line localization.',
-    'required': ['media_id', 'type', 'x0', 'y0', 'x1', 'y1', 'frame'],
-    'additionalProperties': True,
-    'properties': {
-        **post_properties,
-        **line_properties,
-    },
-}
-
-dot_spec = {
-    'type': 'object',
-    'description': 'Single dot localization.',
-    'required': ['media_id', 'type', 'x', 'y', 'frame'],
-    'additionalProperties': True,
-    'properties': {
-        **post_properties,
-        **dot_properties,
-    },
-}
-
-box_props = {
-    'type': 'object',
-    'description': 'Box localization properties.',
-    'required': ['x', 'y', 'width', 'height', 'frame'],
-    'additionalProperties': True,
-    'properties': box_properties,
-}
-
-line_props = {
-    'type': 'object',
-    'description': 'Line localization properties.',
-    'required': ['x0', 'y0', 'x1', 'y1', 'frame'],
-    'additionalProperties': True,
-    'properties': line_properties,
-}
-
-dot_props = {
-    'type': 'object',
-    'description': 'Dot localization properties.',
-    'required': ['x', 'y', 'frame'],
-    'additionalProperties': True,
-    'properties': dot_properties,
-}
-
-localization_props = {
-    'oneOf': [
-        {'$ref': '#/components/schemas/BoxProps'},
-        {'$ref': '#/components/schemas/LineProps'},
-        {'$ref': '#/components/schemas/DotProps'},
-    ],
-}
-
-localization_many_spec = {
-    'type': 'object',
-    'description': 'Many localizations.',
-    'required': ['media_id', 'type', 'many'],
-    'properties': {
-        **post_properties,
-        'many': {
-            'description': 'List of localizations if this request is for bulk'
-                           'create.',
-            'type': 'array',
-            'items': {'$ref': '#/components/schemas/LocalizationProps'},
-        },
-    },
-}
-
-localization_spec = {
-    'oneOf': [
-        {'$ref': '#/components/schemas/BoxSpec'},
-        {'$ref': '#/components/schemas/LineSpec'},
-        {'$ref': '#/components/schemas/DotSpec'},
-        {'$ref': '#/components/schemas/LocalizationManySpec'},
-    ],
-}
-
-box_element = {
-    'type': 'object',
-    'properties': {
-        **localization_get_properties,
         **localization_properties,
-        **box_properties,
-    },
-}
-
-line_element = {
-    'type': 'object',
-    'properties': {
-        **localization_get_properties,
-        **localization_properties,
-        **line_properties,
-    },
-}
-
-dot_element = {
-    'type': 'object',
-    'properties': {
-        **localization_get_properties,
-        **localization_properties,
-        **dot_properties,
-    },
-}
-
-localization_element = {
-    'oneOf': [
-        {'$ref': '#/components/schemas/BoxElement'},
-        {'$ref': '#/components/schemas/LineElement'},
-        {'$ref': '#/components/schemas/DotElement'},
-    ],
-}
-
-box_update = {
-    'type': 'object',
-    'properties': {
-        **localization_properties,
-        **box_properties,
-    },
-}
-
-line_update = {
-    'type': 'object',
-    'properties': {
-        **localization_properties,
-        **line_properties,
-    },
-}
-
-dot_update = {
-    'type': 'object',
-    'properties': {
-        **localization_properties,
-        **dot_properties,
     },
 }
 
 localization_update = {
-    'oneOf': [
-        {'$ref': '#/components/schemas/BoxUpdate'},
-        {'$ref': '#/components/schemas/LineUpdate'},
-        {'$ref': '#/components/schemas/DotUpdate'},
-    ],
-}
-
-box = {
     'type': 'object',
     'properties': {
-        **localization_get_properties,
         **localization_properties,
-        **box_properties,
-    },
-}
-
-line = {
-    'type': 'object',
-    'properties': {
-        **localization_get_properties,
-        **localization_properties,
-        **line_properties,
-    },
-}
-
-dot = {
-    'type': 'object',
-    'properties': {
-        **localization_get_properties,
-        **localization_properties,
-        **dot_properties,
     },
 }
 
 localization = {
-    'oneOf': [
-        {'$ref': '#/components/schemas/Box'},
-        {'$ref': '#/components/schemas/Line'},
-        {'$ref': '#/components/schemas/Dot'},
-    ],
+    'type': 'object',
+    'properties': {
+        **localization_get_properties,
+        **localization_properties,
+    },
 }
+

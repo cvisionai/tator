@@ -1,119 +1,118 @@
-import traceback
-
-from rest_framework.generics import ListCreateAPIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-
-from ..models import EntityTypeMediaBase
-from ..models import EntityTypeMediaImage
-from ..models import EntityTypeMediaVideo
-from ..models import EntityMediaBase
-from ..models import EntityMediaImage
-from ..models import EntityMediaVideo
+from ..models import MediaType
+from ..models import Media
 from ..models import Project
-from ..serializers import EntityTypeMediaSerializer
-from ..serializers import EntityTypeMediaAttrSerializer
 from ..schema import MediaTypeListSchema
 from ..schema import MediaTypeDetailSchema
-from ..schema import parse
 
-from ._entity_type_mixins import EntityTypeListAPIMixin
-from ._entity_type_mixins import EntityTypeDetailAPIMixin
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-class MediaTypeListAPI(EntityTypeListAPIMixin):
-    """ Create or retrieve localization types.
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
+          'visible']
+
+class MediaTypeListAPI(BaseListView):
+    """ Create or retrieve media types.
 
         A media type is the metadata definition object for media. It includes file format,
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
     """
-    pkname='media_id'
-    entity_endpoint='Medias'
-    entityBaseObj=EntityTypeMediaBase
-    baseObj=EntityMediaBase
-    entityTypeAttrSerializer=EntityTypeMediaAttrSerializer
-    serializer_class = EntityTypeMediaSerializer
-
     schema = MediaTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
-    queryset = EntityTypeMediaBase.objects.all()
+    queryset = MediaType.objects.all()
+    http_method_names = ['get', 'post']
 
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
+    def _get(self, params):
+        """ Retrieve media types.
 
-        try:
-            params = parse(request)
-            params['project'] = Project.objects.get(pk=params['project'])
-            dtype = params.pop('dtype')
+            A media type is the metadata definition object for media. It includes file format,
+            name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        media_id = params.get('media_id', None)
+        if media_id != None:
+            if len(media_id) != 1:
+                raise Exception('Entity type list endpoints expect only one media ID!')
+            media_element = Media.objects.get(pk=media_id[0])
+            if media_element.project.id != self.kwargs['project']:
+                raise Exception('Media not in project!')
+            response_data = MediaType.objects.filter(pk=media_element.meta.pk).values(*fields)
+        else:
+            response_data = MediaType.objects.filter(project=self.kwargs['project']).values(*fields)
+        return list(response_data)
 
-            if dtype == 'image':
-                obj = EntityTypeMediaImage(**params)
-            elif dtype == 'video':
-                obj = EntityTypeMediaVideo(**params)
-            obj.save()
+    def _post(self, params):
+        """ Create media type.
 
-            response=Response({'id': obj.id},
-                              status=status.HTTP_201_CREATED)
+            A media type is the metadata definition object for media. It includes file format,
+            name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        params['project'] = Project.objects.get(pk=params['project'])
+        obj = MediaType(**params)
+        obj.save()
+        return {'id': obj.id, 'message': 'Media type created successfully!'}
 
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+MediaTypeListAPI.copy_docstrings()
 
-class MediaTypeDetailAPI(EntityTypeDetailAPIMixin):
+class MediaTypeDetailAPI(BaseDetailView):
     """ Interact with an individual media type.
 
         A media type is the metadata definition object for media. It includes file format,
         name, description, and (like other entity types) may have any number of attribute
         types associated with it.
     """
-    entity_endpoint='Medias'
-    entityBaseObj=EntityTypeMediaBase
-    baseObj=EntityMediaBase
-    entityTypeAttrSerializer=EntityTypeMediaAttrSerializer
-
     schema = MediaTypeDetailSchema()
-    serializer_class = EntityTypeMediaSerializer
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
-    def patch(self, request, format=None, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            name = params.get('name', None)
-            description = params.get('description', None)
-            file_format = params.get('file_format', None)
-            uploadable = params.get('uploadable', None)
-            keep_original = params.get('keep_original', None)
+    def _get(self, params):
+        """ Get media type.
 
-            obj = EntityTypeMediaBase.objects.get(pk=params['id'])
-            if name is not None:
-                obj.name = name
-            if description is not None:
-                obj.description = description
-            if file_format is not None:
-                obj.file_format = file_format
-            if uploadable is not None:
-                obj.uploadable = uploadable
-            if keep_original is not None:
-                obj.keep_original = keep_original
+            A media type is the metadata definition object for media. It includes file format,
+            name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        return MediaType.objects.filter(pk=params['id']).values(*fields)[0]
 
-            obj.save()
-            response=Response({'message': 'Media type updated successfully!'},
-                              status=status.HTTP_200_OK)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        return response
+    def _patch(self, params):
+        """ Update media type.
 
+            A media type is the metadata definition object for media. It includes file format,
+            name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        name = params.get('name', None)
+        description = params.get('description', None)
+        file_format = params.get('file_format', None)
+        keep_original = params.get('keep_original', None)
+
+        obj = MediaType.objects.get(pk=params['id'])
+        if name is not None:
+            obj.name = name
+        if description is not None:
+            obj.description = description
+        if file_format is not None:
+            obj.file_format = file_format
+        if keep_original is not None:
+            obj.keep_original = keep_original
+
+        obj.save()
+        return {'message': 'Media type updated successfully!'}
+
+    def _delete(self, params):
+        """ Delete media type.
+
+            A media type is the metadata definition object for media. It includes file format,
+            name, description, and (like other entity types) may have any number of attribute
+            types associated with it.
+        """
+        MediaType.objects.get(pk=params['id']).delete()
+        return {'message': 'Media type deleted successfully!'}
+
+    def get_queryset(self):
+        return MediaType.objects.all()
+
+MediaTypeDetailAPI.copy_docstrings()

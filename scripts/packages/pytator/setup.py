@@ -1,15 +1,11 @@
 from setuptools import setup, find_packages
 
 import os.path
-
-VERSION_FILE_PATH=os.path.join(os.path.dirname(__file__), 'version')
-VERSION_FILE=open(VERSION_FILE_PATH,'r')
-VERSION_NUMBER=VERSION_FILE.read()
-VERSION_FILE.close()
+import pytator
 
 setup(
     name="PyTator",
-    version=VERSION_NUMBER,
+    version=pytator.__version__,
     packages=find_packages(),
     scripts=['ingestor.py', 'tator_testHarness.py', 'sendProgress.py'],
 
@@ -17,7 +13,7 @@ setup(
     # installed or upgraded on the target machine
     install_requires=['requests>=2.21.0',
                       'progressbar2>=3.42.0',
-                      'tuspy>=0.2.4',
+                      'tator_tuspy>=0.2.5',
                       'pandas>=0.24.2',
                       'opencv-python>=4.1.0',
                       'numpy>=1.16.0'],

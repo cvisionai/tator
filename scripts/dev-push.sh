@@ -1,12 +1,15 @@
 #!/bin/bash
 
-pods=$(kubectl get pod -l "app=gunicorn" -o name)
+for selector in "app=gunicorn" "app=daphne"; do
 
-for pod in ${pods}; do
-    name=`echo $pod | sed 's/pod\///'`
-    echo "Updating ${name}"
-    kubectl cp main ${name}:/tator_online
-    kubectl cp tator_online ${name}:/tator_online
+    pods=$(kubectl get pod -l "${selector}" -o name)
+
+    for pod in ${pods}; do
+        name=`echo $pod | sed 's/pod\///'`
+        echo "Updating ${name}"
+        kubectl cp main ${name}:/tator_online
+        kubectl cp tator_online ${name}:/tator_online
+    done
 done
 
 # Run collect static on one of them

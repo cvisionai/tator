@@ -16,7 +16,7 @@ def random_localization(project, box_type, video_obj, post=False):
         'test_int': random.randint(-1000, 1000),
         'test_float': random.uniform(-1000.0, 1000.0),
         'test_enum': random.choice(['a', 'b', 'c']),
-        'test_str': str(uuid.uuid1()),
+        'test_string': str(uuid.uuid1()),
         'test_datetime': datetime.datetime.now().isoformat(),
         'test_geopos': [random.uniform(-180.0, 180.0), random.uniform(-90.0, 90.0)],
     }
@@ -36,7 +36,7 @@ def random_localization(project, box_type, video_obj, post=False):
         out['attributes'] = attributes
     return out
 
-def test_localization_crud(url, token, project, video_type, video, box_type, box_attribute_types):
+def test_localization_crud(url, token, project, video_type, video, box_type):
     tator = pytator.Tator(url, token, project)
     video_obj = tator.Media.get(pk=video)
 
@@ -44,24 +44,25 @@ def test_localization_crud(url, token, project, video_type, video, box_type, box
     exclude = ['project', 'type', 'media_id', 'id', 'meta', 'user']
 
     # Test bulk create.
-    num_localizations = random.randint(1, 1000)
+    num_localizations = random.randint(2000, 10000)
     boxes = [
         random_localization(project, box_type, video_obj, post=True)
         for _ in range(num_localizations)
     ]
-    status, response = tator.Localization.addMany(boxes)
+    status, response = tator.Localization.new(boxes)
     print(f"New localization response: {response}")
     assert status == 201
 
     # Test single create.
     box = random_localization(project, box_type, video_obj, post=True)
-    status, response = tator.Localization.new(box)
+    status, response = tator.Localization.new([box])
     box_id = response['id'][0]
     assert status == 201
 
     # Patch single box.
     patch = random_localization(project, box_type, video_obj)
     status, response = tator.Localization.update(box_id, patch)
+    print(f"Patch localization response: {response}")
     assert status == 200
 
     # Get single box.

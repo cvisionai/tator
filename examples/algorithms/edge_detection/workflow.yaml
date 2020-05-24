@@ -10,9 +10,9 @@ spec:
       name: workdir
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: nfs-client
       resources:
         requests:
-          storageClass: nfs-client
           storage: 100Mi
   templates:
   - name: pipeline
@@ -25,7 +25,7 @@ spec:
         template: teardown
   - name: setup
     script:
-      image: cvisionai/tator_algo_marshal
+      image: localhost:5000/tator_algo_marshal
       resources:
         limits:
           cpu: 250m
@@ -72,12 +72,12 @@ spec:
                 print(f"media = {media}, media_id = {media_id}")
                 time.sleep(2)
                 # Download media to working directory.
-                fname = media['url'].split('/')[-1]
+                fname = media['file'].split('/')[-1]
                 out_path = os.path.join(work_dir, fname)
                 medias.downloadFile(media, out_path)
   - name: find-edges
     script:
-      image: jrtcppv/find_edges
+      image: localhost:5000/find_edges
       resources:
         limits:
           cpu: 1000m
@@ -100,7 +100,7 @@ spec:
       args: [/find_edges.py]
   - name: teardown
     script:
-      image: cvisionai/tator_algo_marshal
+      image: localhost:5000/tator_algo_marshal
       resources:
         limits:
           cpu: 250m
@@ -141,7 +141,7 @@ spec:
                 "ingestor.py",
                 "media",
                 "--directory", work_dir,
-                "--typeId", "8",
+                "--typeId", "59",
                 "--url", rest_svc,
                 "--token", token,
                 "--project", project_id,

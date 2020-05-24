@@ -45,11 +45,10 @@ def computeRequiredFields(typeObj):
             datafields[field.name] = field.description
 
     attributes={}
-    attributeTypes=AttributeTypeBase.objects.filter(applies_to=typeObj)
-    for column in attributeTypes:
-        attributes[str(column)] = column.description
+    for column in typeObj.attribute_types:
+        attributes[column['name']] = column.get('description', None)
 
-    return (datafields, attributes, attributeTypes)
+    return (datafields, attributes, typeObj.attribute_types)
 
 def check_required_fields(datafields, attr_types, body):
     """ Given the output of computeRequiredFields and a request body, assert that required
@@ -64,12 +63,12 @@ def check_required_fields(datafields, attr_types, body):
     # Check for required attributes. Fill in defaults if available.
     attrs = {}
     for attr_type in attr_types:
-        field = attr_type.name
+        field = attr_type['name']
         if field in body:
             convert_attribute(attr_type, body[field]) # Validates attr value
             attrs[field] = body[field];
-        elif isinstance(attr_type, AttributeTypeDatetime):
-            if attr_type.use_current:
+        elif attr_type['dtype'] == 'datetime':
+            if attr_type['use_current']:
                 # Fill in current datetime.
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             else:
@@ -78,12 +77,9 @@ def check_required_fields(datafields, attr_types, body):
                                 f'"{attr_type.applies_to.name}". Set to `use_current` to '
                                 f'True or supply a value.')
         else:
-            if attr_type.default is not None:
+            if 'default' in attr_type:
                 # Fill in default for missing field.
-                if isinstance(attr_type, AttributeTypeGeoposition):
-                    attrs[field] = [attr_type.default.x, attr_type.default.y]
-                else:
-                    attrs[field] = attr_type.default
+                attrs[field] = attr_type['default']
             else:
                 # Missing a field and no default.
                 raise Exception(f'Missing attribute value for "{field}". Required for = '

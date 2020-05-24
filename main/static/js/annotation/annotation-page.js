@@ -5,6 +5,7 @@ class AnnotationPage extends TatorPage {
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/loading.svg");
     this._shadow.appendChild(this._loading);
+    this._versionLookup = {};
 
     document.body.setAttribute("class", "no-padding-bottom");
 
@@ -68,7 +69,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/EntityMedia/" + newValue, {
+        fetch("/rest/Media/" + newValue, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -85,7 +86,7 @@ class AnnotationPage extends TatorPage {
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;
 
-          fetch("/rest/EntityTypeMedia/" + data.meta, {
+          fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -101,7 +102,7 @@ class AnnotationPage extends TatorPage {
             this._player.mediaTypes = data['type'];
           });
           let player;
-          if ("thumb_gif_url" in data) {
+          if (data.thumbnail_gif) {
             player = document.createElement("annotation-player");
             this._player = player;
             player.addDomParent({"object": this._headerDiv,
@@ -155,6 +156,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _setupInitHandlers(canvas) {
+    this._canvas = canvas;
     const _handleQueryParams = () => {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
@@ -162,6 +164,7 @@ class AnnotationPage extends TatorPage {
         const haveEntityType = searchParams.has("selected_entity_type");
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
+        const haveVersion = searchParams.has("version");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -179,6 +182,17 @@ class AnnotationPage extends TatorPage {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
           this._browser._openForTypeId(typeId);
+        }
+        if (haveVersion)
+        {
+          let edited = true;
+          let version_id = searchParams.get("version");
+          if(searchParams.has("edited") && searchParams.get("edited") == 0)
+          {
+            edited = false;
+          }
+          let evt = {"detail": {"version": this._versionLookup[version_id], "edited": edited}};
+          this._versionDialog._handleSelect(evt);
         }
       }
     }
@@ -236,7 +250,11 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
-      this._data.setVersion(evt.detail.version, evt.detail.edited);
+      this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
+        this._settings.setAttribute("version", evt.detail.version.id);
+        this._settings.setAttribute("edited", evt.detail.edited);
+        this._canvas.refresh();
+      });
       this._browser.version = evt.detail.version;
       this._versionButton.text = evt.detail.version.name;
       this._version = evt.detail.version;
@@ -279,7 +297,7 @@ class AnnotationPage extends TatorPage {
     };
     Promise.all([
       getMetadataType("LocalizationTypes"),
-      getMetadataType("EntityStateTypes"),
+      getMetadataType("StateTypes"),
       versionPromise,
     ])
     .then(([localizationResponse, stateResponse, versionResponse]) => {
@@ -288,6 +306,10 @@ class AnnotationPage extends TatorPage {
       const versionData = versionResponse.json();
       Promise.all([localizationData, stateData, versionData])
       .then(([localizationTypes, stateTypes, versions]) => {
+        for (let version of versions)
+        {
+          this._versionLookup[version['id']] = version;
+        }
         // Skip version if number of annotations is zero and show_empty is false.
         const dispVersions = versions.filter(version => {
           return !(
@@ -302,6 +324,8 @@ class AnnotationPage extends TatorPage {
           versions = [versions[0]];
         }
 
+        // TODO: Probably want a sensible default here more than
+        // just 'the last one'.
         this._versionDialog.init(versions);
         this._version = versions[versions.length - 1];
         if (versions.length == 0) {
@@ -310,12 +334,12 @@ class AnnotationPage extends TatorPage {
           this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
-        this._data.init(dataTypes, this._version);
+        this._data.init(dataTypes, this._version, projectId, mediaId);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
-          (sec[obj.type.dtype] = sec[obj.type.dtype] || []).push(obj);
+          (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           return sec;
         }, {});
         this._sidebar.localizationTypes = byType;
@@ -370,7 +394,7 @@ class AnnotationPage extends TatorPage {
                 frame = undefined;
               }
               else {
-                frame = parseInt(evt.detail.data.association.frame);
+                frame = parseInt(evt.detail.data.frame);
               }
               // Only jump to a frame if it is known
               if (frame != undefined)
@@ -424,8 +448,9 @@ class AnnotationPage extends TatorPage {
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
           save.init(projectId, mediaId, dataType, this._undo, this._version);
+          this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
-          this._saves[dataType.type.id] = save;
+          this._saves[dataType.id] = save;
 
           save.addEventListener("cancel", () => {
             this._closeModal(save);
@@ -484,7 +509,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
-    const save = this._saves[objDescription.type.id];
+    const save = this._saves[objDescription.id];
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
@@ -495,7 +520,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _getSave(objDescription) {
-    return this._saves[objDescription.type.id];
+    return this._saves[objDescription.id];
   }
 
   clearMetaCaches() {

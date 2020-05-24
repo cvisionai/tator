@@ -4,6 +4,8 @@ class ProjectDetail extends TatorPage {
 
     this._worker = new Worker("/static/js/project-detail/media-worker.js");
 
+    window._uploader = new Worker("/static/js/tasks/upload-worker.js");
+
     const main = document.createElement("main");
     main.setAttribute("class", "layout-max py-4");
     this._shadow.appendChild(main);
@@ -115,6 +117,13 @@ class ProjectDetail extends TatorPage {
         this._algorithmButton.algorithms = msg.algorithms;
       } else if (msg.command == "checkVisibility") {
         this._checkSectionVisibility();
+      }
+    });
+
+    window._uploader.addEventListener("message", evt => {
+      const msg = evt.data;
+      if (msg.command == "uploadsDone") {
+        this._leaveConfirmOk = false;
       }
     });
 
@@ -342,7 +351,7 @@ class ProjectDetail extends TatorPage {
       });
     });
     newSection.addEventListener("cancelUpload", evt => {
-      window._serviceWorker.postMessage({
+      window._uploader.postMessage({
         "command": "cancelUpload",
         "uid": evt.detail.uid,
       });
@@ -408,9 +417,12 @@ class ProjectDetail extends TatorPage {
     this._newSection.close();
   };
 
-  _allSetCallback() {
-    this._progress.notify("Upload started!", true);
-    this._leaveConfirmOk = false;
+  async _allSetCallback() {
+    this._progress.notify("Please wait, uploads starting...", true);
+    await new Promise(resolve => setTimeout(resolve, 7000));
+    if (this._leaveConfirmOk) {
+      this._progress.notify("To keep working, open a new tab...", true);
+    }
   }
 
 }

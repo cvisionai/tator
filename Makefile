@@ -162,7 +162,7 @@ externals/build_tools/%.py:
 	@git submodule update --init
 
 # Add specific rule for marshal's .gen because it uses version input file
-containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/version
+containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/pytator/version.py
 	./externals/build_tools/makocc.py -o $@ containers/tator_algo_marshal/Dockerfile.mako
 
 # Dockerfile.gen rules (generic)
@@ -177,7 +177,7 @@ tator-image: containers/tator/Dockerfile.gen
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
-PYTATOR_VERSION=$(shell cat scripts/packages/pytator/version)
+PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
 containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
@@ -249,13 +249,14 @@ FILES = \
     util/fetch-retry.js \
     util/has-permission.js \
     components/tator-element.js \
-    components/upload-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
     components/modal-warning.js \
     components/modal-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
+    components/big-upload-form.js \
+    components/upload-element.js \
     components/progress-job.js \
     components/progress-summary.js \
     components/header-notification.js \
@@ -437,6 +438,10 @@ cleanup-evicted:
 .PHONY: build-search-indices
 build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+
+.PHONY: migrate-flat
+migrate-flat:
+	argo submit workflows/migrate-flat.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
 
 .PHONY: clean_js
 clean_js:

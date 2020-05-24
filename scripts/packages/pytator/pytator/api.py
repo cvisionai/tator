@@ -11,22 +11,35 @@ These endpoints do not need to be manually constructed and instead can be
 accessed via :class:`pytator.Tator`.
 
  """
-import cv2
 import json
 import math
-import requests
 import time
 import os
 import progressbar
-import pandas as pd
-import numpy as np
+import math
+import mimetypes
+import tarfile
+import io
 
 from pytator.md5sum import md5_sum
 from itertools import count
-from tusclient.client import TusClient
 from urllib.parse import urljoin
 from urllib.parse import urlsplit
 from uuid import uuid1
+
+try:
+    import cv2
+except:
+    # TODO: Soft-disable cv2-features
+    print("Couldn't import CV2, certain functions disabled!")
+
+try:
+    import pandas as pd
+    import numpy as np
+    import requests
+    from tusclient.client import TusClient
+except:
+    print("Couldn't required libraries (might be in setup.py)")
 
 class APIElement:
     """ Base API element that provides generic capability to any of the
@@ -332,10 +345,10 @@ class Algorithm(APIElement):
         """ .. warning:: Not supported for algorithms endpoint """
         pass
 
-class AttributeType(APIElement):
-    """ Describes elements from `rest/AttributeTypes` """
+class MediaSection(APIElement):
+    """ Describes elements from `rest/MediaSections` """
     def __init__(self, api):
-        super().__init__(api, "AttributeTypes", "AttributeType")
+        super().__init__(api, "MediaSections", None)
 
 class MediaType(APIElement):
     """ Describes elements from `rest/MediaTypes` """
@@ -371,24 +384,144 @@ class Media(APIElement):
         self.mediaTypeApi = MediaType(api)
 
     def downloadFile(self, element, out_path):
+        for _ in self.downloadFile_v2(element, out_path):
+            pass
+    def downloadFile_v2(self, element, out_path):
         """ Download a media file from Tator to an off-line location
+
+        TODO: Support which file to download
 
         :param dict element: Dictionary from :func:`Media.filter`
         :param path-like out_path: Path to where to download
         """
-        #Use streaming mp4 unless original is present
-        url=element['url']
-        if 'original_url' in element:
-            if element['original_url']:
-                url=element['original_url']
+        if element['media_files'] is not None:
+            archival = element['media_files'].get('archival',[])
+            streaming = element['media_files'].get('streaming',[])
+            split=urlsplit(self.url)
+            if len(archival) > 0:
+                url = urljoin("https://"+split.netloc, archival[0]['path'])
+            elif len(streaming) > 0:
+                url = urljoin("https://"+split.netloc, streaming[0]['path'])
+        else:
+            # Legacy way of using streaming prior to streaming
+            url=os.path.join("media", element['file'])
+            if 'original' in element:
+                if element['original']:
+                    url=os.path.join("data/raw", element['original'])
+            split=urlsplit(self.url)
+            url = urljoin("https://"+split.netloc, url)
 
         # Supply token here for eventual media authorization
         with requests.get(url, stream=True, headers=self.headers) as r:
             r.raise_for_status()
+            total_size = r.headers['Content-Length']
+            total_chunks = math.ceil(int(total_size) / 8192)
+            chunk_count = 0
+            last_progress = 0
+            yield last_progress
             with open(out_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     if chunk:
+                        chunk_count += 1
                         f.write(chunk)
+                        this_progress = round((chunk_count / total_chunks) *100,1)
+                        if this_progress != last_progress:
+                            yield this_progress
+                            last_progress = this_progress
+            yield 100
+
+    def uploadFiles(self, fileList, section=None,chunk_size=2*1024*1024):
+        upload_uid = str(uuid1())
+        upload_gid = str(uuid1())
+        in_mem_buf = io.BytesIO()
+        tus = TusClient(self.tusURL)
+        in_mem_tar = tarfile.TarFile(mode='w', fileobj=in_mem_buf)
+        for idx,fp in enumerate(fileList):
+            in_mem_tar.add(fp, os.path.basename(fp))
+
+        uploader = tus.uploader(file_stream=in_mem_buf, chunk_size=chunk_size)
+        last_progress = 0
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
+        yield last_progress
+        for chunk_count in range(num_chunks):
+            uploader.upload_chunk()
+            this_progress = round((chunk_count / num_chunks) *100,1)
+            if this_progress != last_progress:
+                yield this_progress
+                last_progress = this_progress
+
+
+        # Initiate transcode.
+        out = requests.post(f'{self.url}/Transcode/{self.project}',
+                            headers=self.headers,
+                            json={
+                                'type': -1, #Tar-based inport
+                                'uid': upload_uid,
+                                'gid': upload_gid,
+                                'url': uploader.url,
+                                'name': "archive.tar",
+                                'section': section,
+                                'md5': "N/A",
+        })
+
+        out.raise_for_status()
+        yield 100
+    def uploadFile_v2(self,filePath,
+                      typeId,
+                      md5=None,
+                      section=None,
+                      fname=None,
+                      upload_gid=None,
+                      upload_uid=None,
+                      chunk_size=2*1024*1024):
+        if md5==None:
+            md5 = md5_sum(filePath)
+        if upload_uid is None:
+            upload_uid = str(uuid1())
+        if upload_gid is None:
+            upload_gid = str(uuid1())
+        if fname is None:
+            fname=os.path.basename(filePath)
+        if section is None:
+            section="New Files"
+
+        tus = TusClient(self.tusURL)
+        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
+
+        last_progress = 0
+        yield last_progress
+
+        for chunk_count in range(num_chunks):
+            uploader.upload_chunk()
+            this_progress = round((chunk_count / num_chunks) *100,1)
+            if this_progress != last_progress:
+                yield this_progress
+                last_progress = this_progress
+
+        mime,_ = mimetypes.guess_type(fname)
+        if mime.find('video') >= 0:
+            endpoint = 'Transcode'
+        else:
+            endpoint = 'SaveImage'
+
+        # Initiate transcode.
+        out = requests.post(f'{self.url}/{endpoint}/{self.project}',
+                            headers=self.headers,
+                            json={
+                                'type': typeId,
+                                'uid': upload_uid,
+                                'gid': upload_gid,
+                                'url': uploader.url,
+                                'name': fname,
+                                'section': section,
+                                'md5': md5,
+        })
+        print("{}, {}".format(fname, out.json()['message']))
+        out.raise_for_status()
+        yield 100
+
+
 
     def uploadFile(self, typeId, filePath, waitForTranscode=True, progressBars=True, md5=None,section=None, fname=None):
         """ Upload a new file to Tator """
@@ -401,15 +534,10 @@ class Media(APIElement):
         if section is None:
             section="New Files"
 
-        found=self.byMd5(md5)
-        if found:
-            print(f"File with {md5} found in db ({found['name']})")
-            return False
-
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         if progressBars:
             bar=progressbar.ProgressBar(prefix="Upload",redirect_stdout=True)
         else:
@@ -420,7 +548,7 @@ class Media(APIElement):
 
         mediaType = self.mediaTypeApi.get(typeId)
 
-        if mediaType['type']['dtype'] == 'video':
+        if mediaType['dtype'] == 'video':
             endpoint = 'Transcode'
         else:
             endpoint = 'SaveImage'
@@ -662,9 +790,11 @@ class Localization(APIElement):
         many annotations on a media element, without there having to be a
         request for each box, line or dot. Each element of the list needs
         to match the syntax for :func:`APIElement.new` for a localization
+
+        .. deprecated:: 0.0.15
         """
         response=requests.post(self.url+"/Localizations"+"/"+self.project,
-                               json={"many":listObj},
+                               json=listObj,
                                headers=self.headers)
 
         if response.status_code < 200 or response.status_code >= 300:
@@ -787,7 +917,7 @@ class StateGraphic:
                       "Accept-Encoding": "gzip"}
 
 
-    def get_bgr(self, state_element_or_id):
+    def get_bgr(self, state_element_or_id, **kwargs):
         """ Return a list of np.arrays representing bgr data for each requested
             frame
 
@@ -795,9 +925,16 @@ class StateGraphic:
                    Represents the media to fetch (either a dict with 'id' or
                    just the integer itself)
 
+            kwargs : Maps to argument of `StateGraphic` endpoint.
+                     mode : [tile, animate], default = tile
+                     forceScale : WxH default = None
+
         """
+        args = {"mode": "tile"}
+        for key in kwargs:
+            args.update({key: kwargs[key]})
         code, jpg_data = self.get_encoded_img(state_element_or_id,
-                                              mode="tile")
+                                              **args)
         if code != 200:
             return code,None
 
@@ -810,7 +947,7 @@ class StateGraphic:
         bgr_data = cv2.imdecode(np.asarray(bytearray(jpg_data)), cv2.IMREAD_COLOR)
         frame_data=[]
 
-        num_localizations = len(state_element['association']['localizations'])
+        num_localizations = len(state_element['localizations'])
         width = int(bgr_data.shape[1]/num_localizations)
         for idx in range(num_localizations):
             start_x = idx*width
@@ -821,7 +958,8 @@ class StateGraphic:
         return code, frame_data
 
     def get_encoded_img(self, state_element_or_id,
-                        mode="tile"):
+                        mode="tile",
+                        forceScale=None):
         """ Return an encoded image (jpg,gif) from the media server
 
             media_element_or_id : dict or int
@@ -835,6 +973,8 @@ class StateGraphic:
             state_id = state_element_or_id
 
         params={"mode" : mode}
+        if forceScale:
+            params.update({"forceScale": forceScale})
 
         ep = self.url + "/StateGraphic" + f"/{state_id}"
 
@@ -982,7 +1122,7 @@ class TemporaryFile(APIElement):
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
         uploader = tus.uploader(filePath, chunk_size=chunk_size)
-        num_chunks=math.ceil(uploader.file_size/chunk_size)
+        num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         for _ in range(num_chunks):
             uploader.upload_chunk()
 

@@ -17,14 +17,17 @@ self.addEventListener("message", async evt => {
       }
     }
   } else if (msg.command == "uploadProgress") {
-    // New upload process update from websocket
-    let section;
-    if (self.sections.has(msg.section)) {
-      section = self.sections.get(msg.section);
-    } else {
-      section = addSection(msg.section, 0, 0);
+    // If this is a queued progress message we ignore it
+    if (!(msg.state == "started" && msg.progress == 0)) {
+      // New upload process update from websocket
+      let section;
+      if (self.sections.has(msg.section)) {
+        section = self.sections.get(msg.section);
+      } else {
+        section = addSection(msg.section, 0, 0);
+      }
+      section.uploadProgress(msg);
     }
-    section.uploadProgress(msg);
   } else if (msg.command == "sectionPage") {
     // Section changed pages
     const section = self.sections.get(msg.section);
@@ -222,7 +225,7 @@ class SectionData {
       this._emitUpdate();
     }
     if (start < stop) {
-      const url = "/rest/EntityMedias/" + self.projectId + 
+      const url = "/rest/Medias/" + self.projectId + 
         this.getSectionFilter() +
         "&start=" + start + "&stop=" + stop;
       console.log("Fetching media " + start + " to " + stop);
@@ -560,7 +563,7 @@ function newSectionName() {
 }
 
 function saveMediaSection(mediaId, sectionName) {
-  return fetchRetry("/rest/EntityMedia/" + mediaId, {
+  return fetchRetry("/rest/Media/" + mediaId, {
     method: "PATCH",
     credentials: "omit",
     headers: self.headers,

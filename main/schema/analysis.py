@@ -34,14 +34,12 @@ class AnalysisListSchema(AutoSchema):
                         'summary': 'Count all entities of the given type',
                         'value': {
                             'name': 'Boxes',
-                            'data_type': 1,
                         },
                     },
                     'count_filter': {
                         'summary': 'Count all entities with confidence > 0.5',
                         'value': {
                             'name': 'High confidence boxes',
-                            'data_type': 1,
                             'data_query': 'Confidence:>0.5',
                         },
                     },
@@ -57,7 +55,8 @@ class AnalysisListSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of analyses.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/AnalysisList',
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Analysis'},
                 }}},
             }
         elif method == 'POST':

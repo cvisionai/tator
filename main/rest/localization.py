@@ -1,49 +1,33 @@
-import traceback
 import logging
-import time
 
-from rest_framework.views import APIView
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import PermissionDenied
-from django.core.exceptions import ObjectDoesNotExist
-
-from ..models import EntityLocalizationBase
-from ..models import EntityLocalizationBox
-from ..models import EntityLocalizationLine
-from ..models import EntityLocalizationDot
-from ..models import EntityTypeLocalizationBase
-from ..models import EntityTypeLocalizationBox
-from ..models import EntityTypeLocalizationLine
-from ..models import EntityTypeLocalizationDot
-from ..models import EntityMediaBase
-from ..models import EntityMediaImage
-from ..models import EntityTypeMediaVideo
-from ..models import EntityBase
+from ..models import Localization
+from ..models import LocalizationType
+from ..models import Media
+from ..models import MediaType
+from ..models import State
 from ..models import User
+from ..models import Project
 from ..models import Version
-from ..models import type_to_obj
-from ..serializers import EntityLocalizationSerializer
-from ..serializers import FastEntityLocalizationSerializer
+from ..models import database_qs
 from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
 from ..schema import parse
 
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
 from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._util import delete_polymorphic_qs
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class LocalizationListAPI(APIView, AttributeFilterMixin):
+class LocalizationListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of localizations.
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -53,9 +37,188 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
         This endpoint supports bulk patch of user-defined localization attributes and bulk delete.
         Both are accomplished using the same query parameters used for a GET request.
     """
-    serializer_class = EntityLocalizationSerializer
-    schema=LocalizationListSchema()
+    schema = LocalizationListSchema()
     permission_classes = [ProjectEditPermission]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    entity_type = LocalizationType # Needed by attribute filter mixin
+
+    def _get(self, params):
+        self.validate_attribute_filter(params)
+        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation']
+        use_es = any([key not in postgres_params for key in params])
+
+        # Get the localization list.
+        if use_es:
+            response_data = []
+            annotation_ids, annotation_count, _ = get_annotation_queryset(
+                params['project'],
+                params,
+                'localization',
+            )
+            if self.operation == 'count':
+                response_data = {'count': len(annotation_ids)}
+            elif len(annotation_ids) > 0:
+                qs = Localization.objects.filter(pk__in=annotation_ids).order_by('id')
+                response_data = database_qs(qs)
+        else:
+            qs = Localization.objects.filter(project=params['project'])
+            if 'media_id' in params:
+                qs = qs.filter(media__in=params['media_id'])
+            if 'type' in params:
+                qs = qs.filter(meta=params['type'])
+            if 'version' in params:
+                qs = qs.filter(version__in=params['version'])
+            if 'modified' in params:
+                qs = qs.exclude(modified=(not params['modified']))
+            if self.operation == 'count':
+                response_data = {'count': qs.count()}
+            else:
+                response_data = database_qs(qs.order_by('id'))
+
+        # Adjust fields for csv output.
+        if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
+            # CSV creation requires a bit more
+            user_ids = set([d['user'] for d in response_data])
+            users = list(User.objects.filter(id__in=user_ids).values('id','email'))
+            email_dict = {}
+            for user in users:
+                email_dict[user['id']] = user['email']
+
+            media_ids = set([d['media'] for d in response_data])
+            medias = list(Media.objects.filter(id__in=media_ids).values('id','name'))
+            filename_dict = {}
+            for media in medias:
+                filename_dict[media['id']] = media['name']
+
+            for element in response_data:
+                del element['meta']
+
+                oldAttributes = element['attributes']
+                del element['attributes']
+                element.update(oldAttributes)
+
+                user_id = element['user']
+                media_id = element['media']
+
+                element['user'] = email_dict[user_id]
+                element['media'] = filename_dict[media_id]
+        return response_data
+
+    def _post(self, params):
+        # Check that we are getting a localization list.
+        if 'body' in params:
+            loc_specs = params['body']
+        else:
+            raise Exception('Localization creation requires list of localizations!')
+
+        # Get a default version.
+        default_version = Version.objects.filter(project=params['project'], number=0)
+        if default_version.exists():
+            default_version = default_version[0]
+        else:
+            # If version 0 does not exist, create it.
+            default_version = Version.objects.create(
+                name="Baseline",
+                description="Initial version",
+                project=project,
+                number=0,
+            )
+
+        # Find unique foreign keys.
+        meta_ids = set([loc['type'] for loc in loc_specs])
+        media_ids = set([loc['media_id'] for loc in loc_specs])
+        version_ids = set([loc.get('version', None) for loc in loc_specs])
+
+        # Make foreign key querysets.
+        meta_qs = LocalizationType.objects.filter(pk__in=meta_ids)
+        media_qs = Media.objects.filter(pk__in=media_ids)
+        version_qs = Version.objects.filter(pk__in=version_ids)
+
+        # Construct foreign key dictionaries.
+        project = Project.objects.get(pk=params['project'])
+        metas = {obj.id:obj for obj in meta_qs.iterator()}
+        medias = {obj.id:obj for obj in media_qs.iterator()}
+        versions = {obj.id:obj for obj in version_qs.iterator()}
+        versions[None] = default_version
+
+        # Get required fields for attributes.
+        required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
+        attr_specs = [check_required_fields(required_fields[loc['type']][0],
+                                            required_fields[loc['type']][2],
+                                            loc)
+                      for loc in loc_specs]
+       
+        # Create the localization objects.
+        localizations = []
+        create_buffer = []
+        for loc_spec, attrs in zip(loc_specs, attr_specs):
+            loc = Localization(project=project,
+                               meta=metas[loc_spec['type']],
+                               media=medias[loc_spec['media_id']],
+                               user=self.request.user,
+                               attributes=attrs,
+                               modified=loc_spec.get('modified', None),
+                               created_by=self.request.user,
+                               modified_by=self.request.user,
+                               version=versions[loc_spec.get('version', None)],
+                               x=loc_spec.get('x', None),
+                               y=loc_spec.get('y', None),
+                               u=loc_spec.get('u', None),
+                               v=loc_spec.get('v', None),
+                               width=loc_spec.get('width', None),
+                               height=loc_spec.get('height', None),
+                               frame=loc_spec.get('frame', None))
+            create_buffer.append(loc)
+            if len(create_buffer) > 1000:
+                localizations += Localization.objects.bulk_create(create_buffer)
+                create_buffer = []
+        localizations += Localization.objects.bulk_create(create_buffer)
+
+        # Build ES documents.
+        ts = TatorSearch()
+        documents = []
+        for loc in localizations:
+            documents += ts.build_document(loc)
+            if len(documents) > 1000:
+                ts.bulk_add_documents(documents)
+                documents = []
+        ts.bulk_add_documents(documents)
+
+        # Return created IDs.
+        ids = [loc.id for loc in localizations]
+        return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
+
+    def _delete(self, params):
+        self.validate_attribute_filter(params)
+        annotation_ids, annotation_count, query = get_annotation_queryset(
+            params['project'],
+            params,
+            'localization',
+        )
+        if len(annotation_ids) > 0:
+            # Delete any state many to many relations to these localizations.
+            state_qs = State.localizations.through.objects.filter(localization__in=annotation_ids)
+            state_qs._raw_delete(state_qs.db)
+
+            # Delete the localizations.
+            qs = Localization.objects.filter(pk__in=annotation_ids)
+            qs._raw_delete(qs.db)
+            TatorSearch().delete(self.kwargs['project'], query)
+        return {'message': f'Successfully deleted {len(annotation_ids)} localizations!'}
+
+    def _patch(self, params):
+        self.validate_attribute_filter(params)
+        annotation_ids, annotation_count, query = get_annotation_queryset(
+            params['project'],
+            params,
+            'localization',
+        )
+        if len(annotation_ids) > 0:
+            qs = Localization.objects.filter(pk__in=annotation_ids)
+            new_attrs = validate_attributes(params, qs[0])
+            bulk_patch_attributes(new_attrs, qs)
+            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+        return {'message': f'Successfully updated {len(annotation_ids)} localizations!'}
 
     def get_queryset(self):
         params = parse(self.request)
@@ -65,268 +228,12 @@ class LocalizationListAPI(APIView, AttributeFilterMixin):
             params,
             'localization',
         )
-        queryset = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
+        queryset = Localization.objects.filter(pk__in=annotation_ids)
         return queryset
 
-    def get(self, request, format=None, **kwargs):
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            annotation_ids, annotation_count, _ = get_annotation_queryset(
-                params['project'],
-                params,
-                'localization',
-            )
-            self.request=request
-            before=time.time()
-            qs = EntityLocalizationBase.objects.filter(pk__in=annotation_ids)
-            if self.operation:
-                if self.operation == 'count':
-                    responseData = {'count': qs.count()}
-                else:
-                    raise Exception('Invalid operation parameter!')
-            else:
-                responseData=FastEntityLocalizationSerializer(qs)
-                if request.accepted_renderer.format == 'csv':
-                    # CSV creation requires a bit more
-                    user_ids=list(qs.values('user').distinct().values_list('user', flat=True))
-                    users=list(User.objects.filter(id__in=user_ids).values('id','email'))
-                    email_dict={}
-                    for user in users:
-                        email_dict[user['id']] = user['email']
+LocalizationListAPI.copy_docstrings()
 
-                    media_ids=list(qs.values('media').distinct().values_list('media', flat=True))
-                    medias=list(EntityMediaBase.objects.filter(id__in=media_ids).values('id','name'))
-                    filename_dict={}
-                    for media in medias:
-                        filename_dict[media['id']] = media['name']
-
-                    filter_type=params.get('type', None)
-                    type_obj=EntityTypeLocalizationBase.objects.get(pk=filter_type)
-                    for element in responseData:
-                        del element['meta']
-
-                        oldAttributes = element['attributes']
-                        del element['attributes']
-                        element.update(oldAttributes)
-
-                        user_id = element['user']
-                        media_id = element['media']
-
-                        element['user'] = email_dict[user_id]
-                        element['media'] = filename_dict[media_id]
-
-                    responseData = responseData
-            after=time.time()
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-            return response;
-        return Response(responseData)
-
-    def addNewLocalization(self, reqObject, inhibit_signal, cache=None):
-        media_id=[]
-
-        stage = {}
-        stage[0] = time.time()
-        media_id = reqObject['media_id'];
-        entityTypeId=reqObject['type']
-
-        stage[1] = time.time()
-        if cache:
-            entityType = cache['type']
-        else:
-            entityType = EntityTypeLocalizationBase.objects.get(id=entityTypeId)
-
-        if type(entityType) == EntityTypeMediaVideo:
-            if 'frame' not in reqObject:
-                raise Exception('Missing required frame identifier')
-
-        project = entityType.project
-        if cache:
-            mediaElement=cache['media']
-        else:
-            mediaElement = EntityMediaBase.objects.get(pk=media_id)
-        stage[2] = time.time()
-
-        modified = None
-        if 'modified' in reqObject:
-            modified = bool(reqObject['modified'])
-
-        if 'version' in reqObject:
-            version = Version.objects.get(pk=reqObject['version'])
-        else:
-            # If no version is given, assign the localization to version 0 (baseline)
-            version = Version.objects.filter(project=project, number=0)
-            if version.exists():
-                version = version[0]
-            else:
-                # If version 0 does not exist, create it.
-                version = Version.objects.create(
-                    name="Baseline",
-                    description="Initial version",
-                    project=project,
-                    number=0,
-                )
-
-        newObjType=type_to_obj(type(entityType))
-        stage[3] = time.time()
-
-        if cache:
-            requiredFields, reqAttributes, attrTypes=cache['required']
-        else:
-            requiredFields, reqAttributes, attrTypes=computeRequiredFields(entityType)
-
-        attrs = check_required_fields(requiredFields, attrTypes, reqObject)
-
-        stage[4] = time.time()
-        # Build required keys based on object type (box, line, etc.)
-        # Query the model object and get the names we look for (x,y,etc.)
-        localizationFields={}
-        for field in requiredFields:
-            localizationFields[field] = reqObject[field]
-
-
-        stage[5] = time.time()
-        # Finally make the object, filling in all the info we've collected
-        obj = newObjType(project=project,
-                         meta=entityType,
-                         media=mediaElement,
-                         user=self.request.user,
-                         attributes=attrs,
-                         modified=modified,
-                         created_by=self.request.user,
-                         modified_by=self.request.user,
-                         version=version)
-
-        for field, value in localizationFields.items():
-            setattr(obj, field, value)
-        stage[6] = time.time()
-        if 'frame' in reqObject:
-            obj.frame = reqObject['frame']
-        else:
-            obj.frame = 0
-
-        if 'sequence' in reqObject:
-            obj.state = reqObject['state']
-
-        stage[7] = time.time()
-        # Set temporary bridge flag for relative coordinates
-        obj.relativeCoords=True
-        if inhibit_signal:
-            obj._inhibit = True
-        obj.save()
-        stage[8] = time.time()
-        #for x in range(8):
-        #    logger.info(f"stage {x}: {stage[x+1]-stage[x]}")
-        return obj
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
-
-        try:
-            params = parse(request)
-            entityType=None
-            many = params.get('many', None)
-            obj_ids = []
-            ts = TatorSearch()
-            if many:
-                documents = []
-                group_by_media = {}
-                begin = time.time()
-                for obj in many:
-                    media_id = obj['media_id']
-                    if media_id in group_by_media:
-                        group_by_media[media_id].append(obj)
-                    else:
-                        group_by_media[media_id] = [obj]
-
-                for media_id in group_by_media:
-                    cache={}
-                    cache['media'] = EntityMediaBase.objects.get(pk=media_id)
-                    cache['type'] = None
-                    for obj in group_by_media[media_id]:
-                        if cache['type'] is None or cache['type'].id != obj['type']:
-                            cache['type'] = EntityTypeLocalizationBase.objects.get(id=obj['type'])
-                            cache['required'] = computeRequiredFields(cache['type'])
-                        new_obj = self.addNewLocalization(obj, True, cache)
-                        obj_ids.append(new_obj.id)
-                        documents.extend(ts.build_document(new_obj))
-                after = time.time()
-                logger.info(f"Total Add Duration = {after-begin}")
-                begin = time.time()
-                ts.bulk_add_documents(documents)
-                after = time.time()
-                logger.info(f"Total Index Duration = {after-begin}")
-            else:
-                new_obj = self.addNewLocalization(params, False)
-                obj_ids.append(new_obj.id)
-            response=Response({'id': obj_ids},
-                              status=status.HTTP_201_CREATED)
-
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
-    def delete(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            annotation_ids, annotation_count, query = get_annotation_queryset(
-                params['project'],
-                params,
-                'localization',
-            )
-            if len(annotation_ids) == 0:
-                raise ObjectDoesNotExist
-            qs = EntityBase.objects.filter(pk__in=annotation_ids)
-            delete_polymorphic_qs(qs)
-            TatorSearch().delete(self.kwargs['project'], query)
-            response=Response({'message': 'Batch delete successful!'},
-                              status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
-    def patch(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            self.validate_attribute_filter(params)
-            annotation_ids, annotation_count, query = get_annotation_queryset(
-                params['project'],
-                params,
-                'localization',
-            )
-            if len(annotation_ids) == 0:
-                raise ObjectDoesNotExist
-            qs = EntityBase.objects.filter(pk__in=annotation_ids)
-            new_attrs = validate_attributes(request, qs[0])
-            bulk_patch_attributes(new_attrs, qs)
-            TatorSearch().update(self.kwargs['project'], query, new_attrs)
-            response=Response({'message': 'Attribute patch successful!'},
-                              status=status.HTTP_200_OK)
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
-
-class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
+class LocalizationDetailAPI(BaseDetailView):
     """ Interact with single localization.
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -334,98 +241,78 @@ class LocalizationDetailAPI(RetrieveUpdateDestroyAPIView):
         a type of entity in Tator, meaning they can be described by user defined attributes.
     """
     schema = LocalizationDetailSchema()
-    serializer_class = EntityLocalizationSerializer
-    queryset = EntityLocalizationBase.objects.all()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
-    def patch(self, request, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            localization_object = EntityLocalizationBase.objects.get(pk=params['id'])
+    def _get(self, params):
+        return database_qs(Localization.objects.filter(pk=params['id']))[0]
 
-            # Patch frame.
-            frame = params.get("frame", None)
-            if frame:
-                localization_object.frame = frame
+    def _patch(self, params):
+        obj = Localization.objects.get(pk=params['id'])
 
-            if type(localization_object) == EntityLocalizationBox:
-                x = params.get("x", None)
-                y = params.get("y", None)
-                height = params.get("height", None)
-                width = params.get("width", None)
-                thumbnail_image = params.get("thumbnail_image", None)
-                if x:
-                    localization_object.x = x
-                if y:
-                    localization_object.y = y
-                if height:
-                    localization_object.height = height
-                if width:
-                    localization_object.width = width
+        # Patch common attributes.
+        frame = params.get("frame", None)
+        x = params.get("x", None)
+        y = params.get("y", None)
+        modified = params.get("modified", None)
+        if frame:
+            obj.frame = frame
+        if x:
+            obj.x = x
+        if y:
+            obj.y = y
+        if modified:
+            obj.modified = params["modified"]
 
-                # If the localization moved; the thumbnail is expired
-                if (x or y or height or width) and \
-                   localization_object.thumbnail_image:
-                    localization_object.thumbnail_image.delete()
+        if obj.meta.dtype == 'box':
+            height = params.get("height", None)
+            width = params.get("width", None)
+            thumbnail_image = params.get("thumbnail_image", None)
+            if height:
+                obj.height = height
+            if width:
+                obj.width = width
 
-                if thumbnail_image:
-                    try:
-                        thumbnail_obj=\
-                            EntityMediaImage.objects.get(pk=thumbnail_image)
-                        localization_object.thumbnail_image = thumbnail_obj
-                    except:
-                        logger.error("Bad thumbnail reference given")
-                # TODO we shouldn't be saving here (after patch below)
-                localization_object.save()
-            elif type(localization_object) == EntityLocalizationLine:
-                x0 = params.get("x0", None)
-                y0 = params.get("y0", None)
-                x1 = params.get("x1", None)
-                y1 = params.get("y1", None)
-                if x0:
-                    localization_object.x0 = x0
-                if y0:
-                    localization_object.y0 = y0
-                if x1:
-                    localization_object.x1 = x1
-                if y1:
-                    localization_object.y1 = y1
-                localization_object.save()
-            elif type(localization_object) == EntityLocalizationDot:
-                x = params.get("x", None)
-                y = params.get("y", None)
-                if x:
-                    localization_object.x = x
-                if y:
-                    localization_object.y = y
-                localization_object.save()
-            else:
-                # TODO: Handle lines and dots (and circles too someday.)
-                pass
+            # If the localization moved; the thumbnail is expired
+            if (x or y or height or width) and obj.thumbnail_image:
+                obj.thumbnail_image.delete()
 
-            # Patch modified field
-            if "modified" in params:
-                localization_object.modified = params["modified"]
-                localization_object.save()
+            if thumbnail_image:
+                try:
+                    thumbnail_obj = Media.objects.get(pk=thumbnail_image)
+                    obj.thumbnail_image = thumbnail_obj
+                except:
+                    logger.error("Bad thumbnail reference given")
+        elif obj.meta.dtype == 'line':
+            u = params.get("u", None)
+            v = params.get("v", None)
+            if u:
+                obj.u = u
+            if v:
+                obj.v = v
+        elif obj.meta.dtype == 'dot':
+            pass
+        else:
+            # TODO: Handle circles.
+            pass
 
-            new_attrs = validate_attributes(request, localization_object)
-            patch_attributes(new_attrs, localization_object)
+        new_attrs = validate_attributes(params, obj)
+        obj = patch_attributes(new_attrs, obj)
 
-            # Patch the thumbnail attributes
-            if localization_object.thumbnail_image:
-                patch_attributes(new_attrs, localization_object.thumbnail_image)
+        # Patch the thumbnail attributes
+        if obj.thumbnail_image:
+            obj.thumbnail_image = patch_attributes(new_attrs, obj.thumbnail_image)
+            obj.thumbnail_image.save()
 
-        except PermissionDenied as err:
-            raise
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
+        obj.save()
+        return {'message': f'Localization {params["id"]} successfully updated!'}
 
+    def _delete(self, params):
+        Localization.objects.get(pk=params['id']).delete()
+        return {'message': f'Localization {params["id"]} successfully deleted!'}
+
+    def get_queryset(self):
+        return Localization.objects.all()
+
+LocalizationDetailAPI.copy_docstrings()
