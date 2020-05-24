@@ -748,4 +748,4 @@ def fixMigrateFlatVisible():
                 types.append(type_)
             else:
                 logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
-        type_class.objects.bulk_update(types, ['attribute_types'])
+        type_class.objects.bulk_update(types, ['visible'])
