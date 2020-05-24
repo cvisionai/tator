@@ -18,7 +18,6 @@ class CustomGenerator(SchemaGenerator):
                 'Analysis': analysis,
                 'AttributeTypeSpec': attribute_type_spec,
                 'AttributeType': attribute_type,
-                'AttributeTypeList': attribute_type_list,
                 'AttributeTypeUpdate': attribute_type_update,
                 'LocalizationSpec': localization_spec,
                 'LocalizationUpdate': localization_update,
