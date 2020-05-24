@@ -187,7 +187,7 @@ class Version(Model):
     """ Tells the UI to show this version even if the current media does not
         have any annotations.
     """
-    bases = ManyToManyField('self', symmetrical=False, blank=True, null=True)
+    bases = ManyToManyField('self', symmetrical=False, blank=True)
     """ This version is a patch to an existing version. A use-case here is using one version
         for each generation of a state-based inference algorithm; all referencing localizations
         in another layer.
