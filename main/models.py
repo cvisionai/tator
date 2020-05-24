@@ -1237,6 +1237,8 @@ class Analysis(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     name = CharField(max_length=64)
     data_query = CharField(max_length=1024, default='*')
+    def __str__(self):
+        return f"{self.project} | {self.name}"
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
