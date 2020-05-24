@@ -38,7 +38,6 @@ from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
 
-from .cache import TatorCache
 from .search import TatorSearch
 
 from collections import UserDict
@@ -188,7 +187,7 @@ class Version(Model):
     """ Tells the UI to show this version even if the current media does not
         have any annotations.
     """
-    bases = ManyToManyField('self', symmetrical=False, blank=True, null=True)
+    bases = ManyToManyField('self', symmetrical=False, blank=True)
     """ This version is a patch to an existing version. A use-case here is using one version
         for each generation of a state-based inference algorithm; all referencing localizations
         in another layer.
@@ -210,7 +209,6 @@ def make_default_version(instance):
 
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_project_cache(instance.pk)
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
@@ -1007,7 +1005,6 @@ class Media(Model):
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
     TatorSearch().create_document(instance)
 
 def safe_delete(path):
@@ -1019,8 +1016,8 @@ def safe_delete(path):
 
 @receiver(pre_delete, sender=Media)
 def media_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_media_list_cache(instance.project.pk)
-    TatorSearch().delete_document(instance)
+    if instance.project:
+        TatorSearch().delete_document(instance)
     instance.file.delete(False)
     if instance.original != None:
         path = str(instance.original)
@@ -1087,7 +1084,6 @@ class Localization(Model):
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     if getattr(instance,'_inhibit', False) == False:
         TatorSearch().create_document(instance)
     else:
@@ -1095,7 +1091,6 @@ def localization_save(sender, instance, created, **kwargs):
 
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
-    TatorCache().invalidate_localization_list_cache(instance.media.pk, instance.meta.pk)
     TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
@@ -1229,14 +1224,10 @@ class Leaf(Model):
 
 @receiver(post_save, sender=Leaf)
 def leaf_save(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
     TatorSearch().create_document(instance)
 
 @receiver(pre_delete, sender=Leaf)
 def leaf_delete(sender, instance, **kwargs):
-    for ancestor in instance.computePath().split('.'):
-        TatorCache().invalidate_treeleaf_list_cache(ancestor)
     TatorSearch().delete_document(instance)
 
 class Analysis(Model):

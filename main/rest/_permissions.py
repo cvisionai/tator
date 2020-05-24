@@ -43,6 +43,8 @@ class ProjectPermissionBase(BasePermission):
             pk = view.kwargs['id']
             obj = get_object_or_404(view.get_queryset(), pk=pk)
             project = self._project_from_object(obj)
+            if project is None:
+                raise Http404
         elif 'run_uid' in view.kwargs:
             uid = view.kwargs['run_uid']
             rds = Redis(host=os.getenv('REDIS_HOST'))
