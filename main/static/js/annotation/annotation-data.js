@@ -64,7 +64,7 @@ class AnnotationData extends HTMLElement {
     const getDataUrl = dataType => {
       const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
       const dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" + 
-                      this._mediaId + "&type=" + dataType.id;
+                      this._mediaId + "&type=" + dataType.id.split("_")[1];
       return dataUrl;
     };
 
