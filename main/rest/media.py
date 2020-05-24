@@ -97,9 +97,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             state_loc_qs._raw_delete(state_loc_qs.db)
             loc_qs._raw_delete(loc_qs.db)
 
-            # Delete the media.
+            # Mark media for deletion by setting project to null.
             qs = Media.objects.filter(pk__in=media_ids)
-            qs._raw_delete(qs.db)
+            qs.update(project=None)
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -204,7 +204,9 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        Media.objects.get(pk=params['id']).delete()
+        qs = Media.objects.filter(pk=params['id'])
+        TatorSearch().delete_document(qs[0])
+        qs.update(project=None)
         return {'message': 'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
