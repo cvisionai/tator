@@ -326,7 +326,7 @@ def attrTypeToDict(type_):
               attribute_types.append({
                   'name': attr_type.name,
                   'description': attr_type.description,
-                  'dtype': 'datetime',
+                  'dtype': 'geopos',
                   'default': list(attr_type.default) if attr_type.default is not None else None,
               })
     return attribute_types
@@ -749,3 +749,18 @@ def fixMigrateFlatVisible():
             else:
                 logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
         type_class.objects.bulk_update(types, ['visible'])
+
+def fixMigrateFlatAttributeTypeGeopos():
+    """ Fixes dtype of geoposition attributes.
+    """
+    for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        types = []
+        for type_ in type_class.objects.all():
+            attribute_types = AttributeTypeGeoposition.objects.filter(applies_to=type_.polymorphic)
+            for attr_type in attribute_types:
+                for flat_attr_type in type_.attribute_types:
+                    if flat_attr_type['name'] == attr_type.name:
+                        flat_attr_type['dtype'] = 'geopos'
+            types.append(type_)
+        type_class.objects.bulk_update(types, ['attribute_types'])
+    
