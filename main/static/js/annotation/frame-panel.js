@@ -47,7 +47,7 @@ class FramePanel extends TatorElement {
         if (index === -1) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
-            type: val.id,
+            type: Number(val.id.split("_")[1]),
             name: val.name,
             media_ids: [mediaId],
             frame: this._frame,
@@ -71,7 +71,7 @@ class FramePanel extends TatorElement {
         if (this._data._dataByType.get(typeObj.id).length == 0) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
-            type: val.id,
+            type: Number(val.id.split("_")[1]),
             name: val.name,
             media_ids: [mediaId],
             frame: 0,
