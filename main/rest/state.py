@@ -179,7 +179,8 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                           modified=state_spec.get('modified', None),
                           created_by=self.request.user,
                           modified_by=self.request.user,
-                          version=versions[state_spec.get('version', None)])
+                          version=versions[state_spec.get('version', None)],
+                          frame=state_spec.get('frame', None))
             create_buffer.append(state)
             if len(create_buffer) > 1000:
                 states += State.objects.bulk_create(create_buffer)
