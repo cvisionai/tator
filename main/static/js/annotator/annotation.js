@@ -891,7 +891,7 @@ class AnnotationCanvas extends TatorElement
       var element=data[idx];
 
       var frameId=data[idx]['frame'];
-      var typeid = data[idx].meta;
+      var typeid = typeObj.id;
       if (this.activeLocalization) {
         if (data[idx].id == this.activeLocalization.id) {
           this.activeLocalization = {
