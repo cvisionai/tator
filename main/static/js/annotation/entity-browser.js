@@ -218,7 +218,9 @@ class EntityBrowser extends TatorElement {
       group = "All " + this._title.textContent;
     }
     const selector = this._selectors[group];
-    selector.selectEntity(obj);
+    if (selector) { // Selector may not exist if element was deleted.
+      selector.selectEntity(obj);
+    }
   }
 
   _closeBesides(selector) {
