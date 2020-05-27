@@ -180,7 +180,7 @@ class UndoBuffer extends HTMLElement {
           body = {
             media_id: data.media,
             frame: data.frame,
-            type: dataType.id,
+            type: Number(dataType.id.split("_")[1]),
             version: data.version,
             x: data.x,
             y: data.y,
@@ -204,7 +204,7 @@ class UndoBuffer extends HTMLElement {
             media_ids: data.media,
             localization_ids: data.localizations,
             frame: data.frame,
-            type: dataType.id,
+            type: Number(dataType.id.split("_")[1]),
             version: data.version,
             ...data.attributes,
           };
