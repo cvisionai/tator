@@ -244,9 +244,9 @@ class UndoBuffer extends HTMLElement {
           promise
           .then(response => response.json())
           .then(data => {
-            this._emitUpdate(method, data.id, body, dataType);
+            this._emitUpdate(method, data.id[0], body, dataType);
             const delId = this._forwardOps[this._index][opIndex][2];
-            const newId = data.id;
+            const newId = data.id[0];
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
                 if (op[2] == delId || op[2] == null) {
@@ -274,9 +274,9 @@ class UndoBuffer extends HTMLElement {
           promise
           .then(response => response.json())
           .then(data => {
-            this._emitUpdate(method, data.id, body, dataType);
+            this._emitUpdate(method, data.id[0], body, dataType);
             const delId = this._backwardOps[this._index - 1][opIndex][2];
-            const newId = data.id;
+            const newId = data.id[0];
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
                 if (op[2] == delId || op[2] == null) {
