@@ -254,15 +254,14 @@ class LocalizationDetailAPI(BaseDetailView):
         frame = params.get("frame", None)
         x = params.get("x", None)
         y = params.get("y", None)
-        modified = params.get("modified", None)
         if frame:
             obj.frame = frame
         if x:
             obj.x = x
         if y:
             obj.y = y
-        if modified:
-            obj.modified = params["modified"]
+        if 'modified' in params:
+            obj.modified = params['modified']
 
         if obj.meta.dtype == 'box':
             height = params.get("height", None)

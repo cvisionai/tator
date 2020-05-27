@@ -287,7 +287,13 @@ class LocalizationDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'properties': localization_properties,
+                    'properties': {
+                        **localization_properties,
+                        'modified': {
+                            'description': 'Whether this localization was created in the web UI.',
+                            'type': 'boolean',
+                        },
+                    },
                 },
                 'example': {
                     'x': 0.25,
