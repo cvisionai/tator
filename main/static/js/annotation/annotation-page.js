@@ -170,11 +170,16 @@ class AnnotationPage extends TatorPage {
           const entityId = Number(searchParams.get("selected_entity"));
           this._settings.setAttribute("entity-type", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          const data = this._data._dataByType.get(typeId);
-          for (const elem of data) {
-            if (elem.id == entityId) {
-              this._browser.selectEntity(elem);
-              break;
+          for (const dtype of ['state', 'box', 'line', 'dot']) {
+            let modifiedTypeId = dtype + "_" + typeId;
+            if (this._data._dataByType.has(modifiedTypeId)) {
+              const data = this._data._dataByType.get(modifiedTypeId);
+              for (const elem of data) {
+                if (elem.id == entityId) {
+                  this._browser.selectEntity(elem);
+                  break;
+                }
+              }
             }
           }
         }
