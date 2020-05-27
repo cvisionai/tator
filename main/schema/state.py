@@ -170,7 +170,13 @@ class StateDetailSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'object',
-                    'properties': state_properties,
+                    'properties': {
+                        **state_properties,
+                        'modified': {
+                            'description': 'Whether this localization was created in the web UI.',
+                            'type': 'boolean',
+                        },
+                    },
                 },
                 'example': {
                     'frame': 1001,
