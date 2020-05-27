@@ -114,16 +114,15 @@ class CanvasDrag
     document.removeEventListener("mouseup", this._mouseUpBound);
     document.removeEventListener("mousemove", this._mouseMoveBound);
     // If the event ended off canvas; use the last known good coordinate
-    if (event.path[0] == this._canvas)
-    {
+    this._event.end.x = last.x;
+    this._event.end.y = last.y;
+    if (event.path) {
+      if (event.path[0] == this._canvas)
+      {
 
-      this._event.end.x = (event.pageX-this._canvas.offsetLeft)*scale[0];
-      this._event.end.y = (event.pageY-this._canvas.offsetTop)*scale[1];
-    }
-    else
-    {
-      this._event.end.x = last.x;
-      this._event.end.y = last.y;
+        this._event.end.x = (event.pageX-this._canvas.offsetLeft)*scale[0];
+        this._event.end.y = (event.pageY-this._canvas.offsetTop)*scale[1];
+      }
     }
     this._event.end.time = Date.now();
     this._event.duration = this._event.end.time - this._event.start.time;
