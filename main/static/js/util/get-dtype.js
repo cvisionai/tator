@@ -3,9 +3,9 @@ function getDtype(obj) {
   let dtype = "state";
   if (typeof obj.x !== "undefined") {
     dtype = "dot";
-    if (obj.width !== null) {
+    if (obj.width !== null && typeof obj.width !== "undefined") {
       dtype = "box";
-    } else if (obj.u !== null) {
+    } else if (obj.u !== null && typeof obj.u !== "undefined") {
       dtype = "line";
     }
   }
