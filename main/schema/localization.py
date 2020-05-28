@@ -35,13 +35,13 @@ localization_properties = {
     'u': {
         'description': 'Horizontal vector component for `line` localization types.',
         'type': 'number',
-        'minimum': 0.0,
+        'minimum': -1.0,
         'maximum': 1.0,
     },
     'v': {
         'description': 'Vertical vector component for `line` localization types.',
         'type': 'number',
-        'minimum': 0.0,
+        'minimum': -1.0,
         'maximum': 1.0,
     },
     'frame': {
@@ -101,6 +101,7 @@ class LocalizationListSchema(AutoSchema):
                             'modified': {
                                 'description': 'Whether this localization was created in the web UI.',
                                 'type': 'boolean',
+                                'nullable': True,
                             },
                             **localization_properties,
                         },
@@ -292,6 +293,7 @@ class LocalizationDetailSchema(AutoSchema):
                         'modified': {
                             'description': 'Whether this localization was created in the web UI.',
                             'type': 'boolean',
+                            'nullable': True,
                         },
                     },
                 },
