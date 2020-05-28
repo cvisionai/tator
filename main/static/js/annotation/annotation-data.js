@@ -37,6 +37,9 @@ class AnnotationData extends HTMLElement {
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
     const localTypeIds=[];
+
+    // Clear the track database
+    this._trackDb = new Map();
     for (const [idx, dataType] of dataTypes.entries()) {
       let isLocalization=false;
       let isTrack=false;
