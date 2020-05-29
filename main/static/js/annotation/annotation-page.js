@@ -182,11 +182,15 @@ class AnnotationPage extends TatorPage {
               }
             }
           }
-        }
-        if (haveType) {
+        } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
-          this._browser._openForTypeId(typeId);
+          for (const dtype of ['state', 'box', 'line', 'dot']) {
+            let modifiedTypeId = dtype + "_" + typeId;
+            if (this._data._dataByType.has(modifiedTypeId)) {
+              this._browser._openForTypeId(modifiedTypeId);
+            }
+          }
         }
         if (haveVersion)
         {
