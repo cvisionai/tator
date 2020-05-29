@@ -435,6 +435,7 @@ class AnnotationCanvas extends TatorElement
     this._canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
     this._canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
     this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
+    this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
     this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
@@ -1135,6 +1136,17 @@ class AnnotationCanvas extends TatorElement
     var scale = this._draw.displayToViewportScale();
     return [location[0]*scale[0], location[1]*scale[1]];
   }
+
+  mouseOutHandler(mouseEvent)
+  {
+    this._canvas.classList.remove("select-pointer");
+    if (this._emphasis != null && this._emphasis != this.activeLocalization)
+    {
+      this._emphasis = null;
+      this.refresh();
+    }
+  }
+
   mouseOverHandler(mouseEvent)
   {
     var that = this;
