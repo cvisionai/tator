@@ -33,9 +33,9 @@ class AnnotationImage extends TatorElement {
     this._image.annotationData = val;
   }
 
-  newMetadataItem(dtype, metaMode) {
+  newMetadataItem(dtype, metaMode, objId) {
     this._image.style.cursor = "crosshair";
-    this._image.newMetadataItem(dtype, metaMode);
+    this._image.newMetadataItem(dtype, metaMode, objId);
   }
 
   submitMetadata(data) {

@@ -101,7 +101,7 @@ class UndoBuffer extends HTMLElement {
 
   patch(detailUri, id, body, dataType) {
     const projectId = this.getAttribute("project-id");
-    const promise = this._get(detailUri, id, dataType.id);
+    const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
         let other;
@@ -111,18 +111,6 @@ class UndoBuffer extends HTMLElement {
             frame: data.frame,
             type: data.meta,
           };
-          if (data.u === null) {
-            delete data.u;
-          }
-          if (data.v === null) {
-            delete data.v;
-          }
-          if (data.width === null) {
-            delete data.width;
-          }
-          if (data.height === null) {
-            delete data.height;
-          }
         } else if (detailUri == "State") {
           other = {
             media_ids: data.media,
@@ -172,7 +160,7 @@ class UndoBuffer extends HTMLElement {
   }
 
   del(detailUri, id, dataType) {
-    const promise = this._get(detailUri, id, dataType.id);
+    const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
         let body;
@@ -296,8 +284,8 @@ class UndoBuffer extends HTMLElement {
     }
   }
 
-  _get(detailUri, id, typeId) {
-    const url = "/rest/" + detailUri + "/" + id + "?type=" + typeId;
+  _get(detailUri, id) {
+    const url = "/rest/" + detailUri + "/" + id;
     return fetchRetry(url, {
       method: "GET",
       ...this._headers(),

@@ -11,6 +11,7 @@ localization_properties = {
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'y': {
         'description': 'Normalized vertical position of top edge of bounding box for '
@@ -19,34 +20,40 @@ localization_properties = {
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'width': {
         'description': 'Normalized width of bounding box for `box` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'height': {
         'description': 'Normalized height of bounding box for `box` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'u': {
         'description': 'Horizontal vector component for `line` localization types.',
         'type': 'number',
         'minimum': -1.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'v': {
         'description': 'Vertical vector component for `line` localization types.',
         'type': 'number',
         'minimum': -1.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'frame': {
         'description': 'Frame number of this localization if it is in a video.',
         'type': 'integer',
+        'default': 0,
     },
     'attributes': {
         'description': 'Object containing attribute values.',

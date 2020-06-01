@@ -363,6 +363,7 @@ FILES = \
     annotation/entity-prev-button.js \
     annotation/entity-next-button.js \
     annotation/entity-delete-button.js \
+    annotation/entity-redraw-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
