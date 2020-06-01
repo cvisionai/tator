@@ -122,10 +122,7 @@ class AnnotationBrowser extends TatorElement {
   }
 
   selectEntity(obj) {
-    let typeId = obj.meta;
-    if (typeof typeId != "string") {
-      typeId = getDtype(obj) + "_" + obj.meta;
-    }
+    const typeId = obj.meta;
     this._openForTypeId(typeId);
     if (typeId in this._entityPanels)
     {

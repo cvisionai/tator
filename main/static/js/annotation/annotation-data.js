@@ -217,6 +217,7 @@ class AnnotationData extends HTMLElement {
       }
     })
     .then(json => {
+      json.forEach(obj => {obj.meta = typeId});
       this._dataByType.set(typeId, json);
       this.dispatchEvent(new CustomEvent("freshData", {
         detail: {

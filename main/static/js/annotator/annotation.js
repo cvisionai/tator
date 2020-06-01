@@ -1769,10 +1769,7 @@ class AnnotationCanvas extends TatorElement
   getObjectDescription(localization)
   {
     var objDescription = null;
-    let key = localization.meta;
-    if (typeof localization.meta != "string") { 
-      key = getDtype(localization) + "_" + localization.meta;
-    }
+    const key = localization.meta;
     if (key in this._data._dataTypes)
     {
       return objDescription=this._data._dataTypes[key];
