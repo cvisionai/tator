@@ -143,7 +143,7 @@ class AnnotationData extends HTMLElement {
     const attributeNames = typeObj.attribute_types.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
-      obj.meta = Number(typeId.split("_")[1]);
+      obj.meta = typeId;
       obj.attributes = {};
       for (const key in body) {
         if (attributeNames.includes(key)) {
