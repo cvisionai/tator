@@ -1,6 +1,10 @@
 import tempfile
 import logging
 
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import response
+
 from ..models import State
 from ..renderers import PngRenderer
 from ..renderers import JpegRenderer
@@ -22,6 +26,17 @@ class StateGraphicAPI(BaseDetailView):
 
     def get_queryset(self):
         return State.objects.all()
+
+    def handle_exception(self,exc):
+        status_obj = status.HTTP_400_BAD_REQUEST
+        if type(exc) is response.Http404:
+            status_obj = status.HTTP_404_NOT_FOUND
+        return Response(
+            MediaUtil.generate_error_image(
+                status_obj,
+                str(exc),
+                self.request.accepted_renderer.format),
+            status=status_obj)
 
     def _get(self, params):
         """ Get frame(s) of a given localization-associated state.

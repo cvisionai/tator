@@ -1,13 +1,17 @@
 import tempfile
 import logging
 
+from rest_framework.response import Response
+from rest_framework import status
+from django.http import response
+
 from ..models import Media
 from ..renderers import PngRenderer
 from ..renderers import JpegRenderer
 from ..renderers import GifRenderer
 from ..renderers import Mp4Renderer
 from ..schema import GetFrameSchema
-
+from ..schema import parse
 from ._base_views import BaseDetailView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
@@ -22,6 +26,17 @@ class GetFrameAPI(BaseDetailView):
 
     def get_queryset(self):
         return Media.objects.all()
+
+    def handle_exception(self,exc):
+        status_obj = status.HTTP_400_BAD_REQUEST
+        if type(exc) is response.Http404:
+            status_obj = status.HTTP_404_NOT_FOUND
+        return Response(
+            MediaUtil.generate_error_image(
+                status_obj,
+                str(exc),
+                self.request.accepted_renderer.format),
+            status=status_obj)
 
     def _get(self, params):
         """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
@@ -93,4 +108,3 @@ class GetFrameAPI(BaseDetailView):
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data
-
