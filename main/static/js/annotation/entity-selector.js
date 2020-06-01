@@ -147,6 +147,15 @@ class EntitySelector extends TatorElement {
       this._undo.del(endpoint, this._data[index].id, this._dataType);
     });
 
+    redraw.addEventListener("click", () => {
+      const index = parseInt(this._current.textContent) - 1;
+      this.dispatchEvent(new CustomEvent("patchMeta", {
+        detail: {typeId: this._dataType.id,
+                 objId: this._data[index].id},
+        composed: true,
+      }));
+    });
+
     more.addEventListener("click", () => {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {

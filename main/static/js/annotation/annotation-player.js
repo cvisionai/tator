@@ -262,9 +262,9 @@ class AnnotationPlayer extends TatorElement {
     this._timeline.annotationData = val;
   }
 
-  newMetadataItem(dtype, metaMode) {
+  newMetadataItem(dtype, metaMode, objId) {
     this._video.style.cursor = "crosshair";
-    this._video.newMetadataItem(dtype, metaMode);
+    this._video.newMetadataItem(dtype, metaMode, objId);
   }
 
   submitMetadata(data) {
