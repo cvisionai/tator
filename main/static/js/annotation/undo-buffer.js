@@ -111,18 +111,6 @@ class UndoBuffer extends HTMLElement {
             frame: data.frame,
             type: data.meta,
           };
-          if (data.u === null) {
-            delete data.u;
-          }
-          if (data.v === null) {
-            delete data.v;
-          }
-          if (data.width === null) {
-            delete data.width;
-          }
-          if (data.height === null) {
-            delete data.height;
-          }
         } else if (detailUri == "State") {
           other = {
             media_ids: data.media,
