@@ -3,6 +3,7 @@ import logging
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import response
@@ -19,9 +20,13 @@ def process_exception(exc):
         return Response({'message' : str(exc)},
                         status=status.HTTP_404_NOT_FOUND)
     elif type(exc) is ObjectDoesNotExist:
-        logger.error(f"Not found in GET request: {str(dne)}")
+        logger.error(f"Not found in GET request: {str(exc)}")
         return Response({'message' : str(exc)},
                         status=status.HTTP_404_NOT_FOUND)
+    elif type(exc) is PermissionDenied:
+        logger.error(f"Permission denied error: {str(exc)}")
+        return Response({'message': str(exc)},
+                         status=status.HTTP_403_FORBIDDEN)
     else:
         logger.error(f"Exception in request: {traceback.format_exc()}")
         return Response({'message' : str(exc),
