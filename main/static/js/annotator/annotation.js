@@ -448,6 +448,7 @@ class AnnotationCanvas extends TatorElement
     this._lastAutoTrackColor = null;
     this._domParents = [];
     this._metaMode = false;
+    this._redrawObjId = null;
 
     try
     {
@@ -1745,7 +1746,8 @@ class AnnotationCanvas extends TatorElement
   }
 
   // Construct a new metadata type based on the argument provided
-  newMetadataItem(typeId, metaMode)
+  // objId given if this is to redraw an existing annotation
+  newMetadataItem(typeId, metaMode, objId)
   {
     if ("pause" in this) {
       this.pause();
@@ -1759,6 +1761,7 @@ class AnnotationCanvas extends TatorElement
       this._canvas.classList.add("select-draw");
       updateStatus("Ready for annotation.", "primary", -1);
       this._metaMode = metaMode;
+      this._redrawObjId = objId;
     }
     else
     {
@@ -1835,17 +1838,21 @@ class AnnotationCanvas extends TatorElement
       requestObj.frame = this.currentFrame();
     }
 
-
-    // Drag info is now in DOM coordinates
-    this.dispatchEvent(new CustomEvent("create", {
-      detail: {
-        objDescription: objDescription,
-        dragInfo: this.normalizeDrag(dragInfo),
-        requestObj: requestObj,
-        metaMode: this._metaMode
-      },
-      composed: true,
-    }));
+    if (this._redrawObjId !== null) {
+      this._undo.patch("Localization", this._redrawObjId, requestObj, objDescription);
+      this._redrawObjId = null;
+    } else {
+      // Drag info is now in DOM coordinates
+      this.dispatchEvent(new CustomEvent("create", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: requestObj,
+          metaMode: this._metaMode
+        },
+        composed: true,
+      }));
+    }
   }
 
   normalizeDrag(drag)
