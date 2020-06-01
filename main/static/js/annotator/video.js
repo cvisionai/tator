@@ -226,7 +226,7 @@ class VideoBufferDemux
       // If the time is comfortably in the range don't bother getting
       // additional data
       let timeFromStart = time - this._seekVideo.buffered.start(idx);
-      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.90;
+      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.75;
       if (timeFromStart <= bufferedLength && timeFromStart > 0)
       {
         return this._seekVideo;
@@ -345,8 +345,23 @@ class VideoBufferDemux
       {
         for (let idx = 0; idx < this._seekBuffer.buffered.length; idx++)
         {
-          this._pendingSeeks.push({"delete_range": [this._seekBuffer.buffered.start(idx),
-                                                    this._seekBuffer.buffered.end(idx)]});
+          let begin = this._seekBuffer.buffered.start(idx);
+          let end = this._seekBuffer.buffered.end(idx);
+
+          // If the seek buffer has 3 seconds extra on either side
+          // of the request chop of 1 seconds on either side this
+          // means there is a maximum of ~4 second buffer in the
+          // hq seek buffer.
+          if (begin < time - 3)
+          {
+            this._pendingSeeks.push({"delete_range": [begin,
+                                                      time - 1]});
+          }
+          if (end > time + 3)
+          {
+            this._pendingSeeks.push({"delete_range": [time+1,
+                                                      end]});
+          }
         }
         this._seekBuffer.appendBuffer(data);
       }
@@ -1163,7 +1178,6 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   /// Returns the raw HTML5 buffer for a given frame (default current)
-  /// TODO: Add strategy for multires
   videoBuffer(frame, forceSeekBuffer)
   {
     if (frame == undefined)
