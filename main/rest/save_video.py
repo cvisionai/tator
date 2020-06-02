@@ -111,7 +111,7 @@ class SaveVideoAPI(APIView):
                     streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
                     streaming.append(streaming_format)
 
-            media_files['streaming'] = streaming
+                media_files['streaming'] = streaming
 
             # Handle audio patch
             if new_media_files.get('audio',None):
@@ -120,7 +120,7 @@ class SaveVideoAPI(APIView):
                      upload_uids[f"audio_{idx}_file"] = audio_format['url'].split('/')[-1]
                      res_uid = str(uuid1())
                      save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
-                     del streaming_format['url']
+                     del audio_format['url']
                      logger.info(save_paths[f"audio_{idx}_file"])
                      logger.info(os.path.relpath(save_paths[f"audio_{idx}_file"], "/data"))
                      audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
