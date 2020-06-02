@@ -48,7 +48,7 @@ class SaveImageAPI(APIView):
             project = params['project']
 
             if int(entity_type) == -1:
-                media_types = MediaType.objects.filter(project=project)
+                media_types = MediaType.objects.filter(project=project, dtype='image')
                 if media_types.count() > 0:
                     media_type = media_types[0]
                     entity_type = media_type.pk

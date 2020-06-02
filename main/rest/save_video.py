@@ -204,7 +204,7 @@ class SaveVideoAPI(APIView):
             # Use the first video type available
             if int(entity_type) == -1:
                 media_types = MediaType.objects.filter(
-                    project=project)
+                    project=project, dtype='video')
                 if media_types.count() > 0:
                     media_type = media_types[0]
                     entity_type = media_type.pk
