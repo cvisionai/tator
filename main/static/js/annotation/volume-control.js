@@ -14,26 +14,67 @@ class VolumeControl extends TatorElement {
     // By default use max volume icon
     button.appendChild(this._maxVol);
 
+    this.setupControls();
     this._shown = false;
+
 
     button.addEventListener("click", (evt) => {
       if (this._shown)
       {
-        this.hide();
+        this.fadeOut();
       }
       else
       {
-        this.showControls();
+        this.fadeIn();
         evt.stopPropagation();
-        this._timeout = setTimeout(this.hide.bind(this),
+        this._timeout = setTimeout(this.fadeOut.bind(this),
                                    2500);
       }
     });
   }
 
+  fadeOut()
+  {
+    clearTimeout(this._timeout);
+    let opacity = 100;
+    let animation = () => {
+      opacity = opacity - 3.5;
+      if (opacity <= 0)
+      {
+        this.hide();
+      }
+      else
+      {
+        this._div.style.opacity = opacity/100;
+        requestAnimationFrame(animation);
+      }
+    };
+    animation();
+  }
+
+  fadeIn()
+  {
+    this._div.style.display="flex";
+    // Center horizontally
+    const left = (-this._div.clientWidth/2);
+    this._div.style.left = `${left}px`;
+    this._shown = true;
+    clearTimeout(this._timeout);
+    let opacity = 0;
+    let animation = () => {
+      opacity = opacity + 3.5;
+      if (opacity < 100)
+      {
+        this._div.style.opacity = opacity/100;
+        requestAnimationFrame(animation);
+      }
+    };
+    animation();
+  }
+
   hide()
   {
-    this._button.removeChild(this._div);
+    this._div.style.display="none";
     this._shown = false;
   }
 
@@ -89,9 +130,8 @@ class VolumeControl extends TatorElement {
     this._mute.appendChild(line);
   }
 
-  showControls()
+  setupControls()
   {
-    this._shown = true;
     this._div = document.createElement("div");
     this._div.setAttribute("class", "py-2 px-2");
     this._div.style.align="center";
@@ -100,7 +140,7 @@ class VolumeControl extends TatorElement {
 
     // TODO: Move this into css
     this._div.style.background = "#151b28";
-    this._div.style.display = "flex";
+    this._div.style.display = "none";
     this._button.appendChild(this._div);
 
     this._div.addEventListener("click", (evt) => {
@@ -122,18 +162,14 @@ class VolumeControl extends TatorElement {
     volume.addEventListener("change",() => {
       this.volumeUpdated();
       volume.blur();
-      this._timeout = setTimeout(this.hide.bind(this),
-                                 2500);
+      this._timeout = setTimeout(this.fadeOut.bind(this),
+                                 1500);
     });
 
     volume.addEventListener("input",() => {
       this.volumeUpdated();
       clearTimeout(this._timeout);
     });
-
-    // Center horizontally
-    const left = (-this._div.clientWidth/2);
-    this._div.style.left = `${left}px`;
   }
 
   volumeUpdated()
