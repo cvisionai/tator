@@ -73,36 +73,40 @@ def transcode(path, outpath):
 
     os.makedirs(outpath, exist_ok=True)
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-i", path,
-        "-i", "/scripts/black.mp4"
-    ]
+    #Remove audio token
+    try:
+        resolutions.remove('audio')
+    except:
+        pass
+    if len(resolutions) > 0:
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", path,
+            "-i", "/scripts/black.mp4"
+        ]
 
-    per_res = ["-an",
-        "-metadata:s", "handler_name=tator",
-        "-vcodec", "libx264",
-        "-g", "25",
-        "-preset", "fast",
-        "-pix_fmt", "yuv420p",
-        "-movflags",
-        "faststart+frag_keyframe+empty_moov+default_base_moof",
-        "-tune", "fastdecode",]
+        per_res = ["-an",
+            "-metadata:s", "handler_name=tator",
+            "-vcodec", "libx264",
+            "-g", "25",
+            "-preset", "fast",
+            "-pix_fmt", "yuv420p",
+            "-movflags",
+            "faststart+frag_keyframe+empty_moov+default_base_moof",
+            "-tune", "fastdecode",]
 
-    print(f"Transcoding to {resolutions}")
-    for ridx, resolution in enumerate(resolutions):
-        if resolution == 'audio':
-            continue
-        logger.info(f"Generating resolution @ {resolution}")
-        output_file = os.path.join(outpath, f"{resolution}.mp4")
-        cmd.extend([*per_res,
-                    "-filter_complex",
-                    # Scale the black mp4 to the input resolution prior to concating and scaling back down.
-                    f"[1:v:0]scale={vid_dims[1]}:{vid_dims[0]},setsar=1[bv{ridx}];[0:v:0][bv{ridx}]concat=n=2:v=1:a=0[rv{ridx}];[rv{ridx}]scale=-2:{resolution}[catv{ridx}];[catv{ridx}]pad=ceil(iw/2)*2:ceil(ih/2)*2[outv{ridx}]",
-                    "-map", f"[outv{ridx}]",
-                    output_file])
-    logger.info('ffmpeg cmd = {}'.format(cmd))
-    subprocess.run(cmd, check=True)
+        print(f"Transcoding to {resolutions}")
+        for ridx, resolution in enumerate(resolutions):
+            logger.info(f"Generating resolution @ {resolution}")
+            output_file = os.path.join(outpath, f"{resolution}.mp4")
+            cmd.extend([*per_res,
+                        "-filter_complex",
+                        # Scale the black mp4 to the input resolution prior to concating and scaling back down.
+                        f"[1:v:0]scale={vid_dims[1]}:{vid_dims[0]},setsar=1[bv{ridx}];[0:v:0][bv{ridx}]concat=n=2:v=1:a=0[rv{ridx}];[rv{ridx}]scale=-2:{resolution}[catv{ridx}];[catv{ridx}]pad=ceil(iw/2)*2:ceil(ih/2)*2[outv{ridx}]",
+                        "-map", f"[outv{ridx}]",
+                        output_file])
+        logger.info('ffmpeg cmd = {}'.format(cmd))
+        subprocess.run(cmd, check=True)
 
     if audio:
         logger.info("Extracting audio")
