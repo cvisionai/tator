@@ -92,7 +92,7 @@ class AttributePanel extends TatorElement {
 
       // Set whether this widget is required
       if (typeof column.required === "undefined") {
-        widget.required = true;
+        widget.required = false;
       } else {
         widget.required = column.required;
       }
