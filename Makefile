@@ -374,6 +374,7 @@ FILES = \
     annotation/version-button.js \
     annotation/version-select.js \
     annotation/version-dialog.js \
+    annotation/volume-control.js \
     third_party/autocomplete.js \
     utilities.js
 
