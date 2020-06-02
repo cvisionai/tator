@@ -94,21 +94,36 @@ class SaveVideoAPI(APIView):
 
             upload_uids = {}
             save_paths = {}
-            streaming = media_files.get('streaming',[])
-            for idx,streaming_format in enumerate(new_media_files['streaming']):
-                upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
-                upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
 
-                res_uid = str(uuid1())
-                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
-                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
-                del streaming_format['url']
-                del streaming_format['segment_info_url']
-                streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
-                streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
-                streaming.append(streaming_format)
+            # Handle new streaming files (new resolutions)
+            if new_media_files.get('streaming',None):
+                streaming = media_files.get('streaming',[])
+                for idx,streaming_format in enumerate(new_media_files['streaming']):
+                    upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
+                    upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
+
+                    res_uid = str(uuid1())
+                    save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
+                    save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
+                    del streaming_format['url']
+                    del streaming_format['segment_info_url']
+                    streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
+                    streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
+                    streaming.append(streaming_format)
 
             media_files['streaming'] = streaming
+
+            # Handle audio patch
+            if new_media_files.get('audio',None):
+                audio=media_files.get('audio', [])
+                for idx,audio_format in enumerate(new_media_files['audio']):
+                     upload_uids[f"audio_{idx}_file"] = audio_format['url'].split('/')[-1]
+                     res_uid = str(uuid1())
+                     save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
+                     del streaming_format['url']
+                     audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
+                     audio.append(audio_format)
+                media_files['audio'] = audio
 
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid)
