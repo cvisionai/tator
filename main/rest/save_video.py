@@ -29,7 +29,7 @@ class SaveVideoAPI(APIView):
     """ Saves a transcoded video.
 
         Videos in Tator must be transcoded to a multi-resolution streaming format before they
-        can be viewed or annotated. To launch a transcode on raw uploaded video, use the 
+        can be viewed or annotated. To launch a transcode on raw uploaded video, use the
         `Transcode` endpoint, which will create an Argo workflow to perform the transcode
         and save the video using this endpoint; no further REST calls are required. However,
         if you would like to perform transcodes locally, this endpoint enables that. The
@@ -258,6 +258,13 @@ class SaveVideoAPI(APIView):
                 streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
                 streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
 
+            for idx,audio_format in enumerate(media_files.get('audio',[])):
+                upload_uids[f"audio_{idx}_file"] = audio_format['url'].split('/')[-1]
+                res_uid = str(uuid1())
+                save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
+                del audio_format['url']
+                audio_format['path'] = save_paths[f"audio_{idx}_file"]
+
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid)
                 for key, uid in upload_uids.items()
@@ -350,4 +357,3 @@ class SaveVideoAPI(APIView):
                     if os.path.exists(info_path):
                         os.remove(info_path)
             return response;
-
