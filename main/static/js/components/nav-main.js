@@ -19,6 +19,12 @@ class NavMain extends TatorElement {
     projects.textContent = "Projects";
     this._primary.appendChild(projects);
 
+    const changePassword = document.createElement("a");
+    changePassword.setAttribute("class", "nav__link");
+    changePassword.setAttribute("href", "/accounts/password_change");
+    changePassword.textContent = "Change password";
+    this._primary.appendChild(changePassword);
+
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
     logout.setAttribute("href", "/accounts/logout/");
