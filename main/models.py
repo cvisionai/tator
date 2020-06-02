@@ -1273,6 +1273,15 @@ def database_query(query):
         aq=datetime.datetime.now()
         l=[make_dict(cursor.description, x) for x in cursor]
         af=datetime.datetime.now()
-        print(f"Query = {aq-bq}")
-        print(f"List = {af-aq}")
+        logger.info(f"Query = {aq-bq}")
+        logger.info(f"List = {af-aq}")
     return l
+
+def database_query_ids(table, ids, order):
+    """ Given table name and list of IDs, do query using a subquery expression.
+    """
+    query = (f'SELECT * FROM \"{table}\" WHERE \"{table}\".\"id\" IN '
+             f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
+             f'ORDER BY {order}')
+    return database_query(query)
+
