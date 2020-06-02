@@ -5,9 +5,34 @@ class VolumeControl extends TatorElement {
     const button = document.createElement("div");
     button.setAttribute("class", "d-flex btn-clear px-2 h2 text-gray hover-text-white");
     button.style.position="relative";
+    button.style.cursor="pointer";
     this._shadow.appendChild(button);
     this._volume = 75;
+    this._button = button;
+    this.setupIcons();
 
+    // By default use max volume icon
+    button.appendChild(this._maxVol);
+
+    this._shown = false;
+
+    button.addEventListener("click", (evt) => {
+      if (this._shown)
+      {
+        button.removeChild(this._div);
+        this._shown = false;
+        evt.stopPropagation();
+      }
+      else
+      {
+        this.showControls();
+        evt.stopPropagation();
+      }
+    });
+  }
+
+  setupIcons()
+  {
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("height", "1em");
@@ -20,34 +45,42 @@ class VolumeControl extends TatorElement {
     // override CSS for this icon
     svg.style.fill = "none";
     svg.style.display = "block";
-    button.appendChild(svg);
-    this._button = button;
 
-    const title = document.createElementNS(svgNamespace, "title");
-    title.textContent = "Adjust Volume";
-    svg.appendChild(title);
+    this._maxVol = svg;
+    this._minVol = svg.cloneNode();
+    this._noVol = svg.cloneNode();
+    this._mute = svg.cloneNode();
 
-    const poly = document.createElementNS(svgNamespace, "polygon");
+    // Setup different volume icons
+    // All volumes have a speaker
+    let poly = document.createElementNS(svgNamespace, "polygon");
     poly.setAttribute("points", "11 5 6 9 2 9 2 15 6 15 11 19 11 5");
-    svg.appendChild(poly);
+    this._maxVol.appendChild(poly.cloneNode());
+    this._minVol.appendChild(poly.cloneNode());
+    this._noVol.appendChild(poly.cloneNode());
+    this._mute.appendChild(poly.cloneNode());
 
-    const path = document.createElementNS(svgNamespace, "path");
+    // Max vol has a longer path (2 lines), min has 1 line, no has none
+    let path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07");
-    svg.appendChild(path);
+    this._maxVol.appendChild(path);
+    path = document.createElementNS(svgNamespace, "path");
+    path.setAttribute("d", "M15.54 8.46a5 5 0 0 1 0 7.07");
+    this._minVol.appendChild(path);
 
-    this._shown = false;
-
-    button.addEventListener("click", (evt) => {
-      if (this._shown)
-      {
-        button.removeChild(this._div);
-        this._shown = false;
-      }
-      else
-      {
-        this.showControls();
-      }
-    });
+    // Mute has an X instead of lines represented by... svg lines
+    let line = document.createElementNS(svgNamespace, "line");
+    line.setAttribute("x1", "23");
+    line.setAttribute("y1", "9");
+    line.setAttribute("x2", "17");
+    line.setAttribute("y2", "15");
+    this._mute.appendChild(line);
+    line = document.createElementNS(svgNamespace, "line");
+    line.setAttribute("x1", "17");
+    line.setAttribute("y1", "9");
+    line.setAttribute("x2", "23");
+    line.setAttribute("y2", "15");
+    this._mute.appendChild(line);
   }
 
   showControls()
@@ -57,7 +90,7 @@ class VolumeControl extends TatorElement {
     this._div.setAttribute("class", "py-2 px-2");
     this._div.style.align="center";
     this._div.style.position="absolute";
-    this._div.style.top = "-80px";
+    this._div.style.top = "-70px";
 
     // TODO: Move this into css
     this._div.style.background = "#151b28";
@@ -70,17 +103,51 @@ class VolumeControl extends TatorElement {
     });
 
     const volume = document.createElement("input");
+    volume.style.cursor="pointer";
     volume.setAttribute("type", "range");
     volume.setAttribute("class", "range flex-grow");
     volume.setAttribute("step", "1");
     volume.setAttribute("max", "0");
     volume.setAttribute("max", "100");
     volume.setAttribute("value", this._volume);
+    this._control = volume;
     this._div.appendChild(volume);
 
+    volume.addEventListener("change",() => {
+      this.volumeUpdated();
+      volume.blur();
+    });
+
+    volume.addEventListener("input",() => {
+      this.volumeUpdated();
+    });
+
     // Center horizontally
-    const left = (-this._div.clientWidth/2) + this._button.clientWidth/2;
+    const left = (-this._div.clientWidth/2);
     this._div.style.left = `${left}px`;
+  }
+
+  volumeUpdated()
+  {
+    this._volume = Number(this._control.value);
+    let currentIcon = this._button.children[0];
+    let newIcon = this._maxVol;
+    if (this._volume > 50)
+    {
+      newIcon = this._maxVol;
+    }
+    else if (this._volume > 0)
+    {
+      newIcon = this._minVol;
+    }
+    else
+    {
+      newIcon = this._mute;
+    }
+    if (newIcon != currentIcon)
+    {
+      this._button.replaceChild(newIcon, currentIcon);
+    }
   }
 }
 
