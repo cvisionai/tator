@@ -71,19 +71,17 @@ def check_required_fields(datafields, attr_types, body):
             if attr_type['use_current']:
                 # Fill in current datetime.
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            else:
+            elif attr_type.get('required', True):
                 # Missing a datetime.
-                raise Exception(f'Missing attribute value for "{field}". Required for = '
-                                f'"{attr_type.applies_to.name}". Set to `use_current` to '
+                raise Exception(f'Missing attribute value for "{field}". Set `use_current` to '
                                 f'True or supply a value.')
         else:
             if 'default' in attr_type:
                 # Fill in default for missing field.
                 attrs[field] = attr_type['default']
-            else:
+            elif attr_type.get('required', True):
                 # Missing a field and no default.
-                raise Exception(f'Missing attribute value for "{field}". Required for = '
-                                f'"{attr_type.applies_to.name}". Set a `default` on '
+                raise Exception(f'Missing attribute value for "{field}". Set a `default` on '
                                 f'the attribute type or supply a value.')
     return attrs
 
