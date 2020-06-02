@@ -270,26 +270,23 @@ class TatorSearch:
         if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
             self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
 
-    def search_raw(self, project, query, getSource=False):
+    def search_raw(self, project, query):
         return self.es.search(
             index=self.index_name(project),
             body=query,
-            _source=getSource,
             stored_fields=[],
         )
 
-    def search(self, project, query, getSource=True):
+    def search(self, project, query):
         if 'sort' not in query:
             query['sort'] = {'_doc': 'asc'}
         size = query.get('size', None)
-        documents = []
         if (size is None) or (size >= 10000):
             query['size'] = 10000
             result = self.es.search(
                 index=self.index_name(project),
                 body=query,
                 scroll='1m',
-                _source=getSource,
                 stored_fields=[],
             )
             scroll_id = result['_scroll_id']
@@ -299,27 +296,23 @@ class TatorSearch:
 
             if size:
                 count = size
-            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
-            documents.extend(data)
-
+            ids = drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in data])
             while len(ids) < count:
                 result = self.es.scroll(
                     scroll_id=scroll_id,
                     scroll='1m',
                 )
-                ids += drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in result['hits']['hits']])
-                documents.extend(result['hits']['hits'])
+                ids += drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in result['hits']['hits']])
             ids = ids[:count]
             self.es.clear_scroll(scroll_id)
         else:
             # TODO: This will NOT return the requested number of results if there are
             # duplicates in the dataset.
-            result = self.search_raw(project, query, getSource)
+            result = self.search_raw(project, query)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
-            ids = drop_dupes([obj['_source']['_postgres_id'] & id_mask for obj in data])
-            documents.extend(data)
+            ids = drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in data])
         return ids, count
 
     def count(self, project, query):
