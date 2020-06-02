@@ -13,6 +13,7 @@ from ..models import Project
 from ..models import Version
 from ..models import InterpolationMethods
 from ..models import database_qs
+from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
@@ -69,8 +70,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(annotation_ids)}
             elif len(annotation_ids) > 0:
-                qs = State.objects.filter(pk__in=annotation_ids).order_by('id')
-                response_data = database_qs(qs)
+                response_data = database_query_ids('main_state', annotation_ids, 'id')
                     
         else:
             qs = State.objects.filter(project=params['project'])

@@ -5,6 +5,7 @@ from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
 from ..models import database_qs
+from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
@@ -103,8 +104,7 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(leaf_ids)}
             elif len(leaf_ids) > 0:
-                qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
-                response_data = database_qs(qs)
+                response_data = database_query_ids('main_leaf', leaf_ids, 'id')
         else:
             qs = Leaf.objects.filter(project=params['project'])
             if 'type' in params:

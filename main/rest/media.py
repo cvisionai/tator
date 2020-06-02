@@ -7,6 +7,7 @@ from ..models import MediaType
 from ..models import Localization
 from ..models import State
 from ..models import database_qs
+from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
@@ -61,9 +62,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         if self.operation == 'count':
             response_data = {'count': len(media_ids)}
         elif len(media_ids) > 0:
-            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
-            qs = Media.objects.filter(pk__in=media_ids).order_by(preserved)
-            response_data = database_qs(qs)
+            response_data = database_query_ids('main_media', media_ids, 'name')
         return response_data
 
     def _delete(self, params):
