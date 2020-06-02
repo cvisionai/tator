@@ -995,11 +995,18 @@ class VideoCanvas extends AnnotationCanvas {
       hq_idx = 0;
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
+      let host = `${window.location.protocol}//${window.location.host}`;
+      if ('audio' in videoObject.media_files)
+      {
+        let audio_def = videoObject.media_files['audio'][0];
+        this._audioPlayer = document.createElement("AUDIO");
+        this._audioPlayer.setAttribute('src', host + audio_def.path);
+      }
+
       // Use worst-case dims
       dims = [streaming_files[0].resolution[1],
               streaming_files[0].resolution[0]];
 
-      let host = `${window.location.protocol}//${window.location.host}`;
       for (var idx = 0; idx < streaming_files.length; idx++)
       {
         if (streaming_files[idx].host)
@@ -1220,12 +1227,20 @@ class VideoCanvas extends AnnotationCanvas {
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
   }
+
+  // Audio doesn't have start bias
+  frameToAudioTime(frame)
+  {
+    return ((1/this._fps)*frame);
+  }
+
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
   seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
     var time=this.frameToTime(frame);
+    var audio_time = this.frameToAudioTime(frame);
     var video=this.videoBuffer(frame, forceSeekBuffer);
 
     // Only support seeking if we are stopped (i.e. not playing)
@@ -1261,6 +1276,11 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          if (forceSeekBuffer && that._audioPlayer)
+          {
+            that._audioPlayer.currentTime = audio_time;
+            console.info("Setting audio to " + audio_time);
+          }
         };
       });
 
@@ -1365,6 +1385,12 @@ class VideoCanvas extends AnnotationCanvas {
     var lastTime=performance.now();
     var animationIdx = 0;
 
+    var audioEligible=false;
+    if (this._playbackRate == 1.0 && this._audioPlayer && direction == Direction.FORWARD)
+    {
+      audioEligible = true;
+    }
+
     var player=function(domtime){
 
       // Start the FPS monitor once we start playing
@@ -1385,6 +1411,10 @@ class VideoCanvas extends AnnotationCanvas {
           if (that._motionComp.timeToUpdate(animationIdx+increment))
           {
             that.displayLatest();
+            if (audioEligible && that._audioPlayer.paused)
+            {
+              that._audioPlayer.play();
+            }
             break;
           }
         }
@@ -1397,6 +1427,10 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
+        if (audioEligible && that._audioPlayer.paused)
+        {
+          that._audioPlayer.pause();
+        }
         that._motionComp.clearTimesVector();
         that._playerTimeout=null;
       }
@@ -1579,6 +1613,10 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Stop the player thread first
     this.stopPlayerThread();
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.pause();
+    }
 
     // If we weren't already paused send the event
     if (this._direction != Direction.STOPPED)
