@@ -204,6 +204,11 @@ class VolumeControl extends TatorElement {
     {
       this._button.replaceChild(newIcon, currentIcon);
     }
+
+    this.dispatchEvent(new CustomEvent("volumeChange", {
+        detail: {volume: this._volume},
+        composed: true
+      }));
   }
 }
 
