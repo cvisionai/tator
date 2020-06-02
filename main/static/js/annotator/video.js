@@ -770,6 +770,14 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  setVolume(volume)
+  {
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.volume = volume / 100;
+    }
+  }
+
   startDownload(streaming_files)
   {
     var that = this;

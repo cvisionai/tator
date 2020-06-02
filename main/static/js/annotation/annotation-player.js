@@ -81,6 +81,9 @@ class AnnotationPlayer extends TatorElement {
 
     const volume_control = document.createElement("volume-control");
     div.appendChild(volume_control);
+    volume_control.addEventListener("volumeChange", (evt) => {
+      this._video.setVolume(evt.detail.volume);
+    });
     const fullscreen = document.createElement("video-fullscreen");
     div.appendChild(fullscreen);
 
