@@ -21,7 +21,12 @@ def determine_update(media_element):
     actual=[info['resolution'][0] for info in streaming_files if 'resolution' in info]
     missing = [res for res in expected if res not in actual]
     print(f"Missing resolutions = {missing}")
-    return missing        
+
+    if media_files.get('audio',None):
+        audio_required=True
+    else:
+        audio_required=False
+    return missing, audio_required
         
 if __name__ == '__main__':
     media_ids = os.getenv('TATOR_MEDIA_IDS')
@@ -37,9 +42,11 @@ if __name__ == '__main__':
 
     for media_id in media_ids:
         media_element=tator.Media.get(media_id)
-        missing=determine_update(media_element)
-        if len(missing) == 0:
+        missing, audio_required=determine_update(media_element)
+        if len(missing) == 0 and audio_required is False:
             continue
+        if len(missing) == 0:
+            missing = ['audio']
 
         video_dir = os.path.join(work_dir,
                                  str(media_element['id']))
