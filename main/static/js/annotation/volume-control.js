@@ -19,16 +19,22 @@ class VolumeControl extends TatorElement {
     button.addEventListener("click", (evt) => {
       if (this._shown)
       {
-        button.removeChild(this._div);
-        this._shown = false;
-        evt.stopPropagation();
+        this.hide();
       }
       else
       {
         this.showControls();
         evt.stopPropagation();
+        this._timeout = setTimeout(this.hide.bind(this),
+                                   2500);
       }
     });
+  }
+
+  hide()
+  {
+    this._button.removeChild(this._div);
+    this._shown = false;
   }
 
   setupIcons()
@@ -116,10 +122,13 @@ class VolumeControl extends TatorElement {
     volume.addEventListener("change",() => {
       this.volumeUpdated();
       volume.blur();
+      this._timeout = setTimeout(this.hide.bind(this),
+                                 2500);
     });
 
     volume.addEventListener("input",() => {
       this.volumeUpdated();
+      clearTimeout(this._timeout);
     });
 
     // Center horizontally
