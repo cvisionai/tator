@@ -933,10 +933,13 @@ class Media(Model):
                  .. code-block ::
 
                      map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
-                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ],
+                            <"audio": [AUDIO_DEF]>}
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
                                   "resolution": [<vertical pixel count, e.g. 720>, width]
+                     audio_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>}
 
 
                                   ###################
