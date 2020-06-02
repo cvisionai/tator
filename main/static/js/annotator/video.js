@@ -1001,6 +1001,7 @@ class VideoCanvas extends AnnotationCanvas {
         let audio_def = videoObject.media_files['audio'][0];
         this._audioPlayer = document.createElement("AUDIO");
         this._audioPlayer.setAttribute('src', host + audio_def.path);
+        this._audioPlayer.volume = 0.5; // Default volume
       }
 
       // Use worst-case dims
