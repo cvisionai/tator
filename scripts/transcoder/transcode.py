@@ -33,10 +33,12 @@ def determine_transcode(path):
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
     video_info = json.loads(output)
     stream_idx=0
+    audio=False
     for idx, stream in enumerate(video_info["streams"]):
         if stream["codec_type"] == "video":
             stream_idx=idx
-            break
+        if stream["codec_type"] == "audio":
+            audio=True
     stream = video_info["streams"][stream_idx]
     if "nb_frames" in stream:
         num_frames = float(stream["nb_frames"])
@@ -54,16 +56,16 @@ def determine_transcode(path):
     resolutions=[resolution for resolution in STREAMING_RESOLUTIONS if resolution < height]
     if height <= MAX_RESOLUTION:
         resolutions.append(height)
-    return resolutions, (height,width)
+    return resolutions, (height,width), audio
 
 def transcode(path, outpath):
     """Starts a transcode for the given media file.
     """
 
     if args.resolutions is None:
-        resolutions,vid_dims = determine_transcode(path)
+        resolutions, vid_dims, audio = determine_transcode(path)
     else:
-        _, vid_dims = determine_transcode(path)
+        _, vid_dims, audio = determine_transcode(path)
         resolutions = args.resolutions.split(',')
 
     logger.info(f"Transcoding {path} to {outpath}...")
@@ -98,6 +100,16 @@ def transcode(path, outpath):
                     output_file])
     logger.info('ffmpeg cmd = {}'.format(cmd))
     subprocess.run(cmd, check=True)
+
+    if audio:
+        logger.info("Extracting audio")
+        output_file = os.path.join(outpath, f"audio.m4a")
+        audio_extraction=["ffmpeg",
+                          "-i", path,
+                          "-vn", # Strip video
+                          "-c:a", "aac",
+                          output_file]
+        subprocess.run(audio_extraction, check=True)
     logger.info("Transcoding finished!")
 
 if __name__ == '__main__':
