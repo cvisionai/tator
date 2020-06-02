@@ -30,7 +30,7 @@ class AnnotationPlayer extends TatorElement {
     playButtons.appendChild(fastForward);
 
     const timelineDiv = document.createElement("div");
-    timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-4");
+    timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-2");
     div.appendChild(timelineDiv);
 
     const timeDiv = document.createElement("div");
@@ -79,6 +79,8 @@ class AnnotationPlayer extends TatorElement {
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
 
+    const volume_control = document.createElement("volume-control");
+    div.appendChild(volume_control);
     const fullscreen = document.createElement("video-fullscreen");
     div.appendChild(fullscreen);
 
