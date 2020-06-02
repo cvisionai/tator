@@ -7,7 +7,7 @@ class VolumeControl extends TatorElement {
     button.style.position="relative";
     button.style.cursor="pointer";
     this._shadow.appendChild(button);
-    this._volume = 75;
+    this._volume = 50;
     this._button = button;
     this.setupIcons();
 
@@ -16,9 +16,13 @@ class VolumeControl extends TatorElement {
 
     this.setupControls();
     this._shown = false;
-
+    this._animating = false;
 
     button.addEventListener("click", (evt) => {
+      if (this._animating == true)
+      {
+        return;
+      }
       if (this._shown)
       {
         this.fadeOut();
@@ -38,9 +42,11 @@ class VolumeControl extends TatorElement {
     clearTimeout(this._timeout);
     let opacity = 100;
     let animation = () => {
+      this._animating=true;
       opacity = opacity - 3.5;
       if (opacity <= 0)
       {
+        this._animating=false;
         this.hide();
       }
       else
@@ -62,11 +68,16 @@ class VolumeControl extends TatorElement {
     clearTimeout(this._timeout);
     let opacity = 0;
     let animation = () => {
+      this._animating=true;
       opacity = opacity + 3.5;
       if (opacity < 100)
       {
         this._div.style.opacity = opacity/100;
         requestAnimationFrame(animation);
+      }
+      else
+      {
+        this._animating=false;
       }
     };
     animation();
