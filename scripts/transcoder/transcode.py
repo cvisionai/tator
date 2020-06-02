@@ -27,7 +27,6 @@ def determine_transcode(path):
         "-print_format", "json",
         "-count_frames",
         "-skip_frame", "nokey",
-        "-select_streams", "v",
         path,
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
@@ -38,6 +37,7 @@ def determine_transcode(path):
         if stream["codec_type"] == "video":
             stream_idx=idx
         if stream["codec_type"] == "audio":
+            logger.info("Found Audio Track")
             audio=True
     stream = video_info["streams"][stream_idx]
     if "nb_frames" in stream:
@@ -68,7 +68,8 @@ def transcode(path, outpath):
         _, vid_dims, audio = determine_transcode(path)
         resolutions = args.resolutions.split(',')
 
-    logger.info(f"Transcoding {path} to {outpath}...")
+    print(f"Transcoding {path} to {outpath}...")
+    print(f"Audio Present: {audio}")
 
     os.makedirs(outpath, exist_ok=True)
 
@@ -88,7 +89,7 @@ def transcode(path, outpath):
         "faststart+frag_keyframe+empty_moov+default_base_moof",
         "-tune", "fastdecode",]
 
-    logger.info(f"Transcoding to {resolutions}")
+    print(f"Transcoding to {resolutions}")
     for ridx, resolution in enumerate(resolutions):
         logger.info(f"Generating resolution @ {resolution}")
         output_file = os.path.join(outpath, f"{resolution}.mp4")

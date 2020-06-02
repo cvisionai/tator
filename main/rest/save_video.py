@@ -121,6 +121,8 @@ class SaveVideoAPI(APIView):
                      res_uid = str(uuid1())
                      save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
                      del streaming_format['url']
+                     logger.info(save_paths[f"audio_{idx}_file"])
+                     logger.info(os.path.relpath(save_paths[f"audio_{idx}_file"], "/data"))
                      audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
                      audio.append(audio_format)
                 media_files['audio'] = audio
@@ -278,14 +280,14 @@ class SaveVideoAPI(APIView):
                 res_uid = str(uuid1())
                 save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
                 del audio_format['url']
-                audio_format['path'] = save_paths[f"audio_{idx}_file"]
-
+                audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid)
                 for key, uid in upload_uids.items()
             }
 
             logger.info(f"Upload set = {upload_paths}")
+            logger.info(f"Save set = {save_paths}")
 
 
             # Make sure upload paths exist

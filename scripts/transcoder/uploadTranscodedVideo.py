@@ -104,7 +104,7 @@ def make_audio_definition(disk_file):
         "-v","error",
         "-show_entries", "stream",
         "-print_format", "json",
-        "-select_streams", "v",
+        "-select_streams", "a",
         disk_file,
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(args.transcoded_path):
         print(f"Processing {files} in {args.transcoded_path}")
         for vid_file in files:
-            if os.splitext(vid_file)[1] == ".m4a":
+            if os.path.splitext(vid_file)[1] == ".m4a":
                 # Handle audio file
                 audio_path = os.path.join(root, vid_file)
                 audio_url = upload_file(audio_path, args.tus_url)
