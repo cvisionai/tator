@@ -1389,10 +1389,16 @@ class VideoCanvas extends AnnotationCanvas {
     var lastTime=performance.now();
     var animationIdx = 0;
 
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
     var audioEligible=false;
-    if (this._playbackRate == 1.0 && this._audioPlayer && direction == Direction.FORWARD)
+    if (this._playbackRate >= 0.5 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
     {
       audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
     }
 
     var player=function(domtime){
