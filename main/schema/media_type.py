@@ -1,5 +1,7 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._attribute_type import attribute_type_properties
+from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 
 media_properties = {
@@ -33,6 +35,14 @@ media_properties = {
         'type': 'boolean',
         'default': True,
     },
+    'attribute_types': {
+        'description': 'Attribute type definitions.',
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'properties': attribute_type_properties,
+        },
+    },
 }
 
 class MediaTypeListSchema(AutoSchema):
@@ -65,6 +75,7 @@ class MediaTypeListSchema(AutoSchema):
                 'example': {
                     'name': 'My media type',
                     'dtype': 'video',
+                    'attribute_types': attribute_type_example,
                 },
             }}}
         return body
