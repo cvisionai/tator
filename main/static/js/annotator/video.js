@@ -695,6 +695,9 @@ class MotionComp {
 class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
+
+    // Set global variable to find us
+    window.tator_video = this;
     var that = this;
     this._diagnosticMode = false;
     this._videoVersion = 1;
