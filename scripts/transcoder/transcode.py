@@ -91,6 +91,8 @@ def transcode(path, outpath):
 
     print(f"Transcoding to {resolutions}")
     for ridx, resolution in enumerate(resolutions):
+        if resolution == 'audio':
+            continue
         logger.info(f"Generating resolution @ {resolution}")
         output_file = os.path.join(outpath, f"{resolution}.mp4")
         cmd.extend([*per_res,
@@ -109,6 +111,7 @@ def transcode(path, outpath):
                           "-i", path,
                           "-vn", # Strip video
                           "-c:a", "aac",
+                          "-ac", "2",
                           output_file]
         subprocess.run(audio_extraction, check=True)
     logger.info("Transcoding finished!")
