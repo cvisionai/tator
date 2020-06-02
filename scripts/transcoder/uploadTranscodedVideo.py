@@ -98,6 +98,27 @@ def make_video_definition(disk_file):
                  "codec_description": stream["codec_long_name"]}
     return video_def
 
+def make_audio_definition(disk_file):
+    cmd = [
+        "ffprobe",
+        "-v","error",
+        "-show_entries", "stream",
+        "-print_format", "json",
+        "-select_streams", "v",
+        disk_file,
+    ]
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+    audio_info = json.loads(output)
+    stream_idx=0
+    for idx, stream in enumerate(audio_info["streams"]):
+        if stream["codec_type"] == "audio":
+            stream_idx=idx
+            break
+    stream = audio_info["streams"][stream_idx]
+    audio_def = {"codec": stream["codec_name"],
+                 "codec_description": stream["codec_long_name"]}
+    return audio_def
+
 if __name__ == '__main__':
     args = parse_args()
 
@@ -133,26 +154,35 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(args.transcoded_path):
         print(f"Processing {files} in {args.transcoded_path}")
         for vid_file in files:
-            vid_path = os.path.join(root, vid_file)
-            base = os.path.splitext(vid_file)[0]
-            segments_path = os.path.join(root, f"{base}.json")
-            segments_cmd=["python3",
-                          "/scripts/makeFragmentInfo.py",
-                          "--output", segments_path,
-                          vid_path]
-            subprocess.run(segments_cmd, stdout=subprocess.PIPE, check=True)
+            if os.splitext(vid_file)[1] == ".m4a":
+                # Handle audio file
+                audio_path = os.path.join(root, vid_file)
+                audio_url = upload_file(audio_path, args.tus_url)
+                audio_def = make_audio_definition(audio_path)
+                audio_def["url"] = audio_url
+                media_files["audio"] = [audio_def]
+            else:
+                # Handle video files
+                vid_path = os.path.join(root, vid_file)
+                base = os.path.splitext(vid_file)[0]
+                segments_path = os.path.join(root, f"{base}.json")
+                segments_cmd=["python3",
+                              "/scripts/makeFragmentInfo.py",
+                              "--output", segments_path,
+                              vid_path]
+                subprocess.run(segments_cmd, stdout=subprocess.PIPE, check=True)
 
-            logger.info("Uploading transcoded file...")
-            transcoded_url = upload_file(vid_path, args.tus_url)
+                logger.info("Uploading transcoded file...")
+                transcoded_url = upload_file(vid_path, args.tus_url)
 
-            logger.info("Uploading segments file...")
-            segments_url = upload_file(segments_path, args.tus_url)
+                logger.info("Uploading segments file...")
+                segments_url = upload_file(segments_path, args.tus_url)
 
-            #Generate video info block
-            video_def = make_video_definition(vid_path)
-            video_def["url"] = transcoded_url
-            video_def["segment_info_url"] = segments_url
-            media_files['streaming'].append(video_def)
+                #Generate video info block
+                video_def = make_video_definition(vid_path)
+                video_def["url"] = transcoded_url
+                video_def["segment_info_url"] = segments_url
+                media_files['streaming'].append(video_def)
 
     # Save the video
     out = requests.post(
