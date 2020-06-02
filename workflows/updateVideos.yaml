@@ -48,7 +48,7 @@ spec:
     container:
       image: cvisionai/tator_transcoder:latest
       resources:
-        limits:
+        requests:
           cpu: 1000m
           memory: 1Gi
       env:
@@ -81,8 +81,8 @@ spec:
     container:
       image: cvisionai/tator_transcoder:latest
       resources:
-        limits:
-          cpu: 4000m
+        requests:
+          cpu: 2000m
           memory: 2Gi
       volumeMounts:
       - name: workdir
@@ -100,8 +100,8 @@ spec:
     container:
       image: cvisionai/tator_transcoder:latest
       resources:
-        limits:
-          cpu: 4000m
+        requests:
+          cpu: 1000m
           memory: 2Gi
       volumeMounts:
       - name: workdir

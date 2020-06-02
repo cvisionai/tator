@@ -23,9 +23,10 @@ def determine_update(media_element):
     print(f"Missing resolutions = {missing}")
 
     if media_files.get('audio',None):
-        audio_required=True
-    else:
         audio_required=False
+    else:
+        audio_required=True
+    print(f"Audio Required = {audio_required}")
     return missing, audio_required
         
 if __name__ == '__main__':
