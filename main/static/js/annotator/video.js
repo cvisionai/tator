@@ -611,6 +611,10 @@ class MotionComp {
     {
       displayFps *= factor;
     }
+    if (factor < 2)
+    {
+      displayFps *= factor;
+    }
 
     // Compute a 3-slot schedule for playback
     let animationCyclesPerFrame = (this._monitorFps / displayFps);
@@ -619,7 +623,7 @@ class MotionComp {
       // Safe mode slows things down by 2x
       animationCyclesPerFrame *= 2;
     }
-    let regularSize = Math.floor(animationCyclesPerFrame);
+    let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
     let largeSize = regularSize + Math.round(fractional*3)
     this._schedule = [ regularSize,
@@ -662,7 +666,7 @@ class MotionComp {
     {
       clicks *= 2;
     }
-    return clicks;
+    return Math.floor(clicks);
   }
 
   safeMode()
@@ -695,6 +699,9 @@ class MotionComp {
 class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
+
+    // Set global variable to find us
+    window.tator_video = this;
     var that = this;
     this._diagnosticMode = false;
     this._videoVersion = 1;
@@ -767,6 +774,14 @@ class VideoCanvas extends AnnotationCanvas {
     if (this._dlWorker != null)
     {
       this._dlWorker.terminate();
+    }
+  }
+
+  setVolume(volume)
+  {
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.volume = volume / 100;
     }
   }
 
@@ -987,11 +1002,20 @@ class VideoCanvas extends AnnotationCanvas {
       hq_idx = 0;
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
+      let host = `${window.location.protocol}//${window.location.host}`;
+      if ('audio' in videoObject.media_files)
+      {
+        let audio_def = videoObject.media_files['audio'][0];
+        this._audioPlayer = document.createElement("AUDIO");
+        this._audioPlayer.setAttribute('src', host + audio_def.path);
+        this._audioPlayer.volume = 0.5; // Default volume
+        this.audio = true;
+      }
+
       // Use worst-case dims
       dims = [streaming_files[0].resolution[1],
               streaming_files[0].resolution[0]];
 
-      let host = `${window.location.protocol}//${window.location.host}`;
       for (var idx = 0; idx < streaming_files.length; idx++)
       {
         if (streaming_files[idx].host)
@@ -1212,12 +1236,19 @@ class VideoCanvas extends AnnotationCanvas {
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
   }
+
+  frameToAudioTime(frame)
+  {
+    return this._startBias + ((1/this._fps)*frame);
+  }
+
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
   seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
     var time=this.frameToTime(frame);
+    var audio_time = this.frameToAudioTime(frame);
     var video=this.videoBuffer(frame, forceSeekBuffer);
 
     // Only support seeking if we are stopped (i.e. not playing)
@@ -1253,6 +1284,11 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          if (forceSeekBuffer && that._audioPlayer)
+          {
+            that._audioPlayer.currentTime = audio_time;
+            console.info("Setting audio to " + audio_time);
+          }
         };
       });
 
@@ -1357,6 +1393,18 @@ class VideoCanvas extends AnnotationCanvas {
     var lastTime=performance.now();
     var animationIdx = 0;
 
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    var audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
     var player=function(domtime){
 
       // Start the FPS monitor once we start playing
@@ -1377,6 +1425,10 @@ class VideoCanvas extends AnnotationCanvas {
           if (that._motionComp.timeToUpdate(animationIdx+increment))
           {
             that.displayLatest();
+            if (audioEligible && that._audioPlayer.paused)
+            {
+              that._audioPlayer.play();
+            }
             break;
           }
         }
@@ -1389,6 +1441,10 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
+        if (audioEligible && that._audioPlayer.paused)
+        {
+          that._audioPlayer.pause();
+        }
         that._motionComp.clearTimesVector();
         that._playerTimeout=null;
       }
@@ -1450,6 +1506,9 @@ class VideoCanvas extends AnnotationCanvas {
       this._fpsLoadDiag=0;
       this._fpsScore=3;
       this._networkUpdate = 0;
+      this._audioCheck = 0;
+      this._rateSum = 0;
+      const AUDIO_CHECK_INTERVAL=5;
 
       var diagRoutine=function(last)
       {
@@ -1458,6 +1517,24 @@ class VideoCanvas extends AnnotationCanvas {
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
         let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
+        that._rateSum += (calculatedFPS / targetFPS);
+        that._audioCheck++;
+        if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+        {
+          // Adjust rate to actual playback based on average fps over 3 samples
+          const swag = Math.max(0.99,Math.min(1.0,(that._rateSum/AUDIO_CHECK_INTERVAL)));
+          console.info("new audio playback rate = " +  swag * that._playbackRate);
+          that._audioPlayer.playbackRate = (swag) * that._playbackRate;
+          that._rateSum = 0;
+          const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+          fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
+          if (Math.abs(audioDelta) >= 100)
+          {
+            console.info("Readjusting audio time");
+            const audio_increment = 1+that._motionComp.frameIncrement(that._fps,that._playbackRate);
+            that._audioPlayer.currentTime = that.frameToAudioTime(that._dispFrame+audio_increment);
+          }
+        }
         console.info(fps_msg);
         that._fpsDiag=0;
         that._fpsLoadDiag=0;
@@ -1571,6 +1648,10 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Stop the player thread first
     this.stopPlayerThread();
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.pause();
+    }
 
     // If we weren't already paused send the event
     if (this._direction != Direction.STOPPED)

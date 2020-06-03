@@ -745,6 +745,8 @@ class MediaType(Model):
                             blank=True,
                             default=None)
     keep_original = BooleanField(default=True, null=True, blank=True)
+    default_volume = IntegerField(default=0)
+    """ Default Volume for Videos (default is muted) """
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
