@@ -619,7 +619,7 @@ class MotionComp {
       // Safe mode slows things down by 2x
       animationCyclesPerFrame *= 2;
     }
-    let regularSize = Math.floor(animationCyclesPerFrame);
+    let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
     let largeSize = regularSize + Math.round(fractional*3)
     this._schedule = [ regularSize,
