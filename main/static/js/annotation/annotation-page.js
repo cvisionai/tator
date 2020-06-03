@@ -96,44 +96,45 @@ class AnnotationPage extends TatorPage {
             }
           })
           .then((response) => response.json())
-          .then(data => {
-            this._browser.mediaType = data;
-            this._undo.mediaType = data;
-            this._player.mediaTypes = data['type'];
+          .then(type_data => {
+            this._browser.mediaType = type_data;
+            this._undo.mediaType = type_data;
+            let player;
+            if (data.thumbnail_gif) {
+              player = document.createElement("annotation-player");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+              this._setupInitHandlers(player);
+              this._getMetadataTypes(player, player._video._canvas);
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._video.captureFrame(e.detail.localizations);
+                  });
+            } else {
+              player = document.createElement("annotation-image");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.style.minWidth="70%";
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+              this._setupInitHandlers(player);
+              this._getMetadataTypes(player, player._image._canvas);
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._image.captureFrame(e.detail.localizations);
+                  });
+            }
           });
-          let player;
-          if (data.thumbnail_gif) {
-            player = document.createElement("annotation-player");
-            this._player = player;
-            player.addDomParent({"object": this._headerDiv,
-                                 "alignTo":  this._browser});
-            player.mediaInfo = data;
-            this._main.insertBefore(player, this._browser);
-            this._setupInitHandlers(player);
-            this._getMetadataTypes(player, player._video._canvas);
-            this._settings._capture.addEventListener(
-              'captureFrame',
-              (e) =>
-                {
-                  player._video.captureFrame(e.detail.localizations);
-                });
-          } else {
-            player = document.createElement("annotation-image");
-            this._player = player;
-            player.style.minWidth="70%";
-            player.addDomParent({"object": this._headerDiv,
-                                 "alignTo":  this._browser});
-            player.mediaInfo = data;
-            this._main.insertBefore(player, this._browser);
-            this._setupInitHandlers(player);
-            this._getMetadataTypes(player, player._image._canvas);
-            this._settings._capture.addEventListener(
-              'captureFrame',
-              (e) =>
-                {
-                  player._image.captureFrame(e.detail.localizations);
-                });
-          }
           fetch("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
