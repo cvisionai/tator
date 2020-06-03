@@ -611,6 +611,10 @@ class MotionComp {
     {
       displayFps *= factor;
     }
+    if (factor < 2)
+    {
+      displayFps *= factor;
+    }
 
     // Compute a 3-slot schedule for playback
     let animationCyclesPerFrame = (this._monitorFps / displayFps);
