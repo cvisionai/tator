@@ -666,7 +666,7 @@ class MotionComp {
     {
       clicks *= 2;
     }
-    return clicks;
+    return Math.floor(clicks);
   }
 
   safeMode()
