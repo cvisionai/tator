@@ -372,9 +372,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.pan();
   }
 
+  // Go to the frame at the highest resolution
   goToFrame(frame) {
     this._video.onPlay();
-    return this._video.gotoFrame(frame);
+    return this._video.gotoFrame(frame, true);
   }
 
   selectNone() {
