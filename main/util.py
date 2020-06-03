@@ -8,6 +8,7 @@ from progressbar import progressbar,ProgressBar
 
 from main.models import *
 from main.search import TatorSearch
+from main.search import mediaFileSizes
 
 from django.conf import settings
 from django.db.models import F
@@ -45,29 +46,7 @@ def updateProjectTotals(force=False):
                     if os.path.exists(file.path):
                         project.size += os.path.getsize(file.path)
             for file in files:
-                if file.file:
-                    if os.path.exists(file.file.path):
-                        project.size += file.file.size
-                if os.path.exists(file.thumbnail.path):
-                    project.size += file.thumbnail.size
-                if file.meta.dtype == 'video':
-                    if file.original:
-                        if os.path.exists(file.original):
-                            statinfo = os.stat(file.original)
-                            project.size = project.size + statinfo.st_size
-                    if os.path.exists(file.thumbnail_gif.path):
-                        project.size += file.thumbnail_gif.size
-                    if file.media_files:
-                        if 'archival' in file.media_files:
-                            for archival in file.media_files['archival']:
-                                if os.path.exists(archival['path']):
-                                    statinfo = os.stat(archival['path'])
-                                    project.size += statinfo.st_size
-                        if 'streaming' in file.media_files:
-                            for streaming in file.media_files['streaming']:
-                                if os.path.exists(streaming['path']):
-                                    statinfo = os.stat(streaming['path'])
-                                    project.size += statinfo.st_size
+                project.size += mediaFileSizes(file)[0]
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
             project.save()
 
