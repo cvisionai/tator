@@ -42,6 +42,8 @@ class MediaSectionsAPI(APIView):
         # Update query with aggregations.
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['aggs']['section_counts']['terms']['size'] = 1000 # Return up to 1000 sections
+        query['aggs']['section_counts']['aggs']['download_size'] = {'sum': {'field': '_download_size'}}
+        query['aggs']['section_counts']['aggs']['total_size'] = {'sum': {'field': '_total_size'}}
         query['size'] = 0
 
         # Do queries.
