@@ -69,13 +69,10 @@ class ProgressSummary extends TatorElement {
           let text = "";
           switch (data.prefix) {
             case "algorithm":
-              text = data.project_name + " | " + data.name + " " + data.num_complete + " of " + data.num_procs;
+              text = data.name + " " + data.num_complete + " of " + data.num_procs;
               break;
             case "upload":
-              text = data.project_name + " | " + "Uploading " + data.num_complete + " of " + data.num_procs;
-              break;
-            case "download":
-              text = "Creating " + data.num_complete + " of " + data.num_procs + " zip files";
+              text = "Uploading " + data.num_complete + " of " + data.num_procs;
               break;
           }
           const exists = data.gid in this._summaries;
@@ -85,7 +82,7 @@ class ProgressSummary extends TatorElement {
           } else {
             job = document.createElement("progress-job");
           }
-          job.setAttribute("text", text);
+          job.setText(text, data.project_name, data.project_id);
           job.setAttribute("max", data.num_procs);
           job.setAttribute("done", data.num_complete);
           job.setAttribute("gid", data.gid);
