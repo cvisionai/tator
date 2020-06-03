@@ -183,6 +183,13 @@ class VolumeControl extends TatorElement {
     });
   }
 
+  // Set the volume (clips to 0-100)
+  set volume(vol)
+  {
+    this._control.value = Math.max(0,Math.min(100,vol));
+    this.volumeUpdated();
+  }
+
   volumeUpdated()
   {
     this._volume = Number(this._control.value);
