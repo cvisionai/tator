@@ -1649,6 +1649,7 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._diagTimeout);
       this._diagTimeout=null;
     }
+    this._direction = Direction.STOPPED;
   }
 
   pause()
