@@ -1009,6 +1009,7 @@ class VideoCanvas extends AnnotationCanvas {
         this._audioPlayer = document.createElement("AUDIO");
         this._audioPlayer.setAttribute('src', host + audio_def.path);
         this._audioPlayer.volume = 0.5; // Default volume
+        this.audio = true;
       }
 
       // Use worst-case dims

@@ -79,9 +79,9 @@ class AnnotationPlayer extends TatorElement {
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
 
-    const volume_control = document.createElement("volume-control");
-    div.appendChild(volume_control);
-    volume_control.addEventListener("volumeChange", (evt) => {
+    this._volume_control = document.createElement("volume-control");
+    div.appendChild(this._volume_control);
+    this._volume_control.addEventListener("volumeChange", (evt) => {
       this._video.setVolume(evt.detail.volume);
     });
     const fullscreen = document.createElement("video-fullscreen");
@@ -259,6 +259,11 @@ class AnnotationPlayer extends TatorElement {
             composed: true
         }));
       });
+      if (this._video.audio != true)
+      {
+        // Hide volume on videos with no audio
+        this._volume_control.style.display = "none";
+      }
     });
   }
 
