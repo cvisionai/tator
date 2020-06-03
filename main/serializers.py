@@ -95,7 +95,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'name', 'summary', 'thumb', 'num_files', 'size',
-            'usernames', 'filter_autocomplete', 'section_order', 'permission'
+            'usernames', 'filter_autocomplete', 'permission'
         ]
 
 class MembershipSerializer(serializers.ModelSerializer):

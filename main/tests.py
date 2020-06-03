@@ -1584,7 +1584,6 @@ class ProjectTestCase(APITestCase):
         self.list_uri = 'Projects'
         self.patch_json = {
             'name': 'aaasdfasd',
-            'section_order': ['asdf1', 'asdf2', 'asdf3']
         }
         self.create_json = {
             'name': 'asdfasd',
