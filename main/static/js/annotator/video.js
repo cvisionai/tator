@@ -1524,7 +1524,7 @@ class VideoCanvas extends AnnotationCanvas {
         {
           // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
           const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
-          const correction = 1.0 + audioDelta/2000;
+          const correction = 1.0 + (audioDelta/2000);
           const swag = Math.max(0.99,Math.min(1.01,correction));
           that._audioPlayer.playbackRate = (swag) * that._playbackRate;
 
