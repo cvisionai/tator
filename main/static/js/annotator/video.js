@@ -1237,10 +1237,9 @@ class VideoCanvas extends AnnotationCanvas {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
   }
 
-  // Audio doesn't have start bias
   frameToAudioTime(frame)
   {
-    return ((1/this._fps)*frame);
+    return this._startBias + ((1/this._fps)*frame);
   }
 
   /// Seeks to a specific frame of playback and calls callback when done
