@@ -1010,6 +1010,9 @@ class VideoCanvas extends AnnotationCanvas {
         this._audioPlayer.setAttribute('src', host + audio_def.path);
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
+        this.addPauseListener(() => {
+          this._audioPlayer.pause();
+        });
       }
 
       // Use worst-case dims
@@ -1625,6 +1628,10 @@ class VideoCanvas extends AnnotationCanvas {
   // If running will clear player context
   stopPlayerThread()
   {
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.pause();
+    }
     if (this._playerTimeout)
     {
       clearTimeout(this._playerTimeout);
@@ -1648,10 +1655,6 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Stop the player thread first
     this.stopPlayerThread();
-    if (this._audioPlayer)
-    {
-      this._audioPlayer.pause();
-    }
 
     // If we weren't already paused send the event
     if (this._direction != Direction.STOPPED)
