@@ -297,6 +297,7 @@ FILES = \
     project-detail/new-section.js \
     project-detail/section-search.js \
     project-detail/section-upload.js \
+    project-detail/big-download-form.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
