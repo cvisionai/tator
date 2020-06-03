@@ -66,11 +66,7 @@ self.addEventListener("message", async evt => {
     // Sets token, project.
     self.projectId = msg.projectId;
     self.projectFilter = msg.projectFilter;
-    if (typeof msg.sectionOrder == "undefined") {
-      self.sectionOrder = [];
-    } else {
-      self.sectionOrder = msg.sectionOrder;
-    }
+    self.sectionOrder = [];
     self.headers = {
       "Authorization": "Token " + msg.token,
       "Accept": "application/json",
@@ -129,7 +125,6 @@ self.addEventListener("message", async evt => {
     self.sections.set(msg.toName, section);
     const index = self.sectionOrder.indexOf(msg.fromName);
     self.sectionOrder[index] = msg.toName;
-    saveSectionOrder();
     self.postMessage({
       command: "updateSectionNames",
       allSections: self.sectionOrder,
@@ -411,7 +406,6 @@ function addSection(sectionName, count, afterSection) {
     index = self.sectionOrder.indexOf(afterSection) + 1;
   }
   self.sectionOrder.splice(index, 0, sectionName);
-  saveSectionOrder();
   self.postMessage({
     command: "addSection",
     name: sectionName,
@@ -425,24 +419,11 @@ function addSection(sectionName, count, afterSection) {
 function removeSection(sectionName) {
   const index = self.sectionOrder.indexOf(sectionName);
   self.sectionOrder.splice(index, 1);
-  saveSectionOrder();
   self.sections.delete(sectionName);
   self.postMessage({
     command: "removeSection",
     name: sectionName,
     allSections: self.sectionOrder,
-  });
-}
-
-function saveSectionOrder() {
-  const url = "/rest/Project/" + self.projectId;
-  fetchRetry(url, {
-    method: "PATCH",
-    credentials: "omit",
-    headers: self.headers,
-    body: JSON.stringify({
-      section_order: self.sectionOrder
-    }),
   });
 }
 
@@ -465,7 +446,6 @@ function setupSections(sectionCounts, filteredCounts, projectFilter) {
   self.sectionOrder.sort((left, right) => {
     return left.toLowerCase().localeCompare(right.toLowerCase());
   });
-  saveSectionOrder();
   self.sections = new Map();
   for (const section in sectionCounts) {
     let data;

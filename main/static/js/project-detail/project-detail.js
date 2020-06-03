@@ -290,7 +290,6 @@ class ProjectDetail extends TatorPage {
       this._worker.postMessage({
         command: "init",
         projectId: projectId,
-        sectionOrder: data.section_order,
         projectFilter: projectFilter,
         token: this.getAttribute("token"),
       });
