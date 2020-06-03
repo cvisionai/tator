@@ -1510,7 +1510,7 @@ class VideoCanvas extends AnnotationCanvas {
       this._fpsScore=3;
       this._networkUpdate = 0;
       this._audioCheck = 0;
-      let AUDIO_CHECK_INTERVAL=1;
+      let AUDIO_CHECK_INTERVAL=1; // This could be tweaked if we are too CPU intensive
 
       var diagRoutine=function(last)
       {
