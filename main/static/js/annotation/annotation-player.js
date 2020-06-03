@@ -256,7 +256,7 @@ class AnnotationPlayer extends TatorElement {
       // Hide volume on videos with no audio
       this._volume_control.style.display = "none";
     }
-    console.info("Media Type = " + this.mediaType);
+    this._volume_control.volume = this.mediaType['default_volume'];
   }
 
   set annotationData(val) {
