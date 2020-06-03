@@ -245,26 +245,17 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    // Have to wait for canvas to draw.
-    new Promise(async resolve => {
-      while (true) {
-        if (this._video._canvas.clientHeight > 0) {
-          break;
-        }
-        await new Promise(res => setTimeout(res, 10));
-      }
-      this._video.loadFromVideoObject(val, this._quality)
+    this._video.loadFromVideoObject(val, this._quality)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
-            composed: true
+          composed: true
         }));
       });
-      if (this._video.audio != true)
-      {
-        // Hide volume on videos with no audio
-        this._volume_control.style.display = "none";
-      }
-    });
+    if (this._video.audio != true)
+    {
+      // Hide volume on videos with no audio
+      this._volume_control.style.display = "none";
+    }
   }
 
   set annotationData(val) {
