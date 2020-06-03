@@ -1396,7 +1396,7 @@ class VideoCanvas extends AnnotationCanvas {
     // We are eligible for audio if we are at a supported playback rate
     // have audio, and are going forward.
     var audioEligible=false;
-    if (this._playbackRate >= 0.5 &&
+    if (this._playbackRate >= 1.0 &&
         this._playbackRate <= 4.0 &&
         this._audioPlayer &&
         direction == Direction.FORWARD)
