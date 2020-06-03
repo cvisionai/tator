@@ -1510,8 +1510,7 @@ class VideoCanvas extends AnnotationCanvas {
       this._fpsScore=3;
       this._networkUpdate = 0;
       this._audioCheck = 0;
-      this._rateSum = 0;
-      const AUDIO_CHECK_INTERVAL=5;
+      let AUDIO_CHECK_INTERVAL=1;
 
       var diagRoutine=function(last)
       {
@@ -1520,16 +1519,17 @@ class VideoCanvas extends AnnotationCanvas {
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
         let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
-        that._rateSum += (calculatedFPS / targetFPS);
         that._audioCheck++;
         if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
         {
-          // Adjust rate to actual playback based on average fps over 3 samples
-          const swag = Math.max(0.99,Math.min(1.0,(that._rateSum/AUDIO_CHECK_INTERVAL)));
+          // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
+          const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+          const correction = 1.0 + audioDelta/2000;
+          console.info("correction = " + correction);
+          const swag = Math.max(0.99,Math.min(1.01,correction));
           console.info("new audio playback rate = " +  swag * that._playbackRate);
           that._audioPlayer.playbackRate = (swag) * that._playbackRate;
-          that._rateSum = 0;
-          const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+
           fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
           if (Math.abs(audioDelta) >= 100)
           {
