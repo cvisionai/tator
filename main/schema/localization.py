@@ -55,6 +55,11 @@ localization_properties = {
         'type': 'integer',
         'default': 0,
     },
+    'parent': {
+        'description': 'If a clone, the pk of the parent.',
+        'type': 'number',
+        'nullable': True,
+    },
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',

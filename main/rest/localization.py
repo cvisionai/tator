@@ -152,6 +152,9 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         localizations = []
         create_buffer = []
         for loc_spec, attrs in zip(loc_specs, attr_specs):
+            parent = None
+            if loc_spec.get('parent', None):
+                parent = Localization.objects.get(pk=loc_spec.get('parent', None))
             loc = Localization(project=project,
                                meta=metas[loc_spec['type']],
                                media=medias[loc_spec['media_id']],
@@ -161,6 +164,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                                created_by=self.request.user,
                                modified_by=self.request.user,
                                version=versions[loc_spec.get('version', None)],
+                               parent=parent,
                                x=loc_spec.get('x', None),
                                y=loc_spec.get('y', None),
                                u=loc_spec.get('u', None),
