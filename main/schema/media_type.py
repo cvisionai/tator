@@ -2,74 +2,10 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
+from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
-
-media_properties = {
-    'name': {
-        'description': 'Name of the media type.',
-        'type': 'string',
-    },
-    'description': {
-        'description': 'Description of the media type.',
-        'type': 'string',
-        'default': '',
-    },
-    'dtype': {
-        'description': 'Type of the media, image or video.',
-        'type': 'string',
-        'enum': ['image', 'video'],
-    },
-    'file_format': {
-        'description': 'File extension. If omitted, any recognized file '
-                       'extension for the given dtype is accepted for upload. '
-                       'Do not include a dot prefix.',
-        'type': 'string',
-        'maxLength': 4,
-    },
-    'keep_original': {
-        'description': 'For video dtype, whether to keep the original '
-                       'video file for archival purposes after transcoding. '
-                       'If true, the originally uploaded file will be '
-                       'available for download, otherwise downloads will '
-                       'use the transcoded videos.',
-        'type': 'boolean',
-        'default': True,
-    },
-    'attribute_types': {
-        'description': 'Attribute type definitions.',
-        'type': 'array',
-        'items': {'$ref': '#/components/schema/AttributeType'},
-    },
-}
-
-media_type_schema = {
-    'type': 'object',
-    'description': 'Media type.',
-    'properties': {
-        'type': {
-            'type': 'object',
-            'properties': {
-                'id': {
-                    'type': 'integer',
-                    'description': 'Unique integer identifying a media type.',
-                },
-                **media_properties,
-                'resourcetype': {
-                    'type': 'string',
-                    'description': 'Type of the media.',
-                    'enum': ['EntityTypeMediaImage', 'EntityTypeMediaVideo'],
-                },
-            },
-        },
-        'columns': {
-            'type': 'array',
-            'description': 'Attribute types associated with this localization type.',
-            'items': attribute_type_schema,
-        },
-    },
-}
 
 class MediaTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -97,11 +33,7 @@ class MediaTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype'],
-                    'properties': media_properties,
-                },
+                'schema': {'$ref': '#/components/schema/MediaTypeSpec'},
                 'example': {
                     'name': 'My media type',
                     'dtype': 'video',
@@ -117,26 +49,11 @@ class MediaTypeListSchema(AutoSchema):
                 'description': 'Successful retrieval of media type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': media_type_schema,
+                    'items': {'$ref': '#/components/schema/MediaType'},
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = {
-                'description': 'Successful creation of media type.',
-                'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'message': {
-                            'type': 'string',
-                            'description': 'Message indicating successful creation.',
-                        },
-                        'id': {
-                            'type': 'integer',
-                            'description': 'Unique integer identifying created object.',
-                        },
-                    },
-                }}}
-            }
+            responses['201'] = message_with_id_schema('media type')
         return responses
 
 class MediaTypeDetailSchema(AutoSchema):
@@ -167,15 +84,7 @@ class MediaTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': media_properties['name'],
-                        'description': media_properties['description'],
-                        'file_format': media_properties['file_format'],
-                        'keep_original': media_properties['keep_original'],
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/MediaTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -188,7 +97,9 @@ class MediaTypeDetailSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of media type.',
-                'content': {'application/json': {'schema': media_type_schema}},
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schema/MediaType',
+                }}},
             }
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'media type')
