@@ -3,56 +3,10 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
-from ._attribute_type import attribute_type_properties
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
 
-leaf_properties = {
-    'name': {
-        'description': 'Name of the leaf type.',
-        'type': 'string',
-    },
-    'description': {
-        'description': 'Description of the leaf type.',
-        'type': 'string',
-        'default': '',
-    },
-    'attribute_types': {
-        'description': 'Attribute type definitions.',
-        'type': 'array',
-        'items': {
-            'type': 'object',
-            'properties': attribute_type_properties,
-        },
-    },
-}
-
-leaf_type_schema = {
-    'type': 'object',
-    'description': 'Leaf type.',
-    'properties': {
-        'type': {
-            'type': 'object',
-            'properties': {
-                'id': {
-                    'type': 'integer',
-                    'description': 'Unique integer identifying a leaf type.',
-                },
-                'project': {
-                    'type': 'integer',
-                    'description': 'Unique integer identifying project for this leaf type.',
-                },
-                **leaf_properties,
-            },
-        },
-        'columns': {
-            'type': 'array',
-            'description': 'Attribute types associated with this leaf type.',
-            'items': attribute_type_schema,
-        },
-    },
-}
 class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -79,11 +33,7 @@ class LeafTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name'],
-                    'properties': leaf_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/LeafTypeSpec'},
                 'example': {
                     'name': 'My leaf type',
                     'attribute_types': attribute_type_example,
@@ -98,7 +48,7 @@ class LeafTypeListSchema(AutoSchema):
                 'description': 'Successful retrieval of leaf type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': leaf_type_schema,
+                    'items': {'$ref': '#/components/schemas/LeafType'},
                 }}},
             }
         elif method == 'POST':
@@ -133,14 +83,11 @@ class LeafTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': leaf_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/LeafTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
-                }
+                },
             }}}
         return body
 
@@ -149,7 +96,9 @@ class LeafTypeDetailSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of leaf type.',
-                'content': {'application/json': {'schema': leaf_type_schema}},
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/LeafType',
+                }}},
             }
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'leaf type')
