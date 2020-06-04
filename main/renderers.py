@@ -5,6 +5,7 @@ import io
 import ujson
 
 from collections import OrderedDict
+from pprint import pprint
 
 class CsvRenderer(BaseRenderer):
     """ renders an object (list of objects) to a CSV file """
@@ -38,6 +39,18 @@ class CsvRenderer(BaseRenderer):
             return_value=str(e)
         finally:
             return return_value
+
+class PprintRenderer(BaseRenderer):
+    """ renders an object (list of objects) to a CSV file """
+    media_type = 'application/json'
+    format = 'pprint'
+
+    def render(self, listObj, media_type=None, renderer_context=None):
+        """ Returns a pretty printed representation of the list object """
+        temp_file=io.StringIO()
+        pprint(listObj, temp_file)
+        return temp_file.getvalue()
+
 
 class UJsonRenderer(BaseRenderer):
     """ Uses ujson instead of json to serialize an object """
