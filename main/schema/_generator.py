@@ -67,6 +67,8 @@ class CustomGenerator(SchemaGenerator):
                 'Version': version,
                 'CreateResponse': create_response,
                 'MessageResponse': message_response,
+                'NotFoundResponse': not_found_response,
+                'BadRequestResponse': bad_request_response,
                 'AttributeBulkUpdate': attribute_bulk_update,
                 'Credentials': credentials,
                 'Token': token,
