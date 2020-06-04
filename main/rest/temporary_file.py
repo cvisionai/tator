@@ -74,12 +74,16 @@ class TemporaryFileListAPI(generics.ListAPIView):
                 hours = 24
 
             local_file_path = os.path.join(settings.UPLOAD_ROOT,url.split('/')[-1])
-            TemporaryFile.from_local(path=local_file_path,
-                                     name=params['name'],
-                                     project=Project.objects.get(pk=project),
-                                     user=request.user,
-                                     lookup=params['lookup'],
-                                     hours = hours)
+            temp_file = TemporaryFile.from_local(path=local_file_path,
+                                                 name=params['name'],
+                                                 project=Project.objects.get(pk=project),
+                                                 user=request.user,
+                                                 lookup=params['lookup'],
+                                                 hours = hours)
+            response = Response(
+                {'message': f"Temporary file of {name} created!", 'id': temp_file.id},
+                status=status.HTTP_201_CREATED,
+            )
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
