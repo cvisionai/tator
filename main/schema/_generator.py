@@ -16,7 +16,6 @@ class CustomGenerator(SchemaGenerator):
                 'Algorithm': algorithm,
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
-                'AttributeTypeSpec': attribute_type_spec,
                 'AttributeType': attribute_type,
                 'AttributeTypeUpdate': attribute_type_update,
                 'LocalizationSpec': localization_spec,
