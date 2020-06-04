@@ -63,6 +63,8 @@ class CustomGenerator(SchemaGenerator):
                 'Transcode': transcode,
                 'UserUpdate': user_update,
                 'User': user,
+                'VersionSpec': version_spec,
+                'Version': version,
                 'CreateResponse': create_response,
                 'MessageResponse': message_response,
                 'AttributeBulkUpdate': attribute_bulk_update,
