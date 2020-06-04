@@ -50,6 +50,7 @@ class CustomGenerator(SchemaGenerator):
                 'ImageSpec': image_spec,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
+                'SectionAnalysis': section_analysis,
                 'CreateResponse': create_response,
                 'MessageResponse': message_response,
                 'AttributeBulkUpdate': attribute_bulk_update,
