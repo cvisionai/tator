@@ -6,7 +6,7 @@ from ._errors import error_responses
 class ProgressSummarySchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Progress']
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
