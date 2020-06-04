@@ -1085,6 +1085,8 @@ class Localization(Model):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
+    parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
+    """ Pointer to localization in which this one was generated from """
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
