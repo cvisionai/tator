@@ -2,59 +2,10 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
-from ._attribute_type import attribute_type_properties
+from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
-
-localization_type_schema = {
-    'type': 'object',
-    'description': 'Localization type.',
-    'properties': {
-        'type': {
-            'type': 'object',
-            'properties': {
-                'id': {
-                    'type': 'integer',
-                    'description': 'Unique integer identifying a localization type.',
-                },
-                'name': {
-                    'type': 'string',
-                    'description': 'Name of the localization type.',
-                },
-                'description': {
-                    'type': 'string',
-                    'description': 'Description of the localization type.',
-                },
-                'colorMap': {
-                    'type': 'object',
-                    'additionalProperties': True,
-                },
-                'dtype': {
-                    'type': 'string',
-                    'description': 'Shape of this localization type.',
-                    'enum': ['box', 'line', 'dot'],
-                },
-                'line_width': {
-                    'type': 'integer',
-                    'description': 'Width of the line used to draw the localization.',
-                    'minimum': 1,
-                },
-                'resourcetype': {
-                    'type': 'string',
-                    'description': 'Type of the localization.',
-                    'enum': ['EntityTypeLocalizationBox', 'EntityTypeLocalizationLine',
-                             'EntityTypeLocalizationDot'],
-                },
-            },
-        },
-        'columns': {
-            'type': 'array',
-            'description': 'Attribute types associated with this localization type.',
-            'items': attribute_type_schema,
-        },
-    },
-}
 
 class LocalizationTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -85,43 +36,7 @@ class LocalizationTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype', 'media_types'],
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the localization type.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the localization type.',
-                            'type': 'string',
-                            'default': '',
-                        },
-                        'dtype': {
-                            'description': 'Shape of the localization.',
-                            'type': 'string',
-                            'enum': ['box', 'line', 'dot'],
-                        },
-                        'media_types': {
-                            'description': 'List of integers identifying media types that '
-                                           'this localization type may apply to.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'integer',
-                                'minimum': 1,
-                            },
-                        },
-                        'attribute_types': {
-                            'description': 'Attribute type definitions.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'object',
-                                'properties': attribute_type_properties,
-                            },
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/LocalizationTypeSpec'},
                 'example': {
                     'name': 'My localization type',
                     'dtype': 'box',
@@ -134,28 +49,13 @@ class LocalizationTypeListSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
-            responses['201'] = {
-                'description': 'Successful creation of localization type.',
-                'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'message': {
-                            'type': 'string',
-                            'description': 'Message indicating successful creation.',
-                        },
-                        'id': {
-                            'type': 'integer',
-                            'description': 'Unique integer identifying created object.',
-                        },
-                    },
-                }}}
-            }
+            responses['201'] = message_with_id_schema('localization type')
         elif method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of localization type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': localization_type_schema,
+                    'items': {'$ref': '#/components/schema/LocalizationType'},
                 }}}
             }
         return responses
@@ -188,19 +88,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the localization type.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the localization type.',
-                            'type': 'string',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/LocalizationTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -213,7 +101,9 @@ class LocalizationTypeDetailSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of localization type.',
-                'content': {'application/json': {'schema': localization_type_schema}},
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schema/LocalizationType',
+                }}},
             }
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'localization type')

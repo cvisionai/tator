@@ -12,9 +12,12 @@ from .leaf import leaf_suggestion
 from .leaf import leaf_spec
 from .leaf import leaf_update
 from .leaf import leaf
+from .localization_type import localization_type_spec
+from .localization_type import localization_type_update
+from .localization_type import localization_type
 from .localization import localization_spec
-from .localization import localization
 from .localization import localization_update
+from .localization import localization
 
 from .save_video import video_spec
 from .save_video import video_update
