@@ -3,6 +3,7 @@ from .algorithm_launch import algorithm_launch
 from .algorithm import algorithm
 from .analysis import analysis_spec
 from .analysis import analysis
+from .attribute_type import autocomplete_service
 from .attribute_type import attribute_type
 from .attribute_type import attribute_type_update
 from .leaf_type import leaf_type_spec

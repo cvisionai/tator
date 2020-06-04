@@ -1,3 +1,13 @@
+autocomplete_service = {
+    'type': 'object',
+    'properties': {
+        'serviceUrl': {
+            'description': 'URL of the autocomplete service.',
+            'type': 'string',
+        },
+    },
+}
+
 attribute_type_properties = {
     'name': {
         'description': 'Name of the attribute.',
@@ -56,13 +66,7 @@ attribute_type_properties = {
     'autocomplete': {
         'description': 'Object indicating URL of autocomplete service '
                        'for string dtype.',
-        'type': 'object',
-        'properties': {
-            'serviceUrl': {
-                'description': 'URL of the autocomplete service.',
-                'type': 'string',
-            },
-        },
+        '$ref': '#/components/schemas/AutocompleteService',
     },
     'use_current': {
         'description': 'True to use current datetime as default for '
