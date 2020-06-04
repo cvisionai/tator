@@ -1430,6 +1430,7 @@ class AnnotationCanvas extends TatorElement
       clearTimeout(this._animator);
     }
     this.activeLocalization = null;
+    this._emphasis = null;
     if (this._mouseMode == MouseMode.SELECT) {
       this._mouseMode = MouseMode.QUERY;
     }
@@ -2447,6 +2448,7 @@ class AnnotationCanvas extends TatorElement
   onPlay()
   {
     this.activeLocalization = null;
+    this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
   }
 
