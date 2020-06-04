@@ -1935,6 +1935,19 @@ class AnnotationCanvas extends TatorElement
     if (this._data.getVersion().id != this.activeLocalization.version)
     {
       console.info("Modifying a localization from another layer!");
+
+      let current = this._framedData.get(newObject.frame).get(original_meta);
+      for (let local of current)
+      {
+        if (local.parent == this.activeLocalization.id &&
+            local.version == this.activeLocalization.id)
+        {
+          console.error("Already a clone in this layer!");
+          this.selectNone();
+          this._framedData.get(newObject.frame).delete(original_meta);
+          this.updateType(objDescription,null);
+        }
+      }
       let newObject = {};
       let original_meta = this.activeLocalization.meta;
       newObject.parent = this.activeLocalization.id;
@@ -1958,7 +1971,7 @@ class AnnotationCanvas extends TatorElement
         let localizations = this._framedData.get(newObject.frame).get(original_meta);
         for (let local of localizations)
         {
-          if (local.parent_id == newObject.parent)
+          if (local.parent == newObject.parent)
           {
             this.selectLocalization(local, true);
             break;
