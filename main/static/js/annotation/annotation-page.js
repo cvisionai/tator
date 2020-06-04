@@ -459,7 +459,7 @@ class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("patchMeta", evt => {
           this.clearMetaCaches();
-          canvas.newMetadataItem(evt.detail.typeId, false, evt.detail.objId);
+          canvas.newMetadataItem(evt.detail.typeId, false, evt.detail.obj);
         });
         this._saves = {};
 

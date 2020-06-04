@@ -1750,7 +1750,7 @@ class AnnotationCanvas extends TatorElement
 
   // Construct a new metadata type based on the argument provided
   // objId given if this is to redraw an existing annotation
-  newMetadataItem(typeId, metaMode, objId)
+  newMetadataItem(typeId, metaMode, obj)
   {
     if ("pause" in this) {
       this.pause();
@@ -1760,10 +1760,11 @@ class AnnotationCanvas extends TatorElement
     if (objDescription.isLocalization == true)
     {
       // If we are redrawing a localization set the token
-      if (objId != undefined)
+      if (obj != undefined)
       {
-        this._redrawObjId = objId;
+        this._redrawObjId = obj.id;
         this._mouseMode = MouseMode.NEW;
+        this.selectLocalization(obj, true, false);
       }
       else
       {
