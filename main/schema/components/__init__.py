@@ -37,10 +37,13 @@ from .project import project
 from .save_image import image_spec
 from .save_video import video_spec
 from .save_video import video_update
+from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_update
 from .state import state
-from .section_analysis import section_analysis
+from .state_type import state_type_spec
+from .state_type import state_type_update
+from .state_type import state_type
 from ._common import create_response
 from ._common import message_response
 from ._common import attribute_bulk_update
