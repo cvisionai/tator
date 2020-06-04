@@ -97,6 +97,11 @@ class EntitySelector extends TatorElement {
     svg.appendChild(circle);
     capture.appendChild(svg);
 
+    const redraw = document.createElement("entity-redraw-button");
+    redraw.style.marginLeft="8px";
+    redraw.style.display="none";
+    controls.appendChild(redraw);
+
     const more = document.createElement("entity-more");
     controls.appendChild(more);
 
@@ -142,12 +147,23 @@ class EntitySelector extends TatorElement {
       this._undo.del(endpoint, this._data[index].id, this._dataType);
     });
 
+    redraw.addEventListener("click", () => {
+      const index = parseInt(this._current.textContent) - 1;
+      this.dispatchEvent(new CustomEvent("patchMeta", {
+        detail: {typeId: this._dataType.id,
+                 objId: this._data[index].id},
+        composed: true,
+      }));
+    });
+
     more.addEventListener("click", () => {
       if (capture.style.display == "none") {
         if (hasPermission(this._permission, "Can Edit")) {
           this._del.style.display = "block";
+          redraw.style.display = "block";
         } else {
           this._del.style.display = "none";
+          redraw.style.display = "none";
         }
         // Enable snapshots for boxes
         if (this._dataType.isLocalization &&
@@ -157,6 +173,7 @@ class EntitySelector extends TatorElement {
       } else {
         this._del.style.display = "none";
         capture.style.display = "none";
+        redraw.style.display = "none";
       }
     });
 

@@ -91,7 +91,7 @@ class SaveDialog extends TatorElement {
     }));
     this._recents.store(this._values);
     const body = {
-      type: this._dataType.id,
+      type: Number(this._dataType.id.split("_")[1]),
       name: this._dataType.name,
       media_id: this._mediaId,
       modified: true,

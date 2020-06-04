@@ -90,6 +90,13 @@ class AttributePanel extends TatorElement {
         widget.style.display = "none";
       }
 
+      // Set whether this widget is required
+      if (typeof column.required === "undefined") {
+        widget.required = false;
+      } else {
+        widget.required = column.required;
+      }
+
       if (typeof this._permission !== "undefined") {
         widget.permission = this._permission;
       }
@@ -111,10 +118,10 @@ class AttributePanel extends TatorElement {
     let values = {};
     for (const widget of this._div.children) {
       const val = widget.getValue();
-      if (val === null) {
+      if ((val === null) && (widget.required)) {
         values = null;
         break;
-      } else {
+      } else if (val !== null) {
         values[widget.getAttribute("name")] = val;
       }
     }

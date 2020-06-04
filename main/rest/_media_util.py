@@ -311,11 +311,11 @@ class MediaUtil:
             proc = subprocess.run(gif_args, check=True, capture_output=True)
             return os.path.join(self._temp_dir,"animation.gif")
 
-    def generate_error_image(code, message):
+    def generate_error_image(code, message, img_format="png"):
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
         font = ImageFont.truetype("DejaVuSans.ttf", 28)
         img = Image.open(os.path.join(settings.STATIC_ROOT,
-                                      "images/computer.jpg"))
+                                      f"images/computer.jpg"))
         draw = ImageDraw.Draw(img)
         W, H = img.size
 
@@ -337,5 +337,8 @@ class MediaUtil:
             draw.text((100,start_height+(line_height*line_idx)), line, (255,62,29), font=font)
 
         img_buf = io.BytesIO()
-        img.save(img_buf, "jpeg", quality=95)
+        if img_format == "jpg":
+            img.save(img_buf, "jpeg", quality=95)
+        else:
+            img.save(img_buf, "png", quality=95)
         return img_buf.getvalue()

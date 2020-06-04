@@ -96,44 +96,45 @@ class AnnotationPage extends TatorPage {
             }
           })
           .then((response) => response.json())
-          .then(data => {
-            this._browser.mediaType = data;
-            this._undo.mediaType = data;
-            this._player.mediaTypes = data['type'];
+          .then(type_data => {
+            this._browser.mediaType = type_data;
+            this._undo.mediaType = type_data;
+            let player;
+            if (data.thumbnail_gif) {
+              player = document.createElement("annotation-player");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+              this._setupInitHandlers(player);
+              this._getMetadataTypes(player, player._video._canvas);
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._video.captureFrame(e.detail.localizations);
+                  });
+            } else {
+              player = document.createElement("annotation-image");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.style.minWidth="70%";
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+              this._setupInitHandlers(player);
+              this._getMetadataTypes(player, player._image._canvas);
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._image.captureFrame(e.detail.localizations);
+                  });
+            }
           });
-          let player;
-          if (data.thumbnail_gif) {
-            player = document.createElement("annotation-player");
-            this._player = player;
-            player.addDomParent({"object": this._headerDiv,
-                                 "alignTo":  this._browser});
-            player.mediaInfo = data;
-            this._main.insertBefore(player, this._browser);
-            this._setupInitHandlers(player);
-            this._getMetadataTypes(player, player._video._canvas);
-            this._settings._capture.addEventListener(
-              'captureFrame',
-              (e) =>
-                {
-                  player._video.captureFrame(e.detail.localizations);
-                });
-          } else {
-            player = document.createElement("annotation-image");
-            this._player = player;
-            player.style.minWidth="70%";
-            player.addDomParent({"object": this._headerDiv,
-                                 "alignTo":  this._browser});
-            player.mediaInfo = data;
-            this._main.insertBefore(player, this._browser);
-            this._setupInitHandlers(player);
-            this._getMetadataTypes(player, player._image._canvas);
-            this._settings._capture.addEventListener(
-              'captureFrame',
-              (e) =>
-                {
-                  player._image.captureFrame(e.detail.localizations);
-                });
-          }
           fetch("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
@@ -170,18 +171,27 @@ class AnnotationPage extends TatorPage {
           const entityId = Number(searchParams.get("selected_entity"));
           this._settings.setAttribute("entity-type", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          const data = this._data._dataByType.get(typeId);
-          for (const elem of data) {
-            if (elem.id == entityId) {
-              this._browser.selectEntity(elem);
-              break;
+          for (const dtype of ['state', 'box', 'line', 'dot']) {
+            let modifiedTypeId = dtype + "_" + typeId;
+            if (this._data._dataByType.has(modifiedTypeId)) {
+              const data = this._data._dataByType.get(modifiedTypeId);
+              for (const elem of data) {
+                if (elem.id == entityId) {
+                  this._browser.selectEntity(elem);
+                  break;
+                }
+              }
             }
           }
-        }
-        if (haveType) {
+        } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);
-          this._browser._openForTypeId(typeId);
+          for (const dtype of ['state', 'box', 'line', 'dot']) {
+            let modifiedTypeId = dtype + "_" + typeId;
+            if (this._data._dataByType.has(modifiedTypeId)) {
+              this._browser._openForTypeId(modifiedTypeId);
+            }
+          }
         }
         if (haveVersion)
         {
@@ -334,6 +344,10 @@ class AnnotationPage extends TatorPage {
           this._versionButton.text = this._version.name;
         }
         const dataTypes = localizationTypes.concat(stateTypes)
+        // Replace the data type IDs so they are guaranteed to be unique.
+        for (const dataType of dataTypes) {
+          dataType.id = dataType.dtype + "_" + dataType.id;
+        }
         this._data.init(dataTypes, this._version, projectId, mediaId);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
@@ -442,6 +456,10 @@ class AnnotationPage extends TatorPage {
           {
             canvas.goToFrame(evt.detail.frame);
           }
+        });
+        this._browser.addEventListener("patchMeta", evt => {
+          this.clearMetaCaches();
+          canvas.newMetadataItem(evt.detail.typeId, false, evt.detail.objId);
         });
         this._saves = {};
 

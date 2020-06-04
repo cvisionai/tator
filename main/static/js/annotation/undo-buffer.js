@@ -101,7 +101,7 @@ class UndoBuffer extends HTMLElement {
 
   patch(detailUri, id, body, dataType) {
     const projectId = this.getAttribute("project-id");
-    const promise = this._get(detailUri, id, dataType.id);
+    const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
         let other;
@@ -109,7 +109,7 @@ class UndoBuffer extends HTMLElement {
           other = {
             media_id: data.media,
             frame: data.frame,
-            type: data.meta.id,
+            type: data.meta,
           };
         } else if (detailUri == "State") {
           other = {
@@ -160,7 +160,7 @@ class UndoBuffer extends HTMLElement {
   }
 
   del(detailUri, id, dataType) {
-    const promise = this._get(detailUri, id, dataType.id);
+    const promise = this._get(detailUri, id);
     if (promise) {
       return promise.then(data => {
         let body;
@@ -168,7 +168,7 @@ class UndoBuffer extends HTMLElement {
           body = {
             media_id: data.media,
             frame: data.frame,
-            type: dataType.id,
+            type: Number(dataType.id.split("_")[1]),
             version: data.version,
             x: data.x,
             y: data.y,
@@ -192,7 +192,7 @@ class UndoBuffer extends HTMLElement {
             media_ids: data.media,
             localization_ids: data.localizations,
             frame: data.frame,
-            type: dataType.id,
+            type: Number(dataType.id.split("_")[1]),
             version: data.version,
             ...data.attributes,
           };
@@ -222,6 +222,7 @@ class UndoBuffer extends HTMLElement {
   }
 
   undo() {
+    return; // Undo temporarily disabled.
     if (this._index > 0) {
       this._index--;
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
@@ -232,9 +233,9 @@ class UndoBuffer extends HTMLElement {
           promise
           .then(response => response.json())
           .then(data => {
-            this._emitUpdate(method, data.id, body, dataType);
+            this._emitUpdate(method, data.id[0], body, dataType);
             const delId = this._forwardOps[this._index][opIndex][2];
-            const newId = data.id;
+            const newId = data.id[0];
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
                 if (op[2] == delId || op[2] == null) {
@@ -262,9 +263,9 @@ class UndoBuffer extends HTMLElement {
           promise
           .then(response => response.json())
           .then(data => {
-            this._emitUpdate(method, data.id, body, dataType);
+            this._emitUpdate(method, data.id[0], body, dataType);
             const delId = this._backwardOps[this._index - 1][opIndex][2];
-            const newId = data.id;
+            const newId = data.id[0];
             const replace = ops => {
               for (const [opIndex, op] of ops.entries()) {
                 if (op[2] == delId || op[2] == null) {
@@ -283,8 +284,8 @@ class UndoBuffer extends HTMLElement {
     }
   }
 
-  _get(detailUri, id, typeId) {
-    const url = "/rest/" + detailUri + "/" + id + "?type=" + typeId;
+  _get(detailUri, id) {
+    const url = "/rest/" + detailUri + "/" + id;
     return fetchRetry(url, {
       method: "GET",
       ...this._headers(),

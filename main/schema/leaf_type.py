@@ -3,6 +3,8 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
+from ._attribute_type import attribute_type_properties
+from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
 
@@ -15,6 +17,14 @@ leaf_properties = {
         'description': 'Description of the leaf type.',
         'type': 'string',
         'default': '',
+    },
+    'attribute_types': {
+        'description': 'Attribute type definitions.',
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'properties': attribute_type_properties,
+        },
     },
 }
 
@@ -76,6 +86,7 @@ class LeafTypeListSchema(AutoSchema):
                 },
                 'example': {
                     'name': 'My leaf type',
+                    'attribute_types': attribute_type_example,
                 },
             }}}
         return body

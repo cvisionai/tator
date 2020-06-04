@@ -3,7 +3,7 @@ class PlayButton extends TatorElement {
     super();
 
     const button = document.createElement("button");
-    button.setAttribute("class", "video__play-wrap d-flex flex-justify-center btn-clear circle text-white");
+    button.setAttribute("class", "video__play-wrap d-flex flex-justify-center btn-clear circle text-white flex-items-center");
     this._shadow.appendChild(button);
 
     this._play = document.createElementNS(svgNamespace, "svg");

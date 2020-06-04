@@ -8,6 +8,7 @@ from progressbar import progressbar,ProgressBar
 
 from main.models import *
 from main.search import TatorSearch
+from main.search import mediaFileSizes
 
 from django.conf import settings
 from django.db.models import F
@@ -45,29 +46,7 @@ def updateProjectTotals(force=False):
                     if os.path.exists(file.path):
                         project.size += os.path.getsize(file.path)
             for file in files:
-                if file.file:
-                    if os.path.exists(file.file.path):
-                        project.size += file.file.size
-                if os.path.exists(file.thumbnail.path):
-                    project.size += file.thumbnail.size
-                if file.meta.dtype == 'video':
-                    if file.original:
-                        if os.path.exists(file.original):
-                            statinfo = os.stat(file.original)
-                            project.size = project.size + statinfo.st_size
-                    if os.path.exists(file.thumbnail_gif.path):
-                        project.size += file.thumbnail_gif.size
-                    if file.media_files:
-                        if 'archival' in file.media_files:
-                            for archival in file.media_files['archival']:
-                                if os.path.exists(archival['path']):
-                                    statinfo = os.stat(archival['path'])
-                                    project.size += statinfo.st_size
-                        if 'streaming' in file.media_files:
-                            for streaming in file.media_files['streaming']:
-                                if os.path.exists(streaming['path']):
-                                    statinfo = os.stat(streaming['path'])
-                                    project.size += statinfo.st_size
+                project.size += mediaFileSizes(file)[0]
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
             project.save()
 
@@ -326,7 +305,7 @@ def attrTypeToDict(type_):
               attribute_types.append({
                   'name': attr_type.name,
                   'description': attr_type.description,
-                  'dtype': 'datetime',
+                  'dtype': 'geopos',
                   'default': list(attr_type.default) if attr_type.default is not None else None,
               })
     return attribute_types
@@ -748,4 +727,19 @@ def fixMigrateFlatVisible():
                 types.append(type_)
             else:
                 logger.info(f"Could not update visible field on {type_.name}, no foreign key to polymorphic model!")
+        type_class.objects.bulk_update(types, ['visible'])
+
+def fixMigrateFlatAttributeTypeGeopos():
+    """ Fixes dtype of geoposition attributes.
+    """
+    for type_class in [MediaType, LocalizationType, StateType, LeafType]:
+        types = []
+        for type_ in type_class.objects.all():
+            attribute_types = AttributeTypeGeoposition.objects.filter(applies_to=type_.polymorphic)
+            for attr_type in attribute_types:
+                for flat_attr_type in type_.attribute_types:
+                    if flat_attr_type['name'] == attr_type.name:
+                        flat_attr_type['dtype'] = 'geopos'
+            types.append(type_)
         type_class.objects.bulk_update(types, ['attribute_types'])
+    

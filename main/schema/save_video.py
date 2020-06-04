@@ -2,6 +2,7 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_with_id_schema
+
 from .components import video_spec
 from .components import video_update
 

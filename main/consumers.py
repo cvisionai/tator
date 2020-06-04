@@ -43,6 +43,7 @@ class ProgressProducer:
         self.group_header = {
             'type': 'progress',
             'project_id': project_id,
+            'project_name': Project.objects.get(pk=project_id).name,
             'gid': gid,
             'prefix': prefix,
             'name': name,

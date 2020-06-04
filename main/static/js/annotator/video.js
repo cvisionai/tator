@@ -226,7 +226,7 @@ class VideoBufferDemux
       // If the time is comfortably in the range don't bother getting
       // additional data
       let timeFromStart = time - this._seekVideo.buffered.start(idx);
-      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.90;
+      let bufferedLength = (this._seekVideo.buffered.end(idx) - this._seekVideo.buffered.start(idx)) * 0.75;
       if (timeFromStart <= bufferedLength && timeFromStart > 0)
       {
         return this._seekVideo;
@@ -345,8 +345,23 @@ class VideoBufferDemux
       {
         for (let idx = 0; idx < this._seekBuffer.buffered.length; idx++)
         {
-          this._pendingSeeks.push({"delete_range": [this._seekBuffer.buffered.start(idx),
-                                                    this._seekBuffer.buffered.end(idx)]});
+          let begin = this._seekBuffer.buffered.start(idx);
+          let end = this._seekBuffer.buffered.end(idx);
+
+          // If the seek buffer has 3 seconds extra on either side
+          // of the request chop of 1 seconds on either side this
+          // means there is a maximum of ~4 second buffer in the
+          // hq seek buffer.
+          if (begin < time - 3)
+          {
+            this._pendingSeeks.push({"delete_range": [begin,
+                                                      time - 1]});
+          }
+          if (end > time + 3)
+          {
+            this._pendingSeeks.push({"delete_range": [time+1,
+                                                      end]});
+          }
         }
         this._seekBuffer.appendBuffer(data);
       }
@@ -596,6 +611,10 @@ class MotionComp {
     {
       displayFps *= factor;
     }
+    if (factor < 2)
+    {
+      displayFps *= factor;
+    }
 
     // Compute a 3-slot schedule for playback
     let animationCyclesPerFrame = (this._monitorFps / displayFps);
@@ -604,7 +623,7 @@ class MotionComp {
       // Safe mode slows things down by 2x
       animationCyclesPerFrame *= 2;
     }
-    let regularSize = Math.floor(animationCyclesPerFrame);
+    let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
     let largeSize = regularSize + Math.round(fractional*3)
     this._schedule = [ regularSize,
@@ -647,7 +666,7 @@ class MotionComp {
     {
       clicks *= 2;
     }
-    return clicks;
+    return Math.floor(clicks);
   }
 
   safeMode()
@@ -680,6 +699,9 @@ class MotionComp {
 class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
+
+    // Set global variable to find us
+    window.tator_video = this;
     var that = this;
     this._diagnosticMode = false;
     this._videoVersion = 1;
@@ -752,6 +774,14 @@ class VideoCanvas extends AnnotationCanvas {
     if (this._dlWorker != null)
     {
       this._dlWorker.terminate();
+    }
+  }
+
+  setVolume(volume)
+  {
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.volume = volume / 100;
     }
   }
 
@@ -972,11 +1002,23 @@ class VideoCanvas extends AnnotationCanvas {
       hq_idx = 0;
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
+      let host = `${window.location.protocol}//${window.location.host}`;
+      if ('audio' in videoObject.media_files)
+      {
+        let audio_def = videoObject.media_files['audio'][0];
+        this._audioPlayer = document.createElement("AUDIO");
+        this._audioPlayer.setAttribute('src', host + audio_def.path);
+        this._audioPlayer.volume = 0.5; // Default volume
+        this.audio = true;
+        this.addPauseListener(() => {
+          this._audioPlayer.pause();
+        });
+      }
+
       // Use worst-case dims
       dims = [streaming_files[0].resolution[1],
               streaming_files[0].resolution[0]];
 
-      let host = `${window.location.protocol}//${window.location.host}`;
       for (var idx = 0; idx < streaming_files.length; idx++)
       {
         if (streaming_files[idx].host)
@@ -1163,7 +1205,6 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   /// Returns the raw HTML5 buffer for a given frame (default current)
-  /// TODO: Add strategy for multires
   videoBuffer(frame, forceSeekBuffer)
   {
     if (frame == undefined)
@@ -1198,12 +1239,19 @@ class VideoCanvas extends AnnotationCanvas {
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
   }
+
+  frameToAudioTime(frame)
+  {
+    return this._startBias + ((1/this._fps)*frame);
+  }
+
   /// Seeks to a specific frame of playback and calls callback when done
   /// with the signature of (data, width, height)
   seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
     var time=this.frameToTime(frame);
+    var audio_time = this.frameToAudioTime(frame);
     var video=this.videoBuffer(frame, forceSeekBuffer);
 
     // Only support seeking if we are stopped (i.e. not playing)
@@ -1239,6 +1287,11 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          if (forceSeekBuffer && that._audioPlayer)
+          {
+            that._audioPlayer.currentTime = audio_time;
+            console.info("Setting audio to " + audio_time);
+          }
         };
       });
 
@@ -1343,6 +1396,18 @@ class VideoCanvas extends AnnotationCanvas {
     var lastTime=performance.now();
     var animationIdx = 0;
 
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    var audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
     var player=function(domtime){
 
       // Start the FPS monitor once we start playing
@@ -1363,6 +1428,10 @@ class VideoCanvas extends AnnotationCanvas {
           if (that._motionComp.timeToUpdate(animationIdx+increment))
           {
             that.displayLatest();
+            if (audioEligible && that._audioPlayer.paused)
+            {
+              that._audioPlayer.play();
+            }
             break;
           }
         }
@@ -1375,6 +1444,10 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
+        if (audioEligible && that._audioPlayer.paused)
+        {
+          that._audioPlayer.pause();
+        }
         that._motionComp.clearTimesVector();
         that._playerTimeout=null;
       }
@@ -1436,6 +1509,8 @@ class VideoCanvas extends AnnotationCanvas {
       this._fpsLoadDiag=0;
       this._fpsScore=3;
       this._networkUpdate = 0;
+      this._audioCheck = 0;
+      let AUDIO_CHECK_INTERVAL=1; // This could be tweaked if we are too CPU intensive
 
       var diagRoutine=function(last)
       {
@@ -1444,6 +1519,23 @@ class VideoCanvas extends AnnotationCanvas {
         var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
         var targetFPS = that._motionComp.targetFPS;
         let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
+        that._audioCheck++;
+        if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+        {
+          // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
+          const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+          const correction = 1.0 + (audioDelta/2000);
+          const swag = Math.max(0.99,Math.min(1.01,correction));
+          that._audioPlayer.playbackRate = (swag) * that._playbackRate;
+
+          fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
+          if (Math.abs(audioDelta) >= 100)
+          {
+            console.info("Readjusting audio time");
+            const audio_increment = 1+that._motionComp.frameIncrement(that._fps,that._playbackRate);
+            that._audioPlayer.currentTime = that.frameToAudioTime(that._dispFrame+audio_increment);
+          }
+        }
         console.info(fps_msg);
         that._fpsDiag=0;
         that._fpsLoadDiag=0;
@@ -1534,6 +1626,10 @@ class VideoCanvas extends AnnotationCanvas {
   // If running will clear player context
   stopPlayerThread()
   {
+    if (this._audioPlayer)
+    {
+      this._audioPlayer.pause();
+    }
     if (this._playerTimeout)
     {
       clearTimeout(this._playerTimeout);
@@ -1551,6 +1647,7 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._diagTimeout);
       this._diagTimeout=null;
     }
+    this._direction = Direction.STOPPED;
   }
 
   pause()

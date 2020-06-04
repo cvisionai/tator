@@ -30,7 +30,7 @@ class AnnotationPlayer extends TatorElement {
     playButtons.appendChild(fastForward);
 
     const timelineDiv = document.createElement("div");
-    timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-4");
+    timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-2");
     div.appendChild(timelineDiv);
 
     const timeDiv = document.createElement("div");
@@ -79,6 +79,11 @@ class AnnotationPlayer extends TatorElement {
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
 
+    this._volume_control = document.createElement("volume-control");
+    div.appendChild(this._volume_control);
+    this._volume_control.addEventListener("volumeChange", (evt) => {
+      this._video.setVolume(evt.detail.volume);
+    });
     const fullscreen = document.createElement("video-fullscreen");
     div.appendChild(fullscreen);
 
@@ -194,7 +199,7 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._timeline.addEventListener("select", evt => {
-      this.goToFrame(evt.detail.association.frame);
+      this.goToFrame(evt.detail.frame);
     });
 
     fullscreen.addEventListener("click", evt => {
@@ -240,21 +245,18 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    // Have to wait for canvas to draw.
-    new Promise(async resolve => {
-      while (true) {
-        if (this._video._canvas.clientHeight > 0) {
-          break;
-        }
-        await new Promise(res => setTimeout(res, 10));
-      }
-      this._video.loadFromVideoObject(val, this._quality)
+    this._video.loadFromVideoObject(val, this._quality)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
-            composed: true
+          composed: true
         }));
       });
-    });
+    if (this._video.audio != true)
+    {
+      // Hide volume on videos with no audio
+      this._volume_control.style.display = "none";
+    }
+    this._volume_control.volume = this.mediaType['default_volume'];
   }
 
   set annotationData(val) {
@@ -262,9 +264,9 @@ class AnnotationPlayer extends TatorElement {
     this._timeline.annotationData = val;
   }
 
-  newMetadataItem(dtype, metaMode) {
+  newMetadataItem(dtype, metaMode, objId) {
     this._video.style.cursor = "crosshair";
-    this._video.newMetadataItem(dtype, metaMode);
+    this._video.newMetadataItem(dtype, metaMode, objId);
   }
 
   submitMetadata(data) {
@@ -370,9 +372,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.pan();
   }
 
+  // Go to the frame at the highest resolution
   goToFrame(frame) {
     this._video.onPlay();
-    return this._video.gotoFrame(frame);
+    return this._video.gotoFrame(frame, true);
   }
 
   selectNone() {

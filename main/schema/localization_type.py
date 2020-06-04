@@ -2,6 +2,8 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
+from ._attribute_type import attribute_type_properties
+from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
 
@@ -110,12 +112,21 @@ class LocalizationTypeListSchema(AutoSchema):
                                 'minimum': 1,
                             },
                         },
+                        'attribute_types': {
+                            'description': 'Attribute type definitions.',
+                            'type': 'array',
+                            'items': {
+                                'type': 'object',
+                                'properties': attribute_type_properties,
+                            },
+                        },
                     },
                 },
                 'example': {
                     'name': 'My localization type',
                     'dtype': 'box',
                     'media_types': [1],
+                    'attribute_types': attribute_type_example,
                 },
             }}}
         return body

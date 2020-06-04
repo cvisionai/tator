@@ -11,8 +11,9 @@ class ProgressJob extends TatorElement {
     label.setAttribute("for", "header-processing");
     li.appendChild(label);
 
-    this._text = document.createTextNode("");
-    label.appendChild(this._text);
+    this._link = document.createElement("a");
+    this._link.setAttribute("style", "color:white;");
+    label.appendChild(this._link);
 
     this._cancel = document.createElement("cancel-button");
     label.appendChild(this._cancel);
@@ -29,6 +30,11 @@ class ProgressJob extends TatorElement {
         composed: true,
       }));
     });
+  }
+
+  setText(text, project_name, project_id) {
+    this._link.textContent = project_name + " | " + text;
+    this._link.setAttribute("href", "/" + project_id + "/project-detail");
   }
 
   static get observedAttributes() {
@@ -50,9 +56,6 @@ class ProgressJob extends TatorElement {
           const pct = newValue / this.getAttribute("max");
           this._progress.textContent = pct + "%";
         }
-        break;
-      case "text":
-        this._text.nodeValue = newValue;
         break;
     }
   }

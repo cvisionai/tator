@@ -152,7 +152,6 @@ class Project(Model):
     num_files = IntegerField(default=0)
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
-    section_order = ArrayField(CharField(max_length=128), default=list)
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
     def user_permission(self, user_id):
@@ -746,6 +745,8 @@ class MediaType(Model):
                             blank=True,
                             default=None)
     keep_original = BooleanField(default=True, null=True, blank=True)
+    default_volume = IntegerField(default=0)
+    """ Default Volume for Videos (default is muted) """
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
@@ -933,10 +934,13 @@ class Media(Model):
                  .. code-block ::
 
                      map = {"archival": [ VIDEO_DEF, VIDEO_DEF,... ],
-                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ]}
+                            "streaming": [ VIDEO_DEF, VIDEO_DEF, ... ],
+                            <"audio": [AUDIO_DEF]>}
                      video_def = {"path": <path_to_disk>,
                                   "codec": <human readable codec>,
                                   "resolution": [<vertical pixel count, e.g. 720>, width]
+                     audio_def = {"path": <path_to_disk>,
+                                  "codec": <human readable codec>}
 
 
                                   ###################
@@ -1237,6 +1241,8 @@ class Analysis(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     name = CharField(max_length=64)
     data_query = CharField(max_length=1024, default='*')
+    def __str__(self):
+        return f"{self.project} | {self.name}"
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
@@ -1271,6 +1277,15 @@ def database_query(query):
         aq=datetime.datetime.now()
         l=[make_dict(cursor.description, x) for x in cursor]
         af=datetime.datetime.now()
-        print(f"Query = {aq-bq}")
-        print(f"List = {af-aq}")
+        logger.info(f"Query = {aq-bq}")
+        logger.info(f"List = {af-aq}")
     return l
+
+def database_query_ids(table, ids, order):
+    """ Given table name and list of IDs, do query using a subquery expression.
+    """
+    query = (f'SELECT * FROM \"{table}\" WHERE \"{table}\".\"id\" IN '
+             f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
+             f'ORDER BY {order}')
+    return database_query(query)
+

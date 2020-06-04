@@ -246,6 +246,7 @@ FILES = \
     zip-stream.js \
     util/get-cookie.js \
     util/identifying-attribute.js \
+    util/get-dtype.js \
     util/fetch-retry.js \
     util/has-permission.js \
     components/tator-element.js \
@@ -296,6 +297,7 @@ FILES = \
     project-detail/new-section.js \
     project-detail/section-search.js \
     project-detail/section-upload.js \
+    project-detail/big-download-form.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
@@ -362,6 +364,7 @@ FILES = \
     annotation/entity-prev-button.js \
     annotation/entity-next-button.js \
     annotation/entity-delete-button.js \
+    annotation/entity-redraw-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
@@ -372,6 +375,7 @@ FILES = \
     annotation/version-button.js \
     annotation/version-select.js \
     annotation/version-dialog.js \
+    annotation/volume-control.js \
     third_party/autocomplete.js \
     utilities.js
 

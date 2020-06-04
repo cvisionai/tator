@@ -213,14 +213,38 @@ class MediaSection extends TatorElement {
           headers: headers,
         })
         .then(response => response.json())
-        .then(mediaCount => {
+        .then(async mediaCount => {
           let lastFilename = null;
           let numImages = 0;
           let numVideos = 0;
+          let size = 0;
           for (const key in mediaCount) {
             numImages += mediaCount[key]["num_images"];
             numVideos += mediaCount[key]["num_videos"];
+            size += mediaCount[key]["download_size_images"];
+            size += mediaCount[key]["download_size_videos"];
           }
+          console.log("Download size: " + size);
+          console.log("Download num files: " + (numImages + numVideos));
+          if ((size > 60000000000) || (numImages + numVideos > 5000)) {
+            const bigDownload = document.createElement("big-download-form");
+            const page = document.getElementsByTagName("project-detail")[0];
+            page._projects.appendChild(bigDownload);
+            bigDownload.setAttribute("is-open", "");
+            page.setAttribute("has-open-modal", "");
+            bigDownload.addEventListener("close", evt => {
+              page.removeAttribute("has-open-modal", "");
+              page._projects.removeChild(bigDownload);
+            });
+            while (bigDownload.hasAttribute("is-open")) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            if (!bigDownload._confirm) {
+              page._leaveConfirmOk = false;
+              return;
+            }
+          }
+
           const batchSize = numImages > numVideos ? 20 : 2;
           const filenames = new Set();
           const re = /(?:\.([^.]+))?$/;

@@ -6,6 +6,7 @@ localization_properties = {
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'y': {
         'description': 'Normalized vertical position of top edge of bounding box for '
@@ -14,34 +15,40 @@ localization_properties = {
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'width': {
         'description': 'Normalized width of bounding box for `box` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'height': {
         'description': 'Normalized height of bounding box for `box` localization types.',
         'type': 'number',
         'minimum': 0.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'u': {
         'description': 'Horizontal vector component for `line` localization types.',
         'type': 'number',
-        'minimum': 0.0,
+        'minimum': -1.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'v': {
         'description': 'Vertical vector component for `line` localization types.',
         'type': 'number',
-        'minimum': 0.0,
+        'minimum': -1.0,
         'maximum': 1.0,
+        'nullable': True,
     },
     'frame': {
         'description': 'Frame number of this localization if it is in a video.',
         'type': 'integer',
+        'default': 0,
     },
     'attributes': {
         'description': 'Object containing attribute values.',
@@ -52,13 +59,11 @@ localization_properties = {
 
 post_properties = {
     'media_id': {
-        'description': 'Unique integer identifying a media. Required if '
-                       '`many` is not given.',
+        'description': 'Unique integer identifying a media.',
         'type': 'integer',
     },
     'type': {
-        'description': 'Unique integer identifying a localization type.'
-                       'Required if `many` is not given.',
+        'description': 'Unique integer identifying a localization type.',
         'type': 'integer',
     },
     'version': {
@@ -68,11 +73,7 @@ post_properties = {
     'modified': {
         'description': 'Whether this localization was created in the web UI.',
         'type': 'boolean',
-        'default': False,
-    },
-    'frame': {
-        'description': 'Frame number of this localization if it is in a video.',
-        'type': 'integer',
+        'nullable': True,
     },
 }
 
@@ -114,7 +115,7 @@ localization_get_properties = {
 localization_spec = {
     'type': 'object',
     'description': 'Localization creation spec.',
-    'required': ['media_id', 'type', 'x', 'y', 'width', 'height', 'frame'],
+    'required': ['media_id', 'type', 'frame'],
     'additionalProperties': True,
     'properties': {
         **post_properties,
@@ -126,6 +127,11 @@ localization_update = {
     'type': 'object',
     'properties': {
         **localization_properties,
+        'modified': {
+            'description': 'Whether this localization was created in the web UI.',
+            'type': 'boolean',
+            'nullable': True,
+        },
     },
 }
 

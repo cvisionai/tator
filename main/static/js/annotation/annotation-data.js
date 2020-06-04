@@ -37,6 +37,9 @@ class AnnotationData extends HTMLElement {
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
     const localTypeIds=[];
+
+    // Clear the track database
+    this._trackDb = new Map();
     for (const [idx, dataType] of dataTypes.entries()) {
       let isLocalization=false;
       let isTrack=false;
@@ -64,7 +67,7 @@ class AnnotationData extends HTMLElement {
     const getDataUrl = dataType => {
       const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
       const dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" + 
-                      this._mediaId + "&type=" + dataType.id;
+                      this._mediaId + "&type=" + dataType.id.split("_")[1];
       return dataUrl;
     };
 
@@ -214,6 +217,7 @@ class AnnotationData extends HTMLElement {
       }
     })
     .then(json => {
+      json.forEach(obj => {obj.meta = typeId});
       this._dataByType.set(typeId, json);
       this.dispatchEvent(new CustomEvent("freshData", {
         detail: {

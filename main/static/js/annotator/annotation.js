@@ -114,16 +114,15 @@ class CanvasDrag
     document.removeEventListener("mouseup", this._mouseUpBound);
     document.removeEventListener("mousemove", this._mouseMoveBound);
     // If the event ended off canvas; use the last known good coordinate
-    if (event.path[0] == this._canvas)
-    {
+    this._event.end.x = last.x;
+    this._event.end.y = last.y;
+    if (event.path) {
+      if (event.path[0] == this._canvas)
+      {
 
-      this._event.end.x = (event.pageX-this._canvas.offsetLeft)*scale[0];
-      this._event.end.y = (event.pageY-this._canvas.offsetTop)*scale[1];
-    }
-    else
-    {
-      this._event.end.x = last.x;
-      this._event.end.y = last.y;
+        this._event.end.x = (event.pageX-this._canvas.offsetLeft)*scale[0];
+        this._event.end.y = (event.pageY-this._canvas.offsetTop)*scale[1];
+      }
     }
     this._event.end.time = Date.now();
     this._event.duration = this._event.end.time - this._event.start.time;
@@ -436,6 +435,7 @@ class AnnotationCanvas extends TatorElement
     this._canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
     this._canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
     this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
+    this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
     this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
@@ -448,6 +448,7 @@ class AnnotationCanvas extends TatorElement
     this._lastAutoTrackColor = null;
     this._domParents = [];
     this._metaMode = false;
+    this._redrawObjId = null;
 
     try
     {
@@ -891,7 +892,7 @@ class AnnotationCanvas extends TatorElement
       var element=data[idx];
 
       var frameId=data[idx]['frame'];
-      var typeid = data[idx].meta;
+      var typeid = typeObj.id;
       if (this.activeLocalization) {
         if (data[idx].id == this.activeLocalization.id) {
           this.activeLocalization = {
@@ -1136,6 +1137,17 @@ class AnnotationCanvas extends TatorElement
     var scale = this._draw.displayToViewportScale();
     return [location[0]*scale[0], location[1]*scale[1]];
   }
+
+  mouseOutHandler(mouseEvent)
+  {
+    this._canvas.classList.remove("select-pointer");
+    if (this._emphasis != null && this._emphasis != this.activeLocalization)
+    {
+      this._emphasis = null;
+      this.refresh();
+    }
+  }
+
   mouseOverHandler(mouseEvent)
   {
     var that = this;
@@ -1734,7 +1746,8 @@ class AnnotationCanvas extends TatorElement
   }
 
   // Construct a new metadata type based on the argument provided
-  newMetadataItem(typeId, metaMode)
+  // objId given if this is to redraw an existing annotation
+  newMetadataItem(typeId, metaMode, objId)
   {
     if ("pause" in this) {
       this.pause();
@@ -1748,6 +1761,7 @@ class AnnotationCanvas extends TatorElement
       this._canvas.classList.add("select-draw");
       updateStatus("Ready for annotation.", "primary", -1);
       this._metaMode = metaMode;
+      this._redrawObjId = objId;
     }
     else
     {
@@ -1758,9 +1772,10 @@ class AnnotationCanvas extends TatorElement
   getObjectDescription(localization)
   {
     var objDescription = null;
-    if (localization.meta in this._data._dataTypes)
+    const key = localization.meta;
+    if (key in this._data._dataTypes)
     {
-      return objDescription=this._data._dataTypes[localization.meta];
+      return objDescription=this._data._dataTypes[key];
     }
 
     return objDescription;
@@ -1823,17 +1838,21 @@ class AnnotationCanvas extends TatorElement
       requestObj.frame = this.currentFrame();
     }
 
-
-    // Drag info is now in DOM coordinates
-    this.dispatchEvent(new CustomEvent("create", {
-      detail: {
-        objDescription: objDescription,
-        dragInfo: this.normalizeDrag(dragInfo),
-        requestObj: requestObj,
-        metaMode: this._metaMode
-      },
-      composed: true,
-    }));
+    if (this._redrawObjId !== null && typeof this._redrawObjId !== "undefined") {
+      this._undo.patch("Localization", this._redrawObjId, requestObj, objDescription);
+      this._redrawObjId = null;
+    } else {
+      // Drag info is now in DOM coordinates
+      this.dispatchEvent(new CustomEvent("create", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: requestObj,
+          metaMode: this._metaMode
+        },
+        composed: true,
+      }));
+    }
   }
 
   normalizeDrag(drag)

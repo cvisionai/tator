@@ -29,7 +29,7 @@ class SaveVideoAPI(APIView):
     """ Saves a transcoded video.
 
         Videos in Tator must be transcoded to a multi-resolution streaming format before they
-        can be viewed or annotated. To launch a transcode on raw uploaded video, use the 
+        can be viewed or annotated. To launch a transcode on raw uploaded video, use the
         `Transcode` endpoint, which will create an Argo workflow to perform the transcode
         and save the video using this endpoint; no further REST calls are required. However,
         if you would like to perform transcodes locally, this endpoint enables that. The
@@ -94,21 +94,38 @@ class SaveVideoAPI(APIView):
 
             upload_uids = {}
             save_paths = {}
-            streaming = media_files.get('streaming',[])
-            for idx,streaming_format in enumerate(new_media_files['streaming']):
-                upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
-                upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
 
-                res_uid = str(uuid1())
-                save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
-                save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
-                del streaming_format['url']
-                del streaming_format['segment_info_url']
-                streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
-                streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
-                streaming.append(streaming_format)
+            # Handle new streaming files (new resolutions)
+            if new_media_files.get('streaming',None):
+                streaming = media_files.get('streaming',[])
+                for idx,streaming_format in enumerate(new_media_files['streaming']):
+                    upload_uids[f"streaming_{idx}_file"] = streaming_format['url'].split('/')[-1]
+                    upload_uids[f"streaming_{idx}_segments"] = streaming_format['segment_info_url'].split('/')[-1]
 
-            media_files['streaming'] = streaming
+                    res_uid = str(uuid1())
+                    save_paths[f"streaming_{idx}_file"] = os.path.join(project_dir, res_uid + '.mp4')
+                    save_paths[f"streaming_{idx}_segments"] = os.path.join(project_dir, f"{res_uid}_segments.json")
+                    del streaming_format['url']
+                    del streaming_format['segment_info_url']
+                    streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
+                    streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
+                    streaming.append(streaming_format)
+
+                media_files['streaming'] = streaming
+
+            # Handle audio patch
+            if new_media_files.get('audio',None):
+                audio=media_files.get('audio', [])
+                for idx,audio_format in enumerate(new_media_files['audio']):
+                     upload_uids[f"audio_{idx}_file"] = audio_format['url'].split('/')[-1]
+                     res_uid = str(uuid1())
+                     save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
+                     del audio_format['url']
+                     logger.info(save_paths[f"audio_{idx}_file"])
+                     logger.info(os.path.relpath(save_paths[f"audio_{idx}_file"], "/data"))
+                     audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
+                     audio.append(audio_format)
+                media_files['audio'] = audio
 
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid)
@@ -204,7 +221,7 @@ class SaveVideoAPI(APIView):
             # Use the first video type available
             if int(entity_type) == -1:
                 media_types = MediaType.objects.filter(
-                    project=project)
+                    project=project, dtype='video')
                 if media_types.count() > 0:
                     media_type = media_types[0]
                     entity_type = media_type.pk
@@ -258,12 +275,19 @@ class SaveVideoAPI(APIView):
                 streaming_format['path'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_file"], "/data")
                 streaming_format['segment_info'] = "/"+os.path.relpath(save_paths[f"streaming_{idx}_segments"], "/data")
 
+            for idx,audio_format in enumerate(media_files.get('audio',[])):
+                upload_uids[f"audio_{idx}_file"] = audio_format['url'].split('/')[-1]
+                res_uid = str(uuid1())
+                save_paths[f"audio_{idx}_file"] = os.path.join(project_dir, res_uid + '.m4a')
+                del audio_format['url']
+                audio_format['path'] = "/"+os.path.relpath(save_paths[f"audio_{idx}_file"], "/data")
             upload_paths = {
                 key: os.path.join(settings.UPLOAD_ROOT, uid)
                 for key, uid in upload_uids.items()
             }
 
             logger.info(f"Upload set = {upload_paths}")
+            logger.info(f"Save set = {save_paths}")
 
 
             # Make sure upload paths exist
@@ -350,4 +374,3 @@ class SaveVideoAPI(APIView):
                     if os.path.exists(info_path):
                         os.remove(info_path)
             return response;
-

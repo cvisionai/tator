@@ -9,6 +9,7 @@ from ..models import User
 from ..models import Project
 from ..models import Version
 from ..models import database_qs
+from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
@@ -58,8 +59,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(annotation_ids)}
             elif len(annotation_ids) > 0:
-                qs = Localization.objects.filter(pk__in=annotation_ids).order_by('id')
-                response_data = database_qs(qs)
+                response_data = database_query_ids('main_localization', annotation_ids, 'id')
         else:
             qs = Localization.objects.filter(project=params['project'])
             if 'media_id' in params:
@@ -255,15 +255,14 @@ class LocalizationDetailAPI(BaseDetailView):
         frame = params.get("frame", None)
         x = params.get("x", None)
         y = params.get("y", None)
-        modified = params.get("modified", None)
         if frame:
             obj.frame = frame
         if x:
             obj.x = x
         if y:
             obj.y = y
-        if modified:
-            obj.modified = params["modified"]
+        if 'modified' in params:
+            obj.modified = params['modified']
 
         if obj.meta.dtype == 'box':
             height = params.get("height", None)
