@@ -1652,11 +1652,13 @@ class VideoCanvas extends AnnotationCanvas {
 
   pause()
   {
+    // Stoping the player thread sets the direction to stop
+    const currentDirection = this._direction;
     // Stop the player thread first
     this.stopPlayerThread();
 
     // If we weren't already paused send the event
-    if (this._direction != Direction.STOPPED)
+    if (currentDirection != Direction.STOPPED)
     {
       this._pauseCb.forEach(cb => {cb();});
 
