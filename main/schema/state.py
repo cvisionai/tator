@@ -6,55 +6,6 @@ from ._message import message_schema
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
-state_properties = {
-    'media_ids': {
-        'description': 'List of media IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
-    'localization_ids': {
-        'description': 'List of localization IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
-    'frame': {
-        'description': 'Frame number this state applies to.',
-        'type': 'integer',
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
-}
-
-version_properties = {
-    'version': {
-        'description': 'Unique integer identifying the version.',
-        'type': 'integer',
-    },
-    'modified': {
-        'description': 'Whether this localization was created in the web UI.',
-        'type': 'boolean',
-        'default': False,
-    },
-}
-
-state_get_properties = {
-    'id': {
-        'type': 'integer',
-        'description': 'Unique integer identifying the state.',
-    },
-    'meta': {
-        'type': 'integer',
-        'description': 'Unique integer identifying the entity type.',
-    },
-    'association': {
-        'type': 'integer',
-        'description': 'Unique integer identifying the state association.',
-    },
-}
-
 class StateListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -90,19 +41,7 @@ class StateListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'required': ['media_ids', 'type'],
-                        'additionalProperties': True,
-                        'properties': {
-                            'type': {
-                                'description': 'Unique integer identifying a state type.',
-                                'type': 'integer',
-                            },
-                            **version_properties,
-                            **state_properties,
-                        },
-                    },
+                    'items': {'$ref': '#/components/schema/StateSpec'},
                 },
                 'examples': {
                     'frame': {
@@ -138,17 +77,7 @@ class StateListSchema(AutoSchema):
             }}}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/AttributeBulkUpdate'},
                 'examples': {
                     'single': {
                         'summary': 'Update Species attribute of many states',
@@ -169,14 +98,7 @@ class StateListSchema(AutoSchema):
                 'description': 'Successful retrieval of state list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            **state_get_properties,
-                            **version_properties,
-                            **state_properties,
-                        },
-                    },
+                    'items': {'$ref': '#/components/schema/State'},
                 }}},
             }
         elif method == 'POST':
@@ -215,16 +137,7 @@ class StateDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        **state_properties,
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/StateUpdate'},
                 'example': {
                     'frame': 1001,
                 }
