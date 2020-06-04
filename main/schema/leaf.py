@@ -65,69 +65,10 @@ class LeafSuggestionSchema(AutoSchema):
                 'description': 'Successful retrieval of suggestions.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'value': {
-                                'type': 'string',
-                                'description': 'Name of the suggestion.',
-                            },
-                            'group': {
-                                'type': 'string',
-                                'description': 'Group of the suggestion.',
-                            },
-                            'data': {
-                                'type': 'object',
-                                'description': 'Auxiliary data associated with the leaf.',
-                                'additionalProperties': True,
-                            },
-                        },
-                    },
+                    'items': {'$ref': '#/components/schemas/LeafSuggestion'},
                 }}},
             }
         return responses
-
-leaf_properties = {
-    'name': {
-        'description': 'Name of the leaf.',
-        'type': 'string',
-    },
-    'type': {
-        'description': 'Unique integer identifying a leaf type.',
-        'type': 'integer',
-    },
-    'parent': {
-        'description': 'ID to use as parent if there is one.',
-        'type': 'integer',
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
-}
-
-leaf_schema = {
-    'type': 'object',
-    'description': 'Leaf object.',
-    'properties': {
-        'id': {
-            'type': 'integer',
-            'description': 'Unique integer identifying the leaf.',
-        },
-        'project': {
-            'type': 'integer',
-            'description': 'Unique integer identifying a project.',
-        },
-        'path': {
-            'type': 'string',
-            'description': 'Full path to leaf in hierarchy.',
-        },
-        'name': leaf_properties['name'],
-        'parent': leaf_properties['parent'],
-        'attributes': leaf_properties['attributes'],
-    },
-}
 
 class LeafListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -189,26 +130,13 @@ class LeafListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'required': ['name', 'type'],
-                        'additionalProperties': True,
-                        'properties': leaf_properties,
-                    },
+                    'items': ,
                 },
             }}}
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
+                    '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
             }}}
         return body
@@ -220,7 +148,7 @@ class LeafListSchema(AutoSchema):
                 'description': 'Successful retrieval of leaf list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': leaf_schema,
+                    'items': {'$ref': '#/components/schemas/Leaf'},
                 }}},
             }
         elif method == 'POST':
@@ -259,20 +187,7 @@ class LeafDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the leaf.',
-                            'type': 'string', 
-                        },
-                        'attributes': {
-                            'description': 'Attribute values to update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/LeafUpdate'},
             }}}
         return body
 
@@ -281,7 +196,9 @@ class LeafDetailSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of leaf.',
-                'content': {'application/json': {'schema': leaf_schema}},
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Leaf',
+                }}},
             }
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'leaf')
