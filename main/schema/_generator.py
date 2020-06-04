@@ -31,6 +31,8 @@ class CustomGenerator(SchemaGenerator):
                 'LocalizationSpec': localization_spec,
                 'LocalizationUpdate': localization_update,
                 'Localization': localization,
+                'MediaNextResponse': media_next_response,
+                'MediaPrevResponse': media_prev_response,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
