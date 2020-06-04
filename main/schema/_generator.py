@@ -47,6 +47,7 @@ class CustomGenerator(SchemaGenerator):
                 'ProgressSummarySpec': progress_summary_spec,
                 'ProjectSpec': project_spec,
                 'Project': project,
+                'ImageSpec': image_spec,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
