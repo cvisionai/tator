@@ -2,39 +2,7 @@ from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
-
-membership_properties = {
-    'user': {
-        'description': 'Unique integer identifying a user.',
-        'type': 'integer',
-        'minimum': 1,
-    },
-    'permission': {
-        'description': 'User permission level for the project.',
-        'type': 'string',
-        'enum': ['View Only', 'Can Edit', 'Can Transfer', 'Can Execute', 'Full Control'],
-    },
-}
-
-membership_schema = {
-    'type': 'object',
-    'description': 'Membership object.',
-    'properties': {
-        'id': {
-            'type': 'integer',
-            'description': 'Unique integer identifying a membership.',
-        },
-        'username': {
-            'description': 'Username for the membership.',
-            'type': 'string',
-        },
-        'permission': {
-            'description': 'User permission level for the project.',
-            'type': 'string',
-            'enum': ['view_only', 'can_edit', 'can_transfer', 'can_execute', 'full_control'],
-        },
-    },
-}
+from ._message import message_with_id_schema
 
 class MembershipListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -62,11 +30,7 @@ class MembershipListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype'],
-                    'properties': membership_properties,
-                },
+                'schema': {'$ref': '#/components/schema/MembershipSpec'},
                 'example': {
                     'user': 1,
                     'permission': 'Full Control',
@@ -81,26 +45,11 @@ class MembershipListSchema(AutoSchema):
                 'description': 'Successful retrieval of membership list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': membership_schema,
+                    'items': {'$ref': '#/components/schema/Membership'},
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = {
-                'description': 'Successful creation of membership.',
-                'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'message': {
-                            'type': 'string',
-                            'description': 'Message indicating successful creation of membership.',
-                        },
-                        'id': {
-                            'type': 'integer',
-                            'description': 'Unique integer identifying created membership.',
-                        },
-                    },
-                }}},
-            }
+            responses['201'] = message_with_id_schema('membership')
         return responses
 
 class MembershipDetailSchema(AutoSchema):
@@ -131,12 +80,7 @@ class MembershipDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'permission': membership_properties['permission'],
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/MembershipUpdate'},
                 'example': {
                     'permission': 'View Only',
                 }
@@ -148,7 +92,9 @@ class MembershipDetailSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of membership.',
-                'content': {'application/json': {'schema': membership_schema}},
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schema/Membership',
+                }}},
             }
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'membership')

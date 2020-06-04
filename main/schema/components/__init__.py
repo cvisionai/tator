@@ -26,6 +26,9 @@ from .media_sections import media_sections
 from .media_type import media_type_spec
 from .media_type import media_type_update
 from .media_type import media_type
+from .membership import membership_spec
+from .membership import membership_update
+from .membership import membership
 
 from .save_video import video_spec
 from .save_video import video_update
