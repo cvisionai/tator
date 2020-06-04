@@ -3,7 +3,6 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
-from ._attribute_type import attribute_type_properties
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 from .components.attribute_type import attribute_type as attribute_type_schema
@@ -50,7 +49,7 @@ state_type_schema = {
         'columns': {
             'type': 'array',
             'description': 'Attribute types associated with this state type.',
-            'items': attribute_type_schema,
+            'items': {'$ref': '#/components/schema/AttributeType'},
         },
     },
 }

@@ -130,7 +130,7 @@ class LeafListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': ,
+                    'items': {'$ref': '#/components/schemas/Leaf'},
                 },
             }}}
         if method == 'PATCH':
