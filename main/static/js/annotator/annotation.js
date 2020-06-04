@@ -1932,24 +1932,40 @@ class AnnotationCanvas extends TatorElement
       return patchObj;
     }
 
+    let original_meta = this.activeLocalization.meta;
     if (this._data.getVersion().id != this.activeLocalization.version)
     {
       console.info("Modifying a localization from another layer!");
 
-      let current = this._framedData.get(newObject.frame).get(original_meta);
+      let frame = this.activeLocalization.frame;
+      let current = this._framedData.get(frame).get(original_meta);
+
+      // Check for current derivations in the same layer (bad)
       for (let local of current)
       {
         if (local.parent == this.activeLocalization.id &&
-            local.version == this.activeLocalization.id)
+            local.version == this._data.getVersion().id)
         {
           console.error("Already a clone in this layer!");
+          let old_id = this.activeLocalization.id;
           this.selectNone();
-          this._framedData.get(newObject.frame).delete(original_meta);
-          this.updateType(objDescription,null);
+          this.updateType(objDescription,() => {
+            let restored = this._framedData.get(frame).get(original_meta);
+            for (let local of restored)
+            {
+              if (local.id == old_id)
+              {
+                this.selectLocalization(local, true);
+                break;
+              }
+            }
+          });
+          return;
         }
       }
+
+      // Make the clone
       let newObject = {};
-      let original_meta = this.activeLocalization.meta;
       newObject.parent = this.activeLocalization.id;
       updatePositions(newObject);
       newObject = Object.assign(newObject, this.activeLocalization.attributes);
