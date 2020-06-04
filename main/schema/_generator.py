@@ -68,6 +68,8 @@ class CustomGenerator(SchemaGenerator):
                 'CreateResponse': create_response,
                 'MessageResponse': message_response,
                 'AttributeBulkUpdate': attribute_bulk_update,
+                'Credentials': credentials,
+                'Token': token,
             },
         }
 
@@ -75,36 +77,15 @@ class CustomGenerator(SchemaGenerator):
         if not parser:
             schema['paths']['/rest/Token']['post']['requestBody'] = {
                 'content': {'application/json': {
-                    'schema': {
-                        'type': 'object',
-                        'required': ['username', 'password'],
-                        'properties': {
-                            'username': {
-                                'description': 'Account username.',
-                                'type': 'string',
-                            },
-                            'password': {
-                                'description': 'Account password.',
-                                'type': 'string',
-                            },
-                        },
-                    },
+                    'schema': {'$ref': '#/components/schemas/Credentials'},
                 }},
             }
             schema['paths']['/rest/Token']['post']['responses'] = {
                 '200': {
                     'description': 'Login credentials accepted.',
-                    'content': {'application/json': {
-                        'schema': {
-                            'type': 'object',
-                            'properties': {
-                                'token': {
-                                    'description': 'API token.',
-                                    'type': 'string',
-                                },
-                            },
-                        },
-                    }},
+                    'content': {'application/json': {'schema': {
+                        '$ref': '#/components/schemas/Token',
+                    }}},
                 },
                 400: {'description': 'Login credentials invalid.'},
             }

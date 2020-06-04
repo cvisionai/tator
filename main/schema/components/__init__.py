@@ -46,6 +46,8 @@ from .state_type import state_type_update
 from .state_type import state_type
 from .temporary_file import temporary_file_spec
 from .temporary_file import temporary_file
+from .token import credentials
+from .token import token
 from .transcode import transcode_spec
 from .transcode import transcode
 from .user import user_update
