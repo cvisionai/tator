@@ -439,7 +439,8 @@ class Media(APIElement):
         for idx,fp in enumerate(fileList):
             in_mem_tar.add(fp, os.path.basename(fp))
 
-        uploader = tus.uploader(file_stream=in_mem_buf, chunk_size=chunk_size)
+        uploader = tus.uploader(file_stream=in_mem_buf, chunk_size=chunk_size,
+                                retries=10, retry_delay=15)
         last_progress = 0
         num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         yield last_progress
@@ -486,7 +487,8 @@ class Media(APIElement):
             section="New Files"
 
         tus = TusClient(self.tusURL)
-        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        uploader = tus.uploader(filePath, chunk_size=chunk_size,
+                                retries=10, retry_delay=15)
         num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
 
         last_progress = 0
@@ -536,7 +538,8 @@ class Media(APIElement):
 
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
-        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        uploader = tus.uploader(filePath, chunk_size=chunk_size,
+                                retries=10, retry_delay=15)
         num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         if progressBars:
             bar=progressbar.ProgressBar(prefix="Upload",redirect_stdout=True)
@@ -1121,7 +1124,8 @@ class TemporaryFile(APIElement):
 
         tus = TusClient(self.tusURL)
         chunk_size=100*1024*1024 # 100 Mb
-        uploader = tus.uploader(filePath, chunk_size=chunk_size)
+        uploader = tus.uploader(filePath, chunk_size=chunk_size,
+                                retries=10, retry_delay=15)
         num_chunks=math.ceil(uploader.get_file_size()/chunk_size)
         for _ in range(num_chunks):
             uploader.upload_chunk()
