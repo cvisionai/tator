@@ -48,6 +48,8 @@ from .temporary_file import temporary_file_spec
 from .temporary_file import temporary_file
 from .transcode import transcode_spec
 from .transcode import transcode
+from .user import user_update
+from .user import user
 from ._common import create_response
 from ._common import message_response
 from ._common import attribute_bulk_update

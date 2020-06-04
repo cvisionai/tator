@@ -1,5 +1,9 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
+
 class UserDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -24,11 +28,30 @@ class UserDetailSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         return []
 
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'PATCH':
+            body = {'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/UserUpdate'},
+            }}}
+        return body
+
+    def _get_responses(self, path, method):
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of user.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/User',
+                }}},
+            }
+        return responses
+
 class CurrentUserSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'WhoAmI'
+            operation['operationId'] = 'Whoami'
         operation['tags'] = ['Tator']
         return operation
 
@@ -37,29 +60,7 @@ class CurrentUserSchema(AutoSchema):
             '200': {
                 'description': 'Successful retrieval of user who sent request.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'id': {
-                            'type': 'integer',
-                            'description': 'Unique integer identifying current user.',
-                        },
-                        'username': {
-                            'type': 'string',
-                            'description': 'Username of current user.',
-                        },
-                        'first_name': {
-                            'type': 'string',
-                            'description': 'First name of current user.',
-                        },
-                        'last_name': {
-                            'type': 'string',
-                            'description': 'Last name of current user.',
-                        },
-                        'email': {
-                            'type': 'string',
-                            'description': 'Email address of current user.',
-                        },
-                    },
+                    '$ref': '#/components/schemas/User',
                 }}},
             },
         }
