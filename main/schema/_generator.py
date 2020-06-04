@@ -35,6 +35,7 @@ class CustomGenerator(SchemaGenerator):
                 'MediaPrev': media_prev,
                 'MediaUpdate': media_update,
                 'Media': media,
+                'MediaSections': media_sections,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
