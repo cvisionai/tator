@@ -57,6 +57,12 @@ attribute_type_properties = {
         'description': 'Object indicating URL of autocomplete service '
                        'for string dtype.',
         'type': 'object',
+        'properties': {
+            'serviceUrl': {
+                'description': 'URL of the autocomplete service.',
+                'type': 'string',
+            },
+        },
     },
     'use_current': {
         'description': 'True to use current datetime as default for '
