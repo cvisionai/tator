@@ -1907,31 +1907,71 @@ class AnnotationCanvas extends TatorElement
     const objDescription = this.getObjectDescription(this.activeLocalization);
     const submitUrl="/rest/Localization/" + this.activeLocalization.id;
 
-    var requestObj = {};
-    var patchObj = {};
+    let updatePositions = (patchObj) => {
 
-    // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
-    if (objDescription.dtype=='box')
-    {
-      patchObj.x = this.activeLocalization.x;
-      patchObj.y = this.activeLocalization.y;
-      patchObj.width = this.activeLocalization.width;
-      patchObj.height = this.activeLocalization.height;
-    }
-    else if (objDescription.dtype=='line')
-    {
-      patchObj.x = this.activeLocalization.x0;
-      patchObj.y = this.activeLocalization.y0;
-      patchObj.u = this.activeLocalization.x1 - this.activeLocalization.x0;
-      patchObj.v = this.activeLocalization.y1 - this.activeLocalization.y0;
-    }
-    else if (objDescription.dtype=='dot')
-    {
-      patchObj.x = this.activeLocalization.x;
-      patchObj.y = this.activeLocalization.y;
+      // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
+      if (objDescription.dtype=='box')
+      {
+        patchObj.x = this.activeLocalization.x;
+        patchObj.y = this.activeLocalization.y;
+        patchObj.width = this.activeLocalization.width;
+        patchObj.height = this.activeLocalization.height;
+      }
+      else if (objDescription.dtype=='line')
+      {
+        patchObj.x = this.activeLocalization.x0;
+        patchObj.y = this.activeLocalization.y0;
+        patchObj.u = this.activeLocalization.x1 - this.activeLocalization.x0;
+        patchObj.v = this.activeLocalization.y1 - this.activeLocalization.y0;
+      }
+      else if (objDescription.dtype=='dot')
+      {
+        patchObj.x = this.activeLocalization.x;
+        patchObj.y = this.activeLocalization.y;
+      }
+      return patchObj;
     }
 
-    this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+    if (this._data.getVersion().id != this.activeLocalization.version)
+    {
+      console.info("Modifying a localization from another layer!");
+      let newObject = {};
+      let original_meta = this.activeLocalization.meta;
+      newObject.parent = this.activeLocalization.id;
+      updatePositions(newObject);
+      newObject = Object.assign(newObject, this.activeLocalization.attributes);
+      newObject.version = this._data.getVersion().id;
+      newObject.type = Number(this.activeLocalization.meta.split("_")[1]);
+      newObject.media_id = this.activeLocalization.media;
+      newObject.frame = this.activeLocalization.frame;
+      newObject.modified = true;
+      console.info(newObject);
+      this._undo.post("Localizations", newObject, objDescription);
+
+      // De-select the parent first, delete this frame data and wait for refresh
+      this.selectNone();
+      this._framedData.get(newObject.frame).delete(original_meta);
+
+      // Update the type and select the newly created child.
+      this.updateType(objDescription, () => {
+        // Find the localization we just made and select it
+        let localizations = this._framedData.get(newObject.frame).get(original_meta);
+        for (let local of localizations)
+        {
+          if (local.parent_id == newObject.parent)
+          {
+            this.selectLocalization(local, true);
+            break;
+          }
+        }
+      });
+    }
+    else
+    {
+      let patchObj = {};
+      updatePositions(patchObj);
+      this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+    }
   }
 
   boundsCheck(coords)
