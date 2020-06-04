@@ -5,7 +5,6 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
-from .components.attribute_type import attribute_type as attribute_type_schema
 
 class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
