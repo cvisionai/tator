@@ -22,6 +22,8 @@ def _search_by_dtype(dtype, query, response_data, params):
     num_elements = num_elements['aggregations']['section_counts']['buckets']
     for data in num_elements:
         response_data[data['key']][f'num_{dtype}s'] = data['doc_count']
+        response_data[data['key']][f'download_size_{dtype}s'] = data['download_size']['value']
+        response_data[data['key']][f'total_size_{dtype}s'] = data['total_size']['value']
     return response_data
 
 class MediaSectionsAPI(APIView):
@@ -42,6 +44,8 @@ class MediaSectionsAPI(APIView):
         # Update query with aggregations.
         query['aggs']['section_counts']['terms']['field'] = 'tator_user_sections'
         query['aggs']['section_counts']['terms']['size'] = 1000 # Return up to 1000 sections
+        query['aggs']['section_counts']['aggs']['download_size'] = {'sum': {'field': '_download_size'}}
+        query['aggs']['section_counts']['aggs']['total_size'] = {'sum': {'field': '_total_size'}}
         query['size'] = 0
 
         # Do queries.
@@ -51,12 +55,10 @@ class MediaSectionsAPI(APIView):
 
         # Fill in zeros.
         for section in response_data:
-            no_videos = 'num_videos' not in response_data[section]
-            no_images = 'num_images' not in response_data[section]
-            if no_images:
-                response_data[section]['num_images'] = 0
-            if no_videos:
-                response_data[section]['num_videos'] = 0
+            for key in ['num_videos', 'download_size_videos', 'total_size_videos',
+                        'num_images', 'download_size_images', 'total_size_images']:
+                if key not in response_data[section]:
+                    response_data[section][key] = 0
 
         # Do query for videos.
         return Response(response_data)

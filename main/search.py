@@ -10,6 +10,43 @@ logger = logging.getLogger(__name__)
 id_bits=448
 id_mask=(1 << id_bits) - 1
 
+def mediaFileSizes(file):
+    total_size = 0
+    download_size = None
+
+    if os.path.exists(file.thumbnail.path):
+        total_size += file.thumbnail.size
+    if file.meta.dtype == 'video':
+        if file.media_files:
+            if 'archival' in file.media_files:
+                for archival in file.media_files['archival']:
+                    if os.path.exists(archival['path']):
+                        statinfo = os.stat(archival['path'])
+                        total_size += statinfo.st_size
+                        if download_size is None:
+                            download_size = statinfo.st_size
+            if 'streaming' in file.media_files:
+                for streaming in file.media_files['streaming']:
+                    if os.path.exists(streaming['path']):
+                        statinfo = os.stat(streaming['path'])
+                        total_size += statinfo.st_size
+                        if download_size is None:
+                            download_size = statinfo.st_size
+        if file.original:
+            if os.path.exists(file.original):
+                statinfo = os.stat(file.original)
+                total_size += statinfo.st_size
+                if download_size is None:
+                    download_size = statinfo.st_size
+        if os.path.exists(file.thumbnail_gif.path):
+            total_size += file.thumbnail_gif.size
+    if file.file:
+        if os.path.exists(file.file.path):
+            total_size += file.file.size
+            if download_size is None:
+                download_size = file.file.size
+    return (total_size, download_size)
+
 def drop_dupes(ids):
     """ Drops duplicates in a list without changing the order.
     """
@@ -88,6 +125,8 @@ class TatorSearch:
                 '_modified_datetime': {'type': 'date'},
                 '_modified_by': {'type': 'keyword'},
                 '_postgres_id': {'type': 'long'},
+                '_download_size': {'type': 'long'},
+                '_total_size': {'type': 'long'},
             }},
         )
 
@@ -151,6 +190,13 @@ class TatorSearch:
             aux['tator_media_name'] = entity.name
             aux['_exact_name'] = entity.name
             aux['_md5'] = entity.md5
+
+            # Get total size and download size of this file.
+            total_size, download_size = mediaFileSizes(entity)
+            aux['_total_size'] = total_size
+            aux['_download_size'] = download_size
+
+            # Copy section name.
             if entity.attributes is not None:
                 if 'tator_user_sections' in entity.attributes:
                     aux['tator_user_sections'] = entity.attributes['tator_user_sections']
