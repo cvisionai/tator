@@ -12,8 +12,6 @@ class VersionListSchema(AutoSchema):
         elif method == 'GET':
             operation['operationId'] = 'GetVersionList'
         operation['tags'] = ['Tator']
-        if method == 'GET':
-            operation['operationId'] = 'RetrieveVersionList'
         return operation
 
     def _get_path_parameters(self, path, method):

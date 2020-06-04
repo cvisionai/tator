@@ -11,6 +11,8 @@ class SaveVideoSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'POST':
             operation['operationId'] = 'SaveVideo'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateVideo'
         operation['tags'] = ['Tator']
         return operation
 

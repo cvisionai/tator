@@ -155,6 +155,8 @@ class StateDetailSchema(AutoSchema):
 class StateGraphicSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetStateGraphic'
         operation['tags'] = ['Tator']
         return operation
 
