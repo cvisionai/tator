@@ -33,6 +33,11 @@ class AnnotationData extends HTMLElement {
     return this.updateAll(this._dataTypesRaw, version);
   }
 
+  getVersion()
+  {
+    return this._version;
+  }
+
   // Returns a promise when done
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
