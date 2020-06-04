@@ -59,6 +59,8 @@ class CustomGenerator(SchemaGenerator):
                 'StateType': state_type,
                 'TemporaryFileSpec': temporary_file_spec,
                 'TemporaryFile': temporary_file,
+                'TranscodeSpec': transcode_spec,
+                'Transcode': transcode,
                 'CreateResponse': create_response,
                 'MessageResponse': message_response,
                 'AttributeBulkUpdate': attribute_bulk_update,

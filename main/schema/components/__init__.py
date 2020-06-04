@@ -46,6 +46,8 @@ from .state_type import state_type_update
 from .state_type import state_type
 from .temporary_file import temporary_file_spec
 from .temporary_file import temporary_file
+from .transcode import transcode_spec
+from .transcode import transcode
 from ._common import create_response
 from ._common import message_response
 from ._common import attribute_bulk_update
