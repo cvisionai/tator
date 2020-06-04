@@ -22,6 +22,8 @@ def _search_by_dtype(dtype, query, response_data, params):
     num_elements = num_elements['aggregations']['section_counts']['buckets']
     for data in num_elements:
         response_data[data['key']][f'num_{dtype}s'] = data['doc_count']
+        response_data[data['key']][f'download_size_{dtype}s'] = data['download_size']['value']
+        response_data[data['key']][f'total_size_{dtype}s'] = data['total_size']['value']
     return response_data
 
 class MediaSectionsAPI(APIView):
