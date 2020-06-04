@@ -140,20 +140,6 @@ class SectionOverview extends TatorElement {
 
       let index = 2;
       const divs = this._stats.children;
-      for (const name in counts) {
-        if ((name != "num_videos") && (name != "num_images")) {
-          let div;
-          if (index >= divs.length) {
-            div = document.createElement("div");
-            div.setAttribute("class", "py-2");
-            this._stats.appendChild(div);
-          } else {
-            div = divs[index];
-          }
-          div.textContent = counts[name] + " " + name;
-          index++;
-        }
-      }
     }
     let vidLabel = " Videos";
     if (numVideos === 1) {
