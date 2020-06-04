@@ -20,20 +20,7 @@ class NotifySchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['message', 'sendAsFile'],
-                    'properties': {
-                        'message': {
-                            'description': 'Message to send to administrators.',
-                            'type': 'string',
-                        },
-                        'sendAsFile': {
-                            'description': 'Whether to send message as a file.',
-                            'type': 'string',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/NotifySpec'},
             }}}
         return body
 

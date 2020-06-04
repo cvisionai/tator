@@ -42,6 +42,7 @@ class CustomGenerator(SchemaGenerator):
                 'MembershipSpec': membership_spec,
                 'MembershipUpdate': membership_update,
                 'Membership': membership,
+                'NotifySpec': notify_spec,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
