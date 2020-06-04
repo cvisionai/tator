@@ -379,6 +379,7 @@ class AnnotationPage extends TatorPage {
           {
             this._sidebar.selectDefault();
           }
+          this._browser.blur();
         });
         canvas.addEventListener("frameChange", evt => {
           this._browser.frameChange(evt.detail.frame);
