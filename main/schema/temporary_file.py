@@ -48,7 +48,7 @@ class TemporaryFileListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/TemporaryFileSpec'},
+                'schema': {'$ref': '#/components/schemas/TemporaryFileSpec'},
             }}}
         return body
 
@@ -59,7 +59,7 @@ class TemporaryFileListSchema(AutoSchema):
                 'description': 'Successful retrieval of temporary file list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/TemporaryFile'},
+                    'items': {'$ref': '#/components/schemas/TemporaryFile'},
                 }}},
             }
         elif method == 'POST':
@@ -99,7 +99,7 @@ class TemporaryFileDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of temporary file.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/TemporaryFile',
+                    '$ref': '#/components/schemas/TemporaryFile',
                 }}},
             }
         elif method == 'DELETE':

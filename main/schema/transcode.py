@@ -26,7 +26,7 @@ class TranscodeSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/TranscodeSpec'},
+                'schema': {'$ref': '#/components/schemas/TranscodeSpec'},
             }}}
         return body
 
@@ -36,7 +36,7 @@ class TranscodeSchema(AutoSchema):
             responses['201'] = {
                 'description': 'Successful save of the video in the database.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/Transcode',
+                    '$ref': '#/components/schemas/Transcode',
                 }}},
             }
         return responses

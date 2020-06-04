@@ -27,7 +27,7 @@ class SaveImageSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/ImageSpec'},
+                'schema': {'$ref': '#/components/schemas/ImageSpec'},
             }}}
         return body
 

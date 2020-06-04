@@ -25,7 +25,7 @@ class ProgressSummarySchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/ProgressSummarySpec'},
+                'schema': {'$ref': '#/components/schemas/ProgressSummarySpec'},
             }}}
         return body
 

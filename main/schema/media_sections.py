@@ -36,7 +36,7 @@ class MediaSectionsSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of media count per section.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/MediaSections',
+                    '$ref': '#/components/schemas/MediaSections',
                 }}}
             }
         return responses

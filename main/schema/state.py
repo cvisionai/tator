@@ -41,7 +41,7 @@ class StateListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/StateSpec'},
+                    'items': {'$ref': '#/components/schemas/StateSpec'},
                 },
                 'examples': {
                     'frame': {
@@ -98,7 +98,7 @@ class StateListSchema(AutoSchema):
                 'description': 'Successful retrieval of state list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/State'},
+                    'items': {'$ref': '#/components/schemas/State'},
                 }}},
             }
         elif method == 'POST':
@@ -137,7 +137,7 @@ class StateDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/StateUpdate'},
+                'schema': {'$ref': '#/components/schemas/StateUpdate'},
                 'example': {
                     'frame': 1001,
                 }

@@ -60,7 +60,7 @@ class MediaListSchema(AutoSchema):
                 'description': 'Successful retrieval of media list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/Media'},
+                    'items': {'$ref': '#/components/schemas/Media'},
                 }}},
             }
         elif method == 'PATCH':
@@ -97,7 +97,7 @@ class MediaDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/MediaUpdate'},
+                'schema': {'$ref': '#/components/schemas/MediaUpdate'},
             }}}
         return body
 
@@ -107,7 +107,7 @@ class MediaDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of media.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/Media',
+                    '$ref': '#/components/schemas/Media',
                 }}},
             }
         if method == 'PATCH':

@@ -36,7 +36,7 @@ class MediaPrevSchema(AutoSchema):
             responses['200'] = {
                 'description': 'ID of previous media in the list corresponding to query.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/MediaPrevResponse',
+                    '$ref': '#/components/schemas/MediaPrev',
                 }}}
             }
         return responses

@@ -30,7 +30,7 @@ class MembershipListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/MembershipSpec'},
+                'schema': {'$ref': '#/components/schemas/MembershipSpec'},
                 'example': {
                     'user': 1,
                     'permission': 'Full Control',
@@ -45,7 +45,7 @@ class MembershipListSchema(AutoSchema):
                 'description': 'Successful retrieval of membership list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/Membership'},
+                    'items': {'$ref': '#/components/schemas/Membership'},
                 }}},
             }
         elif method == 'POST':
@@ -80,7 +80,7 @@ class MembershipDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/MembershipUpdate'},
+                'schema': {'$ref': '#/components/schemas/MembershipUpdate'},
                 'example': {
                     'permission': 'View Only',
                 }
@@ -93,7 +93,7 @@ class MembershipDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of membership.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/Membership',
+                    '$ref': '#/components/schemas/Membership',
                 }}},
             }
         elif method == 'PATCH':

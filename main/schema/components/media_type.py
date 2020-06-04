@@ -38,7 +38,7 @@ media_type_properties = {
     'attribute_types': {
         'description': 'Attribute type definitions.',
         'type': 'array',
-        'items': {'$ref': '#/components/schema/AttributeType'},
+        'items': {'$ref': '#/components/schemas/AttributeType'},
     },
 }
 

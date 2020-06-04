@@ -35,7 +35,7 @@ class StateTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/StateTypeSpec'},
+                'schema': {'$ref': '#/components/schemas/StateTypeSpec'},
                 'example': {
                     'name': 'My state type',
                     'association': 'Frame',
@@ -52,7 +52,7 @@ class StateTypeListSchema(AutoSchema):
                 'description': 'Successful retrieval of state type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/StateType'},
+                    'items': {'$ref': '#/components/schemas/StateType'},
                 }}},
             }
         elif method == 'POST':
@@ -87,7 +87,7 @@ class StateTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/StateTypeUpdate'},
+                'schema': {'$ref': '#/components/schemas/StateTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -101,7 +101,7 @@ class StateTypeDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of state type.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/StateType',
+                    '$ref': '#/components/schemas/StateType',
                 }}},
             }
         elif method == 'PATCH':

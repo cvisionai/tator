@@ -35,7 +35,7 @@ class LocalizationTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/LocalizationTypeSpec'},
+                'schema': {'$ref': '#/components/schemas/LocalizationTypeSpec'},
                 'example': {
                     'name': 'My localization type',
                     'dtype': 'box',
@@ -54,7 +54,7 @@ class LocalizationTypeListSchema(AutoSchema):
                 'description': 'Successful retrieval of localization type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/LocalizationType'},
+                    'items': {'$ref': '#/components/schemas/LocalizationType'},
                 }}}
             }
         return responses
@@ -87,7 +87,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/LocalizationTypeUpdate'},
+                'schema': {'$ref': '#/components/schemas/LocalizationTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -101,7 +101,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of localization type.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/LocalizationType',
+                    '$ref': '#/components/schemas/LocalizationType',
                 }}},
             }
         elif method == 'PATCH':

@@ -48,7 +48,7 @@ class SectionAnalysisSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of section analysis.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/SectionAnalysis',
+                    '$ref': '#/components/schemas/SectionAnalysis',
                 }}},
             }
         return responses

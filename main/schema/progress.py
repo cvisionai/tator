@@ -29,7 +29,7 @@ class ProgressSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/ProgressSpec'}
+                    'items': {'$ref': '#/components/schemas/ProgressSpec'}
                 },
                 'examples': {
                     'algorithm': {

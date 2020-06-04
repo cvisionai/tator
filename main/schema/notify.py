@@ -20,7 +20,7 @@ class NotifySchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/NotifySpec'},
+                'schema': {'$ref': '#/components/schemas/NotifySpec'},
             }}}
         return body
 

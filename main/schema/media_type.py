@@ -32,7 +32,7 @@ class MediaTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/MediaTypeSpec'},
+                'schema': {'$ref': '#/components/schemas/MediaTypeSpec'},
                 'example': {
                     'name': 'My media type',
                     'dtype': 'video',
@@ -48,7 +48,7 @@ class MediaTypeListSchema(AutoSchema):
                 'description': 'Successful retrieval of media type list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/MediaType'},
+                    'items': {'$ref': '#/components/schemas/MediaType'},
                 }}},
             }
         elif method == 'POST':
@@ -83,7 +83,7 @@ class MediaTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/MediaTypeUpdate'},
+                'schema': {'$ref': '#/components/schemas/MediaTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -97,7 +97,7 @@ class MediaTypeDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of media type.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/MediaType',
+                    '$ref': '#/components/schemas/MediaType',
                 }}},
             }
         elif method == 'PATCH':

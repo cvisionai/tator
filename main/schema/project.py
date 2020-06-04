@@ -24,7 +24,7 @@ class ProjectListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/ProjectSpec'},
+                'schema': {'$ref': '#/components/schemas/ProjectSpec'},
                 'example': {
                     'name': 'My Project',
                     'summary': 'First project',
@@ -39,7 +39,7 @@ class ProjectListSchema(AutoSchema):
                 'description': 'Successful retrieval of project list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schema/Project'},
+                    'items': {'$ref': '#/components/schemas/Project'},
                 }}},
             }
         elif method == 'POST':
@@ -74,7 +74,7 @@ class ProjectDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schema/ProjectSpec'},
+                'schema': {'$ref': '#/components/schemas/ProjectSpec'},
                 'example': {
                     'name': 'New name',
                     'summary': 'New summary',
@@ -88,7 +88,7 @@ class ProjectDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of project.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/Project',
+                    '$ref': '#/components/schemas/Project',
                 }}},
             }
         elif method == 'PATCH':
