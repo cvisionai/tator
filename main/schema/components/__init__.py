@@ -30,6 +30,8 @@ from .membership import membership_spec
 from .membership import membership_update
 from .membership import membership
 from .notify import notify_spec
+from .progress import progress_spec
+from .progress_summary import progress_summary_spec
 
 from .save_video import video_spec
 from .save_video import video_update

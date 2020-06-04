@@ -1,5 +1,8 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
+
 class ProgressSummarySchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -22,35 +25,13 @@ class ProgressSummarySchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['gid', 'num_jobs', 'num_complete'],
-                    'properties': {
-                        'gid': {
-                            'description': 'UUID generated for the job group. This value is '
-                                           'returned in the response of the `AlgorithmLaunch` '
-                                           'and `Transcode` endpoints.',
-                            'type': 'string',
-                            'format': 'uuid',
-                        },
-                        'num_jobs': {
-                            'description': 'Number of jobs in this job group.',
-                            'type': 'integer',
-                        },
-                        'num_complete': {
-                            'description': 'Number of jobs completed in this job group.',
-                            'type': 'integer',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schema/ProgressSummarySpec'},
             }}}
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find any jobs with given uuid.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful creation of progress summary.'}
+            responses['201'] = message_schema('creation', 'progress summary message')
         return responses
 

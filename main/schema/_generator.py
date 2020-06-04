@@ -43,6 +43,8 @@ class CustomGenerator(SchemaGenerator):
                 'MembershipUpdate': membership_update,
                 'Membership': membership,
                 'NotifySpec': notify_spec,
+                'ProgressSpec': progress_spec,
+                'ProgressSummarySpec': progress_summary_spec,
                 'VideoSpec': video_spec,
                 'VideoUpdate': video_update,
                 'CreateResponse': create_response,
