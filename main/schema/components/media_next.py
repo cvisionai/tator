@@ -1,4 +1,4 @@
-media_next_response = {
+media_next = {
     'type': 'object',
     'properties': {
         'next': {'type': 'integer', 'minimum': 0},

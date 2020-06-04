@@ -1,4 +1,4 @@
-media_prev_response = {
+media_prev = {
     'type': 'object',
     'properties': {
         'prev': {'type': 'integer', 'minimum': 0},

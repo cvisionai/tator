@@ -1,5 +1,5 @@
 from .algorithm_launch import algorithm_launch_spec
-from .algorithm_launch import algorithm_launch_response
+from .algorithm_launch import algorithm_launch
 from .algorithm import algorithm
 from .analysis import analysis_spec
 from .analysis import analysis
@@ -18,8 +18,8 @@ from .localization_type import localization_type
 from .localization import localization_spec
 from .localization import localization_update
 from .localization import localization
-from .media_next import media_next_response
-from .media_prev import media_prev_response
+from .media_next import media_next
+from .media_prev import media_prev
 from .media import media_update
 from .media import media
 

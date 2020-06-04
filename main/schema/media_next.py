@@ -36,7 +36,7 @@ class MediaNextSchema(AutoSchema):
             responses['200'] = {
                 'description': 'ID of next media in the list corresponding to query.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schema/MediaNextResponse',
+                    '$ref': '#/components/schema/MediaNext',
                 }}}
             }
         return responses

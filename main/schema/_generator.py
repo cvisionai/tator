@@ -12,7 +12,7 @@ class CustomGenerator(SchemaGenerator):
         schema['components'] = {
             'schemas': {
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
-                'AlgorithmLaunchResponse': algorithm_launch_response,
+                'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
@@ -31,8 +31,8 @@ class CustomGenerator(SchemaGenerator):
                 'LocalizationSpec': localization_spec,
                 'LocalizationUpdate': localization_update,
                 'Localization': localization,
-                'MediaNextResponse': media_next_response,
-                'MediaPrevResponse': media_prev_response,
+                'MediaNext': media_next,
+                'MediaPrev': media_prev,
                 'MediaUpdate': media_update,
                 'Media': media,
                 'VideoSpec': video_spec,

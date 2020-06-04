@@ -52,7 +52,7 @@ class AlgorithmLaunchSchema(AutoSchema):
             responses['201'] = {
                 'description': 'Successful launch of algorithm.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/AlgorithmLaunchResponse',
+                    '$ref': '#/components/schemas/AlgorithmLaunch',
                 }}}
             }
         return responses

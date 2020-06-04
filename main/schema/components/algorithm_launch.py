@@ -20,7 +20,7 @@ algorithm_launch_spec = {
     },
 }
 
-algorithm_launch_response = {
+algorithm_launch = {
     'type': 'object',
     'properties': {
         'message': {
