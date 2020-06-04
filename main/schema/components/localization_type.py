@@ -58,6 +58,15 @@ localization_type = {
             'type': 'integer',
             'description': 'Unique integer identifying project for this leaf type.',
         },
+        'media': {
+            'description': 'List of integers identifying media types that '
+                           'this localization type may apply to.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
         'colorMap': {
             'type': 'object',
             'additionalProperties': True,
