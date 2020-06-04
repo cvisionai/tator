@@ -2436,8 +2436,12 @@ class AnnotationCanvas extends TatorElement
   defaultMode()
   {
     this.draft = null;
+    // Only refresh if it wasn't a call to new else we get flashes
+    if (this._mouseMode != MouseMode.NEW)
+    {
+      this.refresh();
+    }
     this._mouseMode = MouseMode.QUERY;
-    this.refresh();
   }
 
   onPlay()
