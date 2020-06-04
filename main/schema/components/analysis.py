@@ -13,7 +13,7 @@ analysis_properties = {
 
 analysis_spec = {
     'type': 'object',
-    'required': ['name', 'data_type'],
+    'required': ['name', 'data_query'],
     'properties': analysis_properties,
 }
 
