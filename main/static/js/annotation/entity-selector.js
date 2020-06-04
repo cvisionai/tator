@@ -151,7 +151,7 @@ class EntitySelector extends TatorElement {
       const index = parseInt(this._current.textContent) - 1;
       this.dispatchEvent(new CustomEvent("patchMeta", {
         detail: {typeId: this._dataType.id,
-                 objId: this._data[index].id},
+                 obj: this._data[index]},
         composed: true,
       }));
     });

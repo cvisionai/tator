@@ -1449,8 +1449,11 @@ class AnnotationCanvas extends TatorElement
     }
 
     var that = this;
-    // Always go to select from query
-    if ((this._mouseMode != MouseMode.PAN) && (this._mouseMode != MouseMode.ZOOM_ROI))
+    // Always go to select if we aren't just 're-selecting'
+    // TODO: Maybe check for re-entrancy instead of state-logic here
+    if ((this._mouseMode != MouseMode.PAN) &&
+        (this._mouseMode != MouseMode.ZOOM_ROI) &&
+        (this._mouseMode != MouseMode.NEW))
     {
       this._mouseMode = MouseMode.SELECT;
     }
@@ -1747,7 +1750,7 @@ class AnnotationCanvas extends TatorElement
 
   // Construct a new metadata type based on the argument provided
   // objId given if this is to redraw an existing annotation
-  newMetadataItem(typeId, metaMode, objId)
+  newMetadataItem(typeId, metaMode, obj)
   {
     if ("pause" in this) {
       this.pause();
@@ -1756,12 +1759,21 @@ class AnnotationCanvas extends TatorElement
     const objDescription = this._data._dataTypes[typeId];
     if (objDescription.isLocalization == true)
     {
-      this._mouseMode = MouseMode.NEW;
+      // If we are redrawing a localization set the token
+      if (obj != undefined)
+      {
+        this._redrawObjId = obj.id;
+        this._mouseMode = MouseMode.NEW;
+        this.selectLocalization(obj, true, false);
+      }
+      else
+      {
+        this._mouseMode = MouseMode.NEW;
+      }
       this.draft=objDescription;
       this._canvas.classList.add("select-draw");
       updateStatus("Ready for annotation.", "primary", -1);
       this._metaMode = metaMode;
-      this._redrawObjId = objId;
     }
     else
     {
@@ -2424,8 +2436,12 @@ class AnnotationCanvas extends TatorElement
   defaultMode()
   {
     this.draft = null;
+    // Only refresh if it wasn't a call to new else we get flashes
+    if (this._mouseMode != MouseMode.NEW)
+    {
+      this.refresh();
+    }
     this._mouseMode = MouseMode.QUERY;
-    this.refresh();
   }
 
   onPlay()
