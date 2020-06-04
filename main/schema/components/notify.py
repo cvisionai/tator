@@ -11,4 +11,4 @@ notify_spec = {
             'type': 'string',
         },
     },
-},
+}
