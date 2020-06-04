@@ -6,111 +6,6 @@ from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 from .components.save_video import save_video_properties
 
-media_properties = {
-    'name': {
-        'description': 'Name of the media.',
-        'type': 'string',
-    },
-    'last_edit_start': {
-        'description': 'Datetime of the start of the session when this media or its annotations '
-                       'were last edited.',
-        'type': 'string',
-        'format': 'date-time',
-    },
-    'last_edit_end': {
-        'description': 'Datetime of the end of the session when this media or its annotations were last edited.',
-        'type': 'string',
-        'format': 'date-time',
-    },
-    'media_files': save_video_properties['media_files'],
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
-}
-
-media_get_common_properties = {
-    'id': {
-        'type': 'integer',
-        'description': 'Unique integer identifying this media.',
-    },
-    'project': {
-        'type': 'integer',
-        'description': 'Unique integer identifying project of this media.',
-    },
-    'meta': {
-        'type': 'integer',
-        'description': 'Unique integer identifying entity type of this media.',
-    },
-    'url': {
-        'type': 'string',
-        'description': 'URL of the media file.',
-    },
-}
-
-media_list_get_properties = {
-    **media_properties,
-    **media_get_common_properties,
-    'created_datetime': {
-        'type': 'string',
-        'description': 'Datetime when this media was created.',
-    },
-    'created_by_id': {
-        'type': 'integer',
-        'description': 'Unique integer identifying user who created this media.',
-    },
-    'modified_datetime': {
-        'type': 'string',
-        'description': 'Datetime when this media was last modified.',
-    },
-    'modified_by_id': {
-        'type': 'integer',
-        'description': 'Unique integer identifying user who last modified this media.',
-    },
-    'md5': {
-        'type': 'string',
-        'description': 'MD5 checksum of the media file.',
-    },
-    'video_thumbnail': {
-        'type': 'string',
-        'description': 'URL of video thumbnail.',
-    },
-    'image_thumbnail': {
-        'type': 'string',
-        'description': 'URL of image thumbnail.',
-    },
-    'video_thumbnail_gif': {
-        'type': 'string',
-        'description': 'URL of video thumbnail gif.',
-    },
-    'original_url': {
-        'type': 'string',
-        'description': 'URL of original video, if it exists.',
-    },
-}
-
-media_get_properties = {
-    **media_properties,
-    **media_get_common_properties,
-    'thumb_url': {
-        'type': 'string',
-        'description': 'URL of the media.',
-    },
-    'width': {
-        'type': 'integer',
-        'description': 'Width of the media in pixels.',
-    },
-    'height': {
-        'type': 'integer',
-        'description': 'Height of the media in pixels.',
-    },
-    'resourcetype': {
-        'type': 'string',
-        'description': 'Type of this media.',
-    },
-}
-
 class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -143,15 +38,7 @@ class MediaListSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
+                    '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
                 'examples': {
                     'single': {
@@ -173,12 +60,7 @@ class MediaListSchema(AutoSchema):
                 'description': 'Successful retrieval of media list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            **media_list_get_properties,
-                        }
-                    },
+                    'items': {'$ref': '#/components/schema/Media'},
                 }}},
             }
         elif method == 'PATCH':
@@ -215,10 +97,7 @@ class MediaDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': media_properties,
-                },
+                'schema': {'$ref': '#/components/schema/MediaUpdate'},
             }}}
         return body
 
@@ -228,8 +107,7 @@ class MediaDetailSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of media.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': media_list_get_properties,
+                    '$ref': '#/components/schema/Media',
                 }}},
             }
         if method == 'PATCH':

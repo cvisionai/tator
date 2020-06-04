@@ -20,6 +20,8 @@ from .localization import localization_update
 from .localization import localization
 from .media_next import media_next_response
 from .media_prev import media_prev_response
+from .media import media_update
+from .media import media
 
 from .save_video import video_spec
 from .save_video import video_update
