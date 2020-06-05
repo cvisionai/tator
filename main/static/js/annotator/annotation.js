@@ -1975,24 +1975,22 @@ class AnnotationCanvas extends TatorElement
       newObject.frame = this.activeLocalization.frame;
       newObject.modified = true;
       console.info(newObject);
-      this._undo.post("Localizations", newObject, objDescription);
-
-      // De-select the parent first, delete this frame data and wait for refresh
-      this.selectNone();
-      this._framedData.get(newObject.frame).delete(original_meta);
-
-      // Update the type and select the newly created child.
-      this.updateType(objDescription, () => {
-        // Find the localization we just made and select it
-        let localizations = this._framedData.get(newObject.frame).get(original_meta);
-        for (let local of localizations)
-        {
-          if (local.parent == newObject.parent)
+      let request_obj = {method: "POST",
+                         ...this._undo._headers(),
+                         body: JSON.stringify([newObject])};
+      fetchRetry(`/rest/Localizations/${this.activeLocalization.project}`, request_obj).then(() => {
+        this.updateType(objDescription,() => {
+          // Find the localization we just made and select it
+          let localizations = this._framedData.get(newObject.frame).get(original_meta);
+          for (let local of localizations)
           {
-            this.selectLocalization(local, true);
-            break;
+            if (local.parent == newObject.parent)
+            {
+              this.selectLocalization(local, true);
+              break;
+            }
           }
-        }
+        });
       });
     }
     else
