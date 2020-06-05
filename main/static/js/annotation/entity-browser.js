@@ -168,7 +168,18 @@ class EntityBrowser extends TatorElement {
                     endpoint = "State";
                   }
                   const id = selector.data.id;
-                  this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
+                  if (selector.data.version != this._data.getVersion().id)
+                  {
+                    let tweakedObj = Object.assign({}, selector.data);
+                    delete tweakedObj.version;
+                    tweakedObj.attributes = values;
+                    this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
+                    document.body.classList.remove("shortcuts-disabled");
+                  }
+                  else
+                  {
+                    this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
+                  }
                   this.dispatchEvent(new CustomEvent("save", {
                     detail: this._values
                   }));
@@ -208,6 +219,10 @@ class EntityBrowser extends TatorElement {
     this._search.addEventListener("filterAnnotations", evt => {
       this._data.updateType(this._dataType, null, evt.detail.query);
     });
+  }
+
+  set canvas(obj) {
+    this._canvas = obj;
   }
 
   selectEntity(obj) {

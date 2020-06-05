@@ -2005,6 +2005,8 @@ class AnnotationCanvas extends TatorElement
       });
     });
   }
+
+  // TODO handle this all as a signal up in annotation-page
   modifyLocalization()
   {
     const objDescription = this.getObjectDescription(this.activeLocalization);

@@ -110,6 +110,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
+              this._browser.canvas = player._video;
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -127,6 +128,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._image._canvas);
+              this._browser.canvas = player._image;
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
