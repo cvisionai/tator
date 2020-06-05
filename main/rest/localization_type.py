@@ -98,6 +98,12 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.name = name
         if description is not None:
             obj.description = description
+        if 'line_width' in params:
+            obj.line_width = params['line_width']
+        if 'visible' in params:
+            obj.visible = params['visible']
+        if 'colorMap' in params:
+            obj.colorMap = params['colorMap']
 
         obj.save()
         return {'message': 'Localization type updated successfully!'}
