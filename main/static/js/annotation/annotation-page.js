@@ -345,6 +345,7 @@ class AnnotationPage extends TatorPage {
             this._version = v;
             break;
           }
+          selected_version_idx++;
         }
 
         

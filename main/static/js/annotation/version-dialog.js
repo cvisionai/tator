@@ -126,7 +126,7 @@ class VersionDialog extends ModalDialog {
       this._buttons.push(selectEdited);
     }
 
-    this._buttons[selected_idx].select(true);
+    this._buttons[(selected_idx*2)+1].select(true);
   }
 
   _handleSelect(evt) {
