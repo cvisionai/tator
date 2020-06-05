@@ -13,6 +13,12 @@ from .leaf import leaf_suggestion
 from .leaf import leaf_spec
 from .leaf import leaf_update
 from .leaf import leaf
+from .localization_type import rgb_color
+from .localization_type import rgba_color
+from .localization_type import hex_color
+from .localization_type import color
+from .localization_type import alpha_range
+from .localization_type import color_map
 from .localization_type import localization_type_spec
 from .localization_type import localization_type_update
 from .localization_type import localization_type
