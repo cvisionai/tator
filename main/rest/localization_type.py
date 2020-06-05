@@ -1,3 +1,5 @@
+from django.contrib.postgres.aggregates import ArrayAgg
+
 from ..models import Media
 from ..models import MediaType
 from ..models import LocalizationType
@@ -10,7 +12,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'colorMap', 'line_width', 'visible']
 
 class LocalizationTypeListAPI(BaseListView):
@@ -37,7 +39,17 @@ class LocalizationTypeListAPI(BaseListView):
             response_data = localizations.values(*fields)
         else:
             response_data = LocalizationType.objects.filter(project=params['project']).values(*fields)
-        return list(response_data)
+        # Get many to many fields.
+        loc_ids = [loc['id'] for loc in response_data]
+        media = {obj['localizationtype_id']:obj['media'] for obj in 
+            LocalizationType.media.through.objects\
+            .filter(localizationtype__in=loc_ids)\
+            .values('localizationtype_id').order_by('localizationtype_id')\
+            .annotate(media=ArrayAgg('mediatype_id')).iterator()}
+        # Copy many to many fields into response data.
+        for loc in response_data:
+            loc['media'] = media.get(loc['id'], [])
+        return response_data
 
     def _post(self, params):
         """ Create localization types.
@@ -81,7 +93,13 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             shape, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        return LocalizationType.objects.filter(pk=params['id']).values(*fields)[0]
+        loc = LocalizationType.objects.filter(pk=params['id']).values(*fields)[0]
+        # Get many to many fields.
+        loc['media'] = list(LocalizationType.media.through.objects\
+                            .filter(localizationtype_id=loc['id'])\
+                            .aggregate(media=ArrayAgg('mediatype_id'))\
+                            ['media'])
+        return loc
 
     def _patch(self, params):
         """ Update a localization type.

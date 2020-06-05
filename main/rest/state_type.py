@@ -1,3 +1,5 @@
+from django.contrib.postgres.aggregates import ArrayAgg
+
 from ..models import Media
 from ..models import MediaType
 from ..models import StateType
@@ -10,7 +12,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'media',
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible']
 
 class StateTypeListAPI(BaseListView):
@@ -43,7 +45,17 @@ class StateTypeListAPI(BaseListView):
             response_data = states.values(*fields)
         else:
             response_data = StateType.objects.filter(project=self.kwargs['project']).values(*fields)
-        return list(response_data)
+        # Get many to many fields.
+        state_ids = [state['id'] for state in response_data]
+        media = {obj['statetype_id']:obj['media'] for obj in 
+            StateType.media.through.objects\
+            .filter(statetype__in=state_ids)\
+            .values('statetype_id').order_by('statetype_id')\
+            .annotate(media=ArrayAgg('mediatype_id')).iterator()}
+        # Copy many to many fields into response data.
+        for state in response_data:
+            state['media'] = media.get(state['id'], [])
+        return response_data
 
     def _post(self, params):
         """ Create state type.
@@ -85,7 +97,13 @@ class StateTypeDetailAPI(BaseDetailView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        return StateType.objects.filter(pk=params['id']).values(*fields)[0]
+        state = StateType.objects.filter(pk=params['id']).values(*fields)[0]
+        # Get many to many fields.
+        state['media'] = list(StateType.media.through.objects\
+                              .filter(statetype_id=state['id'])\
+                              .aggregate(media=ArrayAgg('mediatype_id'))\
+                              ['media'])
+        return state
 
     def _patch(self, params):
         """ Update state type.
