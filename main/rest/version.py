@@ -196,15 +196,21 @@ class VersionDetailAPI(RetrieveUpdateDestroyAPIView):
     http_method_names = ['get', 'patch', 'delete']
 
     def patch(self, request, format=None, **kwargs):
-        response = super().patch(request, format, **kwargs)
+        response = Response({})
         try:
+            response = super().patch(request, format, **kwargs)
             params = parse(request)
             if 'bases' in params:
                 qs = Version.objects.filter(pk__in=params['bases'])
                 if qs.count() < len(params['bases']):
                     raise ObjectDoesNotExist
                 else:
+                    obj = Version.objects.get(pk=params['id'])
                     obj.bases.set(qs)
+            response = Response(
+                {'message': f'Version {params["id"]} updated successfully!'},
+                status=status.HTTP_200_OK,
+            )
         except ObjectDoesNotExist as dne:
             response = Response(
                 {'message': str(dne)},
