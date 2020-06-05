@@ -26,9 +26,9 @@ version_properties = {
         'type': 'integer',
     },
     'modified': {
-        'description': 'Whether this localization was created in the web UI.',
+        'description': 'Whether this state was created in the web UI.',
         'type': 'boolean',
-        'default': False,
+        'nullable': True,
     },
 }
 
@@ -68,6 +68,7 @@ state_update = {
         'modified': {
             'description': 'Whether this state was created in the web UI.',
             'type': 'boolean',
+            'nullable': True,
         },
     },
 }
