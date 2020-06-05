@@ -13,12 +13,6 @@ from .leaf import leaf_suggestion
 from .leaf import leaf_spec
 from .leaf import leaf_update
 from .leaf import leaf
-from .localization_type import rgb_color
-from .localization_type import rgba_color
-from .localization_type import hex_color
-from .localization_type import color
-from .localization_type import alpha_range
-from .localization_type import color_map
 from .localization_type import localization_type_spec
 from .localization_type import localization_type_update
 from .localization_type import localization_type
@@ -61,6 +55,12 @@ from .user import user_update
 from .user import user
 from .version import version_spec
 from .version import version
+from ._color import rgb_color
+from ._color import rgba_color
+from ._color import hex_color
+from ._color import color
+from ._color import alpha_range
+from ._color import color_map
 from ._common import create_response
 from ._common import message_response
 from ._common import attribute_bulk_update
