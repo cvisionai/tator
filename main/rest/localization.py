@@ -1,4 +1,5 @@
 import logging
+from django.db.models import Subquery
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -45,7 +46,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation', 'format', 'excludeParents','frame']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the localization list.
@@ -59,7 +60,16 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(annotation_ids)}
             elif len(annotation_ids) > 0:
-                response_data = database_query_ids('main_localization', annotation_ids, 'id')
+                if params['excludeParents']:
+                    qs = Localization.objects.filter(pk__in=annotation_ids)
+                    parent_set = Localization.objects.filter(pk__in=Subquery(
+                        qs.values('parent')))
+                    result_set = qs.difference(parent_set).order_by('id')
+                    response_data = database_qs(result_set)
+                else:
+                    response_data = database_query_ids('main_localization',
+                                                       annotation_ids,
+                                                       'id')
         else:
             qs = Localization.objects.filter(project=params['project'])
             if 'media_id' in params:
@@ -68,12 +78,19 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
                 qs = qs.filter(version__in=params['version'])
+            if 'frame' in params:
+                qs = qs.filter(frame=params['frame'])
             if 'modified' in params:
                 qs = qs.exclude(modified=(not params['modified']))
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:
-                response_data = database_qs(qs.order_by('id'))
+                if params['excludeParents']:
+                    parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
+                    result_set = qs.difference(parent_set).order_by('id')
+                else:
+                    result_set = qs.order_by('id')
+                response_data = database_qs(result_set)
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
@@ -152,6 +169,9 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         localizations = []
         create_buffer = []
         for loc_spec, attrs in zip(loc_specs, attr_specs):
+            parent = None
+            if loc_spec.get('parent', None):
+                parent = Localization.objects.get(pk=loc_spec.get('parent', None))
             loc = Localization(project=project,
                                meta=metas[loc_spec['type']],
                                media=medias[loc_spec['media_id']],
@@ -161,6 +181,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                                created_by=self.request.user,
                                modified_by=self.request.user,
                                version=versions[loc_spec.get('version', None)],
+                               parent=parent,
                                x=loc_spec.get('x', None),
                                y=loc_spec.get('y', None),
                                u=loc_spec.get('u', None),

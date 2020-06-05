@@ -25,6 +25,7 @@ class AnnotationBrowser extends TatorElement {
       if (dataType.visible) {
         const entity = document.createElement("entity-browser");
         entity.dataType = dataType;
+        entity.canvas = this._canvas;
         if (typeof this._permission !== "undefined") {
           entity.permission = this._permission;
         }
@@ -58,6 +59,10 @@ class AnnotationBrowser extends TatorElement {
         this._framePanels[dataType.id] = frame;
       }
     }
+  }
+
+  set canvas(val) {
+    this._canvas = val;
   }
 
   set permission(val) {

@@ -254,34 +254,38 @@ class UndoBuffer extends HTMLElement {
   }
 
   redo() {
-    if (this._index < this._forwardOps.length) {
-      for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
-        const [method, uri, id, body] = op;
-        const dataType = this._dataTypes[this._index];
-        const promise = this._fetch(op, dataType);
-        if (method == "POST") {
-          promise
-          .then(response => response.json())
-          .then(data => {
-            this._emitUpdate(method, data.id[0], body, dataType);
-            const delId = this._backwardOps[this._index - 1][opIndex][2];
-            const newId = data.id[0];
-            const replace = ops => {
-              for (const [opIndex, op] of ops.entries()) {
-                if (op[2] == delId || op[2] == null) {
-                  ops[opIndex][2] = newId;
-                }
-              }
-            };
-            this._forwardOps.forEach(replace);
-            this._backwardOps.forEach(replace);
-          });
-        } else {
-          this._emitUpdate(method, id, body, dataType);
+    let p = new Promise((resolve) => {
+      if (this._index < this._forwardOps.length) {
+        for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
+          const [method, uri, id, body] = op;
+          const dataType = this._dataTypes[this._index];
+          const promise = this._fetch(op, dataType);
+          if (method == "POST") {
+            promise
+              .then(response => response.json())
+              .then(data => {
+                this._emitUpdate(method, data.id[0], body, dataType);
+                const delId = this._backwardOps[this._index - 1][opIndex][2];
+                const newId = data.id[0];
+                const replace = ops => {
+                  for (const [opIndex, op] of ops.entries()) {
+                    if (op[2] == delId || op[2] == null) {
+                      ops[opIndex][2] = newId;
+                    }
+                  }
+                };
+                this._forwardOps.forEach(replace);
+                this._backwardOps.forEach(replace);
+              });
+          } else {
+            this._emitUpdate(method, id, body, dataType);
+          }
         }
+        this._index++;
       }
-      this._index++;
-    }
+      resolve();
+    });
+    return p;
   }
 
   _get(detailUri, id) {

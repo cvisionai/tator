@@ -272,8 +272,12 @@ class EntityTypeLocalizationBase(EntityTypeBase):
      "map": {"attribute_value": <color>, ...}
      "alpha_ranges": {"key": "attribute_name",
                       "alphas": [[<low>,<end>,<alpha>],...]}
+     "version": {"<version_id>": <color>}
      "default": <color>
 
+    (In django-admin json keys have to be strings, hence "<version_id>")
+    It is actually saved as an int in the database and that's what the JS
+    uses client side.
     <color> can either be a hex string for RRGGBB or a list for
     RRGGBBAA components, e.g. (255,0,0,255) for solid red.
     For alpha ranges each row is evaluated as
@@ -1085,6 +1089,8 @@ class Localization(Model):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
+    parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
+    """ Pointer to localization in which this one was generated from """
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -1283,9 +1289,10 @@ def database_query(query):
 
 def database_query_ids(table, ids, order):
     """ Given table name and list of IDs, do query using a subquery expression.
+        TODO: Is this faster than just using `database_qs()` in conjunction
+        with `database_query()`?
     """
     query = (f'SELECT * FROM \"{table}\" WHERE \"{table}\".\"id\" IN '
              f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
              f'ORDER BY {order}')
     return database_query(query)
-

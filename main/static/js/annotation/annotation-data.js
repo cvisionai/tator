@@ -33,6 +33,11 @@ class AnnotationData extends HTMLElement {
     return this.updateAll(this._dataTypesRaw, version);
   }
 
+  getVersion()
+  {
+    return this._version;
+  }
+
   // Returns a promise when done
   updateAll(dataTypes, version) {
     const trackTypeIds=[];
@@ -66,8 +71,13 @@ class AnnotationData extends HTMLElement {
     // Define function for getting data url.
     const getDataUrl = dataType => {
       const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
-      const dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" + 
-                      this._mediaId + "&type=" + dataType.id.split("_")[1];
+      let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
+            this._mediaId + "&type=" + dataType.id.split("_")[1];
+      if (dataEndpoint == "Localizations")
+      {
+        // TODO probably want this for States as well once it is supported there
+        dataUrl += "&excludeParents=1";
+      }
       return dataUrl;
     };
 

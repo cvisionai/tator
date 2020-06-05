@@ -138,13 +138,15 @@ class EntitySelector extends TatorElement {
 
     this._del.addEventListener("click", () => {
       let endpoint;
+      const index = parseInt(this._current.textContent) - 1;
       if (this._dataType.isLocalization) {
         endpoint = "Localization";
+        this._canvas.deleteLocalization(this._data[index]);
       } else {
         endpoint = "State";
+        this._undo.del(endpoint, this._data[index].id, this._dataType);
       }
-      const index = parseInt(this._current.textContent) - 1;
-      this._undo.del(endpoint, this._data[index].id, this._dataType);
+      
     });
 
     redraw.addEventListener("click", () => {
@@ -204,6 +206,10 @@ class EntitySelector extends TatorElement {
     }
   }
 
+  set canvas(val)
+  {
+    this._canvas = val;
+  }
   set permission(val) {
     this._permission = val;
   }

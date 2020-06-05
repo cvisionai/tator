@@ -110,6 +110,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
+              this._browser.canvas = player._video;
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -127,6 +128,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._image._canvas);
+              this._browser.canvas = player._image;
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -334,10 +336,28 @@ class AnnotationPage extends TatorPage {
           versions = [versions[0]];
         }
 
-        // TODO: Probably want a sensible default here more than
-        // just 'the last one'.
-        this._versionDialog.init(versions);
-        this._version = versions[versions.length - 1];
+        // If there is a version with the same name as the user
+        // pick that one.
+        this._version == null;
+        let selected_version_idx = 0;
+        for (let v of  versions)
+        {
+          if (v.name == this.getAttribute("username"))
+          {
+            this._version = v;
+            break;
+          }
+          selected_version_idx++;
+        }
+
+        
+        // TODO: Whats the right way to do a default here
+        if (this._version == null)
+        {
+          this._version = versions[versions.length - 1];
+          selected_version_idx = versions.length - 1;
+        }
+        this._versionDialog.init(versions, selected_version_idx);
         if (versions.length == 0) {
           this._versionButton.style.display = "none";
         } else {

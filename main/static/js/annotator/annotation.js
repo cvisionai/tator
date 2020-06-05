@@ -1430,6 +1430,7 @@ class AnnotationCanvas extends TatorElement
       clearTimeout(this._animator);
     }
     this.activeLocalization = null;
+    this._emphasis = null;
     if (this._mouseMode == MouseMode.SELECT) {
       this._mouseMode = MouseMode.QUERY;
     }
@@ -1897,40 +1898,129 @@ class AnnotationCanvas extends TatorElement
     }
 
     const objDescription = this.getObjectDescription(localization);
-    this._undo.del("Localization", localization.id, objDescription)
-    this._mouseMode = MouseMode.QUERY;
+    let hadParent = (localization.parent != null);
+    if (hadParent)
+    {
+      console.info("Finding lost parent");
+      fetchRetry(`/rest/Localization/${localization.id}`,
+                 {method: "DELETE",
+                  ...this._undo._headers()}).then(() => {
+                    this.updateType(objDescription,null);
+                  });
+    }
+    else
+    {
+      this._undo.del("Localization", localization.id, objDescription);
+    }
+    this.selectNone();
   }
 
-  modifyLocalization()
+  static updatePositions(localization, objDescription)
   {
-    const objDescription = this.getObjectDescription(this.activeLocalization);
-    const submitUrl="/rest/Localization/" + this.activeLocalization.id;
-
-    var requestObj = {};
-    var patchObj = {};
-
+    let patchObj = {}
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
     if (objDescription.dtype=='box')
     {
-      patchObj.x = this.activeLocalization.x;
-      patchObj.y = this.activeLocalization.y;
-      patchObj.width = this.activeLocalization.width;
-      patchObj.height = this.activeLocalization.height;
+      patchObj.x = localization.x;
+      patchObj.y = localization.y;
+      patchObj.width = localization.width;
+      patchObj.height = localization.height;
     }
     else if (objDescription.dtype=='line')
     {
-      patchObj.x = this.activeLocalization.x0;
-      patchObj.y = this.activeLocalization.y0;
-      patchObj.u = this.activeLocalization.x1 - this.activeLocalization.x0;
-      patchObj.v = this.activeLocalization.y1 - this.activeLocalization.y0;
+      patchObj.x = localization.x0;
+      patchObj.y = localization.y0;
+      patchObj.u = localization.x1 - localization.x0;
+      patchObj.v = localization.y1 - localization.y0;
     }
     else if (objDescription.dtype=='dot')
     {
-      patchObj.x = this.activeLocalization.x;
-      patchObj.y = this.activeLocalization.y;
+      patchObj.x = localization.x;
+      patchObj.y = localization.y;
+    }
+    return patchObj;
+  }
+  
+  cloneToNewVersion(localization, dest_version)
+  {
+    const objDescription = this.getObjectDescription(localization);
+    let original_meta = localization.meta;
+    let frame = localization.frame;
+    let current = this._framedData.get(frame).get(original_meta);
+
+    if (dest_version == undefined)
+    {
+      dest_version = this._data.getVersion().id;
     }
 
-    this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+    // Check for current derivations in the same layer (bad)
+    for (let local of current)
+    {
+      if (local.parent == localization.id &&
+          local.version == dest_version)
+      {
+        console.error("Already a clone in this layer!");
+        let old_id = localization.id;
+        this.selectNone();
+        this.updateType(objDescription,() => {
+          let restored = this._framedData.get(frame).get(original_meta);
+          for (let local of restored)
+          {
+            if (local.id == old_id)
+            {
+              this.selectLocalization(local, true);
+              break;
+            }
+          }
+        });
+        return;
+      }
+    }
+
+    // Make the clone
+    let newObject = AnnotationCanvas.updatePositions(localization,objDescription);
+    newObject.parent = localization.id;
+    newObject = Object.assign(newObject, localization.attributes);
+    newObject.version = dest_version;
+    newObject.type = Number(localization.meta.split("_")[1]);
+    newObject.media_id = localization.media;
+    newObject.frame = localization.frame;
+    newObject.modified = true;
+    console.info(newObject);
+    let request_obj = {method: "POST",
+                       ...this._undo._headers(),
+                       body: JSON.stringify([newObject])};
+    fetchRetry(`/rest/Localizations/${localization.project}`, request_obj).then(() => {
+      this.updateType(objDescription,() => {
+        // Find the localization we just made and select it
+        let localizations = this._framedData.get(newObject.frame).get(original_meta);
+        for (let local of localizations)
+        {
+          if (local.parent == newObject.parent)
+          {
+            this.selectLocalization(local, true);
+            break;
+          }
+        }
+      });
+    });
+  }
+
+  // TODO handle this all as a signal up in annotation-page
+  modifyLocalization()
+  {
+    const objDescription = this.getObjectDescription(this.activeLocalization);
+    let original_meta = this.activeLocalization.meta;
+    if (this._data.getVersion().id != this.activeLocalization.version)
+    {
+      console.info("Modifying a localization from another layer!");
+      this.cloneToNewVersion(this.activeLocalization, this._data.getVersion().id);
+    }
+    else
+    {
+      let patchObj = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
+      this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+    }
   }
 
   boundsCheck(coords)
@@ -2374,6 +2464,14 @@ class AnnotationCanvas extends TatorElement
             {
               decodeColor(meta.colorMap.default);
             }
+
+            if (meta.colorMap.version)
+            {
+              if (localization.version in meta.colorMap.version)
+              {
+                decodeColor(meta.colorMap.version[localization.version]);
+              }
+            }
             var keyname = meta.colorMap.key;
             if (keyname && keyname in localization.attributes)
             {
@@ -2447,6 +2545,7 @@ class AnnotationCanvas extends TatorElement
   onPlay()
   {
     this.activeLocalization = null;
+    this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
   }
 

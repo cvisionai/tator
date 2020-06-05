@@ -55,12 +55,39 @@ localization_properties = {
         'type': 'integer',
         'default': 0,
     },
+    'parent': {
+        'description': 'If a clone, the pk of the parent.',
+        'type': 'number',
+        'nullable': True,
+    },
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',
         'additionalProperties': True,
     }
 }
+
+localization_filter_schema = [
+    {
+        'name': 'excludeParents',
+        'in': 'query',
+        'required': False,
+        'description': 'If a clone is present, do not send parent. (0 or 1)',
+        'schema': {'type': 'integer',
+                   'minimum': 0,
+                   'maximum': 1,
+                   'default': 0
+                   }
+    },
+    {
+        'name': 'frame',
+        'in': 'query',
+        'description': 'Frame number of this localization if it is in a video.',
+        'schema': {'type': 'integer',
+                   'minimum': 0},
+        'required': False,
+    },
+]
 
 class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -80,7 +107,7 @@ class LocalizationListSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PATCH', 'DELETE']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema
         return params
 
     def _get_request_body(self, path, method):
