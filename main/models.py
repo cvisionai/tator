@@ -1285,9 +1285,10 @@ def database_query(query):
 
 def database_query_ids(table, ids, order):
     """ Given table name and list of IDs, do query using a subquery expression.
+        TODO: Is this faster than just using `database_qs()` in conjunction
+        with `database_query()`?
     """
     query = (f'SELECT * FROM \"{table}\" WHERE \"{table}\".\"id\" IN '
              f'(VALUES ({"), (".join([str(id_) for id_ in ids])})) '
              f'ORDER BY {order}')
     return database_query(query)
-
