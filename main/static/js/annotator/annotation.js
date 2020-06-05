@@ -1898,8 +1898,21 @@ class AnnotationCanvas extends TatorElement
     }
 
     const objDescription = this.getObjectDescription(localization);
-    this._undo.del("Localization", localization.id, objDescription)
-    this._mouseMode = MouseMode.QUERY;
+    let hadParent = (localization.parent != null);
+    if (hadParent)
+    {
+      console.info("Finding lost parent");
+      fetchRetry(`/rest/Localization/${localization.id}`,
+                 {method: "DELETE",
+                  ...this._undo._headers()}).then(() => {
+                    this.updateType(objDescription,null);
+                  });
+    }
+    else
+    {
+      this._undo.del("Localization", localization.id, objDescription);
+    }
+    this.selectNone();
   }
 
   modifyLocalization()
