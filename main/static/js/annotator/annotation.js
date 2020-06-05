@@ -1941,74 +1941,78 @@ class AnnotationCanvas extends TatorElement
     return patchObj;
   }
   
-  cloneToNewVersion(obj, dest_version)
+  cloneToNewVersion(localization, dest_version)
   {
-    
-  }
-  modifyLocalization()
-  {
-    const objDescription = this.getObjectDescription(this.activeLocalization);
-    const submitUrl="/rest/Localization/" + this.activeLocalization.id;
+    const objDescription = this.getObjectDescription(localization);
+    let original_meta = localization.meta;
+    let frame = localization.frame;
+    let current = this._framedData.get(frame).get(original_meta);
 
-    let original_meta = this.activeLocalization.meta;
-    if (this._data.getVersion().id != this.activeLocalization.version)
+    if (dest_version == undefined)
     {
-      console.info("Modifying a localization from another layer!");
+      dest_version = this._data.getVersion().id;
+    }
 
-      let frame = this.activeLocalization.frame;
-      let current = this._framedData.get(frame).get(original_meta);
-
-      // Check for current derivations in the same layer (bad)
-      for (let local of current)
+    // Check for current derivations in the same layer (bad)
+    for (let local of current)
+    {
+      if (local.parent == localization.id &&
+          local.version == dest_version)
       {
-        if (local.parent == this.activeLocalization.id &&
-            local.version == this._data.getVersion().id)
-        {
-          console.error("Already a clone in this layer!");
-          let old_id = this.activeLocalization.id;
-          this.selectNone();
-          this.updateType(objDescription,() => {
-            let restored = this._framedData.get(frame).get(original_meta);
-            for (let local of restored)
-            {
-              if (local.id == old_id)
-              {
-                this.selectLocalization(local, true);
-                break;
-              }
-            }
-          });
-          return;
-        }
-      }
-
-      // Make the clone
-      let newObject = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
-      newObject.parent = this.activeLocalization.id;
-      newObject = Object.assign(newObject, this.activeLocalization.attributes);
-      newObject.version = this._data.getVersion().id;
-      newObject.type = Number(this.activeLocalization.meta.split("_")[1]);
-      newObject.media_id = this.activeLocalization.media;
-      newObject.frame = this.activeLocalization.frame;
-      newObject.modified = true;
-      console.info(newObject);
-      let request_obj = {method: "POST",
-                         ...this._undo._headers(),
-                         body: JSON.stringify([newObject])};
-      fetchRetry(`/rest/Localizations/${this.activeLocalization.project}`, request_obj).then(() => {
+        console.error("Already a clone in this layer!");
+        let old_id = localization.id;
+        this.selectNone();
         this.updateType(objDescription,() => {
-          // Find the localization we just made and select it
-          let localizations = this._framedData.get(newObject.frame).get(original_meta);
-          for (let local of localizations)
+          let restored = this._framedData.get(frame).get(original_meta);
+          for (let local of restored)
           {
-            if (local.parent == newObject.parent)
+            if (local.id == old_id)
             {
               this.selectLocalization(local, true);
               break;
             }
           }
         });
+        return;
+      }
+    }
+
+    // Make the clone
+    let newObject = AnnotationCanvas.updatePositions(localization,objDescription);
+    newObject.parent = localization.id;
+    newObject = Object.assign(newObject, localization.attributes);
+    newObject.version = dest_version;
+    newObject.type = Number(localization.meta.split("_")[1]);
+    newObject.media_id = localization.media;
+    newObject.frame = localization.frame;
+    newObject.modified = true;
+    console.info(newObject);
+    let request_obj = {method: "POST",
+                       ...this._undo._headers(),
+                       body: JSON.stringify([newObject])};
+    fetchRetry(`/rest/Localizations/${localization.project}`, request_obj).then(() => {
+      this.updateType(objDescription,() => {
+        // Find the localization we just made and select it
+        let localizations = this._framedData.get(newObject.frame).get(original_meta);
+        for (let local of localizations)
+        {
+          if (local.parent == newObject.parent)
+          {
+            this.selectLocalization(local, true);
+            break;
+          }
+        }
       });
+    });
+  }
+  modifyLocalization()
+  {
+    const objDescription = this.getObjectDescription(this.activeLocalization);
+    let original_meta = this.activeLocalization.meta;
+    if (this._data.getVersion().id != this.activeLocalization.version)
+    {
+      console.info("Modifying a localization from another layer!");
+      this.cloneToNewVersion(this.activeLocalization, this._data.getVersion().id);
     }
     else
     {
