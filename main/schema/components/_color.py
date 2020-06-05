@@ -5,8 +5,8 @@ rgb_color = {
         'minimum': 0,
         'maximum': 255,
     },
-    'minLength': 3,
-    'maxLength': 3,
+    'minItems': 3,
+    'maxItems': 3,
 }
 
 rgba_color = {
@@ -16,8 +16,8 @@ rgba_color = {
         'minimum': 0,
         'maximum': 255,
     },
-    'minLength': 4,
-    'maxLength': 4,
+    'minItems': 4,
+    'maxItems': 4,
 }
 
 hex_color = {
