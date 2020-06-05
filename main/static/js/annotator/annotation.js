@@ -2447,9 +2447,9 @@ class AnnotationCanvas extends TatorElement
 
             if (meta.colorMap.version)
             {
-              if (String(localization.version) in meta.colorMap.version)
+              if (localization.version in meta.colorMap.version)
               {
-                decodeColor(meta.colorMap.version[String(localization.version)]);
+                decodeColor(meta.colorMap.version[localization.version]);
               }
             }
             var keyname = meta.colorMap.key;

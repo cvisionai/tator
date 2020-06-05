@@ -275,7 +275,9 @@ class EntityTypeLocalizationBase(EntityTypeBase):
      "version": {"<version_id>": <color>}
      "default": <color>
 
-    (In postgres json keys have to be strings, hence "<version_id>")
+    (In django-admin json keys have to be strings, hence "<version_id>")
+    It is actually saved as an int in the database and that's what the JS
+    uses client side.
     <color> can either be a hex string for RRGGBB or a list for
     RRGGBBAA components, e.g. (255,0,0,255) for solid red.
     For alpha ranges each row is evaluated as
