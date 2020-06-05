@@ -67,6 +67,20 @@ localization_properties = {
     }
 }
 
+localization_filter_schema = [
+    {
+        'name': 'excludeParents',
+        'in': 'query',
+        'required': False,
+        'description': 'If a clone is present, do not send parent. (0 or 1)',
+        'schema': {'type': 'integer',
+                   'minimum': 0,
+                   'maximum': 1,
+                   'default': 0
+                   }
+    },
+]
+
 class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -85,7 +99,7 @@ class LocalizationListSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PATCH', 'DELETE']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema
         return params
 
     def _get_request_body(self, path, method):

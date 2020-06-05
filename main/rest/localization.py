@@ -1,4 +1,5 @@
 import logging
+from django.db.models import Subquery
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -45,7 +46,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation', 'format', 'excludeParents']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the localization list.
@@ -73,7 +74,12 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:
-                response_data = database_qs(qs.order_by('id'))
+                if params['excludeParents']:
+                    parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
+                    result_set = qs.difference(parent_set).order_by('id')
+                else:
+                    result_set = qs.order_by('id')
+                response_data = database_qs(result_set)
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
