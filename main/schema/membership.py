@@ -1,24 +1,17 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-membership_properties = {
-    'user': {
-        'description': 'Unique integer identifying a user.',
-        'type': 'integer',
-        'minimum': 1,
-    },
-    'permission': {
-        'description': 'User permission level for the project.',
-        'type': 'string',
-        'enum': ['View Only', 'Can Edit', 'Can Transfer', 'Can Execute', 'Full Control'],
-    },
-}
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 
 class MembershipListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        if method == 'GET':
-            operation['operationId'] = 'RetrieveMembershipList'
-        operation['tags'] = ['Membership']
+        if method == 'POST':
+            operation['operationId'] = 'CreateMembership'
+        elif method == 'GET':
+            operation['operationId'] = 'GetMembershipList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -37,11 +30,7 @@ class MembershipListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype'],
-                    'properties': membership_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/MembershipSpec'},
                 'example': {
                     'user': 1,
                     'permission': 'Full Control',
@@ -50,19 +39,29 @@ class MembershipListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of membership list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of membership list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Membership'},
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of membership.'}
+            responses['201'] = message_with_id_schema('membership')
         return responses
 
 class MembershipDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Membership']
+        if method == 'GET':
+            operation['operationId'] = 'GetMembership'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMembership'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMembership'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -81,12 +80,7 @@ class MembershipDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'permission': membership_properties['permission'],
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/MembershipUpdate'},
                 'example': {
                     'permission': 'View Only',
                 }
@@ -94,13 +88,16 @@ class MembershipDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find membership with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of membership.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of membership.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of membership.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Membership',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'membership')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of membership.'}
         return responses

@@ -139,7 +139,7 @@ class SaveImageAPI(APIView):
             }
             prog.finished("Uploaded successfully!", {**info})
 
-            response = Response({'message': "Image saved successfully!"},
+            response = Response({'message': "Image saved successfully!", 'id': media_obj.id},
                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:

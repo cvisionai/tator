@@ -303,6 +303,7 @@ class StateDetailAPI(BaseDetailView):
     schema = StateDetailSchema()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         state = database_qs(State.objects.filter(pk=params['id']))[0]

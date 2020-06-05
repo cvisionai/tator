@@ -264,6 +264,7 @@ class LocalizationDetailAPI(BaseDetailView):
     schema = LocalizationDetailSchema()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         return database_qs(Localization.objects.filter(pk=params['id']))[0]

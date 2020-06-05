@@ -25,15 +25,12 @@ import shutil
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
-class TemporaryFileAPI(generics.RetrieveDestroyAPIView):
-    """ Access a detailed view of a temporary file given an id """
-    queryset = TemporaryFile.objects.all()
-    serializer_class = TemporaryFileSerializer
-    permission_classes = [ProjectEditPermission]
-    schema = TemporaryFileDetailSchema()
-
 class TemporaryFileListAPI(generics.ListAPIView):
-    """ Access a list of temporary files associated with a project """
+    """ Interact with temporary file list.
+
+        Temporary files are files stored server side for a defined duration. The file must
+        first be uploaded via tus, and can subsequently be saved using this endpoint.
+    """
     schema = TemporaryFileListSchema()
     permission_classes = [ProjectEditPermission]
     serializer_class = TemporaryFileSerializer
@@ -77,12 +74,16 @@ class TemporaryFileListAPI(generics.ListAPIView):
                 hours = 24
 
             local_file_path = os.path.join(settings.UPLOAD_ROOT,url.split('/')[-1])
-            TemporaryFile.from_local(path=local_file_path,
-                                     name=params['name'],
-                                     project=Project.objects.get(pk=project),
-                                     user=request.user,
-                                     lookup=params['lookup'],
-                                     hours = hours)
+            temp_file = TemporaryFile.from_local(path=local_file_path,
+                                                 name=params['name'],
+                                                 project=Project.objects.get(pk=project),
+                                                 user=request.user,
+                                                 lookup=params['lookup'],
+                                                 hours = hours)
+            response = Response(
+                {'message': f"Temporary file of {name} created!", 'id': temp_file.id},
+                status=status.HTTP_201_CREATED,
+            )
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
@@ -98,3 +99,14 @@ class TemporaryFileListAPI(generics.ListAPIView):
                 if os.path.exists(info_path):
                     os.remove(info_path)
             return response;
+
+class TemporaryFileDetailAPI(generics.RetrieveDestroyAPIView):
+    """ Interact with temporary file.
+
+        Temporary files are files stored server side for a defined duration. The file must
+        first be uploaded via tus, and can subsequently be saved using this endpoint.
+    """
+    queryset = TemporaryFile.objects.all()
+    serializer_class = TemporaryFileSerializer
+    permission_classes = [ProjectEditPermission]
+    schema = TemporaryFileDetailSchema()

@@ -72,6 +72,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
     schema = LocalizationTypeDetailSchema()
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         """ Retrieve a localization type.

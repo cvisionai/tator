@@ -1,12 +1,15 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 
 class MediaSectionsSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Media']
+        if method == 'GET':
+            operation['operationId'] = 'GetMediaSections'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -28,25 +31,12 @@ class MediaSectionsSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of media count per section.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'additionalProperties': {
-                        'type': 'object',
-                        'properties': {
-                            'num_videos': {'type': 'integer', 'minimum': 0},
-                            'num_images': {'type': 'integer', 'minimum': 0},
-                            'download_size_videos': {'type': 'integer', 'minimum': 0},
-                            'download_size_images': {'type': 'integer', 'minimum': 0},
-                            'total_size_videos': {'type': 'integer', 'minimum': 0},
-                            'total_size_images': {'type': 'integer', 'minimum': 0},
-                        },
-                    },
+                    '$ref': '#/components/schemas/MediaSections',
                 }}}
             }
         return responses

@@ -1,11 +1,14 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
 from ._attributes import attribute_filter_parameter_schema
 
 class SectionAnalysisSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['SectionAnalysis']
+        if method == 'GET':
+            operation['operationId'] = 'GetSectionAnalysis'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -40,10 +43,13 @@ class SectionAnalysisSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of section analysis.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of section analysis.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/SectionAnalysis',
+                }}},
+            }
         return responses
 

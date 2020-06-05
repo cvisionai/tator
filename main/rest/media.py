@@ -157,6 +157,7 @@ class MediaDetailAPI(BaseDetailView):
     schema = MediaDetailSchema()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         """ Retrieve individual media.

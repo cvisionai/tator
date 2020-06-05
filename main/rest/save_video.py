@@ -350,7 +350,7 @@ class SaveVideoAPI(APIView):
             # Send progress as finalized or complete based on REST parameter
             prog.progress(f"Imported {name}", 75, {**info})
 
-            response = Response({'message': "Video saved successfully!"},
+            response = Response({'message': "Video saved successfully!", 'id': media_obj.id},
                                 status=status.HTTP_201_CREATED)
 
         except ObjectDoesNotExist as dne:

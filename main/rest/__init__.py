@@ -36,8 +36,8 @@ from .state import StateDetailAPI
 from .state_graphic import StateGraphicAPI
 from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI
-from .temporary_file import TemporaryFileAPI
 from .temporary_file import TemporaryFileListAPI
+from .temporary_file import TemporaryFileDetailAPI
 from .transcode import TranscodeAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI

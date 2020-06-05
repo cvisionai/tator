@@ -65,6 +65,7 @@ class MediaTypeDetailAPI(BaseDetailView):
     schema = MediaTypeDetailSchema()
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         """ Get media type.

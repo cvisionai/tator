@@ -126,7 +126,7 @@ class MembershipSerializer(serializers.ModelSerializer):
 class AlgorithmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Algorithm
-        fields = ['name', 'description', 'pk']
+        fields = ['id', 'name', 'description']
 
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:

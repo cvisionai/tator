@@ -88,6 +88,7 @@ class ProjectDetailAPI(RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     permission_classes = [ProjectFullControlPermission, ProjectOwnerPermission]
     lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
 
     def get(self, request, format=None, **kwargs):
         # Try grabbing data from cache

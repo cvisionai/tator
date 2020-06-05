@@ -1,21 +1,17 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-project_properties = {
-    'name': {
-        'description': 'Name of the project.',
-        'type': 'string',
-    },
-    'summary': {
-        'description': 'Summary of the project.',
-        'type': 'string',
-        'default': '',
-    },
-}
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 
 class ProjectListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Project']
+        if method == 'POST':
+            operation['operationId'] = 'CreateProject'
+        elif method == 'GET':
+            operation['operationId'] = 'GetProjectList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -28,11 +24,7 @@ class ProjectListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name'],
-                    'properties': project_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/ProjectSpec'},
                 'example': {
                     'name': 'My Project',
                     'summary': 'First project',
@@ -41,31 +33,29 @@ class ProjectListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of project list.'}
-        elif method == 'POST':
-            responses['201'] = {
-                'description': 'Successful creation of project.',
+            responses['200'] = {
+                'description': 'Successful retrieval of project list.',
                 'content': {'application/json': {'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'id': {
-                            'type': 'integer',
-                            'minimum': 1,
-                            'description': 'ID of created project.',
-                        },
-                    },
-                }}}
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Project'},
+                }}},
             }
+        elif method == 'POST':
+            responses['201'] = message_with_id_schema('project')
         return responses
 
 class ProjectDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Project']
+        if method == 'GET':
+            operation['operationId'] = 'GetProject'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateProject'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteProject'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -84,10 +74,7 @@ class ProjectDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties':  project_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/ProjectSpec'},
                 'example': {
                     'name': 'New name',
                     'summary': 'New summary',
@@ -96,13 +83,16 @@ class ProjectDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of project.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of project.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of project.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Project',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'project')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of project.'}
         return responses

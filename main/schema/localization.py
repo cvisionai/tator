@@ -1,71 +1,9 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
-
-localization_properties = {
-    'x': {
-        'description': 'Normalized horizontal position of left edge of bounding box for '
-                       '`box` localization types, start of line for `line` localization '
-                       'types, or position of dot for `dot` localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'y': {
-        'description': 'Normalized vertical position of top edge of bounding box for '
-                       '`box` localization types, start of line for `line` localization '
-                       'types, or position of dot for `dot` localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'width': {
-        'description': 'Normalized width of bounding box for `box` localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'height': {
-        'description': 'Normalized height of bounding box for `box` localization types.',
-        'type': 'number',
-        'minimum': 0.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'u': {
-        'description': 'Horizontal vector component for `line` localization types.',
-        'type': 'number',
-        'minimum': -1.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'v': {
-        'description': 'Vertical vector component for `line` localization types.',
-        'type': 'number',
-        'minimum': -1.0,
-        'maximum': 1.0,
-        'nullable': True,
-    },
-    'frame': {
-        'description': 'Frame number of this localization if it is in a video.',
-        'type': 'integer',
-        'default': 0,
-    },
-    'parent': {
-        'description': 'If a clone, the pk of the parent.',
-        'type': 'number',
-        'nullable': True,
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
-}
 
 localization_filter_schema = [
     {
@@ -92,7 +30,15 @@ localization_filter_schema = [
 class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Localization']
+        if method == 'POST':
+            operation['operationId'] = 'CreateLocalization'
+        elif method == 'GET':
+            operation['operationId'] = 'GetLocalizationList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalizationList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalizationList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -116,30 +62,7 @@ class LocalizationListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'additionalProperties': True,
-                        'properties': {
-                            'media_id': {
-                                'description': 'Unique integer identifying a media.',
-                                'type': 'integer',
-                            },
-                            'type': {
-                                'description': 'Unique integer identifying a localization type.',
-                                'type': 'integer',
-                            },
-                            'version': {
-                                'description': 'Unique integer identifying the version.',
-                                'type': 'integer',
-                            },
-                            'modified': {
-                                'description': 'Whether this localization was created in the web UI.',
-                                'type': 'boolean',
-                                'nullable': True,
-                            },
-                            **localization_properties,
-                        },
-                    },
+                    'items': {'$ref': '#/components/schemas/LocalizationSpec'},
                 },
                 'examples': {
                     'box': {
@@ -260,15 +183,7 @@ class LocalizationListSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
+                    '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
                 'examples': {
                     'single': {
@@ -284,24 +199,33 @@ class LocalizationListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of localization list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Localization'},
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of localization(s).'}
+            responses['201'] = message_schema('creation', 'localization(s)')
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of localization '
-                                               'attributes.'}
+            responses['200'] = message_schema('update', 'localization list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of localizations.'}
+            responses['204'] = message_schema('deletion', 'localization list')
         return responses
 
 class LocalizationDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Localization']
+        if method == 'GET':
+            operation['operationId'] = 'GetLocalization'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalization'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalization'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -321,15 +245,7 @@ class LocalizationDetailSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'properties': {
-                        **localization_properties,
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                            'nullable': True,
-                        },
-                    },
+                    '$ref': '#/components/schemas/LocalizationUpdate',
                 },
                 'example': {
                     'x': 0.25,
@@ -341,12 +257,17 @@ class LocalizationDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find localization with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of localization.'}
-        if method == 'DELETE':
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of localization.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Localization',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'localization')
+        elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization.'}
         return responses
 

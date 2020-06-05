@@ -1,13 +1,19 @@
 from rest_framework.schemas.openapi import AutoSchema
 
-from ._attribute_type import attribute_type_properties
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
 
 class LocalizationTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['LocalizationType']
+        if method == 'POST':
+            operation['operationId'] = 'CreateLocalizationType'
+        elif method == 'GET':
+            operation['operationId'] = 'GetLocalizationTypeList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -29,43 +35,7 @@ class LocalizationTypeListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name', 'dtype', 'media_types'],
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the localization type.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the localization type.',
-                            'type': 'string',
-                            'default': '',
-                        },
-                        'dtype': {
-                            'description': 'Shape of the localization.',
-                            'type': 'string',
-                            'enum': ['box', 'line', 'dot'],
-                        },
-                        'media_types': {
-                            'description': 'List of integers identifying media types that '
-                                           'this localization type may apply to.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'integer',
-                                'minimum': 1,
-                            },
-                        },
-                        'attribute_types': {
-                            'description': 'Attribute type definitions.',
-                            'type': 'array',
-                            'items': {
-                                'type': 'object',
-                                'properties': attribute_type_properties,
-                            },
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/LocalizationTypeSpec'},
                 'example': {
                     'name': 'My localization type',
                     'dtype': 'box',
@@ -76,19 +46,29 @@ class LocalizationTypeListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization type list.'}
-        elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of localization type.'}
+        responses = error_responses()
+        if method == 'POST':
+            responses['201'] = message_with_id_schema('localization type')
+        elif method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of localization type list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/LocalizationType'},
+                }}}
+            }
         return responses
 
 class LocalizationTypeDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['LocalizationType']
+        if method == 'GET':
+            operation['operationId'] = 'GetLocalizationType'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateLocalizationType'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteLocalizationType'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -107,19 +87,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the localization type.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the localization type.',
-                            'type': 'string',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/LocalizationTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
@@ -128,13 +96,16 @@ class LocalizationTypeDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find localization type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of localization type.'}
-        elif method in ['PATCH', 'PUT']:
-            responses['200'] = {'description': 'Successful update of localization type.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of localization type.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/LocalizationType',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'localization type')
         elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of localization type.'}
         return responses

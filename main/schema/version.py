@@ -1,11 +1,17 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_schema
+from ._message import message_with_id_schema
+
 class VersionListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Version']
-        if method == 'GET':
-            operation['operationId'] = 'RetrieveVersionList'
+        if method == 'POST':
+            operation['operationId'] = 'CreateVersion'
+        elif method == 'GET':
+            operation['operationId'] = 'GetVersionList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -33,21 +39,7 @@ class VersionListSchema(AutoSchema):
         body = {}
         if method == 'POST':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['name'],
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the version.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the version.',
-                            'type': 'string',
-                            'default': '',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/VersionSpec'},
                 'example': {
                     'name': 'My new version',
                 },
@@ -55,17 +47,29 @@ class VersionListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'POST':
-            responses['201'] = {'description': 'Successful creation of the version.'}
+            responses['201'] = message_with_id_schema('version')
+        elif method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of version list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Version'},
+                }}},
+            }
         return responses
 
 class VersionDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Version']
+        if method == 'GET':
+            operation['operationId'] = 'GetVersion'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateVersion'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteVersion'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -84,32 +88,25 @@ class VersionDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'name': {
-                            'description': 'Name of the version.',
-                            'type': 'string',
-                        },
-                        'description': {
-                            'description': 'Description of the version.',
-                            'type': 'string',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/VersionSpec'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
-                }
+                },
             }}}
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find version with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
-        if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of version.'}
-        if method == 'DELETE':
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of version.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Version',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'version')
+        elif method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of version.'}
         return responses

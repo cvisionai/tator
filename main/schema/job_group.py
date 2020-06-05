@@ -1,9 +1,14 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
+
 class JobGroupDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Job']
+        if method == 'DELETE':
+            operation['operationId'] = 'DeleteJobGroup'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -22,10 +27,8 @@ class JobGroupDetailSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find any jobs with given uuid.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'DELETE':
-            responses['204'] = {'description': 'Successful cancellation of the jobs.'}
+            responses['204'] = message_schema('cancellation', 'job group')
         return responses
 

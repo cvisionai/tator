@@ -1,40 +1,21 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
+from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
-
-media_properties = {
-    'name': {
-        'description': 'Name of the media.',
-        'type': 'string',
-    },
-    'last_edit_start': {
-        'description': 'Datetime of the start of the session when this media or its annotations '
-                       'were last edited.',
-        'type': 'string',
-        'format': 'date-time',
-    },
-    'last_edit_end': {
-        'description': 'Datetime of the end of the session when this media or its annotations were last edited.',
-        'type': 'string',
-        'format': 'date-time',
-    },
-    'media_files': {
-        'description': 'Object containing media information.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
-}
+from .components.save_video import save_video_properties
 
 class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Media']
+        if method == 'GET':
+            operation['operationId'] = 'GetMediaList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMediaList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMediaList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -57,15 +38,7 @@ class MediaListSchema(AutoSchema):
         if method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
+                    '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
                 'examples': {
                     'single': {
@@ -81,22 +54,31 @@ class MediaListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/Media'},
+                }}},
+            }
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of media '
-                                               'attributes.'}
+            responses['200'] = message_schema('update', 'media list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of media.'}
+            responses['204'] = message_schema('deletion', 'media list')
         return responses
 
 class MediaDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['Media']
+        if method == 'GET':
+            operation['operationId'] = 'GetMedia'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateMedia'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteMedia'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -115,21 +97,21 @@ class MediaDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': media_properties,
-                },
+                'schema': {'$ref': '#/components/schemas/MediaUpdate'},
             }}}
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find media with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of media.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of media.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Media',
+                }}},
+            }
         if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of media.'}
+            responses['200'] = message_schema('update', 'media')
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of media.'}
         return responses
@@ -137,7 +119,9 @@ class MediaDetailSchema(AutoSchema):
 class GetFrameSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['GetFrame']
+        if method == 'GET':
+            operation['operationId'] = 'GetFrame'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -214,17 +198,37 @@ class GetFrameSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = {}
-        responses['404'] = {'description': 'Failure to find attribute type with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of frame image.'}
+            responses['404'] = {
+                'description': 'Not found.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+            responses['400'] = {
+                'description': 'Bad request.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+            responses['200'] = {
+                'description': 'Successful retrieval of frame image.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
         return responses
 
 
 class GetClipSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['GetClip']
+        if method == 'GET':
+            operation['operationId'] = 'GetClip'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -269,3 +273,15 @@ class GetClipSchema(AutoSchema):
 
     def _get_request_body(self, path, method):
         return {}
+
+    def _get_responses(self, path, method):
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of video clip.',
+                'content': {'video/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+        return responses

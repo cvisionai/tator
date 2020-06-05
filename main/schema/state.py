@@ -1,34 +1,23 @@
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_with_id_schema
+from ._message import message_schema
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
-
-state_properties = {
-    'media_ids': {
-        'description': 'List of media IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
-    'localization_ids': {
-        'description': 'List of localization IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
-    'frame': {
-        'description': 'Frame number this state applies to.',
-        'type': 'integer',
-    },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
-}
 
 class StateListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['State']
+        if method == 'POST':
+            operation['operationId'] = 'CreateState'
+        elif method == 'GET':
+            operation['operationId'] = 'GetStateList'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateStateList'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteStateList'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -52,26 +41,7 @@ class StateListSchema(AutoSchema):
             body = {'content': {'application/json': {
                 'schema': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'required': ['media_ids', 'type'],
-                        'additionalProperties': True,
-                        'properties': {
-                            'type': {
-                                'description': 'Unique integer identifying a state type.',
-                                'type': 'integer',
-                            },
-                            'version': {
-                                'description': 'Unique integer identifying the version.',
-                                'type': 'integer',
-                            },
-                            'modified': {
-                                'description': 'Whether this localization was created in the web UI.',
-                                'type': 'boolean',
-                            },
-                            **state_properties,
-                        },
-                    },
+                    'items': {'$ref': '#/components/schemas/StateSpec'},
                 },
                 'examples': {
                     'frame': {
@@ -107,17 +77,7 @@ class StateListSchema(AutoSchema):
             }}}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'required': ['attributes'],
-                    'properties': {
-                        'attributes': {
-                            'description': 'Attribute values to bulk update.',
-                            'type': 'object',
-                            'additionalProperties': True,
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/AttributeBulkUpdate'},
                 'examples': {
                     'single': {
                         'summary': 'Update Species attribute of many states',
@@ -132,24 +92,33 @@ class StateListSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find project with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of state list.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of state list.',
+                'content': {'application/json': {'schema': {
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/State'},
+                }}},
+            }
         elif method == 'POST':
-            responses['201'] = {'description': 'Successful creation of state(s).'}
+            responses['201'] = message_with_id_schema('state(s)')
         elif method == 'PATCH':
-            responses['200'] = {'description': 'Successful bulk update of state '
-                                               'attributes.'}
+            responses['200'] = message_schema('update', 'state list')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful bulk delete of states.'}
+            responses['204'] = message_schema('deletion', 'state list')
         return responses
 
 class StateDetailSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['State']
+        if method == 'GET':
+            operation['operationId'] = 'GetState'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateState'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteState'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -168,16 +137,7 @@ class StateDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        **state_properties,
-                        'modified': {
-                            'description': 'Whether this localization was created in the web UI.',
-                            'type': 'boolean',
-                        },
-                    },
-                },
+                'schema': {'$ref': '#/components/schemas/StateUpdate'},
                 'example': {
                     'frame': 1001,
                 }
@@ -185,11 +145,9 @@ class StateDetailSchema(AutoSchema):
         return body
 
     def _get_responses(self, path, method):
-        responses = super()._get_responses(path, method)
-        responses['404'] = {'description': 'Failure to find state with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'PATCH':
-            responses['200'] = {'description': 'Successful update of state.'}
+            responses['200'] = message_schema('update', 'state')
         if method == 'DELETE':
             responses['204'] = {'description': 'Successful deletion of state.'}
         return responses
@@ -197,7 +155,9 @@ class StateDetailSchema(AutoSchema):
 class StateGraphicSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        operation['tags'] = ['StateGraphic']
+        if method == 'GET':
+            operation['operationId'] = 'GetStateGraphic'
+        operation['tags'] = ['Tator']
         return operation
 
     def _get_path_parameters(self, path, method):
@@ -248,10 +208,14 @@ class StateGraphicSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = {}
-        responses['404'] = {'description': 'Failure to find media with given ID.'}
-        responses['400'] = {'description': 'Bad request.'}
+        responses = error_responses()
         if method == 'GET':
-            responses['200'] = {'description': 'Successful retrieval of state graphic.'}
+            responses['200'] = {
+                'description': 'Successful retrieval of state graphic.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
         return responses
 
