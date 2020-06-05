@@ -23,6 +23,8 @@ rgba_color = {
 hex_color = {
     'type': 'string',
     'pattern': '^#(?:[0-9a-fA-F]{3}){1,2}$',
+    'minLength': 7,
+    'maxLength': 7,
 }
 
 color = {
@@ -65,13 +67,16 @@ color_map = {
             'additionalProperties': {'$ref': '#/components/schemas/Color'},
         },
     },
+}
+
+color_map_example = {
     'examples': {
         'Attribute value mapping': {
             'summary': 'Color map based on attribute values.',
             'description': ('- Makes lobsters red.\n'
                             '- Makes scallops yellow with default alpha of 50%.\n'
                             '- Defaults all other boxes to green.\n'
-                            '- Defines an alpha ragne based on an attribute "Alpha". '
+                            '- Defines an alpha range based on an attribute "Alpha". '
                             'If the value is >= 0 and < 0.25 alpha is 10% -- if 0.5 '
                             'to 1.0 is 100%. Else will fall to either map definition '
                             'or system default.'),
@@ -91,4 +96,3 @@ color_map = {
         },
     },
 }
-
