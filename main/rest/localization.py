@@ -60,7 +60,16 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             if self.operation == 'count':
                 response_data = {'count': len(annotation_ids)}
             elif len(annotation_ids) > 0:
-                response_data = database_query_ids('main_localization', annotation_ids, 'id')
+                if params['excludeParents']:
+                    qs = Localization.objects.filter(pk__in=annotation_ids)
+                    parent_set = Localization.objects.filter(pk__in=Subquery(
+                        qs.values('parent')))
+                    result_set = qs.difference(parent_set).order_by('id')
+                    response_data = database_qs(result_set)
+                else:
+                    response_data = database_query_ids('main_localization',
+                                                       annotation_ids,
+                                                       'id')
         else:
             qs = Localization.objects.filter(project=params['project'])
             if 'media_id' in params:
