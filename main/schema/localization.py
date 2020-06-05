@@ -79,6 +79,14 @@ localization_filter_schema = [
                    'default': 0
                    }
     },
+    {
+        'name': 'frame',
+        'in': 'query',
+        'description': 'Frame number of this localization if it is in a video.',
+        'schema': {'type': 'integer',
+                   'minimum': 0},
+        'required': False,
+    },
 ]
 
 class LocalizationListSchema(AutoSchema):

@@ -46,7 +46,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation', 'format', 'excludeParents']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation', 'format', 'excludeParents','frame']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the localization list.
@@ -78,6 +78,8 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
                 qs = qs.filter(version__in=params['version'])
+            if 'frame' in params:
+                qs = qs.filter(frame=params['frame'])
             if 'modified' in params:
                 qs = qs.exclude(modified=(not params['modified']))
             if self.operation == 'count':
