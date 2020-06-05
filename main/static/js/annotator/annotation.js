@@ -1915,35 +1915,40 @@ class AnnotationCanvas extends TatorElement
     this.selectNone();
   }
 
+  static updatePositions(localization, objDescription)
+  {
+    let patchObj = {}
+    // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
+    if (objDescription.dtype=='box')
+    {
+      patchObj.x = localization.x;
+      patchObj.y = localization.y;
+      patchObj.width = localization.width;
+      patchObj.height = localization.height;
+    }
+    else if (objDescription.dtype=='line')
+    {
+      patchObj.x = localization.x0;
+      patchObj.y = localization.y0;
+      patchObj.u = localization.x1 - localization.x0;
+      patchObj.v = localization.y1 - localization.y0;
+    }
+    else if (objDescription.dtype=='dot')
+    {
+      patchObj.x = localization.x;
+      patchObj.y = localization.y;
+    }
+    return patchObj;
+  }
+  
+  cloneToNewVersion(obj, dest_version)
+  {
+    
+  }
   modifyLocalization()
   {
     const objDescription = this.getObjectDescription(this.activeLocalization);
     const submitUrl="/rest/Localization/" + this.activeLocalization.id;
-
-    let updatePositions = (patchObj) => {
-
-      // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
-      if (objDescription.dtype=='box')
-      {
-        patchObj.x = this.activeLocalization.x;
-        patchObj.y = this.activeLocalization.y;
-        patchObj.width = this.activeLocalization.width;
-        patchObj.height = this.activeLocalization.height;
-      }
-      else if (objDescription.dtype=='line')
-      {
-        patchObj.x = this.activeLocalization.x0;
-        patchObj.y = this.activeLocalization.y0;
-        patchObj.u = this.activeLocalization.x1 - this.activeLocalization.x0;
-        patchObj.v = this.activeLocalization.y1 - this.activeLocalization.y0;
-      }
-      else if (objDescription.dtype=='dot')
-      {
-        patchObj.x = this.activeLocalization.x;
-        patchObj.y = this.activeLocalization.y;
-      }
-      return patchObj;
-    }
 
     let original_meta = this.activeLocalization.meta;
     if (this._data.getVersion().id != this.activeLocalization.version)
@@ -1978,9 +1983,8 @@ class AnnotationCanvas extends TatorElement
       }
 
       // Make the clone
-      let newObject = {};
+      let newObject = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
       newObject.parent = this.activeLocalization.id;
-      updatePositions(newObject);
       newObject = Object.assign(newObject, this.activeLocalization.attributes);
       newObject.version = this._data.getVersion().id;
       newObject.type = Number(this.activeLocalization.meta.split("_")[1]);
@@ -2008,8 +2012,7 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      let patchObj = {};
-      updatePositions(patchObj);
+      let patchObj = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
       this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
     }
   }
