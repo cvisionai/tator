@@ -272,8 +272,10 @@ class EntityTypeLocalizationBase(EntityTypeBase):
      "map": {"attribute_value": <color>, ...}
      "alpha_ranges": {"key": "attribute_name",
                       "alphas": [[<low>,<end>,<alpha>],...]}
+     "version": {"<version_id>": <color>}
      "default": <color>
 
+    (In postgres json keys have to be strings, hence "<version_id>")
     <color> can either be a hex string for RRGGBB or a list for
     RRGGBBAA components, e.g. (255,0,0,255) for solid red.
     For alpha ranges each row is evaluated as
