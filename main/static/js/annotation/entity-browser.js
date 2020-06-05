@@ -131,6 +131,7 @@ class EntityBrowser extends TatorElement {
             this._ul.appendChild(li);
 
             const selector = document.createElement("entity-selector");
+            selector.canvas = this._canvas;
             selector.permission = this._permission;
             selector.setAttribute("name", group);
             selector.dataType = this._dataType;

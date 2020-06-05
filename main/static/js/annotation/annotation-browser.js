@@ -62,7 +62,7 @@ class AnnotationBrowser extends TatorElement {
   }
 
   set canvas(val) {
-    this._canvas = val;x
+    this._canvas = val;
   }
 
   set permission(val) {
