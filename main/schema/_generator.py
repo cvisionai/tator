@@ -65,6 +65,7 @@ class CustomGenerator(SchemaGenerator):
                 'UserUpdate': user_update,
                 'User': user,
                 'VersionSpec': version_spec,
+                'VersionUpdate': version_update,
                 'Version': version,
                 'AttributeBulkUpdate': attribute_bulk_update,
                 'RgbColor': rgb_color,

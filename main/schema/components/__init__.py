@@ -54,6 +54,7 @@ from .transcode import transcode
 from .user import user_update
 from .user import user
 from .version import version_spec
+from .version import version_update
 from .version import version
 from ._color import rgb_color
 from ._color import rgba_color

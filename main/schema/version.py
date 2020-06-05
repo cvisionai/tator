@@ -42,6 +42,9 @@ class VersionListSchema(AutoSchema):
                 'schema': {'$ref': '#/components/schemas/VersionSpec'},
                 'example': {
                     'name': 'My new version',
+                    'description': 'New description',
+                    'show_empty': True,
+                    'bases': [1],
                 },
             }}}
         return body
@@ -88,10 +91,12 @@ class VersionDetailSchema(AutoSchema):
         body = {}
         if method == 'PATCH':
             body = {'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/VersionSpec'},
+                'schema': {'$ref': '#/components/schemas/VersionUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',
+                    'show_empty': True,
+                    'bases': [1],
                 },
             }}}
         return body

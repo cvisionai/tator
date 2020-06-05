@@ -1,17 +1,35 @@
+version_properties = {
+    'name': {
+        'description': 'Name of the version.',
+        'type': 'string',
+    },
+    'description': {
+        'description': 'Description of the version.',
+        'type': 'string',
+        'default': '',
+    },
+    'show_empty': {
+        'type': 'boolean',
+        'description': 'Whether to show this version on media for which no annotations exist.',
+        'default': False,
+    },
+    'bases': {
+        'type': 'array',
+        'description': 'Array of other version IDs that are dependencies of this version.',
+        'items': {'type': 'integer'},
+        'minimum': 0,
+    },
+}
+
 version_spec = {
     'type': 'object',
     'required': ['name'],
-    'properties': {
-        'name': {
-            'description': 'Name of the version.',
-            'type': 'string',
-        },
-        'description': {
-            'description': 'Description of the version.',
-            'type': 'string',
-            'default': '',
-        },
-    },
+    'properties': version_properties,
+}
+
+version_update = {
+    'type': 'object',
+    'properties': version_properties,
 }
 
 version = {
@@ -22,14 +40,7 @@ version = {
             'type': 'integer',
             'description': 'Unique integer identifying a membership.',
         },
-        'name': {
-            'description': 'Name of the version.',
-            'type': 'string',
-        },
-        'description': {
-            'type': 'string',
-            'description': 'Description of the version.',
-        },
+        **version_properties,
         'number': {
             'type': 'integer',
             'description': 'Version number.',
@@ -37,10 +48,6 @@ version = {
         'project': {
             'type': 'integer',
             'description': 'Unique integer identifying a project.',
-        },
-        'show_empty': {
-            'type': 'boolean',
-            'description': 'Whether to show this version on media for which no annotations exist.',
         },
         'num_created': {
             'type': 'integer',

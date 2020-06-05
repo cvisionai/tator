@@ -51,12 +51,21 @@ class VersionListAPI(APIView):
             obj = Version(
                 name=name,
                 description=description,
+                show_empty=params['show_empty'],
                 number=number,
                 project=Project.objects.get(pk=project),
                 created_by=request.user,
             )
             obj.save()
 
+            if 'bases' in params:
+                qs = Version.objects.filter(pk__in=params['bases'])
+                if qs.count() < len(params['bases']):
+                    obj.delete()
+                    raise ObjectDoesNotExist
+                else:
+                    obj.bases.set(qs)
+          
             response=Response({'id': obj.id},
                               status=status.HTTP_201_CREATED)
 
@@ -185,3 +194,27 @@ class VersionDetailAPI(RetrieveUpdateDestroyAPIView):
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
+
+    def patch(self, request, format=None, **kwargs):
+        response = super().patch(request, format, **kwargs)
+        try:
+            params = parse(request)
+            if 'bases' in params:
+                qs = Version.objects.filter(pk__in=params['bases'])
+                if qs.count() < len(params['bases']):
+                    raise ObjectDoesNotExist
+                else:
+                    obj.bases.set(qs)
+        except ObjectDoesNotExist as dne:
+            response = Response(
+                {'message': str(dne)},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            response = Response({
+                'message': str(e),
+                'details': traceback.format_exc(),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            return response
+          
