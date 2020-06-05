@@ -334,11 +334,10 @@ class AnnotationPage extends TatorPage {
           versions = [versions[0]];
         }
 
-        this._versionDialog.init(versions);
-
         // If there is a version with the same name as the user
         // pick that one.
         this._version == null;
+        let selected_version_idx = 0;
         for (let v of  versions)
         {
           if (v.name == this.getAttribute("username"))
@@ -348,11 +347,14 @@ class AnnotationPage extends TatorPage {
           }
         }
 
+        
         // TODO: Whats the right way to do a default here
         if (this._version == null)
         {
           this._version = versions[versions.length - 1];
+          selected_version_idx = versions.length - 1;
         }
+        this._versionDialog.init(versions, selected_version_idx);
         if (versions.length == 0) {
           this._versionButton.style.display = "none";
         } else {

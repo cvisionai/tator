@@ -52,7 +52,7 @@ class VersionDialog extends ModalDialog {
     this._buttons = [];
   }
 
-  init(versions) {
+  init(versions, selected_idx) {
     // Initializes the dialog.
     // versions: returned object from Version endpoint.
     for (const version of versions) {
@@ -125,7 +125,8 @@ class VersionDialog extends ModalDialog {
       tdSelectEdited.appendChild(selectEdited);
       this._buttons.push(selectEdited);
     }
-    this._buttons[this._buttons.length - 1].select(true);
+
+    this._buttons[selected_idx].select(true);
   }
 
   _handleSelect(evt) {
