@@ -13,3 +13,11 @@ def message_with_id_schema(name):
             '$ref': '#/components/schemas/CreateResponse',
         }}},
     }
+
+def message_with_id_list_schema(name):
+    return {
+        'description': f'Successful creation of {name}.',
+        'content': {'application/json': {'schema': {
+            '$ref': '#/components/schemas/CreateListResponse',
+        }}},
+    }

@@ -75,6 +75,7 @@ class CustomGenerator(SchemaGenerator):
                 'AlphaRange': alpha_range,
                 'ColorMap': color_map,
                 'CreateResponse': create_response,
+                'CreateListResponse': create_list_response,
                 'MessageResponse': message_response,
                 'NotFoundResponse': not_found_response,
                 'BadRequestResponse': bad_request_response,
