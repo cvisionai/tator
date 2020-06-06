@@ -73,7 +73,8 @@ state_type = {
         'interpolation': {
             'type': 'string',
             'description': 'Interpolation method used by the web interface.',
-            'enum': ['latest'],
+            'default': 'latest',
+            'enum': ['none', 'latest'],
         },
         'visible': {
             'type': 'boolean',
