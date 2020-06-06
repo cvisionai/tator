@@ -10,7 +10,7 @@ class StateListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateState'
+            operation['operationId'] = 'CreateStateList'
         elif method == 'GET':
             operation['operationId'] = 'GetStateList'
         elif method == 'PATCH':

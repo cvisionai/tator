@@ -74,7 +74,7 @@ class LeafListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateLeaf'
+            operation['operationId'] = 'CreateLeafList'
         elif method == 'GET':
             operation['operationId'] = 'GetLeafList'
         elif method == 'PATCH':

@@ -31,7 +31,7 @@ class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateLocalization'
+            operation['operationId'] = 'CreateLocalizationList'
         elif method == 'GET':
             operation['operationId'] = 'GetLocalizationList'
         elif method == 'PATCH':
