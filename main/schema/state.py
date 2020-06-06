@@ -42,6 +42,7 @@ class StateListSchema(AutoSchema):
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/StateSpec'},
+                    'maxItems': 500,
                 },
                 'examples': {
                     'frame': {

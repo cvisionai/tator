@@ -64,6 +64,7 @@ class LocalizationListSchema(AutoSchema):
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/LocalizationSpec'},
+                    'maxItems': 500,
                 },
                 'examples': {
                     'box': {

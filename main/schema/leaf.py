@@ -131,6 +131,7 @@ class LeafListSchema(AutoSchema):
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/Leaf'},
+                    'maxItems': 500,
                 },
             }}}
         if method == 'PATCH':
