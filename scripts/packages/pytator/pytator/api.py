@@ -245,9 +245,15 @@ class APIElement:
             ep = self.url + "/" + self.endpoint + "/" + self.project
         else:
             ep = self.url + "/" + self.endpoint
-        response=requests.post(ep,
-                               json=obj,
-                               headers=self.headers)
+        if isinstance(obj, list):
+            for idx in range(0, len(obj), 500):
+                response = requests.post(ep,
+                                         json=obj[idx:(idx+500)],
+                                         headers=self.headers)
+        else:
+            response=requests.post(ep,
+                                   json=obj,
+                                   headers=self.headers)
         if response.status_code >= 300 or response.status_code < 200:
             try:
                 msg=response.json()
