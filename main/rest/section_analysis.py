@@ -24,12 +24,12 @@ class SectionAnalysisAPI(BaseDetailView):
 
     def _get(self, params):
         mediaId = params.get('media_id', None)
-        analyses = list(Analysis.objects.filter(project=kwargs['project']))
+        analyses = list(Analysis.objects.filter(project=self.kwargs['project']))
         response_data = {}
         for analysis in analyses:
             media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
             media_query['query']['bool']['filter'] = []
-            media_query = get_attribute_query(params, media_query, [], kwargs['project'])
+            media_query = get_attribute_query(params, media_query, [], self.kwargs['project'])
             query_str = f'{analysis.data_query}'
             if mediaId is not None:
                 if not media_query['query']['bool']['filter']:
@@ -46,7 +46,7 @@ class SectionAnalysisAPI(BaseDetailView):
             query['query']['bool']['filter'].append(
                 {'query_string': {'query': query_str}},
             )
-            media_count = TatorSearch().count(kwargs['project'], query)
+            media_count = TatorSearch().count(self.kwargs['project'], query)
 
             # Do the search on all annotations.
             query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
@@ -61,7 +61,7 @@ class SectionAnalysisAPI(BaseDetailView):
             query['query']['bool']['filter'].append({
                 'query_string': {'query': query_str}
             })
-            annotation_count = TatorSearch().count(kwargs['project'], query)
+            annotation_count = TatorSearch().count(self.kwargs['project'], query)
 
             # Use whichever is higher (media or annotation)
             response_data[analysis.name] = max(annotation_count, media_count)
