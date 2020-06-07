@@ -25,7 +25,7 @@ class MembershipListAPI(BaseListView):
 
     def _get(self, params):
         members = Membership.objects.filter(project=params['project'])
-        return MembershipSerializer(members).data
+        return MembershipSerializer(members, many=True).data
 
     def _post(self, params):
         project = params['project']
@@ -59,7 +59,6 @@ class MembershipDetailAPI(BaseDetailView):
         project metadata schema.
     """
     schema = MembershipDetailSchema()
-    queryset = Membership.objects.all()
     permission_classes = [ProjectFullControlPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
@@ -80,3 +79,5 @@ class MembershipDetailAPI(BaseDetailView):
         Membership.objects.get(pk=params['id']).delete()
         return {'message': f'Membership {params["id"]} successfully deleted!'}
 
+    def get_queryset(self):
+        return Membership.objects.all()

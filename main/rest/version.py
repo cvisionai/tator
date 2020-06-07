@@ -154,7 +154,6 @@ class VersionDetailAPI(BaseDetailView):
         an annotation should be displayed for a given media while annotating.
     """
     schema = VersionDetailSchema()
-    queryset = Version.objects.all()
     permission_classes = [ProjectEditPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
@@ -183,3 +182,6 @@ class VersionDetailAPI(BaseDetailView):
     def _delete(self, params):
         Version.objects.get(pk=params['id']).delete()
         return {'message': f'Version {params["id"]} deleted successfully!'}
+
+    def get_queryset(self):
+        return Version.objects.all()

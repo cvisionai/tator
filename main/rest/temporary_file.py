@@ -30,7 +30,7 @@ class TemporaryFileListAPI(BaseListView):
     http_method_names = ['get', 'post', 'delete']
 
     def _get(self, params):
-        return TemporaryFileSerializer(self.get_queryset()).data
+        return TemporaryFileSerializer(self.get_queryset(), many=True).data
 
     def _delete(self, params):
         qs = self.get_queryset()
@@ -85,7 +85,6 @@ class TemporaryFileDetailAPI(BaseDetailView):
         Temporary files are files stored server side for a defined duration. The file must
         first be uploaded via tus, and can subsequently be saved using this endpoint.
     """
-    queryset = TemporaryFile.objects.all()
     permission_classes = [ProjectEditPermission]
     schema = TemporaryFileDetailSchema()
     http_method_names = ['get', 'delete']
@@ -97,4 +96,7 @@ class TemporaryFileDetailAPI(BaseDetailView):
     def _delete(self, params):
         TemporaryFile.objects.get(pk=params['id']).delete()
         return {'message': f'Temporary file {params["id"]} successfully deleted!'}
+
+    def get_queryset(self):
+        return TemporaryFile.objects.all()
 
