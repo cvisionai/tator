@@ -59,7 +59,7 @@ class DeleteMixin:
     def delete(self, request, format=None, **kwargs):
         params = parse(request)
         response_data = self._delete(params)
-        response = Response(response_data, status=status.HTTP_204_NO_CONTENT)
+        response = Response(response_data, status=status.HTTP_200_OK)
         return response
 
 class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin):

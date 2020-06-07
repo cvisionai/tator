@@ -54,7 +54,7 @@ class TemporaryFileListAPI(generics.ListAPIView):
             qs = self.get_queryset()
             qs.delete()
             response=Response({'message': 'Delete successful'},
-                              status=status.HTTP_204_NO_CONTENT)
+                              status=status.HTTP_200_OK)
         except Exception as e:
             response=Response({'message' : str(e),
                                'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)

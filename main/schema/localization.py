@@ -215,7 +215,7 @@ class LocalizationListSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'localization list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deletion', 'localization list')
+            responses['200'] = message_schema('deletion', 'localization list')
         return responses
 
 class LocalizationDetailSchema(AutoSchema):
@@ -270,6 +270,6 @@ class LocalizationDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'localization')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of localization.'}
+            responses['200'] = message_schema('deletion', 'localization')
         return responses
 

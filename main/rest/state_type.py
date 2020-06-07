@@ -132,7 +132,7 @@ class StateTypeDetailAPI(BaseDetailView):
             types associated with it.
         """
         StateType.objects.get(pk=params['id']).delete()
-        return {'message': 'State type deleted successfully!'}
+        return {'message': f'State type {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
         return StateType.objects.all()

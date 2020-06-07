@@ -58,7 +58,8 @@ class JobGroupDetailAPI(APIView):
             else:
                 raise Http404
 
-            response = Response({'message': f"Jobs with group ID {group_id} deleted!"})
+            response = Response({'message': f"Jobs with group ID {group_id} deleted!"},
+                                status=status.HTTP_200_OK)
 
         except ObjectDoesNotExist as dne:
             response=Response({'message' : str(dne)},

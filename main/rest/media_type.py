@@ -109,7 +109,7 @@ class MediaTypeDetailAPI(BaseDetailView):
             types associated with it.
         """
         MediaType.objects.get(pk=params['id']).delete()
-        return {'message': 'Media type deleted successfully!'}
+        return {'message': f'Media type {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
         return MediaType.objects.all()

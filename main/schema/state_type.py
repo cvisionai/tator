@@ -107,5 +107,5 @@ class StateTypeDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'state type')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of state type.'}
+            responses['200'] = message_schema('deletion', 'state type')
         return responses

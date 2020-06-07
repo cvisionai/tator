@@ -113,5 +113,5 @@ class VersionDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'version')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of version.'}
+            responses['200'] = message_schema('deletion', 'version')
         return responses

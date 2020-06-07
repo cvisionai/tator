@@ -134,7 +134,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             types associated with it.
         """
         LocalizationType.objects.get(pk=params['id']).delete()
-        return {'message': 'Localization type deleted successfully!'}
+        return {'message': f'Localization type {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
         return LocalizationType.objects.all()
