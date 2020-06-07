@@ -229,12 +229,12 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
-        'rest/User/<int:id>',
-        UserDetailAPI.as_view(),
-    ),
-    path(
         'rest/User/GetCurrent',
         CurrentUserAPI.as_view(),
+    ),
+    path(
+        'rest/User/<int:id>',
+        UserDetailAPI.as_view(),
     ),
     path(
         'rest/Versions/<int:project>',
