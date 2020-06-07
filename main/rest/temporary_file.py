@@ -31,7 +31,9 @@ class TemporaryFileListAPI(BaseListView):
     http_method_names = ['get', 'post', 'delete']
 
     def _get(self, params):
-        return TemporaryFileSerializer(self.get_queryset(), many=True).data
+        return TemporaryFileSerializer(self.get_queryset(),
+                                       many=True,
+                                       context={'view': self}).data
 
     def _delete(self, params):
         qs = self.get_queryset()
@@ -92,7 +94,7 @@ class TemporaryFileDetailAPI(BaseDetailView):
 
     def _get(self, params):
         tmp_file = TemporaryFile.objects.get(pk=params['id'])
-        return TemporaryFileSerializer(tmp_file).data
+        return TemporaryFileSerializer(tmp_file, context={'view': self}).data
 
     def _delete(self, params):
         TemporaryFile.objects.get(pk=params['id']).delete()
