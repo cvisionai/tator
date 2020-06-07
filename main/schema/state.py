@@ -107,7 +107,7 @@ class StateListSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'state list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deletion', 'state list')
+            responses['200'] = message_schema('deletion', 'state list')
         return responses
 
 class StateDetailSchema(AutoSchema):
@@ -150,7 +150,7 @@ class StateDetailSchema(AutoSchema):
         if method == 'PATCH':
             responses['200'] = message_schema('update', 'state')
         if method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of state.'}
+            responses['200'] = message_schema('deletion', 'state')
         return responses
 
 class StateGraphicSchema(AutoSchema):

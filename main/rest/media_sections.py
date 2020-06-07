@@ -1,13 +1,10 @@
 from collections import defaultdict
 import copy
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
 from ..search import TatorSearch
 from ..schema import MediaSectionsSchema
-from ..schema import parse
 
+from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
 from ._permissions import ProjectViewOnlyPermission
 
@@ -26,7 +23,7 @@ def _search_by_dtype(dtype, query, response_data, params):
         response_data[data['key']][f'total_size_{dtype}s'] = data['total_size']['value']
     return response_data
 
-class MediaSectionsAPI(APIView):
+class MediaSectionsAPI(BaseDetailView):
     """ Retrieve media counts by section.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
@@ -34,9 +31,9 @@ class MediaSectionsAPI(APIView):
     """
     schema = MediaSectionsSchema()
     permission_classes = [ProjectViewOnlyPermission]
+    http_method_names = ['get']
 
-    def get(self, request, *args, **kwargs):
-        params = parse(request)
+    def _get(self, params):
         
         # Get query associated with media filters.
         _, _, query = get_media_queryset(params['project'], params, True)
@@ -60,6 +57,5 @@ class MediaSectionsAPI(APIView):
                 if key not in response_data[section]:
                     response_data[section][key] = 0
 
-        # Do query for videos.
-        return Response(response_data)
+        return response_data
 

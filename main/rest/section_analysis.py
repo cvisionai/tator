@@ -1,24 +1,18 @@
-import traceback
 import copy
 import logging
 from collections import defaultdict
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-
 from ..models import Analysis
 from ..search import TatorSearch
 from ..schema import SectionAnalysisSchema
-from ..schema import parse
 
+from ._base_views import BaseDetailView
 from ._media_query import get_attribute_query
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
 
-class SectionAnalysisAPI(APIView):
+class SectionAnalysisAPI(BaseDetailView):
     """ Retrieve analysis results for a media list.
 
         This endpoint uses objects created with the `Analysis` endpoint to perform analysis
@@ -26,59 +20,49 @@ class SectionAnalysisAPI(APIView):
     """
     schema = SectionAnalysisSchema()
     permission_classes = [ProjectViewOnlyPermission]
+    http_method_names = ['get']
 
-    def get(self, request, *args, **kwargs):
-        response = Response({})
-        try:
-            params = parse(request)
-            mediaId = params.get('media_id', None)
-            analyses = list(Analysis.objects.filter(project=kwargs['project']))
-            response_data = {}
-            for analysis in analyses:
-                media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-                media_query['query']['bool']['filter'] = []
-                media_query = get_attribute_query(params, media_query, [], kwargs['project'])
-                query_str = f'{analysis.data_query}'
-                if mediaId is not None:
-                    if not media_query['query']['bool']['filter']:
-                        media_query['query']['bool']['filter'] = []
-                    media_query['query']['bool']['filter'].append(
-                        {'ids': {'values': [f'video_{id_}' for id_ in mediaId] + 
-                                           [f'image_{id_}' for id_ in mediaId]}}
-                    )
-
-                # Do the search on all media.
-                query = copy.deepcopy(media_query)
-                if not query['query']['bool']['filter']:
-                    query['query']['bool']['filter'] = []
-                query['query']['bool']['filter'].append(
-                    {'query_string': {'query': query_str}},
+    def _get(self, params):
+        mediaId = params.get('media_id', None)
+        analyses = list(Analysis.objects.filter(project=self.kwargs['project']))
+        response_data = {}
+        for analysis in analyses:
+            media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            media_query['query']['bool']['filter'] = []
+            media_query = get_attribute_query(params, media_query, [], self.kwargs['project'])
+            query_str = f'{analysis.data_query}'
+            if mediaId is not None:
+                if not media_query['query']['bool']['filter']:
+                    media_query['query']['bool']['filter'] = []
+                media_query['query']['bool']['filter'].append(
+                    {'ids': {'values': [f'video_{id_}' for id_ in mediaId] + 
+                                       [f'image_{id_}' for id_ in mediaId]}}
                 )
-                media_count = TatorSearch().count(kwargs['project'], query)
 
-                # Do the search on all annotations.
-                query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            # Do the search on all media.
+            query = copy.deepcopy(media_query)
+            if not query['query']['bool']['filter']:
                 query['query']['bool']['filter'] = []
-                if media_query:
-                    query['query']['bool']['filter'].append({
-                        'has_parent': {
-                            'parent_type': 'media',
-                            **media_query,
-                        }
-                    })
+            query['query']['bool']['filter'].append(
+                {'query_string': {'query': query_str}},
+            )
+            media_count = TatorSearch().count(self.kwargs['project'], query)
+
+            # Do the search on all annotations.
+            query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
+            query['query']['bool']['filter'] = []
+            if media_query:
                 query['query']['bool']['filter'].append({
-                    'query_string': {'query': query_str}
+                    'has_parent': {
+                        'parent_type': 'media',
+                        **media_query,
+                    }
                 })
-                annotation_count = TatorSearch().count(kwargs['project'], query)
+            query['query']['bool']['filter'].append({
+                'query_string': {'query': query_str}
+            })
+            annotation_count = TatorSearch().count(self.kwargs['project'], query)
 
-                # Use whichever is higher (media or annotation)
-                response_data[analysis.name] = max(annotation_count, media_count)
-            response = Response(response_data)
-        except ObjectDoesNotExist as dne:
-            response = Response({'message' : str(dne)},
-                                 status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response = Response({'message' : str(e),
-                                 'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        return response
-
+            # Use whichever is higher (media or annotation)
+            response_data[analysis.name] = max(annotation_count, media_count)
+        return response_data

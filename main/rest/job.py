@@ -1,12 +1,7 @@
-import traceback
 import os
 import json
 import logging
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from redis import Redis
 
@@ -15,13 +10,13 @@ from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobDetailSchema
-from ..schema import parse
 
+from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
-class JobDetailAPI(APIView):
+class JobDetailAPI(BaseDetailView):
     """ Cancel a background job.
 
         Algorithms and transcodes create argo workflows that are annotated with two
@@ -34,38 +29,25 @@ class JobDetailAPI(APIView):
     """
     schema = JobDetailSchema()
     permission_classes = [ProjectTransferPermission]
+    http_method_names = ['delete']
 
-    def delete(self, request, format=None, **kwargs):
-        response=Response({})
+    def _delete(self, params):
+        # Parse parameters
+        run_uid = params['run_uid']
 
-        try:
-            # Parse parameters
-            params = parse(request)
-            run_uid = params['run_uid']
+        # Find the gid in redis.
+        rds = Redis(host=os.getenv('REDIS_HOST'))
+        if rds.hexists('uids', run_uid):
+            msg = json.loads(rds.hget('uids', run_uid))
 
-            # Find the gid in redis.
-            rds = Redis(host=os.getenv('REDIS_HOST'))
-            if rds.hexists('uids', run_uid):
-                msg = json.loads(rds.hget('uids', run_uid))
+            # Attempt to cancel.
+            cancelled = False
+            if msg['prefix'] == 'upload':
+                cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
+            elif msg['prefix'] == 'algorithm':
+                alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
+                cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
+        else:
+            raise Http404
 
-                # Attempt to cancel.
-                cancelled = False
-                if msg['prefix'] == 'upload':
-                    cancelled = TatorTranscode().cancel_jobs(f'uid={run_uid}')
-                elif msg['prefix'] == 'algorithm':
-                    alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
-                    cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={run_uid}')
-            else:
-                raise Http404
-
-            response = Response({'message': f"Job with run UID {run_uid} deleted!"})
-
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
+        return {'message': f"Job with run UID {run_uid} deleted!"}

@@ -29,6 +29,6 @@ class JobGroupDetailSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'DELETE':
-            responses['204'] = message_schema('cancellation', 'job group')
+            responses['200'] = message_schema('cancellation', 'job group')
         return responses
 

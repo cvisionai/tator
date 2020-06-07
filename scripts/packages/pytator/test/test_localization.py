@@ -71,7 +71,7 @@ def test_localization_crud(url, token, project, video_type, video, box_type):
     
     # Delete single box.
     status = tator.Localization.delete(box_id)
-    assert status == 204
+    assert status == 200
 
     # ES can be slow at indexing so wait for a bit.
     time.sleep(5)
@@ -92,7 +92,7 @@ def test_localization_crud(url, token, project, video_type, video, box_type):
     
     # Delete all boxes.
     status = tator.Localization.bulk_delete(params)
-    assert status == 204
+    assert status == 200
     time.sleep(1)
 
     # Verify all boxes are gone.

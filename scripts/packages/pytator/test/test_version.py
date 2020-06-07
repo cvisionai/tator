@@ -21,4 +21,4 @@ def test_version_crud(url, token, project):
 
     # Test delete.
     status = tator.Version.delete(pk)
-    assert status == 204
+    assert status == 200

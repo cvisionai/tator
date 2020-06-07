@@ -94,5 +94,5 @@ class ProjectDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'project')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of project.'}
+            responses['200'] = message_schema('deletion', 'project')
         return responses

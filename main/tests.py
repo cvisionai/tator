@@ -361,7 +361,7 @@ class PermissionListTestMixin:
             self.membership.permission = level
             self.membership.save()
             if index >= permission_index:
-                expected_status = status.HTTP_204_NO_CONTENT
+                expected_status = status.HTTP_200_OK
             else:
                 expected_status = status.HTTP_403_FORBIDDEN
             response = self.client.delete(
@@ -395,7 +395,7 @@ class PermissionDetailTestMixin:
             self.membership.permission = level
             self.membership.save()
             if index >= permission_index:
-                expected_status = status.HTTP_204_NO_CONTENT
+                expected_status = status.HTTP_200_OK
             else:
                 expected_status = status.HTTP_403_FORBIDDEN
             test_val = random.random() > 0.5
@@ -403,7 +403,7 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 format='json')
             self.assertEqual(response.status_code, expected_status)
-            if expected_status == status.HTTP_204_NO_CONTENT:
+            if expected_status == status.HTTP_200_OK:
                 del self.entities[0]
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
@@ -538,7 +538,7 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
             f'&attribute=string_test::DELETE ME!!!')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -1621,7 +1621,7 @@ class ProjectTestCase(APITestCase):
             obj.save()
             del obj
             if index >= permission_index:
-                expected_status = status.HTTP_204_NO_CONTENT
+                expected_status = status.HTTP_200_OK
             else:
                 expected_status = status.HTTP_403_FORBIDDEN
             test_val = random.random() > 0.5
@@ -1629,7 +1629,7 @@ class ProjectTestCase(APITestCase):
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 format='json')
             self.assertEqual(response.status_code, expected_status)
-            if expected_status == status.HTTP_204_NO_CONTENT:
+            if expected_status == status.HTTP_200_OK:
                 del self.entities[0]
 
     def test_delete_non_creator(self):

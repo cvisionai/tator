@@ -204,6 +204,7 @@ def make_default_version(instance):
         description="Initial version",
         project=instance,
         number=0,
+        show_empty=True,
     )
 
 @receiver(post_save, sender=Project)

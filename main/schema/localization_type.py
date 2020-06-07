@@ -107,5 +107,5 @@ class LocalizationTypeDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'localization type')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of localization type.'}
+            responses['200'] = message_schema('deletion', 'localization type')
         return responses

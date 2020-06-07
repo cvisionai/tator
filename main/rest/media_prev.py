@@ -1,17 +1,14 @@
 from collections import defaultdict
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
 from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaPrevSchema
-from ..schema import parse
 
+from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
 from ._permissions import ProjectViewOnlyPermission
 
-class MediaPrevAPI(APIView):
+class MediaPrevAPI(BaseDetailView):
     """ Retrieve ID of previous media in a media list.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
@@ -21,10 +18,10 @@ class MediaPrevAPI(APIView):
     """
     schema = MediaPrevSchema()
     permission_classes = [ProjectViewOnlyPermission]
+    http_method_names = ['get']
 
-    def get(self, request, *args, **kwargs):
-        params = parse(request)
-        
+    def _get(self, params):
+
         # Find this object.
         media_id = params['id']
         media = Media.objects.get(pk=media_id)
@@ -46,7 +43,7 @@ class MediaPrevAPI(APIView):
         else:
             response_data = {'prev': -1}
 
-        return Response(response_data)
+        return response_data
 
     def get_queryset(self):
         return Media.objects.all()

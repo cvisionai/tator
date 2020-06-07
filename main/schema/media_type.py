@@ -103,5 +103,5 @@ class MediaTypeDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'media type')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of media type.'}
+            responses['200'] = message_schema('deletion', 'media type')
         return responses

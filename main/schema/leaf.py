@@ -157,7 +157,7 @@ class LeafListSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'leaf list')
         elif method == 'DELETE':
-            responses['204'] = message_schema('deletion', 'leaf list')
+            responses['200'] = message_schema('deletion', 'leaf list')
         return responses
 
 class LeafDetailSchema(AutoSchema):
@@ -204,6 +204,6 @@ class LeafDetailSchema(AutoSchema):
         elif method == 'PATCH':
             responses['200'] = message_schema('update', 'leaf')
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of leaf.'}
+            responses['200'] = {'description': 'Successful deletion of leaf.'}
         return responses
 

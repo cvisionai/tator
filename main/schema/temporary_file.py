@@ -103,6 +103,6 @@ class TemporaryFileDetailSchema(AutoSchema):
                 }}},
             }
         elif method == 'DELETE':
-            responses['204'] = {'description': 'Successful deletion of temporary file.'}
+            responses['200'] = message_schema('deletion', 'temporary file')
         return responses
 

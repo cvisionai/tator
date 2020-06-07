@@ -55,6 +55,12 @@ class CurrentUserSchema(AutoSchema):
         operation['tags'] = ['Tator']
         return operation
 
+    def _get_path_parameters(self, path, method):
+        return []
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
     def _get_responses(self, path, method):
         responses = {
             '200': {
