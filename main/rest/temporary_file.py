@@ -11,6 +11,7 @@ from ..models import Project
 from ..serializers import TemporaryFileSerializer
 from ..schema import TemporaryFileDetailSchema
 from ..schema import TemporaryFileListSchema
+from ..schema import parse
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
