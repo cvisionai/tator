@@ -19,7 +19,6 @@ class ProgressSummaryAPI(BaseListView):
         the group.
     """
     schema = ProgressSummarySchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ['post']
 
     def _post(self, params):

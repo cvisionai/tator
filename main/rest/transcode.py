@@ -41,7 +41,7 @@ class TranscodeAPI(BaseListView):
         name = params['name']
         md5 = params['md5']
         project = params['project']
-        token, _ = Token.objects.get_or_create(user=request.user)
+        token, _ = Token.objects.get_or_create(user=self.request.user)
 
         prog = ProgressProducer(
             'upload',
@@ -49,14 +49,14 @@ class TranscodeAPI(BaseListView):
             gid,
             uid,
             name,
-            request.user,
+            self.request.user,
             {'section': section},
         )
 
         # Get the file size of the uploaded blob if local
         netloc = urllib_parse.urlsplit(url).netloc
-        logger.info(f"{netloc} vs. {request.get_host()}")
-        if netloc == request.get_host():
+        logger.info(f"{netloc} vs. {self.request.get_host()}")
+        if netloc == self.request.get_host():
             upload_uid = url.split('/')[-1]
             upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
             upload_size = os.stat(upload_path).st_size
@@ -74,7 +74,7 @@ class TranscodeAPI(BaseListView):
                 md5,
                 gid,
                 uid,
-                request.user.pk,
+                self.request.user.pk,
                 upload_size)
         else:
             TatorTranscode().start_transcode(
@@ -87,7 +87,7 @@ class TranscodeAPI(BaseListView):
             md5,
             gid,
             uid,
-            request.user.pk,
+            self.request.user.pk,
             upload_size)
 
         prog.progress("Transcoding...", 60)

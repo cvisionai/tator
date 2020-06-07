@@ -44,7 +44,7 @@ class VersionListAPI(BaseListView):
             show_empty=params['show_empty'],
             number=number,
             project=Project.objects.get(pk=project),
-            created_by=request.user,
+            created_by=self.request.user,
         )
         obj.save()
 

@@ -18,7 +18,6 @@ class ProgressAPI(BaseListView):
         for progress messages to be batched into a single request.
     """
     schema = ProgressSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ['post']
 
     def _post(self, params):

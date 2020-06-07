@@ -49,7 +49,7 @@ class TemporaryFileListAPI(BaseListView):
         temp_file = TemporaryFile.from_local(path=local_file_path,
                                              name=params['name'],
                                              project=Project.objects.get(pk=project),
-                                             user=request.user,
+                                             user=self.request.user,
                                              lookup=params['lookup'],
                                              hours = hours)
         response = {'message': f"Temporary file of {name} created!",

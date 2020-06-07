@@ -193,7 +193,7 @@ class SaveVideoAPI(BaseListView):
             gid,
             uid,
             name,
-            request.user,
+            self.request.user,
             {'section': section},
         )
 
