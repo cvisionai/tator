@@ -62,7 +62,7 @@ def test_state_crud(url, token, project, video_type, video, state_type):
     
     # Delete single state.
     status = tator.State.delete(state_id)
-    assert status == 204
+    assert status == 200
 
     # ES can be slow at indexing so wait for a bit.
     time.sleep(5)
@@ -81,7 +81,7 @@ def test_state_crud(url, token, project, video_type, video, state_type):
     
     # Delete all state.
     status = tator.State.bulk_delete(params)
-    assert status == 204
+    assert status == 200
     time.sleep(1)
 
     # Verify all states are gone.
