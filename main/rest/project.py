@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from ..models import Project
 from ..models import Membership
 from ..models import Permission
+from ..models import Media
 from ..serializers import ProjectSerializer
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
@@ -82,9 +83,14 @@ class ProjectDetailAPI(BaseDetailView):
         return {'message': f"Project {params['id']} updated successfully!"}
 
     def _delete(self, params):
+        # Check for permission to delete first.
         project = Project.objects.get(pk=params['id'])
         if self.request.user != project.creator:
             raise PermissionDenied
+
+        # Mark media for deletion rather than actually deleting it.
+        qs = Media.objects.filter(project=params['id'])
+        qs.update(project=None)
         project.delete()
         return {'message': f'Project {params["id"]} deleted successfully!'}
 
