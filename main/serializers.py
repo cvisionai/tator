@@ -122,12 +122,6 @@ class MembershipSerializer(serializers.ModelSerializer):
         model = Membership
         fields = ['id', 'username', 'permission']
 
-
-class AlgorithmSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Algorithm
-        fields = ['id', 'name', 'description']
-
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version
