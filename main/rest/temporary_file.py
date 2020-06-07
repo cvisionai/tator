@@ -33,7 +33,7 @@ class TemporaryFileListAPI(BaseListView):
     def _get(self, params):
         return TemporaryFileSerializer(self.get_queryset(),
                                        many=True,
-                                       context={'view': self}).data
+                                       context=self.get_renderer_context()).data
 
     def _delete(self, params):
         qs = self.get_queryset()
@@ -94,7 +94,7 @@ class TemporaryFileDetailAPI(BaseDetailView):
 
     def _get(self, params):
         tmp_file = TemporaryFile.objects.get(pk=params['id'])
-        return TemporaryFileSerializer(tmp_file, context={'view': self}).data
+        return TemporaryFileSerializer(tmp_file, context=self.get_renderer_context()).data
 
     def _delete(self, params):
         TemporaryFile.objects.get(pk=params['id']).delete()

@@ -25,7 +25,7 @@ class ProjectListAPI(BaseListView):
 
     def _get(self, params):
         projects = self.get_queryset()
-        return ProjectSerializer(projects, many=True).data
+        return ProjectSerializer(projects, many=True, context=self.get_renderer_context()).data
 
     def _post(self, params):
         if Project.objects.filter(
