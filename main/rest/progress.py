@@ -1,19 +1,14 @@
-import traceback
 import logging
 import datetime
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-
 from ..consumers import ProgressProducer
 from ..schema import ProgressSchema
-from ..schema import parse
+
+from ._base_views import BaseListView
 
 logger = logging.getLogger(__name__)
 
-class ProgressAPI(APIView):
+class ProgressAPI(BaseListView):
     """ Broadcast progress update.
 
         Progress messages are sent in the web UI via WebSocket, and are displayed as progress
@@ -23,59 +18,47 @@ class ProgressAPI(APIView):
         for progress messages to be batched into a single request.
     """
     schema = ProgressSchema()
+    permission_classes = [ProjectEditPermission]
+    http_method_names = ['post']
 
-    def post(self, request, format=None, **kwargs):
-        response=Response({})
+    def _post(self, params):
+        for reqObject in params['body']:
+            aux = {}
+            if reqObject['job_type'] == 'upload':
+                if 'swid' in reqObject:
+                    aux['swid'] = str(reqObject['swid'])
 
-        try:
-            params = parse(request)
-            for reqObject in params['body']:
-                aux = {}
-                if reqObject['job_type'] == 'upload':
-                    if 'swid' in reqObject:
-                        aux['swid'] = str(reqObject['swid'])
+                if 'section' in reqObject:
+                    aux['section'] = reqObject['section']
 
-                    if 'section' in reqObject:
-                        aux['section'] = reqObject['section']
+                aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
 
-                    aux['updated'] = str(datetime.datetime.now(datetime.timezone.utc))
+            if reqObject['job_type'] == 'algorithm':
+                if 'sections' in reqObject:
+                    aux['sections'] = reqObject['sections']
+                if 'media_ids' in reqObject:
+                    aux['media_ids'] = reqObject['media_ids']
 
-                if reqObject['job_type'] == 'algorithm':
-                    if 'sections' in reqObject:
-                        aux['sections'] = reqObject['sections']
-                    if 'media_ids' in reqObject:
-                        aux['media_ids'] = reqObject['media_ids']
+            prog = ProgressProducer(
+                reqObject['job_type'],
+                params['project'],
+                str(reqObject['gid']),
+                reqObject['uid'],
+                reqObject['name'],
+                self.request.user,
+                aux,
+            )
 
-                prog = ProgressProducer(
-                    reqObject['job_type'],
-                    params['project'],
-                    str(reqObject['gid']),
-                    reqObject['uid'],
-                    reqObject['name'],
-                    self.request.user,
-                    aux,
-                )
+            if reqObject['state'] == 'failed':
+                prog.failed(reqObject['message'])
+            elif reqObject['state'] == 'queued':
+                prog.queued(reqObject['message'])
+            elif reqObject['state'] == 'started':
+                prog.progress(reqObject['message'], float(reqObject['progress']))
+            elif reqObject['state'] == 'finished':
+                prog.finished(reqObject['message'])
+            else:
+                logger.info(f"Received invalid progress state {reqObject['state']}")
+                raise Exception(f"Invalid progress state {reqObject['state']}")
 
-                if reqObject['state'] == 'failed':
-                    prog.failed(reqObject['message'])
-                elif reqObject['state'] == 'queued':
-                    prog.queued(reqObject['message'])
-                elif reqObject['state'] == 'started':
-                    prog.progress(reqObject['message'], float(reqObject['progress']))
-                elif reqObject['state'] == 'finished':
-                    prog.finished(reqObject['message'])
-                else:
-                    logger.info(f"Received invalid progress state {reqObject['state']}")
-                    raise Exception(f"Invalid progress state {reqObject['state']}")
-
-            response = Response({'message': "Progress sent successfully!"})
-
-        except ObjectDoesNotExist as dne:
-            response=Response({'message' : str(dne)},
-                              status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            response=Response({'message' : str(e),
-                               'details': traceback.format_exc()}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            return response;
-
+        return {'message': "Progress sent successfully!"}
