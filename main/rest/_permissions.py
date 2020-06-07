@@ -141,19 +141,6 @@ class ProjectFullControlPermission(ProjectPermissionBase):
         Permission.CAN_EXECUTE,
     ]
 
-class ProjectOwnerPermission(BasePermission):
-    """Checks if a user owns a project.
-    """
-    message = "Only project owners may delete a project."
-
-    def has_object_permission(self, request, view, obj):
-        granted = True
-        is_delete = request.method == 'DELETE'
-        is_owner = request.user == obj.creator
-        if is_delete and not is_owner:
-            granted = False
-        return granted
-
 class UserPermission(BasePermission):
     """ 1.) Reject all anonymous requests
         2.) Allow all super-user requests
