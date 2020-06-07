@@ -30,6 +30,7 @@ class JobGroupDetailAPI(BaseDetailView):
     """
     schema = JobGroupDetailSchema()
     permission_classes = [ProjectTransferPermission]
+    http_method_names = ['delete']
 
     def _delete(self, params):
         # Parse parameters
