@@ -1,14 +1,4 @@
 state_properties = {
-    'media_ids': {
-        'description': 'List of media IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
-    'localization_ids': {
-        'description': 'List of localization IDs that this state applies to.',
-        'type': 'array',
-        'items': {'type': 'integer'},
-    },
     'frame': {
         'description': 'Frame number this state applies to.',
         'type': 'integer',
@@ -45,6 +35,16 @@ state_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying the state association.',
     },
+    'media': {
+        'description': 'List of media IDs that this state applies to.',
+        'type': 'array',
+        'items': {'type': 'integer'},
+    },
+    'localizations': {
+        'description': 'List of localization IDs that this state applies to.',
+        'type': 'array',
+        'items': {'type': 'integer'},
+    },
 }
 
 state_spec = {
@@ -55,6 +55,16 @@ state_spec = {
         'type': {
             'description': 'Unique integer identifying a state type.',
             'type': 'integer',
+        },
+        'media_ids': {
+            'description': 'List of media IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+        'localization_ids': {
+            'description': 'List of localization IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
         },
         **version_properties,
         **state_properties,
