@@ -10,7 +10,6 @@ from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobGroupDetailSchema
-from ..schema import parse
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission

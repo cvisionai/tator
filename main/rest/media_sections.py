@@ -3,7 +3,6 @@ import copy
 
 from ..search import TatorSearch
 from ..schema import MediaSectionsSchema
-from ..schema import parse
 
 from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset

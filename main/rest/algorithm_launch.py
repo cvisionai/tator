@@ -11,7 +11,6 @@ from ..models import Media
 from ..kube import TatorAlgorithm
 from ..consumers import ProgressProducer
 from ..schema import AlgorithmLaunchSchema
-from ..schema import parse
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
