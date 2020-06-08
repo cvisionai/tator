@@ -36,15 +36,7 @@ attribute_type_properties = {
         'type': 'integer',
         'default': 0,
     },
-    'default': {
-        'description': 'Default value for the attribute.',
-        'oneOf': [
-            {'type': 'boolean'},
-            {'type': 'number'},
-            {'type': 'string'},
-            {'type': 'array', 'items': {'type': 'number'}, 'minLength': 2, 'maxLength': 2},
-        ]
-    },
+    'default': {'$ref': '#/components/schemas/AttributeValue'},
     'minimum': {
         'description': 'Lower bound for int or float dtype.',
         'type': 'number',
@@ -64,8 +56,6 @@ attribute_type_properties = {
         'items': {'type': 'string'},
     },
     'autocomplete': {
-        'description': 'Object indicating URL of autocomplete service '
-                       'for string dtype.',
         '$ref': '#/components/schemas/AutocompleteService',
     },
     'use_current': {

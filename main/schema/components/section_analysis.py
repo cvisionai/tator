@@ -1,5 +1,5 @@
 section_analysis = {
     'type': 'object',
     'description': 'Analysis outputs.',
-    'additionalProperties': True,
+    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
 }

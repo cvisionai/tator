@@ -21,7 +21,7 @@ media_properties = {
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',
-        'additionalProperties': True,
+        'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
 }
 

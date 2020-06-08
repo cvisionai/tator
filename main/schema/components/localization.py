@@ -55,11 +55,6 @@ localization_properties = {
         'type': 'number',
         'nullable': True,
     },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
 }
 
 post_properties = {
@@ -115,13 +110,19 @@ localization_get_properties = {
         'type': 'string',
         'description': 'Email of last user who modified/created this localization.',
     },
+    'attributes': {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+    }
 }
 
 localization_spec = {
     'type': 'object',
-    'description': 'Localization creation spec.',
+    'description': 'Localization creation spec. Attribute key/values must be '
+                   'included in the base object.',
     'required': ['media_id', 'type', 'frame'],
-    'additionalProperties': True,
+    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         **post_properties,
         **localization_properties,
@@ -132,6 +133,11 @@ localization_update = {
     'type': 'object',
     'properties': {
         **localization_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
         'modified': {
             'description': 'Whether this localization was created in the web UI.',
             'type': 'boolean',

@@ -17,6 +17,7 @@ class CustomGenerator(SchemaGenerator):
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
                 'AttributeType': attribute_type,
+                'AttributeValue': attribute_value,
                 'AutocompleteService': autocomplete_service,
                 'LeafTypeSpec': leaf_type_spec,
                 'LeafTypeUpdate': leaf_type_update,

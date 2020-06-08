@@ -3,11 +3,6 @@ state_properties = {
         'description': 'Frame number this state applies to.',
         'type': 'integer',
     },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    }
 }
 
 version_properties = {
@@ -45,12 +40,17 @@ state_get_properties = {
         'type': 'array',
         'items': {'type': 'integer'},
     },
+    'attributes': {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+    },
 }
 
 state_spec = {
     'type': 'object',
     'required': ['media_ids', 'type'],
-    'additionalProperties': True,
+    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': {
         'type': {
             'description': 'Unique integer identifying a state type.',
@@ -75,6 +75,11 @@ state_update = {
     'type': 'object',
     'properties': {
         **state_properties,
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
         'modified': {
             'description': 'Whether this state was created in the web UI.',
             'type': 'boolean',

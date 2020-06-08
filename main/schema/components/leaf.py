@@ -12,7 +12,7 @@ leaf_suggestion = {
         'data': {
             'type': 'object',
             'description': 'Auxiliary data associated with the leaf.',
-            'additionalProperties': True,
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
     },
 }
@@ -30,17 +30,12 @@ leaf_properties = {
         'description': 'ID to use as parent if there is one.',
         'type': 'integer',
     },
-    'attributes': {
-        'description': 'Object containing attribute values.',
-        'type': 'object',
-        'additionalProperties': True,
-    },
 }
 
 leaf_spec = {
     'type': 'object',
     'required': ['name', 'type'],
-    'additionalProperties': True,
+    'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     'properties': leaf_properties,
 }
 
@@ -54,7 +49,7 @@ leaf_update = {
         'attributes': {
             'description': 'Attribute values to update.',
             'type': 'object',
-            'additionalProperties': True,
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
     },
 }
@@ -77,7 +72,11 @@ leaf = {
         },
         'name': leaf_properties['name'],
         'parent': leaf_properties['parent'],
-        'attributes': leaf_properties['attributes'],
+        'attributes': {
+            'description': 'Object containing attribute values.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
     },
 }
 

@@ -44,7 +44,7 @@ attribute_bulk_update = {
         'attributes': {
             'description': 'Attribute values to bulk update an entity list.',
             'type': 'object',
-            'additionalProperties': True,
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
     },
 }

@@ -5,6 +5,7 @@ from .analysis import analysis_spec
 from .analysis import analysis
 from .attribute_type import autocomplete_service
 from .attribute_type import attribute_type
+from .attribute_value import attribute_value
 from .leaf_type import leaf_type_spec
 from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
