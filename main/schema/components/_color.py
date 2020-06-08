@@ -32,11 +32,6 @@ hex_color = {
 
 color = {
     'description': 'RGB array, RGBA array, or hex string.',
-    'oneOf': [
-        {'$ref': '#/components/schemas/RgbColor'},
-        {'$ref': '#/components/schemas/RgbaColor'},
-        {'$ref': '#/components/schemas/HexColor'},
-    ],
 }
 
 alpha_range = { 
