@@ -1,8 +1,8 @@
 attribute_value = {
-    'description': 'Boolean, integer, string, datetime, or [lon, lat].',
+    'description': 'Boolean, integer, float, string, datetime, or [lon, lat].',
     'oneOf': [
         {'type': 'boolean'},
-        {'type': 'integer'},
+        {'type': 'number'},
         {'type': 'string'},
         {
             'type': 'array',
