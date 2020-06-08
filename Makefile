@@ -467,7 +467,7 @@ python-bindings: tator-image
 	docker run -it --rm -v $(shell pwd):/pwd -v /tmp:/out openapitools/openapi-generator-cli generate -c /pwd/scripts/packages/python-config.json -i /pwd/schema.yaml -g python -o /out/tator-py-$(GIT_VERSION)
 	rm schema.yaml
 	cp -r /tmp/tator-py-$(GIT_VERSION)/README.md scripts/packages/tator-py/tator/openapi/.
-	cp -r /tmp/tator-py-$(GIT_VERSION)/tator scripts/packages/tator-py/tator/openapi/.
+	cp -r /tmp/tator-py-$(GIT_VERSION)/tator_openapi scripts/packages/tator-py/tator/openapi/.
 	cp -r /tmp/tator-py-$(GIT_VERSION)/docs scripts/packages/tator-py/tator/openapi/.
 
 TOKEN=$(shell cat token.txt)
