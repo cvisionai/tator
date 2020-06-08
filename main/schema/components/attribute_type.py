@@ -80,17 +80,3 @@ attribute_type = {
     'properties': attribute_type_properties,
 }
 
-attribute_type_update = {
-    'type': 'object',
-    'properties': {
-        'name': {
-            'description': 'Name of the attribute.',
-            'type': 'string',
-        },
-        'description': {
-            'description': 'Description of the attribute.',
-            'type': 'string',
-        },
-    },
-}
-
