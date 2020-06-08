@@ -46,7 +46,7 @@ def test_state_crud(url, token, project, video_type, video, state_type):
     assert status == 201
 
     # Test single create.
-    state = random_state(project, state_type, video_obj)
+    state = random_state(project, state_type, video_obj, post=True)
     status, response = tator.State.new([state])
     state_id = response['id'][0]
     assert status == 201
