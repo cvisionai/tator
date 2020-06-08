@@ -462,8 +462,9 @@ lazyPush:
 python-bindings:
 	mkdir -p scripts/packages/tator-py
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > schema.yaml
-	docker run -it --rm -v $(shell pwd):/pwd openapitools/openapi-generator-cli generate -c /pwd/scripts/packages/python-config.json -i /pwd/schema.yaml -g python -o /pwd/scripts/packages/tator-py
+	docker run -it --rm -v $(shell pwd):/pwd -v /tmp:/out openapitools/openapi-generator-cli generate -c /pwd/scripts/packages/python-config.json -i /pwd/schema.yaml -g python -o /out/tator-py-$(GIT_VERSION)
 	rm schema.yaml
+	cp -r /tmp/tator-py-$(GIT_VERSION)/* scripts/packages/tator-py/tator/openapi/.
 
 TOKEN=$(shell cat token.txt)
 URL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"] + "/rest")')
