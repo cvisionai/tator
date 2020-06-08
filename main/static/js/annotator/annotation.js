@@ -448,7 +448,7 @@ class AnnotationCanvas extends TatorElement
     this._lastAutoTrackColor = null;
     this._domParents = [];
     this._metaMode = false;
-    this._redrawObjId = null;
+    this._redrawObj = null;
 
     try
     {
@@ -1763,7 +1763,7 @@ class AnnotationCanvas extends TatorElement
       // If we are redrawing a localization set the token
       if (obj != undefined)
       {
-        this._redrawObjId = obj.id;
+        this._redrawObj = obj;
         this._mouseMode = MouseMode.NEW;
         this.selectLocalization(obj, true, false);
       }
@@ -1851,9 +1851,23 @@ class AnnotationCanvas extends TatorElement
       requestObj.frame = this.currentFrame();
     }
 
-    if (this._redrawObjId !== null && typeof this._redrawObjId !== "undefined") {
-      this._undo.patch("Localization", this._redrawObjId, requestObj, objDescription);
-      this._redrawObjId = null;
+    if (this._redrawObj !== null && typeof this._redrawObj !== "undefined") {
+      if (this._data.getVersion().id != this._redrawObj.version)
+      {
+        let tempObj = Object.assign({}, this._redrawObj);
+        tempObj.x = requestObj.x;
+        tempObj.y = requestObj.y;
+        tempObj.width = requestObj.width;
+        tempObj.height = requestObj.height;
+        tempObj.u = requestObj.u;
+        tempObj.v = requestObj.v;
+        this.cloneToNewVersion(tempObj, this._data.getVersion().id);
+      }
+      else
+      {
+        this._undo.patch("Localization", this._redrawObj, requestObj, objDescription);
+      }
+      this._redrawObj = null;
     } else {
       // Drag info is now in DOM coordinates
       this.dispatchEvent(new CustomEvent("create", {
