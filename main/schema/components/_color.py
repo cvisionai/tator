@@ -1,4 +1,5 @@
 rgb_color = {
+    'description': 'RGB three element array with values 0-255.',
     'type': 'array',
     'items': {
         'type': 'integer',
@@ -10,6 +11,7 @@ rgb_color = {
 }
 
 rgba_color = {
+    'description': 'RGBA four element array with values 0-255.',
     'type': 'array',
     'items': {
         'type': 'integer',
@@ -21,6 +23,7 @@ rgba_color = {
 }
 
 hex_color = {
+    'description': 'Hex color string, such as #00FF00.',
     'type': 'string',
     'pattern': '^#(?:[0-9a-fA-F]{3}){1,2}$',
     'minLength': 7,
@@ -28,6 +31,7 @@ hex_color = {
 }
 
 color = {
+    'description': 'RGB array, RGBA array, or hex string.',
     'oneOf': [
         {'$ref': '#/components/schemas/RgbColor'},
         {'$ref': '#/components/schemas/RgbaColor'},
@@ -36,6 +40,10 @@ color = {
 }
 
 alpha_range = { 
+    'description': 'Three element array containing start attribute value, '
+                   'stop attribute value, and alpha level 0-255 for the '
+                   'localizations with attribute value falling in this '
+                   'range.',
     'type': 'array',
     'items': {'type': 'number'},
     'minLength': 3,
@@ -44,7 +52,10 @@ alpha_range = {
 
 color_map = {
     'type': 'object',
-    'description': 'Allows for a mapping of an attribute value to a specific color.',
+    'description': 'Maps an attribute value or version to a color/alpha. Use '
+                   '`key` and `map` (optionally `alpha_ranges`) to map an '
+                   'attribute value to colors. Use `version` to map version '
+                   'IDs to colors.',
     'properties': {
         'default': {'$ref': '#/components/schemas/Color'},
         'key': {
