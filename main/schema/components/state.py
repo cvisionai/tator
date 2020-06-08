@@ -26,10 +26,6 @@ state_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying the entity type.',
     },
-    'association': {
-        'type': 'integer',
-        'description': 'Unique integer identifying the state association.',
-    },
     'media': {
         'description': 'List of media IDs that this state applies to.',
         'type': 'array',
