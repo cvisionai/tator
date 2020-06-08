@@ -11,7 +11,7 @@ version_properties = {
     'show_empty': {
         'type': 'boolean',
         'description': 'Whether to show this version on media for which no annotations exist.',
-        'default': False,
+        'default': True,
     },
     'bases': {
         'type': 'array',
