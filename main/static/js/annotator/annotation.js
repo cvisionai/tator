@@ -47,6 +47,12 @@ class Clipboard
       event.stopPropagation();
       this._copyElement = Object.assign({},this._annotationCtrl.activeLocalization);
     }
+    if (event.ctrlKey && event.code == "KeyV")
+    {
+      console.info("Pasting");
+      this._cutElement = null;
+      this._copyElement = null;
+      event.stopPropagation();
     }
   }
 }
