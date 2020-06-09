@@ -17,6 +17,34 @@ function updateStatus(msg, type, timeout)
   // This function should be deleted.
 }
 
+class Clipboard
+{
+  constructor(annotation)
+  {
+    this._annotationCtrl = annotation;
+    document.addEventListener("keydown", this.keydown.bind(this));
+  }
+
+  keydown(event)
+  {
+    if (this._annotationCtrl.activeLocalization == null ||
+        document.body.classList.contains("shortcuts-disabled"))
+    {
+      return;
+    }
+
+    if (event.ctrlKey && event.code == "KeyX")
+    {
+      console.info("Cutting.");
+      event.stopPropagation();
+    }
+    if (event.ctrlKey && event.code == "KeyC")
+    {
+      console.info("Copying");
+      event.stopPropagation();
+    }
+  }
+}
 // Handle generating a drag event within a canvas element
 // The callback either receives an object with start + current
 // representing an on-going drag
@@ -425,6 +453,7 @@ class AnnotationCanvas extends TatorElement
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
     this._shadow.appendChild(this._canvas);
+    this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
     this._dragHandler = new CanvasDrag(this._canvas,
@@ -1966,7 +1995,7 @@ class AnnotationCanvas extends TatorElement
     }
     return patchObj;
   }
-  
+
   cloneToNewVersion(localization, dest_version)
   {
     const objDescription = this.getObjectDescription(localization);
