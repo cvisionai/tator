@@ -2045,7 +2045,15 @@ class AnnotationCanvas extends TatorElement
     const objDescription = this.getObjectDescription(localization);
     let original_meta = localization.meta;
     let frame = localization.frame;
-    let current = this._framedData.get(frame).get(original_meta);
+    let current = [];
+    try
+    {
+      current = this._framedData.get(frame).get(original_meta);
+    }
+    catch(_)
+    {
+      
+    }
 
     if (dest_version == undefined)
     {
