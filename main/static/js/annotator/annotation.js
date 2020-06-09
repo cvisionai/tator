@@ -2003,6 +2003,7 @@ class AnnotationCanvas extends TatorElement
                       this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: false}}));
+                      this.refresh();
                     });
 
                   });
