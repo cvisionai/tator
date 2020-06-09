@@ -29,9 +29,16 @@ class Clipboard
 
   keydown(event)
   {
-    if (this._annotationCtrl.activeLocalization == null ||
-        document.body.classList.contains("shortcuts-disabled"))
+    if (this._annotationCtrl.activeLocalization == null &&
+        this._cutElement == null &&
+        this._copyElement == null)
     {
+      return;
+    }
+    
+    if (document.body.classList.contains("shortcuts-disabled"))
+    {
+      console.info("Shortcuts disabled!");
       return;
     }
 
