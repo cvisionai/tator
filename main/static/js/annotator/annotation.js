@@ -1865,7 +1865,7 @@ class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this._undo.patch("Localization", this._redrawObj, requestObj, objDescription);
+        this._undo.patch("Localization", this._redrawObj.id, requestObj, objDescription);
       }
       this._redrawObj = null;
     } else {
