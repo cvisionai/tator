@@ -2061,6 +2061,11 @@ class AnnotationCanvas extends TatorElement
       dest_version = this._data.getVersion().id;
     }
 
+    if (current == undefined)
+    {
+      current = [];
+    }
+
     // Check for current derivations in the same layer (bad)
     for (let local of current)
     {
