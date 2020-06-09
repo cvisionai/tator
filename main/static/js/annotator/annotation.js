@@ -17,6 +17,16 @@ function updateStatus(msg, type, timeout)
   // This function should be deleted.
 }
 
+// The clipboard acts like the power point clipboard
+// +++++++++++++++++++++++++++++++++++
+// +++++ Behavorial expectations: ++++
+// +++++++++++++++++++++++++++++++++++
+// - If on the same frame a cut/paste places the object back in the
+// same spot
+// - If on the same frame a copy/paste places the object 20 pixels down and to the right
+// - If on a different frame a cut or copy places the object in the same spot on the new frame
+// - After a cut the 'cut buffer' is cleared so that pasting is a no-op.
+// - after a copy the 'copy buffer' is left along, so that pasting continues to duplicate the item.
 class Clipboard
 {
   constructor(annotation)
@@ -35,7 +45,7 @@ class Clipboard
     {
       return;
     }
-    
+
     if (document.body.classList.contains("shortcuts-disabled"))
     {
       console.info("Shortcuts disabled!");
@@ -56,9 +66,25 @@ class Clipboard
     }
     if (event.ctrlKey && event.code == "KeyV")
     {
-      console.info("Pasting");
-      this._cutElement = null;
-      this._copyElement = null;
+
+      if (this._cutElement)
+      {
+        if (this._cutElement.frame != this._annotationCtrl.currentFrame())
+        {
+          console.info("Pasting in cut-mode");
+          this._annotationCtrl.modifyLocalization(this._cutElement,this._annotationCtrl.currentFrame());
+        }
+        else
+        {
+          console.info("Ignoring cut to self");
+        }
+        this._cutElement = null;
+      }
+      else if (this._copyElement)
+      {
+         console.info("Pasting in copy-mode");
+        //pass
+      }
       event.stopPropagation();
     }
   }
@@ -1978,7 +2004,7 @@ class AnnotationCanvas extends TatorElement
                                        {composed: true,
                                         detail: {enabled: false}}));
                     });
-                    
+
                   });
     }
     else
@@ -2086,11 +2112,15 @@ class AnnotationCanvas extends TatorElement
   }
 
   // TODO handle this all as a signal up in annotation-page
-  modifyLocalization(localization)
+  modifyLocalization(localization, frame)
   {
     if (localization == undefined)
     {
       localization = this.activeLocalization;
+    }
+    if (frame)
+    {
+      localization.frame = frame;
     }
     const objDescription = this.getObjectDescription(localization);
     let original_meta = localization.meta;
@@ -2102,6 +2132,10 @@ class AnnotationCanvas extends TatorElement
     else
     {
       let patchObj = AnnotationCanvas.updatePositions(localization,objDescription);
+      if (frame)
+      {
+        patchObj.frame = frame;
+      }
       this._undo.patch("Localization", localization.id, patchObj, objDescription);
     }
   }
