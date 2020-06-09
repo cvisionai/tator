@@ -23,6 +23,8 @@ class Clipboard
   {
     this._annotationCtrl = annotation;
     document.addEventListener("keydown", this.keydown.bind(this));
+    this._cutElement = null;
+    this._copyElement = null;
   }
 
   keydown(event)
@@ -37,11 +39,14 @@ class Clipboard
     {
       console.info("Cutting.");
       event.stopPropagation();
+      this._cutElement = this._annotationCtrl.activeLocalization;
     }
     if (event.ctrlKey && event.code == "KeyC")
     {
       console.info("Copying");
       event.stopPropagation();
+      this._copyElement = Object.assign({},this._annotationCtrl.activeLocalization);
+    }
     }
   }
 }
