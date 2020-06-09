@@ -2001,6 +2001,9 @@ class AnnotationCanvas extends TatorElement
     newObject.frame = localization.frame;
     newObject.modified = true;
     console.info(newObject);
+    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
     let request_obj = {method: "POST",
                        ...this._undo._headers(),
                        body: JSON.stringify([newObject])};
@@ -2016,6 +2019,9 @@ class AnnotationCanvas extends TatorElement
             break;
           }
         }
+        this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                           {composed: true,
+                                            detail: {enabled: false}}));
       });
     });
   }

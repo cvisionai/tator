@@ -223,6 +223,25 @@ class AnnotationPage extends TatorPage {
       _removeLoading();
     });
 
+
+    let maskEdits = (evt) => {
+      if (evt.detail.enabled == true)
+      {
+        this._player.permission = "View Only";
+        this._browser.permission = "View Only";
+      }
+      else
+      {
+        this._player.permission = this._permission;
+        this._browser.permission = this._permission;
+      }
+      console.info("Setting edit mask to " + evt.detail.enabled);
+    };
+    // Disable edits via the player + annotation browser
+    // only during a network operation
+    canvas.addEventListener("temporarilyMaskEdits", maskEdits);
+    this._undo.addEventListener("temporarilyMaskEdits", maskEdits);
+
     canvas.addEventListener("canvasReady", () => {
       this._canvasInitialized = true;
       _handleQueryParams();
@@ -594,6 +613,7 @@ class AnnotationPage extends TatorPage {
     this._preview.appendChild(img);
   };
 
+  /// Turn on or off ability to edit annotations
   enableEditing(enable) {
     let permission;
     if (enable) {
