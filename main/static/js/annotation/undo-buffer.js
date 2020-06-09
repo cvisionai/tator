@@ -319,6 +319,9 @@ class UndoBuffer extends HTMLElement {
         obj.body = JSON.stringify(body);
       }
     }
+    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
     return fetchRetry(url, obj)
     .then(response => {
       if (response.ok) {
@@ -341,6 +344,9 @@ class UndoBuffer extends HTMLElement {
         dataType: dataType,
       }
     }));
+    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: false}}));
   }
 
   _headers() {

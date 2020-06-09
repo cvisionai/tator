@@ -1263,6 +1263,10 @@ class AnnotationCanvas extends TatorElement
   // If the user clicked an annotation, bring up an edit form if they clicked nothing, reset
   mouseDownHandler(clickEvent)
   {
+    if (document.body.classList.contains("shortcuts-disabled")) {
+      document.body.classList.remove("shortcuts-disabled");
+      document.activeElement.blur();
+    }
     cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
     clickEvent.preventDefault();
     var clickLocation =
@@ -1916,10 +1920,18 @@ class AnnotationCanvas extends TatorElement
     if (hadParent)
     {
       console.info("Finding lost parent");
+      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
       fetchRetry(`/rest/Localization/${localization.id}`,
                  {method: "DELETE",
                   ...this._undo._headers()}).then(() => {
-                    this.updateType(objDescription,null);
+                    this.updateType(objDescription,() => {
+                      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: false}}));
+                    });
+                    
                   });
     }
     else
@@ -2001,6 +2013,9 @@ class AnnotationCanvas extends TatorElement
     newObject.frame = localization.frame;
     newObject.modified = true;
     console.info(newObject);
+    this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
     let request_obj = {method: "POST",
                        ...this._undo._headers(),
                        body: JSON.stringify([newObject])};
@@ -2016,6 +2031,9 @@ class AnnotationCanvas extends TatorElement
             break;
           }
         }
+        this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                           {composed: true,
+                                            detail: {enabled: false}}));
       });
     });
   }
