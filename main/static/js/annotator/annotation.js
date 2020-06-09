@@ -1920,10 +1920,18 @@ class AnnotationCanvas extends TatorElement
     if (hadParent)
     {
       console.info("Finding lost parent");
+      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
       fetchRetry(`/rest/Localization/${localization.id}`,
                  {method: "DELETE",
                   ...this._undo._headers()}).then(() => {
-                    this.updateType(objDescription,null);
+                    this.updateType(objDescription,() => {
+                      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: false}}));
+                    });
+                    
                   });
     }
     else
