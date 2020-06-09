@@ -1263,6 +1263,10 @@ class AnnotationCanvas extends TatorElement
   // If the user clicked an annotation, bring up an edit form if they clicked nothing, reset
   mouseDownHandler(clickEvent)
   {
+    if (document.body.classList.contains("shortcuts-disabled")) {
+      document.body.classList.remove("shortcuts-disabled");
+      document.activeElement.blur();
+    }
     cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
     clickEvent.preventDefault();
     var clickLocation =
