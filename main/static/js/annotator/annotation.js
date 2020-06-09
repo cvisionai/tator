@@ -2068,19 +2068,23 @@ class AnnotationCanvas extends TatorElement
   }
 
   // TODO handle this all as a signal up in annotation-page
-  modifyLocalization()
+  modifyLocalization(localization)
   {
-    const objDescription = this.getObjectDescription(this.activeLocalization);
-    let original_meta = this.activeLocalization.meta;
-    if (this._data.getVersion().id != this.activeLocalization.version)
+    if (localization == undefined)
+    {
+      localization = this.activeLocalization;
+    }
+    const objDescription = this.getObjectDescription(localization);
+    let original_meta = localization.meta;
+    if (this._data.getVersion().id != localization.version)
     {
       console.info("Modifying a localization from another layer!");
-      this.cloneToNewVersion(this.activeLocalization, this._data.getVersion().id);
+      this.cloneToNewVersion(localization, this._data.getVersion().id);
     }
     else
     {
-      let patchObj = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
-      this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+      let patchObj = AnnotationCanvas.updatePositions(localization,objDescription);
+      this._undo.patch("Localization", localization.id, patchObj, objDescription);
     }
   }
 
