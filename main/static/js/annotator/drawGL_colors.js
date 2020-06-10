@@ -12,6 +12,7 @@ const color =
     CYAN: [0,255,255],
     MAGENTA: [255,0,255],
     GREEN: [0,255,0],
+    TEAL: [64,224,208],
 
     blend : function(destColor, color, percent)
     {
