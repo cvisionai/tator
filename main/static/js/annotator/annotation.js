@@ -383,7 +383,7 @@ function determineBoxResizeType(mouseLocation,
 function emphasisColor(localization)
 {
   if (typeof localization.color === "undefined") {
-    localization.color = color.BLUE;
+    localization.color = color.TEAL;
   }
   return color.blend(color.WHITE, localization.color, 0.50);
 }
@@ -2455,7 +2455,7 @@ class AnnotationCanvas extends TatorElement
           width = Math.round(width);
 
           // Default to blue
-          var drawColor = color.BLUE;
+          var drawColor = color.TEAL;
           var meta = this.getObjectDescription(localization);
           var trackColor = null;
           var alpha = annotation_alpha;
