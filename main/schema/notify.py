@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -9,6 +11,15 @@ class NotifySchema(AutoSchema):
             operation['operationId'] = 'Notify'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Send a notification to administrators.
+
+        Uses the Slack API to send a notification to system administrators. This
+        endpoint can only be used by system administrators and must be configured
+        in a Tator deployment's settings.
+        """)
 
     def _get_path_parameters(self, path, method):
         return []
