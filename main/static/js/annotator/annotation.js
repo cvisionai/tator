@@ -2583,10 +2583,7 @@ class AnnotationCanvas extends TatorElement
           else if (this.activeLocalization && this.activeLocalization.id == localization.id)
           {
             drawColor = color.WHITE;
-            if (this._clipboard.isCutting(localization))
-            {
-              alpha = 0.5 * 255;
-            }
+            alpha = 255;
           }
           else if (localization.id in this._data._trackDb)
           {
@@ -2659,6 +2656,12 @@ class AnnotationCanvas extends TatorElement
             }
           } //end colormap
 
+          // If we are cutting the localiztion apply half alpha
+          if (this._clipboard.isCutting(localization))
+          {
+            drawColor = color.GRAY;
+            alpha = 0.5 * 255;
+          }
           localization.color = drawColor;
 
           if (type=='box')
