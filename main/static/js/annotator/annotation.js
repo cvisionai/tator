@@ -64,12 +64,15 @@ class Clipboard
       event.stopPropagation();
       this._cutElement = this._annotationCtrl.activeLocalization;
     }
+    /*
+    // Disabled for now
     if (event.ctrlKey && event.code == "KeyC")
     {
       console.info("Copying");
       event.stopPropagation();
       this._copyElement = Object.assign({},this._annotationCtrl.activeLocalization);
     }
+    */
     if (event.ctrlKey && event.code == "KeyV")
     {
 
