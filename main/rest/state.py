@@ -338,11 +338,11 @@ class StateDetailAPI(BaseDetailView):
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         obj.save()
-        return {'message': 'State {params["id"]} successfully updated!'}
+        return {'message': f'State {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        state_object = State.objects.get(pk=params['id']).delete()
-        return {'message': 'State {params["id"]} successfully deleted!'}
+        State.objects.get(pk=params['id']).delete()
+        return {'message': f'State {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return State.objects.all()
