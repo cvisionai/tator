@@ -1,11 +1,9 @@
-from .save_video import save_video_properties
-
 media_properties = {
     'name': {
         'description': 'Name of the media.',
         'type': 'string',
     },
-    'media_files': save_video_properties['media_files'],
+    'media_files': {'$ref': '#/components/schemas/MediaFiles'},
     'last_edit_start': {
         'description': 'Datetime of the start of the session when this media or its annotations '
                        'were last edited.',

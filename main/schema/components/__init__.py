@@ -56,6 +56,9 @@ from .user import user
 from .version import version_spec
 from .version import version_update
 from .version import version
+from ._media_definitions import video_definition
+from ._media_definitions import audio_definition
+from ._media_definitions import media_files
 from ._color import rgb_color
 from ._color import rgba_color
 from ._color import hex_color
