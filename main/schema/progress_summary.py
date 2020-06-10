@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
@@ -8,6 +10,17 @@ class ProgressSummarySchema(AutoSchema):
         operation = super().get_operation(path, method)
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Create or update a progress summary.
+
+        This endpoint sets a key in redis that indicates how many jobs are in
+        a job group as well as how many are completed. This is used to display
+        summary progress in the progress bar. If not used for a given job group,
+        the job completion is computed from the status of individual jobs in
+        the group.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{
