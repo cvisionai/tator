@@ -1,9 +1,16 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
+
+boilerplate = dedent("""\
+A media may be an image or a video. Media are a type of entity in Tator,
+meaning they can be described by user defined attributes.
+""")
 
 class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -16,6 +23,25 @@ class MediaListSchema(AutoSchema):
             operation['operationId'] = 'DeleteMediaList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        short_desc = ''
+        long_desc = ''
+        if method == 'GET':
+            short_desc = "Get media list."
+        elif method == 'PATCH':
+            short_desc = "Update media list."
+            long_desc = dedent("""\
+            This method does a bulk update on all media matching a query. Only 
+            user-defined attributes may be bulk updated.
+            """)
+        elif method == 'DELETE':
+            short_desc = "Delete media list."
+            long_desc = dedent("""\
+            This method performs a bulk delete on all media matching a query. It is 
+            recommended to use a GET request first to check what is being deleted.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -80,6 +106,17 @@ class MediaDetailSchema(AutoSchema):
         operation['tags'] = ['Tator']
         return operation
 
+    def get_description(self, path, method):
+        short_desc = ''
+        long_desc = ''
+        if method == 'GET':
+            short_desc = "Get media."
+        elif method == 'PATCH':
+            short_desc = "Update media."
+        elif method == 'DELETE':
+            short_desc = "Delete media."
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
+
     def _get_path_parameters(self, path, method):
         return [{
             'name': 'id',
@@ -122,6 +159,14 @@ class GetFrameSchema(AutoSchema):
             operation['operationId'] = 'GetFrame'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Get frame(s) from a video.
+
+        Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
+        frames based on the input parameter.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -229,6 +274,13 @@ class GetClipSchema(AutoSchema):
             operation['operationId'] = 'GetClip'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Get video clip.
+
+        Facility to get a clip from the server. Returns a temporary file object that expires in 24 hours.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{
