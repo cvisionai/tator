@@ -1799,8 +1799,9 @@ class AnnotationCanvas extends TatorElement
           }
           that._draw.dispImage(true);
         }
-
-        animator();
+        that.refresh().then(() => {
+          animator();
+        });
       });
     return promise;
   }
