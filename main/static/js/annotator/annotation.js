@@ -2536,14 +2536,18 @@ class AnnotationCanvas extends TatorElement
         }
         else
         {
+          // Make the line width appear as monitor pixels
+          let width = this.getObjectDescription(this.activeLocalization).line_width;
+          width *= this._draw.displayToViewportScale()[0];
+          width = Math.round(width);
           if (type == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
+            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
           }
           else (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0],line[1], color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
+            this._draw.drawLine(line[0],line[1], color.WHITE, width);
           }
           this._draw.dispImage(true, true);
         }
