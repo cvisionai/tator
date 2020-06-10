@@ -1463,10 +1463,7 @@ class AnnotationCanvas extends TatorElement
       {
         // Means we deselected the selection.
         clearStatus();
-        if (this._animator)
-        {
-          clearTimeout(this._animator);
-        }
+        this.clearAnimation();
         this.activeLocalization = null;
         this._activeTrack = null;
         this.refresh();
@@ -1510,7 +1507,7 @@ class AnnotationCanvas extends TatorElement
     clearStatus();
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
     this.activeLocalization = null;
     this._emphasis = null;
@@ -1697,6 +1694,7 @@ class AnnotationCanvas extends TatorElement
     {
       clearTimeout(this._animator);
       this._animator = null;
+      this._animatedLocalization = null;
     }
   }
 
@@ -1710,7 +1708,7 @@ class AnnotationCanvas extends TatorElement
   {
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
 
     this._animatedLocalization = localization;
@@ -1994,7 +1992,7 @@ class AnnotationCanvas extends TatorElement
   {
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
 
     const objDescription = this.getObjectDescription(localization);
@@ -2380,7 +2378,7 @@ class AnnotationCanvas extends TatorElement
       }
       if (this._mouseMode == MouseMode.MOVE)
       {
-        clearTimeout(this._animator);
+        this.clearAnimation();
 
         var objType = this.getObjectDescription(this.activeLocalization);
 
@@ -2471,7 +2469,7 @@ class AnnotationCanvas extends TatorElement
       }
       if (this._mouseMode == MouseMode.RESIZE)
       {
-        clearTimeout(this._animator);
+        this.clearAnimation();
         var type =
             this.getObjectDescription(this.activeLocalization).dtype;
 
