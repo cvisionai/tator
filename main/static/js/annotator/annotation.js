@@ -60,9 +60,18 @@ class Clipboard
 
     if (event.ctrlKey && event.code == "KeyX")
     {
-      console.info("Cutting.");
       event.stopPropagation();
-      this._cutElement = this._annotationCtrl.activeLocalization;
+      if (this._cutElement == this._annotationCtrl.activeLocalization)
+      {
+        console.info("Cancel Cut");
+        this._cutElement = null;
+      }
+      else
+      {
+        console.info("Cutting.");
+        this._cutElement = this._annotationCtrl.activeLocalization;
+      }
+      this._annotationCtrl.refresh();
     }
     /*
     // Disabled for now
