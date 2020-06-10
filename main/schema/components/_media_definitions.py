@@ -91,6 +91,5 @@ media_files = {
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
     },
-    'items': {'type': 'string'},
 }
 
