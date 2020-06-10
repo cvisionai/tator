@@ -13,6 +13,7 @@ const color =
   MAGENTA: [255,0,255],
   GREEN: [0,255,0],
   TEAL: [64,224,208],
+  GRAY: [128,128,128],
 
   blend : function(destColor, color, percent)
   {
