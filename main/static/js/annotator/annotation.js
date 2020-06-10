@@ -37,6 +37,12 @@ class Clipboard
     this._copyElement = null;
   }
 
+  isCutting(localization)
+  {
+    return ((this._cutElement && this._cutElement.id == localization.id) ||
+            (this._copyElement && this._copyElement.id == localization.id));
+  }
+
   keydown(event)
   {
     if (this._annotationCtrl.activeLocalization == null &&
@@ -1707,6 +1713,8 @@ class AnnotationCanvas extends TatorElement
       clearTimeout(this._animator);
     }
 
+    this._animatedLocalization = localization;
+
     var cycles = 7;
     if ('cycles' in options)
     {
@@ -1762,6 +1770,7 @@ class AnnotationCanvas extends TatorElement
           }
           else
           {
+            that._animatedLocalization = null;
             resolve();
           }
 
@@ -2559,7 +2568,19 @@ class AnnotationCanvas extends TatorElement
           var trackColor = null;
           var alpha = annotation_alpha;
 
-          if (localization.id in this._data._trackDb)
+          if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
+          {
+            continue;
+          }
+          else if (this._activeLocalization && this._activeLocalization.id == localization.id)
+          {
+            drawColor = color.WHITE;
+            if (this._clipboard.isCutting(localization))
+            {
+              alpha = 0.5 * 255;
+            }
+          }
+          else if (localization.id in this._data._trackDb)
           {
             if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
             {
