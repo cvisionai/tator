@@ -1254,10 +1254,8 @@ class AnnotationCanvas extends TatorElement
         if(localization != this.activeLocalization) {
           this._canvas.classList.add("select-pointer");
 
-          if (this._mouseMode == MouseMode.QUERY &&
-              this._emphasis != localization)
+          if (this._mouseMode == MouseMode.QUERY)
           {
-            this._emphasis = localization;
             this.emphasizeLocalization(localization);
           }
         }
@@ -1308,15 +1306,13 @@ class AnnotationCanvas extends TatorElement
           {
             this._canvas.classList.add("select-grabbing");
           }
-          this._emphasis = localization;
+          this.emphasizeLocalization(localization);
         }
         else if (localization)
         {
           // User moved off localization
           this._canvas.classList.add("select-pointer");
-          var emphasis=[{obj: localization, color: null}];
-          this.emphasizeMultiLocalizations(emphasis);
-          this._emphasis = localization;
+          this.emphasizeLocalization(localization);
         }
         else
         {
@@ -1692,16 +1688,28 @@ class AnnotationCanvas extends TatorElement
   // Emphasis is applied to the localization
   emphasizeLocalization(localization, userColor, muteOthers)
   {
-    var tempList=[]
-    tempList.push({"obj": localization,
-                   "color":userColor});
-    this.emphasizeMultiLocalizations(tempList, muteOthers);
+    if (muteOthers)
+    {
+      var tempList=[]
+      tempList.push({"obj": localization,
+                     "color":userColor});
+      this.emphasizeMultiLocalizations(tempList, muteOthers);
+    }
+    else
+    {
+      if (this._emphasis != localization)
+      {
+        this._emphasis = localization;
+        this.refresh();
+      }
+    }
   }
 
   clearAnimation()
   {
     if (this._animator)
     {
+      console.info("Stopping animation");
       clearTimeout(this._animator);
       this._animator = null;
       this._animatedLocalization = null;
@@ -2545,6 +2553,11 @@ class AnnotationCanvas extends TatorElement
 
   drawAnnotations(frameInfo, drawContext, roi)
   {
+    console.info(`Drawing ${frameInfo.frame}`);
+    if (this.activeLocalization)
+      console.info(`Active = ${this.activeLocalization.id}`);
+    if (this._emphasis)
+      console.info(`Emphasis = ${this._emphasis.id}`);
     const annotation_alpha=0.7*255;
 
     if (drawContext == undefined)
@@ -2657,6 +2670,12 @@ class AnnotationCanvas extends TatorElement
             }
           } //end colormap
 
+          // Handle emphasis in callback
+          if (this._emphasis && this._emphasis.id == localization.id)
+          {
+            drawColor = color.blend(color.WHITE, drawColor, 0.50);
+            alpha = 255;
+          }
           // If we are cutting the localiztion apply half alpha
           if (this._clipboard.isCutting(localization))
           {
@@ -2669,6 +2688,7 @@ class AnnotationCanvas extends TatorElement
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
             drawContext.drawPolygon(poly, localization.color, width, alpha);
+            console.info("Drawing polygon!");
           }
           else if (type == 'line')
           {
