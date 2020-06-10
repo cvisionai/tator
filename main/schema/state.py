@@ -209,8 +209,22 @@ class StateGraphicSchema(AutoSchema):
         return {}
 
     def _get_responses(self, path, method):
-        responses = error_responses()
+        responses = {}
         if method == 'GET':
+            responses['404'] = {
+                'description': 'Not found.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
+            responses['400'] = {
+                'description': 'Bad request.',
+                'content': {'image/*': {'schema': {
+                    'type': 'string',
+                    'format': 'binary',
+                }}}
+            }
             responses['200'] = {
                 'description': 'Successful retrieval of state graphic.',
                 'content': {'image/*': {'schema': {
