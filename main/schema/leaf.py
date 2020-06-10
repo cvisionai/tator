@@ -107,7 +107,11 @@ class LeafListSchema(AutoSchema):
         if method == 'GET':
             short_desc = 'Get leaf list.'
         elif method == 'POST':
-            short_desc = 'Create leaf.'
+            short_desc = 'Create leaf list.'
+            long_desc = dedent("""\
+            This method does a bulk create on a list of `LeafSpec` objects. A 
+            maximum of 500 leaves may be created in one request.
+            """)
         elif method == 'PATCH':
             short_desc = 'Update leaf list.'
             long_desc = dedent("""\
