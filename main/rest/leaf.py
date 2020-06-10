@@ -194,8 +194,6 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
         queryset = Leaf.objects.filter(pk__in=leaf_ids)
         return queryset
 
-LeafListAPI.copy_docstrings()
-
 class LeafDetailAPI(BaseDetailView):
     """ Interact with individual leaf.
 
@@ -229,4 +227,3 @@ class LeafDetailAPI(BaseDetailView):
     def get_queryset(self):
         return Leaf.objects.all()
 
-LeafDetailAPI.copy_docstrings()

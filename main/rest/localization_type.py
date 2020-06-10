@@ -72,8 +72,6 @@ class LocalizationTypeListAPI(BaseListView):
 
         return {'message': 'Localization type created successfully!', 'id': obj.id}
 
-LocalizationTypeListAPI.copy_docstrings()
-
 class LocalizationTypeDetailAPI(BaseDetailView):
     """ Interact with an individual localization type.
 
@@ -139,4 +137,3 @@ class LocalizationTypeDetailAPI(BaseDetailView):
     def get_queryset(self):
         return LocalizationType.objects.all()
 
-LocalizationTypeDetailAPI.copy_docstrings()

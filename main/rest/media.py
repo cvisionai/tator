@@ -146,8 +146,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         queryset = Media.objects.filter(pk__in=media_ids).order_by(preserved)
         return queryset
 
-MediaListAPI.copy_docstrings()
-
 class MediaDetailAPI(BaseDetailView):
     """ Interact with individual media.
 
@@ -212,4 +210,3 @@ class MediaDetailAPI(BaseDetailView):
     def get_queryset(self):
         return Media.objects.all()
 
-MediaDetailAPI.copy_docstrings()

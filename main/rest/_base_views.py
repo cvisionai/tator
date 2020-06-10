@@ -67,17 +67,6 @@ class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin):
     """
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    @classmethod
-    def copy_docstrings(cls):
-        if 'get' in cls.http_method_names:
-            cls.get.__doc__ = cls._get.__doc__
-        if 'post' in cls.http_method_names:
-            cls.post.__doc__ = cls._post.__doc__
-        if 'patch' in cls.http_method_names:
-            cls.patch.__doc__ = cls._patch.__doc__
-        if 'delete' in cls.http_method_names:
-            cls.delete.__doc__ = cls._delete.__doc__
-
     def handle_exception(self, exc):
         return process_exception(exc)
 
@@ -85,15 +74,6 @@ class BaseDetailView(APIView, GetMixin, PatchMixin, DeleteMixin):
     """ Base class for detail views.
     """
     http_method_names = ['get', 'patch', 'delete']
-
-    @classmethod
-    def copy_docstrings(cls):
-        if 'get' in cls.http_method_names:
-            cls.get.__doc__ = cls._get.__doc__
-        if 'patch' in cls.http_method_names:
-            cls.patch.__doc__ = cls._patch.__doc__
-        if 'delete' in cls.http_method_names:
-            cls.delete.__doc__ = cls._delete.__doc__
 
     def handle_exception(self, exc):
         return process_exception(exc)

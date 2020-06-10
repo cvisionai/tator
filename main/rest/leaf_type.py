@@ -30,8 +30,6 @@ class LeafTypeListAPI(BaseListView):
         obj.save()
         return {'message': 'Leaf type created successfully!', 'id': obj.id}
 
-LeafTypeListAPI.copy_docstrings()
-
 class LeafTypeDetailAPI(BaseDetailView):
     """ Interact with individual leaf type.
 
@@ -65,6 +63,4 @@ class LeafTypeDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return LeafType.objects.all()
-
-LeafTypeDetailAPI.copy_docstrings()
 
