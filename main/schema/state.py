@@ -147,6 +147,13 @@ class StateDetailSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of state.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/State',
+                }}},
+            }
         if method == 'PATCH':
             responses['200'] = message_schema('update', 'state')
         if method == 'DELETE':
