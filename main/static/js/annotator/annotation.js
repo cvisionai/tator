@@ -1550,14 +1550,17 @@ class AnnotationCanvas extends TatorElement
     if (this.activeLocalization && this.activeLocalization.id == localization.id)
     {
       //If we are already selected skip animation
-      skipAnimation=true;
+      return;
     }
 
     if (skipAnimation == true)
     {
-      this.emphasizeLocalization(localization,
-                                 color.WHITE,
-                                 muteOthers);
+      if (muteOthers == true)
+      {
+        this.emphasizeLocalization(localization,
+                                   color.WHITE,
+                                   muteOthers);
+      }
     }
     else
     {
@@ -2067,7 +2070,7 @@ class AnnotationCanvas extends TatorElement
     }
     catch(_)
     {
-      
+
     }
 
     if (dest_version == undefined)
