@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -15,6 +17,17 @@ class SaveVideoSchema(AutoSchema):
             operation['operationId'] = 'UpdateVideo'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Saves a transcoded video.
+
+        Videos in Tator must be transcoded to a multi-resolution streaming format before they
+        can be viewed or annotated. To launch a transcode on raw uploaded video, use the
+        `Transcode` endpoint, which will create an Argo workflow to perform the transcode
+        and save the video using this endpoint; no further REST calls are required. However,
+        if you would like to perform transcodes locally, this endpoint enables that.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{
