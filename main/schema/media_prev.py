@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -11,6 +13,16 @@ class MediaPrevSchema(AutoSchema):
             operation['operationId'] = 'GetMediaPrev'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Retrieve ID of previous media in a media list.
+
+        This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
+        but only returns the previous media ID from the media passed as a path parameter. This 
+        allows iteration through a media list without serializing the entire list, which may be 
+        large.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{
