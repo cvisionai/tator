@@ -1,5 +1,6 @@
 autocomplete_service = {
     'type': 'object',
+    'nullable': True,
     'properties': {
         'serviceUrl': {
             'description': 'URL of the autocomplete service.',
