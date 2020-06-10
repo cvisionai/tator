@@ -1287,9 +1287,6 @@ class AnnotationCanvas extends TatorElement
         var localization = this.localizationByLocation(location);
         if (localization && localization.id == this.activeLocalization.id)
         {
-          // Re-emphasize the localization for track handling
-          this.emphasizeLocalization(this.activeLocalization, color.WHITE);
-
           // If we tripped in during a select, don't override the pointer
           if (mouseEvent.buttons == 0)
           {
@@ -1305,7 +1302,7 @@ class AnnotationCanvas extends TatorElement
         {
           // User moved off localization
           this._canvas.classList.add("select-pointer");
-          var emphasis=[{obj: this.activeLocalization, color: color.WHITE}, {obj: localization, color: null}];
+          var emphasis=[{obj: localization, color: null}];
           this.emphasizeMultiLocalizations(emphasis);
           this._emphasis = localization;
         }
@@ -1314,7 +1311,6 @@ class AnnotationCanvas extends TatorElement
           // User moved off localization
           this._canvas.classList.remove("select-pointer");
           this._emphasis = null;
-          this.emphasizeLocalization(this.activeLocalization, color.WHITE);
         }
       }
     }
@@ -1559,8 +1555,7 @@ class AnnotationCanvas extends TatorElement
         then(
           () =>
             {
-              that.emphasizeLocalization(localization,
-                                         color.WHITE);
+              that.refresh();
             });
     }
     this.activeLocalization = localization;
@@ -2570,7 +2565,7 @@ class AnnotationCanvas extends TatorElement
           {
             continue;
           }
-          else if (this._activeLocalization && this._activeLocalization.id == localization.id)
+          else if (this.activeLocalization && this.activeLocalization.id == localization.id)
           {
             drawColor = color.WHITE;
             if (this._clipboard.isCutting(localization))
