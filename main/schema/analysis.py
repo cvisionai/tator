@@ -1,6 +1,14 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
+
+boilerplate = dedent("""\
+Analysis objects are used to display information about filtered media lists
+and/or annotations on the project detail page of the web UI. Currently only
+counting analysis is supported.
+""")
 
 class AnalysisListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -11,6 +19,14 @@ class AnalysisListSchema(AutoSchema):
             operation['operationId'] = 'CreateAnalysis'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        short_desc = ''
+        if method == 'GET':
+            short_desc = 'Get analysis.'
+        elif method == 'POST':
+            short_desc = 'Create analysis.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -34,6 +50,7 @@ class AnalysisListSchema(AutoSchema):
                         'summary': 'Count all entities of the given type',
                         'value': {
                             'name': 'Boxes',
+                            'data_query': '_meta:1',
                         },
                     },
                     'count_filter': {
