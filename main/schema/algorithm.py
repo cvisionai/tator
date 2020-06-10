@@ -17,11 +17,9 @@ class AlgorithmListSchema(AutoSchema):
         Get algorithms.
 
         Algorithms must be registered to a project as an argo workflow. For 
-        instructions on how to register an algorithm, see the documentation
-        on `GitHub`_.
+        instructions on how to register an algorithm, see the documentation: 
 
-        .. _GitHub:
-           https://github.com/cvisionai/tator/tree/master/examples/algorithms
+        <https://github.com/cvisionai/tator/tree/master/examples/algorithms>
         """)
 
     def _get_path_parameters(self, path, method):
