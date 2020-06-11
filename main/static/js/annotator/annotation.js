@@ -43,6 +43,11 @@ class Clipboard
             (this._copyElement && this._copyElement.id == localization.id));
   }
 
+  cutObject()
+  {
+    return this._cutElement;
+  }
+
   keydown(event)
   {
     if (this._annotationCtrl.activeLocalization == null &&
@@ -1794,7 +1799,7 @@ class AnnotationCanvas extends TatorElement
 
     var getAlphaForFrame = function(frame)
     {
-      
+
       var alpha = 0;
       if (Math.floor(frame / rampLength) % 2 == 0)
       {
@@ -2592,10 +2597,6 @@ class AnnotationCanvas extends TatorElement
 
   drawAnnotations(frameInfo, drawContext, roi)
   {
-    if (this.activeLocalization)
-      console.info(`Active = ${this.activeLocalization.id}`);
-    if (this._emphasis)
-      console.info(`Emphasis = ${this._emphasis.id}`);
     const annotation_alpha=0.7*255;
 
     if (drawContext == undefined)
@@ -2606,12 +2607,48 @@ class AnnotationCanvas extends TatorElement
     // Draw commands are in viewspace coordinates, but annotations
     // are in image coordinates.
     var frameIdx = frameInfo.frame;
+
+    if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)
+    {
+      let localization = this._clipboard.cutObject();
+      var typeObject=this.getObjectDescription(localization);
+      var type=typeObject.dtype;
+      var width=typeObject.line_width;
+      // Make the line width appear as monitor pixels
+      width *= this._draw.displayToViewportScale()[0];
+      width = Math.round(width);
+
+      localization.color = color.MEDIUM_GRAY;
+      alpha = 0.5*255;
+
+      if (type=='box')
+      {
+        var poly = this.localizationToPoly(localization, drawContext, roi);
+        drawContext.drawPolygon(poly, localization.color, width, alpha);
+      }
+      else if (type == 'line')
+      {
+        var line = this.localizationToLine(localization, drawContext, roi);
+        drawContext.drawLine(line[0], line[1], localization.color, width, alpha);
+      }
+      else if (type == 'dot')
+      {
+        const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+        var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+        drawContext.drawLine(line[0], line[1], localization.color, dotWidth, alpha);
+      }
+      else
+      {
+        console.warn("Unsupported localization type: " + type);
+      }
+    }
     if (this._framedData.has(frameIdx))
     {
       var typeDict = this._framedData.get(frameIdx);
       for (let typeid of typeDict.keys())
       {
         var localList = typeDict.get(typeid);
+
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
           var localization=localList[localIdx];
@@ -2707,7 +2744,7 @@ class AnnotationCanvas extends TatorElement
           // If we are cutting the localiztion apply half alpha at gray
           if (this._clipboard.isCutting(localization))
           {
-            drawColor = color.GRAY;
+            drawColor = color.MEDIUM_GRAY;
             alpha = 0.5 * 255;
           }
 
