@@ -2557,7 +2557,6 @@ class AnnotationCanvas extends TatorElement
 
   drawAnnotations(frameInfo, drawContext, roi)
   {
-    console.info(`Drawing ${frameInfo.frame}`);
     if (this.activeLocalization)
       console.info(`Active = ${this.activeLocalization.id}`);
     if (this._emphasis)
@@ -2597,11 +2596,6 @@ class AnnotationCanvas extends TatorElement
           if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
           {
             continue;
-          }
-          else if (this.activeLocalization && this.activeLocalization.id == localization.id)
-          {
-            drawColor = color.WHITE;
-            alpha = 255;
           }
           else if (localization.id in this._data._trackDb)
           {
@@ -2674,25 +2668,39 @@ class AnnotationCanvas extends TatorElement
             }
           } //end colormap
 
-          // Handle emphasis in callback
-          if (this._emphasis && this._emphasis.id == localization.id)
-          {
-            drawColor = color.blend(color.WHITE, drawColor, 0.50);
-            alpha = 255;
-          }
+          // Handle state based color choices
           // If we are cutting the localiztion apply half alpha
           if (this._clipboard.isCutting(localization))
           {
             drawColor = color.GRAY;
             alpha = 0.5 * 255;
           }
+          
+          if (this._emphasis && this._emphasis.id == localization.id)
+          {
+            drawColor = color.blend(color.WHITE, drawColor, 0.50);
+            alpha = 255;
+            if (this._clipboard.isCutting(localization))
+            {
+              alpha *= 0.5;
+            }
+          }
+          else if (this.activeLocalization && this.activeLocalization.id == localization.id)
+          {
+            drawColor = color.WHITE;
+            alpha = 255;
+            if (this._clipboard.isCutting(localization))
+            {
+              alpha *= 0.5;
+            }
+          }
+
           localization.color = drawColor;
 
           if (type=='box')
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
             drawContext.drawPolygon(poly, localization.color, width, alpha);
-            console.info("Drawing polygon!");
           }
           else if (type == 'line')
           {
