@@ -83,13 +83,17 @@ class MediaTypeDetailSchema(AutoSchema):
         return operation
 
     def get_description(self, path, method):
+        long_desc = ''
         if method == 'GET':
             short_desc = 'Get media type.'
         elif method == 'PATCH':
             short_desc = 'Update media type.'
         elif method == 'DELETE':
             short_desc = 'Delete media type.'
-        return f"{short_desc}\n\n{boilerplate}"
+            long_desc = dedent("""\
+            Note that this will also delete any media associated with the media type.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{

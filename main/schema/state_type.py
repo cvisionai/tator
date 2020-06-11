@@ -87,13 +87,17 @@ class StateTypeDetailSchema(AutoSchema):
         return operation
 
     def get_description(self, path, method):
+        long_desc = ''
         if method == 'GET':
             short_desc = 'Get state type.'
         elif method == 'PATCH':
             short_desc = 'Update state type.'
         elif method == 'DELETE':
             short_desc = 'Delete state type.'
-        return f"{short_desc}\n\n{boilerplate}"
+            long_desc = dedent("""\
+            Note that this will also delete any states associated with the state type.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{

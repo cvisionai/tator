@@ -87,13 +87,18 @@ class LocalizationTypeDetailSchema(AutoSchema):
         return operation
 
     def get_description(self, path, method):
+        long_desc = ''
         if method == 'GET':
             short_desc = 'Get localization type.'
         elif method == 'PATCH':
             short_desc = 'Update localization type.'
         elif method == 'DELETE':
             short_desc = 'Delete localization type.'
-        return f"{short_desc}\n\n{boilerplate}"
+            long_desc = dedent("""\
+            Note that this will also delete any localizations associated with
+            the localization type.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
