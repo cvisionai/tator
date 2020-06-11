@@ -1318,7 +1318,11 @@ class AnnotationCanvas extends TatorElement
         {
           // User moved off localization
           this._canvas.classList.remove("select-pointer");
-          this._emphasis = null;
+          if (this._emphasis != null)
+          {
+            this._emphasis = null;
+            this.refresh();
+          }
         }
       }
     }
@@ -1738,10 +1742,22 @@ class AnnotationCanvas extends TatorElement
     }
 
     var initColor = localization.color;
+    var initAlpha = 0.7*255;
 
     if ('initColor' in options)
     {
       initColor = options.initColor;
+    }
+
+    if ('initAlpha' in options)
+    {
+      initAlpha = options.initAlpha;
+    }
+
+    var finalAlpha=255;
+    if (this._clipboard.isCutting(localization))
+    {
+      finalAlpha = 128;
     }
 
     var meta = this.getObjectDescription(localization);
@@ -1758,6 +1774,7 @@ class AnnotationCanvas extends TatorElement
     var increments = [(255.0-initColor[0])/rampLength,
                       (255.0-initColor[1])/rampLength,
                       (255.0-initColor[2])/rampLength];
+    var alpha_increment = (finalAlpha - initAlpha) / rampLength;
     var getColorForFrame = function(frame)
     {
       var color = [0,0,0];
@@ -1775,6 +1792,21 @@ class AnnotationCanvas extends TatorElement
       return color;
     };
 
+    var getAlphaForFrame = function(frame)
+    {
+      
+      var alpha = 0;
+      if (Math.floor(frame / rampLength) % 2 == 0)
+      {
+        alpha = initAlpha + ((frame%rampLength)*alpha_increment);
+      }
+      else
+      {
+        alpha = finalAlpha - ((frame%rampLength)*alpha_increment);
+      }
+      return alpha;
+    }
+
     var promise = new Promise(
       function(resolve)
       {
@@ -1791,11 +1823,7 @@ class AnnotationCanvas extends TatorElement
           }
 
           frameIdx++;
-          let alpha = 255;
-          if (that._clipboard.isCutting(that._animatedLocalization))
-          {
-            alpha = 128;
-          }
+          let alpha = getAlphaForFrame(frameIdx);
 
 
           if (meta.dtype == 'box')
@@ -2604,7 +2632,7 @@ class AnnotationCanvas extends TatorElement
           {
             continue;
           }
-          else if (localization.id in this._data._trackDb)
+          if (localization.id in this._data._trackDb)
           {
             if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
             {
@@ -2687,7 +2715,10 @@ class AnnotationCanvas extends TatorElement
           if (this.activeLocalization && this.activeLocalization.id == localization.id)
           {
             drawColor = color.WHITE;
-            alpha = 255;
+            if (this._emphasis && this._emphasis.id == localization.id)
+            {
+              alpha = 255;
+            }
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
@@ -2697,7 +2728,6 @@ class AnnotationCanvas extends TatorElement
           {
             // If this is the emphasized localization it is white-blended @ 255
             drawColor = color.blend(color.WHITE, drawColor, 0.50);
-            alpha = 255;
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
