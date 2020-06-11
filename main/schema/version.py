@@ -1,8 +1,21 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
+
+boilerplate = dedent("""\
+Versions allow for multiple "layers" of annotations on the same media. Versions
+are created at the project level, but are only displayed for a given media
+if that media contains annotations in that version. The version of an annotation
+can be set by providing it in a POST operation. Currently only localizations
+and states can have versions.
+
+Versions are used in conjunction with the `modified` flag to determine whether
+an annotation should be displayed for a given media while annotating.
+""")
 
 class VersionListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -13,6 +26,13 @@ class VersionListSchema(AutoSchema):
             operation['operationId'] = 'GetVersionList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get version list.'
+        elif method == 'POST':
+            short_desc = 'Create version.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -74,6 +94,20 @@ class VersionDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteVersion'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        long_desc = ''
+        if method == 'GET':
+            short_desc = 'Get version.'
+        elif method == 'PATCH':
+            short_desc = 'Update version.'
+        elif method == 'DELETE':
+            short_desc = 'Delete version.'
+            long_desc = dedent("""\
+            Note that this will also delete any localizations or states associated
+            with the deleted version.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
