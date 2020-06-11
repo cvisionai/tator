@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -11,10 +13,15 @@ class UserDetailSchema(AutoSchema):
             operation['operationId'] = 'GetUser'
         elif method == 'PATCH':
             operation['operationId'] = 'UpdateUser'
-        elif method == 'DELETE':
-            operation['operationId'] = 'DeleteUser'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = "Get user."
+        elif method == 'PATCH':
+            short_desc = "Update user."
+        return f"{short_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -54,6 +61,13 @@ class CurrentUserSchema(AutoSchema):
             operation['operationId'] = 'Whoami'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Get current user.
+
+        Retrieves user making the request.
+        """)
 
     def _get_path_parameters(self, path, method):
         return []
