@@ -36,7 +36,7 @@ class StateListSchema(AutoSchema):
         elif method == 'POST':
             short_desc = 'Create state list.'
             long_desc = dedent("""\
-            This method does a bulk create on a list of `LocalizationSpec` objects. A 
+            This method does a bulk create on a list of `StateSpec` objects. A 
             maximum of 500 states may be created in one request.
             """)
         elif method == 'PATCH':
