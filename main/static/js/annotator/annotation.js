@@ -2434,7 +2434,10 @@ class AnnotationCanvas extends TatorElement
       //We are moving or resizing
       if (this._mouseMode == MouseMode.SELECT)
       {
-        this._mouseMode = MouseMode.MOVE;
+        if (!this._clipboard.isCutting(this.activeLocalization))
+        {
+          this._mouseMode = MouseMode.MOVE;
+        }
       }
       if (this._mouseMode == MouseMode.MOVE)
       {
