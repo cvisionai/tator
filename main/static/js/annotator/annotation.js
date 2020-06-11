@@ -1301,8 +1301,11 @@ class AnnotationCanvas extends TatorElement
                                                line);
       }
 
-      if (this._clipboard.isCutting(localization)) {
+      var localization = this.localizationByLocation(location);
+      if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
+          this._clipboard.isCutting(localization) && localization.id == this.activeLocalization.id) {
         this._canvas.classList.add("select-not-allowed");
+        this.emphasizeLocalization(this.activeLocaliztion);
       }
       else if (resizeType)
       {
@@ -1312,7 +1315,6 @@ class AnnotationCanvas extends TatorElement
       else
       {
         // Check to see if we are nearby are in the localization
-        var localization = this.localizationByLocation(location);
         if (localization && localization.id == this.activeLocalization.id)
         {
           // If we tripped in during a select, don't override the pointer
@@ -1474,7 +1476,9 @@ class AnnotationCanvas extends TatorElement
         }
       }
 
-      if (this._clipboard.isCutting(localization))
+      if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
+          this._clipboard.isCutting(localization) && localization == this.activeLocalization)
+          
       {
         this._canvas.classList.add("select-not-allowed");
       }
