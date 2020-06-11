@@ -10,7 +10,7 @@ from ._entity_type_mixins import entity_type_filter_parameters_schema
 
 boilerplate = dedent("""\
 A leaf type is the metadata definition object for a leaf. It includes
-name, description, and (like other entity types) may have any number of attribute
+name, description, and may have any number of user-defined attribute
 types associated with it.
 """)
 
