@@ -18,7 +18,7 @@ spec:
         app: {{ .app }}
         type: web
     spec:
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 60
       nodeSelector:
         {{ .selector }}
       containers:
