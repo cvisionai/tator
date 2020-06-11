@@ -1292,7 +1292,11 @@ class AnnotationCanvas extends TatorElement
         var resizeType=determineLineResizeType(location,
                                                line);
       }
-      if (resizeType)
+
+      if (this._clipboard.isCutting(localization)) {
+        this._canvas.classList.add("select-not-allowed");
+      }
+      else if (resizeType)
       {
         console.log(`resize type = ${resizeType}`);
         this._canvas.classList.add("select-"+resizeType[0]);
@@ -1434,9 +1438,12 @@ class AnnotationCanvas extends TatorElement
         var resizeType=determineBoxResizeType(clickLocation,
                                               poly);
 
+        if (this._clipboard.isCutting(localization)) {
+          this._canvas.classList.add("select-not-allowed");
+        }
         // Grab the target
-        if (this._canEdit) {
-          this._canvas.classList.add("select-grabbing");
+        else if (this._canEdit) {
+            this._canvas.classList.add("select-grabbing");
         }
       }
     }
@@ -1459,7 +1466,11 @@ class AnnotationCanvas extends TatorElement
         }
       }
 
-      if (resizeType)
+      if (this._clipboard.isCutting(localization))
+      {
+        this._canvas.classList.add("select-not-allowed");
+      }
+      else if (resizeType)
       {
         this._mouseMode = MouseMode.RESIZE;
         this._impactVector=resizeType[1];
