@@ -309,7 +309,8 @@ var cursorTypes=['vertical-resize',
                  'pointer',
                  'move',
                  'crosshair',
-                 'zoom-roi'];
+                 'zoom-roi',
+                 'not-allowed'];
 
 
 function determineLineResizeType(mouseLocation,
