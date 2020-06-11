@@ -55,6 +55,12 @@ class Clipboard
     return this._cutElement;
   }
 
+  clear()
+  {
+    this._cutElement = null;
+    this._copyElement = null;
+  }
+
   keydown(event)
   {
     if (this._annotationCtrl.activeLocalization == null &&
@@ -1054,90 +1060,93 @@ class AnnotationCanvas extends TatorElement
           return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));
         };
 
+    let localizations = [];
     if (this._framedData.has(currentFrame))
     {
-      var match = null;
-      let distances=[];
-      this._framedData.get(currentFrame).forEach(
-        (localizations) => {
-          for (let idx = 0; idx < localizations.length; idx++)
+      for (let typed_list of this._framedData.get(currentFrame))
+      {
+        localizations.push(...typed_list[1]);
+      }
+    }
+
+    // Add the cut object for mouse experience
+    if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != currentFrame)
+    {
+      localizations.push(this._clipboard.cutObject());
+    }
+
+    var match = null;
+    let distances=[];
+    for (let localization of localizations)
+    {
+      var meta = that.getObjectDescription(localization);
+      if (meta.dtype == "box")
+      {
+        var nw = [localization.x,localization.y];
+        var sw = [localization.x,localization.y+localization.height];
+        var ne = [localization.x+localization.width,localization.y];
+        var se = [localization.x+localization.width,localization.y+localization.height];
+        if (loc[0] <= ne[0] && loc[0] >= nw[0] &&
+            loc[1] <= se[1] && loc[1] >= ne[1])
+        {
+          for (let corner of [nw,sw,ne,se])
           {
-            let localization = localizations[idx]
-            var meta = that.getObjectDescription(localization);
-            if (match) return;
-            if (meta.dtype == "box")
+            var distance = distance_func(corner, loc);
+            if (distance < hypot(localization.width/2, localization.height/2))
             {
-              var nw = [localization.x,localization.y];
-              var sw = [localization.x,localization.y+localization.height];
-              var ne = [localization.x+localization.width,localization.y];
-              var se = [localization.x+localization.width,localization.y+localization.height];
-              if (loc[0] <= ne[0] && loc[0] >= nw[0] &&
-                  loc[1] <= se[1] && loc[1] >= ne[1])
-              {
-                for (let corner of [nw,sw,ne,se])
-                {
-                  var distance = distance_func(corner, loc);
-                  if (distance < hypot(localization.width/2, localization.height/2))
-                  {
-                    distances.push({"distance": distance,
-                                    "data": localization});
-                  }
-                }
-              }
-            }
-            // Thershold is a width
-            var t = that.scaleToRelative([0,0,10])[2];
-            if (meta.dtype == "dot")
-            {
-              var pos = [localization.x, localization.y];
-              var distance = distance_func(pos, loc);
-              if ((distance) < t)
-              {
-                distances.push({"distance": distance,
-                                  "data": localization});
-              }
-            }
-            if (meta.dtype == "line")
-            {
-              var y2=localization.y + localization.v;
-              var y1=localization.y;
-              var x2=localization.x + localization.u;
-              var x1=localization.x;
-
-              var x_min=Math.min(x1,x2);
-              var y_min=Math.min(y1,y2);
-              var x_max=Math.max(x1,x2);
-              var y_max=Math.max(y1,y2);
-
-              if (loc[0] > x_min && loc[0] < x_max &&
-                  loc[1] > y_min && loc[1] < y_max )
-              {
-                // Line distance equation
-                var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
-                                              ((x2-x1)*loc[1])+
-                                              (x2*y1)-(y2*x1))/
-                    Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
-                if (distanceFromLine < t)
-                {
-                  distances.push({"distance": distanceFromLine,
-                                "data": localization});
-                }
-              }
+              distances.push({"distance": distance,
+                              "data": localization});
             }
           }
-        });
-      //distances now contains a list of canidates so sort them and return the first one
-      if (distances.length > 0)
-      {
-        distances.sort((a,b) => {return a['distance'] - b['distance']});
-        match = distances[0].data;
+        }
       }
-      return match;
+      // Thershold is a width
+      var t = that.scaleToRelative([0,0,10])[2];
+      if (meta.dtype == "dot")
+      {
+        var pos = [localization.x, localization.y];
+        var distance = distance_func(pos, loc);
+        if ((distance) < t)
+        {
+          distances.push({"distance": distance,
+                          "data": localization});
+        }
+      }
+      if (meta.dtype == "line")
+      {
+        var y2=localization.y + localization.v;
+        var y1=localization.y;
+        var x2=localization.x + localization.u;
+        var x1=localization.x;
+
+        var x_min=Math.min(x1,x2);
+        var y_min=Math.min(y1,y2);
+        var x_max=Math.max(x1,x2);
+        var y_max=Math.max(y1,y2);
+
+        if (loc[0] > x_min && loc[0] < x_max &&
+            loc[1] > y_min && loc[1] < y_max )
+        {
+          // Line distance equation
+          var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
+                                        ((x2-x1)*loc[1])+
+                                        (x2*y1)-(y2*x1))/
+              Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
+          if (distanceFromLine < t)
+          {
+            distances.push({"distance": distanceFromLine,
+                            "data": localization});
+          }
+        }
+      }
     }
-    else
+    //distances now contains a list of canidates so sort them and return the first one
+    if (distances.length > 0)
     {
-      return null;
+      distances.sort((a,b) => {return a['distance'] - b['distance']});
+      match = distances[0].data;
     }
+    return match;
   }
 
   localizationToPoly(localization, drawCtx, roi)
@@ -1265,6 +1274,11 @@ class AnnotationCanvas extends TatorElement
       var localization = this.localizationByLocation(location);
       if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         if(localization != this.activeLocalization) {
           this._canvas.classList.add("select-pointer");
 
@@ -1442,6 +1456,11 @@ class AnnotationCanvas extends TatorElement
     {
       if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         this.selectLocalization(localization);
 
         var poly = this.localizationToPoly(localization);
@@ -1478,7 +1497,7 @@ class AnnotationCanvas extends TatorElement
 
       if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
           this._clipboard.isCutting(localization) && localization == this.activeLocalization)
-          
+
       {
         this._canvas.classList.add("select-not-allowed");
       }
@@ -1494,6 +1513,11 @@ class AnnotationCanvas extends TatorElement
       }
       else if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         this.selectLocalization(localization);
       }
       else
@@ -2843,6 +2867,7 @@ class AnnotationCanvas extends TatorElement
 
   onPlay()
   {
+    this._clipboard.clear();
     this.activeLocalization = null;
     this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
