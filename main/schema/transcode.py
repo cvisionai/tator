@@ -26,6 +26,8 @@ class TranscodeSchema(AutoSchema):
         from the REST API. This endpoint requires a group and run UUID associated with this 
         upload. If no progress messages were generated during upload, then the group and run 
         UUIDs can be newly generated.
+
+        Transcodes may be cancelled via the `Job` or `JobGroup` endpoints.
         """)
 
     def _get_path_parameters(self, path, method):
