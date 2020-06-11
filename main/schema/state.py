@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -5,6 +7,13 @@ from ._message import message_with_id_list_schema
 from ._message import message_schema
 from ._attributes import attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
+
+boilerplate = dedent("""\
+A state is a description of a collection of other objects. The objects a state describes
+could be media (image or video), video frames, or localizations. A state referring
+to a collection of localizations is often referred to as a track. States are
+a type of entity in Tator, meaning they can be described by user defined attributes.
+""")
 
 class StateListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -19,6 +28,30 @@ class StateListSchema(AutoSchema):
             operation['operationId'] = 'DeleteStateList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        long_desc = ''
+        if method == 'GET':
+            short_desc = 'Get state list.'
+        elif method == 'POST':
+            short_desc = 'Create state list.'
+            long_desc = dedent("""\
+            This method does a bulk create on a list of `StateSpec` objects. A 
+            maximum of 500 states may be created in one request.
+            """)
+        elif method == 'PATCH':
+            short_desc = 'Update state list.'
+            long_desc = dedent("""\
+            This method does a bulk update on all states matching a query. Only 
+            user-defined attributes may be bulk updated.
+            """)
+        elif method == 'DELETE':
+            short_desc = 'Delete state list.'
+            long_desc = dedent("""\
+            This method performs a bulk delete on all states matching a query. It is 
+            recommended to use a GET request first to check what is being deleted.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -122,6 +155,15 @@ class StateDetailSchema(AutoSchema):
         operation['tags'] = ['Tator']
         return operation
 
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get state.'
+        elif method == 'PATCH':
+            short_desc = 'Update state.'
+        elif method == 'DELETE':
+            short_desc = 'Delete state.'
+        return f"{short_desc}\n\n{boilerplate}"
+
     def _get_path_parameters(self, path, method):
         return [{
             'name': 'id',
@@ -167,6 +209,13 @@ class StateGraphicSchema(AutoSchema):
             operation['operationId'] = 'GetStateGraphic'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+         Get frame(s) of a given localization-associated state.
+
+        Use the mode argument to control whether it is an animated gif or a tiled jpg.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

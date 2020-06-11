@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
@@ -28,6 +30,18 @@ localization_filter_schema = [
     },
 ]
 
+boilerplate = dedent("""\
+Localizations are shape annotations drawn on a video or image. Available shapes (`dtype`) are 
+box, line, or dot. Each shape is parameterized by a different subset of data members:
+- `box` uses `x`, `y`, `width`, `height`.
+- `line` uses `x`, `y`, `u`, `v`.
+- `dot` uses `x` and `y`.
+
+Geometry members may be left null when creating a localization, in which case the shapes may be 
+drawn later using the redraw capability in the web UI. Localizations are a type of entity in Tator,
+meaning they can be described by user defined attributes.
+""")
+
 class LocalizationListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -41,6 +55,30 @@ class LocalizationListSchema(AutoSchema):
             operation['operationId'] = 'DeleteLocalizationList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        long_desc = ''
+        if method == 'GET':
+            short_desc = 'Get localization list.'
+        elif method == 'POST':
+            short_desc = 'Create localiazation list.'
+            long_desc = dedent("""\
+            This method does a bulk create on a list of `LocalizationSpec` objects. A 
+            maximum of 500 localizations may be created in one request.
+            """)
+        elif method == 'PATCH':
+            short_desc = 'Update localiazation list.'
+            long_desc = dedent("""\
+            This method does a bulk update on all localizations matching a query. Only 
+            user-defined attributes may be bulk updated.
+            """)
+        elif method == 'DELETE':
+            short_desc = 'Delete localiazation list.'
+            long_desc = dedent("""\
+            This method performs a bulk delete on all localizations matching a query. It is 
+            recommended to use a GET request first to check what is being deleted.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -229,6 +267,15 @@ class LocalizationDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteLocalization'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get localization.'
+        elif method == 'PATCH':
+            short_desc = 'Update localization.'
+        elif method == 'DELETE':
+            short_desc = 'Delete localization.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{

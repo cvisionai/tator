@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -9,6 +11,16 @@ class AlgorithmListSchema(AutoSchema):
             operation['operationId'] = 'GetAlgorithmList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Get algorithms.
+
+        Algorithms must be registered to a project as an argo workflow. For 
+        instructions on how to register an algorithm, see the documentation: 
+
+        <https://github.com/cvisionai/tator/tree/master/examples/algorithms>
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

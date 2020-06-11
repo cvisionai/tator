@@ -77,8 +77,6 @@ class StateTypeListAPI(BaseListView):
         obj.save()
         return {'message': 'State type created successfully!', 'id': obj.id}
 
-StateTypeListAPI.copy_docstrings()
-
 class StateTypeDetailAPI(BaseDetailView):
     """ Interact with an individual state type.
 
@@ -137,4 +135,3 @@ class StateTypeDetailAPI(BaseDetailView):
     def get_queryset(self):
         return StateType.objects.all()
 
-StateTypeDetailAPI.copy_docstrings()

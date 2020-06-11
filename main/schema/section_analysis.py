@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -10,6 +12,14 @@ class SectionAnalysisSchema(AutoSchema):
             operation['operationId'] = 'GetSectionAnalysis'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Retrieve analysis results for a media list.
+
+        This endpoint uses objects created with the `Analysis` endpoint to perform analysis
+        on filtered media lists.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

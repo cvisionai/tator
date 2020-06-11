@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -11,6 +13,14 @@ class MediaSectionsSchema(AutoSchema):
             operation['operationId'] = 'GetMediaSections'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Retrieve media counts by section.
+
+        This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
+        but only returns the number of images and videos per sections.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

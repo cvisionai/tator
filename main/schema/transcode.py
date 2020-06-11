@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -9,6 +11,24 @@ class TranscodeSchema(AutoSchema):
             operation['operationId'] = 'Transcode'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Start a transcode.
+
+        Videos in Tator must be transcoded to a multi-resolution streaming format before they
+        can be viewed or annotated. This endpoint launches a transcode on raw uploaded video by
+        creating an Argo workflow. The workflow will download the uploaded raw video, transcode
+        it to the proper format, upload the transcoded video, and save the video using the 
+        `SaveVideo` endpoint.
+
+        Note that the raw video must be uploaded first via tus, which is a separate mechanism 
+        from the REST API. This endpoint requires a group and run UUID associated with this 
+        upload. If no progress messages were generated during upload, then the group and run 
+        UUIDs can be newly generated.
+
+        Transcodes may be cancelled via the `Job` or `JobGroup` endpoints.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

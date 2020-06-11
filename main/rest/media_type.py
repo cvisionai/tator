@@ -53,8 +53,6 @@ class MediaTypeListAPI(BaseListView):
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}
 
-MediaTypeListAPI.copy_docstrings()
-
 class MediaTypeDetailAPI(BaseDetailView):
     """ Interact with an individual media type.
 
@@ -114,4 +112,3 @@ class MediaTypeDetailAPI(BaseDetailView):
     def get_queryset(self):
         return MediaType.objects.all()
 
-MediaTypeDetailAPI.copy_docstrings()

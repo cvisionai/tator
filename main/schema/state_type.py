@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -5,6 +7,12 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+
+boilerplate = dedent("""\
+A state type is the metadata definition object for a state. It includes association
+type, name, description, and may have any number of user-defined attribute
+types associated with it.
+""")
 
 class StateTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -15,6 +23,13 @@ class StateTypeListSchema(AutoSchema):
             operation['operationId'] = 'GetStateTypeList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get state type list.'
+        elif method == 'POST':
+            short_desc = 'Create state type.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -70,6 +85,19 @@ class StateTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteStateType'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        long_desc = ''
+        if method == 'GET':
+            short_desc = 'Get state type.'
+        elif method == 'PATCH':
+            short_desc = 'Update state type.'
+        elif method == 'DELETE':
+            short_desc = 'Delete state type.'
+            long_desc = dedent("""\
+            Note that this will also delete any states associated with the state type.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{

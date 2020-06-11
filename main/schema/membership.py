@@ -1,8 +1,21 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_schema
+
+boilerplate = dedent("""\
+Memberships specify a permission level of a user to a project. There are currently
+five cumulative permission levels:
+- `View Only` can only view a project and not change any data.
+- `Can Edit` can create, modify, and delete annotations.
+- `Can Transfer` can upload and download media.
+- `Can Execute` can launch algorithm workflows.
+- `Full Control` can change project settings, including inviting new members, project name, and
+   project metadata schema.
+""")
 
 class MembershipListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -13,6 +26,13 @@ class MembershipListSchema(AutoSchema):
             operation['operationId'] = 'GetMembershipList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = "Get membership list."
+        elif method == 'POST':
+            short_desc = "Create membership."
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -63,6 +83,15 @@ class MembershipDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteMembership'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = "Get membership."
+        elif method == 'PATCH':
+            short_desc = "Update membership."
+        elif method == 'DELETE':
+            short_desc = "Delete membership."
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{

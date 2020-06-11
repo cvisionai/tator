@@ -252,8 +252,6 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         queryset = Localization.objects.filter(pk__in=annotation_ids)
         return queryset
 
-LocalizationListAPI.copy_docstrings()
-
 class LocalizationDetailAPI(BaseDetailView):
     """ Interact with single localization.
 
@@ -335,4 +333,3 @@ class LocalizationDetailAPI(BaseDetailView):
     def get_queryset(self):
         return Localization.objects.all()
 
-LocalizationDetailAPI.copy_docstrings()

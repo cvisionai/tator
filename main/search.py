@@ -27,7 +27,8 @@ def mediaFileSizes(file):
                             download_size = statinfo.st_size
             if 'streaming' in file.media_files:
                 for streaming in file.media_files['streaming']:
-                    if os.path.exists(streaming['path']):
+                    path = os.path.join('/data', streaming['path'])
+                    if os.path.exists(path):
                         statinfo = os.stat(streaming['path'])
                         total_size += statinfo.st_size
                         if download_size is None:

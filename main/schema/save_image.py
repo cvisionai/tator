@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -10,6 +12,14 @@ class SaveImageSchema(AutoSchema):
             operation['operationId'] = 'SaveImage'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Saves an uploaded image.
+
+        Media is uploaded via tus, a separate mechanism from the REST API. Once an image upload
+        is complete, the image must be saved to the database using this endpoint.
+        """)
 
     def _get_path_parameters(self, path, method):
         return [{

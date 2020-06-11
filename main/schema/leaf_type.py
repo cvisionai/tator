@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
@@ -5,6 +7,12 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._attribute_type import attribute_type_example
 from ._entity_type_mixins import entity_type_filter_parameters_schema
+
+boilerplate = dedent("""\
+A leaf type is the metadata definition object for a leaf. It includes
+name, description, and may have any number of user-defined attribute
+types associated with it.
+""")
 
 class LeafTypeListSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -15,6 +23,13 @@ class LeafTypeListSchema(AutoSchema):
             operation['operationId'] = 'GetLeafTypeList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get leaf type list.'
+        elif method == 'POST':
+            short_desc = 'Create leaf type.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -65,6 +80,15 @@ class LeafTypeDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteLeafType'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get leaf type.'
+        elif method == 'PATCH':
+            short_desc = 'Update leaf type.'
+        elif method == 'DELETE':
+            short_desc = 'Delete leaf type.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{

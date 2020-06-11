@@ -1,9 +1,17 @@
+from textwrap import dedent
+
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_list_schema
 from ._attributes import attribute_filter_parameter_schema
+
+boilerplate = dedent("""\
+Leaves are used to define label hierarchies that can be used for autocompletion
+of string attribute types. Leaves are a type of entity in Tator, meaning they
+can be described by user-defined attributes.
+""")
 
 class LeafSuggestionSchema(AutoSchema):
     def get_operation(self, path, method):
@@ -12,6 +20,16 @@ class LeafSuggestionSchema(AutoSchema):
             operation['operationId'] = 'LeafSuggestion'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Get list of autocomplete suggestions.
+
+        This endpoint is compatible with devbridge suggestion format. It performs
+        a glob search on leaf objects in the project.
+
+        <https://github.com/kraaden/autocomplete>
+        """)
 
     def _get_path_parameters(self, path, method):
         return [
@@ -83,6 +101,30 @@ class LeafListSchema(AutoSchema):
             operation['operationId'] = 'DeleteLeafList'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        long_desc = ''
+        if method == 'GET':
+            short_desc = 'Get leaf list.'
+        elif method == 'POST':
+            short_desc = 'Create leaf list.'
+            long_desc = dedent("""\
+            This method does a bulk create on a list of `LeafSpec` objects. A 
+            maximum of 500 leaves may be created in one request.
+            """)
+        elif method == 'PATCH':
+            short_desc = 'Update leaf list.'
+            long_desc = dedent("""\
+            This method does a bulk update on all leaves matching a query. Only 
+            user-defined attributes may be bulk updated.
+            """)
+        elif method == 'DELETE':
+            short_desc = 'Delete leaf list.'
+            long_desc = dedent("""\
+            This method performs a bulk delete on all leaves matching a query. It is 
+            recommended to use a GET request first to check what is being deleted.
+            """)
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -171,6 +213,15 @@ class LeafDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteLeaf'
         operation['tags'] = ['Tator']
         return operation
+
+    def get_description(self, path, method):
+        if method == 'GET':
+            short_desc = 'Get leaf.'
+        elif method == 'PATCH':
+            short_desc = 'Update leaf.'
+        elif method == 'DELETE':
+            short_desc = 'Delete leaf.'
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{

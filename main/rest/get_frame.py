@@ -19,6 +19,11 @@ from ._permissions import ProjectViewOnlyPermission
 logger = logging.getLogger(__name__)
 
 class GetFrameAPI(BaseDetailView):
+    """ Get frame(s) from a video.
+
+        Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
+        frames based on the input parameter.
+    """
     schema = GetFrameSchema()
     renderer_classes = (PngRenderer, JpegRenderer, GifRenderer, Mp4Renderer)
     permission_classes = [ProjectViewOnlyPermission]
@@ -39,9 +44,6 @@ class GetFrameAPI(BaseDetailView):
             status=status_obj)
 
     def _get(self, params):
-        """ Facility to get a frame(jpg/png) of a given video frame, returns a square tile of
-            frames based on the input parameter
-        """
         # upon success we can return an image
         video = Media.objects.get(pk=params['id'])
         frames = params.get('frames', '0')
