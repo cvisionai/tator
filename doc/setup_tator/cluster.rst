@@ -184,8 +184,8 @@ To build Tator you will need Helm 3 somewhere on your path.
 .. code-block:: bash
    :linenos:
 
-   wget https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
-   tar xzvf helm-v3.0.2-linux-amd64.tar.gz
+   wget https://get.helm.sh/helm-v3.2.3-linux-amd64.tar.gz
+   tar xzvf helm-v3.2.3-linux-amd64.tar.gz
 
 
 * Add the executable to your PATH in bashrc:
