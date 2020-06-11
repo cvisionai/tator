@@ -39,8 +39,15 @@ class Clipboard
 
   isCutting(localization)
   {
-    return ((this._cutElement && this._cutElement.id == localization.id) ||
-            (this._copyElement && this._copyElement.id == localization.id));
+    if (localization == null)
+    {
+      return false;
+    }
+    else
+    {
+      return ((this._cutElement && this._cutElement.id == localization.id) ||
+              (this._copyElement && this._copyElement.id == localization.id));
+    }
   }
 
   cutObject()
@@ -99,7 +106,8 @@ class Clipboard
         }
         else
         {
-          console.info("Ignoring cut to self");
+          this._cutElement = null;
+          this._annotationCtrl.refresh();
         }
         this._cutElement = null;
       }
@@ -2210,7 +2218,7 @@ class AnnotationCanvas extends TatorElement
     {
       localization = this.activeLocalization;
     }
-    if (frame)
+    if (frame != undefined)
     {
       localization.frame = frame;
     }
@@ -2224,7 +2232,7 @@ class AnnotationCanvas extends TatorElement
     else
     {
       let patchObj = AnnotationCanvas.updatePositions(localization,objDescription);
-      if (frame)
+      if (frame != undefined)
       {
         patchObj.frame = frame;
       }
