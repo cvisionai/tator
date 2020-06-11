@@ -1791,19 +1791,26 @@ class AnnotationCanvas extends TatorElement
           }
 
           frameIdx++;
+          let alpha = 255;
+          if (that._clipboard.isCutting(that._animatedLocalization))
+          {
+            alpha = 128;
+          }
+
+
           if (meta.dtype == 'box')
           {
-            that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width);
+            that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
           }
           else if (meta.dtype == 'line')
           {
-            that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width);
+            that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width, alpha);
           }
           else if (meta.dtype == 'dot')
           {
             const dotWidth = Math.round(defaultDotWidth*that._draw.displayToViewportScale()[0]);
             var dotline = that.localizationToDot(localization);
-            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth);
+            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth, alpha);
           }
           that._draw.dispImage(true);
         }
@@ -2669,25 +2676,27 @@ class AnnotationCanvas extends TatorElement
           } //end colormap
 
           // Handle state based color choices
-          // If we are cutting the localiztion apply half alpha
+          // If we are cutting the localiztion apply half alpha at gray
           if (this._clipboard.isCutting(localization))
           {
             drawColor = color.GRAY;
             alpha = 0.5 * 255;
           }
-          
-          if (this._emphasis && this._emphasis.id == localization.id)
+
+          // If this is the active localization it is white @ 255
+          if (this.activeLocalization && this.activeLocalization.id == localization.id)
           {
-            drawColor = color.blend(color.WHITE, drawColor, 0.50);
+            drawColor = color.WHITE;
             alpha = 255;
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
             }
           }
-          else if (this.activeLocalization && this.activeLocalization.id == localization.id)
+          else if (this._emphasis && this._emphasis.id == localization.id)
           {
-            drawColor = color.WHITE;
+            // If this is the emphasized localization it is white-blended @ 255
+            drawColor = color.blend(color.WHITE, drawColor, 0.50);
             alpha = 255;
             if (this._clipboard.isCutting(localization))
             {
