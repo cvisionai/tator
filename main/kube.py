@@ -290,7 +290,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '2Gi',
+                        'memory': '4Gi',
                         'cpu': os.getenv("TRANSCODER_CPU_LIMIT"),
                     },
                 },
