@@ -1,3 +1,3 @@
 #!/bin/bash
 
-git clone https://github.com/tus/tusd.git
+git clone https://github.com/cvisionai/tusd.git

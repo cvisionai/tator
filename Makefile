@@ -197,8 +197,12 @@ postgis-image:  containers/postgis/Dockerfile.gen
 
 .PHONY: tus-image
 tus-image: containers/tus/Dockerfile.gen
+	cd containers/tus
+	./download.sh
+	cd ../..
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_tusd:latest
+	rm -rf containers/tus/tusd
 
 # Publish transcoder image to dockerhub so it can be used cross-cluster
 .PHONY: transcoder-image
