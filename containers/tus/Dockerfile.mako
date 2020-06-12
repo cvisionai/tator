@@ -2,7 +2,7 @@
   import multiArch
 %>
 % if multiArch.arch=="x86_64":
-FROM tusproject/tusd:v1.3.0
+FROM cvisionai/tusd:v1.3.0
 % else:
 FROM golang:1.12 AS builder
 
