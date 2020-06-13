@@ -17,6 +17,115 @@ function updateStatus(msg, type, timeout)
   // This function should be deleted.
 }
 
+// The clipboard acts like the power point clipboard
+// +++++++++++++++++++++++++++++++++++
+// +++++ Behavorial expectations: ++++
+// +++++++++++++++++++++++++++++++++++
+// - If on the same frame a cut/paste places the object back in the
+// same spot
+// - If on the same frame a copy/paste places the object 20 pixels down and to the right
+// - If on a different frame a cut or copy places the object in the same spot on the new frame
+// - After a cut the 'cut buffer' is cleared so that pasting is a no-op.
+// - after a copy the 'copy buffer' is left along, so that pasting continues to duplicate the item.
+class Clipboard
+{
+  constructor(annotation)
+  {
+    this._annotationCtrl = annotation;
+    document.addEventListener("keydown", this.keydown.bind(this));
+    this._cutElement = null;
+    this._copyElement = null;
+  }
+
+  isCutting(localization)
+  {
+    if (localization == null)
+    {
+      return false;
+    }
+    else
+    {
+      return ((this._cutElement && this._cutElement.id == localization.id) ||
+              (this._copyElement && this._copyElement.id == localization.id));
+    }
+  }
+
+  cutObject()
+  {
+    return this._cutElement;
+  }
+
+  clear()
+  {
+    this._cutElement = null;
+    this._copyElement = null;
+  }
+
+  keydown(event)
+  {
+    if (this._annotationCtrl.activeLocalization == null &&
+        this._cutElement == null &&
+        this._copyElement == null)
+    {
+      return;
+    }
+
+    if (document.body.classList.contains("shortcuts-disabled"))
+    {
+      console.info("Shortcuts disabled!");
+      return;
+    }
+
+    if (event.ctrlKey && event.code == "KeyX")
+    {
+      event.stopPropagation();
+      if (this._cutElement == this._annotationCtrl.activeLocalization)
+      {
+        console.info("Cancel Cut");
+        this._cutElement = null;
+      }
+      else
+      {
+        console.info("Cutting.");
+        this._cutElement = this._annotationCtrl.activeLocalization;
+      }
+      this._annotationCtrl.refresh();
+    }
+    /*
+    // Disabled for now
+    if (event.ctrlKey && event.code == "KeyC")
+    {
+      console.info("Copying");
+      event.stopPropagation();
+      this._copyElement = Object.assign({},this._annotationCtrl.activeLocalization);
+    }
+    */
+    if (event.ctrlKey && event.code == "KeyV")
+    {
+
+      if (this._cutElement)
+      {
+        if (this._cutElement.frame != this._annotationCtrl.currentFrame())
+        {
+          console.info("Pasting in cut-mode");
+          this._annotationCtrl.modifyLocalization(this._cutElement,this._annotationCtrl.currentFrame());
+        }
+        else
+        {
+          this._cutElement = null;
+          this._annotationCtrl.refresh();
+        }
+        this._cutElement = null;
+      }
+      else if (this._copyElement)
+      {
+         console.info("Pasting in copy-mode");
+        //pass
+      }
+      event.stopPropagation();
+    }
+  }
+}
 // Handle generating a drag event within a canvas element
 // The callback either receives an object with start + current
 // representing an on-going drag
@@ -214,7 +323,8 @@ var cursorTypes=['vertical-resize',
                  'pointer',
                  'move',
                  'crosshair',
-                 'zoom-roi'];
+                 'zoom-roi',
+                 'not-allowed'];
 
 
 function determineLineResizeType(mouseLocation,
@@ -383,7 +493,7 @@ function determineBoxResizeType(mouseLocation,
 function emphasisColor(localization)
 {
   if (typeof localization.color === "undefined") {
-    localization.color = color.BLUE;
+    localization.color = color.TEAL;
   }
   return color.blend(color.WHITE, localization.color, 0.50);
 }
@@ -425,6 +535,7 @@ class AnnotationCanvas extends TatorElement
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
     this._shadow.appendChild(this._canvas);
+    this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
     this._dragHandler = new CanvasDrag(this._canvas,
@@ -949,90 +1060,93 @@ class AnnotationCanvas extends TatorElement
           return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));
         };
 
+    let localizations = [];
     if (this._framedData.has(currentFrame))
     {
-      var match = null;
-      let distances=[];
-      this._framedData.get(currentFrame).forEach(
-        (localizations) => {
-          for (let idx = 0; idx < localizations.length; idx++)
+      for (let typed_list of this._framedData.get(currentFrame))
+      {
+        localizations.push(...typed_list[1]);
+      }
+    }
+
+    // Add the cut object for mouse experience
+    if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != currentFrame)
+    {
+      localizations.push(this._clipboard.cutObject());
+    }
+
+    var match = null;
+    let distances=[];
+    for (let localization of localizations)
+    {
+      var meta = that.getObjectDescription(localization);
+      if (meta.dtype == "box")
+      {
+        var nw = [localization.x,localization.y];
+        var sw = [localization.x,localization.y+localization.height];
+        var ne = [localization.x+localization.width,localization.y];
+        var se = [localization.x+localization.width,localization.y+localization.height];
+        if (loc[0] <= ne[0] && loc[0] >= nw[0] &&
+            loc[1] <= se[1] && loc[1] >= ne[1])
+        {
+          for (let corner of [nw,sw,ne,se])
           {
-            let localization = localizations[idx]
-            var meta = that.getObjectDescription(localization);
-            if (match) return;
-            if (meta.dtype == "box")
+            var distance = distance_func(corner, loc);
+            if (distance < hypot(localization.width/2, localization.height/2))
             {
-              var nw = [localization.x,localization.y];
-              var sw = [localization.x,localization.y+localization.height];
-              var ne = [localization.x+localization.width,localization.y];
-              var se = [localization.x+localization.width,localization.y+localization.height];
-              if (loc[0] <= ne[0] && loc[0] >= nw[0] &&
-                  loc[1] <= se[1] && loc[1] >= ne[1])
-              {
-                for (let corner of [nw,sw,ne,se])
-                {
-                  var distance = distance_func(corner, loc);
-                  if (distance < hypot(localization.width/2, localization.height/2))
-                  {
-                    distances.push({"distance": distance,
-                                    "data": localization});
-                  }
-                }
-              }
-            }
-            // Thershold is a width
-            var t = that.scaleToRelative([0,0,10])[2];
-            if (meta.dtype == "dot")
-            {
-              var pos = [localization.x, localization.y];
-              var distance = distance_func(pos, loc);
-              if ((distance) < t)
-              {
-                distances.push({"distance": distance,
-                                  "data": localization});
-              }
-            }
-            if (meta.dtype == "line")
-            {
-              var y2=localization.y + localization.v;
-              var y1=localization.y;
-              var x2=localization.x + localization.u;
-              var x1=localization.x;
-
-              var x_min=Math.min(x1,x2);
-              var y_min=Math.min(y1,y2);
-              var x_max=Math.max(x1,x2);
-              var y_max=Math.max(y1,y2);
-
-              if (loc[0] > x_min && loc[0] < x_max &&
-                  loc[1] > y_min && loc[1] < y_max )
-              {
-                // Line distance equation
-                var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
-                                              ((x2-x1)*loc[1])+
-                                              (x2*y1)-(y2*x1))/
-                    Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
-                if (distanceFromLine < t)
-                {
-                  distances.push({"distance": distanceFromLine,
-                                "data": localization});
-                }
-              }
+              distances.push({"distance": distance,
+                              "data": localization});
             }
           }
-        });
-      //distances now contains a list of canidates so sort them and return the first one
-      if (distances.length > 0)
-      {
-        distances.sort((a,b) => {return a['distance'] - b['distance']});
-        match = distances[0].data;
+        }
       }
-      return match;
+      // Thershold is a width
+      var t = that.scaleToRelative([0,0,10])[2];
+      if (meta.dtype == "dot")
+      {
+        var pos = [localization.x, localization.y];
+        var distance = distance_func(pos, loc);
+        if ((distance) < t)
+        {
+          distances.push({"distance": distance,
+                          "data": localization});
+        }
+      }
+      if (meta.dtype == "line")
+      {
+        var y2=localization.y + localization.v;
+        var y1=localization.y;
+        var x2=localization.x + localization.u;
+        var x1=localization.x;
+
+        var x_min=Math.min(x1,x2);
+        var y_min=Math.min(y1,y2);
+        var x_max=Math.max(x1,x2);
+        var y_max=Math.max(y1,y2);
+
+        if (loc[0] > x_min && loc[0] < x_max &&
+            loc[1] > y_min && loc[1] < y_max )
+        {
+          // Line distance equation
+          var distanceFromLine=Math.abs(((y2-y1)*loc[0])-
+                                        ((x2-x1)*loc[1])+
+                                        (x2*y1)-(y2*x1))/
+              Math.sqrt(Math.pow(y2-y1,2)+Math.pow(x2-x1,2));
+          if (distanceFromLine < t)
+          {
+            distances.push({"distance": distanceFromLine,
+                            "data": localization});
+          }
+        }
+      }
     }
-    else
+    //distances now contains a list of canidates so sort them and return the first one
+    if (distances.length > 0)
     {
-      return null;
+      distances.sort((a,b) => {return a['distance'] - b['distance']});
+      match = distances[0].data;
     }
+    return match;
   }
 
   localizationToPoly(localization, drawCtx, roi)
@@ -1160,13 +1274,16 @@ class AnnotationCanvas extends TatorElement
       var localization = this.localizationByLocation(location);
       if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         if(localization != this.activeLocalization) {
           this._canvas.classList.add("select-pointer");
 
-          if (this._mouseMode == MouseMode.QUERY &&
-              this._emphasis != localization)
+          if (this._mouseMode == MouseMode.QUERY)
           {
-            this._emphasis = localization;
             this.emphasizeLocalization(localization);
           }
         }
@@ -1197,7 +1314,14 @@ class AnnotationCanvas extends TatorElement
         var resizeType=determineLineResizeType(location,
                                                line);
       }
-      if (resizeType)
+
+      var localization = this.localizationByLocation(location);
+      if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
+          this._clipboard.isCutting(localization) && localization.id == this.activeLocalization.id) {
+        this._canvas.classList.add("select-not-allowed");
+        this.emphasizeLocalization(this.activeLocaliztion);
+      }
+      else if (resizeType)
       {
         console.log(`resize type = ${resizeType}`);
         this._canvas.classList.add("select-"+resizeType[0]);
@@ -1205,12 +1329,8 @@ class AnnotationCanvas extends TatorElement
       else
       {
         // Check to see if we are nearby are in the localization
-        var localization = this.localizationByLocation(location);
         if (localization && localization.id == this.activeLocalization.id)
         {
-          // Re-emphasize the localization for track handling
-          this.emphasizeLocalization(this.activeLocalization, color.WHITE);
-
           // If we tripped in during a select, don't override the pointer
           if (mouseEvent.buttons == 0)
           {
@@ -1220,22 +1340,23 @@ class AnnotationCanvas extends TatorElement
           {
             this._canvas.classList.add("select-grabbing");
           }
-          this._emphasis = localization;
+          this.emphasizeLocalization(localization);
         }
         else if (localization)
         {
           // User moved off localization
           this._canvas.classList.add("select-pointer");
-          var emphasis=[{obj: this.activeLocalization, color: color.WHITE}, {obj: localization, color: null}];
-          this.emphasizeMultiLocalizations(emphasis);
-          this._emphasis = localization;
+          this.emphasizeLocalization(localization);
         }
         else
         {
           // User moved off localization
           this._canvas.classList.remove("select-pointer");
-          this._emphasis = null;
-          this.emphasizeLocalization(this.activeLocalization, color.WHITE);
+          if (this._emphasis != null)
+          {
+            this._emphasis = null;
+            this.refresh();
+          }
         }
       }
     }
@@ -1335,15 +1456,23 @@ class AnnotationCanvas extends TatorElement
     {
       if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         this.selectLocalization(localization);
 
         var poly = this.localizationToPoly(localization);
         var resizeType=determineBoxResizeType(clickLocation,
                                               poly);
 
+        if (this._clipboard.isCutting(localization)) {
+          this._canvas.classList.add("select-not-allowed");
+        }
         // Grab the target
-        if (this._canEdit) {
-          this._canvas.classList.add("select-grabbing");
+        else if (this._canEdit) {
+            this._canvas.classList.add("select-grabbing");
         }
       }
     }
@@ -1366,7 +1495,13 @@ class AnnotationCanvas extends TatorElement
         }
       }
 
-      if (resizeType)
+      if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
+          this._clipboard.isCutting(localization) && localization == this.activeLocalization)
+
+      {
+        this._canvas.classList.add("select-not-allowed");
+      }
+      else if (resizeType)
       {
         this._mouseMode = MouseMode.RESIZE;
         this._impactVector=resizeType[1];
@@ -1378,16 +1513,18 @@ class AnnotationCanvas extends TatorElement
       }
       else if (localization)
       {
+        if (localization.frame != this.currentFrame())
+        {
+          this._canvas.classList.add("select-not-allowed");
+          return;
+        }
         this.selectLocalization(localization);
       }
       else
       {
         // Means we deselected the selection.
         clearStatus();
-        if (this._animator)
-        {
-          clearTimeout(this._animator);
-        }
+        this.clearAnimation();
         this.activeLocalization = null;
         this._activeTrack = null;
         this.refresh();
@@ -1431,7 +1568,7 @@ class AnnotationCanvas extends TatorElement
     clearStatus();
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
     this.activeLocalization = null;
     this._emphasis = null;
@@ -1466,14 +1603,17 @@ class AnnotationCanvas extends TatorElement
     if (this.activeLocalization && this.activeLocalization.id == localization.id)
     {
       //If we are already selected skip animation
-      skipAnimation=true;
+      return;
     }
 
     if (skipAnimation == true)
     {
-      this.emphasizeLocalization(localization,
-                                 color.WHITE,
-                                 muteOthers);
+      if (muteOthers == true)
+      {
+        this.emphasizeLocalization(localization,
+                                   color.WHITE,
+                                   muteOthers);
+      }
     }
     else
     {
@@ -1483,8 +1623,7 @@ class AnnotationCanvas extends TatorElement
         then(
           () =>
             {
-              that.emphasizeLocalization(localization,
-                                         color.WHITE);
+              that.refresh();
             });
     }
     this.activeLocalization = localization;
@@ -1606,18 +1745,31 @@ class AnnotationCanvas extends TatorElement
   // Emphasis is applied to the localization
   emphasizeLocalization(localization, userColor, muteOthers)
   {
-    var tempList=[]
-    tempList.push({"obj": localization,
-                   "color":userColor});
-    this.emphasizeMultiLocalizations(tempList, muteOthers);
+    if (muteOthers)
+    {
+      var tempList=[]
+      tempList.push({"obj": localization,
+                     "color":userColor});
+      this.emphasizeMultiLocalizations(tempList, muteOthers);
+    }
+    else
+    {
+      if (this._emphasis != localization)
+      {
+        this._emphasis = localization;
+        this.refresh();
+      }
+    }
   }
 
   clearAnimation()
   {
     if (this._animator)
     {
+      console.info("Stopping animation");
       clearTimeout(this._animator);
       this._animator = null;
+      this._animatedLocalization = null;
     }
   }
 
@@ -1631,8 +1783,10 @@ class AnnotationCanvas extends TatorElement
   {
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
+
+    this._animatedLocalization = localization;
 
     var cycles = 7;
     if ('cycles' in options)
@@ -1641,10 +1795,22 @@ class AnnotationCanvas extends TatorElement
     }
 
     var initColor = localization.color;
+    var initAlpha = 0.7*255;
 
     if ('initColor' in options)
     {
       initColor = options.initColor;
+    }
+
+    if ('initAlpha' in options)
+    {
+      initAlpha = options.initAlpha;
+    }
+
+    var finalAlpha=255;
+    if (this._clipboard.isCutting(localization))
+    {
+      finalAlpha = 128;
     }
 
     var meta = this.getObjectDescription(localization);
@@ -1661,6 +1827,7 @@ class AnnotationCanvas extends TatorElement
     var increments = [(255.0-initColor[0])/rampLength,
                       (255.0-initColor[1])/rampLength,
                       (255.0-initColor[2])/rampLength];
+    var alpha_increment = (finalAlpha - initAlpha) / rampLength;
     var getColorForFrame = function(frame)
     {
       var color = [0,0,0];
@@ -1678,6 +1845,21 @@ class AnnotationCanvas extends TatorElement
       return color;
     };
 
+    var getAlphaForFrame = function(frame)
+    {
+
+      var alpha = 0;
+      if (Math.floor(frame / rampLength) % 2 == 0)
+      {
+        alpha = initAlpha + ((frame%rampLength)*alpha_increment);
+      }
+      else
+      {
+        alpha = finalAlpha - ((frame%rampLength)*alpha_increment);
+      }
+      return alpha;
+    }
+
     var promise = new Promise(
       function(resolve)
       {
@@ -1689,28 +1871,33 @@ class AnnotationCanvas extends TatorElement
           }
           else
           {
+            that._animatedLocalization = null;
             resolve();
           }
 
           frameIdx++;
+          let alpha = getAlphaForFrame(frameIdx);
+
+
           if (meta.dtype == 'box')
           {
-            that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width);
+            that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
           }
           else if (meta.dtype == 'line')
           {
-            that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width);
+            that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width, alpha);
           }
           else if (meta.dtype == 'dot')
           {
             const dotWidth = Math.round(defaultDotWidth*that._draw.displayToViewportScale()[0]);
             var dotline = that.localizationToDot(localization);
-            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth);
+            that._draw.drawLine(dotline[0], dotline[1], getColorForFrame(frameIdx), dotWidth, alpha);
           }
           that._draw.dispImage(true);
         }
-
-        animator();
+        that.refresh().then(() => {
+          animator();
+        });
       });
     return promise;
   }
@@ -1912,7 +2099,7 @@ class AnnotationCanvas extends TatorElement
   {
     if (this._animator)
     {
-      clearTimeout(this._animator);
+      this.clearAnimation();
     }
 
     const objDescription = this.getObjectDescription(localization);
@@ -1930,8 +2117,9 @@ class AnnotationCanvas extends TatorElement
                       this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: false}}));
+                      this.refresh();
                     });
-                    
+
                   });
     }
     else
@@ -1966,17 +2154,30 @@ class AnnotationCanvas extends TatorElement
     }
     return patchObj;
   }
-  
+
   cloneToNewVersion(localization, dest_version)
   {
     const objDescription = this.getObjectDescription(localization);
     let original_meta = localization.meta;
     let frame = localization.frame;
-    let current = this._framedData.get(frame).get(original_meta);
+    let current = [];
+    try
+    {
+      current = this._framedData.get(frame).get(original_meta);
+    }
+    catch(_)
+    {
+
+    }
 
     if (dest_version == undefined)
     {
       dest_version = this._data.getVersion().id;
+    }
+
+    if (current == undefined)
+    {
+      current = [];
     }
 
     // Check for current derivations in the same layer (bad)
@@ -2039,19 +2240,31 @@ class AnnotationCanvas extends TatorElement
   }
 
   // TODO handle this all as a signal up in annotation-page
-  modifyLocalization()
+  modifyLocalization(localization, frame)
   {
-    const objDescription = this.getObjectDescription(this.activeLocalization);
-    let original_meta = this.activeLocalization.meta;
-    if (this._data.getVersion().id != this.activeLocalization.version)
+    if (localization == undefined)
+    {
+      localization = this.activeLocalization;
+    }
+    if (frame != undefined)
+    {
+      localization.frame = frame;
+    }
+    const objDescription = this.getObjectDescription(localization);
+    let original_meta = localization.meta;
+    if (this._data.getVersion().id != localization.version)
     {
       console.info("Modifying a localization from another layer!");
-      this.cloneToNewVersion(this.activeLocalization, this._data.getVersion().id);
+      this.cloneToNewVersion(localization, this._data.getVersion().id);
     }
     else
     {
-      let patchObj = AnnotationCanvas.updatePositions(this.activeLocalization,objDescription);
-      this._undo.patch("Localization", this.activeLocalization.id, patchObj, objDescription);
+      let patchObj = AnnotationCanvas.updatePositions(localization,objDescription);
+      if (frame != undefined)
+      {
+        patchObj.frame = frame;
+      }
+      this._undo.patch("Localization", localization.id, patchObj, objDescription);
     }
   }
 
@@ -2268,11 +2481,14 @@ class AnnotationCanvas extends TatorElement
       //We are moving or resizing
       if (this._mouseMode == MouseMode.SELECT)
       {
-        this._mouseMode = MouseMode.MOVE;
+        if (!this._clipboard.isCutting(this.activeLocalization))
+        {
+          this._mouseMode = MouseMode.MOVE;
+        }
       }
       if (this._mouseMode == MouseMode.MOVE)
       {
-        clearTimeout(this._animator);
+        this.clearAnimation();
 
         var objType = this.getObjectDescription(this.activeLocalization);
 
@@ -2363,7 +2579,7 @@ class AnnotationCanvas extends TatorElement
       }
       if (this._mouseMode == MouseMode.RESIZE)
       {
-        clearTimeout(this._animator);
+        this.clearAnimation();
         var type =
             this.getObjectDescription(this.activeLocalization).dtype;
 
@@ -2411,14 +2627,18 @@ class AnnotationCanvas extends TatorElement
         }
         else
         {
+          // Make the line width appear as monitor pixels
+          let width = this.getObjectDescription(this.activeLocalization).line_width;
+          width *= this._draw.displayToViewportScale()[0];
+          width = Math.round(width);
           if (type == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
+            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
           }
           else (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
-            this._draw.drawLine(line[0],line[1], color.WHITE, this.getObjectDescription(this.activeLocalization).line_width);
+            this._draw.drawLine(line[0],line[1], color.WHITE, width);
           }
           this._draw.dispImage(true, true);
         }
@@ -2438,12 +2658,48 @@ class AnnotationCanvas extends TatorElement
     // Draw commands are in viewspace coordinates, but annotations
     // are in image coordinates.
     var frameIdx = frameInfo.frame;
+
+    if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)
+    {
+      let localization = this._clipboard.cutObject();
+      var typeObject=this.getObjectDescription(localization);
+      var type=typeObject.dtype;
+      var width=typeObject.line_width;
+      // Make the line width appear as monitor pixels
+      width *= this._draw.displayToViewportScale()[0];
+      width = Math.round(width);
+
+      localization.color = color.MEDIUM_GRAY;
+      alpha = 0.5*255;
+
+      if (type=='box')
+      {
+        var poly = this.localizationToPoly(localization, drawContext, roi);
+        drawContext.drawPolygon(poly, localization.color, width, alpha);
+      }
+      else if (type == 'line')
+      {
+        var line = this.localizationToLine(localization, drawContext, roi);
+        drawContext.drawLine(line[0], line[1], localization.color, width, alpha);
+      }
+      else if (type == 'dot')
+      {
+        const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+        var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+        drawContext.drawLine(line[0], line[1], localization.color, dotWidth, alpha);
+      }
+      else
+      {
+        console.warn("Unsupported localization type: " + type);
+      }
+    }
     if (this._framedData.has(frameIdx))
     {
       var typeDict = this._framedData.get(frameIdx);
       for (let typeid of typeDict.keys())
       {
         var localList = typeDict.get(typeid);
+
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
           var localization=localList[localIdx];
@@ -2455,11 +2711,15 @@ class AnnotationCanvas extends TatorElement
           width = Math.round(width);
 
           // Default to blue
-          var drawColor = color.BLUE;
+          var drawColor = color.TEAL;
           var meta = this.getObjectDescription(localization);
           var trackColor = null;
           var alpha = annotation_alpha;
 
+          if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
+          {
+            continue;
+          }
           if (localization.id in this._data._trackDb)
           {
             if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
@@ -2531,6 +2791,37 @@ class AnnotationCanvas extends TatorElement
             }
           } //end colormap
 
+          // Handle state based color choices
+          // If we are cutting the localiztion apply half alpha at gray
+          if (this._clipboard.isCutting(localization))
+          {
+            drawColor = color.MEDIUM_GRAY;
+            alpha = 0.5 * 255;
+          }
+
+          // If this is the active localization it is white @ 255
+          if (this.activeLocalization && this.activeLocalization.id == localization.id)
+          {
+            drawColor = color.WHITE;
+            if (this._emphasis && this._emphasis.id == localization.id)
+            {
+              alpha = 255;
+            }
+            if (this._clipboard.isCutting(localization))
+            {
+              alpha *= 0.5;
+            }
+          }
+          else if (this._emphasis && this._emphasis.id == localization.id)
+          {
+            // If this is the emphasized localization it is white-blended @ 255
+            drawColor = color.blend(color.WHITE, drawColor, 0.50);
+            if (this._clipboard.isCutting(localization))
+            {
+              alpha *= 0.5;
+            }
+          }
+
           localization.color = drawColor;
 
           if (type=='box')
@@ -2576,6 +2867,7 @@ class AnnotationCanvas extends TatorElement
 
   onPlay()
   {
+    this._clipboard.clear();
     this.activeLocalization = null;
     this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
