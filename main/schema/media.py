@@ -330,9 +330,8 @@ class GetClipSchema(AutoSchema):
         if method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of video clip.',
-                'content': {'video/*': {'schema': {
-                    'type': 'string',
-                    'format': 'binary',
-                }}}
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/TemporaryFile',
+                }}},
             }
         return responses
