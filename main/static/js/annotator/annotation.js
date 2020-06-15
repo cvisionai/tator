@@ -186,8 +186,8 @@ class CanvasDrag
                      this._canvas.offsetWidth)*scale[0]
     var y = Math.min((event.pageY-this._canvas.offsetTop),
                      this._canvas.offsetHeight)*scale[1];
-    x = Math.max(x,0);
-    y = Math.max(y,0);
+    x = Math.round(Math.max(x,0));
+    y = Math.round(Math.max(y,0));
     if (this._event.current != undefined)
     {
       if (now - this._event.current.time < this.dragLimiter)
