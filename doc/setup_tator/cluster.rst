@@ -626,7 +626,7 @@ Install the nfs-client-provisioner helm chart
 
    kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
-   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
+   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false --set nfs.mountOptions="{nfsvers=3,nolock}"
 
 * This sets up a new storage class called `nfs-client` any pvc request needs to
   specify this as a storage class to use this provisioner.
