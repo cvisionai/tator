@@ -48,7 +48,6 @@ localization_properties = {
     'frame': {
         'description': 'Frame number of this localization if it is in a video.',
         'type': 'integer',
-        'default': 0,
     },
     'parent': {
         'description': 'If a clone, the pk of the parent.',
