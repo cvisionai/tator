@@ -318,6 +318,9 @@ class LocalizationDetailAPI(BaseDetailView):
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
 
+        # Update modified_by to be the last user
+        obj.modified_by = self.request.user
+
         # Patch the thumbnail attributes
         if obj.thumbnail_image:
             obj.thumbnail_image = patch_attributes(new_attrs, obj.thumbnail_image)

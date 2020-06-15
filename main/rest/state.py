@@ -71,7 +71,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 response_data = {'count': len(annotation_ids)}
             elif len(annotation_ids) > 0:
                 response_data = database_query_ids('main_state', annotation_ids, 'id')
-                    
+
         else:
             qs = State.objects.filter(project=params['project'])
             if 'media_id' in params:
@@ -95,7 +95,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 .filter(state__in=state_ids)\
                 .values('state_id').order_by('state_id')\
                 .annotate(localizations=ArrayAgg('localization_id')).iterator()}
-            media = {obj['state_id']:obj['media'] for obj in 
+            media = {obj['state_id']:obj['media'] for obj in
                 State.media.through.objects\
                 .filter(state__in=state_ids)\
                 .values('state_id').order_by('state_id')\
@@ -168,7 +168,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                                             required_fields[state['type']][2],
                                             state)
                       for state in state_specs]
-       
+
         # Create the state objects.
         states = []
         create_buffer = []
@@ -215,11 +215,11 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                         State.localizations.through.objects.bulk_create(loc_relations)
                         loc_relations = []
         State.localizations.through.objects.bulk_create(loc_relations)
-       
+
         # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = itertools.chain(*[state_spec.get('localization_ids', []) 
+        localization_ids = itertools.chain(*[state_spec.get('localization_ids', [])
                                              for state_spec in state_specs])
-        loc_id_to_frame = {loc['id']:loc['frame'] for loc in 
+        loc_id_to_frame = {loc['id']:loc['frame'] for loc in
                            Localization.objects.filter(pk__in=localization_ids)\
                            .values('id', 'frame').iterator()}
         for state, state_spec in zip(states, state_specs):
@@ -337,6 +337,9 @@ class StateDetailAPI(BaseDetailView):
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+        # Update modified_by to be the last user
+        obj.modified_by = self.request.user
+
         obj.save()
         return {'message': f'State {params["id"]} successfully updated!'}
 
