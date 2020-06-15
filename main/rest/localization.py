@@ -238,6 +238,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
             qs = Localization.objects.filter(pk__in=annotation_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
+            qs.update(modified_by=self.request.user)
             TatorSearch().update(self.kwargs['project'], query, new_attrs)
         return {'message': f'Successfully updated {len(annotation_ids)} localizations!'}
 
@@ -317,6 +318,9 @@ class LocalizationDetailAPI(BaseDetailView):
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+
+        # Update modified_by to be the last user
+        obj.modified_by = self.request.user
 
         # Patch the thumbnail attributes
         if obj.thumbnail_image:
