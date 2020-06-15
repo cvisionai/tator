@@ -868,13 +868,13 @@ Building Tator
 
 ``git submodule update --init``
 
-* Install mako
+* Install mako and progressbar2
 
 .. code-block:: bash
    :linenos:
 
    sudo apt-get install python3-pip
-   pip3 install mako
+   pip3 install mako progressbar2
 
 
 * Install node
