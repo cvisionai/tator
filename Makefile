@@ -246,7 +246,6 @@ FILES = \
     zip-stream.js \
     util/get-cookie.js \
     util/identifying-attribute.js \
-    util/get-dtype.js \
     util/fetch-retry.js \
     util/has-permission.js \
     components/tator-element.js \
