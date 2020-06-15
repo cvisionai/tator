@@ -803,6 +803,13 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
+        let seek_time = performance.now() - that._seekStart;
+        let seek_msg = `Seek time = ${seek_time}`;
+        console.info(seek_msg);
+        if (that._diagnosticMode == true)
+        {
+          Utilities.sendNotification(seek_msg);
+        }
       }
       else if (type =="buffer")
       {
@@ -1265,6 +1272,7 @@ class VideoCanvas extends AnnotationCanvas {
                                        {composed: true,
                                         detail: {enabled: true}}));
       video = this._videoElement[this._hq_idx].seekBuffer();
+      this._seekStart = performance.now();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
                                   "time": time,
@@ -1553,7 +1561,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
         {
-          Utilities.sendNotification(fps_msg)
+          Utilities.sendNotification(fps_msg);
         }
         that._networkUpdate += 1;
 
