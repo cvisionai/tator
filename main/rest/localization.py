@@ -272,7 +272,7 @@ class LocalizationDetailAPI(BaseDetailView):
         obj = Localization.objects.get(pk=params['id'])
 
         # Patch common attributes.
-        frame = params.get("frame", None)
+        frame = None #params.get("frame", None)
         x = params.get("x", None)
         y = params.get("y", None)
         if frame is not None:
