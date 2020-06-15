@@ -599,7 +599,7 @@ Installing Argo
 
    kubectl create namespace argo
    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/stable/argo-linux-amd64
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.8.1/argo-linux-amd64
    sudo chmod +x /usr/local/bin/argo
 
 Upgrade the default service acount privileges
