@@ -186,8 +186,8 @@ class CanvasDrag
                      this._canvas.offsetWidth)*scale[0]
     var y = Math.min((event.pageY-this._canvas.offsetTop),
                      this._canvas.offsetHeight)*scale[1];
-    x = Math.max(x,0);
-    y = Math.max(y,0);
+    x = Math.round(Math.max(x,0));
+    y = Math.round(Math.max(y,0));
     if (this._event.current != undefined)
     {
       if (now - this._event.current.time < this.dragLimiter)
@@ -1757,7 +1757,22 @@ class AnnotationCanvas extends TatorElement
       if (this._emphasis != localization)
       {
         this._emphasis = localization;
-        this.refresh();
+        this.refresh().then(() => {
+          // Handle case when localization is in a track
+          if (localization.id in this._data._trackDb)
+          {
+            const track = this._data._trackDb[localization.id];
+            this.dispatchEvent(new CustomEvent("select", {
+              detail: track,
+              composed: true,
+            }));
+          } else {
+            this.dispatchEvent(new CustomEvent("select", {
+              detail: localization,
+              composed: true,
+            }));
+          }
+        });
       }
     }
   }
@@ -2124,7 +2139,9 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      this._undo.del("Localization", localization.id, objDescription);
+      this._undo.del("Localization", localization.id, objDescription).then(() => {
+        this.refresh(); //Remove ghosts
+      })
     }
     this.selectNone();
   }

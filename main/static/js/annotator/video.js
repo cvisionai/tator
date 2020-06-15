@@ -803,6 +803,13 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
+        let seek_time = performance.now() - that._seekStart;
+        let seek_msg = `Seek time = ${seek_time}`;
+        console.info(seek_msg);
+        if (that._diagnosticMode == true)
+        {
+          Utilities.sendNotification(seek_msg);
+        }
       }
       else if (type =="buffer")
       {
@@ -1260,7 +1267,12 @@ class VideoCanvas extends AnnotationCanvas {
       // Set the seek buffer, and command worker to get the seek
       // response
       document.body.style.cursor = "progress";
+      this._masked=true;
+      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
       video = this._videoElement[this._hq_idx].seekBuffer();
+      this._seekStart = performance.now();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
                                   "time": time,
@@ -1280,6 +1292,13 @@ class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          if (that._masked == true)
+          {
+            that._masked = false;
+            that.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                               {composed: true,
+                                                detail: {enabled: false}}));
+          }
           // Don't do anything busy in the canplay interrupt as it holds up the GUI
           // rasterizer.
           // Need to bind the member function to the result handler
@@ -1542,7 +1561,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
         {
-          Utilities.sendNotification(fps_msg)
+          Utilities.sendNotification(fps_msg);
         }
         that._networkUpdate += 1;
 
