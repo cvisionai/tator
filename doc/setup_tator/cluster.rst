@@ -290,13 +290,6 @@ Kubernetes Pre-flight Setup
 
 * Modify /etc/fstab and comment out the swap volume.
 
-Network instability
-^^^^^^^^^^^^^^^^^^^
-
-A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
-older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
-clusters that are already setup.
-
 Configuring a local docker registry
 ===================================
 
