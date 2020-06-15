@@ -1618,7 +1618,7 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      this.highlightLocalization(localization, 500,
+      this.highlightLocalization(localization, 250,
                                  {cycles: 1,
                                   initColor: color.blend(color.WHITE,emphasisColor(localization),0.50)}).
         then(
