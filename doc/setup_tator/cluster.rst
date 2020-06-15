@@ -520,9 +520,9 @@ Replace the master node ip address with the IP address of your machine. You may 
    sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
-* Install kube-router:
+* Install weave:
 
-``sudo KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/v0.3.2/daemonset/kubeadm-kuberouter.yaml``
+``kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"``
 
 * Allow the master node to run Tator pods (if desired):
 
