@@ -2139,7 +2139,9 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      this._undo.del("Localization", localization.id, objDescription);
+      this._undo.del("Localization", localization.id, objDescription).then(() => {
+        this.refresh(); //Remove ghosts
+      })
     }
     this.selectNone();
   }
