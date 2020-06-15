@@ -804,7 +804,7 @@ class VideoCanvas extends AnnotationCanvas {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
         let seek_time = performance.now() - that._seekStart;
-        let seek_msg = `Seek time = ${seek_time}`;
+        let seek_msg = `Seek time = ${seek_time} ms`;
         console.info(seek_msg);
         if (that._diagnosticMode == true)
         {
