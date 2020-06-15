@@ -3,7 +3,7 @@ Setting up a deployment
 
 The steps below will guide you through setup of a Tator deployment. By the end
 you should be able to open Tator in your browser. The tutorial is assuming you
-are starting with a fresh (or near fresh) install of Ubuntu Linux 18.04. Other
+are starting with a fresh (or near fresh) install of Ubuntu Linux 20.04. Other
 distributions may also work, but steps are literal to the Ubuntu platform.
 
 To serve the web application to the world wide web, the tutorial  will use
@@ -155,7 +155,7 @@ For GPU nodes, install nvidia-docker
 Install Kubernetes
 ^^^^^^^^^^^^^^^^^^
 
-* Install Kubernetes 1.14.3 on all cluster nodes.
+* Install Kubernetes 1.16.10 on all cluster nodes.
 
 .. code-block:: bash
    :linenos:
@@ -168,7 +168,7 @@ Install Kubernetes
    deb https://apt.kubernetes.io/ kubernetes-xenial main
    EOF
    apt-get update
-   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
+   apt-get install -qy kubelet=1.16.10-00 kubectl=1.16.10-00 kubeadm=1.16.10-00
    apt-mark hold kubelet kubectl kubeadm kubernetes-cni
    sysctl net.bridge.bridge-nf-call-iptables=1
    exit
@@ -279,7 +279,7 @@ Values file
 Node setup
 ==========
 
-Make sure each of your nodes is running Ubuntu 18.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
+Make sure each of your nodes is running Ubuntu 20.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
 
 Kubernetes Pre-flight Setup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
