@@ -803,6 +803,9 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
+        this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                           {composed: true,
+                                            detail: {enabled: false}}));
       }
       else if (type =="buffer")
       {
@@ -1260,6 +1263,9 @@ class VideoCanvas extends AnnotationCanvas {
       // Set the seek buffer, and command worker to get the seek
       // response
       document.body.style.cursor = "progress";
+      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
       video = this._videoElement[this._hq_idx].seekBuffer();
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
