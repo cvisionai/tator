@@ -803,9 +803,6 @@ class VideoCanvas extends AnnotationCanvas {
       {
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
-        this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
-                                           {composed: true,
-                                            detail: {enabled: false}}));
       }
       else if (type =="buffer")
       {
@@ -1263,6 +1260,7 @@ class VideoCanvas extends AnnotationCanvas {
       // Set the seek buffer, and command worker to get the seek
       // response
       document.body.style.cursor = "progress";
+      this._masked=true;
       this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: true}}));
@@ -1286,6 +1284,13 @@ class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          if (that._masked == true)
+          {
+            that._masked = false;
+            that.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+                                               {composed: true,
+                                                detail: {enabled: false}}));
+          }
           // Don't do anything busy in the canplay interrupt as it holds up the GUI
           // rasterizer.
           // Need to bind the member function to the result handler
