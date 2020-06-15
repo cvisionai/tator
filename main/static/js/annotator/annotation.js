@@ -1828,6 +1828,12 @@ class AnnotationCanvas extends TatorElement
       finalAlpha = 128;
     }
 
+    // Don't over animate if we are using the entity browser
+    if (this._emphasis != localization)
+    {
+      finalAlpha = 0.7 * 255;
+    }
+
     var meta = this.getObjectDescription(localization);
     var width = meta.line_width;
     width *= this._draw.displayToViewportScale()[0];
