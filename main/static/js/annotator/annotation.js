@@ -1606,6 +1606,7 @@ class AnnotationCanvas extends TatorElement
       return;
     }
 
+    this.activeLocalization = localization;
     if (skipAnimation == true)
     {
       if (muteOthers == true)
@@ -1626,7 +1627,6 @@ class AnnotationCanvas extends TatorElement
               that.refresh();
             });
     }
-    this.activeLocalization = localization;
     // Handle case when localization is in a track
     if (localization.id in this._data._trackDb)
     {
