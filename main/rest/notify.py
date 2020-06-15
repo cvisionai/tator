@@ -23,10 +23,10 @@ class NotifyAPI(APIView):
         try:
             params = parse(request)
 
-            send_as_file = params.get('sendAsFile', False)
+            send_as_file = params.get('sendAsFile', 0)
 
             response = None
-            if send_as_file:
+            if send_as_file == 1:
                 response = Notify.notify_admin_file(f"Message from {request.user}", params['message'])
             else:
                 response = Notify.notify_admin_msg(f"_{request.user}_ : {params['message']}")
