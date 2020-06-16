@@ -1200,13 +1200,45 @@ class AnnotationCanvas extends TatorElement
     var scaleFactor=[drawCtx.clientWidth/roi[2],
                      drawCtx.clientHeight/roi[3]];
 
-    //Scale box dimenisons
-    var actX0 = (localization.x - roi[0]) *scaleFactor[0];
-    var actY0 = (localization.y - roi[1])*scaleFactor[1];
-    var actX1 = (localization.x + localization.u - roi[0]) *scaleFactor[0];
-    var actY1 = (localization.y + localization.v - roi[1])*scaleFactor[1];
+    // If the line will be drawn off screen
+    // correct for the actual vertex location due to
+    // viewable pixels
+    let rectify = (x0,y0,x1,y1, sf) => {
+      let slope = (y1-y0)/(x1-x0);
 
-    var line = [[actX0,actY0], [actX1,actY1]];
+      if (x0 < 0)
+      {
+        y0 -= (slope*x0);
+        x0 = 0;
+      }
+      if (y0 < 0)
+      {
+        x0 -= (y0/slope);
+        y0 = 0;
+      }
+      if (x1 > 1.0)
+      {
+        y1 -= (slope*(x1-1.0));
+        x1 = 1.0;
+      }
+      if (y1 > 1.0)
+      {
+        x1 -= ((y1-1.0)/slope);
+        y1 = 1.0;
+      }
+
+      console.info(`${x0},${y0} to ${x1},${y1}`);
+      return [[x0*sf[0],y0*sf[1]],[x1*sf[0],y1*sf[1]]];
+    };
+    //Scale box dimenisons
+    var actX0 = (localization.x - roi[0]) / roi[2];
+    var actY0 = (localization.y - roi[1]) / roi[3];
+    var actX1 = (localization.x + localization.u - roi[0]) / roi[2];
+    var actY1 = (localization.y + localization.v - roi[1]) / roi[3];
+
+    scaleFactor[0] *= roi[2];
+    scaleFactor[1] *= roi[3];
+    var line = rectify(actX0,actY0,actX1,actY1, scaleFactor);
     return line;
   }
 
