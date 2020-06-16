@@ -614,7 +614,7 @@ class AnnotationPage extends TatorPage {
   };
 
   /// Turn on or off ability to edit annotations
-  enableEditing(enable) {
+  async enableEditing(enable) {
     let permission;
     if (enable) {
       // Set privileges to user's level.
@@ -622,6 +622,11 @@ class AnnotationPage extends TatorPage {
     } else {
       // Turn off editing.
       permission = "View Only";
+    }
+    while ((typeof this._player == "undefined")
+        || (typeof this._browser == "undefined")
+        || (typeof this._sidebar == "undefined")) {
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     this._player.permission = permission;
     this._browser.permission = permission;
