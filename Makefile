@@ -474,7 +474,8 @@ python-bindings: tator-image
 	cp -r /tmp/tator-py-$(GIT_VERSION)/docs scripts/packages/tator-py/tator/openapi/.
 
 TOKEN=$(shell cat token.txt)
-URL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"] + "/rest")')
+HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
 .PHONY: pytest
 pytest:
-	cd scripts/packages/pytator/test && pytest --url $(URL) --token $(TOKEN)
+	cd scripts/packages/tator-py/test && pytest --full-trace --host $(HOST) --token $(TOKEN)
+	#cd scripts/packages/pytator/test && pytest --url $(HOST)/rest --token $(TOKEN)
