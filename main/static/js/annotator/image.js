@@ -90,7 +90,14 @@ class ImageCanvas extends AnnotationCanvas
                                    this._dims[1],
                                    this._roi);
       }
-      this._draw.dispImage(true);
+      if (this.activeLocalization)
+      {
+        this.selectLocalization(this.activeLocalization);
+      }
+      else
+      {
+        this._draw.dispImage(true);
+      }
       resolve();
     });
     return promise;
