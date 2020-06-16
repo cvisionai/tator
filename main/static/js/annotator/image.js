@@ -90,14 +90,9 @@ class ImageCanvas extends AnnotationCanvas
                                    this._dims[1],
                                    this._roi);
       }
-      if (this.activeLocalization)
-      {
-        this.selectLocalization(this.activeLocalization);
-      }
-      else
-      {
-        this._draw.dispImage(true);
-      }
+      // Images are always paused.
+      this.onPause();
+      this._draw.dispImage(true);
       resolve();
     });
     return promise;
