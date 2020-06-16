@@ -16,21 +16,20 @@ def sanitizeString(string):
         replace("<","").\
         replace(">","").\
         replace("|","-")
-def processSection(tator, col_names, section, types_of_interest, medias):
+def processSection(tator, col_names, section, types_of_interest, medias, usernames):
     result=[]
     bar = progressbar.ProgressBar()
     base_url = tator.baseURL()
     for media in bar(medias):
         media_id = media['id']
-        media_detail = tator.Media.get(media_id)
-        width=media_detail['width']
-        height=media_detail['height']
+        width=media['width']
+        height=media['height']
         for typeObj in types_of_interest:
-            type_id=typeObj['type']['id']
-            type_desc=typeObj['type']['dtype']
+            type_id=typeObj['id']
+            type_desc=typeObj['dtype']
             primary_attribute=None
             secondary_attributes=[]
-            for col in typeObj['columns']:
+            for col in typeObj['attribute_types']:
                 if col['order'] == 0:
                     primary_attribute = col['name']
                 else:
@@ -52,10 +51,10 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                     datum={'section': section,
                            'media': media['name'],
                            'type': type_desc,
-                           'x': localization['x0']*width,
-                           'y': localization['y0']*height,
-                           'width': localization['x1']*width,
-                           'height': localization['y1']*height}
+                           'x': localization['x']*width,
+                           'y': localization['y']*height,
+                           'width': localization['u']*width,
+                           'height': localization['v']*height}
                 elif type_desc == 'dot':
                     datum={'section': section,
                            'media': media['name'],
@@ -68,7 +67,7 @@ def processSection(tator, col_names, section, types_of_interest, medias):
                 datum.update(localization['attributes'])
                 datum.update({"frame": localization['frame']})
 
-                user=tator.User.get(localization['user'])
+                user=usernames[localization['user']]
                 datum.update({"user": f"{user['first_name']} {user['last_name']}"})
                 # Add persistent url
                 url = base_url.rstrip("/") + "/" + tator.project
@@ -120,20 +119,29 @@ if __name__=="__main__":
 
     types=tator.LocalizationType.all()
     types_of_interest=[]
+    user_ids = []
 
     # TODO: put URL back in when frame jump works
     col_names=['section', 'media', 'thumbnail', 'id', 'user', 'frame', 'type', 'x','y','width','height']
     # only care about lines + dots
     for typeObj in types:
-        type_id = typeObj['type']['id']
-        typeObj['dataframe']=tator.Localization.dataframe({'type': type_id})
+        type_id = typeObj['id']
+        typeObj['dataframe']=tator.Localization.dataframe({
+            'type': type_id,
+            'media_query': f'?attribute=tator_user_sections::{args.section}',
+        })
         types_of_interest.append(typeObj)
+        if typeObj['dataframe'] is not None:
+            user_ids += list(typeObj['dataframe'].user.unique())
 
         # Iterate over the columns and add to csv output
-        if typeObj['columns']:
-            for attr in typeObj['columns']:
+        if typeObj['attribute_types']:
+            for attr in typeObj['attribute_types']:
                 if attr['name'] not in col_names:
                     col_names.append(attr['name'])
+
+    # Get unique usernames
+    usernames = {id_:tator.User.get(id_) for id_ in set(user_ids)}
 
     data=pd.DataFrame(columns=col_names)
     if args.section:
@@ -141,7 +149,8 @@ if __name__=="__main__":
         section_filter=f"tator_user_sections::{section}"
         medias=tator.Media.filter({"attribute": section_filter})
         section_locals=processSection(tator, col_names, section,
-                                      types_of_interest, medias)
+                                      types_of_interest, medias,
+                                      usernames)
         section_data=pd.DataFrame(data=section_locals,
                                   columns=col_names)
         data = data.append(section_data)
