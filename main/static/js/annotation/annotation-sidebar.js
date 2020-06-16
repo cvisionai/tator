@@ -68,13 +68,13 @@ class AnnotationSidebar extends TatorElement {
 
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
-      this._box.style.display = "block";
-      this._line.style.display = "block";
-      this._point.style.display = "block";
+      this._box.removeAttribute("disabled");
+      this._line.removeAttribute("disabled");
+      this._point.removeAttribute("disabled");
     } else {
-      this._box.style.display = "none";
-      this._line.style.display = "none";
-      this._point.style.display = "none";
+      this._box.setAttribute("disabled", "");
+      this._line.setAttribute("disabled", "");
+      this._point.setAttribute("disabled", "");
     }
   }
 
