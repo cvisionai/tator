@@ -34,7 +34,7 @@ Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
 Python API
 ++++++++++
 
-PyTator is the python package to interface with the web services provided by
+`tator-py` is the python package to interface with the web services provided by
 tator.
 
 The package is used to support writing algorithms that run within _Pipelines_
@@ -46,13 +46,32 @@ Installing
 
 .. code-block:: bash
 
+   pip3 install tator
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Python Bindings (tator-py):
+
+   ../tator-py/api
+   ../tator-py/running-tests
+
+
+
+Legacy Python API
++++++++++++++++++
+
+`pytator` was the python package predating the improvements made by `tator-py`.
+New scripts should use tator-py which is the future of python bindings for
+the tator platform.
+
+.. code-block:: bash
+
    pip3 install pytator
 
 .. toctree::
    :maxdepth: 2
-   :caption: Python Bindings (PyTator):
+   :caption: Legacy Python Bindings (PyTator):
 
    ../pytator/api
    ../pytator/examples
    ../pytator/running-tests
-
