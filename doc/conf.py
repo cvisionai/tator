@@ -16,6 +16,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../scripts/packages/pytator'))
 sys.path.insert(0, os.path.abspath('../scripts/packages/pytator/examples'))
+sys.path.insert(0, os.path.abspath('../scripts/packages/tator-py'))
+sys.path.insert(0, os.path.abspath('../scripts/packages/tator-py/examples'))
 
 # -- Project information -----------------------------------------------------
 
