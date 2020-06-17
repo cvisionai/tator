@@ -7,6 +7,7 @@ from urllib import parse as urllib_parse
 
 from ..kube import TatorTranscode
 from ..consumers import ProgressProducer
+from ..models import MediaType
 from ..schema import TranscodeSchema
 
 from ._base_views import BaseListView
@@ -52,6 +53,18 @@ class TranscodeAPI(BaseListView):
             self.request.user,
             {'section': section},
         )
+
+        type_objects = MediaType.objects.filter(project=project)
+        if entity_type != -1:
+            #If we are transcoding and not unpacking we know its a video type we need
+            type_objects = type_objects.filter(pk=entity_type,dtype="video")
+
+        # For tar/zip uploads, we can still get an error after this
+        # because the tar may contain images or video.
+        logger.info(f"Count of type {type_objects.count()}")
+        if type_objects.count() == 0:
+            raise Exception(f"For project {project} given type {entity_type}, can not find a "
+                             "destination media type")
 
         # Get the file size of the uploaded blob if local
         netloc = urllib_parse.urlsplit(url).netloc
