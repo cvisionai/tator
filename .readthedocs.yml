@@ -19,3 +19,5 @@ python:
   install:
   - method: pip
     path: scripts/packages/pytator
+  - method: pip
+    path: scripts/packages/tator-py
