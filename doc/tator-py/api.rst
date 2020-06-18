@@ -6,17 +6,12 @@ Setup Functions
 
 .. autofunction:: tator.get_api
 
-API Functions
+Module definitions
 *************
-.. autoclass:: tator.openapi.tator_openapi.TatorApi
-   :members:
-   :undoc-members:
-
-Models
-*************
-.. automodule:: tator.openapi.tator_openapi.models
+.. automodule:: tator
    :members:
    :undoc-members:
    :imported-members:
+   :exclude-members: get_api 
 
 
