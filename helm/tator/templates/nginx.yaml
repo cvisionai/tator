@@ -73,6 +73,7 @@ metadata:
 {{- if .Values.metallb.enabled }}
   annotations:
     metallb.universe.tf/address-pool: my-ip-space
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "1200"
 {{- end }}
 spec:
 {{- if .Values.metallb.enabled }}
