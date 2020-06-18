@@ -63,7 +63,7 @@ self.setInterval(() => {
 }, 50);
 
 // Define function to add message to progress buffer.
-const bufferMessage = (projectId, token, uid, msg) => { 
+const bufferMessage = (projectId, token, uid, msg) => {
   const key = [projectId, token].join();
   if (!(key in progressBuffer)) {
     progressBuffer[key] = {};
@@ -167,13 +167,6 @@ function removeFromActive(uid) {
 class Upload {
 
   constructor(uploadData) {
-    // Fingerprint function for TUS client.
-    this.uploadUid = function(uname) {
-      return function(file, options) {
-        return SparkMD5.hash(file.name + file.type + uname + file.size);
-      };
-    }(uploadData.username);
-
     this.start_time = Date.now();
     this.file = uploadData.file;
     this.projectId = uploadData.projectId;
@@ -182,10 +175,18 @@ class Upload {
     this.mediaTypeId = uploadData.mediaTypeId;
     this.username = uploadData.username;
     this.token = uploadData.token;
-    this.upload_uid = this.uploadUid(uploadData.file, null);
     this.uploadData = uploadData;
     this.isImage = uploadData.isImage;
     this.aborted = false;
+
+    // Fingerprint function for TUS client required (also needs to return a promise).
+    // It'll use the same upload UID used elsewhere by this class.
+    this.upload_uid = SparkMD5.hash(this.file.name + this.file.type + uploadData.username + this.file.size)
+    this.fingerprint = function(uid) {
+      return function(file, options) {
+        return Promise.resolve(uid)
+      }
+    }(this.upload_uid)
 
     // Create a list item with progress bar.
     this.md5 = "";
@@ -196,17 +197,19 @@ class Upload {
     this.tus = new tus.Upload(this.file, {
       endpoint: this.tus_ep,
       retryDelays: [0, 3000, 5000, 10000, 20000],
-      fingerprint: this.uploadUid,
+      fingerprint: this.fingerprint,
       metadata: {
         filename: this.file.name,
         filetype: this.file.type
       },
-      chunkSize: 5242880, // 5MB
+      chunkSize: 5*1024*1024, // 5MB
       onProgress: (bytesSent, bytesTotal) => {
         let percent = 100.0 * bytesSent / bytesTotal
         if (percent < 100) {
-          let message = "Uploading..."
-          this.progress("started", message, 10 + 0.4 * percent);
+          let message = "Uploading...";
+          let progressPercent = Math.max(percent, 10);
+          progressPercent = progressPercent.toFixed(2)
+          this.progress("started", message, progressPercent);
         }
       },
       onError: error => {
@@ -222,6 +225,7 @@ class Upload {
       },
       onSuccess: () => {
         let endpoint;
+
         if (this.isImage) {
           endpoint = "SaveImage";
         } else {

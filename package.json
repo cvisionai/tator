@@ -5,6 +5,7 @@
   "description": "",
   "dependencies": {
     "babel-minify": "^0.5.0",
-    "sass": "1.20.3"
+    "sass": "1.20.3",
+    "tus-js-client": "^2.1.1"
   }
 }
