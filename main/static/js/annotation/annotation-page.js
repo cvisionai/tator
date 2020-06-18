@@ -476,6 +476,7 @@ class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("close", evt => {
           this._settings.removeAttribute("type-id");
+          canvas.deselectTrack();
           canvas.selectNone();
         });
         this._browser.addEventListener("frameChange", evt => {

@@ -390,6 +390,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.selectTrack(track, frameHint);
   }
 
+  deselectTrack() {
+    this._video.deselectTrack();
+  }
+
   safeMode() {
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");
