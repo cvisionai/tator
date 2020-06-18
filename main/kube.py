@@ -164,9 +164,8 @@ class TatorTranscode(JobManagerMixin):
                 'limit': 3,
                 'retryOn': "Always",
                 'backoff': {
-                    'duration': '1s',
-                    'factor': 2,
-                    'maxDuration': "1m",
+                    'duration': '5s',
+                    'factor': 2
                 },
             },
             'inputs': {'parameters' : spell_out_params(['original',
