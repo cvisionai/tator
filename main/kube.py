@@ -779,7 +779,8 @@ class TatorTranscode(JobManagerMixin):
                 'entrypoint': 'single-file-pipeline',
                 'onExit': 'exit-handler',
                 'arguments': {'parameters' : global_parameters},
-                'ttlStrategy': {'secondsAfterCompletion': 300},
+                'ttlStrategy': {'secondsAfterSuccess': 300,
+                                'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
                     self.download_task,
