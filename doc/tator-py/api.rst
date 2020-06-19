@@ -10,6 +10,8 @@ Shortcuts
 
 .. autofunction:: tator.get_parser
 
+.. autofunction:: tator.download_media
+
 Full utility Library
 ^^^^^^^^^^^^^^^^^^^^
 .. automodule:: tator.util
