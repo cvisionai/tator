@@ -476,7 +476,12 @@ class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("close", evt => {
           this._settings.removeAttribute("type-id");
-          canvas.deselectTrack();
+          
+          // The canvas can either be the annotation player or image. The player is the only
+          // annotation that has the concepts of tracks, so the following check is performed.
+          if (typeof canvas.deselectTrack === "function") {
+            canvas.deselectTrack();
+          }
           canvas.selectNone();
         });
         this._browser.addEventListener("frameChange", evt => {

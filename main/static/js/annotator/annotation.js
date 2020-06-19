@@ -2695,7 +2695,7 @@ class AnnotationCanvas extends TatorElement
           {
             this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
           }
-          else (type == 'line')
+          else if (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
