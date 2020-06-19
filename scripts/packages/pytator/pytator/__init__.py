@@ -3,7 +3,6 @@ Tator Python Bindings REST API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 """
-# Hack for RTD to work
 try:
     from .tator import Tator
     from .tator import Auth
