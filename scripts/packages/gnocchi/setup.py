@@ -15,7 +15,7 @@ setup(
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
-    install_requires=['pytator>=0.0.2',
+    install_requires=['pytator>=0.1.3',
                       'qdarkstyle==2.7'],
 
     # metadata to display on PyPI

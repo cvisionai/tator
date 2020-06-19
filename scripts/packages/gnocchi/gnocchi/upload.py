@@ -53,8 +53,8 @@ class Upload(QObject):
                     dtype = 'image'
                 types=self.tator.MediaType.all()
                 for type_obj in types:
-                    if type_obj['type']['dtype'] == dtype:
-                        type_id = type_obj['type']['id']
+                    if type_obj['dtype'] == dtype:
+                        type_id = type_obj['id']
                 last=None
                 for chunk in self.tator.Media.uploadFile_v2(media,
                                                             typeId=type_id,
