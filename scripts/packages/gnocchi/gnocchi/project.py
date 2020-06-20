@@ -23,12 +23,14 @@ QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class UploadDialog(QtWidgets.QDialog):
-    def __init__(self, parent, tator_api, sectionNames, backgroundThread):
+    def __init__(self, parent, tator_api, project_id,
+                 sectionNames, backgroundThread):
         super(UploadDialog, self).__init__(parent)
         self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
         self.background_thread = backgroundThread
         self.tator_api = tator_api
+        self.project_id = project_id
         self.setModal(True)
         self.ui.sectionSelection.addItem("New Section")
         self.ui.sectionSelection.addItems(sectionNames)
@@ -162,6 +164,7 @@ class ProjectDetail(QtWidgets.QWidget):
     def on_uploadBtn_clicked(self):
         upload_dialog = UploadDialog(self,
                                      self.tator_api,
+                                     self.project_id,
                                      list(self.sections.keys()),
                                      self.background_thread)
         upload_dialog.show()
