@@ -6,6 +6,7 @@ import pathlib
 import logging
 import time
 import json
+import tator
 
 class Download(QObject):
     """ Background thread to handle copying directories """
@@ -15,9 +16,10 @@ class Download(QObject):
     error = pyqtSignal(str)
     _trigger = pyqtSignal()
 
-    def __init__(self, tator, mediaList, outputDirectory):
+    def __init__(self, tator_api, project_id, mediaList, outputDirectory):
         super(Download, self).__init__()
-        self.tator = tator
+        self.tator_api = tator_api
+        self.project_id = project_id
         self.output_dir = outputDirectory
         self.mediaList = mediaList
         self._trigger.connect(self._process)
@@ -35,49 +37,54 @@ class Download(QObject):
         idx = 0
         total = len(self.mediaList)
         for media in self.mediaList:
-            self.progress.emit(f"{media['name']} ({idx}/{total})", idx)
-            section_name = media['attributes'].get('tator_user_sections','No Section')
+            self.progress.emit(f"{media.name} ({idx}/{total})", idx)
+            section_name = media.attributes.get('tator_user_sections','No Section')
             full_directory = os.path.join(self.output_dir, section_name)
             os.makedirs(full_directory, exist_ok=True)
-            full_name = os.path.join(full_directory, media['name'])
-            for chunk in self.tator.Media.downloadFile(media, full_name):
+            full_name = os.path.join(full_directory, media.name)
+            for chunk in tator.util.download_media(self.tator_api,media, full_name):
                 if self._terminated:
                     return
-                self.progress.emit(f"{media['name']} ({idx}/{total})", chunk*10)
+                self.progress.emit(f"{media.name} ({idx}/{total})", chunk*10)
 
             # Fetch state types and for this media
-            state_types = self.tator.StateType.filter({"media_id": media['id']})
+            state_types = self.tator_api.get_state_type_list(self.project_id, media_id=[media.id])
             for dbType in state_types:
-                type_id = dbType['type']['id']
-                type_name = dbType['type']['name']
+                type_id = dbType.id
+                type_name = dbType.name
                 type_dir = os.path.join(full_directory, type_name)
                 os.makedirs(type_dir, exist_ok=True)
-                type_file = f"{media['name']}.json"
+                type_file = f"{media.name}.json"
                 full_type_path = os.path.join(type_dir, type_file)
-                elements = self.tator.State.filter({"media_id": media['id'],
-                                                    "type": type_id})
-                if elements is None:
+                elements = self.tator_api.get_state_list(self.project_id,
+                                                         media_id=[media.id],
+                                                         type=type_id)
+                if len(elements) == 0:
                     continue
 
                 with open(full_type_path, 'w') as output:
+                    elements = [x.to_dict() for x in elements]
                     json.dump(elements, output)
 
             # Now export localizations
-            local_types = self.tator.LocalizationType.filter({"media_id": media['id']})
+            local_types = self.tator_api.get_localization_type_list(self.project_id,media_id=[media.id])
             for dbType in local_types:
-                type_id = dbType['type']['id']
-                type_name = dbType['type']['name']
+                type_id = dbType.id
+                type_name = dbType.name
                 type_dir = os.path.join(full_directory, type_name)
                 os.makedirs(type_dir, exist_ok=True)
-                type_file = f"{media['name']}.json"
+                type_file = f"{media.name}.json"
                 full_type_path = os.path.join(type_dir, type_file)
-                elements = self.tator.Localization.filter(
-                    {"media_id": media['id'],
-                     "type": type_id})
-                if elements is None:
+                elements = self.tator_api.get_localization_list(
+                    self.project_id,
+                    media_id=[media.id],
+                    type=type_id)
+                
+                if len(elements) == 0:
                     continue
 
                 with open(full_type_path, 'w') as output:
+                    elements = [x.to_dict() for x in elements]
                     json.dump(elements, output)
 
             idx += 1

@@ -6,6 +6,7 @@ import pathlib
 import logging
 import time
 import json
+import tator
 import traceback
 import uuid
 
@@ -20,9 +21,10 @@ class Upload(QObject):
     error = pyqtSignal(str)
     _trigger = pyqtSignal()
 
-    def __init__(self, tator, mediaList, section):
+    def __init__(self, tator_api, project_id, mediaList, section):
         super(Upload, self).__init__()
-        self.tator = tator
+        self.tator_api = tator_api
+        self.project_id = project_id
         self.section = section
         self.mediaList = mediaList
         self._trigger.connect(self._process)
@@ -51,16 +53,18 @@ class Upload(QObject):
                     dtype = 'video'
                 else:
                     dtype = 'image'
-                types=self.tator.MediaType.all()
+                types=self.tator_api.get_media_type_list(self.project_id)
                 for type_obj in types:
-                    if type_obj['dtype'] == dtype:
-                        type_id = type_obj['id']
+                    if type_obj.dtype == dtype:
+                        type_id = type_obj.id
                 last=None
-                for chunk in self.tator.Media.uploadFile_v2(media,
-                                                            typeId=type_id,
-                                                            section=self.section,
-                                                            upload_gid=upload_gid,
-                                                            chunk_size=chunk_size):
+                for chunk,response in tator.util.upload_media(
+                        self.tator_api,
+                        type_id=type_id,
+                        path=media,
+                        section=self.section,
+                        upload_gid=upload_gid,
+                        chunk_size=chunk_size):
                     if self._terminated:
                         return
                     if last:

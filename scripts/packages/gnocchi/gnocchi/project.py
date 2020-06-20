@@ -2,7 +2,8 @@ import argparse
 import sys
 import logging
 
-import pytator
+import tator
+import traceback
 import os
 
 # QT Imports
@@ -22,12 +23,14 @@ QT_UPLOAD_PATH = os.path.join(DIRNAME, 'assets', 'upload.svg')
 QT_SEARCH_PATH = os.path.join(DIRNAME, 'assets', 'search.svg')
 
 class UploadDialog(QtWidgets.QDialog):
-    def __init__(self, parent, tator, sectionNames, backgroundThread):
+    def __init__(self, parent, tator_api, project_id,
+                 sectionNames, backgroundThread):
         super(UploadDialog, self).__init__(parent)
         self.ui = Ui_UploadDialog()
         self.ui.setupUi(self)
         self.background_thread = backgroundThread
-        self.tator = tator
+        self.tator_api = tator_api
+        self.project_id = project_id
         self.setModal(True)
         self.ui.sectionSelection.addItem("New Section")
         self.ui.sectionSelection.addItems(sectionNames)
@@ -89,7 +92,8 @@ class UploadDialog(QtWidgets.QDialog):
 
     def on_upload_clicked(self):
         self.uploadBtn.setEnabled(False)
-        self.upload = Upload(self.tator,
+        self.upload = Upload(self.tator_api,
+                             self.project_id,
                              self.media_files,
                              self.section)
         self.upload.progress.connect(self.on_progress)
@@ -130,9 +134,8 @@ class ProjectDetail(QtWidgets.QWidget):
         self.ui = Ui_ProjectDetail()
         self.ui.setupUi(self)
         self.project_id = projectId
-        self.tator = pytator.Tator(url,
-                                   token,
-                                   self.project_id)
+        self.tator_api = tator.get_api(url,
+                                       token)
         self.ui.sectionTree.setHeaderLabel("Media Files")
         # Enable multiple selections
         self.ui.sectionTree.setSelectionMode(QtWidgets.QTreeWidget.MultiSelection)
@@ -160,7 +163,8 @@ class ProjectDetail(QtWidgets.QWidget):
     @pyqtSlot()
     def on_uploadBtn_clicked(self):
         upload_dialog = UploadDialog(self,
-                                     self.tator,
+                                     self.tator_api,
+                                     self.project_id,
                                      list(self.sections.keys()),
                                      self.background_thread)
         upload_dialog.show()
@@ -190,7 +194,8 @@ class ProjectDetail(QtWidgets.QWidget):
 
         if output_directory:
             logging.info(f"Saving to {output_directory}")
-            self.download = Download(self.tator,
+            self.download = Download(self.tator_api,
+                                     self.project_id,
                                      download_list,
                                      output_directory)
             self.download.progress.connect(self.download_progress)
@@ -219,7 +224,7 @@ class ProjectDetail(QtWidgets.QWidget):
     def download_progress(self, filename, idx):
         logging.info(f"Got download progress @ {idx}")
         self.download_dialog.setValue(idx)
-        self.download_dialog.setLabelText(f"filename")
+        self.download_dialog.setLabelText(f"{filename}")
 
     @pyqtSlot(int)
     def download_finished(self, idx):
@@ -228,10 +233,10 @@ class ProjectDetail(QtWidgets.QWidget):
 
     @pyqtSlot()
     def refreshProjectData(self):
-        project_data = self.tator.Project.get(self.project_id)
+        project_data = self.tator_api.get_project(self.project_id).to_dict()
         self.ui.sectionTree.clear()
         self.sections = {}
-        section_data = self.tator.MediaSection.all()
+        section_data = self.tator_api.get_media_sections(self.project_id)
         for section in section_data:
             section_tree = QtWidgets.QTreeWidgetItem(self.ui.sectionTree)
             section_tree.setText(0,section)
@@ -257,21 +262,21 @@ class ProjectDetail(QtWidgets.QWidget):
     def load_media(self):
         filter_string = self.ui.searchEdit.text().strip()
         if filter_string == "":
-            all_medias = self.tator.Media.all()
+            all_medias = self.tator_api.get_media_list(self.project_id)
             self.ui.sectionTree.setHeaderLabel("Media Files")
         else:
-            all_medias = self.tator.Media.filter({"search": filter_string})
+            all_medias = self.tator_api.get_media_list({"search": filter_string})
             self.ui.sectionTree.setHeaderLabel(f"Media Files ({filter_string})")
         self.progress_dialog.setMinimum(0)
         self.progress_dialog.setMaximum(len(all_medias))
         idx = 1
         total = len(all_medias)
         for media in all_medias:
-            section_name = media['attributes']['tator_user_sections']
+            section_name = media.attributes['tator_user_sections']
             parent = self.sections[section_name]['widget']
             media_item = QtWidgets.QTreeWidgetItem(parent)
             media_item.setData(0,0x100,media)
-            media_item.setText(0,media['name'])
+            media_item.setText(0,media.name)
             # Handle progress dialog
             self.progress_dialog.setValue(idx)
             idx += 1
@@ -306,19 +311,17 @@ class Project(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def on_connectBtn_clicked(self):
-        token=pytator.Auth.getToken(self.url,
-                                    self.ui.username_field.text(),
-                                    self.ui.password_field.text())
-        if token is None:
-            logging.warning("Access Denied")
-            QtWidgets.QMessageBox.critical(self,"Access Denied","Please check your username and password.")
-        else:
+        tator_api=tator.get_api(self.url)
+        credentials={'username': self.ui.username_field.text(),
+                     'password': self.ui.password_field.text()}
+        try:
+            token=tator_api.create_obtain_auth_token(credentials=credentials)
             self.ui.login_widget.setVisible(False)
 
-            tator=pytator.Tator(self.url,
-                                token,
-                                None)
-            projects=tator.Project.all()
+            tator_api=tator.get_api(self.url,
+                                    token.token)
+            projects=tator_api.get_project_list()
+            projects=[x.to_dict() for x in projects]
             # TODO landing page
             self.ui.tabWidget.addTab(QtWidgets.QWidget(self), "Welcome")
             for project in projects:
@@ -326,7 +329,7 @@ class Project(QtWidgets.QMainWindow):
                     ProjectDetail(self,
                                   self.background_thread,
                                   self.url,
-                                  token,
+                                  token.token,
                                   project['id']),
                     project['name'])
             self.ui.tabWidget.setVisible(True)
@@ -335,12 +338,16 @@ class Project(QtWidgets.QMainWindow):
             marginLeft = (screenGeometry.width() - self.width()) / 2
             marginRight = (screenGeometry.height() - self.height()) / 2
             self.move(marginLeft, marginRight)
+        except Exception as e:
+            traceback.print_exc()
+            logging.warning("Access Denied")
+            QtWidgets.QMessageBox.critical(self,"Access Denied","Please check your username and password.")
 
 def start():
     parser = argparse.ArgumentParser(description='Gnocchi --- The PyTator GUI')
     parser.add_argument('--theme', default='dark',
                         choices=['dark', 'light'])
-    parser.add_argument('--url', default='https://www.tatorapp.com/rest')
+    parser.add_argument('--url', default='https://www.tatorapp.com')
     args = parser.parse_args()
     """ Starts the camera control UI """
     app = QtWidgets.QApplication(sys.argv)
