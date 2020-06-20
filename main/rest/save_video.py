@@ -126,7 +126,8 @@ class SaveVideoAPI(BaseListView):
         }
 
         for key in upload_paths:
-            shutil.copyfile(upload_paths[key], save_paths[key])
+            logger.info(f"Moving uploaded file {upload_paths[key]} to {save_paths[key]}")
+            shutil.move(upload_paths[key], save_paths[key])
 
         # Delete the old 720p version that has who knows what generation it is
         if media_element.file:
@@ -156,13 +157,9 @@ class SaveVideoAPI(BaseListView):
 
         response = {'message': "Video updated successfully!"}
 
-        # Delete files from the uploads directory.
+        # Delete info files from the uploads directory.
         if 'upload_paths' in locals():
             for key in upload_paths:
-                logger.info(f"Removing uploaded file {upload_paths[key]}")
-                if os.path.exists(upload_paths[key]):
-                    logger.info(f"{upload_paths[key]} exists and is being removed!")
-                    os.remove(upload_paths[key])
                 info_path = os.path.splitext(upload_paths[key])[0] + '.info'
                 if os.path.exists(info_path):
                     os.remove(info_path)
@@ -310,7 +307,8 @@ class SaveVideoAPI(BaseListView):
             if key in ['thumbnail', 'thumbnail_gif']:
                 pass # already handled these above
 
-            shutil.copyfile(upload_paths[key], save_paths[key])
+            logger.info(f"Moving uploaded file {upload_paths[key]} to {save_paths[key}")
+            shutil.move(upload_paths[key], save_paths[key])
 
         # Save the database record.
         media_obj.save()
@@ -332,13 +330,9 @@ class SaveVideoAPI(BaseListView):
 
         response = {'message': "Video saved successfully!", 'id': media_obj.id}
 
-        # Delete files from the uploads directory.
+        # Delete info files from the uploads directory.
         if 'upload_paths' in locals():
             for key in upload_paths:
-                logger.info(f"Removing uploaded file {upload_paths[key]}")
-                if os.path.exists(upload_paths[key]):
-                    logger.info(f"{upload_paths[key]} exists and is being removed!")
-                    os.remove(upload_paths[key])
                 info_path = os.path.splitext(upload_paths[key])[0] + '.info'
                 if os.path.exists(info_path):
                     os.remove(info_path)
