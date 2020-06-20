@@ -91,6 +91,7 @@ class UploadDialog(QtWidgets.QDialog):
     def on_upload_clicked(self):
         self.uploadBtn.setEnabled(False)
         self.upload = Upload(self.tator_api,
+                             self.project_id,
                              self.media_files,
                              self.section)
         self.upload.progress.connect(self.on_progress)
@@ -310,7 +311,6 @@ class Project(QtWidgets.QMainWindow):
         tator_api=tator.get_api(self.url)
         credentials={'username': self.ui.username_field.text(),
                      'password': self.ui.password_field.text()}
-        print(credentials)
         try:
             token=tator_api.create_obtain_auth_token(credentials=credentials)
             self.ui.login_widget.setVisible(False)

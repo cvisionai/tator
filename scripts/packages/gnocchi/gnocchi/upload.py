@@ -20,9 +20,10 @@ class Upload(QObject):
     error = pyqtSignal(str)
     _trigger = pyqtSignal()
 
-    def __init__(self, tator, mediaList, section):
+    def __init__(self, tator_api, project_id, mediaList, section):
         super(Upload, self).__init__()
-        self.tator = tator
+        self.tator_api = tator_api
+        self.project_id = project_id
         self.section = section
         self.mediaList = mediaList
         self._trigger.connect(self._process)
