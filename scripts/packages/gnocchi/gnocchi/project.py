@@ -220,7 +220,7 @@ class ProjectDetail(QtWidgets.QWidget):
     def download_progress(self, filename, idx):
         logging.info(f"Got download progress @ {idx}")
         self.download_dialog.setValue(idx)
-        self.download_dialog.setLabelText(f"filename")
+        self.download_dialog.setLabelText(f"{filename}")
 
     @pyqtSlot(int)
     def download_finished(self, idx):
