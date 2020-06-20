@@ -307,7 +307,7 @@ class SaveVideoAPI(BaseListView):
             if key in ['thumbnail', 'thumbnail_gif']:
                 pass # already handled these above
 
-            logger.info(f"Moving uploaded file {upload_paths[key]} to {save_paths[key}")
+            logger.info(f"Moving uploaded file {upload_paths[key]} to {save_paths[key]}")
             shutil.move(upload_paths[key], save_paths[key])
 
         # Save the database record.
