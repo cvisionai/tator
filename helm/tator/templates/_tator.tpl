@@ -31,7 +31,7 @@ spec:
             limits:
               cpu: 8000m
             requests:
-              cpu: 500m
+              cpu: 1000m
               memory: 1Gi
           env:
             - name: DJANGO_SECRET_KEY

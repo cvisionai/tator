@@ -136,7 +136,7 @@ cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
-	kubectl apply -f k8s/network_fix.yaml
+#	kubectl apply -f k8s/network_fix.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
@@ -246,7 +246,6 @@ FILES = \
     zip-stream.js \
     util/get-cookie.js \
     util/identifying-attribute.js \
-    util/get-dtype.js \
     util/fetch-retry.js \
     util/has-permission.js \
     components/tator-element.js \

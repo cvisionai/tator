@@ -3,7 +3,7 @@ Setting up a deployment
 
 The steps below will guide you through setup of a Tator deployment. By the end
 you should be able to open Tator in your browser. The tutorial is assuming you
-are starting with a fresh (or near fresh) install of Ubuntu Linux 18.04. Other
+are starting with a fresh (or near fresh) install of Ubuntu Linux 20.04. Other
 distributions may also work, but steps are literal to the Ubuntu platform.
 
 To serve the web application to the world wide web, the tutorial  will use
@@ -155,7 +155,7 @@ For GPU nodes, install nvidia-docker
 Install Kubernetes
 ^^^^^^^^^^^^^^^^^^
 
-* Install Kubernetes 1.14.3 on all cluster nodes.
+* Install Kubernetes 1.16.10 on all cluster nodes.
 
 .. code-block:: bash
    :linenos:
@@ -168,7 +168,7 @@ Install Kubernetes
    deb https://apt.kubernetes.io/ kubernetes-xenial main
    EOF
    apt-get update
-   apt-get install -qy kubelet=1.14.3-00 kubectl=1.14.3-00 kubeadm=1.14.3-00
+   apt-get install -qy kubelet=1.16.10-00 kubectl=1.16.10-00 kubeadm=1.16.10-00
    apt-mark hold kubelet kubectl kubeadm kubernetes-cni
    sysctl net.bridge.bridge-nf-call-iptables=1
    exit
@@ -279,7 +279,7 @@ Values file
 Node setup
 ==========
 
-Make sure each of your nodes is running Ubuntu 18.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
+Make sure each of your nodes is running Ubuntu 20.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
 
 Kubernetes Pre-flight Setup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -289,13 +289,6 @@ Kubernetes Pre-flight Setup
 ``sudo swapoff -a``
 
 * Modify /etc/fstab and comment out the swap volume.
-
-Network instability
-^^^^^^^^^^^^^^^^^^^
-
-A startup daemon set is provided in ``k8s/network_fix.yaml`` to apply a fix for k8s networking in versions equal to or
-older than 1.14.X --- this is applied during the ``cluster_install`` makefile step. It can be manually applied to
-clusters that are already setup.
 
 Configuring a local docker registry
 ===================================
@@ -527,9 +520,9 @@ Replace the master node ip address with the IP address of your machine. You may 
    sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
-* Install kube-router:
+* Install weave:
 
-``sudo KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/v0.3.2/daemonset/kubeadm-kuberouter.yaml``
+``kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"``
 
 * Allow the master node to run Tator pods (if desired):
 
@@ -606,7 +599,7 @@ Installing Argo
 
    kubectl create namespace argo
    kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml
-   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/stable/argo-linux-amd64
+   sudo curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.8.1/argo-linux-amd64
    sudo chmod +x /usr/local/bin/argo
 
 Upgrade the default service acount privileges
@@ -633,7 +626,7 @@ Install the nfs-client-provisioner helm chart
 
    kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
-   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
+   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false --set nfs.mountOptions="{nfsvers=3,nolock}"
 
 * This sets up a new storage class called `nfs-client` any pvc request needs to
   specify this as a storage class to use this provisioner.
@@ -875,13 +868,13 @@ Building Tator
 
 ``git submodule update --init``
 
-* Install mako
+* Install mako and progressbar2
 
 .. code-block:: bash
    :linenos:
 
    sudo apt-get install python3-pip
-   pip3 install mako
+   pip3 install mako progressbar2
 
 
 * Install node
