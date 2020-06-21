@@ -207,9 +207,10 @@ class Upload {
         let percent = 100.0 * bytesSent / bytesTotal
         if (percent < 100) {
           let message = "Uploading...";
-          let progressPercent = Math.max(percent, 10);
-          progressPercent = progressPercent.toFixed(2)
-          this.progress("started", message, progressPercent);
+          // In the context of full upload pipeline, md5 check is 
+          // first 10%, upload is 10-50%, starting transcode is 60%,
+          // and argo workflow defines the rest.
+          this.progress("started", message, 10 + 0.4 * percent); 
         }
       },
       onError: error => {
