@@ -167,7 +167,7 @@ function removeFromActive(uid) {
 class Upload {
 
   constructor(uploadData) {
-    this.start_time = Date.now();
+    this.last_progress = Date.now();
     this.file = uploadData.file;
     this.projectId = uploadData.projectId;
     this.gid = uploadData.gid;
@@ -204,13 +204,17 @@ class Upload {
       },
       chunkSize: 5*1024*1024, // 5MB
       onProgress: (bytesSent, bytesTotal) => {
-        let percent = 100.0 * bytesSent / bytesTotal
-        if (percent < 100) {
-          let message = "Uploading...";
-          // In the context of full upload pipeline, md5 check is 
-          // first 10%, upload is 10-50%, starting transcode is 60%,
-          // and argo workflow defines the rest.
-          this.progress("started", message, 10 + 0.4 * percent); 
+        // Throttle progress requests to every 3 seconds.
+        if (Date.now() - this.last_progress > 3000) {
+          let percent = 100.0 * bytesSent / bytesTotal
+          if (percent < 100) {
+            let message = "Uploading...";
+            // In the context of full upload pipeline, md5 check is 
+            // first 10%, upload is 10-50%, starting transcode is 60%,
+            // and argo workflow defines the rest.
+            this.progress("started", message, 10 + 0.4 * percent); 
+          }
+          this.last_progress = Date.now();
         }
       },
       onError: error => {
