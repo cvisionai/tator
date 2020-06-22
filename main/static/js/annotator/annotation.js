@@ -1558,7 +1558,7 @@ class AnnotationCanvas extends TatorElement
         clearStatus();
         this.clearAnimation();
         this.activeLocalization = null;
-        this._activeTrack = null;
+        this.deselectTrack()
         this.refresh();
         this._mouseMode = MouseMode.QUERY;
       }
@@ -1673,6 +1673,11 @@ class AnnotationCanvas extends TatorElement
         composed: true,
       }));
     }
+  }
+
+  deselectTrack()
+  {
+    this._activeTrack = null;
   }
 
   selectTrack(track, frameHint)
@@ -2690,7 +2695,7 @@ class AnnotationCanvas extends TatorElement
           {
             this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
           }
-          else (type == 'line')
+          else if (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
@@ -2977,7 +2982,7 @@ class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this._activeTrack = null;
+        this.deselectTrack();
       }
     }
   }
