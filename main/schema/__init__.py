@@ -10,6 +10,7 @@ from .leaf_type import LeafTypeListSchema
 from .leaf_type import LeafTypeDetailSchema
 from .localization import LocalizationListSchema
 from .localization import LocalizationDetailSchema
+from .localization_graphic import LocalizationGraphicSchema
 from .localization_type import LocalizationTypeListSchema
 from .localization_type import LocalizationTypeDetailSchema
 from .media import MediaListSchema
