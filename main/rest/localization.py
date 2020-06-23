@@ -277,9 +277,9 @@ class LocalizationDetailAPI(BaseDetailView):
         y = params.get("y", None)
         if frame is not None:
             obj.frame = frame
-        if x:
+        if x is not None:
             obj.x = x
-        if y:
+        if y is not None:
             obj.y = y
         if 'modified' in params:
             obj.modified = params['modified']
