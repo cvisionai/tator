@@ -66,6 +66,7 @@ class LocalizationGraphicSchema(AutoSchema):
                         'default': self.MODE_USE_EXISTING_THUMBNAIL,
                     }
                 },
+                '''
                 {
                     'name': self.PARAMS_IMAGE_SIZE,
                     'in': 'query',
@@ -78,6 +79,7 @@ class LocalizationGraphicSchema(AutoSchema):
                         'default': '100x100',
                     },
                 },
+                '''
                 {
                     'name': self.PARAMS_USE_DEFAULT_MARGINS,
                     'in': 'query',
