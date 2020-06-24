@@ -8,7 +8,8 @@ class LocalizationGraphicSchema(AutoSchema):
 
     #TODO Future work:
     1. Endpoint can patch and modify the thumbnail of the localization
-    2. Provide margins that are relative or absolute
+    2. Provide margins that are relative instead of absolute
+    3. Draw the localization in the thumbnail
 
     """
 
@@ -25,7 +26,7 @@ class LocalizationGraphicSchema(AutoSchema):
     
     # Margins (x,y pixels) to use if defaults are requested
     DEFAULT_MARGIN_DOT = SimpleNamespace(x=10, y=10)
-    DEFAULT_MARGIN_LINE = SimpleNamespace(x=50, y=50)
+    DEFAULT_MARGIN_LINE = SimpleNamespace(x=10, y=10)
     DEFAULT_MARGIN_BOX = SimpleNamespace(x=0, y=0)
 
     def get_operation(self, path, method):
@@ -37,7 +38,7 @@ class LocalizationGraphicSchema(AutoSchema):
 
     def get_description(self, path, method):
         return dedent("""\
-        Get localization graphic from a media object (image/video).
+        Get localization graphic from a media object.
         """)
 
     def _get_path_parameters(self, path, method):
@@ -63,7 +64,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'required': False,
                     'description': f'Set to {self.MODE_USE_EXISTING_THUMBNAIL} to use existing thumbnail '
                                    f'or {self.MODE_CREATE_NEW_THUMBNAIL} to generate a new thumbnail. '
-                                   'If using existing thumbnail and it does not exist, a 400 Error will be reported.',
+                                   'If using existing thumbnail and it does not exist, a 400 error will be reported.',
                     'schema': {
                         'type': 'number',
                         'default': self.MODE_USE_EXISTING_THUMBNAIL,
@@ -75,10 +76,10 @@ class LocalizationGraphicSchema(AutoSchema):
                     'required': False,
                     'description': f'Size of final image to return. This forces scaling the image. ' 
                                    'If left empty, the localization size and margins define the image size. ' +
-                                   valid_for_create_only_message,
+                                   valid_for_create_only_message +
+                                   'Example: 100x100 ',
                     'schema': {
                         'type': 'string',
-                        'example': '100x100',
                     },
                 },
                 {
@@ -86,6 +87,10 @@ class LocalizationGraphicSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': f'Use default margins for localization types. ' +
+                                   f' Default margins (x,y pixels) - ' + 
+                                   f'dot: ({self.DEFAULT_MARGIN_DOT.x},{self.DEFAULT_MARGIN_DOT.y}) ' +
+                                   f'line:  ({self.DEFAULT_MARGIN_LINE.x},{self.DEFAULT_MARGIN_LINE.y}) ' +
+                                   f'box: ({self.DEFAULT_MARGIN_BOX.x},{self.DEFAULT_MARGIN_BOX.y}) ' +
                                    valid_for_create_only_message,
                     'schema': {
                         'type': 'boolean',

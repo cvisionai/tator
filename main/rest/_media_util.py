@@ -267,7 +267,6 @@ class MediaUtil:
 
         return self._height
 
-
     def getCroppedImage(self, roi, render_format="jpg", force_scale=None) -> str:
         """ Generate an image of the given ROI
 
@@ -279,20 +278,19 @@ class MediaUtil:
                 'jpg' or 'png'
 
             force_scale: tuple
-                (width, height) Forced image size
+                (width: int, height: int) Forced image size in pixels
 
         Returns:
             Image file path
         """
 
-        width = roi[0] * self._width
-        height = roi[1] * self._height
-        x = roi[2] * self._width
-        y = roi[3] * self._height
+        left = roi[2] * self._width
+        upper = roi[3] * self._height
+        right = left + roi[0] * self._width
+        lower = upper + roi[1] * self._height
 
         img = Image.open(self._video_file)
-        img = img.crop((x, y, width, height))
-        logger.info(f'blahhhhhhhhhh      {x} {y} {width} {height}')
+        img = img.crop((left, upper, right, lower))
 
         if force_scale is not None:
             img = img.resize(force_scale)
@@ -303,7 +301,6 @@ class MediaUtil:
         else:
             img.save(img_buf, "png", quality=95)
         return img_buf.getvalue()
-
 
     def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg", force_scale=None):
         """ Generate a tile jpeg of the given frame/rois """

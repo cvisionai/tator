@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class LocalizationGraphicAPI(BaseDetailView):
-    """ #TODO
+    """ Endpoint that retrieves an image of the requested localization
     """
 
     schema = LocalizationGraphicSchema()
@@ -35,11 +35,13 @@ class LocalizationGraphicAPI(BaseDetailView):
     def get_queryset(self):
         """ Overridden method. Please refer to parent's documentation.
         """
+        
         return Localization.objects.all()
 
     def handle_exception(self,exc):
         """ Overridden method. Please refer to parent's documentation.
         """
+
         status_obj = status.HTTP_400_BAD_REQUEST
         if type(exc) is response.Http404:
             status_obj = status.HTTP_404_NOT_FOUND
@@ -56,7 +58,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         Private helper method used by _get()
 
         Return(s):
-            tuple
+            margins: SimpleNamespace
                 x: int
                     Pixel margin for x/horizontal direction
                 y: int
@@ -98,24 +100,24 @@ class LocalizationGraphicAPI(BaseDetailView):
         """ Returns the ROI to extract from the media for the given parameters
 
         Args:
-            localization_type: Localization object
-                'box', 'dot', or 'line'
+            obj: Localization object
+                Localization object that is the region of interest
 
             params: dict
                 Parameters defined by the schema
 
             media_width: int
-                Pixels of media
+                Pixels of media the localization object is associated with
 
             media_height: int
-                Pixels of media
+                Pixels of media the localization object is associated with
 
         Returns:
-            tuple
-                float: width
-                float: height
-                float: top left x
-                float: top left y
+            roi: tuple
+                float: width (relative)
+                float: height (relative)
+                float: x (relative)
+                float: y (relative)
 
         """
 
@@ -127,7 +129,11 @@ class LocalizationGraphicAPI(BaseDetailView):
         # are in pixels. So we've got to convert.
         margins_rel = SimpleNamespace(x=margins_pixels.x / media_width, y=margins_pixels.y / media_height)
 
-        # Take the position information available and apply the margin
+        # Take the position information available and apply the margin.
+        # The stored position information is normalized, so we will set it to the
+        # provided media pixel width/height, apply the appropriate region of interest (ROI)
+        # information, then normalize back since the media_utils requires the ROI data
+        # in that format.
         #
         # Position information available per localization type:
         #   Point/dot: x, y
@@ -137,36 +143,56 @@ class LocalizationGraphicAPI(BaseDetailView):
         # Region of interest format: width, height, x, y
         if localization_type == 'dot':
             
-            roi = [1 + 2*margins_rel.x,
-                   1 + 2*margins_rel.y,
-                   obj.x - margins_rel.x,
-                   obj.y - margins_rel.y]
+            roi_x = obj.x * media_width
+            roi_y = obj.y * media_height
+
+            roi = [2*margins_pixels.x + 1,
+                   2*margins_pixels.y + 1,
+                   roi_x - margins_pixels.x,
+                   roi_y - margins_pixels.y]
 
         elif localization_type == 'line':
 
-            point_a = SimpleNamespace(x=obj.x, y=obj.y)
-            point_b = SimpleNamespace(x=obj.x+obj.u, y=obj.y+obj.v)
+            x = obj.x * media_width
+            y = obj.y * media_height
+            u = obj.u * media_width
+            v = obj.v * media_height
+
+            point_a = SimpleNamespace(x=x, y=y)
+            point_b = SimpleNamespace(x=x+u, y=y+v)
 
             width = abs(point_b.x - point_a.x)
-            height = abs(point_b.y - point_b.y)
+            height = abs(point_b.y - point_a.y)
 
-            x = min(point_a.x, point_b.x)
-            y = min(point_a.y, point_b.y)
+            roi_x = min(point_a.x, point_b.x)
+            roi_y = min(point_a.y, point_b.y)
 
-            roi = [width + 2*margins_rel.x, + 1,
-                   height + 2*margins_rel.y + 1,
-                   x - margins_rel.x,
-                   y - margins_rel.y]
+            roi = [width + 2*margins_pixels.x,
+                   height + 2*margins_pixels.y,
+                   roi_x - margins_pixels.x,
+                   roi_y - margins_pixels.y]
 
         elif localization_type == 'box':
 
-            roi = [obj.width + 2*margins_rel.x, + 1,
-                   obj.height + 2*margins_rel.y + 1,
-                   obj.x - margins_rel.x,
-                   obj.y - margins_rel.y]
+            roi_x = obj.x * media_width
+            roi_y = obj.y * media_height
+            roi_width = obj.width * media_width
+            roi_height = obj.height * media_height
+
+            roi = [roi_width + 2*margins_pixels.x,
+                   roi_height + 2*margins_pixels.y,
+                   roi_x - margins_pixels.x,
+                   roi_y - margins_pixels.y]
 
         else:
             raise Exception(f"Invalid meta.dtype detected {localization_type}")
+
+        # Now, normalize the ROI
+        roi[0] = roi[0] / media_width
+        roi[2] = roi[2] / media_width
+        
+        roi[1] = roi[1] / media_height
+        roi[3] = roi[3] / media_height
 
         # Force the ROI to be within the image
         for idx, roi_entry in enumerate(roi):
@@ -197,10 +223,10 @@ class LocalizationGraphicAPI(BaseDetailView):
         if force_image_size is not None:
             img_width_height = force_image_size.split('x')
             assert len(img_width_height) == 2
-            requested_width = float(img_width_height[0])
-            requested_height = float(img_width_height[1])
-            assert requested_width > 0.0
-            assert requested_height > 0.0
+            requested_width = int(img_width_height[0])
+            requested_height = int(img_width_height[1])
+            assert requested_width > 0
+            assert requested_height > 0
             force_image_size = (requested_width, requested_height)
 
         # By reaching here, it's expected that the graphics mode is to create a new
