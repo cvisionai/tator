@@ -14,6 +14,7 @@ from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI
+from .localization_graphic import LocalizationGraphicAPI
 from .media import MediaListAPI
 from .media import MediaDetailAPI
 from .media_next import MediaNextAPI

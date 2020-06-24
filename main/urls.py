@@ -116,6 +116,10 @@ urlpatterns += [
         'rest/LocalizationType/<int:id>',
         LocalizationTypeDetailAPI.as_view(),
     ),
+    path('rest/LocalizationGraphic/<int:id>',
+        LocalizationGraphicAPI.as_view(),
+        name='LocalizationGraphic',
+    ),
     path(
         'rest/Medias/<int:project>',
         MediaListAPI.as_view(),

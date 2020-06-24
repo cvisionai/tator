@@ -249,6 +249,58 @@ class MediaUtil:
         proc = subprocess.run(args, check=True, capture_output=True)
         return output_file
 
+    def isVideo(self) -> bool:
+        """ Returns true if the media is video or not
+        """
+
+        return self._fps is not None
+
+    def getWidth(self) -> int:
+        """ Gets the width of the video/image in pixels
+        """
+
+        return self._width
+
+    def getHeight(self) -> int:
+        """ Gets the height of the video/image in pixels
+        """
+
+        return self._height
+
+    def getCroppedImage(self, roi, render_format="jpg", force_scale=None) -> str:
+        """ Generate an image of the given ROI
+
+        Args:
+            roi: tuple
+                (width, height, x, y) Relative values (0.0 .. 1.0)
+
+            render_format: str
+                'jpg' or 'png'
+
+            force_scale: tuple
+                (width: int, height: int) Forced image size in pixels
+
+        Returns:
+            Image file path
+        """
+
+        left = roi[2] * self._width
+        upper = roi[3] * self._height
+        right = left + roi[0] * self._width
+        lower = upper + roi[1] * self._height
+
+        img = Image.open(self._video_file)
+        img = img.crop((left, upper, right, lower))
+
+        if force_scale is not None:
+            img = img.resize(force_scale)
+
+        img_buf = io.BytesIO()
+        if render_format == "jpg":
+            img.save(img_buf, "jpeg", quality=95)
+        else:
+            img.save(img_buf, "png", quality=95)
+        return img_buf.getvalue()
 
     def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg", force_scale=None):
         """ Generate a tile jpeg of the given frame/rois """
