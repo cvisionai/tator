@@ -1,17 +1,20 @@
 from textwrap import dedent
+from types import SimpleNamespace
 
 from rest_framework.schemas.openapi import AutoSchema
 
 class LocalizationGraphicSchema(AutoSchema):
     """ Gets a thumbnail image of the localization
 
-    #TODO Futurework would also entail modifying the thumbnail
+    #TODO Future work:
+    1. Endpoint can patch and modify the thumbnail of the localization
+    2. Provide margins that are relative or absolute
 
     """
 
     # Parameters names
     PARAM_ARG_MODE = 'mode'
-    PARAMS_IMAGE_SIZE = 'image_size'
+    PARAMS_IMAGE_SIZE = 'force_scale'
     PARAMS_USE_DEFAULT_MARGINS = 'use_default_margins'
     PARAMS_MARGIN_X = 'margin_x'
     PARAMS_MARGIN_Y = 'margin_y'
@@ -21,9 +24,9 @@ class LocalizationGraphicSchema(AutoSchema):
     MODE_CREATE_NEW_THUMBNAIL = 1
     
     # Margins (x,y pixels) to use if defaults are requested
-    DEFAULT_MARGIN_DOT = (50, 50)
-    DEFAULT_MARGIN_LINE = (50, 50)
-    DEFAULT_MARGIN_BOX = (0, 0)
+    DEFAULT_MARGIN_DOT = SimpleNamespace(x=10, y=10)
+    DEFAULT_MARGIN_LINE = SimpleNamespace(x=50, y=50)
+    DEFAULT_MARGIN_BOX = SimpleNamespace(x=0, y=0)
 
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -66,20 +69,18 @@ class LocalizationGraphicSchema(AutoSchema):
                         'default': self.MODE_USE_EXISTING_THUMBNAIL,
                     }
                 },
-                '''
                 {
                     'name': self.PARAMS_IMAGE_SIZE,
                     'in': 'query',
                     'required': False,
-                    'description': f'#TODO Size of final image to return. ' +
+                    'description': f'Size of final image to return. This forces scaling the image. ' 
+                                   'If left empty, the localization size and margins define the image size. ' +
                                    valid_for_create_only_message,
                     'schema': {
                         'type': 'string',
                         'example': '100x100',
-                        'default': '100x100',
                     },
                 },
-                '''
                 {
                     'name': self.PARAMS_USE_DEFAULT_MARGINS,
                     'in': 'query',
@@ -89,7 +90,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'schema': {
                         'type': 'boolean',
                         'default': True,
-                    }
+                    },
                 },
                 {
                     'name': self.PARAMS_MARGIN_X,

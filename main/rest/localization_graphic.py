@@ -1,4 +1,5 @@
-from typing import Tuple
+from typing import Tuple, List
+from types import SimpleNamespace
 import logging
 import tempfile
 
@@ -37,6 +38,8 @@ class LocalizationGraphicAPI(BaseDetailView):
         return Localization.objects.all()
 
     def handle_exception(self,exc):
+        """ Overridden method. Please refer to parent's documentation.
+        """
         status_obj = status.HTTP_400_BAD_REQUEST
         if type(exc) is response.Http404:
             status_obj = status.HTTP_404_NOT_FOUND
@@ -47,12 +50,11 @@ class LocalizationGraphicAPI(BaseDetailView):
                 self.request.accepted_renderer.format),
             status=status_obj)
 
-
-    def _set_margins(self, localization_type: str, params: dict) -> Tuple[int, int]:
+    def _getMargins(self, localization_type: str, params: dict):
         """ Returns x/y margins to use based on the provided parameters and localization object
-        
+
         Private helper method used by _get()
-        
+
         Return(s):
             tuple
                 x: int
@@ -81,14 +83,99 @@ class LocalizationGraphicAPI(BaseDetailView):
 
             margin_x = params.get(self.schema.PARAMS_MARGIN_X, None)
             margin_y = params.get(self.schema.PARAMS_MARGIN_Y, None)
-            margins = (margin_x, margin_y)
+            margins = SimpleNamespace(x=margin_x, y=margin_y)
 
-        assert margins[0] >= 0 and margins[1] >= 0
+        assert margins.x >= 0 and margins.y >= 0
 
         return margins
 
-    # end _set_margins
+    def _getRoi(
+            self,
+            obj: str,
+            params: dict,
+            media_width: int,
+            media_height: int) -> Tuple[float, float, float, float]:
+        """ Returns the ROI to extract from the media for the given parameters
 
+        Args:
+            localization_type: Localization object
+                'box', 'dot', or 'line'
+
+            params: dict
+                Parameters defined by the schema
+
+            media_width: int
+                Pixels of media
+
+            media_height: int
+                Pixels of media
+
+        Returns:
+            tuple
+                float: width
+                float: height
+                float: top left x
+                float: top left y
+
+        """
+
+        # Get the initial image based on the localization type and requested margins
+        localization_type = obj.meta.dtype
+        margins_pixels = self._getMargins(localization_type=localization_type, params=params)
+
+        # The roi input is done with normalized arguments. But the margins provided
+        # are in pixels. So we've got to convert.
+        margins_rel = SimpleNamespace(x=margins_pixels.x / media_width, y=margins_pixels.y / media_height)
+
+        # Take the position information available and apply the margin
+        #
+        # Position information available per localization type:
+        #   Point/dot: x, y
+        #   Line: x, y, u, v
+        #   Box: x, y, width, height
+        #
+        # Region of interest format: width, height, x, y
+        if localization_type == 'dot':
+            
+            roi = [1 + 2*margins_rel.x,
+                   1 + 2*margins_rel.y,
+                   obj.x - margins_rel.x,
+                   obj.y - margins_rel.y]
+
+        elif localization_type == 'line':
+
+            point_a = SimpleNamespace(x=obj.x, y=obj.y)
+            point_b = SimpleNamespace(x=obj.x+obj.u, y=obj.y+obj.v)
+
+            width = abs(point_b.x - point_a.x)
+            height = abs(point_b.y - point_b.y)
+
+            x = min(point_a.x, point_b.x)
+            y = min(point_a.y, point_b.y)
+
+            roi = [width + 2*margins_rel.x, + 1,
+                   height + 2*margins_rel.y + 1,
+                   x - margins_rel.x,
+                   y - margins_rel.y]
+
+        elif localization_type == 'box':
+
+            roi = [obj.width + 2*margins_rel.x, + 1,
+                   obj.height + 2*margins_rel.y + 1,
+                   obj.x - margins_rel.x,
+                   obj.y - margins_rel.y]
+
+        else:
+            raise Exception(f"Invalid meta.dtype detected {localization_type}")
+
+        # Force the ROI to be within the image
+        for idx, roi_entry in enumerate(roi):
+            if roi_entry > 1.0:
+                roi[idx] = 1.0
+            elif roi_entry < 0.0:
+                roi[idx] = 0.0
+
+        return tuple(roi)
 
     def _get(self, params: dict):
         """ Overridden method. Please refer to parent's documentation.
@@ -105,79 +192,47 @@ class LocalizationGraphicAPI(BaseDetailView):
             except:
                 raise Exception(f"No thumbnail was generated for the given localization")
 
+        # Extract the force image size argument and assert if there's a problem with the provided inputs
+        force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
+        if force_image_size is not None:
+            img_width_height = force_image_size.split('x')
+            assert len(img_width_height) == 2
+            requested_width = float(img_width_height[0])
+            requested_height = float(img_width_height[1])
+            assert requested_width > 0.0
+            assert requested_height > 0.0
+            force_image_size = (requested_width, requested_height)
+
         # By reaching here, it's expected that the graphics mode is to create a new
-        # thumbnail using the provided parameters and return that
-
-        # Extract the image size argument and assert if there's a problem with the provided inputs
-        img_size_arg = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
-        img_width_height = img_size_arg.split('x')
-        assert len(img_width_height) == 2
-        requested_width = float(img_size_arg[0])
-        requested_height = float(img_width_height[1])
-        assert requested_width > 0.0
-        assert requested_height > 0.0
-
-        # Get the initial image based on the localization type and requested margins
-        #   Position information available per localization type:
-        #       Point/dot: x, y
-        #       Line: x, y, u, v
-        #       Box: x, y, width, height
-        localization_type = obj.meta.dtype
-        margins = self._set_margins(localization_type=localization_type, params=params)
-
-        # TODO Do something with normalizing the margins
-
-        if localization_type == 'dot':
-            x = obj.x
-            y = obj.y
-
-            # Width, height, x, y
-            roi = [x + margins[0],
-                   y + margins[1],
-                   x - margins[0],
-                   y - margins[1]]
-
-            # TODO Check to see if it's within bounds of the image
-
-        elif localization_type == 'line':
-
-            # TODO Need to do some conversion of line information
-            raise Exception("Line not implemented")
-
-        elif localization_type == 'box':
-
-            # Width, height, x, y
-            x = obj.x
-            y = obj.y
-            roi = [x + obj.width + margins[0],
-                   y + obj.height + margins[1],
-                   x - margins[0],
-                   y - margins[1]]
-
-            # TODO Check to see if it's within bounds of the image
-
-        else:
-            raise Exception(f"Invalid meta.dtype detected {localization_type}")
-
-        # Create the temporary file
-        response_data = None
+        # thumbnail using the provided parameters. That new thumbnail is returned
         with tempfile.TemporaryDirectory() as temp_dir:
 
             media_util = MediaUtil(video=obj.media, temp_dir=temp_dir)
 
-            # We will only pass a single frame and corresponding roi into this
-            # so the expected output is only one tile instead of many
-            image = media_util.getTileImage(
-                frames=[obj.frame],
-                rois=[roi],
-                render_format=self.request.accepted_renderer.format)
+            roi = self._getRoi(
+                obj=obj,
+                params=params,
+                media_width=media_util.getWidth(),
+                media_height=media_util.getHeight())
 
-            with open(image, 'rb') as data_file:
-                response_data = data_file.read()
+            if media_util.isVideo():
+                # We will only pass a single frame and corresponding roi into this
+                # so the expected output is only one tile instead of many
+                image_path = media_util.getTileImage(
+                    frames=[obj.frame],
+                    rois=[roi],
+                    tile_size=None,
+                    render_format=self.request.accepted_renderer.format,
+                    force_scale=force_image_size)
 
-        if response_data is None:
-            raise Exception("Error creating localization graphic! Temporarily file created incorrect")
+                with open(image_path, 'rb') as data_file:
+                    response_data = data_file.read()
+
+            else:
+                # Grab the ROI from the image
+                response_data = media_util.getCroppedImage(
+                    roi=roi,
+                    render_format=self.request.accepted_renderer.format,
+                    force_scale=force_image_size)
 
         return response_data
-
-    # end _get
