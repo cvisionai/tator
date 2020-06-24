@@ -151,9 +151,42 @@ if __name__ == '__main__':
     codec, fps, num_frames, width, height = get_metadata(args.original_path)
     media_files['archival'].append(video_def)
 
+    # Save the video
+    out = requests.post(
+        f'{args.url}/SaveVideo/{args.project}',
+        headers={
+            "Authorization": f"Token {args.token}",
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip",
+        },
+        json={
+            'type': args.type,
+            'uid': args.uid,
+            'gid': args.gid,
+            'media_files': media_files,
+            'thumbnail_url': thumbnail_url,
+            'thumbnail_gif_url': thumbnail_gif_url,
+            'name': args.name,
+            'section': args.section,
+            'md5': args.md5,
+            'num_frames': num_frames,
+            'fps': fps,
+            'codec': codec,
+            'width': width,
+            'height': height,
+            'progressName': progress_name
+        },
+    )
+    out.raise_for_status()
+
+    # We saved the original, now we can proceed to upload
+    # the resolutions (one at a time)
+    media_id=out.json()['id']
+
     for root, dirs, files in os.walk(args.transcoded_path):
         print(f"Processing {files} in {args.transcoded_path}")
         for vid_file in files:
+            media_files={"streaming": []}
             if os.path.splitext(vid_file)[1] == ".m4a":
                 # Handle audio file
                 audio_path = os.path.join(root, vid_file)
@@ -184,30 +217,18 @@ if __name__ == '__main__':
                 video_def["segment_info_url"] = segments_url
                 media_files['streaming'].append(video_def)
 
-    # Save the video
-    out = requests.post(
-        f'{args.url}/SaveVideo/{args.project}',
-        headers={
-            "Authorization": f"Token {args.token}",
-            "Content-Type": "application/json",
-            "Accept-Encoding": "gzip",
-        },
-        json={
-            'type': args.type,
-            'uid': args.uid,
-            'gid': args.gid,
-            'media_files': media_files,
-            'thumbnail_url': thumbnail_url,
-            'thumbnail_gif_url': thumbnail_gif_url,
-            'name': args.name,
-            'section': args.section,
-            'md5': args.md5,
-            'num_frames': num_frames,
-            'fps': fps,
-            'codec': codec,
-            'width': width,
-            'height': height,
-            'progressName': progress_name
-        },
-    )
-    out.raise_for_status()
+            out = requests.patch(
+            f'{args.url}/SaveVideo/{args.project}',
+            headers={
+                "Authorization": f"Token {args.token}",
+                "Content-Type": "application/json",
+                "Accept-Encoding": "gzip",
+            },
+                json={
+                    'media_files': media_files,
+                    'id': media_id,
+                    'uid': args.uid,
+                    'gid': args.gid,
+                },
+            )
+            out.raise_for_status()
