@@ -8,12 +8,12 @@
 {{- $prunerSettings := dict "Values" .Values "name" "prune-messages-cron" "app" "pruner" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemessages\"]" "schedule" "0 * * * *" }}
 {{include "tatorCron.template" $prunerSettings }}
 ---
-{{- $sizerSettings := dict "Values" .Values "name" "sizer-cron" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "schedule" "0 * * * *"  }}
+{{- $sizerSettings := dict "Values" .Values "name" "sizer-cron" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "schedule" "10 * * * *"  }}
 {{include "tatorCron.template" $sizerSettings }}
 ---
-{{- $tempSettings := dict "Values" .Values "name" "prune-temp-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunetemporaryfiles\"]" "schedule" "0 * * * *" }}
+{{- $tempSettings := dict "Values" .Values "name" "prune-temp-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunetemporaryfiles\"]" "schedule" "20 * * * *" }}
 {{include "tatorCron.template" $tempSettings }}
 ---
-{{- $mediaSettings := dict "Values" .Values "name" "prune-media-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemedia\"]" "schedule" "0 * * * *" }}
+{{- $mediaSettings := dict "Values" .Values "name" "prune-media-cron" "app" "prune" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunemedia\"]" "schedule" "30 * * * *" }}
 {{include "tatorCron.template" $mediaSettings }}
 
