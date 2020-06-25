@@ -41,11 +41,11 @@ def updateProjectTotals(force=False):
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
             project.size = 0
-            for file in temp_files:
+            for file in temp_files.iterator():
                 if file.path:
                     if os.path.exists(file.path):
                         project.size += os.path.getsize(file.path)
-            for file in files:
+            for file in files.iterator():
                 project.size += mediaFileSizes(file)[0]
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
             project.save()
