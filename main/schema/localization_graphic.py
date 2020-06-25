@@ -21,8 +21,8 @@ class LocalizationGraphicSchema(AutoSchema):
     PARAMS_MARGIN_Y = 'margin_y'
 
     # Valid values for get mode
-    MODE_USE_EXISTING_THUMBNAIL = 0
-    MODE_CREATE_NEW_THUMBNAIL = 1
+    MODE_USE_EXISTING_THUMBNAIL = 'existing'
+    MODE_CREATE_NEW_THUMBNAIL = 'create'
     
     # Margins (x,y pixels) to use if defaults are requested
     DEFAULT_MARGIN_DOT = SimpleNamespace(x=10, y=10)
@@ -62,12 +62,14 @@ class LocalizationGraphicSchema(AutoSchema):
                     'name': self.PARAM_ARG_MODE,
                     'in': 'query',
                     'required': False,
-                    'description': f'Set to {self.MODE_USE_EXISTING_THUMBNAIL} to use existing thumbnail '
-                                   f'or {self.MODE_CREATE_NEW_THUMBNAIL} to generate a new thumbnail. '
-                                   'If using existing thumbnail and it does not exist, a 400 error will be reported.',
+                    'description': f"Set to '{self.MODE_USE_EXISTING_THUMBNAIL}' to use existing thumbnail "
+                                   f"or '{self.MODE_CREATE_NEW_THUMBNAIL}' to generate a new thumbnail. "
+                                   'If using existing thumbnail and it does not exist, a 400 error will be reported. '
+                                   f'Default is {self.MODE_CREATE_NEW_THUMBNAIL}',
                     'schema': {
-                        'type': 'number',
-                        'default': self.MODE_USE_EXISTING_THUMBNAIL,
+                        'type': 'string',
+                        'enum': [self.MODE_USE_EXISTING_THUMBNAIL, self.MODE_CREATE_NEW_THUMBNAIL],
+                        'default': self.MODE_CREATE_NEW_THUMBNAIL,
                     }
                 },
                 {
@@ -75,7 +77,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': f'Size of final image to return. This forces scaling the image. ' 
-                                   'If left empty, the localization size and margins define the image size. ' +
+                                   'Default is the localization size and margins define the image size. ' +
                                    valid_for_create_only_message +
                                    'Example: 100x100 ',
                     'schema': {
