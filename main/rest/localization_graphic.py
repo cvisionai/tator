@@ -35,7 +35,7 @@ class LocalizationGraphicAPI(BaseDetailView):
     def get_queryset(self):
         """ Overridden method. Please refer to parent's documentation.
         """
-        
+
         return Localization.objects.all()
 
     def handle_exception(self,exc):
@@ -142,7 +142,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         #
         # Region of interest format: width, height, x, y
         if localization_type == 'dot':
-            
+
             roi_x = obj.x * media_width
             roi_y = obj.y * media_height
 
@@ -190,7 +190,7 @@ class LocalizationGraphicAPI(BaseDetailView):
         # Now, normalize the ROI
         roi[0] = roi[0] / media_width
         roi[2] = roi[2] / media_width
-        
+
         roi[1] = roi[1] / media_height
         roi[3] = roi[3] / media_height
 
@@ -212,11 +212,16 @@ class LocalizationGraphicAPI(BaseDetailView):
 
         # If the provided mode is to use the thumbnail, then attempt to get it. If the thumbnail is null, then
         # throw up a 400 bad request error.
-        if params.get(self.schema.PARAM_ARG_MODE, None) == self.schema.MODE_USE_EXISTING_THUMBNAIL:
+        mode = params.get(self.schema.PARAM_ARG_MODE, None)
+        if mode == self.schema.MODE_USE_EXISTING_THUMBNAIL:
             try:
                 return obj.thumbnail
             except:
-                raise Exception(f"No thumbnail was generated for the given localization")
+                raise Exception("No thumbnail was generated for the given localization")
+
+        elif mode != self.schema.MODE_CREATE_NEW_THUMBNAIL:
+            log_msg = f"Invalid mode provided. Please use {self.schema.MODE_USE_EXISTING_THUMBNAIL} or {self.schema.MODE_CREATE_NEW_THUMBNAIL}"
+            raise Exception(log_msg)
 
         # Extract the force image size argument and assert if there's a problem with the provided inputs
         force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
