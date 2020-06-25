@@ -993,7 +993,7 @@ class Media(Model):
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
-    file = FileField()
+    file = FileField(null=True, blank=True)
     last_edit_start = DateTimeField(null=True, blank=True)
     """ Start datetime of a session in which the media's annotations were edited.
     """
@@ -1001,7 +1001,7 @@ class Media(Model):
     """ End datetime of a session in which the media's annotations were edited.
     """
     original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    thumbnail = ImageField()
+    thumbnail = ImageField(null=True, blank=True)
     thumbnail_gif = ImageField(null=True, blank=True)
     num_frames = IntegerField(null=True, blank=True)
     fps = FloatField(null=True, blank=True)
