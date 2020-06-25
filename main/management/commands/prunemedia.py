@@ -11,7 +11,11 @@ class Command(BaseCommand):
         BATCH_SIZE = 100
         num_deleted = 0
         while True:
-            media = Media.objects.filter(project__isnull=True)[:BATCH_SIZE]
+            # We cannot delete with a LIMIT query, so make a separate query
+            # using IDs.
+            media_ids = Media.objects.filter(project__isnull=True)\
+                                     .values_list('pk', flat=True)[:BATCH_SIZE]
+            media = Media.objects.filter(pk__in=media_ids)
             num_media = media.count()
             if num_media == 0:
                 break
