@@ -111,7 +111,8 @@ class TranscodeAPI(BaseListView):
             gid,
             uid,
             self.request.user.pk,
-            upload_size)
+            upload_size,
+            media.id)
 
         prog.progress("Transcoding...", 60)
 

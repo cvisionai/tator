@@ -720,7 +720,8 @@ class TatorTranscode(JobManagerMixin):
             body=manifest,
         )
 
-    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid, user, upload_size):
+    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid,
+                        user, upload_size, media_id):
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -734,6 +735,7 @@ class TatorTranscode(JobManagerMixin):
             'entity_type': str(entity_type),
             'md5' : md5,
             'name': name,
+            'media_id': str(media_id),
         }
 
         if upload_size:
