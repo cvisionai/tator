@@ -36,7 +36,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
     """
     schema = MediaListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete']
     entity_type = MediaType # Needed by attribute filter mixin
 
     def _get(self, params):
