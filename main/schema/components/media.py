@@ -98,6 +98,51 @@ media_get_properties = {
     },
 }
 
+media_spec = {
+    'type': 'object',
+    'required': ['type', 'gid', 'uid', 'url', 'section', 'name', 'md5'],
+    'properties': {
+        'type': {
+            'description': 'Unique integer identifying a media type. Use '
+                           '-1 to automatically select the media type if '
+                           'only one media type exists in a project.',
+            'type': 'integer',
+            'minimum': -1,
+        },
+        'gid': {
+            'description': 'UUID corresponding to a group of uploads if this is an image type.',
+            'type': 'string',
+            'format': 'uuid',
+        },
+        'uid': {
+            'description': 'UUID corresponding to an upload if this is an image type.',
+            'type': 'string',
+        },
+        'url': {
+            'description': 'Upload URL for the image if this is an image type. If '
+                           'not an image, this field is ignored.',
+            'type': 'string',
+        },
+        'thumbnail_url': {
+            'description': 'Upload URL for the image thumbnail if already generated. If '
+                           'not an image, this field is ignored.',
+            'type': 'string',
+        },
+        'section': {
+            'description': 'Media section name.',
+            'type': 'string',
+        },
+        'name': {
+            'description': 'Name of the file.',
+            'type': 'string',
+        },
+        'md5': {
+            'description': 'MD5 sum of the media file.',
+            'type': 'string',
+        },
+    },
+}
+
 media_update = {
     'type': 'object',
     'properties': media_properties,
