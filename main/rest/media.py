@@ -47,7 +47,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
     entity_type = MediaType # Needed by attribute filter mixin
 
     def get_permissions(self):
-        """ Require transfer permissions for POST, view only otherwise.
+        """ Require transfer permissions for POST, edit otherwise.
         """
         if self.request.method == 'POST':
             self.permission_classes = [ProjectTransferPermission]

@@ -29,7 +29,6 @@ from .progress import ProgressAPI
 from .progress_summary import ProgressSummaryAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
-from .save_image import SaveImageAPI
 from .save_video import SaveVideoAPI
 from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI

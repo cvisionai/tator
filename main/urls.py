@@ -184,11 +184,6 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
-        'rest/SaveImage/<int:project>',
-        SaveImageAPI.as_view(),
-        name='SaveImage',
-    ),
-    path(
         'rest/SaveVideo/<int:project>',
         SaveVideoAPI.as_view(),
         name='SaveVideo',
