@@ -187,6 +187,10 @@ class LocalizationGraphicAPI(BaseDetailView):
         else:
             raise Exception(f"Invalid meta.dtype detected {localization_type}")
 
+        # Don't allow any single pixel width/heights
+        roi[0] = max(roi[0], 2)
+        roi[1] = max(roi[1], 2)
+
         # Now, normalize the ROI
         roi[0] = roi[0] / media_width
         roi[2] = roi[2] / media_width

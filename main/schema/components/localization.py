@@ -113,6 +113,24 @@ localization_get_properties = {
         'description': 'Object containing attribute values.',
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+    },
+    'created_datetime': {
+        'type': 'string',
+        'format': 'date-time',
+        'description': 'Datetime this localization was created.',
+    },
+    'modified_datetime': {
+        'type': 'string',
+        'format': 'date-time',
+        'description': 'Datetime this localization was last modified.',
+    },
+    'modified_by': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who last modified this localization.'
+    },
+    'user': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 
