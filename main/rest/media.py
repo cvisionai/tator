@@ -1,17 +1,25 @@
 import logging
+import datetime
+import os
+import shutil
+from uuid import uuid1
 
 from django.db.models import Case, When
+from django.conf import settings
+from PIL import Image
 
 from ..models import Media
 from ..models import MediaType
 from ..models import Localization
 from ..models import State
+from ..models import Project
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
+from ..consumers import ProgressProducer
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -21,7 +29,7 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._permissions import ProjectEditPermission
-from ._permissions import ProjectViewOnlyPermission
+from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +43,16 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         Both are accomplished using the same query parameters used for a GET request.
     """
     schema = MediaListSchema()
-    permission_classes = [ProjectEditPermission]
     http_method_names = ['get', 'post', 'patch', 'delete']
     entity_type = MediaType # Needed by attribute filter mixin
+
+    def get_permissions(self):
+        """ Require transfer permissions for POST, view only otherwise.
+        """
+        if self.request.method == 'POST':
+            self.permission_classes = [ProjectTransferPermission]
+        else:
+            self.permission_classes = [ProjectEditPermission]
 
     def _get(self, params):
         """ Retrieve list of media.
