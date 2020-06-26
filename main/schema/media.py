@@ -73,7 +73,11 @@ class MediaListSchema(AutoSchema):
 
     def _get_request_body(self, path, method):
         body = {}
-        if method == 'PATCH':
+        if method == 'POST':
+            body = {'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/MediaSpec'},
+            }}}
+        elif method == 'PATCH':
             body = {'content': {'application/json': {
                 'schema': {
                     '$ref': '#/components/schemas/AttributeBulkUpdate',
@@ -93,7 +97,9 @@ class MediaListSchema(AutoSchema):
 
     def _get_responses(self, path, method):
         responses = error_responses()
-        if method == 'GET':
+        if method == 'POST':
+            responses['201'] = message_with_id_schema('media')
+        elif method == 'GET':
             responses['200'] = {
                 'description': 'Successful retrieval of media list.',
                 'content': {'application/json': {'schema': {
