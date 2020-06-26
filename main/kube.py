@@ -130,8 +130,6 @@ class TatorTranscode(JobManagerMixin):
 
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
-
-            TODO: Would be nice if this was just in a yaml file.
         """
         # Setup common pipeline steps
         # Define persistent volume claim.
