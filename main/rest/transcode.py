@@ -59,7 +59,7 @@ class TranscodeAPI(BaseListView):
         if entity_type != -1:
             #If we are transcoding and not unpacking we know its a video type we need
             type_objects = type_objects.filter(pk=entity_type,dtype="video")
-            # Create the media object immediately
+            # Create the media object.
             media = Media.objects.create(
                 project=project,
                 meta=type_objects[0],
