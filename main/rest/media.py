@@ -53,6 +53,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             self.permission_classes = [ProjectTransferPermission]
         else:
             self.permission_classes = [ProjectEditPermission]
+        return super().get_permissions()
 
     def _get(self, params):
         """ Retrieve list of media.

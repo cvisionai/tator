@@ -3,6 +3,7 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._message import message_schema
+from ._message import message_with_id_schema
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema

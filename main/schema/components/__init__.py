@@ -21,6 +21,7 @@ from .localization import localization_update
 from .localization import localization
 from .media_next import media_next
 from .media_prev import media_prev
+from .media import media_spec
 from .media import media_update
 from .media import media
 from .media_sections import media_sections
@@ -35,7 +36,6 @@ from .progress import progress_spec
 from .progress_summary import progress_summary_spec
 from .project import project_spec
 from .project import project
-from .save_image import image_spec
 from .save_video import video_spec
 from .save_video import video_update
 from .section_analysis import section_analysis
