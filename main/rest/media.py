@@ -195,7 +195,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
         else:
             # Create the media object.
-            media = Media.objects.create(
+            media_obj = Media.objects.create(
                 project=project,
                 meta=entity_type,
                 created_by=self.request.user,
@@ -203,9 +203,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 name=name,
                 md5=md5,
             )
+            response = {'message': "Video saved successfully!", 'id': media_obj.id}
 
         return response
-
 
     def _delete(self, params):
         """ Delete list of media.
