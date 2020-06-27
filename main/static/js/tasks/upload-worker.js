@@ -232,7 +232,7 @@ class Upload {
         let endpoint;
 
         if (this.isImage) {
-          endpoint = "Media";
+          endpoint = "Medias";
         } else {
           endpoint = "Transcode";
         }

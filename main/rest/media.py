@@ -95,7 +95,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
-        if entity_type.dtype == 'image':
+        if media_type.dtype == 'image':
             # Get image only parameters.
             gid = str(params['gid'])
             uid = params['uid']
