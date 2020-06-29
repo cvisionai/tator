@@ -5,8 +5,6 @@ import tempfile
 import copy
 import tarfile
 
-from django.conf import settings
-
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
@@ -1023,45 +1021,25 @@ class TatorMove:
                 param['value'] = value
                 break
 
-    def move_video(self, project, media_id, token, media_files, url, segments_url=None):
+    def move_video(self, project, media_id, token, move_list, media_files):
+        """ Create a workflow for moving files.
+
+        :param project: Unique integer identifying a project.
+        :param media_id: Unique integer identifying a media.
+        :param token: API token.
+        :param move_list: List of dicts containing src and dst keys, with values
+            specifying the source and destination paths respectively.
+        :param media_files: Used to call the Media PATCH endpoint video/audio definitions.
+        """
         host = os.getenv('MAIN_HOST')
-
-        # Make sure media files only has one key.
-        key = media_files.keys()[0]
-        assert(len(media_files.keys()) == 1)
-
-        # Make sure media files only has one value
-        assert(len(media_files[key]) == 1)
-
-        # Determine if this is archival/streaming
-        if key == 'archival':
-            subpath = settings.RAW_ROOT
-        else:
-            subpath = settings.MEDIA_ROOT
-
-        # Create media paths and insert into media_files
-        uuid = str(uuid1())
-        media_url = f'{project}/{uuid}.mp4'
-        src = os.path.join(settings.UPLOAD_ROOT, os.path.basename(url))
-        dst = os.path.join(subpath, media_url)
-        media_files[key]['path'] = media_url
 
         # Set required workflow parameters.
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', media_id)
-        self._set_parameter('src', src)
-        self._set_parameter('dst', dst)
+        self._set_parameter('move_list', move_list)
+        self._set_parameter('media_files', media_files)
 
-        # Create segments file paths and insert into media_files
-        if segments_url:
-            segments_url = f'{project}/{uuid}_segments.json'
-            segments_src = os.path.join(settings.UPLOAD_ROOT, os.path.basename(segments_url))
-            segments_dst = os.path.join(subpath, segments_url)
-            media_files[key]['segments_info'] = segments_url
-            self._set_parameter('segments_src', segments_src)
-            self._set_parameter('segments_dst', segments_dst)
-            
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
             version='v1alpha1',

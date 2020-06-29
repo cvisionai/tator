@@ -1,6 +1,9 @@
 import logging
+import os
+from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
+from django.conf import settings
 
 from ..kube import TatorMove
 from ..models import Media
@@ -39,8 +42,53 @@ class MoveVideoAPI(BaseListView):
         # Get the token
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
+        # Determine the move paths and update media_files with new paths.
+        media_files = params['media_files']
+        import json
+        logger.info(f"MEDIA FILES BEFORE ADJUSTMENT: {json.dumps(media_files)}")
+        move_list = []
+        if 'archival' in media_files:
+            for video_def in media_files['archival']:
+                upload_base = os.path.basename(video_def['url'])
+                path = f"/{project}/{str(uuid1())}.mp4"
+                move_list.append({
+                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
+                    'dst': os.path.join(settings.RAW_ROOT, path),
+                })
+                video_def['path'] = '/data/raw' + path
+                del video_def['url']
+        if 'streaming' in media_files:
+            for video_def in media_files['streaming']:
+                upload_base = os.path.basename(video_def['url'])
+                segment_upload_base = os.path.basename(video_def['segments_url'])
+                uuid = str(uuid())
+                path = f"/{project}/{uuid}.mp4"
+                segment_info = f"/{project}/{uuid}_segments.json"
+                move_list += [{
+                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
+                    'dst': os.path.join(settings.MEDIA_ROOT, path),
+                }, {
+                    'src': os.path.join(settings.UPLOAD_ROOT, segment_upload_base),
+                    'dst': os.path.join(settings.MEDIA_ROOT, path),
+                }]
+                video_def['path'] = '/media' + path
+                video_def['segment_info'] = '/media' + path
+                del video_def['url']
+                del video_def['segments_url']
+        if 'audio' in media_files:
+            for audio_def in media_files['audio']:
+                upload_base = os.path.basename(audio_def['url'])
+                path = f"/{project}/{str(uuid1())}.mp4"
+                move_list.append({
+                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
+                    'dst': os.path.join(settings.RAW_ROOT, path),
+                })
+                audio_def['path'] = '/media' + path
+                del audio_def['url']
+        logger.info(f"MEDIA FILES AFTER ADJUSTMENT: {json.dumps(media_files)}")
+
         # Create the move workflow
-        TatorMove().move_video(**params, token=token, project=project)
+        TatorMove().move_video(project, params['id'], str(token), media_files, move_list)
         
     def get_queryset(self):
         return Media.objects.all()
