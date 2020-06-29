@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: move-video-
+spec:
+  entrypoint: main
+  arguments:
+    parameters:
+    - name: src # Main file source
+    - name: dst # Main file destination
+    - name: segments_src # Segments file source
+      value: empty
+    - name: segments_dst # Segments file destination
+      value: empty
+    - name: media_files 
+    - name: media_id
+    - name: host
+    - name: token
+  templates:
+  - name: main
+    steps:
+    - - name: move-file
+        template: move
+        arguments:
+          parameters:
+          - name: src
+            value: "{{workflow.parameters.src}}"
+          - name: dst
+            value: "{{workflow.parameters.dst}}"
+      - name: move-segments
+        template: move
+        arguments:
+          parameters:
+          - name: src
+            value: "{{workflow.parameters.segments_src}}"
+          - name: dst
+            value: "{{workflow.parameters.segments_dst}}"
+        when: "{{workflow.parameters.segments_src}} != empty"
+    - - name: patch-media
+        template: patch
+  - name: move
+    inputs:
+      parameters:
+      - name: src
+      - name: dst
+    container:
+      image: busybox:1.31.1-uclibc
+      command: [mv]
+      args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 200m
+  - name: patch
+    container:
+      image: curlimages/curl:7.71.0
+      command: [curl]
+      args: ["-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_files}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
+      resources:
+        requests:
+          memory: 64Mi
+          cpu: 100m
+
