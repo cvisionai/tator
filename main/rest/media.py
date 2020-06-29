@@ -310,10 +310,22 @@ class MediaDetailAPI(BaseDetailView):
     def _patch(self, params):
         """ Update individual media.
 
+            Updates to `media_files` (video only) may append video definitions, but 
+            cannot replace or delete them. To delete media, the DELETE method must
+            be used.
+
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
         obj = Media.objects.get(pk=params['id'])
+
+        # Make sure project directories exist
+        project = params['project']
+        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+        os.makedirs(project_dir, exist_ok=True)
+        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+        os.makedirs(raw_project_dir, exist_ok=True)
+
         if 'attributes' in params:
             new_attrs = validate_attributes(params, obj)
             obj = patch_attributes(new_attrs, obj)
@@ -322,9 +334,6 @@ class MediaDetailAPI(BaseDetailView):
                 for localization in obj.localization_thumbnail_image.all():
                     localization = patch_attributes(new_attrs, localization)
                     localization.save()
-        if 'media_files' in params:
-            # TODO: for now just pass through, eventually check URL
-            obj.media_files = params['media_files']
 
         if 'name' in params:
             obj.name = params['name']
@@ -334,6 +343,38 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'last_edit_end' in params:
             obj.last_edit_end = params['last_edit_end']
+
+        if 'thumbnail_url' in params:
+            # Save the thumbnail.
+            upload_uid = params['thumbnail_url'].split('/')[-1]
+            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
+            save_path = os.path.join(project_dir, str(uuid1()) + '.jpg'),
+            media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
+            with open(upload_path, 'rb') as f:
+                obj.thumbnail.save(media_base, f, save=False)
+
+        if 'thumbnail_gif_url' in params:
+            # Save the thumbnail gif.
+            upload_uid = params['thumbnail_gif_url'].split('/')[-1]
+            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
+            save_path = os.path.join(project_dir, str(uuid1()) + '.gif'),
+            media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
+            with open(upload_path, 'rb') as f:
+                obj.thumbnail_gif.save(media_base, f, save=False)
+
+        # Media definitions may be appended but not replaced or deleted.
+        if 'media_files' in params:
+            new_streaming = params['media_files'].get('streaming', [])
+            old_streaming = obj.media_files.get('streaming', [])
+            new_archival = params['media_files'].get('archival', [])
+            old_archival = obj.media_files.get('archival', [])
+            new_audio = params['media_files'].get('audio', [])
+            old_audio = obj.media_files.get('audio', [])
+            obj.media_files = {
+                'streaming': new_streaming + old_streaming,
+                'archival': new_archvial + old_archival,
+                'audio': new_audio + old_audio,
+            }
 
         obj.save()
         return {'message': 'Media {params["id"]} successfully updated!'}
