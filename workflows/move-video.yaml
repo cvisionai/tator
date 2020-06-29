@@ -6,12 +6,8 @@ spec:
   entrypoint: main
   arguments:
     parameters:
-    - name: src # Main file source
-    - name: dst # Main file destination
-    - name: segments_src # Segments file source
-      value: empty
-    - name: segments_dst # Segments file destination
-      value: empty
+    - name: move_list # List of objects with src/dst.
+                      # Example: [{"src": "/src/path", "dst": "/dst/path"}]
     - name: media_files 
     - name: media_id
     - name: host
@@ -24,18 +20,10 @@ spec:
         arguments:
           parameters:
           - name: src
-            value: "{{workflow.parameters.src}}"
+            value: "{{item.src}}"
           - name: dst
-            value: "{{workflow.parameters.dst}}"
-      - name: move-segments
-        template: move
-        arguments:
-          parameters:
-          - name: src
-            value: "{{workflow.parameters.segments_src}}"
-          - name: dst
-            value: "{{workflow.parameters.segments_dst}}"
-        when: "{{workflow.parameters.segments_src}} != empty"
+            value: "{{item.dst}}"
+        withParam: "{{workflow.parameters.move_list}}"
     - - name: patch-media
         template: patch
   - name: move
