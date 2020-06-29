@@ -16,7 +16,9 @@ meaning they can be described by user defined attributes.
 class MediaListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
-        if method == 'GET':
+        if method == 'POST':
+            operation['operationId'] = 'CreateMedia'
+        elif method == 'GET':
             operation['operationId'] = 'GetMediaList'
         elif method == 'PATCH':
             operation['operationId'] = 'UpdateMediaList'
@@ -40,8 +42,9 @@ class MediaListSchema(AutoSchema):
             the media object itself. This method is only needed for local 
             transcodes. In that case, it will create an empty Media object;
             thumbnails, streaming, and archival videos must be subsequently uploaded via
-            tus and moved to the media folder using the `MoveVideo` endpoint, which also
-            calls the `Media` PATCH method to update the `media_files` field.
+            tus. Videos must be  moved to the media folder using the `MoveVideo` endpoint, 
+            which also calls the `Media` PATCH method to update the `media_files` field.
+            Thumbnails may be saved by just using the `Media` PATCH method directly.
             """)
         elif method == 'PATCH':
             short_desc = "Update media list."
