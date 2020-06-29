@@ -4,7 +4,7 @@ audio_definition = {
     'properties': {
         'path': {
             'type': 'string',
-            'description': 'Path to file.',
+            'description': 'Relative URL to the file.',
         },
         'codec': {
             'description': 'Human readable codec.',

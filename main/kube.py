@@ -1005,3 +1005,69 @@ class TatorAlgorithm(JobManagerMixin):
         )
 
         return response
+
+class TatorMove:
+    def __init__(self):
+        # Load in the workflow yaml.
+        with open('/tator_online/workflows/move-video.yaml', 'r') as f:
+            self.workflow = yaml.safe_load(f)
+
+        # Initialize kube interface.
+        load_incluster_config()
+        self.corev1 = CoreV1Api()
+        self.custom = CustomObjectsApi()
+
+    def _set_parameter(self, name, value):
+        for param in self.workflow['spec']['arguments']['parameters']:
+            if param['name'] == name:
+                param['value'] = value
+                break
+
+    def move_video(self, project, media_id, token, media_id, media_files, url, segments_url=None):
+        host = os.getenv('MAIN_HOST')
+
+        # Make sure media files only has one key.
+        key = media_files.keys()[0]
+        assert(len(media_files.keys()) == 1)
+
+        # Make sure media files only has one value
+        assert(len(media_files[key]) == 1)
+
+        # Determine if this is archival/streaming
+        if key == 'archival':
+            subpath = settings.RAW_ROOT
+        else:
+            subpath = settings.MEDIA_ROOT
+
+        # Create media paths and insert into media_files
+        uuid = str(uuid1())
+        media_url = f'{project}/{uuid}.mp4'
+        src = os.path.join(settings.UPLOAD_ROOT, os.path.basename(url))
+        dst = os.path.join(subpath, media_url)
+        media_files[key]['path'] = media_url
+
+        # Set required workflow parameters.
+        self._set_parameter('host', host)
+        self._set_parameter('token', token)
+        self._set_parameter('media_id', media_id)
+        self._set_parameter('src', src)
+        self._set_parameter('dst', dst)
+
+        # Create segments file paths and insert into media_files
+        if segments_url:
+            segments_url = f'{project}/{uuid}_segments.json'
+            segments_src = os.path.join(settings.UPLOAD_ROOT, os.path.basename(segments_url))
+            segments_dst = os.path.join(subpath, segments_url)
+            media_files[key]['segments_info'] = segments_url
+            self._set_parameter('segments_src', segments_src)
+            self._set_parameter('segments_dst', segments_dst)
+            
+        response = self.custom.create_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            body=self.workflow,
+        )
+
+        return response
