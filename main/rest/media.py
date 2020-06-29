@@ -196,12 +196,13 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         else:
             # Create the media object.
             media_obj = Media.objects.create(
-                project=project,
-                meta=entity_type,
-                created_by=self.request.user,
-                modified_by=self.request.user,
+                project=Project.objects.get(pk=project),
+                meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
+                attributes={'tator_user_sections': section},
+                created_by=self.request.user,
+                modified_by=self.request.user,
             )
             response = {'message': "Video saved successfully!", 'id': media_obj.id}
 

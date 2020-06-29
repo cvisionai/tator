@@ -1023,7 +1023,7 @@ class TatorMove:
                 param['value'] = value
                 break
 
-    def move_video(self, project, media_id, token, media_id, media_files, url, segments_url=None):
+    def move_video(self, project, media_id, token, media_files, url, segments_url=None):
         host = os.getenv('MAIN_HOST')
 
         # Make sure media files only has one key.

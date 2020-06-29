@@ -1,15 +1,10 @@
 import logging
-from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
 
 from ..kube import TatorMove
 from ..models import Media
-from ..models import MediaType
-from ..models import getVideoDefinition
-from ..models import Project
-from ..consumers import ProgressProducer
-from ..schema import SaveVideoSchema
+from ..schema import MoveVideoSchema
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
