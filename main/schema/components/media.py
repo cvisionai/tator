@@ -100,7 +100,7 @@ media_get_properties = {
 
 media_spec = {
     'type': 'object',
-    'required': ['type', 'gid', 'uid', 'url', 'section', 'name', 'md5'],
+    'required': ['type', 'section', 'name', 'md5'],
     'properties': {
         'type': {
             'description': 'Unique integer identifying a media type. Use '
@@ -145,7 +145,38 @@ media_spec = {
 
 media_update = {
     'type': 'object',
-    'properties': media_properties,
+    'properties': {
+        **media_properties,
+        'thumbnail_url': {
+            'description': 'Upload URL for the thumbnail.',
+            'type': 'string',
+        },
+        'thumbnail_gif_url': {
+            'description': 'Upload URL for the thumbnail gif.',
+            'type': 'string',
+        },
+        'num_frames': {
+            'description': 'Number of frames in the video.',
+            'type': 'integer',
+            'minimum': 0,
+        },
+        'fps': {
+            'description': 'Frame rate of the video.',
+            'type': 'number',
+        },
+        'codec': {
+            'description': 'Codec of the original video.',
+            'type': 'string',
+        },
+        'width': {
+            'description': 'Pixel width of the video.',
+            'type': 'integer',
+        },
+        'height': {
+            'description': 'Pixel height of the video.',
+            'type': 'integer',
+        },
+    },
 }
 
 media = {
