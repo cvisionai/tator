@@ -24,12 +24,12 @@ from .media_type import MediaTypeListSchema
 from .media_type import MediaTypeDetailSchema
 from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
+from .move_video import MoveVideoSchema
 from .notify import NotifySchema
 from .progress import ProgressSchema
 from .progress_summary import ProgressSummarySchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
-from .save_video import SaveVideoSchema
 from .section_analysis import SectionAnalysisSchema
 from .state import StateListSchema
 from .state import StateDetailSchema

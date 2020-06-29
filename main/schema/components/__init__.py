@@ -31,13 +31,12 @@ from .media_type import media_type
 from .membership import membership_spec
 from .membership import membership_update
 from .membership import membership
+from .move_video import move_video_spec
 from .notify import notify_spec
 from .progress import progress_spec
 from .progress_summary import progress_summary_spec
 from .project import project_spec
 from .project import project
-from .save_video import video_spec
-from .save_video import video_update
 from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_update
