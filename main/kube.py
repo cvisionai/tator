@@ -1032,14 +1032,14 @@ class TatorMove:
             specifying the source and destination paths respectively.
         :param media_files: Used to call the Media PATCH endpoint video/audio definitions.
         """
-        host = os.getenv('MAIN_HOST')
+        host = f"https://{os.getenv('MAIN_HOST')}"
 
         # Set required workflow parameters.
         self._set_parameter('host', host)
         self._set_parameter('token', token)
-        self._set_parameter('media_id', media_id)
+        self._set_parameter('media_id', str(media_id))
         self._set_parameter('move_list', json.dumps(move_list))
-        self._set_parameter('media_files', json.dumps(media_files))
+        self._set_parameter('media_files', json.dumps({'media_files': media_files}))
 
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
