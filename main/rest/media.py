@@ -4,6 +4,7 @@ import os
 import shutil
 from uuid import uuid1
 
+from django.db import transaction
 from django.db.models import Case, When
 from django.conf import settings
 from PIL import Image
@@ -308,6 +309,7 @@ class MediaDetailAPI(BaseDetailView):
         """
         return database_qs(Media.objects.filter(pk=params['id']))[0]
 
+    @transaction.atomic
     def _patch(self, params):
         """ Update individual media.
 
@@ -318,7 +320,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        obj = Media.objects.get(pk=params['id'])
+        obj = Media.objects.select_for_update().get(pk=params['id'])
 
         # Make sure project directories exist
         project = obj.project.pk
