@@ -377,6 +377,21 @@ class MediaDetailAPI(BaseDetailView):
                 'audio': new_audio + old_audio,
             }
 
+        if 'fps' in params:
+            obj.fps = params['fps']
+
+        if 'num_frames' in params:
+            obj.num_frames = params['num_frames']
+
+        if 'codec' in params:
+            obj.codec = params['codec']
+
+        if 'width' in params:
+            obj.width = params['width']
+
+        if 'height' in params:
+            obj.height = params['height']
+
         obj.save()
         return {'message': 'Media {params["id"]} successfully updated!'}
 
