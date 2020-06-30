@@ -63,7 +63,7 @@ spec:
     container:
       image: curlimages/curl:7.71.0
       command: [curl]
-      args: ["-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_files}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
+      args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_files}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
         requests:
           memory: 64Mi
