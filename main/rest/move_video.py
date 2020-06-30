@@ -44,8 +44,6 @@ class MoveVideoAPI(BaseListView):
 
         # Determine the move paths and update media_files with new paths.
         media_files = params['media_files']
-        import json
-        logger.info(f"MEDIA FILES BEFORE ADJUSTMENT: {json.dumps(media_files)}")
         move_list = []
         if 'archival' in media_files:
             for video_def in media_files['archival']:
@@ -85,8 +83,6 @@ class MoveVideoAPI(BaseListView):
                 })
                 audio_def['path'] = '/media/' + path
                 del audio_def['url']
-        logger.info(f"MEDIA FILES AFTER ADJUSTMENT: {json.dumps(media_files)}")
-        logger.info(f"MOVE LIST: {json.dumps(move_list)}")
 
         # Create the move workflow
         TatorMove().move_video(project, params['id'], str(token), move_list, media_files)
