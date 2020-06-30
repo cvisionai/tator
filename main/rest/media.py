@@ -383,6 +383,7 @@ class MediaDetailAPI(BaseDetailView):
             # Only fill in a key if it has at least one definition.
             obj.media_files = {}
             if streaming:
+                streaming.sort(key=lambda x: x['resolution'][0], reverse=True)
                 obj.media_files['streaming'] = streaming
             if archival:
                 obj.media_files['archival'] = archival
