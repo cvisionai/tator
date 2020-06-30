@@ -4,6 +4,7 @@ import logging
 import tempfile
 import copy
 import tarfile
+import json
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -1037,8 +1038,8 @@ class TatorMove:
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', media_id)
-        self._set_parameter('move_list', move_list)
-        self._set_parameter('media_files', media_files)
+        self._set_parameter('move_list', json.dumps(move_list))
+        self._set_parameter('media_files', json.dumps(media_files))
 
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
