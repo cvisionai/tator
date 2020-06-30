@@ -321,7 +321,7 @@ class MediaDetailAPI(BaseDetailView):
         obj = Media.objects.get(pk=params['id'])
 
         # Make sure project directories exist
-        project = params['project']
+        project = obj.project.pk
         project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
         os.makedirs(project_dir, exist_ok=True)
         raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
@@ -349,7 +349,7 @@ class MediaDetailAPI(BaseDetailView):
             # Save the thumbnail.
             upload_uid = params['thumbnail_url'].split('/')[-1]
             upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
-            save_path = os.path.join(project_dir, str(uuid1()) + '.jpg'),
+            save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
             media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
             with open(upload_path, 'rb') as f:
                 obj.thumbnail.save(media_base, f, save=False)
@@ -358,7 +358,7 @@ class MediaDetailAPI(BaseDetailView):
             # Save the thumbnail gif.
             upload_uid = params['thumbnail_gif_url'].split('/')[-1]
             upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
-            save_path = os.path.join(project_dir, str(uuid1()) + '.gif'),
+            save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
             media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
             with open(upload_path, 'rb') as f:
                 obj.thumbnail_gif.save(media_base, f, save=False)
