@@ -8,7 +8,6 @@ from urllib import parse as urllib_parse
 from ..kube import TatorTranscode
 from ..consumers import ProgressProducer
 from ..models import MediaType
-from ..models import Media
 from ..schema import TranscodeSchema
 
 from ._base_views import BaseListView
@@ -59,15 +58,6 @@ class TranscodeAPI(BaseListView):
         if entity_type != -1:
             #If we are transcoding and not unpacking we know its a video type we need
             type_objects = type_objects.filter(pk=entity_type,dtype="video")
-            # Create the media object.
-            media = Media.objects.create(
-                project=project,
-                meta=type_objects[0],
-                created_by=self.request.user,
-                modified_by=self.request.user,
-                name=name,
-                md5=md5,
-            )
 
         # For tar/zip uploads, we can still get an error after this
         # because the tar may contain images or video.
