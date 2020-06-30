@@ -10,6 +10,7 @@ class LocalizationGraphicSchema(AutoSchema):
     1. Endpoint can patch and modify the thumbnail of the localization
     2. Provide margins that are relative instead of absolute
     3. Draw the localization in the thumbnail
+    4. Add a mode to use existing thumbnails
 
     """
 
@@ -59,7 +60,6 @@ class LocalizationGraphicSchema(AutoSchema):
                     'required': False,
                     'description': f'Size of final image to return. This forces scaling the image. '
                                    'Default is the localization size and margins define the image size. ' +
-                                   valid_for_create_only_message +
                                    'Example: 100x100 ',
                     'schema': {
                         'type': 'string',
@@ -73,7 +73,7 @@ class LocalizationGraphicSchema(AutoSchema):
                                    f' Default margins (x,y pixels) - ' +
                                    f'dot: ({self.DEFAULT_MARGIN_DOT.x},{self.DEFAULT_MARGIN_DOT.y}) ' +
                                    f'line:  ({self.DEFAULT_MARGIN_LINE.x},{self.DEFAULT_MARGIN_LINE.y}) ' +
-                                   f'box: ({self.DEFAULT_MARGIN_BOX.x},{self.DEFAULT_MARGIN_BOX.y}) '
+                                   f'box: ({self.DEFAULT_MARGIN_BOX.x},{self.DEFAULT_MARGIN_BOX.y}) ',
                     'schema': {
                         'type': 'boolean',
                         'default': True,
@@ -83,7 +83,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'name': self.PARAMS_MARGIN_X,
                     'in': 'query',
                     'required': False,
-                    'description': f'Pixel margin to apply to the height of the localization when generating the image. '
+                    'description': f'Pixel margin to apply to the height of the localization when generating the image. ' +
                                    valid_for_non_default_margins_message,
                     'schema': {
                         'type': 'integer',
@@ -93,7 +93,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'name': self.PARAMS_MARGIN_Y,
                     'in': 'query',
                     'required': False,
-                    'description': f'Pixel margin to apply to the width of the localization when generating the image. '
+                    'description': f'Pixel margin to apply to the width of the localization when generating the image. ' +
                                    valid_for_non_default_margins_message,
                     'schema': {
                         'type': 'integer',
