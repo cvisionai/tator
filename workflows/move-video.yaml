@@ -46,6 +46,7 @@ spec:
       - name: dst
     container:
       image: busybox:1.31.1-uclibc
+      imagePullPolicy: IfNotPresent
       command: [mv]
       args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
       resources:
@@ -62,6 +63,7 @@ spec:
   - name: patch
     container:
       image: curlimages/curl:7.71.0
+      imagePullPolicy: IfNotPresent
       command: [curl]
       args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_files}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
