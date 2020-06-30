@@ -662,7 +662,7 @@ class TatorTranscode(JobManagerMixin):
                     'name': 'transcode-task',
                     'template': 'transcode',
                     'arguments': {
-                        'parameters': [passthrough_parameters['parameters'] + [{
+                        'parameters': passthrough_parameters['parameters'] + [{
                             'name': 'workload',
                             'value': '{{item}}',
                         }],
