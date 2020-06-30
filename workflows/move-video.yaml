@@ -4,6 +4,9 @@ metadata:
   generateName: move-video-
 spec:
   entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 300
+    secondsAfterFailure: 86400
   arguments:
     parameters:
     - name: move_list # List of objects with src/dst.
@@ -12,6 +15,16 @@ spec:
     - name: media_id
     - name: host
     - name: token
+  volumes:
+  - name: upload-pv-claim
+    persistentVolumeClaim:
+      claimName: upload-pv-claim
+  - name: media-pv-claim
+    persistentVolumeClaim:
+      claimName: media-pv-claim
+  - name: raw-pv-claim
+    persistentVolumeClaim:
+      claimName: raw-pv-claim
   templates:
   - name: main
     steps:
@@ -39,6 +52,13 @@ spec:
         requests:
           memory: 128Mi
           cpu: 200m
+      volumeMounts:
+      - mountPath: /data/uploads
+        name: upload-pv-claim
+      - mountPath: /data/media
+        name: media-pv-claim
+      - mountPath: /data/raw
+        name: raw-pv-claim
   - name: patch
     container:
       image: curlimages/curl:7.71.0
