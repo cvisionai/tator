@@ -280,7 +280,7 @@ class TatorTranscode(JobManagerMixin):
                          '--section', '{{workflow.parameters.section}}',
                          '--name', '{{inputs.parameters.name}}',
                          '--md5', '{{inputs.parameters.md5}}',
-                         '--output', '/work/media_id.json'],
+                         '--output', '/work/media_id.txt'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
@@ -295,7 +295,7 @@ class TatorTranscode(JobManagerMixin):
             'outputs': {
                 'parameters': [{
                     'name': 'media_id',
-                    'valueFrom': {'path': '/work/media_id.json'},
+                    'valueFrom': {'path': '/work/media_id.txt'},
                 }],
             },
         }
