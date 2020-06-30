@@ -49,7 +49,9 @@ class StateTypeListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/StateTypeSpec'},
                 'example': {
                     'name': 'My state type',
@@ -114,7 +116,9 @@ class StateTypeDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/StateTypeUpdate'},
                 'example': {
                     'name': 'New name',

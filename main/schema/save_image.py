@@ -36,7 +36,9 @@ class SaveImageSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/ImageSpec'},
             }}}
         return body

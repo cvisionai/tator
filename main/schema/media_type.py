@@ -46,7 +46,9 @@ class MediaTypeListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/MediaTypeSpec'},
                 'example': {
                     'name': 'My media type',
@@ -110,7 +112,9 @@ class MediaTypeDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/MediaTypeUpdate'},
                 'example': {
                     'name': 'New name',

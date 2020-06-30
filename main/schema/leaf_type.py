@@ -46,7 +46,9 @@ class LeafTypeListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/LeafTypeSpec'},
                 'example': {
                     'name': 'My leaf type',
@@ -105,7 +107,9 @@ class LeafTypeDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/LeafTypeUpdate'},
                 'example': {
                     'name': 'New name',

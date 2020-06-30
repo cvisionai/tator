@@ -71,7 +71,9 @@ class StateListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/StateSpec'},
@@ -110,7 +112,9 @@ class StateListSchema(AutoSchema):
                 },
             }}}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/AttributeBulkUpdate'},
                 'examples': {
                     'single': {
@@ -179,7 +183,9 @@ class StateDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/StateUpdate'},
                 'example': {
                     'frame': 1001,

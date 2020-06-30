@@ -169,7 +169,9 @@ class LeafListSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/LeafSpec'},
@@ -177,7 +179,9 @@ class LeafListSchema(AutoSchema):
                 },
             }}}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {
                     '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
@@ -238,7 +242,9 @@ class LeafDetailSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/LeafUpdate'},
             }}}
         return body

@@ -39,7 +39,9 @@ class ProgressSchema(AutoSchema):
     def _get_request_body(self, path, method):
         body = {}
         if method == 'POST':
-            body = {'content': {'application/json': {
+            body = {
+                'required': True,
+                'content': {'application/json': {
                 'schema': {
                     'type': 'array',
                     'items': {'$ref': '#/components/schemas/ProgressSpec'}
