@@ -20,10 +20,6 @@ class LocalizationGraphicSchema(AutoSchema):
     PARAMS_MARGIN_X = 'margin_x'
     PARAMS_MARGIN_Y = 'margin_y'
 
-    # Valid values for get mode
-    MODE_USE_EXISTING_THUMBNAIL = 'existing'
-    MODE_CREATE_NEW_THUMBNAIL = 'create'
-    
     # Margins (x,y pixels) to use if defaults are requested
     DEFAULT_MARGIN_DOT = SimpleNamespace(x=10, y=10)
     DEFAULT_MARGIN_LINE = SimpleNamespace(x=10, y=10)
@@ -52,31 +48,16 @@ class LocalizationGraphicSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
 
-        valid_for_create_only_message = f'Valid only if {self.PARAM_ARG_MODE} = {self.MODE_CREATE_NEW_THUMBNAIL}. '
         valid_for_non_default_margins_message = f'Valid only if {self.PARAMS_USE_DEFAULT_MARGINS} is false. '
 
         params = []
         if method == 'GET':
             params = [
                 {
-                    'name': self.PARAM_ARG_MODE,
-                    'in': 'query',
-                    'required': False,
-                    'description': f"Set to '{self.MODE_USE_EXISTING_THUMBNAIL}' to use existing thumbnail "
-                                   f"or '{self.MODE_CREATE_NEW_THUMBNAIL}' to generate a new thumbnail. "
-                                   'If using existing thumbnail and it does not exist, a 400 error will be reported. '
-                                   f'Default is {self.MODE_CREATE_NEW_THUMBNAIL}',
-                    'schema': {
-                        'type': 'string',
-                        'enum': [self.MODE_USE_EXISTING_THUMBNAIL, self.MODE_CREATE_NEW_THUMBNAIL],
-                        'default': self.MODE_CREATE_NEW_THUMBNAIL,
-                    }
-                },
-                {
                     'name': self.PARAMS_IMAGE_SIZE,
                     'in': 'query',
                     'required': False,
-                    'description': f'Size of final image to return. This forces scaling the image. ' 
+                    'description': f'Size of final image to return. This forces scaling the image. '
                                    'Default is the localization size and margins define the image size. ' +
                                    valid_for_create_only_message +
                                    'Example: 100x100 ',
@@ -89,11 +70,10 @@ class LocalizationGraphicSchema(AutoSchema):
                     'in': 'query',
                     'required': False,
                     'description': f'Use default margins for localization types. ' +
-                                   f' Default margins (x,y pixels) - ' + 
+                                   f' Default margins (x,y pixels) - ' +
                                    f'dot: ({self.DEFAULT_MARGIN_DOT.x},{self.DEFAULT_MARGIN_DOT.y}) ' +
                                    f'line:  ({self.DEFAULT_MARGIN_LINE.x},{self.DEFAULT_MARGIN_LINE.y}) ' +
-                                   f'box: ({self.DEFAULT_MARGIN_BOX.x},{self.DEFAULT_MARGIN_BOX.y}) ' +
-                                   valid_for_create_only_message,
+                                   f'box: ({self.DEFAULT_MARGIN_BOX.x},{self.DEFAULT_MARGIN_BOX.y}) '
                     'schema': {
                         'type': 'boolean',
                         'default': True,
@@ -103,8 +83,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'name': self.PARAMS_MARGIN_X,
                     'in': 'query',
                     'required': False,
-                    'description': f'Pixel margin to apply to the height of the localization when generating the image. ' +
-                                   valid_for_create_only_message +
+                    'description': f'Pixel margin to apply to the height of the localization when generating the image. '
                                    valid_for_non_default_margins_message,
                     'schema': {
                         'type': 'integer',
@@ -114,8 +93,7 @@ class LocalizationGraphicSchema(AutoSchema):
                     'name': self.PARAMS_MARGIN_Y,
                     'in': 'query',
                     'required': False,
-                    'description': f'Pixel margin to apply to the width of the localization when generating the image. ' +
-                                   valid_for_create_only_message +
+                    'description': f'Pixel margin to apply to the width of the localization when generating the image. '
                                    valid_for_non_default_margins_message,
                     'schema': {
                         'type': 'integer',

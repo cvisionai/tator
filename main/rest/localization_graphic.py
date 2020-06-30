@@ -215,19 +215,6 @@ class LocalizationGraphicAPI(BaseDetailView):
         # Get the localization associated with the given ID
         obj = Localization.objects.get(pk=params['id'])
 
-        # If the provided mode is to use the thumbnail, then attempt to get it. If the thumbnail is null, then
-        # throw up a 400 bad request error.
-        mode = params.get(self.schema.PARAM_ARG_MODE, None)
-        if mode == self.schema.MODE_USE_EXISTING_THUMBNAIL:
-            try:
-                return obj.thumbnail
-            except:
-                raise Exception("No thumbnail was generated for the given localization")
-
-        elif mode != self.schema.MODE_CREATE_NEW_THUMBNAIL:
-            log_msg = f"Invalid mode provided. Please use {self.schema.MODE_USE_EXISTING_THUMBNAIL} or {self.schema.MODE_CREATE_NEW_THUMBNAIL}"
-            raise Exception(log_msg)
-
         # Extract the force image size argument and assert if there's a problem with the provided inputs
         force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)
         if force_image_size is not None:
