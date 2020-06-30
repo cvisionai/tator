@@ -57,11 +57,5 @@ transcode = {
             'type': 'string',
             'description': 'UUID identifying the job group.',
         },
-        'media_id': {
-            'type': 'integer',
-            'description': 'Unique integer identifying a media. This value is null for archive '
-                           'transcodes.',
-            'nullable': True,
-        },
     },
 }

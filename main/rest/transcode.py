@@ -101,15 +101,11 @@ class TranscodeAPI(BaseListView):
             gid,
             uid,
             self.request.user.pk,
-            upload_size,
-            media.id)
+            upload_size)
 
         prog.progress("Transcoding...", 60)
 
         response_data = {'message': "Transcode started successfully!",
                          'run_uid': uid,
-                         'group_id': gid,
-                         'media_id': None}
-        if entity_type != -1:
-            response_data['media_id'] = media.id
+                         'group_id': gid}
         return response_data
