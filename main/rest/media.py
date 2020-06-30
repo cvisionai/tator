@@ -365,6 +365,8 @@ class MediaDetailAPI(BaseDetailView):
 
         # Media definitions may be appended but not replaced or deleted.
         if 'media_files' in params:
+            if obj.media_files is None:
+                obj.media_files = {}
             new_streaming = params['media_files'].get('streaming', [])
             old_streaming = obj.media_files.get('streaming', [])
             new_archival = params['media_files'].get('archival', [])
@@ -373,7 +375,7 @@ class MediaDetailAPI(BaseDetailView):
             old_audio = obj.media_files.get('audio', [])
             obj.media_files = {
                 'streaming': new_streaming + old_streaming,
-                'archival': new_archvial + old_archival,
+                'archival': new_archival + old_archival,
                 'audio': new_audio + old_audio,
             }
 
@@ -393,7 +395,7 @@ class MediaDetailAPI(BaseDetailView):
             obj.height = params['height']
 
         obj.save()
-        return {'message': 'Media {params["id"]} successfully updated!'}
+        return {'message': f'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         """ Delete individual media.
@@ -404,7 +406,7 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'])
         TatorSearch().delete_document(qs[0])
         qs.update(project=None)
-        return {'message': 'Media {params["id"]} successfully deleted!'}
+        return {'message': f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Media.objects.all()
