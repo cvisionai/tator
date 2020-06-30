@@ -159,7 +159,6 @@ class TatorTranscode(JobManagerMixin):
             'name': 'download',
             'retryStrategy': {
                 'limit': 3,
-                'retryOn': "Always",
                 'backoff': {
                     'duration': '5s',
                     'factor': 2
@@ -296,7 +295,7 @@ class TatorTranscode(JobManagerMixin):
             'outputs': {
                 'parameters': [{
                     'name': 'media_id',
-                    'valueFrom': '/work/media_id.json',
+                    'valueFrom': {'path': '/work/media_id.json'},
                 }],
             },
         }
@@ -320,7 +319,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512i',
+                        'memory': '512Mi',
                         'cpu': '500m',
                     },
                 },
@@ -328,7 +327,7 @@ class TatorTranscode(JobManagerMixin):
             'outputs': {
                 'parameters': [{
                     'name': 'workloads',
-                    'valueFrom': '/work/workloads.json',
+                    'valueFrom': {'path': '/work/workloads.json'},
                 }],
             },
         }
@@ -336,7 +335,9 @@ class TatorTranscode(JobManagerMixin):
         self.transcode_task = {
             'name': 'transcode',
             'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media', 'workload'])},
+            'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
+                                                        'category', 'raw_width', 'raw_height',
+                                                        'resolutions'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -345,10 +346,10 @@ class TatorTranscode(JobManagerMixin):
                          '--host', '{{workflow.parameters.host}}',
                          '--token', '{{workflow.parameters.token}}',
                          '--media', '{{inputs.parameters.media}}',
-                         '--category', '{{inputs.parameters.workload.category}}',
-                         '--raw_width', '{{inputs.parameters.workload.raw_width}}',
-                         '--raw_height', '{{inputs.parameters.workload.raw_height}}',
-                         '--resolutions', '{{inputs.parameters.workload.resolutions}}',
+                         '--category', '{{inputs.parameters.category}}',
+                         '--raw_width', '{{inputs.parameters.raw_width}}',
+                         '--raw_height', '{{inputs.parameters.raw_height}}',
+                         '--resolutions', '{{inputs.parameters.resolutions}}',
                          '--output', '{{inputs.parameters.transcoded}}',
                          '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
@@ -366,10 +367,10 @@ class TatorTranscode(JobManagerMixin):
         }
         self.thumbnail_task = {
             'name': 'thumbnail',
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
-                'nodeSelector' : {'cpuWorker' : 'yes'},
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.make_thumbnails',
@@ -652,27 +653,38 @@ class TatorTranscode(JobManagerMixin):
                     'name': 'determine-transcode-task',
                     'template': 'determine-transcode',
                     'arguments': passthrough_parameters,
-                    'outputs': {
-                        'parameters': [{
-                            'name': 'workloads',
-                            'valueFrom': '/workloads.json',
-                        }],
-                    },
                 }, {
                     'name': 'transcode-task',
                     'template': 'transcode',
                     'arguments': {
                         'parameters': passthrough_parameters['parameters'] + [{
-                            'name': 'workload',
-                            'value': '{{item}}',
+                            'name': 'category',
+                            'value': '{{item.category}}',
+                        }, {
+                            'name': 'raw_width',
+                            'value': '{{item.raw_width}}',
+                        }, {
+                            'name': 'raw_height',
+                            'value': '{{item.raw_height}}',
+                        }, {
+                            'name': 'resolutions',
+                            'value': '{{item.resolutions}}',
+                        }, {
+                            'name': 'media',
+                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
                         }],
                     },
                     'dependencies': ['create-media-task', 'determine-transcode-task'],
-                    'withParam': '{{tasks.determine-transcode.outputs.parameters.workloads}}',
+                    'withParam': '{{tasks.determine-transcode-task.outputs.parameters.workloads}}',
                 }, {
                     'name': 'thumbnail-task',
                     'template': 'thumbnail',
-                    'arguments': passthrough_parameters,
+                    'arguments': {
+                        'parameters': passthrough_parameters['parameters'] + [{
+                            'name': 'media',
+                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
+                        }],
+                    },
                     'dependencies': ['create-media-task'],
                 }],
             },
@@ -882,6 +894,14 @@ class TatorTranscode(JobManagerMixin):
                 ],
             },
         }
+
+
+        class NoAliasDumper(yaml.Dumper):
+            def ignore_aliases(self, data):
+                return True
+        logger.info(f"WORKFLOW: {yaml.dump(dict(manifest), Dumper=NoAliasDumper)}")
+        with open('/data/static/WORKFLOW.yaml', 'w') as f:
+            f.write(yaml.dump(dict(manifest), Dumper=NoAliasDumper))
 
         # Create the workflow
         response = self.custom.create_namespaced_custom_object(
