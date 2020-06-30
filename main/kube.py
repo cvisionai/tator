@@ -351,7 +351,7 @@ class TatorTranscode(JobManagerMixin):
                          '--raw_height', '{{inputs.parameters.raw_height}}',
                          '--resolutions', '{{inputs.parameters.resolutions}}',
                          '--output', '{{inputs.parameters.transcoded}}',
-                         '{{inputs.parameters.original}}'],
+                         '--input', '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
