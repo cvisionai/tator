@@ -50,45 +50,46 @@ class MoveVideoAPI(BaseListView):
         if 'archival' in media_files:
             for video_def in media_files['archival']:
                 upload_base = os.path.basename(video_def['url'])
-                path = f"/{project}/{str(uuid1())}.mp4"
+                path = f"{project}/{str(uuid1())}.mp4"
                 move_list.append({
                     'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
                     'dst': os.path.join(settings.RAW_ROOT, path),
                 })
-                video_def['path'] = '/data/raw' + path
+                video_def['path'] = '/data/raw/' + path
                 del video_def['url']
         if 'streaming' in media_files:
             for video_def in media_files['streaming']:
                 upload_base = os.path.basename(video_def['url'])
                 segment_upload_base = os.path.basename(video_def['segments_url'])
-                uuid = str(uuid())
-                path = f"/{project}/{uuid}.mp4"
-                segment_info = f"/{project}/{uuid}_segments.json"
+                uuid = str(uuid1())
+                path = f"{project}/{uuid}.mp4"
+                segment_info = f"{project}/{uuid}_segments.json"
                 move_list += [{
                     'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
                     'dst': os.path.join(settings.MEDIA_ROOT, path),
                 }, {
                     'src': os.path.join(settings.UPLOAD_ROOT, segment_upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, path),
+                    'dst': os.path.join(settings.MEDIA_ROOT, segment_info),
                 }]
-                video_def['path'] = '/media' + path
-                video_def['segment_info'] = '/media' + path
+                video_def['path'] = '/media/' + path
+                video_def['segment_info'] = '/media/' + path
                 del video_def['url']
                 del video_def['segments_url']
         if 'audio' in media_files:
             for audio_def in media_files['audio']:
                 upload_base = os.path.basename(audio_def['url'])
-                path = f"/{project}/{str(uuid1())}.mp4"
+                path = f"{project}/{str(uuid1())}.mp4"
                 move_list.append({
                     'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.RAW_ROOT, path),
+                    'dst': os.path.join(settings.MEDIA_ROOT, path),
                 })
-                audio_def['path'] = '/media' + path
+                audio_def['path'] = '/media/' + path
                 del audio_def['url']
         logger.info(f"MEDIA FILES AFTER ADJUSTMENT: {json.dumps(media_files)}")
+        logger.info(f"MOVE LIST: {json.dumps(move_list)}")
 
         # Create the move workflow
-        TatorMove().move_video(project, params['id'], str(token), media_files, move_list)
+        TatorMove().move_video(project, params['id'], str(token), move_list, media_files)
         
     def get_queryset(self):
         return Media.objects.all()
