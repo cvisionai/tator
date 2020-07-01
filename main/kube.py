@@ -798,6 +798,8 @@ class TatorTranscode(JobManagerMixin):
                 'templates': [
                     self.download_task,
                     self.delete_task,
+                    self.create_media_task,
+                    self.determine_transcode_task,
                     self.transcode_task,
                     self.thumbnail_task,
                     self.image_upload_task,
