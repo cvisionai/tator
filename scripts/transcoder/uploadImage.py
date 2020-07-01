@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # Save the video
     out = requests.post(
-        f'{args.url}/Media/{args.project}',
+        f'{args.url}/Medias/{args.project}',
         headers={
             "Authorization": f"Token {args.token}",
             "Content-Type": "application/json",
