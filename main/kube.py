@@ -756,6 +756,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
+                       'host': f'https://{os.getenv("MAIN_HOST")}',
                        'rest_url': f'https://{os.getenv("MAIN_HOST")}/rest',
                        'tus_url' : f'https://{os.getenv("MAIN_HOST")}/files/',
                        'project' : str(project),
