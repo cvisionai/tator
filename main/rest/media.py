@@ -417,7 +417,7 @@ class MediaDetailAPI(BaseDetailView):
             prog = ProgressProducer(
                 'upload',
                 project,
-                params['gid'],
+                str(params['gid']),
                 params['uid'],
                 obj.name,
                 self.request.user,
@@ -430,7 +430,7 @@ class MediaDetailAPI(BaseDetailView):
                 'name': obj.name,
                 'section': obj.attributes['tator_user_sections'],
             }
-            prog.finished("Uploaded successfully!", {**info})
+            prog.finished("Uploaded successfully!", info)
 
         obj.save()
         return {'message': f'Media {params["id"]} successfully updated!'}
