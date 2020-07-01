@@ -1123,7 +1123,7 @@ class TatorMove:
                 param['value'] = value
                 break
 
-    def move_video(self, project, media_id, token, move_list, media_files):
+    def move_video(self, project, media_id, token, move_list, media_files, gid, uid):
         """ Create a workflow for moving files.
 
         :param project: Unique integer identifying a project.
@@ -1135,12 +1135,19 @@ class TatorMove:
         """
         host = f"https://{os.getenv('MAIN_HOST')}"
 
+        # Set up media update object
+        media_update = {'media_files': media_files}
+        if gid is not None and uid is not None:
+            media_update['gid'] = gid
+            media_update['uid'] = uid
+
         # Set required workflow parameters.
+        self._set_parameter('transcoder_image': f"{docker_registry}/tator_transcoder:{Git.sha}"
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', str(media_id))
         self._set_parameter('move_list', json.dumps(move_list))
-        self._set_parameter('media_files', json.dumps({'media_files': media_files}))
+        self._set_parameter('media_update', json.dumps(media_update))
 
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',

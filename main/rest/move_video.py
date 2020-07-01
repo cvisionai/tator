@@ -85,7 +85,10 @@ class MoveVideoAPI(BaseListView):
                 del audio_def['url']
 
         # Create the move workflow
-        response = TatorMove().move_video(project, params['id'], str(token), move_list, media_files)
+        gid = params.get('gid', None)
+        uid = params.get('uid', None)
+        response = TatorMove().move_video(project, params['id'], str(token), move_list,
+                                          media_files, gid, uid)
 
         response_data = {'message': f"Moving video for media {params['id']} in workflow "
                                     f"{response['metadata']['name']}!",
