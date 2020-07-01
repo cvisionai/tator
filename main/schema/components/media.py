@@ -147,6 +147,17 @@ media_update = {
     'type': 'object',
     'properties': {
         **media_properties,
+        'gid': {
+            'description': 'UUID corresponding to a group of uploads. If given, a '
+                           'progress message will be sent for this media.',
+            'type': 'string',
+            'format': 'uuid',
+        },
+        'uid': {
+            'description': 'UUID corresponding to an upload. If given, a '
+                           'progress message will be sent for this media.',
+            'type': 'string',
+        },
         'thumbnail_url': {
             'description': 'Upload URL for the thumbnail.',
             'type': 'string',
