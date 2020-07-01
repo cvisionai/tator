@@ -199,16 +199,13 @@ class UploadElement extends TatorElement {
     }
 
 
-    console.log("GOT TO FILES ADDED");
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
       composed: true
     }));
-    console.log("GOT TO POSTING MESSAGES");
     for (const msg of this._messages) {
       window._uploader.postMessage(msg);
     }
-    console.log("GOT TO ALL SET");
     if (numStarted > 0) {
       this.dispatchEvent(new Event("allset", {composed: true}));
     }
