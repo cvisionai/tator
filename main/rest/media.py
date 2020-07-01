@@ -103,6 +103,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             uid = params['uid']
             url = params['url']
             thumbnail_url = params.get('thumbnail_url', None)
+            progress_name = params.get('progress_name', name)
 
             # Determine file paths
             upload_uid = url.split('/')[-1]
@@ -121,7 +122,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 project,
                 gid,
                 uid,
-                name,
+                progress_name,
                 self.request.user,
                 {'section': section},
             )
