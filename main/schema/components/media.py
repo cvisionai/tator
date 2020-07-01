@@ -140,6 +140,10 @@ media_spec = {
             'description': 'MD5 sum of the media file.',
             'type': 'string',
         },
+        'progress_name': {
+            'description': 'Replaces name in progress message.',
+            'type': 'string',
+        },
     },
 }
 
