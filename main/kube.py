@@ -895,14 +895,6 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-
-        class NoAliasDumper(yaml.Dumper):
-            def ignore_aliases(self, data):
-                return True
-        logger.info(f"WORKFLOW: {yaml.dump(dict(manifest), Dumper=NoAliasDumper)}")
-        with open('/data/static/WORKFLOW.yaml', 'w') as f:
-            f.write(yaml.dump(dict(manifest), Dumper=NoAliasDumper))
-
         # Create the workflow
         response = self.custom.create_namespaced_custom_object(
             group='argoproj.io',
