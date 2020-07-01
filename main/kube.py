@@ -350,6 +350,8 @@ class TatorTranscode(JobManagerMixin):
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
                          '--resolutions', '{{inputs.parameters.resolutions}}',
+                         '--gid', '{{workflow.parameters.gid}}',
+                         '--uid', '{{workflow.parameters.uid}}',
                          '--output', '{{inputs.parameters.transcoded}}',
                          '--input', '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
@@ -1134,6 +1136,7 @@ class TatorMove:
         :param media_files: Used to call the Media PATCH endpoint video/audio definitions.
         """
         host = f"https://{os.getenv('MAIN_HOST')}"
+        docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
 
         # Set up media update object
         media_update = {'media_files': media_files}
