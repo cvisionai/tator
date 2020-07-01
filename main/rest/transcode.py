@@ -106,11 +106,13 @@ class TranscodeAPI(BaseListView):
 
         prog.progress("Transcoding...", 60)
 
-        response_data = {'message': "Transcode started successfully!",
+        msg = (f"Transcode job {uid} started for file "
+               f"{name} on project {type_objects[0].project.name}")
+        response_data = {'message': msg,
                          'run_uid': uid,
                          'group_id': gid}
 
         # Send notification that transcode started.
-        Notify.notify_admin_msg(f"Transcode job {uid} started for file "
-                                f"{name} on project {type_objects[0].project.name}")
+        logger.info(msg)
+        Notify.notify_admin_msg(msg)
         return response_data

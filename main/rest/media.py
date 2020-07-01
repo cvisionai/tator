@@ -206,10 +206,11 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 created_by=self.request.user,
                 modified_by=self.request.user,
             )
-            response = {'message': "Video saved successfully!", 'id': media_obj.id}
-
-            Notify.notify_admin_msg(f"Media object {media_obj.id} created for video "
-                                    f"{name} on project {media_type.project.name}")
+            msg = (f"Media object {media_obj.id} created for video "
+                   f"{name} on project {media_type.project.name}")
+            response = {'message': msg, 'id': media_obj.id}
+            logger.info(msg)
+            Notify.notify_admin_msg(msg)
 
         return response
 
