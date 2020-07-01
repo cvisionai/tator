@@ -6,6 +6,10 @@ audio_definition = {
             'type': 'string',
             'description': 'Relative URL to the file.',
         },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
         'codec': {
             'description': 'Human readable codec.',
             'type': 'string',
@@ -46,6 +50,10 @@ video_definition = {
         'path': {
             'type': 'string',
             'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
         },
         'codec': {
             'description': 'Human readable codec.',
