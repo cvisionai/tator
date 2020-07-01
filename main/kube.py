@@ -652,6 +652,16 @@ class TatorTranscode(JobManagerMixin):
                     'template': 'create-media',
                     'arguments': passthrough_parameters,
                 }, {
+                    'name': 'thumbnail-task',
+                    'template': 'thumbnail',
+                    'arguments': {
+                        'parameters': passthrough_parameters['parameters'] + [{
+                            'name': 'media',
+                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
+                        }],
+                    },
+                    'dependencies': ['create-media-task'],
+                }, {
                     'name': 'determine-transcode-task',
                     'template': 'determine-transcode',
                     'arguments': passthrough_parameters,
@@ -676,18 +686,8 @@ class TatorTranscode(JobManagerMixin):
                             'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
                         }],
                     },
-                    'dependencies': ['create-media-task', 'determine-transcode-task'],
+                    'dependencies': ['thumbnail-task', 'determine-transcode-task'],
                     'withParam': '{{tasks.determine-transcode-task.outputs.parameters.workloads}}',
-                }, {
-                    'name': 'thumbnail-task',
-                    'template': 'thumbnail',
-                    'arguments': {
-                        'parameters': passthrough_parameters['parameters'] + [{
-                            'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
-                        }],
-                    },
-                    'dependencies': ['create-media-task'],
                 }],
             },
         }
