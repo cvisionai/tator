@@ -1142,7 +1142,7 @@ class TatorMove:
             media_update['uid'] = uid
 
         # Set required workflow parameters.
-        self._set_parameter('transcoder_image': f"{docker_registry}/tator_transcoder:{Git.sha}"
+        self._set_parameter('transcoder_image', f"{docker_registry}/tator_transcoder:{Git.sha}")
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', str(media_id))
