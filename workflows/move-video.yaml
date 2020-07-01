@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: move-video-
+spec:
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 300
+    secondsAfterFailure: 86400
+  arguments:
+    parameters:
+    - name: transcoder_image
+    - name: move_list # List of objects with src/dst.
+                      # Example: [{"src": "/src/path", "dst": "/dst/path"}]
+    - name: media_update 
+    - name: media_id
+    - name: host
+    - name: token
+  volumes:
+  - name: upload-pv-claim
+    persistentVolumeClaim:
+      claimName: upload-pv-claim
+  - name: media-pv-claim
+    persistentVolumeClaim:
+      claimName: media-pv-claim
+  - name: raw-pv-claim
+    persistentVolumeClaim:
+      claimName: raw-pv-claim
+  templates:
+  - name: main
+    steps:
+    - - name: move-file
+        template: move
+        arguments:
+          parameters:
+          - name: src
+            value: "{{item.src}}"
+          - name: dst
+            value: "{{item.dst}}"
+        withParam: "{{workflow.parameters.move_list}}"
+    - - name: patch-media
+        template: patch
+  - name: move
+    inputs:
+      parameters:
+      - name: src
+      - name: dst
+    container:
+      image: "{{workflow.parameters.transcoder_image}}"
+      imagePullPolicy: IfNotPresent
+      command: [mv]
+      args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 200m
+      volumeMounts:
+      - mountPath: /data/uploads
+        name: upload-pv-claim
+      - mountPath: /data/media
+        name: media-pv-claim
+      - mountPath: /data/raw
+        name: raw-pv-claim
+  - name: patch
+    container:
+      image: "{{workflow.parameters.transcoder_image}}"
+      imagePullPolicy: IfNotPresent
+      command: [curl]
+      args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_update}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
+      resources:
+        requests:
+          memory: 64Mi
+          cpu: 100m
+

@@ -14,8 +14,9 @@ def mediaFileSizes(file):
     total_size = 0
     download_size = None
 
-    if os.path.exists(file.thumbnail.path):
-        total_size += file.thumbnail.size
+    if file.thumbnail:
+        if os.path.exists(file.thumbnail.path):
+            total_size += file.thumbnail.size
     if file.meta.dtype == 'video':
         if file.media_files:
             if 'archival' in file.media_files:
@@ -39,8 +40,9 @@ def mediaFileSizes(file):
                 total_size += statinfo.st_size
                 if download_size is None:
                     download_size = statinfo.st_size
-        if os.path.exists(file.thumbnail_gif.path):
-            total_size += file.thumbnail_gif.size
+        if file.thumbnail_gif:
+            if os.path.exists(file.thumbnail_gif.path):
+                total_size += file.thumbnail_gif.size
     if file.file:
         if os.path.exists(file.file.path):
             total_size += file.file.size
