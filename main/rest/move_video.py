@@ -70,7 +70,7 @@ class MoveVideoAPI(BaseListView):
                     'dst': os.path.join(settings.MEDIA_ROOT, segment_info),
                 }]
                 video_def['path'] = '/media/' + path
-                video_def['segment_info'] = '/media/' + path
+                video_def['segment_info'] = '/media/' + segment_info
                 del video_def['url']
                 del video_def['segments_url']
         if 'audio' in media_files:
