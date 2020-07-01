@@ -412,6 +412,26 @@ class MediaDetailAPI(BaseDetailView):
         if 'height' in params:
             obj.height = params['height']
 
+        # Send progress message if we have a gid/uid.
+        if ('gid' in params) and ('uid' in params):
+            prog = ProgressProducer(
+                'upload',
+                project,
+                params['gid'],
+                params['uid'],
+                obj.name,
+                self.request.user,
+                {'section': obj.attributes['tator_user_sections']},
+            )
+            info = {
+                'id': obj.id,
+                'thumbnail': str(obj.thumbnail),
+                'thumbnail_gif': str(obj.thumbnail_gif),
+                'name': obj.name,
+                'section': obj.attributes['tator_user_sections'],
+            }
+            prog.finished("Uploaded successfully!", {**info})
+
         obj.save()
         return {'message': f'Media {params["id"]} successfully updated!'}
 
