@@ -9,6 +9,7 @@ from ..kube import TatorTranscode
 from ..consumers import ProgressProducer
 from ..models import MediaType
 from ..schema import TranscodeSchema
+from ..notify import Notify
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -108,4 +109,8 @@ class TranscodeAPI(BaseListView):
         response_data = {'message': "Transcode started successfully!",
                          'run_uid': uid,
                          'group_id': gid}
+
+        # Send notification that transcode started.
+        Notify.notify_admin_msg(f"Transcode job {uid} started for file "
+                                f"{name} on project {type_objects[0].project.name}")
         return response_data

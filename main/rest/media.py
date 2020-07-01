@@ -21,6 +21,7 @@ from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..consumers import ProgressProducer
+from ..notify import Notify
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -206,6 +207,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 modified_by=self.request.user,
             )
             response = {'message': "Video saved successfully!", 'id': media_obj.id}
+
+            Notify.notify_admin_msg(f"Media object {media_obj.id} created for video "
+                                    f"{name} on project {media_type.project.name}")
 
         return response
 
