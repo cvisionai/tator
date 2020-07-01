@@ -10,6 +10,10 @@ audio_definition = {
             'type': 'integer',
             'description': 'File size in bytes.',
         },
+        'bit_rate': {
+            'type': 'integer',
+            'description': 'Bit rate in bits per second',
+        },
         'codec': {
             'description': 'Human readable codec.',
             'type': 'string',
@@ -54,6 +58,10 @@ video_definition = {
         'size': {
             'type': 'integer',
             'description': 'File size in bytes.',
+        },
+        'bit_rate': {
+            'type': 'integer',
+            'description': 'Bit rate in bits per second',
         },
         'codec': {
             'description': 'Human readable codec.',
