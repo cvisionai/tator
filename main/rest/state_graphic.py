@@ -1,5 +1,6 @@
 import tempfile
 import logging
+import traceback
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -28,6 +29,7 @@ class StateGraphicAPI(BaseDetailView):
         return State.objects.all()
 
     def handle_exception(self,exc):
+        logger.error(f"Exception in request: {traceback.format_exc()}")
         status_obj = status.HTTP_400_BAD_REQUEST
         if type(exc) is response.Http404:
             status_obj = status.HTTP_404_NOT_FOUND
