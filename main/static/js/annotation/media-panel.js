@@ -38,28 +38,20 @@ class MediaPanel extends TatorElement {
 
   set mediaType(val)
   {
-    if (val.attribute_types.length == 0)
-    {
-      // Hide the attribute viewer is there are none.
-      this._attrs.style.display="none";
+    // Setup the attribute display for the media
+    this._attrs.dataType = val;
+    this._attrs.setValues(this._mediaData);
+    this._attrs.addEventListener("change", () => {
+    const values = this._attrs.getValues();
+    if (values !== null) {
+      const endpoint="Media";
+      const id = this._mediaData['id'];
+      this._undo.patch(endpoint, id, {"attributes": values}, val);
+      this.dispatchEvent(new CustomEvent("save", {
+        detail: this._values
+      }));
     }
-    else
-    {
-      // Setup the attribute display for the media
-      this._attrs.dataType = val;
-      this._attrs.setValues(this._mediaData);
-      this._attrs.addEventListener("change", () => {
-      const values = this._attrs.getValues();
-      if (values !== null) {
-        const endpoint="Media";
-        const id = this._mediaData['id'];
-        this._undo.patch(endpoint, id, {"attributes": values}, val);
-        this.dispatchEvent(new CustomEvent("save", {
-          detail: this._values
-        }));
-      }
     });
-    }
   }
 
   set annotationData(val) {
