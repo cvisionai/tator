@@ -127,7 +127,7 @@ class FramePanel extends TatorElement {
       if (data.length > 0) {
         this._blockingWrites = true;
         const values = this._getInterpolated(data);
-        this._attributes.setValues({attributes: values});
+        this._attributes.setValues(values);
         this._blockingWrites = false;
       }
     }
@@ -152,13 +152,15 @@ class FramePanel extends TatorElement {
       afterIdx = nearestIdx;
     }
     let attrs;
+    let id;
     switch (this._method) {
       case "latest":
         attrs = data[beforeIdx].attributes;
+        id = data[beforeIdx].id;
         break;
       //TODO: Implement other interpolation methods
     }
-    return attrs;
+    return {attributes: attrs, id: id};
   }
 }
 
