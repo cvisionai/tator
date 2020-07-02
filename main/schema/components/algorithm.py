@@ -1,9 +1,10 @@
+# Note: The same schema is used for POST and GET requests
 algorithm = {
     'type': 'object',
     'properties': {
         'name': {
             'type': 'string',
-            'description': 'Name of the algorithm.',
+            'description': 'Unique name of the algorithm.',
         },
         'project': {
             'type': 'integer',

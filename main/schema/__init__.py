@@ -1,5 +1,6 @@
 from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
+from .algorithm_registration import AlgorithmRegistrationSchema
 from .analysis import AnalysisListSchema
 from .job_group import JobGroupDetailSchema
 from .job import JobDetailSchema

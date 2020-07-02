@@ -1,5 +1,6 @@
 from .algorithm_launch import AlgorithmLaunchAPI
 from .algorithm import AlgorithmListAPI
+from .algorithm_registration import AlgorithmRegistrationAPI
 from .analysis import AnalysisListAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
