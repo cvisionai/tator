@@ -6,6 +6,11 @@ class AttributePanel extends TatorElement {
     this._div.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
     this._shadow.appendChild(this._div);
     this._emitChanges=true;
+
+    this._idWidget = document.createElement("text-input");
+    this._idWidget.permission = "View Only";
+    this._idWidget.setAttribute("name", "ID");
+    this._div.appendChild(this._idWidget);
   }
 
   static get observedAttributes() {
@@ -22,7 +27,9 @@ class AttributePanel extends TatorElement {
   set permission(val) {
     this._permission = val;
     for (const widget of this._div.children) {
-      widget.permission = val;
+      if (widget.getAttribute("name") != "ID") {
+          widget.permission = val;
+      }
     }
   }
 
@@ -129,6 +136,9 @@ class AttributePanel extends TatorElement {
   }
 
   setValues(values) {
+    // Set the ID widget
+    this._idWidget.setValue(values.id);
+
     // Skip resetting slider if we already display this track
     if (this._track && this._track.id == values.id)
     {
