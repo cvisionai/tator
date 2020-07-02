@@ -12,13 +12,10 @@ from django.http import response
 from django.conf import settings
 
 from ..models import Algorithm
-from ..models import Media
-from ..models import Project
 from ..schema import AlgorithmRegistrationSchema
-from ..schema import parse
+from ._media_util import MediaUtil
 from ._base_views import BaseDetailView
 from ._permissions import ProjectExecutePermission
-from .temporary_file import TemporaryFileDetailAPI
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +42,7 @@ class AlgorithmRegistrationAPI(BaseDetailView):
             status=status_obj)
 
     def _post(self, params: dict) -> dict:
-        """
+        """ Overridden method. Please refer to parent's documentation.
         Args:
             params: Parsed request
 

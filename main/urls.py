@@ -61,9 +61,9 @@ urlpatterns += [
         AlgorithmListAPI.as_view(),
     ),
     path(
-        'rest/AlgorithmRegistration/<int:project>',
+        'rest/RegisterAlgorithm/<int:project>',
         AlgorithmRegistrationAPI.as_view(),
-        name='AlgorithmRegistration',
+        name='RegisterAlgorithm',
     ),
     path(
         'rest/Analyses/<int:project>',

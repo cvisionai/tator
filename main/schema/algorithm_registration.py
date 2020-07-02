@@ -2,13 +2,16 @@ from textwrap import dedent
 
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._errors import error_responses
+from ._message import message_with_id_schema
+
 class AlgorithmRegistrationSchema(AutoSchema):
     def get_operation(self, path, method):
         """ Overriden method. Please refer to parent for documentation
         """
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'AlgorithmRegistration'
+            operation['operationId'] = 'RegisterAlgorithm'
         operation['tags'] = ['Tator']
         return operation
     
@@ -40,7 +43,7 @@ class AlgorithmRegistrationSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema' : {'$ref': '#/components/schemas/Algorithm',}
+                'schema' : {'$ref': '#/components/schemas/ImageSpec'},
             }}}
 
         return body
@@ -48,10 +51,5 @@ class AlgorithmRegistrationSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
-            responses['201'] = {
-                'description': 'Successful registration of algorithm.',
-                'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/Algorithm',
-                }}}
-            }
+            responses['201'] = message_with_id_schema('blah')
         return responses
