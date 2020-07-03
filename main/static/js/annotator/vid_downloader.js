@@ -168,7 +168,8 @@ class VideoDownloader
                  // Transfer the buffer to the
                  var data={"type": "seek_result",
                            "time": time,
-                           "buffer": buffer};
+                           "buffer": buffer,
+                           "frame": frame};
                  postMessage(data, [data.buffer]);
                });
            });
