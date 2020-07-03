@@ -1193,7 +1193,7 @@ class Leaf(Model):
                                 related_name='leaf_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LeafType, on_delete=SET_NULL, db_column='meta')
+    meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
