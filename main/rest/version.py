@@ -1,8 +1,12 @@
 import logging
 from collections import defaultdict
+from django.utils import timezone
+import datetime
 
 from ..models import Version
 from ..models import Project
+from ..models import State
+from ..models import Localization
 from ..serializers import VersionSerializer
 from ..search import TatorSearch
 from ..schema import VersionListSchema
@@ -55,7 +59,7 @@ class VersionListAPI(BaseListView):
                 raise ObjectDoesNotExist
             else:
                 obj.bases.set(qs)
-      
+
         return {'message': 'Created version successfully!', 'id': obj.id}
 
     def _get(self, params):
@@ -69,77 +73,49 @@ class VersionListAPI(BaseListView):
             many=True,
         ).data
 
-        # Use elasticsearch to find annotation stats and last modification date/user
-        query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-        if media:
-            query['query']['bool']['filter'] = []
-            query['query']['bool']['filter'].append({
-                'has_parent': {
-                    'parent_type': 'media',
-                    'query': {'ids': {'values': [f'image_{media}', f'video_{media}']}},
-                },
-            })
-        query['query']['bool']['should'] = []
-        query['query']['bool']['should'].append({
-            'match': {'_modified': False},
-        })
-        query['query']['bool']['should'].append({
-            'bool': {
-                'must_not': [{'exists': {'field': '_modified'}}],
-            },
-        })
-        query['query']['bool']['minimum_should_match'] = 1
-        query['aggs']['versions']['terms']['field'] = '_annotation_version'
-        query['aggs']['versions']['aggs']['latest']['top_hits'] = {
-            'sort': [{'_modified_datetime': {'order': 'desc'}}],
-            '_source': {'includes': ['_modified_datetime', '_modified_by']},
-            'size': 1,
-        }
-        created_aggs = TatorSearch().search_raw(project, query)
-        created_aggs = created_aggs['aggregations']['versions']['buckets']
-        query['query']['bool']['should'][0]['match']['_modified'] = True
-        modified_aggs = TatorSearch().search_raw(project, query)
-        modified_aggs = modified_aggs['aggregations']['versions']['buckets']
+        # We augment each version with 'num_created', 'created_datetime'
+        # 'num_modified', 'modified_datetime', 'modified_by'
+        response=[]
+        type_objects = [State, Localization]
+        for datum in data:
+            datum['num_created'] = 0
+            datum['num_modified'] = 0
+            earliest_ctime = timezone.now()
+            latest_mtime = timezone.make_aware(datetime.datetime.fromtimestamp(0))
+            for obj in type_objects:
+                created_qs = obj.objects.filter(project=project,version=datum['id'])
+                modified_qs = obj.objects.filter(project=project,version=datum['id'], modified=True)
+                if media:
+                    created_qs = created_qs.filter(media=media)
+                    modified_qs = modified_qs.filter(media=media)
+                created_qs = created_qs.order_by('created_datetime')
+                modified_qs = modified_qs.order_by('-modified_datetime')
 
-        # Convert to dictionary with id as keys
-        data = {i['id']: i for i in data}
-        created_aggs = {i['key']: i for i in created_aggs}
-        modified_aggs = {i['key']: i for i in modified_aggs}
+                # Generate return structure
+                num_created = created_qs.count()
+                num_modified = modified_qs.count()
+                datum['num_created'] += num_created
+                datum['num_modified'] += modified_qs.count()
+                if num_created:
+                    if created_qs[0].created_datetime < earliest_ctime:
+                        earliest_ctime = created_qs[0].created_datetime
+                        datum['created_by'] = str(created_qs[0].created_by)
+                        datum['created_datetime'] = earliest_ctime.isoformat()
+                else:
+                    datum['created_by'] = '---'
+                    datum['created_datetime'] = '---'
+                if num_modified:
+                    if created_qs[0].modified_datetime > latest_mtime:
+                        latest_mtime = created_qs[0].modified_datetime
+                        datum['modified_by'] = str(created_qs[0].created_by)
+                        datum['modified_datetime'] = earliest_ctime.isoformat()
+                else:
+                    datum['modified_by'] = '---'
+                    datum['modified_datetime'] = '---'
 
-        # Copy annotation stats and modification dates into objects.
-        for key in data:
-            if key in created_aggs:
-                created_latest = created_aggs[key]['latest']['hits']['hits'][0]['_source']
-                data[key] = {
-                    **data[key],
-                    'num_created': created_aggs[key]['doc_count'],
-                    'created_datetime': created_latest['_modified_datetime'],
-                    'created_by': created_latest['_modified_by'],
-                }
-            else:
-                data[key] = {
-                    **data[key],
-                    'num_created': 0,
-                    'created_datetime': '---',
-                    'created_by': '---',
-                }
-            if key in modified_aggs:
-                modified_latest = modified_aggs[key]['latest']['hits']['hits'][0]['_source']
-                data[key] = {
-                    **data[key],
-                    'num_modified': modified_aggs[key]['doc_count'],
-                    'modified_datetime': modified_latest['_modified_datetime'],
-                    'modified_by': modified_latest['_modified_by'],
-                }
-            else:
-                data[key] = {
-                    **data[key],
-                    'num_modified': 0,
-                    'modified_datetime': '---',
-                    'modified_by': '---',
-                }
+            response.append(datum)
 
-        return list(data.values())
+        return response
 
 class VersionDetailAPI(BaseDetailView):
     """ Interact with individual version.
