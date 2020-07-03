@@ -18,12 +18,7 @@ class AlgorithmRegistrationSchema(AutoSchema):
     def get_description(self, path, method):
         """ Overriden method. Please refer to parent for documentation
         """
-        return dedent("""\
-        Registers an algorithm.
-
-        This will register an Argo workflow with a named algorithm.
-        The registered algorithm will then be available for launching.
-        """)
+        return "Register Algorithm."
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -43,7 +38,7 @@ class AlgorithmRegistrationSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema' : {'$ref': '#/components/schemas/ImageSpec'},
+                'schema': {'$ref': '#/components/schemas/Algorithm'},
             }}}
 
         return body
@@ -51,5 +46,10 @@ class AlgorithmRegistrationSchema(AutoSchema):
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
-            responses['201'] = message_with_id_schema('blah')
+            responses['201'] = {
+                'description': 'Successful registration of algorithm.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Algorithm',
+                }}}
+            }
         return responses

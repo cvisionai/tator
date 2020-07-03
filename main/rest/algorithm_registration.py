@@ -1,63 +1,92 @@
-from typing import Tuple, List
 import logging
 import os
-import tempfile
-import traceback
-import shutil
-from uuid import uuid1
 
-from rest_framework.response import Response
-from rest_framework import status
-from django.http import response
 from django.conf import settings
 
-from ..models import Algorithm
+from ..models import Project, Algorithm, User
 from ..schema import AlgorithmRegistrationSchema
-from ._media_util import MediaUtil
-from ._base_views import BaseDetailView
+from ..schema.components.algorithm import fields
+from ._base_views import BaseListView
 from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
-class AlgorithmRegistrationAPI(BaseDetailView):
-    """
+class AlgorithmRegistrationAPI(BaseListView):
+    """ Registers/saves an algorithm workflow
+
+    The manifest (.yaml) must have been uploaded via tus, a separate mechanism from the REST API.
+
     """
 
     schema = AlgorithmRegistrationSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ['post']
 
-    def handle_exception(self, exc):
-        """ Overridden method. Please refer to parent's documentation.
-        """
-        logger.error(f"Exception in request: {traceback.format_exc()}")
-        status_obj = status.HTTP_400_BAD_REQUEST
-        if type(exc) is response.Http404:
-            status_obj = status.HTTP_404_NOT_FOUND
-        return Response(
-            MediaUtil.generate_error_image(
-                status_obj,
-                str(exc),
-                self.request.accepted_renderer.format),
-            status=status_obj)
-
     def _post(self, params: dict) -> dict:
         """ Overridden method. Please refer to parent's documentation.
-        Args:
-            params: Parsed request
-
-        Returns:
-            Dictionary for response to be processed by the REST framework
         """
 
-        # Gather the parameters
-        manifest_url = params['manifest']
-        manifest_uid = manifest_url.split('/')[-1]
-        provided_manifest_path = os.path.join(settings.UPLOAD_ROOT, manifest_uid)
+        #
+        # Have to check the validity of the provided parameters before committing them
+        # to the database
+        # 
 
-        new_uid = str(uuid1())
-        ext = os.path.splitex(manifest_url)[1]
+        # Is the name unique?
+        alg_workflow_name = params[fields.name]
+        if Algorithm.objects.filter(name=alg_workflow_name).exists():
+            log_msg = f'Provided algorithm workflow name ({alg_workflow_name}) already exists'
+            logger.error(log_msg)
+            raise ValueError(log_msg)
 
-        print(provided_manifest_path)
+        # Does the project ID exist?
+        project_id = params[fields.project]
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Exception as exc:
+            log_msg = f'Provided project ID ({project_id}) does not exist'
+            logger.error(log_msg)
+            raise exc
 
-        return {}
+        # Does the user ID exist?
+        user_id = params[fields.user]
+        try:
+            user = User.objects.get(pk=user_id)
+        except Exception as exc:
+            log_msg = f'Provided user ID ({user_id}) does not exist'
+            logger.error(log_msg)
+            raise exc
+
+        # Gather the manifest and verify it exists on the server in the right project
+        manifest_url = params[fields.manifest]
+        manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
+        if not os.path.exists(manifest_path):
+            log_msg = f'Provided manifest ({manifest_url}) does not exist in {settings.MEDIA_ROOT}'
+            logging.error(log_msg)
+            raise ValueError(log_msg)
+
+        # Number of files per job greater than 1?
+        files_per_job = int(params[fields.files_per_job])
+        if files_per_job < 1:
+            log_msg = f'Provided files_per_job ({files_per_job}) must be at least 1'
+            logger.error(log_msg)
+            raise ValueError(log_msg)
+
+        #
+        # Get the optional fields and set to null if need be.
+        #
+        description = params.get(fields.description, None)
+        cluster = params.get(fields.cluster, None)
+
+        # Register the algorithm workflow
+        alg_obj = Algorithm(
+            name=alg_workflow_name,
+            project=project,
+            user=user,
+            manifest=manifest_url,
+            description=description,
+            cluster=cluster,
+            files_per_job=files_per_job)
+        alg_obj.save()
+
+        response_msg = f'Algorithm workflow registered. ID: {alg_obj.id}'
+        return {'message': response_msg}

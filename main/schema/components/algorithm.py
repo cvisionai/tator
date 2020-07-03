@@ -1,32 +1,43 @@
+from types import SimpleNamespace
+
+fields = SimpleNamespace(
+    name='name',
+    project='project',
+    user='user',
+    description='description',
+    manifest='manifest',
+    cluster='cluster',
+    files_per_job='files_per_job')
+
 # Note: The same schema is used for POST and GET requests
 algorithm = {
     'type': 'object',
     'properties': {
-        'name': {
+        fields.name: {
             'type': 'string',
-            'description': 'Unique name of the algorithm.',
+            'description': 'Unique name of the algorithm workflow.',
         },
-        'project': {
+        fields.project: {
             'type': 'integer',
             'description': 'Unique integer identifying the project associated with the algorithm.',
         },
-        'user': {
+        fields.user: {
             'type': 'integer',
             'description': 'Unique integer identifying the user registering the algorithm.',
         },
-        'description': {
+        fields.description: {
             'type': 'string',
             'description': 'Description of the algorithm.',
         },
-        'manifest': {
+        fields.manifest: {
             'type': 'string',
-            'description': 'URL to argo manifest file (.yaml)',
+            'description': 'Server URL to argo manifest file (.yaml)',
         },
-        'cluster': {
+        fields.cluster: {
             'type': 'integer',
             'description': 'Unique integer identifying the cluster.',
         },
-        'files_per_job': {
+        fields.files_per_job: {
             'type': 'integer',
             'description': 'Number of media files to be submitted to each workflow.',
         },
