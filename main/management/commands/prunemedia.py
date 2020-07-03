@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Deletes any media files marked for deletion with null project.'
+    help = 'Deletes any media files marked for deletion with null project or type.'
 
     def handle(self, **options):
         BATCH_SIZE = 100
