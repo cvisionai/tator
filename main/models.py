@@ -1037,12 +1037,16 @@ def media_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
         files = instance.media_files.get('streaming', [])
+        if files is None:
+            files = []
         for obj in files:
             path = "/data" + obj['path']
             safe_delete(path)
             path = "/data" + obj['segment_info']
             safe_delete(path)
         files = instance.media_files.get('archival', [])
+        if files is None:
+            files = []
         for obj in files:
             safe_delete(obj['path'])
     instance.thumbnail.delete(False)
