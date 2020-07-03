@@ -1067,7 +1067,7 @@ class Localization(Model):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='localization_modified_by', db_column='modified_by')
     user = ForeignKey(User, on_delete=PROTECT, db_column='user')
-    media = ForeignKey(Media, on_delete=CASCADE, db_column='media')
+    media = ForeignKey(Media, on_delete=SET_NULL, null=True, blank=True, db_column='media')
     frame = PositiveIntegerField(null=True, blank=True)
     thumbnail_image = ForeignKey(Media, on_delete=SET_NULL,
                                  null=True, blank=True,
