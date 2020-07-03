@@ -165,15 +165,11 @@ class Project(Model):
         return self.name
 
     def delete(self, *args, **kwargs):
-        # Delete attribute types
-        qs = AttributeTypeBase.objects.filter(project=self)
-        delete_polymorphic_qs(qs)
-        # Delete entities
-        qs = EntityBase.objects.filter(project=self)
-        delete_polymorphic_qs(qs)
-        # Delete entity types
-        qs = EntityTypeBase.objects.filter(project=self)
-        delete_polymorphic_qs(qs)
+        Version.objects.filter(project=self).delete()
+        MediaType.objects.filter(project=self).delete()
+        LocalizationType.objects.filter(project=self).delete()
+        StateType.objects.filter(project=self).delete()
+        LeafType.objects.filter(project=self).delete()
         super().delete(*args, **kwargs)
 
 class Version(Model):
