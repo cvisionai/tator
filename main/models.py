@@ -977,7 +977,7 @@ class Media(Model):
                                 related_name='media_polymorphic')
     """ Temporary field for migration. """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
-    meta = ForeignKey(MediaType, on_delete=SET_NULL, db_column='meta')
+    meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
