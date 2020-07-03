@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
@@ -1022,6 +1023,7 @@ def safe_delete(path):
         os.remove(path)
     except:
         logger.warning(f"Could not remove {path}")
+        logger.warning(f"{traceback.format_exc()}")
 
 @receiver(pre_delete, sender=Media)
 def media_delete(sender, instance, **kwargs):
