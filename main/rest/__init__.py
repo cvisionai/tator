@@ -24,13 +24,12 @@ from .media_type import MediaTypeListAPI
 from .media_type import MediaTypeDetailAPI
 from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
+from .move_video import MoveVideoAPI
 from .notify import NotifyAPI
 from .progress import ProgressAPI
 from .progress_summary import ProgressSummaryAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
-from .save_image import SaveImageAPI
-from .save_video import SaveVideoAPI
 from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
