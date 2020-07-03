@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Deletes any localizations marked for deletion with null project, type, or version.'
+    help = 'Deletes any localizations marked for deletion with null project, type, version, or media.'
 
     def handle(self, **options):
         BATCH_SIZE = 1000
@@ -16,8 +16,10 @@ class Command(BaseCommand):
             null_project = Localization.objects.filter(project__isnull=True)
             null_meta = Localization.objects.filter(meta__isnull=True)
             null_version = Localization.objects.filter(version__isnull=True)
-            loc_ids = (null_project | null_meta | null_version).distinct()\
-                                                               .values_list('pk', flat=True)[:BATCH_SIZE]
+            null_media = Localization.objects.filter(media__isnull=True)
+            loc_ids = (null_project | null_meta | null_version | null_media)\
+                      .distinct()\
+                      .values_list('pk', flat=True)[:BATCH_SIZE]
             localizations = Localization.objects.filter(pk__in=loc_ids)
             num_localizations = localizations.count()
             if num_localizations == 0:
