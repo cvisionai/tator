@@ -1052,8 +1052,8 @@ class Localization(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='localization_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
@@ -1073,7 +1073,7 @@ class Localization(Model):
                                  null=True, blank=True,
                                  related_name='localization_thumbnail_image',
                                  db_column='thumbnail_image')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -1117,8 +1117,8 @@ class State(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='state_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
-    meta = ForeignKey(StateType, on_delete=CASCADE, db_column='meta')
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
+    meta = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
@@ -1131,7 +1131,7 @@ class State(Model):
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_modified_by', db_column='modified_by')
-    version = ForeignKey(Version, on_delete=CASCADE, null=True, blank=True, db_column='version')
+    version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
     modified = BooleanField(null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -1192,8 +1192,8 @@ class Leaf(Model):
     polymorphic = OneToOneField(EntityBase, on_delete=SET_NULL, null=True, blank=True,
                                 related_name='leaf_polymorphic')
     """ Temporary field for migration. """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
-    meta = ForeignKey(LeafType, on_delete=CASCADE, db_column='meta')
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
+    meta = ForeignKey(LeafType, on_delete=SET_NULL, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
