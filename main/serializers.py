@@ -1,7 +1,6 @@
 import re
 
 from rest_framework import serializers
-from rest_polymorphic.serializers import PolymorphicSerializer
 
 from django.conf import settings
 from django.db import models
