@@ -6,9 +6,6 @@ from django.db.models.expressions import Subquery
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 
-from ..models import AttributeTypeBase
-from ..models import AttributeTypeDatetime
-from ..models import AttributeTypeGeoposition
 from ..models import type_to_obj
 
 from ._attributes import convert_attribute
