@@ -36,7 +36,7 @@ RUN pip3 --no-cache-dir install \
         django==2.2.7 channels==2.1.7 \
         psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
         djangorestframework==3.11.0 pygments==2.4.2 \
-        django-rest-polymorphic==0.1.8 django-extensions==2.2.5 pygraphviz==1.5 \
+        django-extensions==2.2.5 pygraphviz==1.5 \
         pyparsing==2.4.5 pydot==1.4.1 markdown==3.1.1 \
         hiredis==1.0.0 channels_redis==2.4.0 redis==3.3.11 \
         daphne==2.2.5 gunicorn==20.0.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
