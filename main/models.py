@@ -34,8 +34,6 @@ from django.db.models.signals import pre_delete
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.conf import settings
-from enumfields import Enum
-from enumfields import EnumField
 from django_ltree.fields import PathField
 
 from .search import TatorSearch
