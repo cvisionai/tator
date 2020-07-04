@@ -101,12 +101,3 @@ def paginate(query_params, queryset):
         qs = queryset[start:stop]
     return qs
 
-def delete_polymorphic_qs(qs):
-    """Deletes a polymorphic queryset.
-    """
-    types = set(map(lambda x: type(x), qs))
-    ids = list(map(lambda x: x.id, list(qs)))
-    for entity_type in types:
-        qs = entity_type.objects.filter(pk__in=ids)
-        qs.delete()
-
