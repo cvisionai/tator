@@ -33,8 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 --no-cache-dir install wheel
 RUN pip3 --no-cache-dir install pyyaml==5.3.1
 RUN pip3 --no-cache-dir install \
-        django==2.2.7 django-enumfields==1.0.0 \
-        django-polymorphic==2.1.2 channels==2.1.7 \
+        django==2.2.7 channels==2.1.7 \
         psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
         djangorestframework==3.11.0 pygments==2.4.2 \
         django-rest-polymorphic==0.1.8 django-extensions==2.2.5 pygraphviz==1.5 \
