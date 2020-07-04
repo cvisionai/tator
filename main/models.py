@@ -229,6 +229,9 @@ def getVideoDefinition(path, codec, resolution, **kwargs):
             raise TypeError(f"Invalid argument '{arg}' supplied")
     return obj
 
+def ProjectBasedFileLocation(instance, filename):
+    return os.path.join(f"{instance.project.id}", filename)
+
 class JobCluster(Model):
     name = CharField(max_length=128)
     owner = ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
