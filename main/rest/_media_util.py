@@ -41,7 +41,7 @@ class MediaUtil:
                 self._segment_info = json.load(fp)
                 self._moof_data = [(i,x) for i,x in enumerate(self._segment_info['segments']) if x['name'] == 'moof']
         elif video.original:
-            video_file = video.original.path
+            video_file = video.original
             self._height = video.height
             self._width = video.width
             # Make file relative to URL to be consistent with streaming files below
@@ -49,8 +49,8 @@ class MediaUtil:
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
         elif video.file:
             video_file = video.file.path
-            self._height = video.height
-            self._width = video.width
+            self._height = (min(video.height, 720) / video.height) * video.height
+            self._width = (self._height / video.height) * video.width
             # Make file relative to URL to be consistent with streaming files below
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
