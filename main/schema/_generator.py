@@ -14,6 +14,7 @@ class CustomGenerator(SchemaGenerator):
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,
+                'AlgorithmManifestSpec': algorithm_manifest_spec,
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
                 'AttributeType': attribute_type,

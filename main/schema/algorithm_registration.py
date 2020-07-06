@@ -18,7 +18,7 @@ class AlgorithmRegistrationSchema(AutoSchema):
     def get_description(self, path, method):
         """ Overriden method. Please refer to parent for documentation
         """
-        return "Register Algorithm."
+        return "Register algorithm workflow using an already saved algorithm manifest."
 
     def _get_path_parameters(self, path, method):
         return [{

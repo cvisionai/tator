@@ -66,6 +66,11 @@ urlpatterns += [
         name='RegisterAlgorithm',
     ),
     path(
+        'rest/SaveAlgorithmManifest/<int:project>',
+        SaveAlgorithmManifestAPI.as_view(),
+        name='SaveAlgorithmManifest',
+    ),
+    path(
         'rest/Analyses/<int:project>',
         AnalysisListAPI.as_view(),
     ),

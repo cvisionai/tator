@@ -43,3 +43,18 @@ algorithm = {
         },
     }, 
 }
+
+# This spec is used specifically for uploading the manifest file
+algorithm_manifest_spec = {
+    'type': 'object',
+    'properties': {
+        'name': {
+            'description': 'Name of manifest (.yaml) file',
+            'type': 'string',
+        },
+        'upload_url': {
+            'description': 'URL of the uploaded file returned from tus upload',
+            'type': 'string',
+        },
+    },
+}

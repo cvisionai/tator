@@ -2,6 +2,7 @@ import logging
 import os
 
 from django.conf import settings
+import yaml
 
 from ..models import Project, Algorithm, User
 from ..schema import AlgorithmRegistrationSchema
@@ -63,6 +64,15 @@ class AlgorithmRegistrationAPI(BaseListView):
             log_msg = f'Provided manifest ({manifest_url}) does not exist in {settings.MEDIA_ROOT}'
             logging.error(log_msg)
             raise ValueError(log_msg)
+
+        # Try loading the manifest yaml and verify there are no YAML syntax errors
+        try:
+            with open(manifest_path, 'r') as file:
+                loaded_yaml = yaml.load(file, Loader=yaml.FullLoader)
+        except Exception as exc:
+            log_msg = f'Provided yaml file has syntax errors'
+            logginer.error(log_msg)
+            raise exc
 
         # Number of files per job greater than 1?
         files_per_job = int(params[fields.files_per_job])
