@@ -22,14 +22,7 @@ class MediaUtil:
         # the part of the file we need to
         self._segment_info = None
 
-        if video.file:
-            video_file = video.file.path
-            self._height = video.height
-            self._width = video.width
-            # Make file relative to URL to be consistent with streaming files below
-            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
-            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
-        else:
+        if video.media_files:
             if quality is None:
                 quality_idx = 0
             else:
@@ -47,7 +40,20 @@ class MediaUtil:
             with open(segment_file, 'r') as fp:
                 self._segment_info = json.load(fp)
                 self._moof_data = [(i,x) for i,x in enumerate(self._segment_info['segments']) if x['name'] == 'moof']
-
+        elif video.original:
+            video_file = video.original.path
+            self._height = video.height
+            self._width = video.width
+            # Make file relative to URL to be consistent with streaming files below
+            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
+            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
+        elif video.file:
+            video_file = video.file.path
+            self._height = video.height
+            self._width = video.width
+            # Make file relative to URL to be consistent with streaming files below
+            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
+            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
 
         self._video_file = os.path.relpath(self._video_file, settings.MEDIA_URL)
         self._video_file = os.path.join(settings.MEDIA_ROOT, self._video_file)
