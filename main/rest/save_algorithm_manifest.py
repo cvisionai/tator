@@ -26,7 +26,7 @@ class SaveAlgorithmManifestAPI(BaseListView):
         """    
 
         # Verify the provided file has been uploaded
-        url = params['url']
+        url = params['upload_url']
         basename = os.path.basename(url)
         upload_path = os.path.join(settings.UPLOAD_ROOT, basename)
 
