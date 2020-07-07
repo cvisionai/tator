@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 from django.conf import settings
 
@@ -26,30 +27,37 @@ class SaveAlgorithmManifestAPI(BaseListView):
         """    
 
         # Verify the provided file has been uploaded
-        url = params['upload_url']
-        basename = os.path.basename(url)
+        upload_url = params['upload_url']
+        basename = os.path.basename(upload_url)
         upload_path = os.path.join(settings.UPLOAD_ROOT, basename)
 
         if not os.path.exists(upload_path):
-            log_msg = f"Upload file does not exist"
+            log_msg = f"Upload file does not exist {upload_path}"
             raise RuntimeError(log_msg)
 
         # Move the file to the right location using the provided name
-        project_id = params['project']
+        project_id = str(params['project'])
         basename = os.path.basename(params['name'])
         filename, extension = os.path.splitext(basename)
         new_filename = filename + extension
         final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         file_index = -1
-        while not os.path.exists(final_path):
+        while os.path.exists(final_path):
             file_index += 1
             new_filename = f'{filename}_{file_index}{extension}'
             final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
+
+        project_folder = os.path.dirname(final_path)
+        if not os.path.exists(project_folder):
+            os.makedirs(project_folder, exist_ok=True)
 
         shutil.move(src=upload_path, dst=final_path)
 
         # Create the response back to the user
         new_url = os.path.join(project_id, new_filename)
-        response = {'message': f'Algorithm manifest saved. URL: {new_url}'}
+        response = {
+            'name': basename,
+            'upload_url': upload_url,
+            'server_url': new_url}
         return response

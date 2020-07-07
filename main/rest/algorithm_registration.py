@@ -58,10 +58,10 @@ class AlgorithmRegistrationAPI(BaseListView):
             raise exc
 
         # Gather the manifest and verify it exists on the server in the right project
-        manifest_url = params[fields.manifest]
-        manifest_path = os.path.join(settings.MEDIA_ROOT, manifest_url)
+        manifest_file = os.path.basename(params[fields.manifest])
+        manifest_path = os.path.join(settings.MEDIA_ROOT, str(project_id), manifest_file)
         if not os.path.exists(manifest_path):
-            log_msg = f'Provided manifest ({manifest_url}) does not exist in {settings.MEDIA_ROOT}'
+            log_msg = f'Provided manifest ({manifest_file}) does not exist in {settings.MEDIA_ROOT}'
             logging.error(log_msg)
             raise ValueError(log_msg)
 

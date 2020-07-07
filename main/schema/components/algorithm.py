@@ -56,5 +56,9 @@ algorithm_manifest_spec = {
             'description': 'URL of the uploaded file returned from tus upload',
             'type': 'string',
         },
+        'server_url': {
+            'description': 'URL of the saved manifest on the server',
+            'type': 'string',
+        },
     },
 }
