@@ -1,6 +1,6 @@
 from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
-from .algorithm_registration import AlgorithmRegistrationSchema
+from .algorithm import AlgorithmDetailSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
 from .job_group import JobGroupDetailSchema
