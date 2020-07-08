@@ -54,7 +54,6 @@ def create_test_algorithm(user, name, project):
         project=project,
         user=user,
         files_per_job=1,
-        max_concurrent=1,
     )
     obj.manifest.save(
         name='asdf.yaml',
