@@ -50,4 +50,8 @@ COPY scripts/packages /scripts/packages
 WORKDIR /scripts/packages/pytator
 RUN python3 setup.py install
 
+# Build tator-py
+WORKDIR /scripts/packages/tator-py
+RUN python3 setup.py install
+
 WORKDIR /scripts

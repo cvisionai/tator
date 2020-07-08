@@ -801,6 +801,11 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type =="seek_result")
       {
+        if (that._seekFrame != e.data["frame"])
+        {
+          console.warn(`Out of order seek operations detected. Expected=${this.seekFrame}, Got=${e.data["frame"]}`);
+          return;
+        }
         that._videoElement[that._hq_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
         let seek_time = performance.now() - that._seekStart;
@@ -1273,6 +1278,10 @@ class VideoCanvas extends AnnotationCanvas {
                                         detail: {enabled: true}}));
       video = this._videoElement[this._hq_idx].seekBuffer();
       this._seekStart = performance.now();
+
+      // Use the frame as a cookie to keep track of duplicated
+      // seek operations
+      this._seekFrame = frame;
       that._dlWorker.postMessage({"type": "seek",
                                   "frame": frame,
                                   "time": time,

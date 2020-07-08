@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # Save the video
     out = requests.post(
-        f'{args.url}/SaveImage/{args.project}',
+        f'{args.url}/Medias/{args.project}',
         headers={
             "Authorization": f"Token {args.token}",
             "Content-Type": "application/json",
@@ -111,9 +111,7 @@ if __name__ == '__main__':
             'name': args.name,
             'section': args.section,
             'md5': args.md5,
-            'width': width,
-            'height': height,
-            'progressName': progress_name
+            'progress_name': progress_name
         },
     )
     out.raise_for_status()

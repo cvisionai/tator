@@ -4,7 +4,15 @@ audio_definition = {
     'properties': {
         'path': {
             'type': 'string',
-            'description': 'Path to file.',
+            'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
+        'bit_rate': {
+            'type': 'integer',
+            'description': 'Bit rate in bits per second',
         },
         'codec': {
             'description': 'Human readable codec.',
@@ -30,6 +38,12 @@ audio_definition = {
             'description': 'Description other than codec.',
             'type': 'string',
         },
+        'url': {
+            'description': 'Required when this object is used with the MoveVideo endpoint, '
+                           'this field is the upload URL of the audio file. It is '
+                           'is used for the src path and to create `path` field.',
+            'type': 'string',
+        },
     },
 }
 
@@ -39,7 +53,15 @@ video_definition = {
     'properties': {
         'path': {
             'type': 'string',
-            'description': 'Path to file.',
+            'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
+        'bit_rate': {
+            'type': 'integer',
+            'description': 'Bit rate in bits per second',
         },
         'codec': {
             'description': 'Human readable codec.',
@@ -77,6 +99,18 @@ video_definition = {
         },
         'codec_description': {
             'description': 'Description other than codec.',
+            'type': 'string',
+        },
+        'url': {
+            'description': 'Required when this object is used with the MoveVideo endpoint, '
+                           'this field is the upload URL of the video file. It is '
+                           'is used to determine the src path.',
+            'type': 'string',
+        },
+        'segments_url': {
+            'description': 'Required when this object is used with the MoveVideo endpoint, '
+                           'this field is the upload URL of the segments file. It is '
+                           'is used to determine the src path.',
             'type': 'string',
         },
     },

@@ -124,12 +124,14 @@ class AttributePanel extends TatorElement {
   getValues() {
     let values = {};
     for (const widget of this._div.children) {
-      const val = widget.getValue();
-      if ((val === null) && (widget.required)) {
-        values = null;
-        break;
-      } else if (val !== null) {
-        values[widget.getAttribute("name")] = val;
+      if (widget.getAttribute("name") != "ID") {
+        const val = widget.getValue();
+        if ((val === null) && (widget.required)) {
+          values = null;
+          break;
+        } else if (val !== null) {
+          values[widget.getAttribute("name")] = val;
+        }
       }
     }
     return values;

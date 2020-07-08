@@ -421,12 +421,13 @@ class Media(APIElement):
         with requests.get(url, stream=True, headers=self.headers) as r:
             r.raise_for_status()
             total_size = r.headers['Content-Length']
-            total_chunks = math.ceil(int(total_size) / 8192)
+            download_chunk = 2 * 1024 * 1024
+            total_chunks = math.ceil(int(total_size) / download_chunk)
             chunk_count = 0
             last_progress = 0
             yield last_progress
             with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
+                for chunk in r.iter_content(chunk_size=download_chunk):
                     if chunk:
                         chunk_count += 1
                         f.write(chunk)
@@ -1154,6 +1155,6 @@ class TemporaryFile(APIElement):
         with requests.get(url, stream=True, headers=self.headers) as r:
             r.raise_for_status()
             with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
+                for chunk in r.iter_content(chunk_size=2*1024*1024):
                     if chunk:
                         f.write(chunk)

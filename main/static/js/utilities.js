@@ -52,8 +52,8 @@ class Utilities
       else if (media_files.streaming)
       {
         path = media_files.streaming[0].path;
-        http_authorization = media_files.archival[1].http_auth;
-        hostname = media_files.archival[0].host;
+        http_authorization = media_files.streaming[0].http_auth;
+        hostname = media_files.streaming[0].host;
       }
       else
       {
