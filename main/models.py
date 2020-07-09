@@ -247,16 +247,12 @@ class JobCluster(Model):
 
 class Algorithm(Model):
     name = CharField(max_length=128)
-    project = ForeignKey(Project, on_delete=CASCADE)
-    user = ForeignKey(User, on_delete=PROTECT)
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=PROTECT, db_column='user')
     description = CharField(max_length=1024, null=True, blank=True)
     manifest = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
-    cluster = ForeignKey(JobCluster, null=True, blank=True, on_delete=SET_NULL)
+    cluster = ForeignKey(JobCluster, null=True, blank=True, on_delete=SET_NULL, db_column='cluster')
     files_per_job = PositiveIntegerField(
-        default=1,
-        validators=[MinValueValidator(1),]
-    )
-    max_concurrent = PositiveIntegerField(
         default=1,
         validators=[MinValueValidator(1),]
     )

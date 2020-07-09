@@ -1,5 +1,7 @@
 from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
+from .algorithm import AlgorithmDetailSchema
+from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
