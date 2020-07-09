@@ -357,6 +357,7 @@ class MediaType(Model):
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
     """
+    archive_config = JSONField(default=None, null=True, blank=True)
     def __str__(self):
         return f'{self.name} | {self.project}'
 

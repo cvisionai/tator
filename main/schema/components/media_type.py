@@ -40,6 +40,12 @@ media_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/AttributeType'},
     },
+    'archive_config': {
+        'description': 'Archive config definitions. If null, the raw file will be uploaded '
+                       'to Tator.',
+        'type': 'array',
+        'items': {'$ref': '#/components/schemas/ArchiveConfig'},
+    },
 }
 
 media_type_spec = {

@@ -8,7 +8,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
-fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format', 'default_volume', 'visible']
+fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
+          'default_volume', 'visible', 'archive_config']
 
 class MediaTypeListAPI(BaseListView):
     """ Create or retrieve media types.

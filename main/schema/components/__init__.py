@@ -55,6 +55,9 @@ from .user import user
 from .version import version_spec
 from .version import version_update
 from .version import version
+from ._archive_config import encode_config
+from ._archive_config import s3_storage_config
+from ._archive_config import archive_config
 from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import media_files
