@@ -28,8 +28,9 @@ encode_config = {
         'tune': {
             'type': 'string',
             'description': 'Tune setting for ffmpeg.',
-            'enum': ['film', 'animation', 'grain', 'stillimage', 'fastdecode', 'zerolatency'],
-            'default': 'film',
+            'enum': ['film', 'animation', 'grain', 'stillimage', 'fastdecode', 'zerolatency',
+                     'psnr', 'ssim'],
+            'default': 'fastdecode',
         },
     },
 }
