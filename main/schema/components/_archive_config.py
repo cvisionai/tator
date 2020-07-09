@@ -47,6 +47,10 @@ s3_storage_config = {
             'type': 'string',
             'description': 'AWS secret access key.',
         },
+        'bucket_name': {
+            'type': 'string',
+            'description': 'Name of bucket.',
+        },
     },
     
 }
