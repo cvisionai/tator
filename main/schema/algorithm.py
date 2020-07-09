@@ -7,8 +7,6 @@ from ._message import message_with_id_schema
 from ._errors import error_responses
 
 class AlgorithmListSchema(AutoSchema):
-    """
-    """
 
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
@@ -22,12 +20,7 @@ class AlgorithmListSchema(AutoSchema):
     def get_description(self, path, method):
         if method == 'GET':
             description = dedent("""\
-            Get algorithms.
-
-            Algorithms must be registered to a project as an argo workflow. For 
-            instructions on how to register an algorithm, see the documentation: 
-
-            <https://github.com/cvisionai/tator/tree/master/examples/algorithms>
+            Get registered algorithms.
             """)
 
         elif method == 'POST':
@@ -39,8 +32,9 @@ class AlgorithmListSchema(AutoSchema):
             SaveAlgorithmManifest endpoint. This endpoint will respond with an error if
             one of the following conditions occur:
 
-            - Provided name is not unique
-            - 
+            - Provided workflow name is not unique (across projects)
+            - Not all the required fields are present
+            - There are syntax errors with the given manifest file
             """)
 
         return description
@@ -83,8 +77,6 @@ class AlgorithmListSchema(AutoSchema):
         return responses
 
 class AlgorithmDetailSchema(AutoSchema):
-    """ #TODO
-    """
 
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)

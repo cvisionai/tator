@@ -7,7 +7,7 @@ from django.conf import settings
 from ..schema import SaveAlgorithmManifestSchema
 from ..schema.components.algorithm import manifest_fields as fields
 from ._base_views import BaseListView
-from ._permissions import ProjectExecutePermission
+from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +20,22 @@ class SaveAlgorithmManifestAPI(BaseListView):
     """
 
     schema = SaveAlgorithmManifestSchema()
-    permission_clases = [ProjectExecutePermission]
+    permission_clases = [ProjectTransferPermission]
     http_method_names = ['post']
 
     def _post(self, params: dict) -> dict:
-        """ Overridden method. Please refer to parent's documentation.
-        """    
+        """ Saves the manifest file into the corresponding project file
+
+        It's expected that the file provided is in the upload directory, and then is
+        moved into the project media folder. After this is done, this final URL can
+        be used for algorithm registration
+
+        Args:
+            params: Parameters with request that contains the info for the manifest file save
+
+        Returns:
+            Response with saved manifest file info
+        """
 
         # Verify the provided file has been uploaded
         upload_url = params[fields.upload_url]

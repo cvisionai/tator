@@ -1,5 +1,6 @@
 import logging
 import os
+# import subprocess
 
 from django.conf import settings
 import yaml
@@ -16,27 +17,41 @@ from ._permissions import ProjectEditPermission
 logger = logging.getLogger(__name__)
 
 class AlgorithmListAPI(BaseListView):
-    """ Interact with algorithms that have been registered to a project.
-
-        For instructions on how to register an algorithm, visit `GitHub`_.
-
-        .. _GitHub:
-           https://github.com/cvisionai/tator/tree/master/examples/algorithms
+    """ Retrieves registered algorithms and register new algorithm workflows
     """
     schema = AlgorithmListSchema()
     permission_classes = [ProjectEditPermission]
     http_method_names = ['get', 'post']
 
-    def _get(self, params):
+    def _get(self, params: dict) -> dict:
+        """ Returns the full database entries of algorithm registered with this project
+        """
         qs = Algorithm.objects.filter(project=params['project'])
         return database_qs(qs)
 
     def get_queryset(self):
+        """ Returns a queryset of algorithms related with the current request's project
+        """
         params = parse(self.request)
         qs = Algorithm.objects.filter(project__id=params['project'])
         return qs
 
     def _post(self, params: dict) -> dict:
+        """ Registers a new algorithm argo workflow using the provided parameters
+
+        Parameters are checked first for validity. If there's a problem with any of the
+        following, an exception is raised:
+        - Unique algorithm name (checked against all algorithms, regardless of project)
+        - Unique project ID
+        - User ID
+        - Saved manifest file (saved to the project) with correct syntax
+
+        Args:
+            params: Parameters with request that contains the info for the algorithm registration
+
+        Returns:
+            Response with message and ID of registered algorithm
+        """
 
         # Have to check the validity of the provided parameters before committing them
         # to the database
@@ -75,13 +90,24 @@ class AlgorithmListAPI(BaseListView):
             logging.error(log_msg)
             raise ValueError(log_msg)
 
+        ''' #TODO Review this, ideally this would happen instead of the YAML syntax error load
         # Try loading the manifest yaml and verify there are no YAML syntax errors
+        result = subprocess.run(['argo', 'lint', manifest_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if len(result.stderr) > 0:
+            log_msg = f'Provided manifest file has the following errors'
+            log_msg += result.stderr
+            logging.error(log_msg)
+            raise exc
+        '''
+
         try:
             with open(manifest_path, 'r') as file:
-                loaded_yaml = yaml.load(file, Loader=yaml.FullLoader)
+                loaded_yaml = yaml.safe_load(file)
         except Exception as exc:
             log_msg = f'Provided yaml file has syntax errors'
-            logginer.error(log_msg)
+            logging.error(log_msg)
             raise exc
 
         # Number of files per job greater than 1?
@@ -91,9 +117,7 @@ class AlgorithmListAPI(BaseListView):
             logger.error(log_msg)
             raise ValueError(log_msg)
 
-        #
         # Get the optional fields and set to null if need be.
-        #
         description = params.get(fields.description, None)
         cluster = params.get(fields.cluster, None)
 
@@ -111,7 +135,7 @@ class AlgorithmListAPI(BaseListView):
         return {'message': f'Successfully registered algorithm argo workflow.', 'id': alg_obj.id}
 
 class AlgorithmDetailAPI(BaseDetailView):
-    """ Interact with single registered algorithm
+    """ Interact with a single registered algorithm
     """
 
     schema = AlgorithmDetailSchema()
@@ -155,4 +179,6 @@ class AlgorithmDetailAPI(BaseDetailView):
         return {'message': msg}
 
     def get_queryset(self):
+        """ Returns a queryset of all registered algorithms
+        """
         return Algorithm.objects.all()

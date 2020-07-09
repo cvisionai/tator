@@ -7,8 +7,6 @@ from ._message import message_with_id_schema
 
 class SaveAlgorithmManifestSchema(AutoSchema):
     def get_operation(self, path, method):
-        """ Overriden method. Please refer to parent for documentation
-        """
         operation = super().get_operation(path, method)
         if method == 'POST':
             operation['operationId'] = 'SaveAlgorithmManifest'
@@ -16,8 +14,6 @@ class SaveAlgorithmManifestSchema(AutoSchema):
         return operation
 
     def get_description(self, path, method):
-        """ Overriden method. Please refer to parent for documentation
-        """
         return dedent("""\
         Saves an uploaded algorithm manifest to the desired project. It is expected this manifest
         corresponds with an algorithm workflow to be registered by another endpoint.
