@@ -30,8 +30,6 @@ logger = logging.getLogger(__name__)
 schema_view = get_schema_view(
     title='Tator REST API',
     version='v1',
-    authentication_classes=[SessionAuthentication],
-    permission_classes=[IsAuthenticated],
     generator_class=CustomGenerator,
 )
 
