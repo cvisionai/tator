@@ -52,6 +52,6 @@ RUN python3 setup.py install
 
 # Build tator-py
 WORKDIR /scripts/packages/tator-py
-RUN python3 setup.py install
+RUN pip3 install dist/*.whl
 
 WORKDIR /scripts
