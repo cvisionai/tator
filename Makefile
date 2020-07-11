@@ -459,19 +459,11 @@ lazyPush:
 
 .PHONY: python-bindings
 python-bindings: tator-image
-	mkdir -p /tmp/tator-py-$(GIT_VERSION)
-	rm -rf scripts/packages/tator-py/tator/openapi/tator
-	rm -rf scripts/packages/tator-py/tator/openapi/docs
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/schema.yaml
-	cd scripts
-	python3 remove_oneof.py
-	cd ..
-	docker run -it --rm -v $(shell pwd):/pwd -v /tmp:/out openapitools/openapi-generator-cli:v4.3.1 generate -c /pwd/scripts/packages/python-config.json -i /pwd/scripts/schema.yaml -g python -o /out/tator-py-$(GIT_VERSION) -t /pwd/scripts/packages/tator-py/templates
-
-	rm scripts/schema.yaml
-	cp -r /tmp/tator-py-$(GIT_VERSION)/README.md scripts/packages/tator-py/tator/openapi/.
-	cp -r /tmp/tator-py-$(GIT_VERSION)/tator_openapi scripts/packages/tator-py/tator/openapi/.
-	cp -r /tmp/tator-py-$(GIT_VERSION)/docs scripts/packages/tator-py/tator/openapi/.
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	cd scripts/packages/tator-py
+	rm -rf dist
+	python3 setup.py bdist_wheel
+	cd ../../..
 
 TOKEN=$(shell cat token.txt)
 HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
