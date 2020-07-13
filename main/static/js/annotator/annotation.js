@@ -1313,18 +1313,21 @@ class AnnotationCanvas extends TatorElement
         }
         if(localization != this.activeLocalization) {
           this._canvas.classList.add("select-pointer");
-
-          if (this._mouseMode == MouseMode.QUERY)
-          {
-            this.emphasizeLocalization(localization);
-          }
+          this.emphasizeLocalization(localization);
         }
       }
       else
       {
-        this._canvas.classList.remove("select-pointer");
-        if (this._emphasis != null && this._emphasis != this.activeLocalization)
+        // This is a mouse out event. User has moved outside a localization.
+        // If there is an active localization (i.e. a selected one), then select that one
+
+        if (this.activeLocalization != null)
         {
+          this.emphasizeLocalization(this.activeLocalization);
+        }
+        else if (this._emphasis != null && this._emphasis != this.activeLocalization)
+        {        
+          this._canvas.classList.remove("select-pointer");
           this._emphasis = null;
           this.refresh();
         }
@@ -1550,6 +1553,13 @@ class AnnotationCanvas extends TatorElement
           this._canvas.classList.add("select-not-allowed");
           return;
         }
+
+        // Before selecting the localization, clear out the previous selected track
+        // (if there is one). This will prevent a bounce back and forth effect.
+        clearStatus();
+        this.clearAnimation();
+        this.activeLocalization = null;
+        this.deselectTrack()
         this.selectLocalization(localization);
       }
       else
@@ -1663,6 +1673,7 @@ class AnnotationCanvas extends TatorElement
     if (localization.id in this._data._trackDb)
     {
       const track = this._data._trackDb[localization.id];
+      this._activeTrack = track
       this.dispatchEvent(new CustomEvent("select", {
         detail: track,
         composed: true,
@@ -1761,6 +1772,7 @@ class AnnotationCanvas extends TatorElement
                                   if (localization.id in this._data._trackDb)
                                   {
                                     const track = this._data._trackDb[localization.id];
+                                    this._activeTrack = track
                                     this.dispatchEvent(new CustomEvent("select", {
                                       detail: track,
                                       composed: true,
@@ -1798,6 +1810,9 @@ class AnnotationCanvas extends TatorElement
           // Handle case when localization is in a track
           if (localization.id in this._data._trackDb)
           {
+            // Explicitly not setting the active track here like it is done in other spots.
+            // It's possible the localization is emphasized, but the active track is still another
+            // selected track (e.g. selected a track but hovered over another one)
             const track = this._data._trackDb[localization.id];
             this.dispatchEvent(new CustomEvent("select", {
               detail: track,
