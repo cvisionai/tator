@@ -836,6 +836,46 @@ class DrawGL
     }
   }
 
+  fillPolygon(points, width, penColor, alpha)
+  {
+    if (points.length < 3)
+    {
+      console.error("Can't draw polygon with less than 3 points");
+      return;
+    }
+
+    var maxX = 0;
+    var maxY = 0;
+    var minY = 0xFFFFFFF;
+    var minX = 0xFFFFFFF;
+
+    for (var idx = 0; idx < points.length; idx++)
+    {
+      if (points[idx][0] > maxX)
+      {
+        maxX = points[idx][0];
+      }
+      if (points[idx][0] < minX)
+      {
+        minX = points[idx][0];
+      }
+      if (points[idx][1] > maxY)
+      {
+        maxY = points[idx][1];
+      }
+      if (points[idx][1] < minY)
+      {
+        minY = points[idx][1];
+      }
+
+      var start=[minX+(width/2), (minY+maxY)/2];
+      var end =[maxX-(width/2), (minY+maxY)/2];
+      var fillWidth = maxY-minY-width;
+
+      this.drawLine(start,end,penColor, fillWidth, alpha);
+    }
+  }
+
   computeBounds(vertices)
   {
     var total=vertices.length;

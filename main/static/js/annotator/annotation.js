@@ -2811,7 +2811,7 @@ class AnnotationCanvas extends TatorElement
           var alpha = annotation_alpha;
 
           // Default fill is off
-          var fill = {"style": null,"color":color.TEAL,"alpha":0.2*255};
+          var fill = {"style": "solid","color":color.TEAL,"alpha":0.05*255};
 
           if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
           {
@@ -2832,6 +2832,7 @@ class AnnotationCanvas extends TatorElement
             {
               drawColor = color.hexToRgb(trackColor);
             }
+            fill.color = drawColor;
           }
           else if (meta.colorMap != null)
           {
@@ -2848,6 +2849,8 @@ class AnnotationCanvas extends TatorElement
                     alpha = value[3];
                   }
                 }
+              //Set the fill color to the box draw color
+              fill.color = drawColor;
             };
             let decodeFill = (fill_obj) => {
               fill.style=fill_obj.style;
@@ -2924,6 +2927,7 @@ class AnnotationCanvas extends TatorElement
           if (this.activeLocalization && this.activeLocalization.id == localization.id)
           {
             drawColor = color.WHITE;
+            fill.alpha = 0.0;
             if (this._emphasis && this._emphasis.id == localization.id)
             {
               alpha = 255;
@@ -2931,12 +2935,14 @@ class AnnotationCanvas extends TatorElement
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
+              fill.alpha *= 0.5;
             }
           }
           else if (this._emphasis && this._emphasis.id == localization.id)
           {
             // If this is the emphasized localization it is white-blended @ 255
             drawColor = color.blend(color.WHITE, drawColor, 0.50);
+            fill.alpha = 0.0;
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
@@ -2949,6 +2955,10 @@ class AnnotationCanvas extends TatorElement
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
             drawContext.drawPolygon(poly, localization.color, width, alpha);
+            if (fill.style == "solid")
+            {
+              drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
+            }
           }
           else if (type == 'line')
           {
