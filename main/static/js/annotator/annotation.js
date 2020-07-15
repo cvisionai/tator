@@ -2810,6 +2810,9 @@ class AnnotationCanvas extends TatorElement
           var trackColor = null;
           var alpha = annotation_alpha;
 
+          // Default fill is off
+          var fill = {"style": null,"color":color.TEAL,"alpha":0.2*255};
+
           if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
           {
             continue;
@@ -2846,9 +2849,29 @@ class AnnotationCanvas extends TatorElement
                   }
                 }
             };
+            let decodeFill = (fill_obj) => {
+              fill.style=fill_obj.style;
+              let value =fill_obj.color;
+              if (typeof(value.color) == "string")
+                {
+                  fill.color = color.hexToRgb(value)
+                }
+                else
+                {
+                  fill.color = value.slice(0,3);
+                  if (value.length == 4)
+                  {
+                    fill.alpha = value[3];
+                  }
+                }
+            };
             if (meta.colorMap.default)
             {
               decodeColor(meta.colorMap.default);
+            }
+            if (meta.colorMap.defaultFill)
+            {
+              decodeFill(meta.colorMap.defaultFill);
             }
 
             if (meta.colorMap.version)
@@ -2862,9 +2885,13 @@ class AnnotationCanvas extends TatorElement
             if (keyname && keyname in localization.attributes)
             {
               var keyvalue=localization.attributes[keyname];
-              if (keyvalue in meta.colorMap.map)
+              if (meta.colorMap.map && keyvalue in meta.colorMap.map)
               {
                 decodeColor(meta.colorMap.map[keyvalue]);
+              }
+              if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+              {
+                decodeFill(meta.fillMap.map[keyvalue]);
               }
             }
             // If we define a alpha_ranges routine
