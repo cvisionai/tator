@@ -97,6 +97,7 @@ class CustomGenerator(SchemaGenerator):
                 'RgbaColor': rgba_color,
                 'HexColor': hex_color,
                 'Color': color,
+                'Fill': fill,
                 'AlphaRange': alpha_range,
                 'ColorMap': color_map,
                 'CreateResponse': create_response,

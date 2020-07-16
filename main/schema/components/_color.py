@@ -39,7 +39,7 @@ color = {
     ],
 }
 
-alpha_range = { 
+alpha_range = {
     'description': 'Three element array containing start attribute value, '
                    'stop attribute value, and alpha level 0-255 for the '
                    'localizations with attribute value falling in this '
@@ -58,6 +58,7 @@ color_map = {
                    'IDs to colors.',
     'properties': {
         'default': {'$ref': '#/components/schemas/Color'},
+        'defaultFill': {'$ref': '#/components/schemas/Fill'},
         'key': {
             'type': 'string',
             'description': 'Attribute name.',
@@ -66,6 +67,11 @@ color_map = {
             'type': 'object',
             'description': 'Map of attribute values to colors.',
             'additionalProperties': {'$ref': '#/components/schemas/Color'},
+        },
+        'fillMap': {
+            'type': 'object',
+            'description': 'Map of attribute values to fill types.',
+            'additionalProperties': {'$ref': '#/components/schemas/Fill'},
         },
         'alpha_ranges': {
             'type': 'object',
@@ -78,6 +84,20 @@ color_map = {
             'additionalProperties': {'$ref': '#/components/schemas/Color'},
         },
     },
+}
+
+fill = {
+'type': 'object',
+    'description': 'Maps an attribute value or version to a color/alpha. Use '
+                   '`key` and `map` (optionally `alpha_ranges`) to map an '
+                   'attribute value to colors. Use `version` to map version '
+                   'IDs to colors.',
+    'properties': {
+        'color': {'$ref': '#/components/schemas/Color'},
+        'style': {'description': "Type of fill effect",
+                  'type': 'string',
+                  'enum': ['fill', 'blur', 'gray']}}
+
 }
 
 color_map_example = {
@@ -103,6 +123,14 @@ color_map_example = {
             'description': 'Color map based on version.',
             'value': {
                 'version': {'1': [0, 255, 0], '2': [255, 0, 0]},
+            },
+        },
+        'Fill mapping': {
+            'summary': 'Color map based on version.',
+            'description': 'Color map based on version.',
+            'value': {
+                'key': 'Tire',
+                'fillMap': {'Tire': {'style': 'blur'}}
             },
         },
     },
