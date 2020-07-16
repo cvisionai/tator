@@ -73,10 +73,23 @@ const imageFsSource = `#version 300 es
     // Can make a test pattern with outputing color palette.
     uniform sampler2D imageTexture;
 
+    uniform vec2 u_Resolution;
+    uniform float blurSigma;
+
     void main() {
          if (texcoord.x >= 0.0)
          {
-             pixelOutput = texture(imageTexture, texcoord);
+             // only show every 16 pixels
+             if (blurSigma > 0.0)
+             {
+               float mSize = u_Resolution.y*0.01; //Default to 1% blur
+               vec2 sampledCoord = (floor((texcoord*u_Resolution)/mSize)*mSize)/u_Resolution;
+               pixelOutput= texture(imageTexture, sampledCoord);
+             }
+             else
+             {
+                 pixelOutput = texture(imageTexture, texcoord);
+             }
          }
          else
          {
@@ -84,47 +97,6 @@ const imageFsSource = `#version 300 es
          }
     }
 `;
-
-const blurFsSource = `#version 300 es
-float normpdf(in float x, in float sigma)
-{
-  return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
-}
-
-
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
-  vec3 c = texture(imageTexture, texcoord).rgb;
-  const int mSize = 11;
-  const int kSize = (mSize-1)/2;
-  float kernel[mSize];
-  vec3 final_colour = vec3(0.0);
-
-  //create the 1-D kernel
-  float sigma = 7.0;
-  float Z = 0.0;
-  for (int j = 0; j <= kSize; ++j)
-  {
-    kernel[kSize+j] = kernel[kSize-j] = normpdf(float(j), sigma);
-  }
-
-  //get the normalization factor (as the gaussian has been clamped)
-  for (int j = 0; j < mSize; ++j)
-  {
-    Z += kernel[j];
-  }
-
-  //read out the texels
-  for (int i=-kSize; i <= kSize; ++i)
-  {
-    for (int j=-kSize; j <= kSize; ++j)
-    {
-      final_colour += kernel[kSize+j]*kernel[kSize+i]*texture(iChannel0, (fragCoord.xy+vec2(float(i),float(j))) / iResolution.xy).rgb;
-
-    }
-  }
-  pixelOutput = vec4(final_colour/(Z*Z), 1.0);
-}`;
 
 // Given an image width/height, compute the vertex quad in image pixel
 // coordinates
@@ -287,6 +259,7 @@ class DrawGL
     gl.attachShader(this.imageShaderProg, fsShader);
     gl.linkProgram(this.imageShaderProg);
 
+
     if (!gl.getProgramParameter(this.imageShaderProg, gl.LINK_STATUS))
     {
       alert('Unable to initialize the shader program: ' +
@@ -384,12 +357,21 @@ class DrawGL
     gl.uniform2fv(viewShiftLoc,[this.clientWidth/2,
                                 this.clientHeight/2]);
 
+    var blurSigmaLoc = gl.getUniformLocation(this.imageShaderProg,
+                                            "blurSigma");
+    //gl.uniform1f(blurSigmaLoc, 5.0);
+
     // The scale is in terms of actual image pixels so that inputs are in image
     // pixels not device pixels.
     var viewScale = [2/((this.clientWidth)),2/((this.clientHeight))];
     // This vector scales an image unit to a viewscale unit
     var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewScale");
     gl.uniform2fv(viewScaleLoc,viewScale);
+
+    var resolution = [this.clientWidth,this.clientHeight];
+    // This vector scales an image unit to a viewscale unit
+    var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_Resolution");
+    gl.uniform2fv(viewScaleLoc,resolution);
 
     this.viewFlip=this.clientHeight;
     var viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
