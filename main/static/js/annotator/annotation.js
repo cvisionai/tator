@@ -1056,7 +1056,7 @@ class AnnotationCanvas extends TatorElement
   computeLocalizationColor(localization, meta)
   {
     // Default fill is solid
-    var fill = {"style": "solid","color":color.TEAL,"alpha":0.05*255};
+    var fill = {"style": "blur","color":color.TEAL,"alpha":0.05*255};
     var drawColor = color.TEAL;
     var trackColor = null;
     var alpha = annotation_alpha;
@@ -2014,6 +2014,8 @@ class AnnotationCanvas extends TatorElement
 
     var initColor = localization.color;
     var initAlpha = 0.7*255;
+    var initFillAlpha = 0.025*255;
+    var finalFillAlpha = 0.0;
 
     if ('initColor' in options)
     {
@@ -2052,6 +2054,7 @@ class AnnotationCanvas extends TatorElement
                       (255.0-initColor[1])/rampLength,
                       (255.0-initColor[2])/rampLength];
     var alpha_increment = (finalAlpha - initAlpha) / rampLength;
+    var fill_alpha_increment = (finalFillAlpha - initFillAlpha) / rampLength;
     var getColorForFrame = function(frame)
     {
       var color = [0,0,0];
@@ -2073,15 +2076,18 @@ class AnnotationCanvas extends TatorElement
     {
 
       var alpha = 0;
+      var fill_alpha = 0;
       if (Math.floor(frame / rampLength) % 2 == 0)
       {
         alpha = initAlpha + ((frame%rampLength)*alpha_increment);
+        fill_alpha = initFillAlpha + ((frame%rampLength)*fill_alpha_increment);
       }
       else
       {
         alpha = finalAlpha - ((frame%rampLength)*alpha_increment);
+        fill_alpha = finalFillAlpha - ((frame%rampLength)*fill_alpha_increment);
       }
-      return alpha;
+      return {"alpha": alpha, "fillAlpha": fill_alpha};
     }
 
     var promise = new Promise(
@@ -2100,12 +2106,27 @@ class AnnotationCanvas extends TatorElement
           }
 
           frameIdx++;
-          let alpha = getAlphaForFrame(frameIdx);
+          let alphaInfo = getAlphaForFrame(frameIdx);
+          let alpha = alphaInfo.alpha;
+          let fillAlpha = alphaInfo.fillAlpha;
+          var colorInfo = that.computeLocalizationColor(localization,meta);
 
 
           if (meta.dtype == 'box')
           {
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
+            if (colorInfo.fill.style == "solid")
+            {
+              that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha);
+            }
+            if (colorInfo.fill.style == "blur")
+            {
+              that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha,[1.0,0.01,0,0]);
+            }
+            if (colorInfo.fill.style == "gray")
+            {
+              that._draw.fillPolygon(poly, width, getColorForFrame(frameIdx), fillAlpha,[2.0,0,0,0]);
+            }
           }
           else if (meta.dtype == 'line')
           {
