@@ -1076,6 +1076,23 @@ class AnnotationCanvas extends TatorElement
       {
         drawColor = color.hexToRgb(trackColor);
       }
+      if (meta.colorMap.defaultFill)
+      {
+        decodeFill(meta.colorMap.defaultFill);
+      }
+      var keyname = meta.colorMap.key;
+      if (keyname && keyname in this._data._trackDb[localization.id].attributes)
+      {
+        var keyvalue=localization.attributes[keyname];
+        if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+        {
+          decodeColor(meta.colorMap.map[keyvalue]);
+        }
+        if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+        {
+          decodeFill(meta.colorMap.fillMap[keyvalue]);
+        }
+      }
       fill.color = drawColor;
     }
     else if (meta.colorMap != null)
@@ -1099,6 +1116,8 @@ class AnnotationCanvas extends TatorElement
       let decodeFill = (fill_obj) => {
         fill.style=fill_obj.style;
         let value =fill_obj.color;
+        if (value == undefined)
+          return;
         if (typeof(value.color) == "string")
           {
             fill.color = color.hexToRgb(value)
@@ -1138,7 +1157,7 @@ class AnnotationCanvas extends TatorElement
         }
         if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
         {
-          decodeFill(meta.fillMap.map[keyvalue]);
+          decodeFill(meta.colorMap.fillMap[keyvalue]);
         }
       }
       // If we define a alpha_ranges routine
