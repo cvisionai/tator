@@ -2942,7 +2942,7 @@ class AnnotationCanvas extends TatorElement
           {
             // If this is the emphasized localization it is white-blended @ 255
             drawColor = color.blend(color.WHITE, drawColor, 0.50);
-            fill.alpha = 0.0;
+            fill.alpha *= 0.5;
             if (this._clipboard.isCutting(localization))
             {
               alpha *= 0.5;
