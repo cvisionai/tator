@@ -877,7 +877,6 @@ class DrawGL
   // Flatland by Edwin Abbott.
   drawPolygon(points, penColor, width, alpha)
   {
-    console.info("Draw Poly");
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
@@ -913,7 +912,6 @@ class DrawGL
 
   fillPolygon(points, width, penColor, alpha, effect)
   {
-    console.info("Fill Poly");
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
