@@ -90,7 +90,7 @@ const imageFsSource = `#version 300 es
          {
              if (filterOp_s.x == 1.0)
              {
-               float mSize = u_Resolution.y*filterOp_s.y; //Use arg1 for blur %
+               float mSize = max((u_Resolution.y*filterOp_s.y),(u_Resolution.x*filterOp_s.y)); //Use arg1 for blur %
                vec2 sampledCoord = (floor((texcoord*u_Resolution)/mSize)*mSize)/u_Resolution;
                pixelOutput= texture(imageTexture, sampledCoord);
              }
