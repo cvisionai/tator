@@ -70,6 +70,7 @@ from ._color import hex_color
 from ._color import color
 from ._color import alpha_range
 from ._color import color_map
+from ._color import fill
 from ._common import create_response
 from ._common import create_list_response
 from ._common import message_response
