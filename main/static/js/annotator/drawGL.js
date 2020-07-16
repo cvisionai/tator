@@ -406,6 +406,11 @@ class DrawGL
     this.viewFlip=this.clientHeight;
     var viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
     gl.uniform1f(viewFlipLoc,this.viewFlip);
+
+    // Image texture is in slot 0
+    var imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
+                                            "imageTexture");
+    gl.uniform1i(imageTexLoc, 0);
   }
 
   // Constructs the vertices into the viewport
@@ -531,13 +536,7 @@ class DrawGL
     else
       frameInfo.drawBuffer=null;
 
-    // Image texture is in slot 0
-    var imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
-                                            "imageTexture");
-    gl.uniform1i(imageTexLoc, 0);
     gl.activeTexture(gl.TEXTURE0);
-
-
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
   };
