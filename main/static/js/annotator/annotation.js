@@ -1061,6 +1061,41 @@ class AnnotationCanvas extends TatorElement
     var trackColor = null;
     var alpha = annotation_alpha;
 
+    let decodeColor = (value) => {
+    if (typeof(value) == "string")
+      {
+        drawColor = color.hexToRgb(value)
+      }
+      else
+      {
+        drawColor = value.slice(0,3);
+        if (value.length == 4)
+        {
+          alpha = value[3];
+        }
+      }
+      //Set the fill color to the box draw color
+      fill.color = drawColor;
+    };
+    let decodeFill = (fill_obj) => {
+      fill.style=fill_obj.style;
+      let value =fill_obj.color;
+      if (value == undefined)
+        return;
+      if (typeof(value.color) == "string")
+      {
+        fill.color = color.hexToRgb(value)
+      }
+      else
+      {
+        fill.color = value.slice(0,3);
+        if (value.length == 4)
+        {
+          fill.alpha = value[3];
+        }
+      }
+    };
+
     if (localization.id in this._data._trackDb)
     {
       if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
@@ -1097,40 +1132,6 @@ class AnnotationCanvas extends TatorElement
     }
     else if (meta.colorMap != null)
     {
-      let decodeColor = (value) => {
-        if (typeof(value) == "string")
-          {
-            drawColor = color.hexToRgb(value)
-          }
-          else
-          {
-            drawColor = value.slice(0,3);
-            if (value.length == 4)
-            {
-              alpha = value[3];
-            }
-          }
-        //Set the fill color to the box draw color
-        fill.color = drawColor;
-      };
-      let decodeFill = (fill_obj) => {
-        fill.style=fill_obj.style;
-        let value =fill_obj.color;
-        if (value == undefined)
-          return;
-        if (typeof(value.color) == "string")
-          {
-            fill.color = color.hexToRgb(value)
-          }
-          else
-          {
-            fill.color = value.slice(0,3);
-            if (value.length == 4)
-            {
-              fill.alpha = value[3];
-            }
-          }
-      };
       if (meta.colorMap.default)
       {
         decodeColor(meta.colorMap.default);
