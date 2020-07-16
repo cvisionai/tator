@@ -2959,6 +2959,14 @@ class AnnotationCanvas extends TatorElement
             {
               drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
             }
+            if (fill.style == "blur")
+            {
+              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[1.0,0.01,0,0]);
+            }
+            if (fill.style == "gray")
+            {
+              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[2.0,0,0,0]);
+            }
           }
           else if (type == 'line')
           {

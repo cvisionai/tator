@@ -35,6 +35,12 @@ const vsSource = `#version 300 es
     // Represents either the uv coord or nothing (if negative)
     in vec2 uvcoord;
 
+    // Represents a filter <mode,arg1,arg2,arg3> to apply to texture
+    // modes:
+    // -  0 is NO-OP
+    // -  1 is pixelization, arg1 is percentage
+    in vec4 filterOp;
+
     // These two matrices convert our pixel coordinate vertex (0,0) to
     // (imgWidth,imgHeight) to view space coordinates.
 
@@ -50,6 +56,7 @@ const vsSource = `#version 300 es
 
     out vec2 texcoord;
     out vec4 rgba;
+    out vec4 filterOp_s;
 
     void main() {
       vec2 flippedVertex = vec2(vertex.x, u_ViewFlip-vertex.y);
@@ -58,6 +65,7 @@ const vsSource = `#version 300 es
       gl_Position = vec4(normalized, 0.0, 1.0);
       texcoord=uvcoord;
       rgba = color/255.0;
+      filterOp_s = filterOp;
     }
 `;
 
@@ -66,6 +74,7 @@ const imageFsSource = `#version 300 es
     precision mediump float;
     in vec2 texcoord;
     in vec4 rgba;
+    in vec4 filterOp_s;
 
     // Make sure pixel output is at location 0
     layout(location = 0) out vec4 pixelOutput;
@@ -73,18 +82,35 @@ const imageFsSource = `#version 300 es
     // Can make a test pattern with outputing color palette.
     uniform sampler2D imageTexture;
 
+    // Image resolution (useful for filters)
     uniform vec2 u_Resolution;
-    uniform float blurSigma;
 
     void main() {
          if (texcoord.x >= 0.0)
          {
-             // only show every 16 pixels
-             if (blurSigma > 0.0)
+             if (filterOp_s.x == 1.0)
              {
-               float mSize = u_Resolution.y*0.01; //Default to 1% blur
+               float mSize = u_Resolution.y*filterOp_s.y; //Use arg1 for blur %
                vec2 sampledCoord = (floor((texcoord*u_Resolution)/mSize)*mSize)/u_Resolution;
                pixelOutput= texture(imageTexture, sampledCoord);
+             }
+             else if (filterOp_s.x == 2.0)
+             {
+               float min=filterOp_s.y;
+               float max=filterOp_s.z;
+               if (max == 0.0)
+               {
+                 max = 1.0;
+               }
+               vec4 rgba = texture(imageTexture, texcoord).rgba;
+               float gray_p = 0.299*rgba.r+0.587*rgba.g+0.114*rgba.b;
+               gray_p = (gray_p - min) / (max-min);
+               vec3 gray = vec3(gray_p);
+               pixelOutput = vec4(gray,rgba.a);
+             }
+             else if (filterOp_s.x == 3.0)
+             {
+                pixelOutput = vec4(0.5,0.25,0.25,1.0);
              }
              else
              {
@@ -165,6 +191,13 @@ const uvOfQuad = new Float32Array([
   1.0, 1.0]);
 
 const quadColor = new Float32Array([
+  0.0,0.0,0.0,0.0,
+  0.0,0.0,0.0,0.0,
+  0.0,0.0,0.0,0.0,
+  0.0,0.0,0.0,0.0]);
+
+// By default don't apply any filter to quad
+let quadFilter = new Float32Array([
   0.0,0.0,0.0,0.0,
   0.0,0.0,0.0,0.0,
   0.0,0.0,0.0,0.0,
@@ -357,10 +390,6 @@ class DrawGL
     gl.uniform2fv(viewShiftLoc,[this.clientWidth/2,
                                 this.clientHeight/2]);
 
-    var blurSigmaLoc = gl.getUniformLocation(this.imageShaderProg,
-                                            "blurSigma");
-    //gl.uniform1f(blurSigmaLoc, 5.0);
-
     // The scale is in terms of actual image pixels so that inputs are in image
     // pixels not device pixels.
     var viewScale = [2/((this.clientWidth)),2/((this.clientHeight))];
@@ -387,6 +416,8 @@ class DrawGL
                                              'color');
     const uvAttrLoc=this.gl.getAttribLocation(this.imageShaderProg,
                                               'uvcoord');
+    const filterLoc=this.gl.getAttribLocation(this.imageShaderProg,
+                                              'filterOp');
 
     // Setup Vertex Buffer
     this.gl.enableVertexAttribArray(vertexAttrLoc);
@@ -421,6 +452,18 @@ class DrawGL
                                 false,
                                 0,
                                 0);
+
+    // Setup the filterOp buffer
+    this.gl.enableVertexAttribArray(filterLoc);
+    this.filterBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.filterBuffer);
+    this.gl.vertexAttribPointer(filterLoc,
+                                4,
+                                this.gl.FLOAT,
+                                false,
+                                0,
+                                0);
+
 
 
     this.indexBuffer = this.gl.createBuffer();
@@ -515,6 +558,9 @@ class DrawGL
     gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
     gl.bufferData(this.gl.ARRAY_BUFFER, quadColor, gl.STATIC_DRAW);
 
+    gl.bindBuffer(this.gl.ARRAY_BUFFER, this.filterBuffer);
+    gl.bufferData(this.gl.ARRAY_BUFFER, quadFilter, gl.STATIC_DRAW);
+
     // Load quad texture coordinates
     gl.bindBuffer(this.gl.ARRAY_BUFFER, this.uvBuffer);
     gl.bufferData(this.gl.ARRAY_BUFFER, uv,gl.STATIC_DRAW);
@@ -555,34 +601,6 @@ class DrawGL
     else
       frameInfo.drawBuffer=null;
   };
-
-  reloadQuadVertices(dWidth, dHeight, uv)
-  {
-    var gl = this.gl;
-
-    // Have to reload vertex buffer for quad
-    const vertexAttrLoc=gl.getAttribLocation(this.imageShaderProg,
-                                             'vertex');
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-
-
-    // Calculate + load Vertex
-    var quad = computeQuad(dWidth, dHeight);
-    gl.bufferData(gl.ARRAY_BUFFER,
-                  quad,
-                  gl.STATIC_DRAW);
-
-    // Load quad colors
-    gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
-    gl.bufferData(this.gl.ARRAY_BUFFER, quadColor, gl.STATIC_DRAW);
-
-    // Load quad texture coordinates
-    gl.bindBuffer(this.gl.ARRAY_BUFFER, this.uvBuffer);
-    gl.bufferData(this.gl.ARRAY_BUFFER, uv,gl.STATIC_DRAW);
-
-    gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-    gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, quadIndices, gl.STATIC_DRAW);
-  }
 
   // Display the latest image in the framebuffer.
   // @param hold If true, will not call done() after display.
@@ -716,7 +734,7 @@ class DrawGL
   // a 'dumpDraw' or 'dispDraw'.
   beginDraw()
   {
-    this.drawBuffer = {vertices: [], colors: [], uv: [], indices:[]};
+    this.drawBuffer = {vertices: [], colors: [], uv: [], indices:[], filter:[]};
   }
 
   // Returns the internal draw buffer to facilitate deferred rendering
@@ -729,7 +747,7 @@ class DrawGL
   }
 
   // Draw a line at start to finish. Optionally supply pen info.
-  drawLine(start, finish, penColor, width, alpha)
+  drawLine(start, finish, penColor, width, alpha, effect)
   {
     if (this.drawBuffer == null)
     {
@@ -747,6 +765,25 @@ class DrawGL
     {
       // This is actually a scale of 0 to 255 when it works
       alpha = 255.0;
+    }
+    if (effect == undefined)
+    {
+      effect = [0];
+    }
+
+    if (effect.length != 4)
+    {
+      let effect_new = [];
+      let idx = 0;
+      for (idx = 0; idx < effect.length; idx++)
+      {
+        effect_new[idx] = effect[idx];
+      }
+      for (idx; idx < 4; idx++)
+      {
+        effect_new[idx] = 0;
+      }
+      effect = effect_new;
     }
 
     var idx = 0;
@@ -788,18 +825,23 @@ class DrawGL
 
     // Make sure the vertices don't go off the page.
     // Left or top
+    var bgCoords =[];
     vertices[0] = Math.min(Math.max(start[0]-marginX,0),this.clientWidth);
     vertices[1] = Math.min(Math.max(start[1]-marginY,0), this.clientHeight);
+    bgCoords[0] = [vertices[0]/this.clientWidth,vertices[1]/this.clientHeight];
 
     vertices[2] = Math.min(Math.max(finish[0]-marginX,0), this.clientWidth);
     vertices[3] = Math.min(Math.max(finish[1]-marginY,0), this.clientHeight);
+    bgCoords[1] = [vertices[2]/this.clientWidth,vertices[3]/this.clientHeight];
 
     // Right or bottoms
     vertices[4] = Math.min(Math.max(finish[0]+marginX,0),this.clientWidth);
     vertices[5] = Math.min(Math.max(finish[1]+marginY,0), this.clientHeight);
+    bgCoords[2] = [vertices[4]/this.clientWidth,vertices[5]/this.clientHeight];
 
     vertices[6] = Math.min(Math.max(start[0]+marginX,0),this.clientWidth);
     vertices[7] = Math.min(Math.max(start[1]+marginY,0), this.clientHeight);
+    bgCoords[3] = [vertices[6]/this.clientWidth,vertices[7]/this.clientHeight];
 
     // Pen color is the same for each vertex pair (!)
     for (idx = 0; idx < (vertices.length/2); idx++)
@@ -807,10 +849,19 @@ class DrawGL
       // Push supplied color to the color buffer
       this.drawBuffer.colors.push(...penColor);
       this.drawBuffer.colors.push(alpha);
+      if (effect[0] == 0.0)
+      {
+        // No texture for pen drawing
+        this.drawBuffer.uv.push(...[-1.0,-1.0]);
+      }
+      else
+      {
+        // Fill effects use a texture coordinate based on line location
+        console.info(`${idx}: ${bgCoords[idx]}`);
+        this.drawBuffer.uv.push(...bgCoords[idx]);
+      }
 
-      // No texture for pen drawing
-      this.drawBuffer.uv.push(-1.0);
-      this.drawBuffer.uv.push(-1.0);
+      this.drawBuffer.filter.push(...effect);
     }
 
     this.drawBuffer.vertices = this.drawBuffer.vertices.concat(vertices);
@@ -826,6 +877,7 @@ class DrawGL
   // Flatland by Edwin Abbott.
   drawPolygon(points, penColor, width, alpha)
   {
+    console.info("Draw Poly");
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
@@ -859,8 +911,9 @@ class DrawGL
     }
   }
 
-  fillPolygon(points, width, penColor, alpha)
+  fillPolygon(points, width, penColor, alpha, effect)
   {
+    console.info("Fill Poly");
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
@@ -893,10 +946,9 @@ class DrawGL
 
       var start=[minX+(width/2), (minY+maxY)/2];
       var end =[maxX-(width/2), (minY+maxY)/2];
-      var fillWidth = maxY-minY-width;
-
-      this.drawLine(start,end,penColor, fillWidth, alpha);
+      var fillWidth = (maxY-minY-width);
     }
+    this.drawLine(start,end,penColor, fillWidth, alpha, effect);
   }
 
   computeBounds(vertices)
@@ -966,6 +1018,11 @@ class DrawGL
       gl.bindBuffer(this.gl.ARRAY_BUFFER, this.uvBuffer);
       gl.bufferData(this.gl.ARRAY_BUFFER,
                     new Float32Array(bufferToUse.uv),
+                    gl.STATIC_DRAW);
+
+      gl.bindBuffer(this.gl.ARRAY_BUFFER, this.filterBuffer);
+      gl.bufferData(this.gl.ARRAY_BUFFER,
+                    new Float32Array(bufferToUse.filter),
                     gl.STATIC_DRAW);
 
       gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
