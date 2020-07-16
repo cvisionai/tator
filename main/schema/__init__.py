@@ -46,4 +46,5 @@ from .user import CurrentUserSchema
 from .version import VersionListSchema
 from .version import VersionDetailSchema
 from ._parse import parse
+from ._generator import NoAliasRenderer
 from ._generator import CustomGenerator

@@ -21,6 +21,7 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 
+from .schema import NoAliasRenderer
 from .schema import CustomGenerator
 
 from .rest import *
@@ -31,6 +32,7 @@ schema_view = get_schema_view(
     title='Tator REST API',
     version='v1',
     generator_class=CustomGenerator,
+    renderer_classes=[NoAliasRenderer],
 )
 
 urlpatterns = [

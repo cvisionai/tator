@@ -1,6 +1,23 @@
 from rest_framework.schemas.openapi import SchemaGenerator
+from rest_framework.renderers import BaseRenderer
+import yaml
 
 from .components import *
+
+class NoAliasRenderer(BaseRenderer):
+    media_type = 'application/vnd.oai.openapi'
+    charset = None
+    format = 'openapi'
+
+    def __init__(self):
+        assert yaml, 'Using OpenAPIRenderer, but `pyyaml` is not installed.'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        # disable yaml advanced feature 'alias' for clean, portable, and readable output
+        class Dumper(yaml.Dumper):
+            def ignore_aliases(self, data):
+                return True
+        return yaml.dump(data, default_flow_style=False, sort_keys=False, Dumper=Dumper).encode('utf-8')
 
 class CustomGenerator(SchemaGenerator):
     """ Schema generator for Swagger UI.
