@@ -870,7 +870,6 @@ class DrawGL
       else
       {
         // Fill effects use a texture coordinate based on line location
-        console.info(`${idx}: ${bgCoords[idx]}`);
         this.drawBuffer.uv.push(...bgCoords[idx]);
       }
 
