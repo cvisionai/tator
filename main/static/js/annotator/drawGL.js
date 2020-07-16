@@ -235,6 +235,7 @@ class DrawGL
     this.lastDy=null;
     this.frameBuffer=null;
     this.setViewport(canvas);
+    this._roi = [0,0,1.0,1.0];
 
     // Print out debug information for OpenGL
     this.debugGL();
@@ -508,6 +509,9 @@ class DrawGL
     {
       dirty = false;
     }
+
+    // This vector scales an image unit to a viewscale unit
+    this._roi = [sx,sy,sWidth,sHeight];
 
     //Push the frame idx, dims, and content to the buffer.
     var frameInfo=this.frameBuffer.load();
@@ -823,25 +827,35 @@ class DrawGL
     // |/ |
     // 0--3   (start)
 
+
+    // The assumed texture coordinates from the vertex location are
+    // relatve to the current roi; we have to convert to the global roi
+    // to accurately create a fill
+    let globalizeTexCoord = (coord) => {
+      return [(coord[0]*this._roi[2])+this._roi[0],
+              (coord[1]*this._roi[3])+this._roi[1]];
+    };
+
     // Make sure the vertices don't go off the page.
     // Left or top
     var bgCoords =[];
     vertices[0] = Math.min(Math.max(start[0]-marginX,0),this.clientWidth);
     vertices[1] = Math.min(Math.max(start[1]-marginY,0), this.clientHeight);
-    bgCoords[0] = [vertices[0]/this.clientWidth,vertices[1]/this.clientHeight];
+    bgCoords[0] = globalizeTexCoord([vertices[0]/this.clientWidth,vertices[1]/this.clientHeight]);
+
 
     vertices[2] = Math.min(Math.max(finish[0]-marginX,0), this.clientWidth);
     vertices[3] = Math.min(Math.max(finish[1]-marginY,0), this.clientHeight);
-    bgCoords[1] = [vertices[2]/this.clientWidth,vertices[3]/this.clientHeight];
+    bgCoords[1] = globalizeTexCoord([vertices[2]/this.clientWidth,vertices[3]/this.clientHeight]);
 
     // Right or bottoms
     vertices[4] = Math.min(Math.max(finish[0]+marginX,0),this.clientWidth);
     vertices[5] = Math.min(Math.max(finish[1]+marginY,0), this.clientHeight);
-    bgCoords[2] = [vertices[4]/this.clientWidth,vertices[5]/this.clientHeight];
+    bgCoords[2] = globalizeTexCoord([vertices[4]/this.clientWidth,vertices[5]/this.clientHeight]);
 
     vertices[6] = Math.min(Math.max(start[0]+marginX,0),this.clientWidth);
     vertices[7] = Math.min(Math.max(start[1]+marginY,0), this.clientHeight);
-    bgCoords[3] = [vertices[6]/this.clientWidth,vertices[7]/this.clientHeight];
+    bgCoords[3] = globalizeTexCoord([vertices[6]/this.clientWidth,vertices[7]/this.clientHeight]);
 
     // Pen color is the same for each vertex pair (!)
     for (idx = 0; idx < (vertices.length/2); idx++)
