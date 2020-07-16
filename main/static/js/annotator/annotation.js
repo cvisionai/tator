@@ -1056,7 +1056,7 @@ class AnnotationCanvas extends TatorElement
   computeLocalizationColor(localization, meta)
   {
     // Default fill is solid
-    var fill = {"style": "blur","color":color.TEAL,"alpha":0.05*255};
+    var fill = {"style": "solid","color":color.TEAL,"alpha":0.15*255};
     var drawColor = color.TEAL;
     var trackColor = null;
     var alpha = annotation_alpha;
