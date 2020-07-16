@@ -2,6 +2,7 @@
 var statusAnimator=null;
 var defaultDotWidth=10;
 var defaultDrawWidth=3;
+const annotation_alpha=0.7*255;
 
 function clearStatus()
 {
@@ -1052,6 +1053,148 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  computeLocalizationColor(localization, meta)
+  {
+    // Default fill is solid
+    var fill = {"style": "solid","color":color.TEAL,"alpha":0.05*255};
+    var drawColor = color.TEAL;
+    var trackColor = null;
+    var alpha = annotation_alpha;
+
+    if (localization.id in this._data._trackDb)
+    {
+      if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
+      {
+        alpha = 1.0*255;
+        trackColor = "FFFFFF";
+      }
+      else
+      {
+        trackColor = this._data._trackDb[localization.id].color;
+      }
+      if (trackColor)
+      {
+        drawColor = color.hexToRgb(trackColor);
+      }
+      fill.color = drawColor;
+    }
+    else if (meta.colorMap != null)
+    {
+      let decodeColor = (value) => {
+        if (typeof(value) == "string")
+          {
+            drawColor = color.hexToRgb(value)
+          }
+          else
+          {
+            drawColor = value.slice(0,3);
+            if (value.length == 4)
+            {
+              alpha = value[3];
+            }
+          }
+        //Set the fill color to the box draw color
+        fill.color = drawColor;
+      };
+      let decodeFill = (fill_obj) => {
+        fill.style=fill_obj.style;
+        let value =fill_obj.color;
+        if (typeof(value.color) == "string")
+          {
+            fill.color = color.hexToRgb(value)
+          }
+          else
+          {
+            fill.color = value.slice(0,3);
+            if (value.length == 4)
+            {
+              fill.alpha = value[3];
+            }
+          }
+      };
+      if (meta.colorMap.default)
+      {
+        decodeColor(meta.colorMap.default);
+      }
+      if (meta.colorMap.defaultFill)
+      {
+        decodeFill(meta.colorMap.defaultFill);
+      }
+
+      if (meta.colorMap.version)
+      {
+        if (localization.version in meta.colorMap.version)
+        {
+          decodeColor(meta.colorMap.version[localization.version]);
+        }
+      }
+      var keyname = meta.colorMap.key;
+      if (keyname && keyname in localization.attributes)
+      {
+        var keyvalue=localization.attributes[keyname];
+        if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+        {
+          decodeColor(meta.colorMap.map[keyvalue]);
+        }
+        if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+        {
+          decodeFill(meta.fillMap.map[keyvalue]);
+        }
+      }
+      // If we define a alpha_ranges routine
+      if (meta.colorMap.alpha_ranges)
+      {
+        keyname = meta.colorMap.alpha_ranges.key;
+        var keyvalue=localization.attributes[keyname];
+        if (keyvalue)
+        {
+          for (let ranges of meta.colorMap.alpha_ranges.alphas)
+          {
+            if (keyvalue >= ranges[0] && keyvalue < ranges[1])
+            {
+              alpha = ranges[2];
+            }
+          }
+        }
+      }
+    } //end colormap
+
+    // Handle state based color choices
+    // If we are cutting the localiztion apply half alpha at gray
+    if (this._clipboard.isCutting(localization))
+    {
+      drawColor = color.MEDIUM_GRAY;
+      alpha = 0.5 * 255;
+    }
+
+    // If this is the active localization it is white @ 255
+    if (this.activeLocalization && this.activeLocalization.id == localization.id)
+    {
+      drawColor = color.WHITE;
+      fill.alpha = 0.0;
+      if (this._emphasis && this._emphasis.id == localization.id)
+      {
+        alpha = 255;
+      }
+      if (this._clipboard.isCutting(localization))
+      {
+        alpha *= 0.5;
+        fill.alpha *= 0.5;
+      }
+    }
+    else if (this._emphasis && this._emphasis.id == localization.id)
+    {
+      // If this is the emphasized localization it is white-blended @ 255
+      drawColor = color.blend(color.WHITE, drawColor, 0.50);
+      fill.alpha *= 0.5;
+      if (this._clipboard.isCutting(localization))
+      {
+        alpha *= 0.5;
+      }
+    }
+    return {"color": drawColor, "alpha": alpha, "fill": fill};
+  }
+
   localizationByLocation(clickLoc)
   {
     var loc = this.scaleToRelative(clickLoc);
@@ -1333,7 +1476,7 @@ class AnnotationCanvas extends TatorElement
           this.emphasizeLocalization(this.activeLocalization);
         }
         else if (this._emphasis != null && this._emphasis != this.activeLocalization)
-        {        
+        {
           this._canvas.classList.remove("select-pointer");
           this._emphasis = null;
           this.refresh();
@@ -2742,8 +2885,6 @@ class AnnotationCanvas extends TatorElement
 
   drawAnnotations(frameInfo, drawContext, roi)
   {
-    const annotation_alpha=0.7*255;
-
     if (drawContext == undefined)
     {
       drawContext = this._draw;
@@ -2797,164 +2938,27 @@ class AnnotationCanvas extends TatorElement
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
           var localization=localList[localIdx];
-          var typeObject=this.getObjectDescription(localization);
-          var type=typeObject.dtype;
-          var width=typeObject.line_width;
-          // Make the line width appear as monitor pixels
-          width *= this._draw.displayToViewportScale()[0];
-          width = Math.round(width);
-
-          // Default to blue
-          var drawColor = color.TEAL;
-          var meta = this.getObjectDescription(localization);
-          var trackColor = null;
-          var alpha = annotation_alpha;
-
-          // Default fill is off
-          var fill = {"style": "solid","color":color.TEAL,"alpha":0.05*255};
-
           if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
           {
             continue;
           }
-          if (localization.id in this._data._trackDb)
-          {
-            if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
-            {
-              alpha = 1.0*255;
-              trackColor = "FFFFFF";
-            }
-            else
-            {
-              trackColor = this._data._trackDb[localization.id].color;
-            }
-            if (trackColor)
-            {
-              drawColor = color.hexToRgb(trackColor);
-            }
-            fill.color = drawColor;
-          }
-          else if (meta.colorMap != null)
-          {
-            let decodeColor = (value) => {
-              if (typeof(value) == "string")
-                {
-                  drawColor = color.hexToRgb(value)
-                }
-                else
-                {
-                  drawColor = value.slice(0,3);
-                  if (value.length == 4)
-                  {
-                    alpha = value[3];
-                  }
-                }
-              //Set the fill color to the box draw color
-              fill.color = drawColor;
-            };
-            let decodeFill = (fill_obj) => {
-              fill.style=fill_obj.style;
-              let value =fill_obj.color;
-              if (typeof(value.color) == "string")
-                {
-                  fill.color = color.hexToRgb(value)
-                }
-                else
-                {
-                  fill.color = value.slice(0,3);
-                  if (value.length == 4)
-                  {
-                    fill.alpha = value[3];
-                  }
-                }
-            };
-            if (meta.colorMap.default)
-            {
-              decodeColor(meta.colorMap.default);
-            }
-            if (meta.colorMap.defaultFill)
-            {
-              decodeFill(meta.colorMap.defaultFill);
-            }
+          var localization=localList[localIdx];
+          var meta=this.getObjectDescription(localization);
+          var type=meta.dtype;
+          var width=meta.line_width;
+          // Make the line width appear as monitor pixels
+          width *= this._draw.displayToViewportScale()[0];
+          width = Math.round(width);
 
-            if (meta.colorMap.version)
-            {
-              if (localization.version in meta.colorMap.version)
-              {
-                decodeColor(meta.colorMap.version[localization.version]);
-              }
-            }
-            var keyname = meta.colorMap.key;
-            if (keyname && keyname in localization.attributes)
-            {
-              var keyvalue=localization.attributes[keyname];
-              if (meta.colorMap.map && keyvalue in meta.colorMap.map)
-              {
-                decodeColor(meta.colorMap.map[keyvalue]);
-              }
-              if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
-              {
-                decodeFill(meta.fillMap.map[keyvalue]);
-              }
-            }
-            // If we define a alpha_ranges routine
-            if (meta.colorMap.alpha_ranges)
-            {
-              keyname = meta.colorMap.alpha_ranges.key;
-              var keyvalue=localization.attributes[keyname];
-              if (keyvalue)
-              {
-                for (let ranges of meta.colorMap.alpha_ranges.alphas)
-                {
-                  if (keyvalue >= ranges[0] && keyvalue < ranges[1])
-                  {
-                    alpha = ranges[2];
-                  }
-                }
-              }
-            }
-          } //end colormap
-
-          // Handle state based color choices
-          // If we are cutting the localiztion apply half alpha at gray
-          if (this._clipboard.isCutting(localization))
-          {
-            drawColor = color.MEDIUM_GRAY;
-            alpha = 0.5 * 255;
-          }
-
-          // If this is the active localization it is white @ 255
-          if (this.activeLocalization && this.activeLocalization.id == localization.id)
-          {
-            drawColor = color.WHITE;
-            fill.alpha = 0.0;
-            if (this._emphasis && this._emphasis.id == localization.id)
-            {
-              alpha = 255;
-            }
-            if (this._clipboard.isCutting(localization))
-            {
-              alpha *= 0.5;
-              fill.alpha *= 0.5;
-            }
-          }
-          else if (this._emphasis && this._emphasis.id == localization.id)
-          {
-            // If this is the emphasized localization it is white-blended @ 255
-            drawColor = color.blend(color.WHITE, drawColor, 0.50);
-            fill.alpha *= 0.5;
-            if (this._clipboard.isCutting(localization))
-            {
-              alpha *= 0.5;
-            }
-          }
-
-          localization.color = drawColor;
+          // Compute the localization color
+          var colorInfo = this.computeLocalizationColor(localization,meta);
+          localization.color = colorInfo.color
+          var fill = colorInfo.fill;
 
           if (type=='box')
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
-            drawContext.drawPolygon(poly, localization.color, width, alpha);
+            drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
             if (fill.style == "solid")
             {
               drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
