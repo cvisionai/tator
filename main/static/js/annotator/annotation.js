@@ -1821,12 +1821,9 @@ class AnnotationCanvas extends TatorElement
     this.activeLocalization = localization;
     if (skipAnimation == true)
     {
-      if (muteOthers == true)
-      {
         this.emphasizeLocalization(localization,
                                    color.WHITE,
                                    muteOthers);
-      }
     }
     else
     {
