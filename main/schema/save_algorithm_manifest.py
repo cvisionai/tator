@@ -52,7 +52,7 @@ class SaveAlgorithmManifestSchema(AutoSchema):
             responses['201'] = {
             'description': 'Successful save of algortihm manifest.',
             'content': {'application/json': {'schema': {
-                '$ref': '#/components/schemas/AlgorithmManfiest',
+                '$ref': '#/components/schemas/AlgorithmManifest',
             }}}
         }
         return responses

@@ -32,7 +32,7 @@ class CustomGenerator(SchemaGenerator):
                 'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,
                 'AlgorithmSpec': algorithm_spec,
-                'AlgorithmManfiest': algorithm_manifest,
+                'AlgorithmManifest': algorithm_manifest,
                 'AlgorithmManifestSpec': algorithm_manifest_spec,
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
