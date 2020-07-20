@@ -25,4 +25,8 @@
 ---
 {{- $leafSettings := dict "Values" .Values "name" "prune-leaves-cron" "app" "prune-leaves" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"pruneleaves\"]" "schedule" "30 3 * * *" }}
 {{include "tatorCron.template" $leafSettings }}
+---
+{{- $filebeatSettings := dict "Values" .Values "name" "prune-filebeat-cron" "app" "prune-filebeat" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunefilebeat\"]" "schedule" "40 4 * * *" }}
+{{include "tatorCron.template" $filebeatSettings }}
+
 
