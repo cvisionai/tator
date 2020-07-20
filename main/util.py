@@ -3,8 +3,10 @@ import os
 import time
 import subprocess
 import json
+import datetime
 
 from progressbar import progressbar,ProgressBar
+from dateutil.parser import parse
 
 from main.models import *
 from main.search import TatorSearch
@@ -13,6 +15,7 @@ from main.search import mediaFileSizes
 from django.conf import settings
 from django.db.models import F
 
+from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
 
 logger = logging.getLogger(__name__)
@@ -228,3 +231,14 @@ def fixVideoDims(project):
         except:
             print(f"Error on {video.pk}")
 
+def clearOldFilebeatIndices():
+    es = Elasticsearch([os.getenv('ELASTICSEARCH_HOST')])
+    for index in es.indices.get('filebeat-*'):
+        tokens = str(index).split('-')
+        if len(tokens) < 3:
+            continue
+        dt = parse(tokens[2])
+        delta = datetime.datetime.now() - dt
+        if delta.days > 7:
+            logger.info(f"Deleting old filebeat index {index}")
+            es.indices.delete(str(index))
