@@ -2940,7 +2940,7 @@ class AnnotationCanvas extends TatorElement
       width = Math.round(width);
 
       localization.color = color.MEDIUM_GRAY;
-      alpha = 0.5*255;
+      let alpha = 0.5*255;
 
       if (type=='box')
       {
