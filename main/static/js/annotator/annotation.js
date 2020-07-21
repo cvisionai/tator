@@ -1959,6 +1959,11 @@ class AnnotationCanvas extends TatorElement
   // Emphasis is applied to the localization
   emphasizeLocalization(localization, userColor, muteOthers)
   {
+    if (localization == null)
+    {
+      console.warning("Emphasizing null localization");
+      return;
+    }
     if (muteOthers)
     {
       var tempList=[]
