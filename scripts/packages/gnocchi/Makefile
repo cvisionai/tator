@@ -35,5 +35,5 @@ endif
 
 .PHONY: dist
 dist: uic
-	pyinstaller -F $(OS_ARGS) -n $(NAME) --add-data "gnocchi/assets$(SEP)gnocchi/assets" gnocchi/__main__.py
+	pyinstaller -F $(OS_ARGS) -n $(NAME) --add-data "gnocchi/assets$(SEP)gnocchi/assets" --exclude-module numpy --exclude-module matplotlib --exclude-module pandas --exclude-module PIL --exclude-module PyQt5.QtOpenGL --exclude-module PyQt5.QtSql --exclude-module PyQt5.QtMultimedia --exclude-module PyQt5.QtTest --exclude-module PyQt5.QtWebEngineWidgets --exclude-module PyQt5.QtQuick --exclude-module PyQt5.QtQuickWidgets gnocchi/__main__.py
 	mv $(NAME).spec build
