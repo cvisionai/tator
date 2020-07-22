@@ -3016,13 +3016,13 @@ class AnnotationCanvas extends TatorElement
           else if (type == 'line')
           {
             var line = this.localizationToLine(localization, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, width, alpha);
+            drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
           }
           else if (type == 'dot')
           {
             const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
             var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, alpha);
+            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, colorInfo.alpha);
           }
           else
           {
