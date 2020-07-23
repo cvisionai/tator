@@ -1111,7 +1111,7 @@ class AnnotationCanvas extends TatorElement
       {
         drawColor = color.hexToRgb(trackColor);
       }
-      if (meta.colorMap.defaultFill)
+      if (meta.colorMap && meta.colorMap.defaultFill)
       {
         decodeFill(meta.colorMap.defaultFill);
       }
