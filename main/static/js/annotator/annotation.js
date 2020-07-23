@@ -1111,21 +1111,24 @@ class AnnotationCanvas extends TatorElement
       {
         drawColor = color.hexToRgb(trackColor);
       }
-      if (meta.colorMap && meta.colorMap.defaultFill)
+      if (meta.colorMap)
       {
-        decodeFill(meta.colorMap.defaultFill);
-      }
-      var keyname = meta.colorMap.key;
-      if (keyname && keyname in this._data._trackDb[localization.id].attributes)
-      {
-        var keyvalue=localization.attributes[keyname];
-        if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+        if (meta.colorMap.defaultFill)
         {
-          decodeColor(meta.colorMap.map[keyvalue]);
+          decodeFill(meta.colorMap.defaultFill);
         }
-        if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+        var keyname = meta.colorMap.key;
+        if (keyname && keyname in this._data._trackDb[localization.id].attributes)
         {
-          decodeFill(meta.colorMap.fillMap[keyvalue]);
+          var keyvalue=localization.attributes[keyname];
+          if (meta.colorMap.map && keyvalue in meta.colorMap.map)
+          {
+            decodeColor(meta.colorMap.map[keyvalue]);
+          }
+          if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
+          {
+            decodeFill(meta.colorMap.fillMap[keyvalue]);
+          }
         }
       }
       fill.color = drawColor;
