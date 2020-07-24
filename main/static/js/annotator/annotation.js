@@ -1062,7 +1062,7 @@ class AnnotationCanvas extends TatorElement
     var alpha = annotation_alpha;
 
     let decodeColor = (value) => {
-    if (typeof(value) == "string")
+      if (typeof(value) == "string")
       {
         drawColor = color.hexToRgb(value)
       }
@@ -1096,49 +1096,13 @@ class AnnotationCanvas extends TatorElement
       }
     };
 
-    if (localization.id in this._data._trackDb)
-    {
-      if (this._activeTrack && this._activeTrack.localizations.includes(localization.id))
-      {
-        alpha = 1.0*255;
-        trackColor = "FFFFFF";
-      }
-      else
-      {
-        trackColor = this._data._trackDb[localization.id].color;
-      }
-      if (trackColor)
-      {
-        drawColor = color.hexToRgb(trackColor);
-      }
-      if (meta.colorMap)
-      {
-        if (meta.colorMap.defaultFill)
-        {
-          decodeFill(meta.colorMap.defaultFill);
-        }
-        var keyname = meta.colorMap.key;
-        if (keyname && keyname in this._data._trackDb[localization.id].attributes)
-        {
-          var keyvalue=localization.attributes[keyname];
-          if (meta.colorMap.map && keyvalue in meta.colorMap.map)
-          {
-            decodeColor(meta.colorMap.map[keyvalue]);
-          }
-          if (meta.colorMap.fillMap && keyvalue in meta.colorMap.fillMap)
-          {
-            decodeFill(meta.colorMap.fillMap[keyvalue]);
-          }
-        }
-      }
-      fill.color = drawColor;
-    }
-    else if (meta.colorMap != null)
-    {
+    let colorMap = (objAttributes) => {
+
       if (meta.colorMap.default)
       {
         decodeColor(meta.colorMap.default);
       }
+
       if (meta.colorMap.defaultFill)
       {
         decodeFill(meta.colorMap.defaultFill);
@@ -1151,10 +1115,11 @@ class AnnotationCanvas extends TatorElement
           decodeColor(meta.colorMap.version[localization.version]);
         }
       }
+
       var keyname = meta.colorMap.key;
-      if (keyname && keyname in localization.attributes)
+      if (keyname && keyname in objAttributes)
       {
-        var keyvalue=localization.attributes[keyname];
+        var keyvalue = objAttributes[keyname];
         if (meta.colorMap.map && keyvalue in meta.colorMap.map)
         {
           decodeColor(meta.colorMap.map[keyvalue]);
@@ -1164,6 +1129,7 @@ class AnnotationCanvas extends TatorElement
           decodeFill(meta.colorMap.fillMap[keyvalue]);
         }
       }
+
       // If we define a alpha_ranges routine
       if (meta.colorMap.alpha_ranges)
       {
@@ -1180,10 +1146,43 @@ class AnnotationCanvas extends TatorElement
           }
         }
       }
-    } //end colormap
+    };
+
+    let localizationMatchesActiveTrack = this._activeTrack && this._activeTrack.localizations.includes(localization.id);
+    let localizationInTrack = localization.id in this._data._trackDb;
+
+    if (localization.id in this._data._trackDb)
+    {
+      if (localizationMatchesActiveTrack)
+      {
+        alpha = 1.0*255;
+        trackColor = "FFFFFF";
+      }
+      else
+      {
+        trackColor = this._data._trackDb[localization.id].color;
+      }
+      if (trackColor)
+      {
+        drawColor = color.hexToRgb(trackColor);
+      }
+    }
+
+    if (meta.colorMap)
+    {
+      if (localizationInTrack)
+      {
+        colorMap(this._data._trackDb[localization.id].attributes);
+      }
+      else
+      {
+        colorMap(localization.attributes);
+      }
+    }
+    fill.color = drawColor;
 
     // Handle state based color choices
-    // If we are cutting the localiztion apply half alpha at gray
+    // If we are cutting the localization apply half alpha at gray
     if (this._clipboard.isCutting(localization))
     {
       drawColor = color.MEDIUM_GRAY;
@@ -1191,7 +1190,11 @@ class AnnotationCanvas extends TatorElement
     }
 
     // If this is the active localization it is white @ 255
-    if (this.activeLocalization && this.activeLocalization.id == localization.id)
+    if (localizationMatchesActiveTrack)
+    {
+      fill.alpha = 0.0;
+    }
+    else if (this.activeLocalization && this.activeLocalization.id == localization.id)
     {
       drawColor = color.WHITE;
       fill.alpha = 0.0;
