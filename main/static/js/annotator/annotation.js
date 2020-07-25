@@ -1387,25 +1387,44 @@ class AnnotationCanvas extends TatorElement
         y0 -= (slope*x0);
         x0 = 0;
       }
+      else if (x0 > 1.0)
+      {
+        y0 -= (slope*(x0-1.0));
+        x0 = 1.0;
+      }
       if (y0 < 0)
       {
         x0 -= (y0/slope);
         y0 = 0;
+      }
+      else if (y0 > 1.0)
+      {
+        x0 -= ((y0-1.0)/slope);
+        y0 = 1.0;
       }
       if (x1 > 1.0)
       {
         y1 -= (slope*(x1-1.0));
         x1 = 1.0;
       }
+      else if (x1 < 0)
+      {
+        y1 -= (slope*x1);
+        x1 = 0;
+      }
       if (y1 > 1.0)
       {
         x1 -= ((y1-1.0)/slope);
         y1 = 1.0;
       }
-
-      console.info(`${x0},${y0} to ${x1},${y1}`);
+      else if (y1 < 0)
+      {
+        x1 -= (y1/slope);
+        y1 = 0;
+      }
       return [[x0*sf[0],y0*sf[1]],[x1*sf[0],y1*sf[1]]];
     };
+  
     //Scale box dimenisons
     var actX0 = (localization.x - roi[0]) / roi[2];
     var actY0 = (localization.y - roi[1]) / roi[3];
@@ -1415,6 +1434,7 @@ class AnnotationCanvas extends TatorElement
     scaleFactor[0] *= roi[2];
     scaleFactor[1] *= roi[3];
     var line = rectify(actX0,actY0,actX1,actY1, scaleFactor);
+
     return line;
   }
 
