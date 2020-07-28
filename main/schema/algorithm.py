@@ -6,6 +6,8 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
 
+from .components.algorithm import alg_fields as fields
+
 class AlgorithmListSchema(AutoSchema):
 
     def get_operation(self, path, method):
@@ -78,20 +80,28 @@ class AlgorithmListSchema(AutoSchema):
 
 class AlgorithmDetailSchema(AutoSchema):
 
-    def get_operation(self, path, method):
+    def get_operation(self, path, method) -> dict:
         operation = super().get_operation(path, method)
-        if method == 'DELETE':
+        if method == 'GET':
+            operation['operationId'] = 'GetAlgorithm'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateProject'
+        elif method == 'DELETE':
             operation['operationId'] = 'DeleteAlgorithm'
         operation['tags'] = ['Tator']
         return operation
     
-    def get_description(self, path, method):
+    def get_description(self, path, method) -> str:
         description = ''
-        if method == 'DELETE':
+        if method == 'GET':
+            description = 'Get registered algorithm workflow'
+        elif method == 'PATCH':
+            description = 'Updated registered algorithm workflow'
+        elif method == 'DELETE':
             description = 'Delete registered algorithm workflow'
         return description
 
-    def _get_path_parameters(self, path, method):
+    def _get_path_parameters(self, path, method) -> list:
         parameters = [{
             'name': 'id',
             'in': 'path',
@@ -105,11 +115,29 @@ class AlgorithmDetailSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
-        return {}
+    def _get_request_body(self, path, method) -> str:
+        body = {}
+        if method == 'PATCH':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/AlgorithmSpec'},
+                'example': {
+                    fields.name: 'New unique name',
+                    fields.manifest: 'Server path to new manifest file'
+                }
+            }}}
+        return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
-        if method == 'DELETE':
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of algorithm.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Algorithm',
+                }}},
+            }
+        elif method == 'DELETE':
             responses['200'] = message_schema('deletion', 'registered algorithm')
         return responses

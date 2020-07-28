@@ -140,7 +140,7 @@ class AlgorithmDetailAPI(BaseDetailView):
 
     schema = AlgorithmDetailSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['delete']
+    http_method_names = ['get', 'patch', 'delete']
 
     def safe_delete(self, path: str) -> None:
         """ Attempts to delete the file at the provided path.
@@ -177,6 +177,46 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         msg = f'Registered algorithm deleted successfully!'
         return {'message': msg}
+
+    def _get(self, params):
+        """ Retrieve the requested algortihm entry by ID
+        """
+        return database_qs(Algorithm.objects.filter(pk=params['id']))[0]
+
+    def _patch(self, params) -> dict:
+        """ Patch operation on the algorithm entry
+        """
+        alg_id = params["id"]
+        obj = Algorithm.objects.get(pk=alg_id)
+
+        name = params.get(fields.name, None)
+        if name not None:
+            obj.name = name
+
+        user = params.get(fields.user, None)
+        if user not None:
+            obj.user = user
+
+        description = params.get(fields.description, None)
+        if description not None:
+            obj.description = description
+
+        #TODO Should this delete the manifest if it's not registered to anything else?
+        manifest = params.get(fields.manifest, None)
+        if manifest not None:
+            obj.manifest = manifest
+
+        cluster = params.get(fields.cluster, None)
+        if cluster not None:
+            obj.cluster = cluster
+
+        files_per_job = params.get(fields.files_per_job, None)
+        if files_per_job not None:
+            obj.files_per_job = files_per_job
+
+        obj.save()
+
+        return {'message': f'Algorithm {alg_id} successfully updated!')
 
     def get_queryset(self):
         """ Returns a queryset of all registered algorithms
