@@ -190,33 +190,33 @@ class AlgorithmDetailAPI(BaseDetailView):
         obj = Algorithm.objects.get(pk=alg_id)
 
         name = params.get(fields.name, None)
-        if name not None:
+        if name is not None:
             obj.name = name
 
         user = params.get(fields.user, None)
-        if user not None:
+        if user is not None:
             obj.user = user
 
         description = params.get(fields.description, None)
-        if description not None:
+        if description is not None:
             obj.description = description
 
         #TODO Should this delete the manifest if it's not registered to anything else?
         manifest = params.get(fields.manifest, None)
-        if manifest not None:
+        if manifest is not None:
             obj.manifest = manifest
 
         cluster = params.get(fields.cluster, None)
-        if cluster not None:
+        if cluster is not None:
             obj.cluster = cluster
 
         files_per_job = params.get(fields.files_per_job, None)
-        if files_per_job not None:
+        if files_per_job is not None:
             obj.files_per_job = files_per_job
 
         obj.save()
 
-        return {'message': f'Algorithm {alg_id} successfully updated!')
+        return {'message': f'Algorithm {alg_id} successfully updated!'}
 
     def get_queryset(self):
         """ Returns a queryset of all registered algorithms
