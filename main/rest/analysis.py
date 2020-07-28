@@ -2,10 +2,13 @@ from ..models import Analysis
 from ..models import Project
 from ..models import database_qs
 from ..schema import AnalysisListSchema
+from ..schema import AnalysisDetailSchema
 from ..schema import parse
+from ..schema.components.analysis import fields
 
+from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import ProjectFullControlPermission
+from ._permissions import ProjectEditPermission, ProjectFullControlPermission
 
 class AnalysisListAPI(BaseListView):
     """ Define and list analyses for a project.
@@ -35,3 +38,37 @@ class AnalysisListAPI(BaseListView):
         qs = Analysis.objects.filter(project__id=params['project'])
         return qs
 
+class AnalysisDetailAPI(BaseDetailView):
+    """ Interact with a single analysis record
+    """
+
+    schema = AnalysisDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    http_method_names = ['get', 'delete', 'patch']
+
+    def _delete(self, params: dict) -> dict:
+        """ Deletes the analysis record
+
+        Args:
+            params: Parameters provided as part of the delete request. Only care about ID
+
+        Returns:
+            Returns response message indicating successful deletion of algorithm
+        """
+
+        obj_id = params[fields.id]
+        obj = Analysis.objects.get(pk=obj_id)
+        obj.delete()
+
+        msg = f'Analysis record {obj_id} deleted successfully!'
+        return {'message': msg}
+
+    def _get(self, params: dict):
+        """ Retrieves the requested analysis record by ID
+        """
+        return database_qs(Analysis.objects.filter(pk=params[fields.id]))[0]
+
+    def get_queryset(self):
+        """ Returns a queryset of all analysis records
+        """
+        return Analysis.objects.all()

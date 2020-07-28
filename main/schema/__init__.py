@@ -3,6 +3,7 @@ from .algorithm import AlgorithmListSchema
 from .algorithm import AlgorithmDetailSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
+from .analysis import AnalysisDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .job_group import JobGroupDetailSchema

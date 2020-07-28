@@ -115,7 +115,7 @@ class AlgorithmDetailSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method) -> str:
+    def _get_request_body(self, path, method) -> dict:
         body = {}
         if method == 'PATCH':
             body = {
