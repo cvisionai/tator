@@ -97,8 +97,10 @@ class AnalysisDetailSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'GetAnalysis'
-        elif method == 'DELETE':
+        elif method == 'PATCH':
             operation['operationId'] = 'UpdateAnalysis'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteAnalysis'
         operation['tags'] = ['Tator']
         return operation
 
@@ -108,8 +110,9 @@ class AnalysisDetailSchema(AutoSchema):
             description = 'Get analysis record'
         elif method == 'DELETE':
             description = 'Delete analysis record'
+        elif method == 'PATCH':
+            description = 'Update analysis record'
         return description
-
 
     def _get_path_parameters(self, path, method) -> list:
         parameters = [{
@@ -147,6 +150,8 @@ class AnalysisDetailSchema(AutoSchema):
                     '$ref': '#/components/schemas/Analysis',
                 }}},
             }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'analysis record')
         elif method == 'DELETE':
             responses['200'] = message_schema('deletion', 'analysis record')
         return responses

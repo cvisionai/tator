@@ -85,7 +85,7 @@ class AlgorithmDetailSchema(AutoSchema):
         if method == 'GET':
             operation['operationId'] = 'GetAlgorithm'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateProject'
+            operation['operationId'] = 'UpdateAlgorithm'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteAlgorithm'
         operation['tags'] = ['Tator']

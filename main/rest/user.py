@@ -1,10 +1,31 @@
 from ..models import User
 from ..serializers import UserSerializerBasic
+from ..schema import UserListSchema
 from ..schema import UserDetailSchema
 from ..schema import CurrentUserSchema
-
 from ._base_views import BaseDetailView
+from ._base_views import BaseListView
 from ._permissions import UserPermission
+from ._permissions import ProjectFullControlPermission
+
+class UserListAPI(BaseListView):
+    """
+    """
+
+    schema = UserListSchema()
+    permission_classes = [ProjectFullControlPermission]
+    http_method_names = ['get', 'post']
+
+    def _get(self, params: dict) -> dict:
+        qs = User.objects.all()
+        return database_qs(self.get_queryset())
+
+    def get_queryset(self):
+        qs = User.objects.all()
+        return qs
+
+    def _post(self, params: dict) -> dict:
+        return {'message': f'...did not do anything. sorry.'}
 
 class UserDetailAPI(BaseDetailView):
     """ Interact with an individual user.
@@ -13,7 +34,7 @@ class UserDetailAPI(BaseDetailView):
     queryset = User.objects.all()
     permission_classes = [UserPermission]
     lookup_field = 'id'
-    http_method_names = ['get', 'patch']
+    http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
         user = User.objects.get(pk=params['id'])

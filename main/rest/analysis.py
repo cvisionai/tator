@@ -8,7 +8,8 @@ from ..schema.components.analysis import fields
 
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
-from ._permissions import ProjectEditPermission, ProjectFullControlPermission
+from ._permissions import ProjectEditPermission
+from ._permissions import ProjectFullControlPermission
 
 class AnalysisListAPI(BaseListView):
     """ Define and list analyses for a project.
