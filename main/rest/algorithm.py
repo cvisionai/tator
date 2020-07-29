@@ -5,7 +5,10 @@ import os
 from django.conf import settings
 import yaml
 
-from ..models import Project, Algorithm, User
+from ..models import Project
+from ..models import Algorithm
+from ..models import User
+from ..models import JobCluster
 from ..models import database_qs
 from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
@@ -195,7 +198,8 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         user = params.get(fields.user, None)
         if user is not None:
-            obj.user = user
+            user_entry = User.objects.get(pk=user)
+            obj.user = user_entry
 
         description = params.get(fields.description, None)
         if description is not None:
@@ -206,9 +210,14 @@ class AlgorithmDetailAPI(BaseDetailView):
         if manifest is not None:
             obj.manifest = manifest
 
+        #TODO This needs to be updated at some point to actually use the JobCluster objects
+        #     Currently, there doesn't exist an endpoint to manage jobclusters
+        '''
         cluster = params.get(fields.cluster, None)
         if cluster is not None:
-            obj.cluster = cluster
+            cluster_obj = JobCluster.objects.get(pk=cluster)
+            obj.cluster = cluster_obj
+        '''
 
         files_per_job = params.get(fields.files_per_job, None)
         if files_per_job is not None:
