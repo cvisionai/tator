@@ -69,6 +69,24 @@ class AnalysisDetailAPI(BaseDetailView):
         """
         return database_qs(Analysis.objects.filter(pk=params[fields.id]))[0]
 
+    def _patch(self, params: dict):
+        """ #TODO
+        """
+        obj_id = params['id']
+        obj = Analysis.objects.get(pk=obj_id)
+
+        name = params.get(fields.name)
+        if name is not None:
+            obj.name = name
+
+        data_query = params.get(fields.data_query)
+        if data_query is not None:
+            obj.data_query = data_query
+
+        obj.save()
+
+        return {'message': f'Analysis {obj_id} successfully updated!'}
+
     def get_queryset(self):
         """ Returns a queryset of all analysis records
         """

@@ -136,6 +136,7 @@ class AnalysisDetailSchema(AutoSchema):
                 'content': {'application/json': {
                 'schema': {'$ref': '#/components/schemas/AnalysisSpec'},
                 'example': {
+                    fields.name: "New name",
                     fields.data_query: 'New string for analysis record'
                 }
             }}}
