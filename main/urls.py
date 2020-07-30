@@ -240,10 +240,6 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
-        'rest/Users',
-        UserListAPI.as_view(),
-    ),
-    path(
         'rest/User/GetCurrent',
         CurrentUserAPI.as_view(),
     ),
