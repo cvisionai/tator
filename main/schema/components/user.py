@@ -1,17 +1,26 @@
+from types import SimpleNamespace
+
+fields = SimpleNamespace(
+    id='id',
+    username='username',
+    first_name='first_name',
+    last_name='last_name',
+    email='email')
+
 user_properties = {
-    'username': {
+    fields.username: {
         'type': 'string',
         'description': 'Username of user.',
     },
-    'first_name': {
+    fields.first_name: {
         'type': 'string',
         'description': 'First name of user.',
     },
-    'last_name': {
+    fields.last_name: {
         'type': 'string',
         'description': 'Last name of user.',
     },
-    'email': {
+    fields.email: {
         'type': 'string',
         'description': 'Email address of user.',
     },
@@ -25,7 +34,7 @@ user_update = {
 user = {
     'type': 'object',
     'properties': {
-        'id': {
+        fields.id: {
             'type': 'integer',
             'description': 'Unique integer identifying a user.',
         },

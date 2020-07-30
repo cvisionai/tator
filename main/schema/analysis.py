@@ -2,7 +2,10 @@ from textwrap import dedent
 
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._message import message_schema
 from ._errors import error_responses
+
+from .components.analysis import fields
 
 boilerplate = dedent("""\
 Analysis objects are used to display information about filtered media lists
@@ -86,4 +89,70 @@ class AnalysisListSchema(AutoSchema):
                     '$ref': '#/components/schemas/CreateResponse',
                 }}}
             }
+        return responses
+
+class AnalysisDetailSchema(AutoSchema):
+
+    def get_operation(self, path, method) -> dict:
+        operation = super().get_operation(path, method)
+        if method == 'GET':
+            operation['operationId'] = 'GetAnalysis'
+        elif method == 'PATCH':
+            operation['operationId'] = 'UpdateAnalysis'
+        elif method == 'DELETE':
+            operation['operationId'] = 'DeleteAnalysis'
+        operation['tags'] = ['Tator']
+        return operation
+
+    def get_description(self, path, method) -> str:
+        description = ''
+        if method == 'GET':
+            description = 'Get analysis record'
+        elif method == 'DELETE':
+            description = 'Delete analysis record'
+        elif method == 'PATCH':
+            description = 'Update analysis record'
+        return description
+
+    def _get_path_parameters(self, path, method) -> list:
+        parameters = [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying an analysis record.',
+            'schema': {'type': 'integer'},
+            }]
+
+        return parameters
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method) -> dict:
+        body = {}
+        if method == 'PATCH':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/AnalysisSpec'},
+                'example': {
+                    fields.name: "New name",
+                    fields.data_query: 'New string for analysis record'
+                }
+            }}}
+        return body
+
+    def _get_responses(self, path, method):
+        responses = error_responses()
+        if method == 'GET':
+            responses['200'] = {
+                'description': 'Successful retrieval of analysis record.',
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/Analysis',
+                }}},
+            }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'analysis record')
+        elif method == 'DELETE':
+            responses['200'] = message_schema('deletion', 'analysis record')
         return responses

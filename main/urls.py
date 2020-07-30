@@ -73,6 +73,10 @@ urlpatterns += [
         'rest/Analyses/<int:project>',
         AnalysisListAPI.as_view(),
     ),
+    path(
+        'rest/Analysis/<int:id>',
+        AnalysisDetailAPI.as_view(),
+    ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
     ),

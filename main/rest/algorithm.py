@@ -5,7 +5,10 @@ import os
 from django.conf import settings
 import yaml
 
-from ..models import Project, Algorithm, User
+from ..models import Project
+from ..models import Algorithm
+from ..models import User
+from ..models import JobCluster
 from ..models import database_qs
 from ..schema import AlgorithmDetailSchema
 from ..schema import AlgorithmListSchema
@@ -140,7 +143,7 @@ class AlgorithmDetailAPI(BaseDetailView):
 
     schema = AlgorithmDetailSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['delete']
+    http_method_names = ['get', 'patch', 'delete']
 
     def safe_delete(self, path: str) -> None:
         """ Attempts to delete the file at the provided path.
@@ -177,6 +180,52 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         msg = f'Registered algorithm deleted successfully!'
         return {'message': msg}
+
+    def _get(self, params):
+        """ Retrieve the requested algortihm entry by ID
+        """
+        return database_qs(Algorithm.objects.filter(pk=params['id']))[0]
+
+    def _patch(self, params) -> dict:
+        """ Patch operation on the algorithm entry
+        """
+        alg_id = params["id"]
+        obj = Algorithm.objects.get(pk=alg_id)
+
+        name = params.get(fields.name, None)
+        if name is not None:
+            obj.name = name
+
+        user = params.get(fields.user, None)
+        if user is not None:
+            user_entry = User.objects.get(pk=user)
+            obj.user = user_entry
+
+        description = params.get(fields.description, None)
+        if description is not None:
+            obj.description = description
+
+        #TODO Should this delete the manifest if it's not registered to anything else?
+        manifest = params.get(fields.manifest, None)
+        if manifest is not None:
+            obj.manifest = manifest
+
+        #TODO This needs to be updated at some point to actually use the JobCluster objects
+        #     Currently, there doesn't exist an endpoint to manage jobclusters
+        '''
+        cluster = params.get(fields.cluster, None)
+        if cluster is not None:
+            cluster_obj = JobCluster.objects.get(pk=cluster)
+            obj.cluster = cluster_obj
+        '''
+
+        files_per_job = params.get(fields.files_per_job, None)
+        if files_per_job is not None:
+            obj.files_per_job = files_per_job
+
+        obj.save()
+
+        return {'message': f'Algorithm {alg_id} successfully updated!'}
 
     def get_queryset(self):
         """ Returns a queryset of all registered algorithms

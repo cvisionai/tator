@@ -1,9 +1,16 @@
+from types import SimpleNamespace
+
+fields = SimpleNamespace(
+    id='id',
+    name='name',
+    data_query='data_query')
+
 analysis_properties = {
-    'name': {
+    fields.name: {
         'description': 'Name of analysis.',
         'type': 'string',
     },
-    'data_query': {
+    fields.data_query: {
         'description': 'Lucene query string used to retrieve entities '
                        'to analyze.',
         'type': 'string',
@@ -13,14 +20,14 @@ analysis_properties = {
 
 analysis_spec = {
     'type': 'object',
-    'required': ['name', 'data_query'],
+    'required': [fields.name, fields.data_query],
     'properties': analysis_properties,
 }
 
 analysis = {
     'type': 'object',
     'properties': {
-        'id': {
+        fields.id: {
             'type': 'integer',
             'description': 'Unique integer identifying the analysis.',
         },
