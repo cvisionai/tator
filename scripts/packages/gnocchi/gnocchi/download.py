@@ -8,6 +8,12 @@ import time
 import json
 import tator
 
+import datetime
+
+def default_json(o):
+    if isinstance(o, (datetime.date, datetime.datetime)):
+        return o.isoformat()
+
 class Download(QObject):
     """ Background thread to handle copying directories """
 
@@ -64,7 +70,7 @@ class Download(QObject):
 
                 with open(full_type_path, 'w') as output:
                     elements = [x.to_dict() for x in elements]
-                    json.dump(elements, output)
+                    json.dump(elements, output, default=default_json)
 
             # Now export localizations
             local_types = self.tator_api.get_localization_type_list(self.project_id,media_id=[media.id])
@@ -85,7 +91,7 @@ class Download(QObject):
 
                 with open(full_type_path, 'w') as output:
                     elements = [x.to_dict() for x in elements]
-                    json.dump(elements, output)
+                    json.dump(elements, output, default=default_json)
 
             idx += 1
             if self._terminated:
