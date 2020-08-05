@@ -49,8 +49,8 @@ class MediaUtil:
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
         elif video.file:
             video_file = video.file.path
-            self._height = int((min(video.height, 720) / video.height) * video.height)
-            self._width = int((self._height / video.height) * video.width)
+            self._height = video.height
+            self._width = video.width
             # Make file relative to URL to be consistent with streaming files below
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
