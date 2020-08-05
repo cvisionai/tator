@@ -48,10 +48,18 @@ class MediaUtil:
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
         elif video.file:
-            video_file = video.file.path
-            self._height = video.height
-            self._width = video.width
+            if video.fps is not None:
+                # Legacy video path where the video.file is capped at 720p
+                # So scale the height and width to 720p being the max
+                self._height = int((min(video.height, 720) / video.height) * video.height)
+                self._width = int((self._height / video.height) * video.width)
+            else:
+                # Image
+                self._height = video.height
+                self._width = video.width
+
             # Make file relative to URL to be consistent with streaming files below
+            video_file = video.file.path
             video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
             self._video_file = os.path.join(settings.MEDIA_URL, video_file)
 
