@@ -15,7 +15,7 @@ setup(
                       'progressbar2>=3.42.0',
                       'tator_tuspy>=0.2.5',
                       'pandas>=0.24.2',
-                      'opencv-python>=4.1.0',
+                      'opencv-python>=4.2.0,<4.3',
                       'numpy>=1.16.0'],
 
     # metadata to display on PyPI
