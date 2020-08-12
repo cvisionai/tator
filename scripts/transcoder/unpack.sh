@@ -5,7 +5,7 @@
 # $2 = path to extract
 #
 # Required Environment variables
-# TATOR_URL : URL to tator rest service
+# TATOR_HOST : Host to tator
 # TATOR_TOKEN : Valid token
 # TATOR_PROJECT : Tator project identification code
 
@@ -19,4 +19,4 @@ fi
 
 rm -f $1
 
-python3 makeWorkList.py --url ${TATOR_URL} --token ${TATOR_TOKEN} --project ${TATOR_PROJECT} $2
+python3 makeWorkList.py --host ${TATOR_HOST} --token ${TATOR_TOKEN} --project ${TATOR_PROJECT} $2
