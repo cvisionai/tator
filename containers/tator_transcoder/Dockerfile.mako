@@ -46,10 +46,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 
 COPY scripts/transcoder /scripts
 COPY scripts/packages /scripts/packages
 
-# Build pytator
-WORKDIR /scripts/packages/pytator
-RUN python3 setup.py install
-
 # Build tator-py
 WORKDIR /scripts/packages/tator-py
 RUN pip3 install dist/*.whl
