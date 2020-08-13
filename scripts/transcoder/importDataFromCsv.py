@@ -46,6 +46,7 @@ def formatState(row, media, default_object):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser = tator.get_parser()
+    parser.add_argument("--project", required=True, type=int)
     parser.add_argument("--media-md5", required=True)
     parser.add_argument("--mode", required=True,choices=["localizations",
                                                          "state"])
@@ -58,9 +59,9 @@ if __name__=="__main__":
         sys.exit(-1)
 
     type_id = os.path.splitext(os.path.basename(args.data_csv))[0]
-    api = tator.get_api(args.host, args.token)
+    api = tator.get_api(host=args.host, token=args.token)
 
-    matching_media_elements = api.get_media_list(md5=args.media_md5)
+    matching_media_elements = api.get_media_list(args.project, md5=args.media_md5)
     if len(matching_media_elements) != 1:
         print(f"Got {matching_media_elements} for {args.media_md5}")
         sys.exit(-1)
