@@ -2,6 +2,7 @@ import logging
 import datetime
 import os
 import shutil
+import mimetypes
 from uuid import uuid1
 
 from django.db import transaction
@@ -88,10 +89,18 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         if int(entity_type) == -1:
             media_types = MediaType.objects.filter(project=project)
             if media_types.count() > 0:
-                media_type = media_types[0]
+                mime, _ = mimetypes.guess_type(name)
+                if mime.startswith('image'):
+                    for media_type in media_types:
+                        if media_type.dtype == 'image':
+                            break
+                else:
+                    for media_type in media_types:
+                        if media_type.dtype == 'video':
+                            break
                 entity_type = media_type.pk
             else:
-                raise Exception('No image types for project')
+                raise Exception('No media types for project')
         else:
             media_type = MediaType.objects.get(pk=int(entity_type))
             if media_type.project.pk != project:
