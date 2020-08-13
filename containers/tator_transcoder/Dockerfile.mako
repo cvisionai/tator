@@ -23,7 +23,7 @@ COPY containers/qemu_support/qemu-aarch64-static /usr/bin
 RUN chmod 1777 /tmp
 # Install apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip unzip wget pandas \
+        python3 python3-pip unzip wget \
         python3-setuptools python3-dev gcc git vim curl \
         libssl-dev ffmpeg && \
         rm -rf /var/lib/apt/lists
@@ -38,7 +38,7 @@ RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /usr/bin/
 
 # Install pip packages
 RUN pip3 --no-cache-dir install wheel
-RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0 boto3==1.14.19
+RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0 boto3==1.14.19 pandas==1.1.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev && rm -rf /var/lib/apt/lists
 
