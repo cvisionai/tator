@@ -30,10 +30,22 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     api = tator.get_api(args.host, args.token)
+    # Find type id corresponding to images.
+    media_types = api.get_media_type_list(args.project)
+    for media_type in media_types:
+        if media_type.dtype == 'image':
+            break
     with open("/work/images.json", "r") as fp:
         images = json.load(fp)
         for image in images:
             path = os.path.join(image['dirname'], image['name'])
-            for progress, response in tator.util.upload_media(api, image['entity_type'], path):
-                pass
+            if int(image['entity_type']) == -1:
+                type_id = media_type.id
+            else:
+                type_id = int(image['entity_type'])
+            for progress, response in tator.util.upload_media(api, type_id, path,
+                                                              section=args.section,
+                                                              upload_gid=args.gid,
+                                                              upload_uid=args.uid):
+                print(f"Uploading {image['name']}...")
             print(response.message)
