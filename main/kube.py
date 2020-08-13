@@ -220,9 +220,6 @@ class TatorTranscode(JobManagerMixin):
             'container': {
                 'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
-                'env': [{'name': 'TATOR_HOST', 'value': '{{workflow.parameters.host}}'},
-                        {'name': 'TATOR_PROJECT', 'value': '{{workflow.parameters.project}}'},
-                        {'name': 'TATOR_TOKEN', 'value': '{{workflow.parameters.token}}'}],
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
                 'volumeMounts': [{
@@ -310,6 +307,7 @@ class TatorTranscode(JobManagerMixin):
                 'args': ['-m', 'tator.transcode.determine_transcode',
                          '--host', '{{workflow.parameters.host}}',
                          '--token', '{{workflow.parameters.token}}',
+                         '--project', '{{workflow.parameters.project}}',
                          '--media_type', '{{inputs.parameters.entity_type}}',
                          '--output', '/work/workloads.json',
                          '{{inputs.parameters.original}}'],
@@ -404,7 +402,6 @@ class TatorTranscode(JobManagerMixin):
                 'command': ['python3',],
                 'args': [
                     'imageLoop.py',
-                    '--tus_url', '{{workflow.parameters.tus_url}}',
                     '--host', '{{workflow.parameters.host}}',
                     '--token', '{{workflow.parameters.token}}',
                     '--project', '{{workflow.parameters.project}}',
@@ -413,56 +410,6 @@ class TatorTranscode(JobManagerMixin):
                     # TODO: If we made section a DAG argument, we could
                     # conceviably import a tar across multiple sections
                     '--section', '{{workflow.parameters.section}}',
-                    '--progressName', '{{workflow.parameters.upload_name}}',
-                ],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '500Mi',
-                        'cpu': '1000m',
-                    },
-                },
-            },
-        }
-
-        self.upload_task = {
-            'name': 'upload',
-            'inputs': {'parameters' : spell_out_params(['url',
-                                                        'original',
-                                                        'transcoded',
-                                                        'thumbnail',
-                                                        'thumbnail_gif',
-                                                        'segments',
-                                                        'entity_type',
-                                                        'name',
-                                                        'md5'])},
-            'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': [
-                    'uploadTranscodedVideo.py',
-                    '--original_path', '{{inputs.parameters.original}}',
-                    '--original_url', '{{inputs.parameters.url}}',
-                    '--transcoded_path', '{{inputs.parameters.transcoded}}',
-                    '--thumbnail_path', '{{inputs.parameters.thumbnail}}',
-                    '--thumbnail_gif_path', '{{inputs.parameters.thumbnail_gif}}',
-                    '--tus_url', '{{workflow.parameters.tus_url}}',
-                    '--host', '{{workflow.parameters.host}}',
-                    '--token', '{{workflow.parameters.token}}',
-                    '--project', '{{workflow.parameters.project}}',
-                    '--type', '{{inputs.parameters.entity_type}}',
-                    '--gid', '{{workflow.parameters.gid}}',
-                    '--uid', '{{workflow.parameters.uid}}',
-                    # TODO: If we made section a DAG argument, we could
-                    # conceviably import a tar across multiple sections
-                    '--section', '{{workflow.parameters.section}}',
-                    '--name', '{{inputs.parameters.name}}',
-                    '--md5', '{{inputs.parameters.md5}}',
                     '--progressName', '{{workflow.parameters.upload_name}}',
                 ],
                 'workingDir': '/scripts',
