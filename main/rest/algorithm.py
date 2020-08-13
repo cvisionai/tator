@@ -1,7 +1,8 @@
+""" Algorithm REST endpoints """
+# pylint: disable=too-many-ancestors
+
 import logging
 import os
-# import subprocess
-
 from django.conf import settings
 import yaml
 
@@ -16,12 +17,14 @@ from ..schema.components.algorithm import alg_fields as fields
 from ._base_views import BaseDetailView
 from ._base_views import BaseListView
 from ._permissions import ProjectEditPermission
+from ..schema import parse
 
 logger = logging.getLogger(__name__)
 
 class AlgorithmListAPI(BaseListView):
     """ Retrieves registered algorithms and register new algorithm workflows
     """
+    # pylint: disable=no-member,no-self-use
     schema = AlgorithmListSchema()
     permission_classes = [ProjectEditPermission]
     http_method_names = ['get', 'post']
