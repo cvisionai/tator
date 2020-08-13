@@ -23,7 +23,7 @@ COPY containers/qemu_support/qemu-aarch64-static /usr/bin
 RUN chmod 1777 /tmp
 # Install apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip unzip wget \
+        python3 python3-pip unzip wget pandas \
         python3-setuptools python3-dev gcc git vim curl \
         libssl-dev ffmpeg && \
         rm -rf /var/lib/apt/lists
