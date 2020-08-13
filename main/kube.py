@@ -25,10 +25,10 @@ def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return "{}Mi".format(num_megabytes)
 
-def get_marshal_image_name():
-    """ Returns the location and version of the marshal image to use """
+def get_transcoder_image_name():
+    """ Returns the location and version of the transcoder image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/tator_algo_marshal:{Git.sha}"
+    return f"{registry}/tator_transcoder:{Git.sha}"
 
 class JobManagerMixin:
     """ Defines functions for job management.
@@ -433,7 +433,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'message',
                                                         'progress'])},
             'container': {
-                'image': '{{workflow.parameters.marshal_image}}',
+                'image': '{{workflow.parameters.transcoder_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -712,8 +712,7 @@ class TatorTranscode(JobManagerMixin):
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}",
-                       'marshal_image': get_marshal_image_name()}
+                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}"}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -802,8 +801,7 @@ class TatorTranscode(JobManagerMixin):
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}",
-                       'marshal_image': get_marshal_image_name()}
+                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}"}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
@@ -954,7 +952,7 @@ class TatorAlgorithm(JobManagerMixin):
             failed_task = {
                 'name': 'tator-failed',
                 'container': {
-                    'image': get_marshal_image_name(),
+                    'image': get_transcoder_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -983,7 +981,7 @@ class TatorAlgorithm(JobManagerMixin):
             succeeded_task = {
                 'name': 'tator-succeeded',
                 'container': {
-                    'image': get_marshal_image_name(),
+                    'image': get_transcoder_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
