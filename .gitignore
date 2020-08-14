@@ -15,7 +15,6 @@ examples/algorithms/groundfish_demo/fishtrackingdata
 main/version.py
 tator-image
 tator-transcoder
-marshal-image
 tus-image
 postgis-image
 *.min.js

@@ -178,7 +178,6 @@ Call the resulting command to log into the registry.
 
 ```
 aws ecr create-repository --repository-name tator_online
-aws ecr create-repository --repository-name tator_algo_marshal
 aws ecr create-repository --repository-name tator_tusd
 ```
 

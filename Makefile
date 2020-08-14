@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis transcoder packager tusd gunicorn daphne ngin
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings marshal-image tus-image postgis-image transcoder-image
+IMAGES=python-bindings tus-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -161,10 +161,6 @@ externals/build_tools/%.py:
 	@echo "Downloading submodule"
 	@git submodule update --init
 
-# Add specific rule for marshal's .gen because it uses version input file
-containers/tator_algo_marshal/Dockerfile.gen: containers/tator_algo_marshal/Dockerfile.mako scripts/packages/pytator/pytator/version.py
-	./externals/build_tools/makocc.py -o $@ containers/tator_algo_marshal/Dockerfile.mako
-
 # Dockerfile.gen rules (generic)
 %/Dockerfile.gen: %/Dockerfile.mako
 	echo $@ $<
@@ -182,13 +178,6 @@ PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
 containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 	make -C scripts/packages/pytator wheel
 	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
-
-.PHONY: marshal-image
-marshal-image:  containers/tator_algo_marshal/Dockerfile.gen containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) -f $< containers || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_algo_marshal:latest
 
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen

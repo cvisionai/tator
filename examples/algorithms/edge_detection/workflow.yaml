@@ -25,7 +25,7 @@ spec:
         template: teardown
   - name: setup
     script:
-      image: localhost:5000/tator_algo_marshal
+      image: localhost:5000/tator_transcoder
       resources:
         limits:
           cpu: 250m
@@ -100,7 +100,7 @@ spec:
       args: [/find_edges.py]
   - name: teardown
     script:
-      image: localhost:5000/tator_algo_marshal
+      image: localhost:5000/tator_transcoder
       resources:
         limits:
           cpu: 250m
