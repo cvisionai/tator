@@ -112,7 +112,7 @@ class AlgorithmListAPI(BaseListView):
             with open(manifest_path, 'r') as file:
                 loaded_yaml = yaml.safe_load(file)
         except Exception as exc:
-            log_msg = f'Provided yaml file has syntax errors'
+            log_msg = 'Provided yaml file has syntax errors'
             logging.error(log_msg)
             raise exc
 
@@ -138,7 +138,7 @@ class AlgorithmListAPI(BaseListView):
             files_per_job=files_per_job)
         alg_obj.save()
 
-        return {'message': f'Successfully registered algorithm argo workflow.', 'id': alg_obj.id}
+        return {'message': 'Successfully registered algorithm argo workflow.', 'id': alg_obj.id}
 
 class AlgorithmDetailAPI(BaseDetailView):
     """ Interact with a single registered algorithm
@@ -181,7 +181,7 @@ class AlgorithmDetailAPI(BaseDetailView):
         path = os.path.join(settings.MEDIA_ROOT, manifest_file)
         self.safe_delete(path=path)
 
-        msg = f'Registered algorithm deleted successfully!'
+        msg = 'Registered algorithm deleted successfully!'
         return {'message': msg}
 
     def _get(self, params):
