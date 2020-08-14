@@ -4,14 +4,12 @@ import argparse
 import json
 import subprocess
 import os
+import tator
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Uploads transcoded video.')
-    parser.add_argument('--tus_url', type=str,
-                        default='https://www.tatorapp.com/files/',
-                        help='TUS URL.')
-    parser.add_argument('--url', type=str,
-                        default='https://www.tatorapp.com/rest',
+    parser.add_argument('--host', type=str,
+                        default='https://www.tatorapp.com',
                         help='REST API URL.')
     parser.add_argument('--token', type=str,
                         help='REST API token.')
@@ -31,24 +29,23 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    image_upload_args = ["python3", "/scripts/uploadImage.py",
-                         "--tus_url", args.tus_url,
-                         "--url", args.url,
-                         "--token", args.token,
-                         "--project", str(args.project),
-                         "--gid", args.gid,
-                         "--uid", args.uid,
-                         "--section", args.section,
-                         "--progressName", args.progressName]
+    api = tator.get_api(args.host, args.token)
+    # Find type id corresponding to images.
+    media_types = api.get_media_type_list(args.project)
+    for media_type in media_types:
+        if media_type.dtype == 'image':
+            break
     with open("/work/images.json", "r") as fp:
         images = json.load(fp)
         for image in images:
-            image_args = [*image_upload_args,
-                          '--original_path', os.path.join(image['dirname'],
-                                                          image['name']),
-                          '--type', image['entity_type'],
-                          '--name', image['name'],
-                          "--md5", image['md5']]
-            status = subprocess.run(image_args).returncode
-            if status != 0:
-                print(f"Failed to import {image['name']}")
+            path = os.path.join(image['dirname'], image['name'])
+            if int(image['entity_type']) == -1:
+                type_id = media_type.id
+            else:
+                type_id = int(image['entity_type'])
+            for progress, response in tator.util.upload_media(api, type_id, path,
+                                                              section=args.section,
+                                                              upload_gid=args.gid,
+                                                              upload_uid=args.uid):
+                print(f"Uploading {image['name']}...")
+            print(response.message)

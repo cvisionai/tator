@@ -38,17 +38,13 @@ RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /usr/bin/
 
 # Install pip packages
 RUN pip3 --no-cache-dir install wheel
-RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0 boto3==1.14.19
+RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0 boto3==1.14.19 pandas==1.1.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev && rm -rf /var/lib/apt/lists
 
 # Copy over scripts
 COPY scripts/transcoder /scripts
 COPY scripts/packages /scripts/packages
-
-# Build pytator
-WORKDIR /scripts/packages/pytator
-RUN python3 setup.py install
 
 # Build tator-py
 WORKDIR /scripts/packages/tator-py
