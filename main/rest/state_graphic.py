@@ -51,6 +51,8 @@ class StateGraphicAPI(BaseDetailView):
 
         mode = params['mode']
         fps = params['fps']
+        length = params['length']
+        offset = params['offset']
         force_scale = None
         if 'forceScale' in params:
             force_scale = params['forceScale'].split('x')
@@ -63,6 +65,7 @@ class StateGraphicAPI(BaseDetailView):
         video = state.media.all()[0]
         localizations = state.localizations.all()
         frames = [l.frame for l in localizations]
+        frames = frames[offset:offset+length]
         roi = [(l.width, l.height, l.x, l.y) for l in localizations]
         with tempfile.TemporaryDirectory() as temp_dir:
             media_util = MediaUtil(video, temp_dir)
@@ -71,7 +74,9 @@ class StateGraphicAPI(BaseDetailView):
                     pass
                 else:
                     self.request.accepted_renderer = GifRenderer()
-                gif_fp = media_util.getAnimation(frames, roi, fps, self.request.accepted_renderer.format, force_scale=force_scale)
+                gif_fp = media_util.getAnimation(frames, roi, fps,
+                                                 self.request.accepted_renderer.format,
+                                                 force_scale=force_scale)
                 with open(gif_fp, 'rb') as data_file:
                     self.request.accepted_renderer = GifRenderer()
                     response_data = data_file.read()
