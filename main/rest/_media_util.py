@@ -182,51 +182,56 @@ class MediaUtil:
 
     def _generateFrameImages(self, frames, rois=None, render_format="jpg", force_scale=None):
         """ Generate a jpg for each requested frame and store in the working directory """
-        frames=[int(frame) for frame in frames]
-        crop_filter = None
-        if rois:
-            crop_filter=[]
-            for c in rois:
-                w = max(0,min(round(c[0]*self._width),self._width))
-                h = max(0,min(round(c[1]*self._height),self._height))
-                x = max(0,min(round(c[2]*self._width),self._width))
-                y = max(0,min(round(c[3]*self._height),self._height))
-                if force_scale:
-                    scale_w=force_scale[0]
-                    scale_h=force_scale[1]
-                    crop_filter.append(f"crop={w}:{h}:{x}:{y},scale={scale_w}:{scale_h}")
+        BATCH_SIZE = 30
+        frame_idx = 0
+        procs = []
+        for idx in range(0, len(frames), BATCH_SIZE):
+            batch = [int(frame) for frame in frames[idx:idx+BATCH_SIZE]]
+            crop_filter = None
+            if rois:
+                crop_filter=[]
+                for c in rois:
+                    w = max(0,min(round(c[0]*self._width),self._width))
+                    h = max(0,min(round(c[1]*self._height),self._height))
+                    x = max(0,min(round(c[2]*self._width),self._width))
+                    y = max(0,min(round(c[3]*self._height),self._height))
+                    if force_scale:
+                        scale_w=force_scale[0]
+                        scale_h=force_scale[1]
+                        crop_filter.append(f"crop={w}:{h}:{x}:{y},scale={scale_w}:{scale_h}")
+                    else:
+                        crop_filter.append(f"crop={w}:{h}:{x}:{y}")
+
+            logger.info(f"Processing {self._video_file}")
+            args = ["ffmpeg"]
+            inputs = []
+            outputs = []
+
+            # attempt to make a temporary file in a fast manner to speed up AWS access
+            impactedSegments = self._getImpactedSegments(batch)
+            lookup = {}
+            if impactedSegments:
+                lookup = self.makeTemporaryVideos(impactedSegments)
+
+            for batch_idx, frame in enumerate(batch):
+                outputs.extend(["-map", f"{batch_idx}:v","-frames:v", "1", "-q:v", "3"])
+                if crop_filter:
+                    outputs.extend(["-vf", crop_filter[frame_idx]])
+
+                outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
+                if frame in lookup:
+                    inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
                 else:
-                    crop_filter.append(f"crop={w}:{h}:{x}:{y}")
+                    # If we didn't make per segment mp4s, use the big one
+                    inputs.extend(["-ss", self._frameToTimeStr(frame), "-i", self._video_file])
+                frame_idx += 1
 
-        logger.info(f"Processing {self._video_file}")
-        args = ["ffmpeg"]
-        inputs = []
-        outputs = []
-
-        # attempt to make a temporary file in a fast manner to speed up AWS access
-        impactedSegments = self._getImpactedSegments(frames)
-        lookup = {}
-        if impactedSegments:
-            lookup = self.makeTemporaryVideos(impactedSegments)
-
-        for frame_idx,frame in enumerate(frames):
-            outputs.extend(["-map", f"{frame_idx}:v","-frames:v", "1", "-q:v", "3"])
-            if crop_filter:
-                outputs.extend(["-vf", crop_filter[frame_idx]])
-
-            outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
-            if frame in lookup:
-                inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]), "-i", lookup[frame][1]])
-            else:
-                # If we didn't make per segment mp4s, use the big one
-                inputs.extend(["-ss", self._frameToTimeStr(frame), "-i", self._video_file])
-
-        # Now add all the cmds in
-        args.extend(inputs)
-        args.extend(outputs)
-        logger.info(args)
-        proc = subprocess.run(args, check=True, capture_output=True)
-        return proc.returncode == 0
+            # Now add all the cmds in
+            args.extend(inputs)
+            args.extend(outputs)
+            logger.info(args)
+            procs.append(subprocess.run(args, check=True, capture_output=True))
+        return any([proc.returncode == 0 for proc in procs])
 
     def getClip(self, frameRanges):
         """ Given a list of frame ranges generate a temporary mp4
@@ -316,7 +321,8 @@ class MediaUtil:
             img.save(img_buf, "png", quality=95)
         return img_buf.getvalue()
 
-    def getTileImage(self, frames, rois=None, tile_size=None, render_format="jpg", force_scale=None):
+    def getTileImage(self, frames, rois=None, tile_size=None,
+                     render_format="jpg", force_scale=None):
         """ Generate a tile jpeg of the given frame/rois """
         # Compute tile size if not supplied explicitly
         try:
@@ -335,7 +341,9 @@ class MediaUtil:
             height = math.ceil(len(frames) / width)
             tile_size = f"{width}x{height}"
 
-        if self._generateFrameImages(frames, rois, render_format=render_format, force_scale=force_scale) == False:
+        if self._generateFrameImages(frames, rois,
+                                     render_format=render_format,
+                                     force_scale=force_scale) == False:
             return None
 
         output_file = None
@@ -356,7 +364,9 @@ class MediaUtil:
         return output_file
 
     def getAnimation(self,frames, roi, fps, render_format, force_scale):
-        if self._generateFrameImages(frames, roi, render_format="jpg", force_scale=force_scale) == False:
+        if self._generateFrameImages(frames, roi,
+                                     render_format="jpg",
+                                     force_scale=force_scale) == False:
             return None
 
         mp4_args = ["ffmpeg",
