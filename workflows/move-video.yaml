@@ -9,7 +9,7 @@ spec:
     secondsAfterFailure: 86400
   arguments:
     parameters:
-    - name: transcoder_image
+    - name: client_image
     - name: move_list # List of objects with src/dst.
                       # Example: [{"src": "/src/path", "dst": "/dst/path"}]
     - name: media_update 
@@ -46,7 +46,7 @@ spec:
       - name: src
       - name: dst
     container:
-      image: "{{workflow.parameters.transcoder_image}}"
+      image: "{{workflow.parameters.client_image}}"
       imagePullPolicy: IfNotPresent
       command: [mv]
       args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
@@ -63,7 +63,7 @@ spec:
         name: raw-pv-claim
   - name: patch
     container:
-      image: "{{workflow.parameters.transcoder_image}}"
+      image: "{{workflow.parameters.client_image}}"
       imagePullPolicy: IfNotPresent
       command: [curl]
       args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_update}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]

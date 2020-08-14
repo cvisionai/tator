@@ -1,6 +1,6 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis transcoder packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
+CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
 
 OPERATIONS=reset logs bash
 
@@ -189,18 +189,18 @@ tus-image: containers/tus/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_tusd:latest
 
-# Publish transcoder image to dockerhub so it can be used cross-cluster
-.PHONY: transcoder-image
-transcoder-image: containers/tator_transcoder/Dockerfile.gen
-	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:latest
+# Publish client image to dockerhub so it can be used cross-cluster
+.PHONY: client-image
+client-image: containers/tator_client/Dockerfile.gen
+	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 
-.PHONY: transcoder-latest
-transcoder-latest: transcoder-image
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_transcoder:$(GIT_VERSION) cvisionai/tator_transcoder:latest
-	docker push cvisionai/tator_transcoder:latest
+.PHONY: client-latest
+client-latest: client-image
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
+	docker push cvisionai/tator_client:latest
 
 .PHONY: cross-info
 cross-info: ./externals/build_tools/multiArch.py

@@ -25,10 +25,10 @@ def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return "{}Mi".format(num_megabytes)
 
-def get_transcoder_image_name():
-    """ Returns the location and version of the transcoder image to use """
+def get_client_image_name():
+    """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/tator_transcoder:{Git.sha}"
+    return f"{registry}/tator_client:{Git.sha}"
 
 class JobManagerMixin:
     """ Defines functions for job management.
@@ -167,7 +167,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original',
                                                         'url'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
                 'args': ['-O', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
@@ -189,7 +189,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'delete',
             'inputs': {'parameters' : spell_out_params(['url'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
@@ -218,7 +218,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
@@ -239,7 +239,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['importDataFromCsv.py',
@@ -266,7 +266,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'create-media',
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.create_media',
@@ -301,7 +301,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'determine-transcode',
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.determine_transcode',
@@ -337,7 +337,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'category', 'raw_width', 'raw_height',
                                                         'resolutions'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.transcode',
@@ -370,7 +370,7 @@ class TatorTranscode(JobManagerMixin):
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.make_thumbnails',
@@ -397,7 +397,7 @@ class TatorTranscode(JobManagerMixin):
         self.image_upload_task = {
             'name': 'image-upload',
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -433,7 +433,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'message',
                                                         'progress'])},
             'container': {
-                'image': '{{workflow.parameters.transcoder_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -712,7 +712,7 @@ class TatorTranscode(JobManagerMixin):
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}"}
+                       'client_image' : f"{docker_registry}/tator_client:{Git.sha}"}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -801,7 +801,7 @@ class TatorTranscode(JobManagerMixin):
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'transcoder_image' : f"{docker_registry}/tator_transcoder:{Git.sha}"}
+                       'client_image' : f"{docker_registry}/tator_client:{Git.sha}"}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
@@ -952,7 +952,7 @@ class TatorAlgorithm(JobManagerMixin):
             failed_task = {
                 'name': 'tator-failed',
                 'container': {
-                    'image': get_transcoder_image_name(),
+                    'image': get_client_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -981,7 +981,7 @@ class TatorAlgorithm(JobManagerMixin):
             succeeded_task = {
                 'name': 'tator-succeeded',
                 'container': {
-                    'image': get_transcoder_image_name(),
+                    'image': get_client_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -1093,7 +1093,7 @@ class TatorMove:
             media_update['uid'] = uid
 
         # Set required workflow parameters.
-        self._set_parameter('transcoder_image', f"{docker_registry}/tator_transcoder:{Git.sha}")
+        self._set_parameter('client_image', f"{docker_registry}/tator_client:{Git.sha}")
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', str(media_id))
