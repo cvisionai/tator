@@ -220,7 +220,9 @@ class StateGraphicSchema(AutoSchema):
         return dedent("""\
          Get frame(s) of a given localization-associated state.
 
-        Use the mode argument to control whether it is an animated gif or a tiled jpg.
+        Use the mode argument to control whether it is an animated gif or a tiled jpg. A maximum
+        of 100 detections may be retrieved at once. Use the length and offset parameters to 
+        control which section of a state is retrieved.
         """)
 
     def _get_path_parameters(self, path, method):
@@ -263,6 +265,29 @@ class StateGraphicSchema(AutoSchema):
                 'schema': {
                     'type': 'string',
                     'example': '240x240',
+                },
+            },
+            {
+                'name': 'length',
+                'in': 'query',
+                'required': False,
+                'description': 'Number of detections to extract.',
+                'schema': {
+                    'type': 'integer',
+                    'example': 100,
+                    'default': 100,
+                    'maximum': 100,
+                },
+            },
+            {
+                'name': 'offset',
+                'in': 'query',
+                'required': False,
+                'description': 'Index offset of detections to extract.',
+                'schema': {
+                    'type': 'integer',
+                    'example': 0,
+                    'default': 0,
                 },
             },
         ]
