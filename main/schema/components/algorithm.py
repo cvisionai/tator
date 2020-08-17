@@ -74,6 +74,7 @@ algorithm_manifest = {
     'properties': {
         manifest_fields.url: {
             'description': 'Name of algorithm manifest (.yaml) file',
+            'type': 'string',
         }
     },
 }
