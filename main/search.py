@@ -398,7 +398,7 @@ class TatorSearch:
             if isinstance(val, list): # This is a list geopos type
                 lon, lat = val # Lists are lon first
                 val = f'{lat},{lon}' # Convert to string geopos type, lat first
-            query['script'] += f"ctx._source.{key}='{val}';"
+            query['script'] += f"ctx._source['{key}']='{val}';"
         self.es.update_by_query(
             index=self.index_name(project),
             body=query,
