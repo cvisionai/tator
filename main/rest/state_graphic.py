@@ -63,9 +63,8 @@ class StateGraphicAPI(BaseDetailView):
             raise Exception('Not a localization association state')
 
         video = state.media.all()[0]
-        localizations = state.localizations.all()
+        localizations = state.localizations.order_by('frame')[offset:offset+length]
         frames = [l.frame for l in localizations]
-        frames = frames[offset:offset+length]
         roi = [(l.width, l.height, l.x, l.y) for l in localizations]
         with tempfile.TemporaryDirectory() as temp_dir:
             media_util = MediaUtil(video, temp_dir)
