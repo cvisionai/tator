@@ -264,7 +264,9 @@ class StateGraphicSchema(AutoSchema):
                 'description': 'wxh to force each tile prior to stich',
                 'schema': {
                     'type': 'string',
-                    'example': '240x240',
+                    'example': '512x512',
+                    'default': '224x224',
+                    'nullable': True,
                 },
             },
             {
