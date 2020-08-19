@@ -307,6 +307,7 @@ FILES = \
     project-detail/project-detail.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
+    annotation/lock-button.js \
     annotation/media-capture-button.js \
     annotation/media-link-button.js \
     annotation/media-prev-button.js \
