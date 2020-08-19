@@ -47,6 +47,7 @@ class AnnotationPage extends TatorPage {
     this._browser.undoBuffer = this._undo;
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
+    this._versionEditable = true;
   }
 
   static get observedAttributes() {
@@ -168,6 +169,7 @@ class AnnotationPage extends TatorPage {
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
         const haveVersion = searchParams.has("version");
+        const haveLock = searchParams.has("lock");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -199,12 +201,18 @@ class AnnotationPage extends TatorPage {
         {
           let edited = true;
           let version_id = searchParams.get("version");
-          if(searchParams.has("edited") && searchParams.get("edited") == 0)
+          if(searchParams.has("edited") && Number(searchParams.get("edited")) == 0)
           {
             edited = false;
           }
           let evt = {"detail": {"version": this._versionLookup[version_id], "edited": edited}};
           this._versionDialog._handleSelect(evt);
+        }
+        if (haveLock) {
+          const lock = Number(searchParams.get("lock"));
+          if (lock) {
+            this._settings._lock.lock();
+          }
         }
       }
     }
@@ -237,6 +245,10 @@ class AnnotationPage extends TatorPage {
       this._canvasInitialized = true;
       _handleQueryParams();
       _removeLoading();
+    });
+
+    this._settings._lock.addEventListener("click", evt=> {
+      this.enableEditing(true);
     });
 
     this._settings.addEventListener("rateChange", evt => {
@@ -272,9 +284,10 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
+      this._versionEditable = evt.detail.edited;
       this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
         this._settings.setAttribute("version", evt.detail.version.id);
-        this._settings.setAttribute("edited", evt.detail.edited);
+        this._settings.setAttribute("edited", Number(evt.detail.edited));
         this._canvas.refresh();
       });
       this._browser.version = evt.detail.version;
@@ -283,7 +296,7 @@ class AnnotationPage extends TatorPage {
       for (const key in this._saves) {
         this._saves[key].version = this._version;
       }
-      this.enableEditing(evt.detail.edited);
+      this.enableEditing();
     });
 
     this._versionButton.addEventListener("click", () => {
@@ -611,7 +624,18 @@ class AnnotationPage extends TatorPage {
   };
 
   /// Turn on or off ability to edit annotations
-  async enableEditing(enable) {
+  async enableEditing(mask) {
+    // Check state of lock button.
+    let enable = this._settings._lock._pathLocked.style.display == "none";
+
+    // Check if version is editable.
+    enable &= this._versionEditable;
+
+    // Check input.
+    if (typeof mask !== "undefined") {
+      enable &= mask;
+    }
+
     let permission;
     if (enable) {
       // Set privileges to user's level.

@@ -6,6 +6,9 @@ class AnnotationSettings extends TatorElement {
     div.setAttribute("class", "annotation__settings d-flex f2");
     this._shadow.appendChild(div);
 
+    this._lock = document.createElement("lock-button");
+    div.appendChild(this._lock);
+
     this._capture = document.createElement("media-capture-button");
     div.appendChild(this._capture);
 
@@ -92,7 +95,7 @@ class AnnotationSettings extends TatorElement {
       .then(responses => Promise.all(responses.map(resp => resp.json())))
       .then(([nextData, prevData]) => {
         const baseUrl = "/" + projectId + "/annotation/";
-        const searchParams = new URLSearchParams(window.location.search);
+        const searchParams = this._queryParams();
         const media_id = parseInt(mediaId);
 
         // Turn disable selected_type.
@@ -105,8 +108,9 @@ class AnnotationSettings extends TatorElement {
         else {
           this._prev.addEventListener("click", () => {
             let url = baseUrl + prevData.prev;
-            const searchParams = new URLSearchParams(window.location.search);
+            const searchParams = this._queryParams();
             searchParams.delete("selected_type");
+            searchParams.delete("selected_entity");
             searchParams.delete("frame");
             const typeParams = this._typeParams();
             if (typeParams) {
@@ -123,8 +127,9 @@ class AnnotationSettings extends TatorElement {
         else {
           this._next.addEventListener("click", () => {
             let url = baseUrl + nextData.next;
-            const searchParams = new URLSearchParams(window.location.search);
+            const searchParams = this._queryParams();
             searchParams.delete("selected_type");
+            searchParams.delete("selected_entity");
             searchParams.delete("frame");
             const typeParams = this._typeParams();
             if (typeParams) {
@@ -150,7 +155,7 @@ class AnnotationSettings extends TatorElement {
   _queryParams(params) {
     if (params == undefined)
     {
-      params = new URLSearchParams()
+      params = new URLSearchParams(window.location.search)
     }
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
@@ -168,7 +173,12 @@ class AnnotationSettings extends TatorElement {
       params.set("version", this.getAttribute("version"));
     }
     if (this.hasAttribute("edited")) {
-      params.set("edited", this.getAttribute("edited"));
+      params.set("edited", Number(this.getAttribute("edited")));
+    }
+    if (this._lock._pathLocked.style.display == "block") {
+      params.set("lock", 1);
+    } else {
+      params.set("lock", 0);
     }
     return params;
   }
