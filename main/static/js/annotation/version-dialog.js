@@ -136,6 +136,8 @@ class VersionDialog extends ModalDialog {
       const sameEdited = button._edited == evt.detail.edited;
       if (!(sameVersion && sameEdited)) {
         button.deselect();
+      } else {
+        button.select(true);
       }
     }
     this.dispatchEvent(new CustomEvent("versionSelect", {
