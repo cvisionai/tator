@@ -125,6 +125,9 @@ cluster-autoscaler:
 awsStorage:
   # Should be disabled for bare metal.
   enabled: false
+awsFargate:
+  # Should be disabled for bare metal.
+  enabled: false
 remoteTranscodes:
   # Typically for dev processing is done on the same machine.
   enabled: false
