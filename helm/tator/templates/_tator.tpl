@@ -140,6 +140,11 @@ spec:
               name: remote-transcode-cert
               readOnly: true
             {{- end }}
+            {{- if .Values.cognito.enabled }}
+            - mountPath: /cognito
+              name: cognito-config
+              readOnly: true
+            {{- end }}
       initContainers:
         - name: redis
           image: redis
@@ -157,5 +162,13 @@ spec:
             items:
             - key: remoteTranscodeCert
               path: ca.crt
+        {{- end }}
+        {{- if .Values.cognito.enabled }}
+        - name: cognito-config
+          secret:
+            secretName: tator-secrets
+            items:
+              - key: cognito-config
+                path: cognito.yaml
         {{- end }}
 {{ end }}
