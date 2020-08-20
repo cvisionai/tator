@@ -118,13 +118,11 @@ kibana:
 cluster-autoscaler:
   enabled: true
 awsStorage:
-  # Enable this if you are using helm charts instead of 
-  # AWS services for something needing a StatefulSet, and want to use
-  # provisioned IOPS.
-  enabled: false
-  ebs:
-    type: io1
-    iopsPerGb: "50"
+  # Enable this if you are using EFS storage.
+  enabled: true
+awsFargate:
+  # Enable this if you are using fargate for containers.
+  enabled: true
 remoteTranscodes:
   # Enable this if you would like to do transcodes with a different
   # Kubernetes cluster, such as an on-premises cluster. Follow instructions
