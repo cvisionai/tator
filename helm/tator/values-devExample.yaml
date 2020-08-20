@@ -69,6 +69,7 @@ hpa:
 metallb:
   # Enable this to provide a load balancer implementation on bare metal.
   enabled: true
+  existingConfigMap: metallb-config
   ipRangeStart: 192.168.1.220
   ipRangeStop: 192.168.1.224
   loadBalancerIp: 192.168.1.221
