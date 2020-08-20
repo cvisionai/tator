@@ -45,27 +45,6 @@ You can test the installation with:
 kubectl version
 ```
 
-### Create a key pair for SSH access
-
-To enable SSH access to EKS nodes, we need to create a key pair that can be used by eksctl:
-
-```
-aws ec2 create-key-pair --key-name tator-key-pair
-```
-
-* Copy the contents of KeyMaterial into a private key and store it somewhere safe.
-* Update permissions on the file:
-
-```
-sudo chmod 400 /path/to/privkey.pem
-```
-
-* Create a public key from the private key:
-
-```
-ssh-keygen -y -f /path/to/privkey.pem > /path/to/publickey.pem
-```
-
 ### Create the EKS cluster
 
 You can use the example eks configuration in `examples/eksctl/cluster.yaml` to create a cluster. Feel free to modify for your needs.
@@ -86,13 +65,20 @@ kubectl get nodes
 kubectl create -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml
 ```
 
-### Delete the default storage class (gp2)
+### Install EFS CSI driver
 
-EKS provides a default storage class which tator does not use. To prevent conflicts, we remove this storage class.
+Open a file `~/csi.yaml` and paste the following:
 
 ```
-kubectl delete sc gp2
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: efs.csi.aws.com
+spec:
+  attachRequired: false
 ```
+
+Then apply it with `kubectl apply -f ~/csi.yaml`.
 
 ### Create an EFS filesystem
 
