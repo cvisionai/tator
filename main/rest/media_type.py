@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ..models import MediaType
 from ..models import Media
 from ..models import Project
@@ -75,6 +77,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         """
         return MediaType.objects.filter(pk=params['id']).values(*fields)[0]
 
+    @transaction.atomic
     def _patch(self, params):
         """ Update media type.
 

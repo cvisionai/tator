@@ -1,5 +1,6 @@
 import logging
 from django.db.models import Subquery
+from django.db import transaction
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -268,6 +269,7 @@ class LocalizationDetailAPI(BaseDetailView):
     def _get(self, params):
         return database_qs(Localization.objects.filter(pk=params['id']))[0]
 
+    @transaction.atomic
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'])
 

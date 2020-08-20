@@ -1,4 +1,5 @@
 from rest_framework.exceptions import PermissionDenied
+from django.db import transaction
 
 from ..models import Project
 from ..models import Membership
@@ -73,6 +74,7 @@ class ProjectDetailAPI(BaseDetailView):
         return ProjectSerializer(Project.objects.get(pk=params['id']),
                                  context=self.get_renderer_context()).data
 
+    @transaction.atomic
     def _patch(self, params):
         project = Project.objects.get(pk=params['id']) 
         if 'name' in params:

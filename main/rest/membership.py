@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ..models import Membership
 from ..models import Project
 from ..models import User
@@ -67,6 +69,7 @@ class MembershipDetailAPI(BaseDetailView):
         member = Membership.objects.get(pk=params['id'])
         return MembershipSerializer(member).data
 
+    @transaction.atomic
     def _patch(self, params):
         membership = Membership.objects.get(pk=params['id']) 
         if 'permission' in params:

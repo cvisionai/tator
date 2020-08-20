@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ..models import User
 from ..serializers import UserSerializerBasic
 from ..schema import UserDetailSchema
@@ -19,6 +21,7 @@ class UserDetailAPI(BaseDetailView):
         user = User.objects.get(pk=params['id'])
         return UserSerializerBasic(user).data
 
+    @transaction.atomic
     def _patch(self, params):
         user = User.objects.get(pk=params['id'])
         if 'username' in params:

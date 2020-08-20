@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from django.db import transaction
 from django.utils import timezone
 import datetime
 
@@ -138,6 +139,7 @@ class VersionDetailAPI(BaseDetailView):
         version = Version.objects.get(pk=params['id'])
         return VersionSerializer(version).data
 
+    @transaction.atomic
     def _patch(self, params):
         version = Version.objects.get(pk=params['id'])
         if 'name' in params:

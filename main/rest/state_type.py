@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
 
 from ..models import Media
@@ -103,6 +104,7 @@ class StateTypeDetailAPI(BaseDetailView):
                               ['media'])
         return state
 
+    @transaction.atomic
     def _patch(self, params):
         """ Update state type.
 

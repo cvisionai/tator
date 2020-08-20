@@ -1,6 +1,8 @@
 import logging
 from collections import defaultdict
 
+from django.db import transaction
+
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
@@ -207,6 +209,7 @@ class LeafDetailAPI(BaseDetailView):
     def _get(self, params):
         return database_qs(Leaf.objects.filter(pk=params['id']))[0]
 
+    @transaction.atomic
     def _patch(self, params):
         obj = Leaf.objects.get(pk=params['id'])
 

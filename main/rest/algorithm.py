@@ -3,6 +3,7 @@
 
 import logging
 import os
+from django.db import transaction
 from django.conf import settings
 import yaml
 
@@ -189,6 +190,7 @@ class AlgorithmDetailAPI(BaseDetailView):
         """
         return database_qs(Algorithm.objects.filter(pk=params['id']))[0]
 
+    @transaction.atomic
     def _patch(self, params) -> dict:
         """ Patch operation on the algorithm entry
         """

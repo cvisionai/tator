@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ..models import LeafType
 from ..models import Leaf
 from ..models import Project
@@ -44,6 +46,7 @@ class LeafTypeDetailAPI(BaseDetailView):
     def _get(self, params):
         return LeafType.objects.filter(pk=params['id']).values(*fields)[0]
 
+    @transaction.atomic
     def _patch(self, params):
         name = params.get('name', None)
         description = params.get('description', None)

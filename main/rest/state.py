@@ -2,6 +2,7 @@ import logging
 import datetime
 import itertools
 
+from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
 import numpy as np
 
@@ -319,6 +320,7 @@ class StateDetailAPI(BaseDetailView):
                               ['media'])
         return state
 
+    @transaction.atomic
     def _patch(self, params):
         obj = State.objects.get(pk=params['id'])
         # Patch modified fields

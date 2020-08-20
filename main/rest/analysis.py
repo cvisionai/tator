@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from ..models import Analysis
 from ..models import Project
 from ..models import database_qs
@@ -69,6 +71,7 @@ class AnalysisDetailAPI(BaseDetailView):
         """
         return database_qs(Analysis.objects.filter(pk=params[fields.id]))[0]
 
+    @transaction.atomic
     def _patch(self, params: dict):
         """ #TODO
         """

@@ -1,4 +1,5 @@
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.db import transaction
 
 from ..models import Media
 from ..models import MediaType
@@ -99,6 +100,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
                             ['media'])
         return loc
 
+    @transaction.atomic
     def _patch(self, params):
         """ Update a localization type.
 
