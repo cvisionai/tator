@@ -100,8 +100,6 @@ kibana:
       server:
         basePath: /logs
   elasticsearchHosts: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
-cluster-autoscaler:
-  enabled: true
 awsStorage:
   # Enable this if you are using EFS storage.
   enabled: true

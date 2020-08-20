@@ -120,9 +120,6 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
-cluster-autoscaler:
-  # Should be disabled for bare metal.
-  enabled: false
 awsStorage:
   # Should be disabled for bare metal.
   enabled: false
