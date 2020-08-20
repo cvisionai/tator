@@ -14,7 +14,7 @@ spec:
   storageClassName: efs-sc
   csi:
     driver: efs.csi.aws.com
-    volumeHandle: fs-9e2920e7
+    volumeHandle: {{ .Values.awsStorage.filesystemId }}
 {{ else }} # .Values.awsStorage.enabled
 kind: PersistentVolume
 apiVersion: v1
