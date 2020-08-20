@@ -79,6 +79,28 @@ spec:
               name: gunicorn
             - containerPort: 8001
               name: daphne
+{{ if .Values.awsStorage.enabled }}
+          volumeMounts:
+            - mountPath: /data/static
+              name: efs-pv-claim
+              subPath: static
+            - mountPath: /data/uploads
+              name: efs-pv-claim
+              subPath: upload
+            - mountPath: /data/media
+              name: efs-pv-claim
+              subPath: media
+            - mountPath: /data/raw
+              name: efs-pv-claim
+              subPath: raw
+            - mountPath: /tator_online/main/migrations
+              name: efs-pv-claim
+              subPath: migrations
+      volumes:
+        - name: efs-pv-claim
+          persistentVolumeClaim:
+            claimName: efs-pv-claim
+{{ else }}
           volumeMounts:
             - mountPath: /data/static
               name: static-pv-claim
@@ -106,4 +128,5 @@ spec:
         - name: migrations-pv-claim
           persistentVolumeClaim:
             claimName: migrations-pv-claim
+{{ end }}
 {{ end }}

@@ -19,8 +19,11 @@ spec:
         type: web
     spec:
       terminationGracePeriodSeconds: 60
+{{ if .Values.awsFargate.enabled }}
+{{ else }}
       nodeSelector:
         {{ .selector }}
+{{ end }}
       containers:
         - name: tator-online
           image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
@@ -117,6 +120,23 @@ spec:
             - containerPort: 8001
               name: daphne
           volumeMounts:
+{{ if .Values.awsStorage.enabled }}
+            - mountPath: /data/static
+              name: efs-pv-claim
+              subPath: static
+            - mountPath: /data/uploads
+              name: efs-pv-claim
+              subPath: upload
+            - mountPath: /data/media
+              name: efs-pv-claim
+              subPath: media
+            - mountPath: /data/raw
+              name: efs-pv-claim
+              subPath: raw
+            - mountPath: /tator_online/main/migrations
+              name: efs-pv-claim
+              subPath: migrations
+{{ else }}
             - mountPath: /data/static
               name: static-pv-claim
             - mountPath: /data/uploads
@@ -127,6 +147,7 @@ spec:
               name: raw-pv-claim
             - mountPath: /tator_online/main/migrations
               name: migrations-pv-claim
+{{ end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - mountPath: /remote_transcodes
               name: remote-transcode-cert
@@ -139,6 +160,11 @@ spec:
           command: ["redis-cli"]
           args: ["-h", {{ .Values.redisHost | quote }}, "-p", "6379", "ping"]
       volumes:
+{{ if .Values.awsStorage.enabled }}
+        - name: efs-pv-claim
+          persistentVolumeClaim:
+            claimName: efs-pv-claim
+{{ else }}
         - name: static-pv-claim
           persistentVolumeClaim:
             claimName: static-pv-claim
@@ -154,6 +180,7 @@ spec:
         - name: migrations-pv-claim
           persistentVolumeClaim:
             claimName: migrations-pv-claim
+{{ end }}
         {{- if .Values.remoteTranscodes.enabled }}
         - name: remote-transcode-cert
           secret:

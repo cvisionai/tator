@@ -18,6 +18,11 @@ spec:
             {{ .selector }}
           terminationGracePeriodSeconds: 10
           volumes:
+{{ if .Values.awsStorage.enabled }}
+            - name: efs-pv-claim
+              persistentVolumeClaim:
+                claimName: efs-pv-claim
+{{ else }}
             - name: static-pv-claim
               persistentVolumeClaim:
                 claimName: static-pv-claim
@@ -33,6 +38,7 @@ spec:
             - name: migrations-pv-claim
               persistentVolumeClaim:
                 claimName: migrations-pv-claim
+{{ end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - name: remote-transcode-cert
               secret:
@@ -132,6 +138,23 @@ spec:
                 - containerPort: 8001
                   name: daphne
               volumeMounts:
+{{ if .Values.awsStorage.enabled }}
+                - mountPath: /data/static
+                  name: efs-pv-claim
+                  subPath: static
+                - mountPath: /data/uploads
+                  name: efs-pv-claim
+                  subPath: upload
+                - mountPath: /data/media
+                  name: efs-pv-claim
+                  subPath: media
+                - mountPath: /data/raw
+                  name: efs-pv-claim
+                  subPath: raw
+                - mountPath: /tator_online/main/migrations
+                  name: efs-pv-claim
+                  subPath: migrations
+{{ else }}
                 - mountPath: /data/static
                   name: static-pv-claim
                 - mountPath: /data/uploads
@@ -142,6 +165,7 @@ spec:
                   name: raw-pv-claim
                 - mountPath: /tator_online/main/migrations
                   name: migrations-pv-claim
+{{ end }}
                 {{- if .Values.remoteTranscodes.enabled }}
                 - mountPath: /remote_transcodes
                   name: remote-transcode-cert

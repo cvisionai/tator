@@ -29,21 +29,6 @@ sslKey: |
   -----END PRIVATE KEY-----
 pv:
   enabled: true
-  nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
-  nfsMountOptions:
-    - nfsvers=4.1
-    - rsize=1048576
-    - wsize=1048576
-    - hard
-    - timeo=600
-    - retrans=2
-    - noresvport
-  staticPath: "/static"
-  uploadPath: "/upload"
-  mediaPath: "/media"
-  rawPath: "/raw"
-  backupPath: "/backup"
-  migrationsPath: "/migrations"
 pvc:
   # These are required to be valid values but will be ignored by AWS EFS.
   # EFS will not limit the amount of storage you can use.
@@ -118,13 +103,13 @@ kibana:
 cluster-autoscaler:
   enabled: true
 awsStorage:
-  # Enable this if you are using helm charts instead of 
-  # AWS services for something needing a StatefulSet, and want to use
-  # provisioned IOPS.
-  enabled: false
-  ebs:
-    type: io1
-    iopsPerGb: "50"
+  # Enable this if you are using EFS storage.
+  enabled: true
+  # EFS filesystem ID.
+  filesystemId: <Your filesystem ID>
+awsFargate:
+  # Enable this if you are using fargate for containers.
+  enabled: true
 remoteTranscodes:
   # Enable this if you would like to do transcodes with a different
   # Kubernetes cluster, such as an on-premises cluster. Follow instructions

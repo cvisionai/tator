@@ -3,6 +3,7 @@ kind: ClusterConfig
 metadata:
   name: tator
   region: us-east-2
+  version: "1.17"
 nodeGroups:
   - name: cpuWorkers
     instanceType: m5.xlarge
@@ -22,9 +23,6 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
-    ssh:
-      allow: true
-      publicKeyPath: /home/aws/sshpublickey.pem
   - name: dbServers
     instanceType: r5.xlarge
     labels:
@@ -43,9 +41,6 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "yes"
-    ssh:
-      allow: true
-      publicKeyPath: /home/aws/sshpublickey.pem
   - name: gpuWorkers
     instanceType: g4dn.xlarge
     labels:
@@ -54,7 +49,7 @@ nodeGroups:
       webServer: "no"
       dbServer: "no"
     minSize: 0
-    maxSize: 1
+    maxSize: 10
     desiredCapacity: 0
     iam:
       withAddonPolicies:
@@ -64,12 +59,18 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "yes"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
-    ssh:
-      allow: true
-      publicKeyPath: /home/aws/sshpublickey.pem
 fargateProfiles:
   - name: fargate
     selectors:
       - namespace: default
         labels:
           app: gunicorn
+      - namespace: default
+        labels:
+          app: tusd
+      - namespace: default
+        labels:
+          app: nginx
+      - namespace: default
+        labels:
+          app: daphne

@@ -17,8 +17,11 @@ spec:
         app: tusd
         type: web
     spec:
+{{ if .Values.awsFargate.enabled }}
+{{ else }}
       nodeSelector:
         webServer: "yes"
+{{ end }}
       containers:
         - name: tusd
           image: {{ .Values.dockerRegistry }}/tator_tusd
@@ -33,6 +36,16 @@ spec:
               cpu: 500m
           ports:
             - containerPort: 1080
+{{ if .Values.awsStorage.enabled }}
+          volumeMounts:
+            - mountPath: /data/uploads
+              name: efs-pv-claim
+              subPath: upload
+      volumes:
+        - name: efs-pv-claim
+          persistentVolumeClaim:
+            claimName: efs-pv-claim
+{{ else }}
           volumeMounts:
             - mountPath: /data/uploads
               name: upload-pv-claim
@@ -40,6 +53,7 @@ spec:
         - name: upload-pv-claim
           persistentVolumeClaim:
             claimName: upload-pv-claim
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
