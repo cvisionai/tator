@@ -15,8 +15,11 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
     spec:
+{{ if .Values.awsFargate.enabled }}
+{{ else }}
       nodeSelector:
         webServer: "yes"
+{{ end }}
       containers:
         - name: nginx
           image: nginx:1.16
@@ -38,12 +41,24 @@ spec:
             - mountPath: /ssl
               readOnly: true
               name: ssl
+{{ if .Values.awsStorage.enabled }}
+            - mountPath: /data/static
+              name: efs-pv-claim
+              subPath: static
+            - mountPath: /data/media
+              name: efs-pv-claim
+              subPath: media
+            - mountPath: /data/raw
+              name: efs-pv-claim
+              subPath: raw
+{{ else }}
             - mountPath: /data/static
               name: static-pv-claim
             - mountPath: /data/media
               name: media-pv-claim
             - mountPath: /data/raw
               name: raw-pv-claim
+{{ end }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -56,6 +71,11 @@ spec:
                 path: CertificateBundle1.pem
               - key: sslKey
                 path: tator.key
+{{ if .Values.awsStorage.enabled }}
+        - name: efs-pv-claim
+          persistentVolumeClaim:
+            claimName: efs-pv-claim
+{{ else }}
         - name: static-pv-claim
           persistentVolumeClaim:
             claimName: static-pv-claim
@@ -65,6 +85,7 @@ spec:
         - name: raw-pv-claim
           persistentVolumeClaim:
             claimName: raw-pv-claim
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
