@@ -1,4 +1,21 @@
 {{ if .Values.pv.enabled }}
+{{ if .Values.awsStorage.enabled }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: efs-pv
+spec:
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-9e2920e7
+{{ else }} # .Values.awsStorage.enabled
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -121,7 +138,6 @@ spec:
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
-{{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -138,10 +154,8 @@ spec:
     path: {{ $.Values.elasticsearch.hostPath }}
 {{ end }}
 {{ end }}
-{{ end }}
 ---
 {{ if .Values.postgis.enabled }}
-{{ if eq .Values.awsStorage.enabled false }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -157,5 +171,5 @@ spec:
   hostPath:
     path: {{ $.Values.postgis.hostPath }}
 {{ end }}
-{{ end }}
+{{ end }} # .Values.awsStorage.enabled
 {{ end }} # .Values.pv.enabled 
