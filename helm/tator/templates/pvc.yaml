@@ -1,3 +1,16 @@
+{{ if .Values.awsStorage.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: efs-pv-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 5Gi
+{{ else }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -89,4 +102,5 @@ spec:
   resources:
     requests:
       storage: {{ .Values.postgis.persistence.size }}
+{{ end }}
 {{ end }}
