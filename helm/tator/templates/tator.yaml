@@ -29,7 +29,7 @@
 {{- $filebeatSettings := dict "Values" .Values "name" "prune-filebeat-cron" "app" "prune-filebeat" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunefilebeat\"]" "schedule" "40 4 * * *" }}
 {{include "tatorCron.template" $filebeatSettings }}
 ---
-{{ if .Values.certCron.enable }}
+{{ if .Values.certCron.enabled }}
 {{- $certSettings := dict "Values" .Values "name" "cert-cron" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert.sh\"]" "schedule" "50 5 15 * *" }}
 {{include "tatorCron.template" $certSettings }}
 {{ end }}

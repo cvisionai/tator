@@ -17,7 +17,7 @@
 {{- $collectStaticSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "collect-static" "app" "collect-static" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"collectstatic\", \"--noinput\"]" "hookWeight" "2" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $collectStaticSettings }}
 ---
-{{ if .Values.certCron.enable }}
+{{ if .Values.certCron.enabled }}
 {{- $certSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "get-cert" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert.sh\"]" "hookWeight" "2" "hook" "post-install,post-upgrade" }}
 {{include "dbjob.template" $certSettings }}
 {{ end }}
