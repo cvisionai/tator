@@ -35,7 +35,16 @@ data:
         server_name {{ .Values.domain }};
         ssl_certificate /ssl/signed_chain.crt;
         ssl_certificate_key /ssl/domain.key;
-        return 301 https://{{ .Values.domain }}$request_uri;
+
+        # Proxy acme challenge files.
+        location /.well-known/acme-challenge/ {
+          alias /data/static/challenges/;
+          try_files $uri =404;
+        }
+
+        location / {
+          return 301 https://{{ .Values.domain }}$request_uri;
+        }
       }
 
       server {
@@ -52,12 +61,6 @@ data:
         error_log /var/log/nginx/error.log;
 
         client_max_body_size 0;
-
-        # Proxy acme challenge files.
-        location /.well-known/acme-challenge/ {
-          alias /data/static/challenges/;
-          try_files $uri =404;
-        }
 
         location ~*phpinfo.php {
           return 404;
