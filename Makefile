@@ -464,3 +464,6 @@ pytest:
 .PHONY: pylint
 pylint:
 	docker run -it --rm -v $(shell pwd):/pwd localhost:5000/tator_online:$(GIT_VERSION) pylint --rcfile /pwd/pylint.ini --load-plugins pylint_django /pwd/main
+
+.PHONY: update-cert
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- scripts/cert.sh
