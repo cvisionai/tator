@@ -171,10 +171,6 @@ aws ecr create-repository --repository-name tator_tusd
 
 This step is optional since you can use helm charts for databases as is done in the bare metal deployment, but it is recommended to use managed services for this purpose. For each service you set up, make sure you create it in the same VPC that was created by EKS and that you include all nodes in the `ClusterSharedNodeSecurityGroup`.
 
-### Get an SSL certificate for your domain with LetsEncrypt
-
-If you already have an SSL certificate you can skip this, otherwise follow the instructions [here](doc/certbot.md)
-
 ### Copy the values.yaml file
 
 ```
@@ -187,8 +183,6 @@ cp helm/tator/values-aws.yaml helm/tator/values.yaml
 * Set `djangoSecretKey` to a django key. You can generate one with several online tools.
 * Set `dockerUsername` and `dockerPassword` to the values given from the `aws ecr` command above.
 * Set `dockerRegistry` to the appropriate values for your AWS account and region.
-* Set `sslBundle` to the contents of `/etc/letsencrypt/live/<your domain>/fullchain.pem`.
-* Set `sslKey` to the contents of `/etc/letsencrypt/live/<your domain>/privkey.pem`.
 
 ### Install tator
 
