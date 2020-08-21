@@ -15,6 +15,7 @@ metadata:
     "helm.sh/hook-weight": "{{ .hookWeight }}"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
+  ttlSecondsAfterFinished: 300
   template:
     metadata:
       name: "{{ .name }}-template"
