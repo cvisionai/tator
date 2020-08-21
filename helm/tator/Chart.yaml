@@ -32,10 +32,6 @@ dependencies:
     version: 7.4.1
     repository: https://helm.elastic.co
     condition: kibana.enabled
-  - name: cluster-autoscaler
-    version: 6.2.0
-    repository: https://kubernetes-charts.storage.googleapis.com
-    condition: cluster-autoscaler.enabled
 maintainers:
   - name: CVision AI
     email: info@cvisionai.com

@@ -16,3 +16,8 @@
 ---
 {{- $collectStaticSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "collect-static" "app" "collect-static" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"collectstatic\", \"--noinput\"]" "hookWeight" "2" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $collectStaticSettings }}
+---
+{{ if .Values.certCron.enabled }}
+{{- $letsencryptSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "letsencrypt-challenge" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "hookWeight" "2" "hook" "post-install" }}
+{{include "postjob.template" $letsencryptSettings }}
+{{ end }}

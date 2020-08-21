@@ -1,4 +1,4 @@
-{{ define "postjob.template" }}
+{{ define "prejob.template" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -36,20 +36,10 @@ spec:
           command: {{ .command }}
           args: {{ .args }}
           env:
-            - name: DJANGO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: djangoSecretKey
             - name: POSTGRES_HOST
               value: {{ .Values.postgresHost }}
             - name: POSTGRES_USERNAME
               value: {{ .Values.postgresUsername }}
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: postgresPassword
             - name: REDIS_HOST
               value: {{ .Values.redisHost }}
             - name: ELASTICSEARCH_HOST
@@ -58,11 +48,6 @@ spec:
               value: {{ .Values.domain }}
             - name: DOCKER_USERNAME
               value: {{ .Values.dockerUsername }}
-            - name: DOCKER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
             - name: SYSTEM_IMAGES_REGISTRY
@@ -80,54 +65,4 @@ spec:
               name: gunicorn
             - containerPort: 8001
               name: daphne
-{{ if .Values.awsStorage.enabled }}
-          volumeMounts:
-            - mountPath: /data/static
-              name: efs-pv-claim
-              subPath: static
-            - mountPath: /data/uploads
-              name: efs-pv-claim
-              subPath: upload
-            - mountPath: /data/media
-              name: efs-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: efs-pv-claim
-              subPath: raw
-            - mountPath: /tator_online/main/migrations
-              name: efs-pv-claim
-              subPath: migrations
-      volumes:
-        - name: efs-pv-claim
-          persistentVolumeClaim:
-            claimName: efs-pv-claim
-{{ else }}
-          volumeMounts:
-            - mountPath: /data/static
-              name: static-pv-claim
-            - mountPath: /data/uploads
-              name: upload-pv-claim
-            - mountPath: /data/media
-              name: media-pv-claim
-            - mountPath: /data/raw
-              name: raw-pv-claim
-            - mountPath: /tator_online/main/migrations
-              name: migrations-pv-claim
-      volumes:
-        - name: static-pv-claim
-          persistentVolumeClaim:
-            claimName: static-pv-claim
-        - name: upload-pv-claim
-          persistentVolumeClaim:
-            claimName: upload-pv-claim
-        - name: media-pv-claim
-          persistentVolumeClaim:
-            claimName: media-pv-claim
-        - name: raw-pv-claim
-          persistentVolumeClaim:
-            claimName: raw-pv-claim
-        - name: migrations-pv-claim
-          persistentVolumeClaim:
-            claimName: migrations-pv-claim
-{{ end }}
 {{ end }}

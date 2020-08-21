@@ -192,69 +192,6 @@ To build Tator you will need Helm 3 somewhere on your path.
 
 ``export PATH=$HOME/linux-amd64:$PATH``
 
-DuckDNS Domain Setup
-====================
-
-* Navigate to `Duck DNS <https://www.duckdns.org>`_ to setup domain
-* Choose login method and log in.
-* Type in a subdomain (for example, mydomain.duckdns.org). This is the address you will use to access Tator from your browser.
-* Click "Add domain".
-
-Install Certbot
-===============
-
-Instructions summarized from: `Certbot Install Guide <https://certbot.eff.org/lets-encrypt/ubuntubionic-nginx>`_
-
-Add Certbot PPA
-^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get update
-   sudo apt-get install software-properties-common
-   sudo add-apt-repository universe
-   sudo add-apt-repository ppa:certbot/certbot
-   sudo apt-get update
-
-
-Install Certbot
-^^^^^^^^^^^^^^^
-``sudo apt-get install certbot python-certbot-nginx``
-
-Get the certificate
-^^^^^^^^^^^^^^^^^^^
-``sudo certbot -d <domain> --manual --preferred-challenges dns certonly``
-
-The following message will display:
-
-.. code-block:: bash
-
-   Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>
-
-For the next step you will need to get your token from your `<duckdns.org>`_ account page.
-
-In order to deploy this DNS TXT record open a new browser window and enter the following into the address bar:
-   `https://www.duckdns.org/update?domains=<sub\_domain\_only>&token=<your\_token\_value>&txt=<DNS\_TXT\_value>`
-
-* ``OK`` should appear in your browser
-* Navigate back to the terminal, hit enter
-
-The certificate has been issued. Note the location of the certificate files.
-
-**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto**
-
-Certbot-auto installation steps:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   wget https://dl.eff.org/certbot-auto
-   sudo mv certbot-auto /usr/local/bin/certbot-auto
-   sudo chown root /usr/local/bin/certbot-auto
-   sudo chmod 0755 /usr/local/bin/certbot-auto
-
 Clone the Tator repository
 ==========================
 
@@ -754,6 +691,12 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   useMinJs
     Either "False" or "True" (with quotes) to denote whether to use minified
     javascript [Default if not specified: "True"]
+
+  certCron.enabled
+    Enable this to enable a cron job to automatically update certificates
+    periodically from LetsEncrypt. If this is not provided, the Secret objects
+    tls-cert and tls-key must be created manually. See scripts/cert.sh for an
+    example of how to do this.
 
   transcoderPvcSize
     Ability to specify the size allocated to the pvc for transcoding. This can

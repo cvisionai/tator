@@ -38,9 +38,14 @@ spec:
               subPath: nginx.conf
               readOnly: true
               name: nginx-conf
-            - mountPath: /ssl
+            - mountPath: /ssl/signed_chain.crt
+              subPath: signed_chain.crt
               readOnly: true
-              name: ssl
+              name: tls-cert
+            - mountPath: /ssl/domain.key
+              subPath: domain.key
+              readOnly: true
+              name: tls-key
 {{ if .Values.awsStorage.enabled }}
             - mountPath: /data/static
               name: efs-pv-claim
@@ -63,14 +68,18 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-conf
-        - name: ssl
+        - name: tls-cert
           secret:
-            secretName: tator-secrets
+            secretName: tls-cert
             items:
-              - key: sslBundle
-                path: CertificateBundle1.pem
-              - key: sslKey
-                path: tator.key
+              - key: signed_chain.crt
+                path: signed_chain.crt
+        - name: tls-key
+          secret:
+            secretName: tls-key
+            items:
+              - key: domain.key
+                path: domain.key
 {{ if .Values.awsStorage.enabled }}
         - name: efs-pv-claim
           persistentVolumeClaim:

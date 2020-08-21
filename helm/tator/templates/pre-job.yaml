@@ -1,0 +1,4 @@
+{{ if .Values.certCron.enabled }}
+{{- $selfsignedSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-selfsigned" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/selfsigned.sh\"]" "hookWeight" "2" "hook" "pre-install" }}
+{{include "prejob.template" $selfsignedSettings }}
+{{ end }}

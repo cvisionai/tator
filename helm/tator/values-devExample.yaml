@@ -23,17 +23,12 @@ dockerRegistry: "localhost:5000"
 systemImageRepo: "localhost:5000"
 slackToken: "<Your slack API token>" # Optional, for slack notifications
 slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
-sslBundle: |
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-sslKey: |
-  -----BEGIN PRIVATE KEY-----
-  <Insert private key here>
-  -----END PRIVATE KEY-----
+certCron:
+  # Enable this to enable a cron job to automatically update certificates
+  # periodically from LetsEncrypt. If this is not provided, the Secret objects
+  # tls-cert and tls-key must be created manually. See scripts/cert.sh for an
+  # example of how to do this.
+  enabled: true
 pv:
   enabled: true
   nfsServer: "192.168.1.114"
@@ -120,9 +115,6 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
-cluster-autoscaler:
-  # Should be disabled for bare metal.
-  enabled: false
 awsStorage:
   # Should be disabled for bare metal.
   enabled: false

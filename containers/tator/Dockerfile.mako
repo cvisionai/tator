@@ -10,7 +10,7 @@ MAINTAINER CVision AI <info@cvisionai.com>
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        ffmpeg && rm -rf /var/lib/apt/lists
+        ffmpeg wget && rm -rf /var/lib/apt/lists
 %else:
 FROM ubuntu:19.04
 MAINTAINER CVision AI <info@cvisionai.com>
@@ -25,7 +25,7 @@ RUN chmod 1777 /tmp
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        libssl-dev ffmpeg && \
+        libssl-dev ffmpeg wget && \
         rm -rf /var/lib/apt/lists
 % endif
 
@@ -44,6 +44,15 @@ RUN pip3 --no-cache-dir install \
         google-auth==1.6.3 elasticsearch==7.1.0 progressbar2==3.47.0 \
         gevent==1.4.0 uritemplate==3.0.1 pylint pylint-django
 
+# Get acme_tiny.py for certificate renewal
+WORKDIR /
+RUN wget https://raw.githubusercontent.com/diafygi/acme-tiny/4.1.0/acme_tiny.py 
+
+# Install kubectl
+RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl
+RUN chmod +x kubectl
+RUN mv kubectl /usr/local/bin/.
+
 # Install fork of openapi-core that works in DRF views
 WORKDIR /working
 RUN git clone https://github.com/jrtcppv/openapi-core.git
@@ -56,14 +65,8 @@ RUN git clone --branch release-10.0 --recursive https://github.com/kubernetes-cl
 WORKDIR /working/python
 RUN python3 setup.py install
 
-# For reference on building pip package by source:
-#WORKDIR /working
-#RUN git clone --branch v0.3 https://github.com/mariocesar/django-ltree.git
-#WORKDIR /working/django-ltree
-#RUN python3 setup.py install
-#WORKDIR /
-
 # Copy over the project
 COPY . /tator_online
 WORKDIR /tator_online
 RUN rm -rf helm
+
