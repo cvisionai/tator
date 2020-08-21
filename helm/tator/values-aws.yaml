@@ -16,17 +16,12 @@ elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
-sslBundle: |
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-sslKey: |
-  -----BEGIN PRIVATE KEY-----
-  <Insert private key here>
-  -----END PRIVATE KEY-----
+certCron:
+  # Enable this to enable a cron job to automatically update certificates
+  # periodically from LetsEncrypt. If this is not provided, the Secret objects
+  # tls-cert and tls-key must be created manually. See scripts/cert.sh for an
+  # example of how to do this.
+  enabled: true
 pv:
   enabled: true
 pvc:
