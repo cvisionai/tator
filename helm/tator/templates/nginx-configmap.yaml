@@ -33,6 +33,13 @@ data:
       server {
         listen 80;
         server_name {{ .Values.domain }};
+
+        # Proxy acme challenge files.
+        location /.well-known/acme-challenge/ {
+          alias /data/static/challenges/;
+          try_files $uri =404;
+        }
+
         ssl_certificate /ssl/CertificateBundle1.pem;
         ssl_certificate_key /ssl/tator.key;
         return 301 https://{{ .Values.domain }}$request_uri;
@@ -230,4 +237,4 @@ data:
         error_page 405 =200 $uri;
       }
     }
----
+
