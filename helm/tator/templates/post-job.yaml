@@ -18,6 +18,6 @@
 {{ include "postjob.template" $collectStaticSettings }}
 ---
 {{ if .Values.certCron.enabled }}
-{{- $certSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "get-cert" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert.sh\"]" "hookWeight" "2" "hook" "post-install,post-upgrade" }}
-{{include "dbjob.template" $certSettings }}
+{{- $certSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "get-cert" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert.sh\"]" "hookWeight" "2" "hook" "post-install" }}
+{{include "postjob.template" $certSettings }}
 {{ end }}
