@@ -2,7 +2,7 @@
 
 openssl genrsa 4096 > /tmp/account.key
 openssl genrsa 4096 > /tmp/domain.key
-openssl req -new -sha256 -key domain.key -subj "/CN=$MAIN_HOST" > /tmp/domain.csr
+openssl req -new -sha256 -key /tmp/domain.key -subj "/CN=$MAIN_HOST" > /tmp/domain.csr
 mkdir -p /data/static/challenges
 python3 /acme_tiny.py --account-key /tmp/account.key \
                       --csr /tmp/domain.csr \
