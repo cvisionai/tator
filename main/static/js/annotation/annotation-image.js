@@ -103,6 +103,10 @@ class AnnotationImage extends TatorElement {
   selectLocalization(loc) {
     this._image.selectLocalization(loc);
   }
+
+  toggleBoxFills(fill) {
+    this._image.toggleBoxFills(fill);
+  }
 }
 
 customElements.define("annotation-image", AnnotationImage);

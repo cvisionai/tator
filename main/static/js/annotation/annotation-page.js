@@ -170,6 +170,7 @@ class AnnotationPage extends TatorPage {
         const haveFrame = searchParams.has("frame");
         const haveVersion = searchParams.has("version");
         const haveLock = searchParams.has("lock");
+        const haveFillBoxes = searchParams.has("fill_boxes");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -214,6 +215,12 @@ class AnnotationPage extends TatorPage {
             this._settings._lock.lock();
           }
         }
+        if (haveFillBoxes) {
+          const fill_boxes = Number(searchParams.get("fill_boxes"));
+          if (fill_boxes) {
+            this._settings._fill_boxes.unfill();
+          }
+        }
       }
     }
 
@@ -250,6 +257,11 @@ class AnnotationPage extends TatorPage {
     this._settings._lock.addEventListener("click", evt=> {
       this.enableEditing(true);
     });
+
+    this._settings._fill_boxes.addEventListener("click", evt => {
+      canvas.toggleBoxFills(this._settings._fill_boxes.get_fill_boxes_status());
+      canvas.refresh();
+    })
 
     this._settings.addEventListener("rateChange", evt => {
       if ("setRate" in canvas) {
