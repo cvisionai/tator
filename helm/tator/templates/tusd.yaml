@@ -30,10 +30,11 @@ spec:
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
-              cpu: 4000m
-              memory: 1Gi
+              cpu: 1000m
+              memory: 2Gi
             requests:
-              cpu: 500m
+              cpu: 250m
+              memory: 1Gi
           ports:
             - containerPort: 1080
 {{ if .Values.awsStorage.enabled }}
