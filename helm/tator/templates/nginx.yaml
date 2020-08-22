@@ -106,6 +106,7 @@ metadata:
 {{- else }}
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "1200"
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
 {{- end }}
 spec:
 {{- if .Values.metallb.enabled }}
