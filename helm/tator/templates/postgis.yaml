@@ -37,16 +37,17 @@ spec:
             - mountPath: /var/lib/postgresql/data
               name: postgis-pv-claim
             - mountPath: /backup
-              name: backup-pv-claim
+              name: main-pv-claim
+              subPath: backup
             - mountPath: /dev/shm
               name: sharedmem
       volumes:
         - name: postgis-pv-claim
           persistentVolumeClaim:
             claimName: postgis-pv-claim
-        - name: backup-pv-claim
+        - name: main-pv-claim
           persistentVolumeClaim:
-            claimName: backup-pv-claim
+            claimName: main-pv-claim
         - name: sharedmem
           emptyDir:
             medium: "Memory"
