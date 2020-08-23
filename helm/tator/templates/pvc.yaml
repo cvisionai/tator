@@ -2,7 +2,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: efs-pv-claim
+  name: main-pv-claim
 spec:
   accessModes:
     - ReadWriteMany
