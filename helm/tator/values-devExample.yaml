@@ -35,19 +35,9 @@ pv:
   nfsMountOptions:
     - nfsvers=3
     - nolock
-  staticPath: "/media/kubernetes_share/static"
-  uploadPath: "/media/kubernetes_share/upload"
-  mediaPath: "/media/kubernetes_share/media"
-  rawPath: "/media/kubernetes_share/raw"
-  backupPath: "/media/kubernetes_share/backup"
-  migrationsPath: "/media/kubernetes_share/migrations"
+  path: "/media/kubernetes_share"
 pvc:
-  staticSize: 1Gi
-  uploadSize: 1Ti
-  mediaSize: 4Ti
-  rawSize: 6Ti
-  backupSize: 100Gi
-  migrationsSize: 1Gi
+  size: 10Ti
 hpa:
   nginxMinReplicas: 1
   nginxMaxReplicas: 10
