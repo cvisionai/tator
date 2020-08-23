@@ -80,54 +80,24 @@ spec:
               name: gunicorn
             - containerPort: 8001
               name: daphne
-{{ if .Values.awsStorage.enabled }}
           volumeMounts:
             - mountPath: /data/static
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: static
             - mountPath: /data/uploads
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: upload
             - mountPath: /data/media
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: media
             - mountPath: /data/raw
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: raw
             - mountPath: /tator_online/main/migrations
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: migrations
       volumes:
-        - name: efs-pv-claim
+        - name: main-pv-claim
           persistentVolumeClaim:
-            claimName: efs-pv-claim
-{{ else }}
-          volumeMounts:
-            - mountPath: /data/static
-              name: static-pv-claim
-            - mountPath: /data/uploads
-              name: upload-pv-claim
-            - mountPath: /data/media
-              name: media-pv-claim
-            - mountPath: /data/raw
-              name: raw-pv-claim
-            - mountPath: /tator_online/main/migrations
-              name: migrations-pv-claim
-      volumes:
-        - name: static-pv-claim
-          persistentVolumeClaim:
-            claimName: static-pv-claim
-        - name: upload-pv-claim
-          persistentVolumeClaim:
-            claimName: upload-pv-claim
-        - name: media-pv-claim
-          persistentVolumeClaim:
-            claimName: media-pv-claim
-        - name: raw-pv-claim
-          persistentVolumeClaim:
-            claimName: raw-pv-claim
-        - name: migrations-pv-claim
-          persistentVolumeClaim:
-            claimName: migrations-pv-claim
-{{ end }}
+            claimName: main-pv-claim
 {{ end }}

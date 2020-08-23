@@ -3,7 +3,7 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: efs-pv
+  name: main-pv
 spec:
   capacity:
     storage: 5Gi
@@ -15,126 +15,26 @@ spec:
   csi:
     driver: efs.csi.aws.com
     volumeHandle: {{ .Values.awsStorage.filesystemId }}
-{{ else }} # .Values.awsStorage.enabled
+{{ else }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: static-pv
+  name: main-pv
 spec:
   capacity:
-    storage: {{ .Values.pvc.staticSize }}
+    storage: {{ .Values.pvc.size }}
   accessModes:
     - ReadWriteMany
   claimRef:
     namespace: default
-    name: static-pv-claim
+    name: main-pv-claim
   mountOptions:
     {{- range .Values.pv.nfsMountOptions }}
     - {{ . }}
     {{- end }}
   nfs:
     server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.staticPath }}
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: upload-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.uploadSize }}
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    namespace: default
-    name: upload-pv-claim
-  mountOptions:
-    {{- range .Values.pv.nfsMountOptions }}
-    - {{ . }}
-    {{- end }}
-  nfs:
-    server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.uploadPath }}
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: media-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.mediaSize }}
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    namespace: default
-    name: media-pv-claim
-  mountOptions:
-    {{- range .Values.pv.nfsMountOptions }}
-    - {{ . }}
-    {{- end }}
-  nfs:
-    server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.mediaPath }}
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: raw-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.rawSize }}
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    namespace: default
-    name: raw-pv-claim
-  mountOptions:
-    {{- range .Values.pv.nfsMountOptions }}
-    - {{ . }}
-    {{- end }}
-  nfs:
-    server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.rawPath }}
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: backup-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.backupSize }}
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    namespace: default
-    name: backup-pv-claim
-  mountOptions:
-    {{- range .Values.pv.nfsMountOptions }}
-    - {{ . }}
-    {{- end }}
-  nfs:
-    server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.backupPath }}
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: migrations-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.migrationsSize }}
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    namespace: default
-    name: migrations-pv-claim
-  mountOptions:
-    {{- range .Values.pv.nfsMountOptions }}
-    - {{ . }}
-    {{- end }}
-  nfs:
-    server: {{ .Values.pv.nfsServer }}
-    path: {{ .Values.pv.migrationsPath }}
+    path: {{ .Values.pv.path }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}

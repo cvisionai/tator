@@ -46,24 +46,15 @@ spec:
               subPath: domain.key
               readOnly: true
               name: tls-key
-{{ if .Values.awsStorage.enabled }}
             - mountPath: /data/static
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: static
             - mountPath: /data/media
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: media
             - mountPath: /data/raw
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: raw
-{{ else }}
-            - mountPath: /data/static
-              name: static-pv-claim
-            - mountPath: /data/media
-              name: media-pv-claim
-            - mountPath: /data/raw
-              name: raw-pv-claim
-{{ end }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -80,21 +71,9 @@ spec:
             items:
               - key: domain.key
                 path: domain.key
-{{ if .Values.awsStorage.enabled }}
-        - name: efs-pv-claim
+        - name: main-pv-claim
           persistentVolumeClaim:
-            claimName: efs-pv-claim
-{{ else }}
-        - name: static-pv-claim
-          persistentVolumeClaim:
-            claimName: static-pv-claim
-        - name: media-pv-claim
-          persistentVolumeClaim:
-            claimName: media-pv-claim
-        - name: raw-pv-claim
-          persistentVolumeClaim:
-            claimName: raw-pv-claim
-{{ end }}
+            claimName: main-pv-claim
 ---
 apiVersion: v1
 kind: Service

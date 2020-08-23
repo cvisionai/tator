@@ -24,15 +24,6 @@ certCron:
   enabled: true
 pv:
   enabled: true
-pvc:
-  # These are required to be valid values but will be ignored by AWS EFS.
-  # EFS will not limit the amount of storage you can use.
-  staticSize: 1Gi
-  uploadSize: 1Ti
-  mediaSize: 4Ti
-  rawSize: 6Ti
-  backupSize: 100Gi
-  migrationsSize: 1Gi
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10
