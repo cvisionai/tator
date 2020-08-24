@@ -20,6 +20,7 @@ python:
   version: 3.7
   system_packages: true
   install:
+  - requirements: scripts/packages/tator-py/requirements.txt
   - method: pip
     path: scripts/packages/pytator
   - method: pip
