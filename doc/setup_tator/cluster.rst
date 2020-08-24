@@ -122,10 +122,9 @@ Install Docker
    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
    sudo add-apt-repository \
       "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) \
-      stable"
+      focal stable"
    sudo apt-get update
-   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
+   sudo apt-get install docker-ce=5:19.03.12~3-0~ubuntu-focal docker-ce-cli=5:19.03.12~3-0~ubuntu-focal containerd.io
 
 
 * Add yourself to the docker group
@@ -155,7 +154,7 @@ For GPU nodes, install nvidia-docker
 Install Kubernetes
 ^^^^^^^^^^^^^^^^^^
 
-* Install Kubernetes 1.16.10 on all cluster nodes.
+* Install Kubernetes 1.17.11 on all cluster nodes.
 
 .. code-block:: bash
    :linenos:
@@ -168,11 +167,11 @@ Install Kubernetes
    deb https://apt.kubernetes.io/ kubernetes-xenial main
    EOF
    apt-get update
-   apt-get install -qy kubelet=1.16.10-00 kubectl=1.16.10-00 kubeadm=1.16.10-00
+   apt-get install -qy kubelet=1.17.11-00 kubectl=1.17.11-00 kubeadm=1.17.11-00
    apt-mark hold kubelet kubectl kubeadm kubernetes-cni
    sysctl net.bridge.bridge-nf-call-iptables=1
+   iptables -P FORWARD ACCEPT
    exit
-   sudo iptables -P FORWARD ACCEPT
 
 Install helm
 ^^^^^^^^^^^^
@@ -250,7 +249,7 @@ Unless the local registry is setup to use authentication, the docker client on e
 insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
 
 * Open /etc/docker/daemon.json
-* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'myserver':
+* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'localhost':
 
 .. code-block:: json
    :linenos:
@@ -262,7 +261,7 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
        "max-size": "100m"
      },
      "storage-driver": "overlay2",
-     "insecure-registries":["myserver:5000"]
+     "insecure-registries":["localhost:5000"]
    }
 
 
@@ -285,7 +284,7 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
        "max-size": "100m"
      },
      "storage-driver": "overlay2",
-     "insecure-registries":["myserver:5000"]
+     "insecure-registries":["localhost:5000"]
    }
 
 * Restart the docker daemon:
@@ -299,15 +298,16 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
 
 Setting up NFS
 ==============
-Tator creates all Kubernetes persistent volumes using NFS shares. Its build system expects six NFS shares to be available:
+Tator creates all Kubernetes persistent volumes using a single NFS share with a particular directory layout. The subdirectories are as follows:
 
-* The **media** share is for storing transcoded media.
-* The **upload** share is for storing temporary upload data.
-* The **static** share contains static website files (javascript, images).
-* The **raw** share is for storing raw media.
-* The **backup** share is for storing database backups.
-* The **migrations** share is for storing migrations.
-* The **scratch** share is for temporary storage of artifacts used by workflows
+* The **media** directory is for storing transcoded media.
+* The **upload** directory is for storing temporary upload data.
+* The **static** directory contains static website files (javascript, images).
+* The **raw** directory is for storing raw media.
+* The **backup** directory is for storing database backups.
+* The **migrations** directory is for storing migrations.
+
+A second NFS share is used for dynamic provisioning of persistent volumes. In this tutorial, we will share it separately under the subdirectory **scratch**.
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -352,11 +352,8 @@ Preparing NFS server node
 NFS version
 ^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for
-development/evaluation.
+We recommend using NFS3 with Tator because we have experienced stability issues with NFS4.
 
-Using NFS3
-**********
 Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
 
 * Disable rpcbind:
@@ -392,18 +389,6 @@ Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NF
 ``docker logs nfs3``
 
 It should show the message "READY AND WAITING FOR NFS CLIENT CONNECTIONS"
-
-Using NFS4 (potentially unstable!)
-**********************************
-
-* Install the nfs4 server package:
-
-``sudo apt-get install nfs-kernel-server``
-
-* Copy the exports file to /etc/exports
-* Restart the nfs service:
-
-``sudo systemctl restart nfs-kernel-server``
 
 Database storage
 ================
