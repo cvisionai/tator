@@ -144,7 +144,7 @@ class UserManager(UserManager):
         return user
 
 class User(AbstractUser):
-    cognito_id = UUIDField(primary_key=False,db_index=True,default=uuid.uuid4, editable=False)
+    cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
     organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
