@@ -52,6 +52,7 @@ urlpatterns += [
     url(r'^rest/Token', views.obtain_auth_token),
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
+    path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'),
     path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),

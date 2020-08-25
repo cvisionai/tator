@@ -46,3 +46,4 @@ from .user import UserDetailAPI
 from .user import CurrentUserAPI
 from .version import VersionListAPI
 from .version import VersionDetailAPI
+from .jwt import JwtGatewayAPI
