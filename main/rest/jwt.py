@@ -23,7 +23,7 @@ class JwtGatewayAPI(APIView):
                                              "client_id": settings.COGNITO_AUDIENCE,
                                              "code": code,
                                              "scope": "openid",
-                                             "redirect_uri": request.build_absolute_uri('?')})
+                                             "redirect_uri": "https://btate.duckdns.org/jwt-gateway"})
             try:
                 return Response(token_resp.json(),status=token_resp.status_code)
             except:
