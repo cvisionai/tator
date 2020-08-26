@@ -1,18 +1,21 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from django.conf import settings
 from django.contrib.auth import login
 from django.shortcuts import redirect
-
 from django_cognito_jwt.validator import TokenError,TokenValidator
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 from ..models import User
+from ..schema import JwtGatewaySchema
 
 import requests
 
+
 class JwtGatewayAPI(APIView):
     """ Notional JWT login gateway """
+    schema = JwtGatewaySchema()
     def get(self, request, format=None, **kwargs):
         if settings.COGNITO_ENABLED is False:
             body = {"message": "page not found"}
