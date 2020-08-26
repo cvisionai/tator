@@ -197,3 +197,52 @@ kubectl get svc | grep nginx
 ```
 
 Use your DNS to make a CNAME rule pointing your domain to the service given under `EXTERNAL_IP`.
+
+
+## Using AWS Cognito
+
+Given an existing user pool, Tator REST access can be authenticated with
+bearer tokens from the cognito user pool. If using the JWT gateway within Tator
+the app client should be configured without a client secret and use the code
+grant workflow from oauth2.
+
+Instead of using the *Token* in the HTTP Authorization header, one must
+use the b64-encoded version of the *id token* from AWS.
+
+```
+Authorization: Bearer <id_token>
+```
+
+If a user supplies a bearer token, that is valid, but not recognized by the
+system, a local tator user is created.
+
+### Configuration Details
+
+*values.yaml* must contain the following object configuration to hook into
+cognito services. Example
+
+
+```
+cognito:
+  enabled: true
+  config: |
+    aws-region: <user pool region>
+    pool-id: <user pool id>
+    client-id: <client id>
+    domain: <user pool name>
+```
+
+The values above should be set such that `https://<domain>.auth.<region>.amazoncognito.com/oauth2/token` is a valid URL. User pool-id and client-id can
+be obtained from the AWS console.
+
+#### Using the hosted-UI to enable tator logins via cognito
+
+If desired, a JWT login can be upgraded to a Session-based login for using the
+Tator UI. Usage of the `rest/jwt-gateway` endpoint is compatible with the API
+expected by the hosted UI for AWS cognito logins.
+
+Configure the app client, within the aws console, to have a callback URL of:
+https://your-domain.com/rest/jwt-gateway
+
+OAuthFlow should be Authorization code grant, and the oauth scope must be set
+to openid.
