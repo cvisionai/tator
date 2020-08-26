@@ -274,7 +274,7 @@ SILENCED_SYSTEM_CHECKS = ['fields.W342']
 # Cognito configuration
 if os.path.exists("/cognito/cognito.yaml"):
     with open("/cognito/cognito.yaml", "r") as cfile:
-        data = yaml.load(cfile,Loader=None)
+        data = yaml.safe_load(cfile)
         REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (*REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'], 'django_cognito_jwt.JSONWebTokenAuthentication')
         COGNITO_AWS_REGION=data['aws-region']
         COGNITO_USER_POOL=data['pool-id']
