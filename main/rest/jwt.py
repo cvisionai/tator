@@ -44,7 +44,9 @@ class JwtGatewayAPI(APIView):
 
                 # Upgrade the connection to a session
                 login(request, user)
-                
+
+                # Use this to get id_token for debug
+                #return Response({"id_token": id_token})
                 return redirect("/projects")
             except TokenError as e:
                 return Response({"message": "invalid token"},status=status.HTTP_404_NOT_FOUND)
