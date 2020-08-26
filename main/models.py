@@ -120,7 +120,7 @@ class Organization(Model):
     def __str__(self):
         return self.name
 
-class UserManager(UserManager):
+class TatorUserManager(UserManager):
     def get_or_create_for_cognito(self, payload):
         cognito_id = payload['sub']
 
@@ -129,10 +129,11 @@ class UserManager(UserManager):
         except self.model.DoesNotExist:
             pass
         
-        first_name = payload['given name']
-        last_name = payload['family name']
+        first_name = payload['given_name']
+        last_name = payload['family_name']
         initials = f"{first_name[0]}{last_name[0]}"
         user = User(
+            username=payload['email'],
             cognito_id=cognito_id,
             first_name=first_name,
             last_name=last_name,
@@ -144,6 +145,7 @@ class UserManager(UserManager):
         return user
 
 class User(AbstractUser):
+    objects=TatorUserManager()
     cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
