@@ -281,7 +281,6 @@ if os.path.exists("/cognito/cognito.yaml"):
         COGNITO_AUDIENCE=data['client-id']
         COGNITO_DOMAIN=f"{data['domain']}.auth.{data['aws-region']}.amazoncognito.com"
         COGNITO_USER_MODEL = 'main.User'
-        COGNITO_SECRET = data['client-secret']
         COGNITO_ENABLED=True
 else:
     COGNITO_ENABLED=False
