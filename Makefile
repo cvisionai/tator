@@ -473,3 +473,7 @@ letsencrypt:
 .PHONY: selfsigned
 selfsigned:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- scripts/cert/selfsigned.sh
+
+.PHONY: docs
+docs:
+	make -C doc html
