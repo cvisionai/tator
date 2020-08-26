@@ -4,6 +4,7 @@ import logging
 from django.urls import path
 from django.urls import include
 from django.conf.urls import url
+from django.conf import settings
 
 from rest_framework.authtoken import views
 from rest_framework.authentication import SessionAuthentication
@@ -47,12 +48,15 @@ urlpatterns = [
     path('auth-admin', AuthAdminView.as_view()),
 ]
 
+if settings.COGNITO_ENABLED:
+    urlpatterns += [
+        path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
+
 # This is used for REST calls
 urlpatterns += [
     url(r'^rest/Token', views.obtain_auth_token),
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
-    path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'),
     path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),
