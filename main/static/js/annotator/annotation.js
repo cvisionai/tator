@@ -568,6 +568,7 @@ class AnnotationCanvas extends TatorElement
     this._domParents = [];
     this._metaMode = false;
     this._redrawObj = null;
+    this._fillBoxes = true;
 
     try
     {
@@ -1053,6 +1054,13 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  toggleBoxFills(fill)
+  {
+    // fill is True if localization boxes should be filled.
+    // False will make all box fills transparent.
+    this._fillBoxes = fill
+  }
+
   computeLocalizationColor(localization, meta)
   {
     // Default fill is solid
@@ -1218,6 +1226,13 @@ class AnnotationCanvas extends TatorElement
         alpha *= 0.5;
       }
     }
+
+    // If the fill is disabled, just set the alpha to fully transparent
+    if (!this._fillBoxes)
+    {
+      fill.alpha = 0.0;
+    }
+
     return {"color": drawColor, "alpha": alpha, "fill": fill};
   }
 

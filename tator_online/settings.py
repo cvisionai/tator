@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 import socket
 from django.contrib.messages import constants as messages
+import yaml
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -269,3 +270,18 @@ TATOR_SLACK_TOKEN = os.getenv('TATOR_SLACK_TOKEN')
 TATOR_SLACK_CHANNEL = os.getenv('TATOR_SLACK_CHANNEL')
 
 SILENCED_SYSTEM_CHECKS = ['fields.W342']
+
+# Cognito configuration
+if os.path.exists("/cognito/cognito.yaml"):
+    with open("/cognito/cognito.yaml", "r") as cfile:
+        data = yaml.safe_load(cfile)
+        REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (*REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'], 'django_cognito_jwt.JSONWebTokenAuthentication')
+        COGNITO_AWS_REGION=data['aws-region']
+        COGNITO_USER_POOL=data['pool-id']
+        COGNITO_AUDIENCE=data['client-id']
+        COGNITO_DOMAIN=f"{data['domain']}.auth.{data['aws-region']}.amazoncognito.com"
+        COGNITO_USER_MODEL = 'main.User'
+        COGNITO_SECRET = data['client-secret']
+        COGNITO_ENABLED=True
+else:
+    COGNITO_ENABLED=False

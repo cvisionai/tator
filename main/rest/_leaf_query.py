@@ -3,7 +3,7 @@ import logging
 
 from ..search import TatorSearch
 
-from ._attributes import kv_separator
+from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ def get_leaf_queryset(query_params):
         if attr_filter_params[op] is not None:
             for kv_pair in attr_filter_params[op].split(','):
                 if op == 'attribute_distance':
-                    key, dist_km, lat, lon = kv_pair.split(kv_separator)
+                    key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
                     attr_query['filter'].append({
                         'geo_distance': {
                             'distance': f'{dist_km}km',
@@ -70,7 +70,7 @@ def get_leaf_queryset(query_params):
                         }
                     })
                 else:
-                    key, val = kv_pair.split(kv_separator)
+                    key, val = kv_pair.split(KV_SEPARATOR)
                     if op == 'attribute_eq':
                         attr_query['filter'].append({'match': {key: val}})
                     elif op == 'attribute_lt':

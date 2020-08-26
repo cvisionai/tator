@@ -24,11 +24,12 @@ from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
 from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
-from django.db.models import FloatField, Transform
+from django.db.models import FloatField, Transform,UUIDField
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_delete
 from django.db.models.signals import m2m_changed
@@ -119,7 +120,33 @@ class Organization(Model):
     def __str__(self):
         return self.name
 
+class TatorUserManager(UserManager):
+    def get_or_create_for_cognito(self, payload):
+        cognito_id = payload['sub']
+
+        try:
+            return self.get(cognito_id=cognito_id)
+        except self.model.DoesNotExist:
+            pass
+        
+        first_name = payload['given_name']
+        last_name = payload['family_name']
+        initials = f"{first_name[0]}{last_name[0]}"
+        user = User(
+            username=payload['email'],
+            cognito_id=cognito_id,
+            first_name=first_name,
+            last_name=last_name,
+            initials=initials,
+            email=payload['email'],
+            is_active=True)
+        user.save()
+
+        return user
+
 class User(AbstractUser):
+    objects=TatorUserManager()
+    cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
     organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)

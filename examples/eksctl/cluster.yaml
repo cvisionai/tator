@@ -23,24 +23,6 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
-  - name: dbServers
-    instanceType: r5.xlarge
-    labels:
-      cpuWorker: "no"
-      gpuWorker: "no"
-      webServer: "no"
-      dbServer: "yes"
-    minSize: 0
-    maxSize: 10
-    desiredCapacity: 0
-    iam:
-      withAddonPolicies:
-        autoScaler: true
-    tags:
-      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
-      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
-      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
-      k8s.io/cluster-autoscaler/node-template/label/dbServer: "yes"
   - name: gpuWorkers
     instanceType: g4dn.xlarge
     labels:

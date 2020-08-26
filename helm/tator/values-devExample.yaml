@@ -23,36 +23,21 @@ dockerRegistry: "localhost:5000"
 systemImageRepo: "localhost:5000"
 slackToken: "<Your slack API token>" # Optional, for slack notifications
 slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
-sslBundle: |
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  <Insert certificate here>
-  -----END CERTIFICATE-----
-sslKey: |
-  -----BEGIN PRIVATE KEY-----
-  <Insert private key here>
-  -----END PRIVATE KEY-----
+certCron:
+  # Enable this to enable a cron job to automatically update certificates
+  # periodically from LetsEncrypt. If this is not provided, the Secret objects
+  # tls-cert and tls-key must be created manually. See scripts/cert.sh for an
+  # example of how to do this.
+  enabled: true
 pv:
   enabled: true
   nfsServer: "192.168.1.114"
   nfsMountOptions:
     - nfsvers=3
     - nolock
-  staticPath: "/media/kubernetes_share/static"
-  uploadPath: "/media/kubernetes_share/upload"
-  mediaPath: "/media/kubernetes_share/media"
-  rawPath: "/media/kubernetes_share/raw"
-  backupPath: "/media/kubernetes_share/backup"
-  migrationsPath: "/media/kubernetes_share/migrations"
+  path: "/media/kubernetes_share"
 pvc:
-  staticSize: 1Gi
-  uploadSize: 1Ti
-  mediaSize: 4Ti
-  rawSize: 6Ti
-  backupSize: 100Gi
-  migrationsSize: 1Gi
+  size: 10Ti
 hpa:
   nginxMinReplicas: 1
   nginxMaxReplicas: 10
@@ -120,9 +105,6 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
-cluster-autoscaler:
-  # Should be disabled for bare metal.
-  enabled: false
 awsStorage:
   # Should be disabled for bare metal.
   enabled: false
@@ -149,4 +131,9 @@ remoteTranscodes:
     -----BEGIN CERTIFICATE-----
     <Insert certificate here>
     -----END CERTIFICATE-----
-
+cognito:
+  enabled: false
+  config: |
+    aws-region: us-east-2
+    pool-id: <POOL ID HERE>
+    client-id: <ID HERE>

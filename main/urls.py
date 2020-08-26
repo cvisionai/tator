@@ -4,6 +4,7 @@ import logging
 from django.urls import path
 from django.urls import include
 from django.conf.urls import url
+from django.conf import settings
 
 from rest_framework.authtoken import views
 from rest_framework.authentication import SessionAuthentication
@@ -46,6 +47,10 @@ urlpatterns = [
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
 ]
+
+if settings.COGNITO_ENABLED:
+    urlpatterns += [
+        path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
 
 # This is used for REST calls
 urlpatterns += [

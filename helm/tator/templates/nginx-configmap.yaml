@@ -22,8 +22,8 @@ data:
         listen 80;
         listen 443;
         server_name {{ . }};
-        ssl_certificate /ssl/CertificateBundle1.pem;
-        ssl_certificate_key /ssl/tator.key;
+        ssl_certificate /ssl/signed_chain.crt;
+        ssl_certificate_key /ssl/domain.key;
         return 301 https://{{ $.Values.domain }}$request_uri;
       }
 
@@ -33,9 +33,18 @@ data:
       server {
         listen 80;
         server_name {{ .Values.domain }};
-        ssl_certificate /ssl/CertificateBundle1.pem;
-        ssl_certificate_key /ssl/tator.key;
-        return 301 https://{{ .Values.domain }}$request_uri;
+        ssl_certificate /ssl/signed_chain.crt;
+        ssl_certificate_key /ssl/domain.key;
+
+        # Proxy acme challenge files.
+        location /.well-known/acme-challenge/ {
+          alias /data/static/challenges/;
+          try_files $uri =404;
+        }
+
+        location / {
+          return 301 https://{{ .Values.domain }}$request_uri;
+        }
       }
 
       server {
@@ -43,8 +52,8 @@ data:
 
         server_name {{ .Values.domain }};
 
-        ssl_certificate /ssl/CertificateBundle1.pem;
-        ssl_certificate_key /ssl/tator.key;
+        ssl_certificate /ssl/signed_chain.crt;
+        ssl_certificate_key /ssl/domain.key;
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
         
@@ -230,4 +239,4 @@ data:
         error_page 405 =200 $uri;
       }
     }
----
+

@@ -8,6 +8,7 @@ from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .job_group import JobGroupDetailSchema
 from .job import JobDetailSchema
+from .jwt import JwtGatewaySchema
 from .leaf import LeafSuggestionSchema
 from .leaf import LeafListSchema
 from .leaf import LeafDetailSchema

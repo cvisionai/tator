@@ -30,6 +30,9 @@ class AnnotationSettings extends TatorElement {
     this._zoom = document.createElement("zoom-control");
     div.appendChild(this._zoom);
 
+    this._fill_boxes = document.createElement("fill-boxes-button")
+    div.appendChild(this._fill_boxes)
+
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
       let url = window.location.origin + window.location.pathname;
@@ -179,6 +182,11 @@ class AnnotationSettings extends TatorElement {
       params.set("lock", 1);
     } else {
       params.set("lock", 0);
+    }
+    if (this._fill_boxes.current_state == "fill") {
+      params.set("fill_boxes", 1);
+    } else {
+      params.set("fill_boxes", 0);
     }
     return params;
   }

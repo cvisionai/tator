@@ -122,10 +122,9 @@ Install Docker
    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
    sudo add-apt-repository \
       "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) \
-      stable"
+      focal stable"
    sudo apt-get update
-   sudo apt-get install docker-ce=5:18.09.8~3-0~ubuntu-bionic docker-ce-cli=5:18.09.8~3-0~ubuntu-bionic containerd.io
+   sudo apt-get install docker-ce=5:19.03.12~3-0~ubuntu-focal docker-ce-cli=5:19.03.12~3-0~ubuntu-focal containerd.io
 
 
 * Add yourself to the docker group
@@ -155,7 +154,7 @@ For GPU nodes, install nvidia-docker
 Install Kubernetes
 ^^^^^^^^^^^^^^^^^^
 
-* Install Kubernetes 1.16.10 on all cluster nodes.
+* Install Kubernetes 1.17.11 on all cluster nodes.
 
 .. code-block:: bash
    :linenos:
@@ -168,11 +167,11 @@ Install Kubernetes
    deb https://apt.kubernetes.io/ kubernetes-xenial main
    EOF
    apt-get update
-   apt-get install -qy kubelet=1.16.10-00 kubectl=1.16.10-00 kubeadm=1.16.10-00
+   apt-get install -qy kubelet=1.17.11-00 kubectl=1.17.11-00 kubeadm=1.17.11-00
    apt-mark hold kubelet kubectl kubeadm kubernetes-cni
    sysctl net.bridge.bridge-nf-call-iptables=1
+   iptables -P FORWARD ACCEPT
    exit
-   sudo iptables -P FORWARD ACCEPT
 
 Install helm
 ^^^^^^^^^^^^
@@ -191,69 +190,6 @@ To build Tator you will need Helm 3 somewhere on your path.
 * Add the executable to your PATH in bashrc:
 
 ``export PATH=$HOME/linux-amd64:$PATH``
-
-DuckDNS Domain Setup
-====================
-
-* Navigate to `Duck DNS <https://www.duckdns.org>`_ to setup domain
-* Choose login method and log in.
-* Type in a subdomain (for example, mydomain.duckdns.org). This is the address you will use to access Tator from your browser.
-* Click "Add domain".
-
-Install Certbot
-===============
-
-Instructions summarized from: `Certbot Install Guide <https://certbot.eff.org/lets-encrypt/ubuntubionic-nginx>`_
-
-Add Certbot PPA
-^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get update
-   sudo apt-get install software-properties-common
-   sudo add-apt-repository universe
-   sudo add-apt-repository ppa:certbot/certbot
-   sudo apt-get update
-
-
-Install Certbot
-^^^^^^^^^^^^^^^
-``sudo apt-get install certbot python-certbot-nginx``
-
-Get the certificate
-^^^^^^^^^^^^^^^^^^^
-``sudo certbot -d <domain> --manual --preferred-challenges dns certonly``
-
-The following message will display:
-
-.. code-block:: bash
-
-   Please deploy a DNS TXT record under the name xxxx with the following value: <DNS_TXT_VALUE>
-
-For the next step you will need to get your token from your `<duckdns.org>`_ account page.
-
-In order to deploy this DNS TXT record open a new browser window and enter the following into the address bar:
-   `https://www.duckdns.org/update?domains=<sub\_domain\_only>&token=<your\_token\_value>&txt=<DNS\_TXT\_value>`
-
-* ``OK`` should appear in your browser
-* Navigate back to the terminal, hit enter
-
-The certificate has been issued. Note the location of the certificate files.
-
-**Note: If you were unable to acquire certificate after following the steps above, install Certbot-Auto**
-
-Certbot-auto installation steps:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-   :linenos:
-
-   wget https://dl.eff.org/certbot-auto
-   sudo mv certbot-auto /usr/local/bin/certbot-auto
-   sudo chown root /usr/local/bin/certbot-auto
-   sudo chmod 0755 /usr/local/bin/certbot-auto
 
 Clone the Tator repository
 ==========================
@@ -313,7 +249,7 @@ Unless the local registry is setup to use authentication, the docker client on e
 insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
 
 * Open /etc/docker/daemon.json
-* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'myserver':
+* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'localhost':
 
 .. code-block:: json
    :linenos:
@@ -325,7 +261,7 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
        "max-size": "100m"
      },
      "storage-driver": "overlay2",
-     "insecure-registries":["myserver:5000"]
+     "insecure-registries":["localhost:5000"]
    }
 
 
@@ -348,7 +284,7 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
        "max-size": "100m"
      },
      "storage-driver": "overlay2",
-     "insecure-registries":["myserver:5000"]
+     "insecure-registries":["localhost:5000"]
    }
 
 * Restart the docker daemon:
@@ -362,15 +298,16 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
 
 Setting up NFS
 ==============
-Tator creates all Kubernetes persistent volumes using NFS shares. Its build system expects six NFS shares to be available:
+Tator creates all Kubernetes persistent volumes using a single NFS share with a particular directory layout. The subdirectories are as follows:
 
-* The **media** share is for storing transcoded media.
-* The **upload** share is for storing temporary upload data.
-* The **static** share contains static website files (javascript, images).
-* The **raw** share is for storing raw media.
-* The **backup** share is for storing database backups.
-* The **migrations** share is for storing migrations.
-* The **scratch** share is for temporary storage of artifacts used by workflows
+* The **media** directory is for storing transcoded media.
+* The **upload** directory is for storing temporary upload data.
+* The **static** directory contains static website files (javascript, images).
+* The **raw** directory is for storing raw media.
+* The **backup** directory is for storing database backups.
+* The **migrations** directory is for storing migrations.
+
+A second NFS share is used for dynamic provisioning of persistent volumes. In this tutorial, we will share it separately under the subdirectory **scratch**.
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -379,12 +316,7 @@ Create a file called *exports* in your node home directory that we will use for 
 .. code-block:: text
    :linenos:
 
-   /media/kubernetes_share/media 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/upload 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/static 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/raw 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/backup 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/migrations 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
+   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
    /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
 
 .. _NFS Setup:
@@ -420,11 +352,8 @@ Preparing NFS server node
 NFS version
 ^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4. However NFS4 is suitable for
-development/evaluation.
+We recommend using NFS3 with Tator because we have experienced stability issues with NFS4.
 
-Using NFS3
-**********
 Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
 
 * Disable rpcbind:
@@ -460,18 +389,6 @@ Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NF
 ``docker logs nfs3``
 
 It should show the message "READY AND WAITING FOR NFS CLIENT CONNECTIONS"
-
-Using NFS4 (potentially unstable!)
-**********************************
-
-* Install the nfs4 server package:
-
-``sudo apt-get install nfs-kernel-server``
-
-* Copy the exports file to /etc/exports
-* Restart the nfs service:
-
-``sudo systemctl restart nfs-kernel-server``
 
 Database storage
 ================
@@ -754,6 +671,12 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   useMinJs
     Either "False" or "True" (with quotes) to denote whether to use minified
     javascript [Default if not specified: "True"]
+
+  certCron.enabled
+    Enable this to enable a cron job to automatically update certificates
+    periodically from LetsEncrypt. If this is not provided, the Secret objects
+    tls-cert and tls-key must be created manually. See scripts/cert.sh for an
+    example of how to do this.
 
   transcoderPvcSize
     Ability to specify the size allocated to the pvc for transcoding. This can

@@ -1,4 +1,4 @@
-{{ define "postjob.template" }}
+{{ define "prejob.template" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -36,20 +36,10 @@ spec:
           command: {{ .command }}
           args: {{ .args }}
           env:
-            - name: DJANGO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: djangoSecretKey
             - name: POSTGRES_HOST
               value: {{ .Values.postgresHost }}
             - name: POSTGRES_USERNAME
               value: {{ .Values.postgresUsername }}
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: postgresPassword
             - name: REDIS_HOST
               value: {{ .Values.redisHost }}
             - name: ELASTICSEARCH_HOST
@@ -58,11 +48,6 @@ spec:
               value: {{ .Values.domain }}
             - name: DOCKER_USERNAME
               value: {{ .Values.dockerUsername }}
-            - name: DOCKER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: tator-secrets
-                  key: dockerPassword
             - name: DOCKER_REGISTRY
               value: {{ .Values.dockerRegistry }}
             - name: SYSTEM_IMAGES_REGISTRY
@@ -80,24 +65,4 @@ spec:
               name: gunicorn
             - containerPort: 8001
               name: daphne
-          volumeMounts:
-            - mountPath: /data/static
-              name: main-pv-claim
-              subPath: static
-            - mountPath: /data/uploads
-              name: main-pv-claim
-              subPath: upload
-            - mountPath: /data/media
-              name: main-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: main-pv-claim
-              subPath: raw
-            - mountPath: /tator_online/main/migrations
-              name: main-pv-claim
-              subPath: migrations
-      volumes:
-        - name: main-pv-claim
-          persistentVolumeClaim:
-            claimName: main-pv-claim
 {{ end }}

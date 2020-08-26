@@ -30,30 +30,21 @@ spec:
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
-              cpu: 4000m
-              memory: 1Gi
+              cpu: 1000m
+              memory: 2Gi
             requests:
-              cpu: 500m
+              cpu: 250m
+              memory: 1Gi
           ports:
             - containerPort: 1080
-{{ if .Values.awsStorage.enabled }}
           volumeMounts:
             - mountPath: /data/uploads
-              name: efs-pv-claim
+              name: main-pv-claim
               subPath: upload
       volumes:
-        - name: efs-pv-claim
+        - name: main-pv-claim
           persistentVolumeClaim:
-            claimName: efs-pv-claim
-{{ else }}
-          volumeMounts:
-            - mountPath: /data/uploads
-              name: upload-pv-claim
-      volumes:
-        - name: upload-pv-claim
-          persistentVolumeClaim:
-            claimName: upload-pv-claim
-{{ end }}
+            claimName: main-pv-claim
 ---
 apiVersion: v1
 kind: Service
