@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
+from django.contrib.auth import login
+from django.shortcuts import redirect
 
 from django_cognito_jwt.validator import TokenError,TokenValidator
 
@@ -10,7 +12,7 @@ from ..models import User
 import requests
 
 class JwtGatewayAPI(APIView):
-    """ Notional JWT code to token page """
+    """ Notional JWT login gateway """
     def get(self, request, format=None, **kwargs):
         if settings.COGNITO_ENABLED is False:
             body = {"message": "page not found"}
@@ -39,7 +41,11 @@ class JwtGatewayAPI(APIView):
                 response.update({"jwt": jwt_payload})
                 user = User.objects.get_or_create_for_cognito(jwt_payload)
                 response.update({"user": user.username})
-                return Response(response,status=token_resp.status_code)
+
+                # Upgrade the connection to a session
+                login(request, user)
+                
+                return redirect("/projects")
             except TokenError as e:
                 return Response({"message": "invalid token"},status=status.HTTP_404_NOT_FOUND)
             #except Exception as e:
