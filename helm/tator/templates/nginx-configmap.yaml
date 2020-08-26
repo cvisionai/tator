@@ -99,6 +99,11 @@ data:
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
+        location /docs {
+          alias /data/static/docs;
+          autoindex off;
+          add_header Cache-Control "max-age=0, must-revalidate";
+        }
         location /media {
           alias /data/media/;
           autoindex off;
