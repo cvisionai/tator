@@ -791,6 +791,15 @@ Building Tator
 
 ``git submodule update --init``
 
+* Install sphinx and sphinx rtd theme modules
+
+.. code-block:: bash
+   :linenos:
+
+    sudo apt-get install python3-sphinx
+    pip3 install sphinx-rtd-theme recommonmark
+
+
 * Install mako and progressbar2
 
 .. code-block:: bash
