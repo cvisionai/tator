@@ -218,8 +218,12 @@ class AnnotationPage extends TatorPage {
         if (haveFillBoxes) {
           const fill_boxes = Number(searchParams.get("fill_boxes"));
           if (fill_boxes) {
+            this._settings._fill_boxes.fill();
+          }
+          else {
             this._settings._fill_boxes.unfill();
           }
+          canvas.toggleBoxFills(this._settings._fill_boxes.get_fill_boxes_status());
         }
       }
     }
