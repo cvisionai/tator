@@ -421,9 +421,11 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'height' in params:
             obj.height = params['height']
+        obj.save()
 
-        # Send progress message if we have a gid/uid.
-        if ('gid' in params) and ('uid' in params):
+        # Send progress message if we have a gid/uid and at least one streaming
+        # file is available.
+        if ('gid' in params) and ('uid' in params) and len(obj.media_files['streaming']) > 0:
             prog = ProgressProducer(
                 'upload',
                 project,
@@ -442,7 +444,6 @@ class MediaDetailAPI(BaseDetailView):
             }
             prog.finished("Uploaded successfully!", info)
 
-        obj.save()
         return {'message': f'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
