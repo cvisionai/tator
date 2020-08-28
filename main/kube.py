@@ -75,27 +75,16 @@ class JobManagerMixin:
         if len(response['items']) > 0:
             for job in response['items']:
                 name = job['metadata']['name']
-                response = self.custom.delete_namespaced_custom_object(
+                response = self.custom.patch_namespaced_custom_object(
                     group='argoproj.io',
                     version='v1alpha1',
                     namespace='default',
                     plural='workflows',
                     name=name,
-                    body={},
-                    grace_period_seconds=0,
+                    body={'spec': {'shutdown': 'Stop'}},
                 )
                 if response['status'] == 'Success':
                     cancelled = True
-                    prog = ProgressProducer(
-                        self._job_type(),
-                        int(job['metadata']['labels']['project']),
-                        job['metadata']['labels']['gid'],
-                        job['metadata']['labels']['uid'],
-                        job['metadata']['annotations']['name'],
-                        int(job['metadata']['labels']['user']),
-                        self._get_progress_aux(job),
-                    )
-                    prog.failed(self._cancel_message())
         return cancelled
 
 class TatorTranscode(JobManagerMixin):
@@ -669,9 +658,6 @@ class TatorTranscode(JobManagerMixin):
     def _get_progress_aux(self, job):
         return {'section': job['metadata']['annotations']['section']}
 
-    def _cancel_message(self):
-        return 'Transcode aborted!'
-
     def _job_type(self):
         return 'upload'
 
@@ -901,9 +887,6 @@ class TatorAlgorithm(JobManagerMixin):
             'sections': job['metadata']['annotations']['sections'],
             'media_ids': job['metadata']['annotations']['media_ids'],
         }
-
-    def _cancel_message(self):
-        return 'Algorithm aborted!'
 
     def _job_type(self):
         return 'algorithm'
