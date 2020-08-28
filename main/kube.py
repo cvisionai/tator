@@ -71,7 +71,7 @@ class JobManagerMixin:
             label_selector=f'{selector},job_type={self._job_type()}',
         )
 
-        # Delete the object.
+        # Patch the workflow with shutdown=Stop.
         if len(response['items']) > 0:
             for job in response['items']:
                 name = job['metadata']['name']
@@ -450,6 +450,31 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+        # Define task to delete media objects in case of failure.
+        self.delete_media_task = {
+            'name': 'delete-media',
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': ['-m', 'tator.transcode.delete_media',
+                         '--host', '{{workflow.parameters.host}}',
+                         '--token', '{{workflow.parameters.token}}',
+                         '--input', '/work/media_id.txt'],
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '128Mi',
+                        'cpu': '100m',
+                    },
+                },
+            },
+        }
+
+
         # Define a exit handler.
         self.exit_handler = {
             'name': 'exit-handler',
@@ -465,6 +490,11 @@ class TatorTranscode(JobManagerMixin):
                                        {'name': 'progress', 'value': '0'},
                                    ]
                     }
+                },
+                {
+                    'name': 'delete-media',
+                    'template': 'delete-media',
+                    'when': '{{workflow.status}} != Succeeded',
                 },
                 {
                     'name': 'send-success',
@@ -740,6 +770,7 @@ class TatorTranscode(JobManagerMixin):
                     self.get_transcode_dag(),
                     pipeline_task,
                     self.progress_task,
+                    self.delete_media_task,
                     self.exit_handler,
                     self.data_import
                 ],
@@ -826,6 +857,7 @@ class TatorTranscode(JobManagerMixin):
                     self.get_transcode_dag(),
                     pipeline_task,
                     self.progress_task,
+                    self.delete_media_task,
                     self.exit_handler,
                 ],
             },
