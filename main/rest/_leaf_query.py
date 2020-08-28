@@ -1,3 +1,4 @@
+""" TODO: add documentation for this """
 from collections import defaultdict
 import logging
 
@@ -8,10 +9,11 @@ from ._attributes import KV_SEPARATOR
 logger = logging.getLogger(__name__)
 
 def get_leaf_queryset(query_params):
+    """ TODO: add documentation for this """
 
     # Get parameters.
     project = query_params['project']
-    filterType = query_params.get('type', None)
+    filter_type = query_params.get('type', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
     after = query_params.get('after', None)
@@ -21,26 +23,26 @@ def get_leaf_queryset(query_params):
     query['sort']['_postgres_id'] = 'asc'
     bools = [{'match': {'_dtype': 'leaf'}}]
 
-    if filterType != None:
-        bools.append({'match': {'_meta': {'query': int(filterType)}}})
+    if filter_type is not None:
+        bools.append({'match': {'_meta': {'query': int(filter_type)}}})
 
-    if start != None:
+    if start is not None:
         query['from'] = int(start)
         if start > 10000:
             raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
 
-    if start == None and stop != None:
+    if start is None and stop is not None:
         query['size'] = int(stop)
         if stop > 10000:
             raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
 
-    if start != None and stop != None:
+    if start is not None and stop is not None:
         query['size'] = int(stop) - int(start)
         if start + stop > 10000:
             raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
                              "'after'.")
 
-    if after != None:
+    if after is not None:
         bools.append({'range': {'_postgres_id': {'gt': after}}})
 
     # Get attribute filter parameters.
@@ -92,7 +94,6 @@ def get_leaf_queryset(query_params):
                         else:
                             raise Exception("Invalid value for attribute_null operation, must"
                                             " be <field>::<value> where <value> is true or false.")
-    
     attr_query['filter'] += bools
 
     for key in ['must_not', 'filter']:
@@ -100,7 +101,7 @@ def get_leaf_queryset(query_params):
             query['query']['bool'][key] = attr_query[key]
 
     search = query_params.get('search', None)
-    if search != None:
+    if search is not None:
         search_query = {'query_string': {'query': search}}
         query['query']['bool']['filter'].append(search_query)
 

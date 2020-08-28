@@ -1104,23 +1104,26 @@ class AnnotationCanvas extends TatorElement
       }
     };
 
-    let colorMap = (objAttributes) => {
+    let colorMap = (objAttributes, skipDefault) => {
 
-      if (meta.colorMap.default)
+      if (skipDefault == false)
       {
-        decodeColor(meta.colorMap.default);
-      }
-
-      if (meta.colorMap.defaultFill)
-      {
-        decodeFill(meta.colorMap.defaultFill);
-      }
-
-      if (meta.colorMap.version)
-      {
-        if (localization.version in meta.colorMap.version)
+        if (meta.colorMap.default)
         {
-          decodeColor(meta.colorMap.version[localization.version]);
+          decodeColor(meta.colorMap.default);
+        }
+
+        if (meta.colorMap.defaultFill)
+        {
+          decodeFill(meta.colorMap.defaultFill);
+        }
+
+        if (meta.colorMap.version)
+        {
+          if (localization.version in meta.colorMap.version)
+          {
+            decodeColor(meta.colorMap.version[localization.version]);
+          }
         }
       }
 
@@ -1180,11 +1183,11 @@ class AnnotationCanvas extends TatorElement
     {
       if (localizationInTrack)
       {
-        colorMap(this._data._trackDb[localization.id].attributes);
+        colorMap(this._data._trackDb[localization.id].attributes, true);
       }
       else
       {
-        colorMap(localization.attributes);
+        colorMap(localization.attributes, false);
       }
     }
     fill.color = drawColor;
