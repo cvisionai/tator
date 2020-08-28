@@ -53,6 +53,7 @@ Installing
    :caption: Python Bindings (tator-py):
 
    ../tator-py/api
+   ../tator-py/examples
    ../tator-py/running-tests
 
 
