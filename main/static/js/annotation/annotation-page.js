@@ -117,7 +117,7 @@ class AnnotationPage extends TatorPage {
             this._browser.mediaType = type_data;
             this._undo.mediaType = type_data;
             let player;
-            if (data.thumbnail_gif) {
+            if (type_data.dtype == "video") {
               player = document.createElement("annotation-player");
               this._player = player;
               this._player.mediaType = type_data;
@@ -134,7 +134,7 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
-            } else {
+            } else if (type_data.dype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
               this._player.mediaType = type_data;
@@ -152,7 +152,11 @@ class AnnotationPage extends TatorPage {
                   {
                     player._image.captureFrame(e.detail.localizations);
                   });
-            }
+            } else if (type_data.dtype == "multi") {
+		window.alert("Not implemented");
+	    } else {
+		window.alert(`Unknown media type ${type_data.dtype}`)
+	    }
           });
           fetch("/rest/Project/" + data.project, {
             method: "GET",
