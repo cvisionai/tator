@@ -13,7 +13,7 @@ What is Tator?
 * Download - Save media and metadata locally
 * Collaborate - Invite team members and manage permissions
 
-**Documentation** is hosted at [read the docs](https://tator.readthedocs.io/en/latest/).
+**Documentation** is hosted [here](https://tatorapp.com/docs).
 
 **Tator** is developed by [CVision AI](https://www.cvisionai.com).
 
