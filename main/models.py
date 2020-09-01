@@ -837,6 +837,25 @@ class Analysis(Model):
     def __str__(self):
         return f"{self.project} | {self.name}"
 
+class Section(Model):
+    """ Stores either a lucene search or raw elasticsearch query.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    name = CharField(max_length=128)
+    """ Name of the section.
+    """
+    lucene_search = CharField(max_length=1024, null=True, blank=True)
+    """ Optional lucene query syntax search string.
+    """
+    media_bools = JSONField(null=True, blank=True)
+    """ Optional list of elasticsearch boolean queries that should be applied
+        to media. These are applied to the boolean query "filter" list.
+    """
+    annotation_bools = JSONField(null=True, blank=True)
+    """ Optional list of elasticsearch boolean queries that should be applied
+        to annotations. These are applied to the boolean query "filter" list.
+    """
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {
