@@ -27,12 +27,14 @@ class JwtGatewayAPI(APIView):
                 return Response({"message": "Not Found"},
                                 status=status.HTTP_404_NOT_FOUND)
 
+            redirect_uri = request.build_absolute_uri('?')
+
             token_resp = requests.post("https://"+settings.COGNITO_DOMAIN+"/oauth2/token",
                                        data={"grant_type": "authorization_code",
                                              "client_id": settings.COGNITO_AUDIENCE,
                                              "code": code,
                                              "scope": "openid",
-                                             "redirect_uri": "https://btate.duckdns.org/jwt-gateway"})
+                                             "redirect_uri": redirect_uri})
             try:
                 aws = token_resp.json()
                 response={"aws": aws}
