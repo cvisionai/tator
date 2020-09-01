@@ -28,9 +28,9 @@ class SectionListAPI(BaseListView):
     def _post(self, params):
         project = params['project']
         name = params['name']
-        lucene_search = params['lucene_search']
-        media_bools = params['media_bools']
-        annotation_bools = params['annotation_bools']
+        lucene_search = params.get('lucene_search', None)
+        media_bools = params.get('media_bools', None)
+        annotation_bools = params.get('annotation_bools', None)
         
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
