@@ -36,9 +36,9 @@ class SectionListAPI(BaseListView):
         section = Section.objects.create(
             project=project,
             name=name,
-            lucene_search = params['lucene_search']
-            media_bools = params['media_bools']
-            annotation_bools = params['annotation_bools']
+            lucene_search=lucene_search,
+            media_bools=media_bools,
+            annotation_bools=annotation_bools,
         )
         return {'message': f"Section {name} created!",
                 'id': section.id}
@@ -48,7 +48,7 @@ class SectionListAPI(BaseListView):
         sections = Section.objects.filter(project__id=project_id)
         return sections
 
-class MembershipDetailAPI(BaseDetailView):
+class SectionDetailAPI(BaseDetailView):
     """ Interact with an individual section.
 
         Sections correspond to saved queries on media that may consist of a lucene
@@ -65,7 +65,7 @@ class MembershipDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        section = Section.objects.get(pk=params[params['id'])
+        section = Section.objects.get(pk=params['id'])
         if 'name' in params:
             section.name = params['name']
         if 'lucene_search' in params:

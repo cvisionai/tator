@@ -56,7 +56,7 @@ def get_media_queryset(project, query_params, dry_run=False):
                     },
                 ],
                 'minimum_should_match': 1,
-            }}
+            }})
         if section_object.media_bools:
             bools.append(media_bools)
         if section_object.annotation_bools:
