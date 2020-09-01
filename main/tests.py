@@ -81,6 +81,8 @@ spec:
     )
     return obj
 
+def create_test_section(name, project):
+    return Section.objects.create(name=name, project=project)
 
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -390,6 +392,7 @@ class PermissionDetailTestMixin:
 
     def test_detail_delete_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
+        print(f"ENTITIES: {self.entities}")
         for index, level in enumerate(permission_levels):
             self.membership.permission = level
             self.membership.save()
@@ -1755,3 +1758,81 @@ class VersionTestCase(
     def tearDown(self):
         self.project.delete()
 
+class SectionTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            keep_original=False,
+        )
+        self.media = create_test_video(self.user, 'asdf', self.entity_type, self.project)
+        self.entities = [create_test_section(f"Section {idx}", self.project)
+                         for idx in range(random.randint(6, 10))]
+        print(f"ENTITIES: {self.entities}")
+        self.list_uri = 'Sections'
+        self.detail_uri = 'Section'
+        self.create_json = {
+            'project': self.project.pk,
+            'name': 'No Filters',
+        }
+        self.patch_json = {
+            'name': 'New name',
+        }
+        self.edit_permission = Permission.CAN_EDIT
+
+        # Setup for search tests.
+        self.medias = [
+            create_test_video(self.user, name, self.entity_type, self.project)
+            for name in ['Apple', 'Banana', 'Orange']
+        ]
+        self.box_type = LocalizationType.objects.create(
+            name='boxes',
+            dtype='box',
+            project=self.project,
+        )
+        self.box = create_test_box(self.user, self.box_type, self.project, self.medias[2], 0)
+        self.sections = [Section.objects.create(
+            project=self.project,
+            name='Apples',
+            lucene_search='_exact_name:Apple',
+        ), Section.objects.create(
+            project=self.project,
+            name='Bananas',
+            media_bools=[{'match': {'_exact_name': 'Banana'}}],
+        ), Section.objects.create(
+            project=self.project,
+            name='Oranges',
+            annotation_bools=[{'match': {'_frame': 0}}],
+        )]
+        time.sleep(1)
+
+    def test_lucene_search(self):
+        url = f'/rest/Medias/{self.project.pk}?section={self.sections[0].pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], self.medias[0].pk)
+        
+    def test_media_bools(self):
+        url = f'/rest/Medias/{self.project.pk}?section={self.sections[1].pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], self.medias[1].pk)
+        
+    def test_annotation_bools(self):
+        url = f'/rest/Medias/{self.project.pk}?section={self.sections[2].pk}'
+        response = self.client.get(url)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], self.medias[2].pk)
+        

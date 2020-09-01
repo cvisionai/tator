@@ -33,6 +33,8 @@ from .progress import ProgressAPI
 from .progress_summary import ProgressSummaryAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
+from .section import SectionListAPI
+from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI
 from .state import StateDetailAPI

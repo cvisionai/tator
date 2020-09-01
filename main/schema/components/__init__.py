@@ -40,6 +40,8 @@ from .progress import progress_spec
 from .progress_summary import progress_summary_spec
 from .project import project_spec
 from .project import project
+from .section import section_spec
+from .section import section
 from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_update
