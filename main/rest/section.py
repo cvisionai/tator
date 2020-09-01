@@ -1,0 +1,85 @@
+from django.db import transaction
+
+from ..models import Section
+from ..models import Project
+from ..models import database_qs
+from ..schema import SectionListSchema
+from ..schema import SectionDetailSchema
+
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
+from ._permissions import ProjectEditPermission
+
+class SectionListAPI(BaseListView):
+    """ Create or retrieve a list of project media sections.
+
+        Sections correspond to saved queries on media that may consist of a lucene
+        search string, a list of elasticsearch boolean queries applied to media,
+        or a list of elasticsearch boolean queries applied to child annotations.
+    """
+    schema = SectionListSchema()
+    permission_classes = [ProjectEditPermission]
+    http_method_names = ['get', 'post']
+
+    def _get(self, params):
+        qs = Section.objects.filter(project=params['project'])
+        return database_qs(qs)
+
+    def _post(self, params):
+        project = params['project']
+        name = params['name']
+        lucene_search = params['lucene_search']
+        media_bools = params['media_bools']
+        annotation_bools = params['annotation_bools']
+        
+        project = Project.objects.get(pk=project)
+        section = Section.objects.create(
+            project=project,
+            name=name,
+            lucene_search = params['lucene_search']
+            media_bools = params['media_bools']
+            annotation_bools = params['annotation_bools']
+        )
+        return {'message': f"Section {name} created!",
+                'id': section.id}
+
+    def get_queryset(self):
+        project_id = self.kwargs['project']
+        sections = Section.objects.filter(project__id=project_id)
+        return sections
+
+class MembershipDetailAPI(BaseDetailView):
+    """ Interact with an individual section.
+
+        Sections correspond to saved queries on media that may consist of a lucene
+        search string, a list of elasticsearch boolean queries applied to media,
+        or a list of elasticsearch boolean queries applied to child annotations.
+    """
+    schema = SectionDetailSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
+
+    def _get(self, params):
+        return database_qs(Section.objects.filter(pk=params['id']))[0]
+
+    @transaction.atomic
+    def _patch(self, params):
+        section = Section.objects.get(pk=params[params['id'])
+        if 'name' in params:
+            section.name = params['name']
+        if 'lucene_search' in params:
+            section.lucene_search = params['lucene_search']
+        if 'media_bools' in params:
+            section.media_bools = params['media_bools']
+        if 'annotation_bools' in params:
+            section.annotation_bools = params['annotation_bools']
+        section.save()
+        return {'message': f"Section {section.name} updated successfully!"}
+
+    def _delete(self, params):
+        Section.objects.get(pk=params['id']).delete()
+        return {'message': f'Section {params["id"]} successfully deleted!'}
+
+    def get_queryset(self):
+        return Section.objects.all()
