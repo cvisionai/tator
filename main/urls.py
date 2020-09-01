@@ -206,6 +206,14 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
+        'rest/Sections/<int:project>',
+        SectionListAPI.as_view(),
+    ),
+    path(
+        'rest/Section/<int:id>',
+        SectionDetailAPI.as_view(),
+    ),
+    path(
         'rest/SectionAnalysis/<int:project>',
         SectionAnalysisAPI.as_view(),
         name='SectionAnalysis',
