@@ -75,6 +75,8 @@ class CustomGenerator(SchemaGenerator):
                 'ProjectSpec': project_spec,
                 'Project': project,
                 'S3StorageConfig': s3_storage_config,
+                'SectionSpec': section_spec,
+                'Section': section,
                 'SectionAnalysis': section_analysis,
                 'StateSpec': state_spec,
                 'StateUpdate': state_update,

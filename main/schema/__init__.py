@@ -34,6 +34,8 @@ from .progress import ProgressSchema
 from .progress_summary import ProgressSummarySchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
+from .section import SectionListSchema
+from .section import SectionDetailSchema
 from .section_analysis import SectionAnalysisSchema
 from .state import StateListSchema
 from .state import StateDetailSchema
