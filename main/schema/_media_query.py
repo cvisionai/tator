@@ -28,6 +28,13 @@ media_filter_parameter_schema = [
         'schema': {'type': 'string'},
     },
     {
+        'name': 'section',
+        'in': 'query',
+        'required': False,
+        'description': 'Unique integer identifying a media section.',
+        'schema': {'type': 'integer'},
+    },
+    {
         'name': 'md5',
         'in': 'query',
         'required': False,

@@ -4,6 +4,7 @@ from collections import defaultdict
 from urllib import parse as urllib_parse
 
 from ..search import TatorSearch
+from ..models import Section
 
 from ._attribute_query import get_attribute_query
 from ._attributes import AttributeFilterMixin
@@ -15,6 +16,7 @@ def get_media_queryset(project, query_params, dry_run=False):
     media_id = query_params.get('media_id', None)
     filter_type = query_params.get('type', None)
     name = query_params.get('name', None)
+    section = query_params.get('section', None)
     md5 = query_params.get('md5', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
@@ -29,6 +31,7 @@ def get_media_queryset(project, query_params, dry_run=False):
         ],
         'minimum_should_match': 1,
     }}]
+    annotation_bools = []
 
     if media_id is not None:
         ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]
@@ -39,6 +42,25 @@ def get_media_queryset(project, query_params, dry_run=False):
 
     if name is not None:
         bools.append({'match': {'_exact_name': {'query': name}}})
+
+    if section is not None:
+        section_object = Section.objects.get(pk=section)
+        if section_object.lucene_search:
+            bools.append({'bool': {
+                'should': [
+                    {'query_string': {'query': search}},
+                    {'has_child': {
+                        'type': 'annotation',
+                        'query': {'query_string': {'query': search}},
+                        },
+                    },
+                ],
+                'minimum_should_match': 1,
+            }}
+        if section_object.media_bools:
+            bools.append(media_bools)
+        if section_object.annotation_bools:
+            annotation_bools.append(annotation_bools)
 
     if md5 is not None:
         bools.append({'match': {'_md5': {'query': md5}}})
@@ -62,7 +84,8 @@ def get_media_queryset(project, query_params, dry_run=False):
     if after is not None:
         bools.append({'range': {'_exact_name': {'gt': after}}})
 
-    query = get_attribute_query(query_params, query, bools, project)
+    query = get_attribute_query(query_params, query, bools, project, is_media=True,
+                                annotation_bools=annotation_bools)
 
     if dry_run:
         return [], [], query
