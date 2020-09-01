@@ -235,10 +235,17 @@ cognito:
 The values above should be set such that `https://<domain>.auth.<region>.amazoncognito.com/oauth2/token` is a valid URL. User pool-id and client-id can
 be obtained from the AWS console.
 
+#### Cognito Settings
+
+1.) The app client should not use an app secret
+2.) The user pool attributes must contain a minimum of email, given_name, and
+    family_name. (AWS terms for first name and last name respectively)
+
+
 #### Using the hosted-UI to enable tator logins via cognito
 
 If desired, a JWT login can be upgraded to a Session-based login for using the
-Tator UI. Usage of the `rest/jwt-gateway` endpoint is compatible with the API
+Tator UI. Usage of the `/jwt-gateway` endpoint is compatible with the API
 expected by the hosted UI for AWS cognito logins.
 
 Configure the app client, within the aws console, to have a callback URL of:
