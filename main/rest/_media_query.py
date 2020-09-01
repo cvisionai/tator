@@ -48,19 +48,19 @@ def get_media_queryset(project, query_params, dry_run=False):
         if section_object.lucene_search:
             bools.append({'bool': {
                 'should': [
-                    {'query_string': {'query': search}},
+                    {'query_string': {'query': section_object.lucene_search}},
                     {'has_child': {
                         'type': 'annotation',
-                        'query': {'query_string': {'query': search}},
+                        'query': {'query_string': {'query': section_object.lucene_search}},
                         },
                     },
                 ],
                 'minimum_should_match': 1,
             }})
         if section_object.media_bools:
-            bools.append(media_bools)
+            bools.append(section_object.media_bools)
         if section_object.annotation_bools:
-            annotation_bools.append(annotation_bools)
+            annotation_bools.append(section_object.annotation_bools)
 
     if md5 is not None:
         bools.append({'match': {'_md5': {'query': md5}}})
