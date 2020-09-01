@@ -11,8 +11,8 @@ Sections represent groups of media using saved queries. The queries can be in th
 of a lucene query syntax search string or a list of boolean filter queries applied to
 either media or child annotations of media.
 
-https://lucene.apache.org/core/2_9_4/queryparsersyntax.html
-https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+<https://lucene.apache.org/core/2_9_4/queryparsersyntax.html>\n
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html>
 """)
 
 class SectionListSchema(AutoSchema):
@@ -84,14 +84,13 @@ class SectionDetailSchema(AutoSchema):
         return operation
     
     def get_description(self, path, method) -> str:
-        description = ''
         if method == 'GET':
             short_desc = "Get section."
         elif method == 'PATCH':
             short_desc = "Update section."
         elif method == 'DELETE':
             short_desc = "Delete section."
-        return description
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method) -> list:
         parameters = [{
@@ -116,7 +115,7 @@ class SectionDetailSchema(AutoSchema):
                 'schema': {'$ref': '#/components/schemas/SectionSpec'},
                 'example': {
                     'name': 'New unique name',
-                    'lucene_string': 'My\\ Field:value*'
+                    'lucene_string': 'Field:value*'
                 }
             }}}
         return body
