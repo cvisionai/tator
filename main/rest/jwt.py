@@ -11,7 +11,9 @@ from ..models import User
 from ..schema import JwtGatewaySchema
 
 import requests
+import logging
 
+logger = logging.getLogger(__name__)
 
 class JwtGatewayAPI(APIView):
     """ Notional JWT login gateway """
@@ -28,6 +30,7 @@ class JwtGatewayAPI(APIView):
                                 status=status.HTTP_404_NOT_FOUND)
 
             redirect_uri = request.build_absolute_uri('?')
+            redirect_uri = redirect_uri.rstrip('/')
 
             token_resp = requests.post("https://"+settings.COGNITO_DOMAIN+"/oauth2/token",
                                        data={"grant_type": "authorization_code",
@@ -38,6 +41,9 @@ class JwtGatewayAPI(APIView):
             try:
                 aws = token_resp.json()
                 response={"aws": aws}
+                if token_resp.status_code != 200:
+                    logger.error(f"AWS returned {aws}")
+                    return Response({"aws error": aws, "status": token_resp.status_code}, status=token_resp.status_code)
                 id_token = aws['id_token']
                 validator = TokenValidator(settings.COGNITO_AWS_REGION,
                                            settings.COGNITO_USER_POOL,
