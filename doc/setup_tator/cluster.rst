@@ -658,6 +658,18 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
 .. glossary::
 
+  domain
+    The domain name that was set up earlier in this tutorial. (e.g. mysite.duckdns.org)
+    
+  redirects
+    List of redirect domains. Requests sent to these domains will be redirected to the primary domain.
+
+  tatorDebug
+    Boolean indicating whether to enable django debug mode. Should be false for production, true for development.
+
+  useMinJs
+    Boolean indicating whether to minify JavaScript code. Should be true for production, false for development.
+    
   dockerRegistry
     The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
 
@@ -666,27 +678,11 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
     This defaults to 'cvisionai' off dockerhub; but for development should be
     set to the value in :term:`dockerRegistry`
 
-  tatorDebug
-    Either "False" or "True" (with quotes) to denote whether to run django in
-    debug [Default if not specified: "False"]
-
-  useMinJs
-    Either "False" or "True" (with quotes) to denote whether to use minified
-    javascript [Default if not specified: "True"]
-
   certCron.enabled
     Enable this to enable a cron job to automatically update certificates
     periodically from LetsEncrypt. If this is not provided, the Secret objects
     tls-cert and tls-key must be created manually. See scripts/cert/selfsigned.sh 
     for an example of how to do this.
-
-  transcoderPvcSize
-    Ability to specify the size allocated to the pvc for transcoding. This can
-    limit the maximum size of an upload. [Default if not specifed: "10Gi"]
-
-  transcoderCpuLimit
-    Ability to specify the cpu limit allocated to the pvc for transcoding.
-    [Default if not specifed: "4000m"]
 
   djangoSecretKey
     A required field. You can generate an appropriate key using `<https://miniwebtool.com/django-secret-key-generator/>`_
@@ -696,26 +692,57 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
   postgresPassword
     Field that allows you to set your postgres db password (or if you are accessing an existing one, provide the password here)
+    
+  redisHost
+    Redis hostname. If the Redis subchart is enabled (the default), this should be "tator-redis-master".
+    
+  elasticsearchHost
+    Elasticsearch hostname. If the Elasticsearch subchart is enabled (the default), this should be "elasticsearch-master".
 
-  nfsServer
+  pv.nfsServer
     The IP address of the host serving the NFS shares.
 
-  loadBalancerIp
-    The external IP address of the load balancer. This is where NGINX will receive requests. For single node deployments this
-    can be the same as the IP address of the node on the LAN (e.g. 192.168.1.100). It is ideal if this is a static IP address. This
-    ip address should be within the inclusive range of :term:`metallb.ipRangeStart` and :term:`metallb.ipRangeStop`.
+  pv.path
+     Indicates the path to your NFS share.
+     
+  pv.nfsMountOptions
+     Mount options for the NFS share.
 
-  domain
-    The domain name that was set up earlier in this tutorial. (e.g. mysite.duckdns.org)
+  pvc.size
+     Indicates the size of the persistent volume corresponding to the NFS share. Thsi can be modified according to
+     available space on your NFS share.
+
+  hpa.nginxMinReplicas
+  hpa.gunicornMinReplicas
+  hpa.daphneMinReplicas
+  hpa.tusdMinReplicas
+      Indicates the minimum number of pods to scale for a given service
+
+  hpa.nginxMinReplicas
+  hpa.gunicornMinReplicas
+  hpa.daphneMinReplicas
+  hpa.tusdMinReplicas
+      Indicates the maximum number of pods to scale for a given service
+
+  hpa.nginxCpuPercent
+  hpa.gunicornCpuPercent
+  hpa.daphneCpuPercent
+  hpa.tusdCpuPercent
+      Indicates the percentage to monitor to scale a new pod for a given service
 
   metallb.enabled
-    A boolean indicating whether metallb should be installed. This should be true for bare metal but false for cloud
+    A boolean indicating whether metallb subchart should be installed. This should be true for bare metal but false for cloud
     providers as in these cases a load balancer implementation is provided.
 
   metallb.ipRangeStart
   metallb.ipRangeStop
     Indicates the range of assignable IP addresses for metallb. Make sure these do not conflict with assignable IP addresses of
     any DHCP servers on your network. Verify the selected :term:`loadBalancerIp` falls into this range
+
+  metallb.loadBalancerIp
+    The external IP address of the load balancer. This is where NGINX will receive requests. For single node deployments this
+    can be the same as the IP address of the node on the LAN (e.g. 192.168.1.100). It is ideal if this is a static IP address. This
+    ip address should be within the inclusive range of :term:`metallb.ipRangeStart` and :term:`metallb.ipRangeStop`.
 
   redis.enabled
      A boolean indicating whether redis should be enabled. On cloud providers you may wish to use a managed cache service,
@@ -729,53 +756,6 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
      Specifies the host path for the postgres data directory. This should be a path to high speed storage
      (preferably SSD) on a specific node. The node running the database should have been specified in the kubernetes
      setup step via the dbServer node label.
-
-  gunicornReplicas
-  transcoderReplicas
-  algorithmReplicas
-     Indicates the number of pod replicas for each of these services.
-
-  pv.staticPath
-  pv.uploadPath
-  pv.mediaPath
-  pv.rawPath
-  pv.backupPath
-  pv.migrationsPath
-     Indicates the location of each persistent volume.
-
-  pvc.staticSize
-  pvc.uploadSize
-  pvc.mediaSize
-  pvc.rawSize
-  pvc.backupSize
-  pvc.migrationsSize
-     Indicates the size of the persistent volumes corresponding to the NFS shares. These can be modified according to
-     available space on your NFS shares.\
-
-
-  hpa.nginxMinReplicas
-  hpa.gunicornMinReplicas
-  hpa.daphneMinReplicas
-  hpa.tusdMinReplicas
-      Indicates the minimum number of pods to scale for a given service
-
-
-  hpa.nginxMinReplicas
-  hpa.gunicornMinReplicas
-  hpa.daphneMinReplicas
-  hpa.tusdMinReplicas
-      Indicates the maximum number of pods to scale for a given service
-
-
-  hpa.nginxCpuPercent
-  hpa.gunicornCpuPercent
-  hpa.daphneCpuPercent
-  hpa.tusdCpuPercent
-      Indicates the percentage to monitor to scale a new pod for a given service
-
-
-
-
 
 
 Update your domain to access the load balancer
