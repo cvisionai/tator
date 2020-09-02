@@ -83,6 +83,16 @@ spec:
                 {{- else }}
                   value: "false"
                 {{- end }}
+                - name: DOMAIN
+                  value: {{ .domain }}
+                - name: DOMAIN_KEY
+                  value: /tmp/{{ .tlsKeyFile | default "domain.key" }}
+                - name: SIGNED_CHAIN
+                  value: /tmp/{{ .tlsCertFile | default "signed_chain.crt" }}
+                - name: KEY_SECRET_NAME
+                  value: {{ .tlsKeySecretName | default "tls-key" }}
+                - name: CERT_SECRET_NAME
+                  value: {{ .tlsCertSecretName | default "tls-cert" }}
                 - name: TRANSCODER_PVC_SIZE
                   value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
                 {{- if hasKey .Values "slackToken" }}
