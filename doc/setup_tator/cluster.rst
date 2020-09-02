@@ -9,7 +9,11 @@ distributions may also work, but steps are literal to the Ubuntu platform.
 To serve the web application to the world wide web, the tutorial  will use
 `DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app.
 Tator is configured to work over https, so a TLS certificate is required.
-`LetsEncrypt <https://letsencrypt.org>`_ will be used to get a TLS certificate.
+`LetsEncrypt <https://letsencrypt.org>`_ is used to retrieve a TLS certificate
+automatically using an HTTP 01 challenge; this requires that the deployment be
+accessible by LetsEncrypt via http on port 80. If this is not possible, the 
+Secret objects tls-cert and tls-key must be created manually. See scripts/cert.sh 
+for an example of how to do this.
 
 For hardware, you can use a single virtual machine, a single node,
 or a cluster of nodes in a local area network. Other CAs can also be used
@@ -209,8 +213,6 @@ Values file
 * Copy the example values.yaml.
 
 ``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
-
-* Copy certificate information from the generated certificate files at ``/etc/letsencrypt/live/<domain>`` into the values.yaml file.
 
 Node setup
 ==========
