@@ -55,9 +55,6 @@ class AnnotationMulti extends TatorElement {
     this._slider = document.createElement("seek-bar");
 
     this._domParents = []; //handle defered loading of video element
-    // TODO: Buffer loading
-    //this._video.addEventListener("bufferLoaded",
-    //                           this._slider.onBufferLoaded.bind(this._slider));
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
 
@@ -261,16 +258,17 @@ class AnnotationMulti extends TatorElement {
     let setup_video = (idx, video_info) => {
       this._slider.setAttribute("min", 0);
 
-      // Mute multi-video
-      this._videos[idx].setVolume(0);
       // TODO: Handle multi-video in browser somehow
       if (idx == 0)
       {
+        let prime = this._videos[idx];
         this._slider.setAttribute("max", Number(video_info.num_frames)-1);
+        // TODO handle fact we are buffering multiple videos.
+        prime.addEventListener("bufferLoaded",
+                               this._slider.onBufferLoaded.bind(this._slider));
         this._fps = video_info.fps;
         this._totalTime.textContent = "/ " + this._frameToTime(video_info.num_frames);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-        let prime = this._videos[idx];
         this.parent._browser.canvas = prime;
         prime.addEventListener("frameChange", evt => {
              const frame = evt.detail.frame;
@@ -292,6 +290,8 @@ class AnnotationMulti extends TatorElement {
       }
       this._videos[idx].loadFromVideoObject(video_info, this._quality)
       this.parent._getMetadataTypes(this, this._videos[idx]._canvas);
+      // Mute multi-video
+      this._videos[idx].setVolume(0);
 
       if (this._permission)
       {
