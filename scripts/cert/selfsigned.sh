@@ -15,7 +15,7 @@
 #   KEY_SECRET_NAME=tls-key \
 #   ./selfsigned.sh
 
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=$MAIN_HOST" -keyout $DOMAIN_KEY -out $SIGNED_CHAIN
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/CN=$DOMAIN" -keyout $DOMAIN_KEY -out $SIGNED_CHAIN
 kubectl create secret generic $CERT_SECRET_NAME \
   --from-file=$SIGNED_CHAIN --dry-run -o yaml | kubectl apply -f -
 kubectl create secret generic $KEY_SECRET_NAME \
