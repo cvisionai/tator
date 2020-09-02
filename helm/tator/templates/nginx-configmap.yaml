@@ -31,7 +31,9 @@ data:
           try_files $uri =404;
         }
 
-        return 301 https://{{ $.Values.domain }}$request_uri;
+        location / {
+          return 301 https://{{ $.Values.domain }}$request_uri;
+        }
       }
 
       {{- end }}
