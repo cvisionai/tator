@@ -12,8 +12,8 @@ Tator is configured to work over https, so a TLS certificate is required.
 `LetsEncrypt <https://letsencrypt.org>`_ is used to retrieve a TLS certificate
 automatically using an HTTP 01 challenge; this requires that the deployment be
 accessible by LetsEncrypt via http on port 80. If this is not possible, the 
-Secret objects tls-cert and tls-key must be created manually. See scripts/cert.sh 
-for an example of how to do this.
+Secret objects tls-cert and tls-key must be created manually. See 
+scripts/cert/selfsigned.sh for an example of how to do this.
 
 For hardware, you can use a single virtual machine, a single node,
 or a cluster of nodes in a local area network. Other CAs can also be used
@@ -677,8 +677,8 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   certCron.enabled
     Enable this to enable a cron job to automatically update certificates
     periodically from LetsEncrypt. If this is not provided, the Secret objects
-    tls-cert and tls-key must be created manually. See scripts/cert.sh for an
-    example of how to do this.
+    tls-cert and tls-key must be created manually. See scripts/cert/selfsigned.sh 
+    for an example of how to do this.
 
   transcoderPvcSize
     Ability to specify the size allocated to the pvc for transcoding. This can
