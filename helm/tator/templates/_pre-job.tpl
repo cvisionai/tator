@@ -56,6 +56,16 @@ spec:
               value: {{ .Values.tatorDebug | default "false" | quote }}
             - name: TATOR_USE_MIN_JS
               value: {{ .Values.useMinJs | default "true" | quote }}
+            - name: DOMAIN
+              value: {{ .domain }}
+            - name: DOMAIN_KEY
+              value: /tmp/{{ .tlsKeyFile | default domain.key }}
+            - name: SIGNED_CHAIN
+              value: /tmp/{{ .tlsCertFile | default signed_chain.crt }}
+            - name: KEY_SECRET_NAME
+              value: {{ .tlsKeySecretName | default tls-key }}
+            - name: CERT_SECRET_NAME
+              value: {{ .tlsCertSecretName | default tls-cert }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
