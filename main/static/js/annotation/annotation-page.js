@@ -153,7 +153,23 @@ class AnnotationPage extends TatorPage {
                     player._image.captureFrame(e.detail.localizations);
                   });
             } else if (type_data.dtype == "multi") {
-		window.alert("Not implemented");
+		          player = document.createElement("annotation-multi");
+              this._player = player;
+              this._player.parent = this;
+              this._player.mediaType = type_data;
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+              this._setupInitHandlers(player);
+              //this._getMetadataTypes(player, player._video._canvas);
+              //this._browser.canvas = player._video;
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._video.captureFrame(e.detail.localizations);
+                  });
 	    } else {
 		window.alert(`Unknown media type ${type_data.dtype}`)
 	    }

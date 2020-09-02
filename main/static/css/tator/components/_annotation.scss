@@ -216,6 +216,26 @@ favorite-button {
   margin-right: $spacing-2;
 }
 
+.annotation__multi-player {
+  flex-grow: 1;
+  overflow: hidden;
+  &.is-full-screen {
+    margin-right: $spacing-3;
+
+    & + .annotation__panels {
+      display: none;
+    }
+
+    .video__maximize {
+      display: none;
+    }
+
+    .video__minimize {
+      display: block;
+    }
+  }
+}
+
 .annotation__video-player {
   flex-grow: 1;
   overflow: hidden;

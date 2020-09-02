@@ -354,6 +354,7 @@ FILES = \
     annotator/image.js \
     annotation/annotation-player.js \
     annotation/annotation-image.js \
+    annotation/annotation-multi.js \
     annotation/bool-input.js \
     annotation/enum-input.js \
     annotation/text-input.js \
