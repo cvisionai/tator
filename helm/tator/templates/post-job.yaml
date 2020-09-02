@@ -18,6 +18,27 @@
 {{ include "postjob.template" $collectStaticSettings }}
 ---
 {{ if .Values.certCron.enabled }}
-{{- $letsencryptSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "letsencrypt-challenge" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "hookWeight" "2" "hook" "post-install" }}
-{{include "postjob.template" $letsencryptSettings }}
+{{- $letsencryptSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "letsencrypt-challenge" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "hookWeight" "2" "hook" "pre-install" "domain" .Values.domain }}
+{{- if hasKey .Values "tlsCertFile" }}
+{{ $_ := set $selfsignedSettings "tlsCertFile" .Values.tlsCertFile }}
+{{ end }}
+{{- if hasKey .Values "tlsKeyFile" }}
+{{ $_ := set $selfsignedSettings "tlsKeyFile" .Values.tlsKeyFile }}
+{{ end }}
+{{- if hasKey .Values "tlsCertSecretName" }}
+{{ $_ := set $selfsignedSettings "tlsCertSecretName" .Values.tlsCertSecretName }}
+{{ end }}
+{{- if hasKey .Values "tlsKeySecretName" }}
+{{ $_ := set $selfsignedSettings "tlsKeySecretName" .Values.tlsKeySecretName }}
+{{ end }}
+{{include "prejob.template" $letsencryptSettings }}
+---
+{{- if hasKey .Values "redirects" }}
+{{- range .Values.redirects }}
+{{- $letsencryptSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "letsencrypt-challenge" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/selfsigned.sh\"]" "hookWeight" "2" "hook" "pre-install" "domain" .domain "tlsCertFile" .tlsCertFile "tlsKeyFile" .tlsKeyFile "tlsCertSecretName" .tlsCertSecretName "tlsKeySecretName" .tlsKeySecretName }}
+{{include "prejob.template" $letsencryptSettings }}
+---
+{{ end }}
+{{ end }}
+{{ end }}
 {{ end }}
