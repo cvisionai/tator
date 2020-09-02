@@ -21,10 +21,19 @@ data:
       server {
         listen 80;
         listen 443;
-        server_name {{ . }};
-        ssl_certificate /ssl/signed_chain.crt;
-        ssl_certificate_key /ssl/domain.key;
-        return 301 https://{{ $.Values.domain }}$request_uri;
+        server_name {{ .domain }};
+        ssl_certificate /ssl/{{ .tlsCertFile }};
+        ssl_certificate_key /ssl/{{ .tlsKeyFile }};
+
+        # Proxy acme challenge files.
+        location /.well-known/acme-challenge/ {
+          alias /data/static/challenges/;
+          try_files $uri =404;
+        }
+
+        location / {
+          return 301 https://{{ $.Values.domain }}$request_uri;
+        }
       }
 
       {{- end }}
@@ -33,8 +42,8 @@ data:
       server {
         listen 80;
         server_name {{ .Values.domain }};
-        ssl_certificate /ssl/signed_chain.crt;
-        ssl_certificate_key /ssl/domain.key;
+        ssl_certificate /ssl/{{ .Values.tlsCertFile | default "signed_chain.crt" }};
+        ssl_certificate_key /ssl/{{ .Values.tlsKeyFile | default "domain.key" }};
 
         # Proxy acme challenge files.
         location /.well-known/acme-challenge/ {
@@ -52,8 +61,8 @@ data:
 
         server_name {{ .Values.domain }};
 
-        ssl_certificate /ssl/signed_chain.crt;
-        ssl_certificate_key /ssl/domain.key;
+        ssl_certificate /ssl/{{ .Values.tlsCertFile | default "signed_chain.crt" }};
+        ssl_certificate_key /ssl/{{ .Values.tlsKeyFile | default "domain.key" }};
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
         

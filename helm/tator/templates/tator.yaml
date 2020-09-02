@@ -30,6 +30,27 @@
 {{include "tatorCron.template" $filebeatSettings }}
 ---
 {{ if .Values.certCron.enabled }}
-{{- $certSettings := dict "Values" .Values "name" "cert-cron" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert.sh\"]" "schedule" "50 5 15 * *" }}
+{{- $certSettings := dict "Values" .Values "name" "cert-cron" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "schedule" "50 5 15 * *" "domain" .Values.domain }}
+{{- if hasKey .Values "tlsCertFile" }}
+{{ $_ := set $certSettings "tlsCertFile" .Values.tlsCertFile }}
+{{- end }}
+{{- if hasKey .Values "tlsKeyFile" }}
+{{ $_ := set $certSettings "tlsKeyFile" .Values.tlsKeyFile }}
+{{- end }}
+{{- if hasKey .Values "tlsCertSecretName" }}
+{{ $_ := set $certSettings "tlsCertSecretName" .Values.tlsCertSecretName }}
+{{- end }}
+{{- if hasKey .Values "tlsKeySecretName" }}
+{{ $_ := set $certSettings "tlsKeySecretName" .Values.tlsKeySecretName }}
+{{- end }}
 {{include "tatorCron.template" $certSettings }}
+---
+{{- if hasKey .Values "redirects" }}
+{{- range .Values.redirects }}
+{{- $name := printf "cert-cron-%s" .tlsKeySecretName }}
+{{- $certSettings := dict "Values" $.Values "name" $name "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "schedule" "50 5 16 * *" "domain" .domain "tlsCertFile" .tlsCertFile "tlsKeyFile" .tlsKeyFile "tlsCertSecretName" .tlsCertSecretName "tlsKeySecretName" .tlsKeySecretName }}
+{{include "tatorCron.template" $certSettings }}
+---
+{{ end }}
+{{ end }}
 {{ end }}
