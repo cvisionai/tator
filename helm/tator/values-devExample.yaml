@@ -1,8 +1,15 @@
 domain: your.domain.com
 # Requests for these domains will be redirected to the actual domain.
 redirects:
-  - other.domain.com
-  - other.domain1.com
+  - domain: mysite.duckdns.org
+    # Key filename that will be used in secret for this domain.
+    tlsKeyFile: mysite_key.key
+    # Cert filename that will be used in secret for this domain.
+    tlsCertFile: mysite_cert.crt
+    # Key secret name that will be used in secret for this domain.
+    tlsKeySecretName: mysite-tls-key
+    # Cert secret name that will be used in secret for this domain.
+    tlsCertSecretName: mysite-tls-cert
 # Enables debug mode for gunicorn. Do NOT enable this in production.
 tatorDebug: true
 # Enables javascript minification.
