@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .name }}-job"
+  name: "{{ .name }}-{{ .tlsKeySecretName | default "tls-key" }}-job"
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -59,13 +59,13 @@ spec:
             - name: DOMAIN
               value: {{ .domain }}
             - name: DOMAIN_KEY
-              value: /tmp/{{ .tlsKeyFile | default domain.key }}
+              value: /tmp/{{ .tlsKeyFile | default "domain.key" }}
             - name: SIGNED_CHAIN
-              value: /tmp/{{ .tlsCertFile | default signed_chain.crt }}
+              value: /tmp/{{ .tlsCertFile | default "signed_chain.crt" }}
             - name: KEY_SECRET_NAME
-              value: {{ .tlsKeySecretName | default tls-key }}
+              value: {{ .tlsKeySecretName | default "tls-key" }}
             - name: CERT_SECRET_NAME
-              value: {{ .tlsCertSecretName | default tls-cert }}
+              value: {{ .tlsCertSecretName | default "tls-cert" }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:

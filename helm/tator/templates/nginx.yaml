@@ -38,14 +38,14 @@ spec:
               subPath: nginx.conf
               readOnly: true
               name: nginx-conf
-            - mountPath: /ssl/{{ .Values.tlsCertFile | default signed_chain.crt }}
-              subPath: {{ .Values.tlsCertFile | default signed_chain.crt }}
+            - mountPath: /ssl/{{ .Values.tlsCertFile | default "signed_chain.crt" }}
+              subPath: {{ .Values.tlsCertFile | default "signed_chain.crt" }}
               readOnly: true
-              name: {{ .Values.tlsCertSecretName | default tls-cert }}
-            - mountPath: /ssl/{{ .Values.tlsKeyFile | default domain.key }}
-              subPath: {{ .Values.tlsKeyFile | default domain.key }}
+              name: {{ .Values.tlsCertSecretName | default "tls-cert" }}
+            - mountPath: /ssl/{{ .Values.tlsKeyFile | default "domain.key" }}
+              subPath: {{ .Values.tlsKeyFile | default "domain.key" }}
               readOnly: true
-              name: {{ .Values.tlsKeySecretName | default tls-key }}
+              name: {{ .Values.tlsKeySecretName | default "tls-key" }}
             {{- if hasKey .Values "redirects" }}
             {{- range .Values.redirects }}
             - mountPath: /ssl/{{ .tlsCertFile }}
@@ -71,18 +71,18 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-conf
-        - name: {{ .Values.tlsCertSecretName | default tls-cert }}
+        - name: {{ .Values.tlsCertSecretName | default "tls-cert" }}
           secret:
-            secretName: {{ .Values.tlsCertSecretName | default tls-cert }}
+            secretName: {{ .Values.tlsCertSecretName | default "tls-cert" }}
             items:
-              - key: {{ .Values.tlsCertFile | default signed_chain.crt }}
-                path: {{ .Values.tlsCertFile | default signed_chain.crt }}
-        - name: {{ .Values.tlsKeySecretName | default tls-key }}
+              - key: {{ .Values.tlsCertFile | default "signed_chain.crt" }}
+                path: {{ .Values.tlsCertFile | default "signed_chain.crt" }}
+        - name: {{ .Values.tlsKeySecretName | default "tls-key" }}
           secret:
-            secretName: {{ .Values.tlsKeySecretName | default tls-key }}
+            secretName: {{ .Values.tlsKeySecretName | default "tls-key" }}
             items:
-              - key: {{ .Values.tlsKeyFile | default domain.key }}
-                path: {{ .Values.tlsKeyFile | default domain.key }}
+              - key: {{ .Values.tlsKeyFile | default "domain.key" }}
+                path: {{ .Values.tlsKeyFile | default "domain.key" }}
         {{- if hasKey .Values "redirects" }}
         {{- range .Values.redirects }}
         - name: {{ .tlsCertSecretName }}
