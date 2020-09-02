@@ -242,3 +242,72 @@ def clearOldFilebeatIndices():
         if delta.days > 7:
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
+
+
+def hard_link_media(source, section_list, dest):
+    dest_proj = Project.objects.get(pk=dest)
+    dest_type = MediaType.objects.filter(project=dest_proj,dtype="video")[0]
+    for section in section_list:
+        original_videos=Media.objects.filter(project=source, attributes__tator_user_sections=section)
+        print(f"copying {original_videos.count()} {source}:{section} to {dest}")
+        for video in original_videos:
+            new_obj=video
+            new_obj.pk=None
+            new_obj.project = dest_proj
+            new_obj.meta=dest_type
+            originals = new_obj.media_files["archival"]
+            for idx,orig in enumerate(originals):
+                name=os.path.basename(orig['path'])
+                new_path=os.path.join("/data/raw", str(dest), name)
+                try:
+                    os.link(orig['path'], new_path)
+                except Exception as e:
+                    print("Already copied")
+                new_obj.media_files["archival"][idx]['path']=new_path
+            streaming = new_obj.media_files["streaming"]
+            for idx,stream in enumerate(streaming):
+                name=os.path.basename(stream['path'])
+                new_path=os.path.join("media", str(dest), name)
+                try:
+                    if os.path.isabs(stream['path']):
+                        source=f"/data{stream['path']}"
+                    else:
+                        source=os.path.join("/data", stream['path'])
+                    os.link(source, os.path.join('/data',new_path))
+                except Exception as e:
+                    print(f"Already copied {e}")
+                new_obj.media_files["streaming"][idx]['path']="/"+new_path
+                name=os.path.basename(stream['segment_info'])
+                new_path=os.path.join("media", str(dest), name)
+                try:
+                    if os.path.isabs(stream['segment_info']):
+                        source=f"/data{stream['segment_info']}"
+                    else:
+                        source=os.path.join("/data", stream['segment_info'])
+                    os.link(source, os.path.join('/data',new_path))
+                except Exception as e:
+                    print(f"Already copied {e}")
+                new_obj.media_files["streaming"][idx]['segment_info']=new_path
+
+            #Handle thumbnail
+            orig_thumb = new_obj.thumbnail.name
+            name = os.path.basename(orig_thumb)
+            orig_thumb_path = os.path.join("/data/media", orig_thumb)
+            new_thumb = os.path.join("/data/media/",str(dest), name)
+            try:
+                os.link(orig_thumb_path, new_thumb)
+            except Exception as e:
+                print(f"Already copied thumbnail {e}")
+            new_obj.thumbnail = os.path.join(str(dest),name)
+
+            rig_thumb = new_obj.thumbnail_gif.name
+            name = os.path.basename(orig_thumb)
+            orig_thumb_path = os.path.join("/data/media", orig_thumb)
+            new_thumb = os.path.join("/data/media/",str(dest), name)
+            try:
+                os.link(orig_thumb_path, new_thumb)
+            except Exception as e:
+                print(f"Already copied thumbnail {e}")
+            new_obj.thumbnail_gif = os.path.join(str(dest),name)
+
+            new_obj.save()
