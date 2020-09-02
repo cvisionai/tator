@@ -24,6 +24,13 @@ data:
         server_name {{ .domain }};
         ssl_certificate /ssl/{{ .tlsCertFile }};
         ssl_certificate_key /ssl/{{ .tlsKeyFile }};
+
+        # Proxy acme challenge files.
+        location /.well-known/acme-challenge/ {
+          alias /data/static/challenges/;
+          try_files $uri =404;
+        }
+
         return 301 https://{{ $.Values.domain }}$request_uri;
       }
 
