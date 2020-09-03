@@ -201,7 +201,9 @@ data:
           proxy_set_header Tus-Version 1.0.0;
           proxy_set_header Tus-Resumable 1.0.0;
           proxy_set_header X-Forwarded-Host $host;
+          {{- if .Values.requireHttps }} 
           proxy_set_header X-Forwarded-Proto https;
+          {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
           proxy_pass http://tusd-svc:1080/files/;
