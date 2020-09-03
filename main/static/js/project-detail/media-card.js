@@ -212,13 +212,23 @@ class MediaCard extends TatorElement {
 
   set media(val) {
     this._media = val;
-    this._more.media = val;
-    let project = val.project;
-    if(typeof(val.project) == "undefined") {
-      project = val.project_id;
+    if (this._media.file == '' &&
+        (this._media.media_files && !('streaming' in this._media.media_files)))
+    {
+      this._li.style.opacity = 0.35;
+      this._li.style.cursor = "not-allowed";
+      this._link.style.cursor = "not-allowed";
     }
-    var uri = encodeURI(`/${project}/annotation/${val.id}${this._mediaFilter()}`);
-    this._link.setAttribute("href", uri);
+    else
+    {
+      this._more.media = val;
+      let project = val.project;
+      if(typeof(val.project) == "undefined") {
+        project = val.project_id;
+      }
+      var uri = encodeURI(`/${project}/annotation/${val.id}${this._mediaFilter()}`);
+      this._link.setAttribute("href", uri);
+    }
   }
 
   get media() {
