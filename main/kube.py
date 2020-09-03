@@ -108,7 +108,7 @@ class TatorTranscode(JobManagerMixin):
         if host:
             conf = Configuration()
             conf.api_key['authorization'] = token
-            conf.host = f'{proto}{host}:{port}'
+            conf.host = f'{PROTO}{host}:{port}'
             conf.verify_ssl = True
             conf.ssl_ca_cert = cert
             api_client = ApiClient(conf)
@@ -724,9 +724,9 @@ class TatorTranscode(JobManagerMixin):
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
-                       'host': f'{proto}{os.getenv("MAIN_HOST")}',
-                       'rest_url': f'{proto}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{proto}{os.getenv("MAIN_HOST")}/files/',
+                       'host': f'{PROTO}{os.getenv("MAIN_HOST")}',
+                       'rest_url': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
+                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
                        'project' : str(project),
                        'token' : str(token),
                        'section' : section,
@@ -814,9 +814,9 @@ class TatorTranscode(JobManagerMixin):
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         global_args = {'upload_name': name,
-                       'host' : f'{proto}{os.getenv("MAIN_HOST")}',
-                       'rest_url' : f'{proto}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{proto}{os.getenv("MAIN_HOST")}/files/',
+                       'host' : f'{PROTO}{os.getenv("MAIN_HOST")}',
+                       'rest_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
+                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
                        'token' : str(token),
                        'project' : str(project),
                        'section' : section,
@@ -894,7 +894,7 @@ class TatorAlgorithm(JobManagerMixin):
                 f.write(alg.cluster.cert)
             conf = Configuration()
             conf.api_key['authorization'] = token
-            conf.host = f'{proto}{host}:{port}'
+            conf.host = f'{PROTO}{host}:{port}'
             conf.verify_ssl = True
             conf.ssl_ca_cert = cert
             api_client = ApiClient(conf)
@@ -954,13 +954,13 @@ class TatorAlgorithm(JobManagerMixin):
                 'value': uid,
             }, {
                 'name': 'rest_url',
-                'value': f'{proto}{os.getenv("MAIN_HOST")}/rest',
+                'value': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
             }, {
                 'name': 'rest_token',
                 'value': str(token),
             }, {
                 'name': 'tus_url',
-                'value': f'{proto}{os.getenv("MAIN_HOST")}/files/',
+                'value': f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
             }, {
                 'name': 'project_id',
                 'value': str(project),
@@ -977,7 +977,7 @@ class TatorAlgorithm(JobManagerMixin):
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',
-                        '--host', f'{proto}{os.getenv("MAIN_HOST")}',
+                        '--host', f'{PROTO}{os.getenv("MAIN_HOST")}',
                         '--token', str(token),
                         '--project', str(project),
                         '--job_type', 'algorithm',
@@ -1006,7 +1006,7 @@ class TatorAlgorithm(JobManagerMixin):
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',
-                        '--host', f'{proto}{os.getenv("MAIN_HOST")}',
+                        '--host', f'{PROTO}{os.getenv("MAIN_HOST")}',
                         '--token', str(token),
                         '--project', str(project),
                         '--job_type', 'algorithm',
@@ -1103,7 +1103,7 @@ class TatorMove:
             specifying the source and destination paths respectively.
         :param media_files: Used to call the Media PATCH endpoint video/audio definitions.
         """
-        host = f"{proto}{os.getenv('MAIN_HOST')}"
+        host = f"{PROTO}{os.getenv('MAIN_HOST')}"
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
 
         # Set up media update object
