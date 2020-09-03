@@ -30,6 +30,7 @@ Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
    Administrative Functions <administration/admin.md>
    Utilizing an AWS deployment <aws.md>
    Media Management <usage/media_management.rst>
+   Using HTTPS <https.rst>
 
 Python API
 ++++++++++

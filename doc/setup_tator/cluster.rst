@@ -6,14 +6,8 @@ you should be able to open Tator in your browser. The tutorial is assuming you
 are starting with a fresh (or near fresh) install of Ubuntu Linux 20.04. Other
 distributions may also work, but steps are literal to the Ubuntu platform.
 
-To serve the web application to the world wide web, the tutorial  will use
+To serve the web application, the tutorial  will use
 `DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app.
-Tator is configured to work over https, so a TLS certificate is required.
-`LetsEncrypt <https://letsencrypt.org>`_ is used to retrieve a TLS certificate
-automatically using an HTTP 01 challenge; this requires that the deployment be
-accessible by LetsEncrypt via http on port 80. If this is not possible, the 
-Secret objects tls-cert and tls-key must be created manually. See 
-scripts/cert/selfsigned.sh for an example of how to do this.
 
 For hardware, you can use a single virtual machine, a single node,
 or a cluster of nodes in a local area network. Other CAs can also be used
@@ -111,7 +105,7 @@ NFS and other standard packages
 Install Docker
 ^^^^^^^^^^^^^^
 
-* Install docker on each node. Make sure it is version 18.09.8
+* Install docker on each node. Make sure it is version 19.03.12
 
 .. code-block:: bash
    :linenos:
@@ -194,6 +188,16 @@ To build Tator you will need Helm 3 somewhere on your path.
 * Add the executable to your PATH in bashrc:
 
 ``export PATH=$HOME/linux-amd64:$PATH``
+
+Get a domain from DuckDNS
+=========================
+
+* Navigate to `DuckDNS <http://www.duckdns.org/>`_ to setup domain.
+* Choose a login method and log in.
+* Type in a subdomain (for example, mydomain.duckdns.org). This is the address you will use to access Tator from your browser.
+* Click "Add domain".
+
+
 
 Clone the Tator repository
 ==========================
