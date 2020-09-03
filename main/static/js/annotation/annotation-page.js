@@ -81,6 +81,13 @@ class AnnotationPage extends TatorPage {
         })
         .then(response => response.json())
         .then(data => {
+          if (data.file == '' &&
+              (data.media_files && !('streaming' in data.media_files)))
+          {
+            this._shadow.removeChild(this._loading);
+            window.alert("No streaming files available.")
+            return;
+          }
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._breadcrumbs.setAttribute("section-name", data.attributes.tator_user_sections);
           this._browser.mediaInfo = data;
