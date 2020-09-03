@@ -85,6 +85,7 @@ class AnnotationPage extends TatorPage {
               (data.media_files && !('streaming' in data.media_files)))
           {
             this._shadow.removeChild(this._loading);
+            Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
           }
