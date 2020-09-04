@@ -136,10 +136,13 @@ class UndoBuffer extends HTMLElement {
           // This was an original annotation, patch the original and post
           // an edited one.
           const listUri = UndoBuffer.detailToList[detailUri];
+          let postObj = {
+            ...data, ...data.attributes, ...original, ...other, modified: false,
+          };
+          delete postObj.attributes;
+          delete postObj.thumbnail_image;
           this._forwardOps.push([
-            ["POST", listUri, projectId, {
-              ...data, ...data.attributes, ...original, ...other, modified: false,
-            }],
+            ["POST", listUri, projectId, postObj],
             ["PATCH", detailUri, id, {...body, modified: true}],
           ]);
           this._backwardOps.push([
