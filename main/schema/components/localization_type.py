@@ -23,6 +23,11 @@ localization_type_properties = {
         'description': 'Whether this type should be displayed in the UI.',
         'default': True,
     },
+    'grouping_default': {
+        'type': 'boolean',
+        'description': 'Whether to group elements in the UI by default.',
+        'default': True,
+    },
     'attribute_types': {
         'description': 'Attribute type definitions.',
         'type': 'array',
@@ -57,6 +62,7 @@ localization_type_update = {
         'colorMap': localization_type_properties['colorMap'],
         'line_width': localization_type_properties['line_width'],
         'visible': localization_type_properties['visible'],
+        'grouping_default': localization_type_properties['grouping_default'],
     },
 }
 

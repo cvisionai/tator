@@ -45,6 +45,15 @@ class EntityBrowser extends TatorElement {
     this._search = document.createElement("annotation-search");
     searchDiv.appendChild(this._search);
 
+    const groupDiv = document.createElement("div");
+    spacer.appendChild(groupDiv);
+
+    this._group = document.createElement("bool-input");
+    this._group.setAttribute("name", "Grouping");
+    this._group.setAttribute("off-text", "Off");
+    this._group.setAttribute("on-text", "On");
+    groupDiv.appendChild(this._group);
+
     this._ul = document.createElement("ul");
     this._ul.setAttribute("class", "annotation__entities f2");
     div.appendChild(this._ul);
@@ -86,143 +95,154 @@ class EntityBrowser extends TatorElement {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
       if (evt.detail.typeObj.id === this._dataType.id) {
-        let groups;
-        if (this._identifier) {
-          const key = this._identifier.name;
-          groups = evt.detail.data.reduce((sec, obj) => {
-            (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(obj);
-            return sec;
-          }, {});
-        } else {
-          groups = {};
-          if (evt.detail.data.length > 0) {
-            const key = "All " + this._title.textContent;
-            groups[key] = evt.detail.data;
-          }
-        }
-        for (const group in groups) {
-          if (this._dataType.isLocalization) {
-            groups[group].sort((item_a, item_b) => {
-              if (item_a.frame === item_b.frame) {
-                return item_a.id - item_b.id;
-              }
-              return item_a.frame - item_b.frame;
-            });
-          } else if (this._dataType.isTrack) {
-            groups[group].sort((item_a, item_b) => {
-              if (item_a.segments[0][0] == item_b.segments[0][0]) {
-                return item_a.id - item_b.id;
-              }
-              return item_a.segments[0][0] - item_b.segments[0][0];
-            });
-          } else {
-            groups[group].sort((item_a, item_b) => {
-              if (item_a.frame === item_b.frame) {
-                return item_a.id - item_b.id;
-              }
-              return item_a.frame - item_b.frame;
-            });
-          }
-          if (group in this._selectors) {
-            const selector = this._selectors[group];
-            selector.update(groups[group]);
-          } else {
-            const li = document.createElement("li");
-            this._ul.appendChild(li);
-
-            const selector = document.createElement("entity-selector");
-            selector.canvas = this._canvas;
-            selector.permission = this._permission;
-            selector.setAttribute("name", group);
-            selector.dataType = this._dataType;
-            selector.undoBuffer = this._undo;
-            selector.update(groups[group]);
-            li.appendChild(selector);
-            this._selectors[group] = selector;
-
-            if (!this._dataType.isTLState) {
-              const attributes = document.createElement("attribute-panel");
-              attributes.dataType = evt.detail.typeObj;
-              if (typeof this._permission !== "undefined") {
-                attributes.permission = this._permission;
-              }
-              attributes.setAttribute("in-entity-browser", "");
-              li.appendChild(attributes);
-              this._attributes[group] = attributes;
-
-              attributes.addEventListener("focus", () => {
-                document.body.classList.add("tab-disabled");
-              });
-
-              attributes.addEventListener("blur", () => {
-                document.body.classList.remove("tab-disabled");
-              });
-
-              attributes.addEventListener("change", () => {
-                const values = attributes.getValues();
-                if (values !== null) {
-                  let endpoint;
-                  if (this._dataType.isLocalization) {
-                    endpoint = "Localization";
-                  } else {
-                    endpoint = "State";
-                  }
-                  const id = selector.data.id;
-                  if (selector.data.version != this._data.getVersion().id)
-                  {
-                    let tweakedObj = Object.assign({}, selector.data);
-                    delete tweakedObj.version;
-                    tweakedObj.attributes = values;
-                    this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
-                    document.body.classList.remove("shortcuts-disabled");
-                  }
-                  else
-                  {
-                    this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
-                  }
-                  this.dispatchEvent(new CustomEvent("save", {
-                    detail: this._values
-                  }));
-                }
-              });
-
-              selector.addEventListener("select", evt => {
-                attributes.setValues(evt.detail.data);
-              });
-            };
-
-            selector.addEventListener("open", () => {
-              li.classList.add("is-open");
-              this._closeBesides(selector);
-              selector.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-                inline: "start",
-              });
-            });
-
-            selector.addEventListener("close", () => {
-              li.classList.remove("is-open");
-            });
-          }
-        }
-        for (const group in this._selectors) {
-          if (!(group in groups)) {
-            const li = this._selectors[group].parentNode;
-            this._ul.removeChild(li);
-            delete this._selectors[group];
-            delete this._attributes[group];
-          }
-        }
+        this._group.setValue(this._dataType.grouping_default);
+        this._evt = evt;
+        this._drawControls();
       }
     });
     this._search.addEventListener("filterAnnotations", evt => {
       this._data.updateType(this._dataType, null, evt.detail.query);
     });
+    this._group.addEventListener("change", evt => {
+      this._drawControls();
+    });
   }
 
   set canvas(obj) {
     this._canvas = obj;
+  }
+
+ 
+  _drawControls() {
+    const evt = this._evt; 
+    let groups;
+    if (this._identifier && this._group.getValue()) {
+      const key = this._identifier.name;
+      groups = evt.detail.data.reduce((sec, obj) => {
+        (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(obj);
+        return sec;
+      }, {});
+    } else {
+      groups = {};
+      if (evt.detail.data.length > 0) {
+        const key = "All " + this._title.textContent;
+        groups[key] = evt.detail.data;
+      }
+    }
+    for (const group in groups) {
+      if (this._dataType.isLocalization) {
+        groups[group].sort((item_a, item_b) => {
+          if (item_a.frame === item_b.frame) {
+            return item_a.id - item_b.id;
+          }
+          return item_a.frame - item_b.frame;
+        });
+      } else if (this._dataType.isTrack) {
+        groups[group].sort((item_a, item_b) => {
+          if (item_a.segments[0][0] == item_b.segments[0][0]) {
+            return item_a.id - item_b.id;
+          }
+          return item_a.segments[0][0] - item_b.segments[0][0];
+        });
+      } else {
+        groups[group].sort((item_a, item_b) => {
+          if (item_a.frame === item_b.frame) {
+            return item_a.id - item_b.id;
+          }
+          return item_a.frame - item_b.frame;
+        });
+      }
+      if (group in this._selectors) {
+        const selector = this._selectors[group];
+        selector.update(groups[group]);
+      } else {
+        const li = document.createElement("li");
+        this._ul.appendChild(li);
+
+        const selector = document.createElement("entity-selector");
+        selector.canvas = this._canvas;
+        selector.permission = this._permission;
+        selector.setAttribute("name", group);
+        selector.dataType = this._dataType;
+        selector.undoBuffer = this._undo;
+        selector.update(groups[group]);
+        li.appendChild(selector);
+        this._selectors[group] = selector;
+
+        if (!this._dataType.isTLState) {
+          const attributes = document.createElement("attribute-panel");
+          attributes.dataType = evt.detail.typeObj;
+          if (typeof this._permission !== "undefined") {
+            attributes.permission = this._permission;
+          }
+          attributes.setAttribute("in-entity-browser", "");
+          li.appendChild(attributes);
+          this._attributes[group] = attributes;
+
+          attributes.addEventListener("focus", () => {
+            document.body.classList.add("tab-disabled");
+          });
+
+          attributes.addEventListener("blur", () => {
+            document.body.classList.remove("tab-disabled");
+          });
+
+          attributes.addEventListener("change", () => {
+            const values = attributes.getValues();
+            if (values !== null) {
+              let endpoint;
+              if (this._dataType.isLocalization) {
+                endpoint = "Localization";
+              } else {
+                endpoint = "State";
+              }
+              const id = selector.data.id;
+              if (selector.data.version != this._data.getVersion().id)
+              {
+                let tweakedObj = Object.assign({}, selector.data);
+                delete tweakedObj.version;
+                tweakedObj.attributes = values;
+                this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
+                document.body.classList.remove("shortcuts-disabled");
+              }
+              else
+              {
+                this._undo.patch(endpoint, id, {"attributes": values}, this._dataType);
+              }
+              this.dispatchEvent(new CustomEvent("save", {
+                detail: this._values
+              }));
+            }
+          });
+
+          selector.addEventListener("select", evt => {
+            attributes.setValues(evt.detail.data);
+          });
+        };
+
+        selector.addEventListener("open", () => {
+          li.classList.add("is-open");
+          this._closeBesides(selector);
+          selector.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "start",
+          });
+        });
+
+        selector.addEventListener("close", () => {
+          li.classList.remove("is-open");
+        });
+      }
+    }
+    for (const group in this._selectors) {
+      if (!(group in groups)) {
+        const li = this._selectors[group].parentNode;
+        this._ul.removeChild(li);
+        delete this._selectors[group];
+        delete this._attributes[group];
+      }
+    }
   }
 
   selectEntity(obj) {
