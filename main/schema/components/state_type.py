@@ -12,6 +12,11 @@ state_type_properties = {
         'type': 'string',
         'enum': ['Media', 'Frame', 'Localization'],
     },
+    'grouping_default': {
+        'type': 'boolean',
+        'description': 'Whether to group elements in the UI by default.',
+        'default': True,
+    },
     'attribute_types': {
         'description': 'Attribute type definitions.',
         'type': 'array',
@@ -41,6 +46,7 @@ state_type_update = {
     'properties': {
         'name': state_type_properties['name'],
         'description': state_type_properties['description'],
+        'grouping_default': localization_type_properties['grouping_default'],
     },
 }
 
