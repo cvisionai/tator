@@ -57,8 +57,8 @@ state_type_update = {
     'properties': {
         'name': state_type_properties['name'],
         'description': state_type_properties['description'],
-        'visible': localization_type_properties['visible'],
-        'grouping_default': localization_type_properties['grouping_default'],
+        'visible': state_type_properties['visible'],
+        'grouping_default': state_type_properties['grouping_default'],
     },
 }
 
