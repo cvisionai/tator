@@ -247,7 +247,7 @@ class EntityBrowser extends TatorElement {
 
   selectEntity(obj) {
     let group;
-    if (this._identifier) {
+    if (this._identifier && this._group.getValue()) {
       group = obj.attributes[this._identifier.name];
     } else {
       group = "All " + this._title.textContent;
