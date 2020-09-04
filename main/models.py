@@ -396,6 +396,8 @@ class LocalizationType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
+    grouping_default = BooleanField(default=True)
+    """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
     colorMap = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
@@ -437,6 +439,8 @@ class StateType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
+    grouping_default = BooleanField(default=True)
+    """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
     interpolation = CharField(max_length=16,
                               choices=[('none', 'none'), ('latest', 'latest')],
