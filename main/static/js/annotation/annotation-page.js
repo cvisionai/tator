@@ -82,7 +82,9 @@ class AnnotationPage extends TatorPage {
         .then(response => response.json())
         .then(data => {
           if (data.file == '' &&
-              (data.media_files && !('streaming' in data.media_files)))
+              (data.media_files == null ||
+               (data.media_files &&
+                !('streaming' in data.media_files))))
           {
             this._shadow.removeChild(this._loading);
             Utilities.sendNotification(`Unplayable file ${data.id}`);
