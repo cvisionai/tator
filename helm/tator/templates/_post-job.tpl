@@ -71,6 +71,12 @@ spec:
               value: {{ .Values.tatorDebug | default "false" | quote }}
             - name: TATOR_USE_MIN_JS
               value: {{ .Values.useMinJs | default "true" | quote }}
+            - name: REQUIRE_HTTPS
+              {{- if .Values.requireHttps }}
+              value: "TRUE"
+              {{- else }}
+              value: "FALSE"
+              {{- end }}
             - name: DOMAIN
               value: {{ .domain }}
             - name: DOMAIN_KEY

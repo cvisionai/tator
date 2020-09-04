@@ -23,6 +23,8 @@ elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
+# Enable this to require HTTPS. Be sure to set true for production deployments!
+requireHttps: true
 certCron:
   # Enable this to enable a cron job to automatically update certificates
   # periodically from LetsEncrypt. If this is not provided, the Secret objects

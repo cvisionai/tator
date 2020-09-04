@@ -38,6 +38,7 @@ spec:
               subPath: nginx.conf
               readOnly: true
               name: nginx-conf
+            {{- if .Values.requireHttps }}
             - mountPath: /ssl/{{ .Values.tlsCertFile | default "signed_chain.crt" }}
               subPath: {{ .Values.tlsCertFile | default "signed_chain.crt" }}
               readOnly: true
@@ -58,6 +59,7 @@ spec:
               name: {{ .tlsKeySecretName }}
             {{- end }}
             {{- end }}
+            {{- end }}
             - mountPath: /data/static
               name: main-pv-claim
               subPath: static
@@ -71,6 +73,7 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-conf
+        {{- if .Values.requireHttps }}
         - name: {{ .Values.tlsCertSecretName | default "tls-cert" }}
           secret:
             secretName: {{ .Values.tlsCertSecretName | default "tls-cert" }}
@@ -97,6 +100,7 @@ spec:
             items:
               - key: {{ .tlsKeyFile }}
                 path: {{ .tlsKeyFile }}
+        {{- end }}
         {{- end }}
         {{- end }}
         - name: main-pv-claim

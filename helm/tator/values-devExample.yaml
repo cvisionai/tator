@@ -30,12 +30,13 @@ dockerRegistry: "localhost:5000"
 systemImageRepo: "localhost:5000"
 slackToken: "<Your slack API token>" # Optional, for slack notifications
 slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
+# Enable this to require HTTPS. Be sure to set true for production deployments!
+requireHttps: false
 certCron:
   # Enable this to enable a cron job to automatically update certificates
   # periodically from LetsEncrypt. If this is not provided, the Secret objects
-  # tls-cert and tls-key must be created manually. See scripts/cert.sh for an
-  # example of how to do this.
-  enabled: true
+  # tls-cert and tls-key must be created manually.
+  enabled: false
 pv:
   enabled: true
   nfsServer: "192.168.1.114"

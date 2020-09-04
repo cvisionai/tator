@@ -81,6 +81,12 @@ spec:
             {{- else }}
               value: "false"
             {{- end }}
+            - name: REQUIRE_HTTPS
+              {{- if .Values.requireHttps }}
+              value: "TRUE"
+              {{- else }}
+              value: "FALSE"
+              {{- end }}
             - name: TRANSCODER_PVC_SIZE
               value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
             - name: TRANSCODER_CPU_LIMIT

@@ -20,8 +20,11 @@ data:
 
       server {
         listen 80;
+        {{- if $.Values.requireHttps }}
         listen 443;
+        {{- end }}
         server_name {{ .domain }};
+        {{- if $.Values.requireHttps }}
         ssl_certificate /ssl/{{ .tlsCertFile }};
         ssl_certificate_key /ssl/{{ .tlsKeyFile }};
 
@@ -30,15 +33,21 @@ data:
           alias /data/static/challenges/;
           try_files $uri =404;
         }
+        {{- end }}
 
         location / {
+          {{- if $.Values.requireHttps }}
           return 301 https://{{ $.Values.domain }}$request_uri;
+          {{- else }}
+          return 301 http://{{ $.Values.domain }}$request_uri;
+          {{- end }}
         }
       }
 
       {{- end }}
       {{- end }}
 
+      {{- if .Values.requireHttps }}
       server {
         listen 80;
         server_name {{ .Values.domain }};
@@ -55,16 +64,23 @@ data:
           return 301 https://{{ .Values.domain }}$request_uri;
         }
       }
+      {{- end }}
 
       server {
+        {{- if .Values.requireHttps }}
         listen 443 ssl http2;
+        {{- else }}
+        listen 80;
+        {{- end }}
 
         server_name {{ .Values.domain }};
 
+        {{- if .Values.requireHttps }}
         ssl_certificate /ssl/{{ .Values.tlsCertFile | default "signed_chain.crt" }};
         ssl_certificate_key /ssl/{{ .Values.tlsKeyFile | default "domain.key" }};
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
+        {{- end }}
         
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log;
@@ -174,14 +190,20 @@ data:
           proxy_http_version 1.1;
         }  
         location /files/ {
+          {{- if .Values.requireHttps }} 
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
+          {{- else }}
+          proxy_redirect http://$hostname/ http://{{ .Values.domain }}/;
+          {{- end }}
           proxy_request_buffering off;
           proxy_buffering off;
           proxy_http_version 1.1;
           proxy_set_header Tus-Version 1.0.0;
           proxy_set_header Tus-Resumable 1.0.0;
           proxy_set_header X-Forwarded-Host $host;
+          {{- if .Values.requireHttps }} 
           proxy_set_header X-Forwarded-Proto https;
+          {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
           proxy_pass http://tusd-svc:1080/files/;
@@ -240,7 +262,9 @@ data:
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Host $server_name;
+          {{- if .Values.requireHttps }}
           proxy_set_header X-Forwarded-Proto https;
+          {{- end }}
           add_header Cache-Control "max-age=0, must-revalidate";
 
           gzip on;

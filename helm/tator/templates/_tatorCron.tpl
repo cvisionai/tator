@@ -83,6 +83,12 @@ spec:
                 {{- else }}
                   value: "false"
                 {{- end }}
+                - name: REQUIRE_HTTPS
+                  {{- if .Values.requireHttps }}
+                  value: "TRUE"
+                  {{- else }}
+                  value: "FALSE"
+                  {{- end }}
                 - name: DOMAIN
                   value: {{ .domain }}
                 - name: DOMAIN_KEY
