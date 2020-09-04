@@ -12,6 +12,16 @@ state_type_properties = {
         'type': 'string',
         'enum': ['Media', 'Frame', 'Localization'],
     },
+    'interpolation': {
+        'type': 'string',
+        'description': 'Interpolation method used by the web interface.',
+        'default': 'latest',
+        'enum': ['none', 'latest'],
+    },
+    'visible': {
+        'type': 'boolean',
+        'description': 'Whether this state type should be displayed.',
+    },
     'grouping_default': {
         'type': 'boolean',
         'description': 'Whether to group elements in the UI by default.',
@@ -37,6 +47,7 @@ state_type_spec = {
                 'type': 'integer',
                 'minimum': 1,
             },
+            'minItems': 1,
         },
     },
 }
@@ -46,6 +57,7 @@ state_type_update = {
     'properties': {
         'name': state_type_properties['name'],
         'description': state_type_properties['description'],
+        'visible': localization_type_properties['visible'],
         'grouping_default': localization_type_properties['grouping_default'],
     },
 }
@@ -75,16 +87,6 @@ state_type = {
                 'type': 'integer',
                 'minimum': 1,
             },
-        },
-        'interpolation': {
-            'type': 'string',
-            'description': 'Interpolation method used by the web interface.',
-            'default': 'latest',
-            'enum': ['none', 'latest'],
-        },
-        'visible': {
-            'type': 'boolean',
-            'description': 'Whether this state type should be displayed.',
         },
         **state_type_properties,
     },
