@@ -14,7 +14,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'colorMap', 'line_width', 'visible']
+          'colorMap', 'line_width', 'visible', 'grouping_default']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
@@ -122,6 +122,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.visible = params['visible']
         if 'colorMap' in params:
             obj.colorMap = params['colorMap']
+        if 'grouping_default' in params:
+            obj.grouping_default = params['grouping_default']
 
         obj.save()
         return {'message': 'Localization type updated successfully!'}

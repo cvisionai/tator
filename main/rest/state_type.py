@@ -14,7 +14,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'interpolation', 'association', 'visible']
+          'interpolation', 'association', 'visible', 'grouping_default']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
@@ -114,12 +114,18 @@ class StateTypeDetailAPI(BaseDetailView):
         """
         name = params.get('name', None)
         description = params.get('description', None)
+        visible = params.get('visible', None)
+        grouping_default = params.get('grouping_default', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
             obj.name = name
         if description is not None:
             obj.description = description
+        if visible is not None:
+            obj.visible = visible
+        if grouping_default is not None:
+            obj.grouping_default = grouping_default
 
         obj.save()
         return {'message': 'State type updated successfully!'}
