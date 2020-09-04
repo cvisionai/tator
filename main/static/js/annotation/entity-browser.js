@@ -95,6 +95,7 @@ class EntityBrowser extends TatorElement {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
       if (evt.detail.typeObj.id === this._dataType.id) {
+        this._group.setValue(this._dataType.grouping_default);
         this._evt = evt;
         this._drawControls();
       }
