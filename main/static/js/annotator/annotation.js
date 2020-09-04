@@ -1535,11 +1535,7 @@ class AnnotationCanvas extends TatorElement
         // This is a mouse out event. User has moved outside a localization.
         // If there is an active localization (i.e. a selected one), then select that one
 
-        if (this.activeLocalization != null)
-        {
-          this.emphasizeLocalization(this.activeLocalization);
-        }
-        else if (this._emphasis != null && this._emphasis != this.activeLocalization)
+        if (this._emphasis != null && this._emphasis != this.activeLocalization)
         {
           this._canvas.classList.remove("select-pointer");
           this._emphasis = null;
