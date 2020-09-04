@@ -10,14 +10,14 @@ To serve the web application, the tutorial  will use
 `DuckDNS <http://www.duckdns.org/>`_ to create a domain for the app.
 
 For hardware, you can use a single virtual machine, a single node,
-or a cluster of nodes in a local area network. Other CAs can also be used
-to provide TLS certificates. For LAN-only deployments, the DuckDNS subdomain
-can be configured to point to a LAN-local address via its DNS entry.
+or a cluster of nodes in a local area network. For LAN-only deployments,
+the DuckDNS subdomain can be configured to point to a LAN-local address via
+its DNS entry.
 
 We recommend going through the full tutorial at least once using a single node
 or VM. After that, feel free to skip some steps if you already have a domain,
-SSL certificate, NFS server, or Kubernetes cluster. The full tutorial assumes
-you are starting with just bare metal.
+NFS server, or Kubernetes cluster. The full tutorial assumes you are starting
+with just bare metal.
 
 Architectural Pieces
 ====================
@@ -93,7 +93,7 @@ must be enabled on your network's router. To be exact, ports `443` and port
 `80` must be forwarded to the load balancer IP via the NAT router.
 
 Installation of Prerequisites
-==================
+=============================
 
 NFS and other standard packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
