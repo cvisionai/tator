@@ -43,6 +43,7 @@ localization_type_spec = {
                 'type': 'integer',
                 'minimum': 1,
             },
+            'minItems': 1,
         },
     },
 }
