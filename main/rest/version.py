@@ -27,9 +27,6 @@ class VersionListAPI(BaseListView):
         if that media contains annotations in that version. The version of an annotation
         can be set by providing it in a POST operation. Currently only localizations
         and states can have versions.
-
-        Versions are used in conjunction with the `modified` flag to determine whether
-        an annotation should be displayed for a given media while annotating.
     """
     schema = VersionListSchema()
     queryset = Version.objects.all()
@@ -68,55 +65,11 @@ class VersionListAPI(BaseListView):
         project = params['project']
 
         qs = Version.objects.filter(project=project).order_by('number')
-        data = VersionSerializer(
+        return VersionSerializer(
             qs,
             context=self.get_renderer_context(),
             many=True,
         ).data
-
-        # We augment each version with 'num_created', 'created_datetime'
-        # 'num_modified', 'modified_datetime', 'modified_by'
-        response=[]
-        type_objects = [State, Localization]
-        for datum in data:
-            datum['num_created'] = 0
-            datum['num_modified'] = 0
-            earliest_ctime = timezone.now()
-            latest_mtime = timezone.make_aware(datetime.datetime.fromtimestamp(0))
-            for obj in type_objects:
-                created_qs = obj.objects.filter(project=project,version=datum['id'])
-                modified_qs = obj.objects.filter(project=project,version=datum['id'], modified=True)
-                if media:
-                    created_qs = created_qs.filter(media=media)
-                    modified_qs = modified_qs.filter(media=media)
-                created_qs = created_qs.order_by('created_datetime')
-                modified_qs = modified_qs.order_by('-modified_datetime')
-
-                # Generate return structure
-                num_created = created_qs.count()
-                num_modified = modified_qs.count()
-                datum['num_created'] += num_created
-                datum['num_modified'] += modified_qs.count()
-                if num_created:
-                    if created_qs[0].created_datetime < earliest_ctime:
-                        earliest_ctime = created_qs[0].created_datetime
-                        datum['created_by'] = str(created_qs[0].created_by)
-                        datum['created_datetime'] = earliest_ctime.isoformat()
-                else:
-                    datum['created_by'] = '---'
-                    datum['created_datetime'] = '---'
-                if num_modified:
-                    if created_qs[0].modified_datetime > latest_mtime:
-                        latest_mtime = created_qs[0].modified_datetime
-                        datum['modified_by'] = str(created_qs[0].created_by)
-                        datum['modified_datetime'] = earliest_ctime.isoformat()
-                else:
-                    datum['modified_by'] = '---'
-                    datum['modified_datetime'] = '---'
-
-            response.append(datum)
-
-        return response
 
 class VersionDetailAPI(BaseDetailView):
     """ Interact with individual version.
@@ -126,9 +79,6 @@ class VersionDetailAPI(BaseDetailView):
         if that media contains annotations in that version. The version of an annotation
         can be set by providing it in a POST operation. Currently only localizations
         and states can have versions.
-
-        Versions are used in conjunction with the `modified` flag to determine whether
-        an annotation should be displayed for a given media while annotating.
     """
     schema = VersionDetailSchema()
     permission_classes = [ProjectEditPermission]
