@@ -27,7 +27,7 @@ class VersionDialog extends ModalDialog {
     thead.appendChild(tr);
 
     const thName = document.createElement("th");
-    thName.setAttribute("class", "py-3 col-3");
+    thName.setAttribute("class", "py-3 col-9");
     thName.textContent = "Version";
     tr.appendChild(thName);
 
@@ -67,7 +67,7 @@ class VersionDialog extends ModalDialog {
       this._buttons.push(select);
     }
 
-    this._buttons[(selected_idx*2)+1].select(true);
+    this._buttons[selected_idx].select(true);
   }
 
   _handleSelect(evt) {
