@@ -69,11 +69,6 @@ post_properties = {
         'description': 'Unique integer identifying the version.',
         'type': 'integer',
     },
-    'modified': {
-        'description': 'Whether this localization was created in the web UI.',
-        'type': 'boolean',
-        'nullable': True,
-    },
 }
 
 localization_get_properties = {
@@ -96,10 +91,6 @@ localization_get_properties = {
     'thumbnail_image': {
         'type': 'string',
         'description': 'URL of thumbnail corresponding to this localization.',
-    },
-    'modified': {
-        'type': 'boolean',
-        'description': 'Indicates whether this localization has been modified in the web UI.',
     },
     'version': {
         'type': 'integer',
@@ -154,11 +145,6 @@ localization_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },
-        'modified': {
-            'description': 'Whether this localization was created in the web UI.',
-            'type': 'boolean',
-            'nullable': True,
         },
     },
 }

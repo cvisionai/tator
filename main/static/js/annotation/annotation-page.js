@@ -47,7 +47,6 @@ class AnnotationPage extends TatorPage {
     this._browser.undoBuffer = this._undo;
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
-    this._versionEditable = true;
   }
 
   static get observedAttributes() {
@@ -210,13 +209,8 @@ class AnnotationPage extends TatorPage {
         }
         if (haveVersion)
         {
-          let edited = true;
           let version_id = searchParams.get("version");
-          if(searchParams.has("edited") && Number(searchParams.get("edited")) == 0)
-          {
-            edited = false;
-          }
-          let evt = {"detail": {"version": this._versionLookup[version_id], "edited": edited}};
+          let evt = {"detail": {"version": this._versionLookup[version_id]}};
           this._versionDialog._handleSelect(evt);
         }
         if (haveLock) {
@@ -310,10 +304,8 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
-      this._versionEditable = evt.detail.edited;
-      this._data.setVersion(evt.detail.version, evt.detail.edited).then(() => {
+      this._data.setVersion(evt.detail.version).then(() => {
         this._settings.setAttribute("version", evt.detail.version.id);
-        this._settings.setAttribute("edited", Number(evt.detail.edited));
         this._canvas.refresh();
       });
       this._browser.version = evt.detail.version;
@@ -370,19 +362,6 @@ class AnnotationPage extends TatorPage {
         for (let version of versions)
         {
           this._versionLookup[version['id']] = version;
-        }
-        // Skip version if number of annotations is zero and show_empty is false.
-        const dispVersions = versions.filter(version => {
-          return !(
-            version.num_created == 0 &&
-            version.num_modified == 0 &&
-            version.show_empty == false
-          );
-        });
-        if (dispVersions.length > 0) {
-          versions = dispVersions;
-        } else {
-          versions = [versions[0]];
         }
 
         // If there is a version with the same name as the user
@@ -653,9 +632,6 @@ class AnnotationPage extends TatorPage {
   async enableEditing(mask) {
     // Check state of lock button.
     let enable = this._settings._lock._pathLocked.style.display == "none";
-
-    // Check if version is editable.
-    enable &= this._versionEditable;
 
     // Check input.
     if (typeof mask !== "undefined") {

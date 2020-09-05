@@ -49,29 +49,9 @@ version = {
             'type': 'integer',
             'description': 'Unique integer identifying a project.',
         },
-        'num_created': {
-            'type': 'integer',
-            'description': 'Number of created annotations in this version.',
-        },
-        'created_datetime': {
-            'type': 'string',
-            'description': 'Datetime when the last unmodified annotation was created.',
-        },
         'created_by': {
             'type': 'string',
             'description': 'Name of user who created the last unmodified annotation in this version.',
-        },
-        'num_modified': {
-            'type': 'integer',
-            'description': 'Number of modified annotations in this version.',
-        },
-        'modified_datetime': {
-            'type': 'string',
-            'description': 'Datetime when last annotation was modified in the web interface.',
-        },
-        'modified_by': {
-            'type': 'string',
-            'description': 'Name of user who modified annotations in this version most recently.',
         },
     },
 }

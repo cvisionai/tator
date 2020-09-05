@@ -2519,7 +2519,6 @@ class AnnotationCanvas extends TatorElement
     newObject.type = Number(localization.meta.split("_")[1]);
     newObject.media_id = localization.media;
     newObject.frame = localization.frame;
-    newObject.modified = true;
     console.info(newObject);
     this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,

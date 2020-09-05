@@ -175,9 +175,6 @@ class AnnotationSettings extends TatorElement {
     if (this.hasAttribute("version")) {
       params.set("version", this.getAttribute("version"));
     }
-    if (this.hasAttribute("edited")) {
-      params.set("edited", Number(this.getAttribute("edited")));
-    }
     if (this._lock._pathLocked.style.display == "block") {
       params.set("lock", 1);
     } else {

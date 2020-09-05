@@ -47,7 +47,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation', 'format', 'excludeParents','frame']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'operation', 'format', 'excludeParents','frame']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the localization list.
@@ -81,8 +81,8 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(version__in=params['version'])
             if 'frame' in params:
                 qs = qs.filter(frame=params['frame'])
-            if 'modified' in params:
-                qs = qs.exclude(modified=(not params['modified']))
+            # TODO: Remove modified parameter
+            qs = qs.exclude(modified=False)
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:
@@ -178,7 +178,6 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                                media=medias[loc_spec['media_id']],
                                user=self.request.user,
                                attributes=attrs,
-                               modified=loc_spec.get('modified', None),
                                created_by=self.request.user,
                                modified_by=self.request.user,
                                version=versions[loc_spec.get('version', None)],
@@ -283,8 +282,6 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.x = x
         if y is not None:
             obj.y = y
-        if 'modified' in params:
-            obj.modified = params['modified']
 
         if obj.meta.dtype == 'box':
             height = params.get("height", None)

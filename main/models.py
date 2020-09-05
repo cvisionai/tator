@@ -671,7 +671,7 @@ class Localization(Model):
                                  related_name='localization_thumbnail_image',
                                  db_column='thumbnail_image')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
-    modified = BooleanField(null=True, blank=True)
+    modified = BooleanField(default=True, null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
         false: Original upload, but was modified or deleted.
@@ -726,7 +726,7 @@ class State(Model):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_modified_by', db_column='modified_by')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
-    modified = BooleanField(null=True, blank=True)
+    modified = BooleanField(default=True, null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
         false: Original upload, but was modified or deleted.

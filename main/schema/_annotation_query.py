@@ -37,17 +37,6 @@ annotation_filter_parameter_schema = [
         },
     },
     {
-        'name': 'modified',
-        'in': 'query',
-        'required': False,
-        'description': 'Whether to return original or modified annotations, 0 or 1.',
-        'schema': {
-            'type': 'integer',
-            'enum': [0, 1],
-            'default': 1,
-        },
-    },
-    {
         'name': 'after',
         'in': 'query',
         'required': False,

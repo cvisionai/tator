@@ -17,7 +17,6 @@ def get_annotation_queryset(project, query_params, annotation_type): #pylint: di
     media_query = query_params.get('media_query', None)
     filter_type = query_params.get('type', None)
     version = query_params.get('version', None)
-    modified = query_params.get('modified', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
     after = query_params.get('after', None)
@@ -73,8 +72,9 @@ def get_annotation_queryset(project, query_params, annotation_type): #pylint: di
     if after is not None:
         annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
 
+    # TODO: Remove modified parameter.
     query = get_attribute_query(query_params, query, media_bools, project, False,
-                                annotation_bools, modified)
+                                annotation_bools, True)
 
     annotation_ids, annotation_count = TatorSearch().search(project, query)
 

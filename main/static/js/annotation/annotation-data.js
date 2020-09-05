@@ -5,7 +5,6 @@ class AnnotationData extends HTMLElement {
     this._trackDb = new Map();
     this._updateUrls = new Map();
     this._dataByType = new Map();
-    this._edited = true;
   }
 
   init(dataTypes, version, projectId, mediaId) {
@@ -27,9 +26,8 @@ class AnnotationData extends HTMLElement {
   }
 
   // Returns a promise when done
-  setVersion(version, edited) {
+  setVersion(version) {
     this._version = version;
-    this._edited = edited;
     return this.updateAll(this._dataTypesRaw, version);
   }
 
@@ -133,23 +131,6 @@ class AnnotationData extends HTMLElement {
       return;
     }
 
-    // Posting with modified field set to false is ignored.
-    if (method == "POST" && "modified" in body) {
-      if (body.modified == false) {
-        return;
-      }
-    }
-
-    // Patching the modified field may be treated as post/delete as it could
-    // change versions.
-    if (method == "PATCH" && "modified" in body) {
-      if (body.modified == null) {
-        method = "POST";
-      } else if (body.modified == false) {
-        method = "DELETE";
-      }
-    }
-
     const attributeNames = typeObj.attribute_types.map(column => column.name);
     const setupObject = obj => {
       obj.id = id;
@@ -212,7 +193,6 @@ class AnnotationData extends HTMLElement {
     }
 
     searchParams.set('version',[...this._version.bases,this._version.id]);
-    searchParams.set('modified', Number(this._edited));
     url.search = searchParams;
 
     // Fetch new ones from server

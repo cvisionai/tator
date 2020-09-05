@@ -7,7 +7,7 @@ class VersionDialog extends ModalDialog {
     this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
     this._header.setAttribute("class", "px-3 py-3");
     this._titleDiv.setAttribute("class", "h2");
-    this._title.nodeValue = "Version History";
+    this._title.nodeValue = "Versions";
     this._main.remove();
     this._footer.remove();
 
@@ -27,19 +27,9 @@ class VersionDialog extends ModalDialog {
     thead.appendChild(tr);
 
     const thName = document.createElement("th");
-    thName.setAttribute("class", "py-3 col-3");
+    thName.setAttribute("class", "py-3 col-9");
     thName.textContent = "Version";
     tr.appendChild(thName);
-
-    const thUpdated = document.createElement("th");
-    thUpdated.setAttribute("class", "col-4");
-    thUpdated.textContent = "Updated";
-    tr.appendChild(thUpdated);
-
-    const thAnnotations = document.createElement("th");
-    thAnnotations.setAttribute("class", "col-3");
-    thAnnotations.textContent = "Annotations";
-    tr.appendChild(thAnnotations);
 
     const thView = document.createElement("th");
     tr.appendChild(thView);
@@ -67,22 +57,6 @@ class VersionDialog extends ModalDialog {
       tdName.textContent = version.name;
       tr.appendChild(tdName);
 
-      const tdUpdated = document.createElement("td");
-      tdUpdated.setAttribute("class", "f3 text-gray");
-      const created = new Date(version.created_datetime);
-      if (!isNaN(created)) {
-        const created_str = created.toDateString().slice(4);
-        tdUpdated.textContent = created_str + " by " + version.created_by;
-      } else {
-        tdUpdated.textContent = "---";
-      }
-      tr.appendChild(tdUpdated);
-
-      const tdAnnotations = document.createElement("td");
-      tdAnnotations.setAttribute("class", "f3 text-gray");
-      tdAnnotations.textContent = version.num_created;
-      tr.appendChild(tdAnnotations);
-
       const tdSelect = document.createElement("td");
       tr.appendChild(tdSelect);
 
@@ -91,50 +65,16 @@ class VersionDialog extends ModalDialog {
       select.init(version, false);
       tdSelect.appendChild(select);
       this._buttons.push(select);
-
-      const trEdited = document.createElement("tr");
-      tbody.appendChild(trEdited);
-
-      const tdNameEdited = document.createElement("td");
-      tdNameEdited.setAttribute("class", "f3 text-gray text-uppercase text-semibold");
-      tdNameEdited.textContent = "Edited";
-      trEdited.appendChild(tdNameEdited);
-
-      const tdModified = document.createElement("td");
-      tdModified.setAttribute("class", "f3 text-gray");
-      const modified = new Date(version.modified_datetime);
-      if (!isNaN(modified)) {
-        const modified_str = modified.toDateString().slice(4);
-        tdModified.textContent = modified_str + " by " + version.modified_by;
-      } else {
-        tdModified.textContent = "---";
-      }
-      trEdited.appendChild(tdModified);
-
-      const tdAnnotationsEdited = document.createElement("td");
-      tdAnnotationsEdited.setAttribute("class", "f3 text-gray");
-      tdAnnotationsEdited.textContent = version.num_modified;
-      trEdited.appendChild(tdAnnotationsEdited);
-
-      const tdSelectEdited = document.createElement("td");
-      trEdited.appendChild(tdSelectEdited);
-
-      const selectEdited = document.createElement("version-select");
-      selectEdited.addEventListener("select", this._handleSelect.bind(this));
-      selectEdited.init(version, true);
-      tdSelectEdited.appendChild(selectEdited);
-      this._buttons.push(selectEdited);
     }
 
-    this._buttons[(selected_idx*2)+1].select(true);
+    this._buttons[selected_idx].select(true);
   }
 
   _handleSelect(evt) {
     const id = evt.detail.version.id;
     for (const button of this._buttons) {
       const sameVersion = button._version.id == id;
-      const sameEdited = button._edited == evt.detail.edited;
-      if (!(sameVersion && sameEdited)) {
+      if (!sameVersion) {
         button.deselect();
       } else {
         button.select(true);
@@ -143,7 +83,6 @@ class VersionDialog extends ModalDialog {
     this.dispatchEvent(new CustomEvent("versionSelect", {
       "detail": {
         "version": evt.detail.version,
-        "edited": evt.detail.edited,
       }
     }));
   }

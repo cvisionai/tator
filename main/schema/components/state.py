@@ -10,11 +10,6 @@ version_properties = {
         'description': 'Unique integer identifying the version.',
         'type': 'integer',
     },
-    'modified': {
-        'description': 'Whether this state was created in the web UI.',
-        'type': 'boolean',
-        'nullable': True,
-    },
 }
 
 state_get_properties = {
@@ -75,11 +70,6 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },
-        'modified': {
-            'description': 'Whether this state was created in the web UI.',
-            'type': 'boolean',
-            'nullable': True,
         },
     },
 }
