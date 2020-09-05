@@ -26,7 +26,7 @@ class AnnotationData extends HTMLElement {
   }
 
   // Returns a promise when done
-  setVersion(version, edited) {
+  setVersion(version) {
     this._version = version;
     return this.updateAll(this._dataTypesRaw, version);
   }

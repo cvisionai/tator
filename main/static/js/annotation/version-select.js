@@ -34,11 +34,9 @@ class VersionSelect extends TatorElement {
     });
   }
 
-  init(version, edited) {
+  init(version) {
     // version: Version corresponding to this button
-    // edited: Whether this button corresponds to edited version
     this._version = version;
-    this._edited = edited;
   }
 
   select(suppressEvent) {
@@ -48,7 +46,6 @@ class VersionSelect extends TatorElement {
       this.dispatchEvent(new CustomEvent("select", {
         detail: {
           "version": this._version,
-          "edited": this._edited,
         },
       }));
     }

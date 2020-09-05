@@ -67,7 +67,7 @@ class FramePanel extends TatorElement {
         this._updateAttributes(evt.detail.data);
 
         // If there are no annotations for this type, make a default one at frame 0.
-        if (this._data._dataByType.get(typeObj.id).length == 0 && this._data._edited) {
+        if (this._data._dataByType.get(typeObj.id).length == 0) {
           const mediaId = Number(this.getAttribute("media-id"));
           const body = {
             type: Number(val.id.split("_")[1]),
