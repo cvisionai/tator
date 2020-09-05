@@ -51,7 +51,6 @@ class FramePanel extends TatorElement {
             name: val.name,
             media_ids: [mediaId],
             frame: this._frame,
-            modified: true,
             version: this._version.id,
             ...values,
           };
@@ -75,7 +74,6 @@ class FramePanel extends TatorElement {
             name: val.name,
             media_ids: [mediaId],
             frame: 0,
-            modified: true,
             version: this._version.id,
           }
           for (const column of val.attribute_types) {

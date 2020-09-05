@@ -94,7 +94,6 @@ class SaveDialog extends TatorElement {
       type: Number(this._dataType.id.split("_")[1]),
       name: this._dataType.name,
       media_id: this._mediaId,
-      modified: true,
       version: this._version.id,
       ...requestObj,
       ...values,
