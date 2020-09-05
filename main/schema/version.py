@@ -12,9 +12,6 @@ are created at the project level, but are only displayed for a given media
 if that media contains annotations in that version. The version of an annotation
 can be set by providing it in a POST operation. Currently only localizations
 and states can have versions.
-
-Versions are used in conjunction with the `modified` flag to determine whether
-an annotation should be displayed for a given media while annotating.
 """)
 
 class VersionListSchema(AutoSchema):
