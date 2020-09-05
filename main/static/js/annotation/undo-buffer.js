@@ -132,29 +132,9 @@ class UndoBuffer extends HTMLElement {
           }
         }
         this._resetFromNow();
-        if ((data.modified == null) && (detailUri != "Media")) {
-          // This was an original annotation, patch the original and post
-          // an edited one.
-          const listUri = UndoBuffer.detailToList[detailUri];
-          let postObj = {
-            ...data, ...data.attributes, ...original, ...other, modified: false,
-          };
-          delete postObj.attributes;
-          delete postObj.thumbnail_image;
-          this._forwardOps.push([
-            ["POST", listUri, projectId, postObj],
-            ["PATCH", detailUri, id, {...body, modified: true}],
-          ]);
-          this._backwardOps.push([
-            ["PATCH", detailUri, id, {...original, modified: null}],
-            ["DELETE", detailUri, null, null],
-          ]);
-          this._dataTypes.push(dataType);
-        } else {
-          this._forwardOps.push([["PATCH", detailUri, id, body]]);
-          this._backwardOps.push([["PATCH", detailUri, id, original]]);
-          this._dataTypes.push(dataType);
-        }
+        this._forwardOps.push([["PATCH", detailUri, id, body]]);
+        this._backwardOps.push([["PATCH", detailUri, id, original]]);
+        this._dataTypes.push(dataType);
         return this.redo();
       });
     } else {
@@ -204,18 +184,8 @@ class UndoBuffer extends HTMLElement {
         const projectId = this.getAttribute("project-id");
         const listUri = UndoBuffer.detailToList[detailUri];
         this._resetFromNow();
-        if (data.modified == null) {
-          // This was an "original" annotation, patch the original.
-          this._forwardOps.push([["PATCH", detailUri, id, {...body, modified: false}]]);
-          this._backwardOps.push([["PATCH", detailUri, id, {...body, modified: null}]]);
-        } else if (data.modified == true) {
-          // This was an annotation created via web interface, actually delete it.
-          this._forwardOps.push([["DELETE", detailUri, id, null]]);
-          this._backwardOps.push([["POST", listUri, projectId, {...body, modified: true}]]); 
-        } else if (data.modified == false) {
-          console.error("Attempted to delete an original version!");
-          return null;
-        }
+        this._forwardOps.push([["DELETE", detailUri, id, null]]);
+        this._backwardOps.push([["POST", listUri, projectId, body]]); 
         this._dataTypes.push(dataType);
         return this.redo();
       });
