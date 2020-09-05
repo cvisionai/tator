@@ -369,14 +369,6 @@ class AnnotationPage extends TatorPage {
         {
           this._versionLookup[version['id']] = version;
         }
-        // Skip version if number of annotations is zero and show_empty is false.
-        const dispVersions = versions.filter(version => {
-          return !(
-            version.num_created == 0 &&
-            version.num_modified == 0 &&
-            version.show_empty == false
-          );
-        });
         if (dispVersions.length > 0) {
           versions = dispVersions;
         } else {
