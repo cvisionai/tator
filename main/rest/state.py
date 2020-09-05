@@ -56,7 +56,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'modified', 'operation']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'operation']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the state list.
@@ -81,8 +81,8 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(meta=params['type'])
             if 'version' in params:
                 qs = qs.filter(version__in=params['version'])
-            if 'modified' in params:
-                qs = qs.exclude(modified=(not params['modified']))
+            # TODO: Remove modified parameter
+            qs = qs.exclude(modified=False)
             if self.operation == 'count':
                 response_data = {'count': qs.count()}
             else:
@@ -177,7 +177,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             state = State(project=project,
                           meta=metas[state_spec['type']],
                           attributes=attrs,
-                          modified=state_spec.get('modified', None),
                           created_by=self.request.user,
                           modified_by=self.request.user,
                           version=versions[state_spec.get('version', None)],
@@ -323,9 +322,6 @@ class StateDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = State.objects.get(pk=params['id'])
-        # Patch modified fields
-        if 'modified' in params:
-            obj.modified = params['modified']
 
         if 'frame' in params:
             obj.frame = params['frame']
