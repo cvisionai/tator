@@ -369,11 +369,6 @@ class AnnotationPage extends TatorPage {
         {
           this._versionLookup[version['id']] = version;
         }
-        if (dispVersions.length > 0) {
-          versions = dispVersions;
-        } else {
-          versions = [versions[0]];
-        }
 
         // If there is a version with the same name as the user
         // pick that one.
