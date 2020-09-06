@@ -130,6 +130,8 @@ class TatorSearch:
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
+                '_gid': {'type': 'keyword'},
+                '_uid': {'type': 'keyword'},
             }},
         )
 
@@ -193,6 +195,8 @@ class TatorSearch:
             aux['tator_media_name'] = entity.name
             aux['_exact_name'] = entity.name
             aux['_md5'] = entity.md5
+            aux['_gid'] = entity.gid
+            aux['_uid'] = entity.uid
 
             # Get total size and download size of this file.
             total_size, download_size = mediaFileSizes(entity)
