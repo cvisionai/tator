@@ -96,6 +96,14 @@ media_get_properties = {
         'type': 'string',
         'description': 'DEPRECATED. Use media_files. Stores path to original media file.',
     },
+    'gid': {
+        'description': 'Group ID for the upload group of this media.',
+        'type': 'string',
+    },
+    'uid': {
+        'description': 'Unique ID for the upload of this media.',
+        'type': 'string',
+    },
 }
 
 media_spec = {
