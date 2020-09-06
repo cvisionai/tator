@@ -117,15 +117,8 @@ media_spec = {
             'type': 'integer',
             'minimum': -1,
         },
-        'gid': {
-            'description': 'UUID corresponding to a group of uploads if this is an image type.',
-            'type': 'string',
-            'format': 'uuid',
-        },
-        'uid': {
-            'description': 'UUID corresponding to an upload if this is an image type.',
-            'type': 'string',
-        },
+        'gid': media_get_properties['gid'],
+        'uid': media_get_properties['uid'],
         'url': {
             'description': 'Upload URL for the image if this is an image type. If '
                            'not an image, this field is ignored.',
