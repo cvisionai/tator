@@ -143,13 +143,12 @@ spec:
         value: "{{workflow.parameters.useMinJs}}"
       volumeMounts:
         - mountPath: /data/media
-          name: media-pv-claim
+          name: main-pv-claim
+          subPath: raw
         - mountPath: /data/raw
-          name: raw-pv-claim
+          name: main-pv-claim
+          subPath: raw
   volumes:
-    - name: media-pv-claim
+    - name: main-pv-claim
       persistentVolumeClaim:
-        claimName: media-pv-claim
-    - name: raw-pv-claim
-      persistentVolumeClaim:
-        claimName: raw-pv-claim
+        claimName: main-pv-claim
