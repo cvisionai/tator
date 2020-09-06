@@ -271,6 +271,8 @@ class TatorTranscode(JobManagerMixin):
                          '--section', '{{workflow.parameters.section}}',
                          '--name', '{{inputs.parameters.name}}',
                          '--md5', '{{inputs.parameters.md5}}',
+                         '--gid', '{{workflow.parameters.gid}}',
+                         '--uid', '{{workflow.parameters.uid}}',
                          '--output', '/work/media_id.txt'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
