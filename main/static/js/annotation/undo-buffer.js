@@ -195,7 +195,6 @@ class UndoBuffer extends HTMLElement {
   }
 
   undo() {
-    return; // Undo temporarily disabled.
     if (this._index > 0) {
       this._index--;
       for (const [opIndex, op] of this._backwardOps[this._index].entries()) {
@@ -287,6 +286,8 @@ class UndoBuffer extends HTMLElement {
     };
     if (body) {
       if (method == "POST") {
+        delete body.attributes;
+        delete body.color;
         obj.body = JSON.stringify([body]);
       } else {
         obj.body = JSON.stringify(body);
