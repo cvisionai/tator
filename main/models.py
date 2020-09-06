@@ -581,6 +581,14 @@ class Media(Model):
         field of this structure. """
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
+    gid = CharField(max_length=36, null=True, blank=True)
+    """ Group ID for the upload that created this media. Note we intentionally do 
+        not use UUIDField because this field is provided by the uploader and not
+        guaranteed to be an actual UUID. """
+    uid = CharField(max_length=36, null=True, blank=True)
+    """ Unique ID for the upload that created this media. Note we intentionally do 
+        not use UUIDField because this field is provided by the uploader and not
+        guaranteed to be an actual UUID. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                             related_name='media_created_by', db_column='created_by')

@@ -84,6 +84,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         name = params['name']
         md5 = params['md5']
         project = params['project']
+        gid = params.get('gid', None)
+        uid = params.get('uid', None)
+        if gid is not None:
+            gid = str(gid)
 
         # Get the media type.
         if int(entity_type) == -1:
@@ -108,8 +112,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
         if media_type.dtype == 'image':
             # Get image only parameters.
-            gid = str(params['gid'])
-            uid = params['uid']
             url = params['url']
             thumbnail_url = params.get('thumbnail_url', None)
             progress_name = params.get('progress_name', name)
@@ -153,6 +155,8 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 attributes={'tator_user_sections': section},
                 created_by=self.request.user,
                 modified_by=self.request.user,
+                gid=gid,
+                uid=uid,
             )
 
             if thumbnail_url is None:
@@ -215,6 +219,8 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 attributes={'tator_user_sections': section},
                 created_by=self.request.user,
                 modified_by=self.request.user,
+                gid=gid,
+                uid=uid,
             )
             msg = (f"Media object {media_obj.id} created for video "
                    f"{name} on project {media_type.project.name}")
