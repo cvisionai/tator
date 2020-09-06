@@ -18,6 +18,8 @@ def get_media_queryset(project, query_params, dry_run=False):
     name = query_params.get('name', None)
     section = query_params.get('section', None)
     md5 = query_params.get('md5', None)
+    gid = query_params.get('gid', None)
+    uid = query_params.get('uid', None)
     start = query_params.get('start', None)
     stop = query_params.get('stop', None)
     after = query_params.get('after', None)
@@ -64,6 +66,12 @@ def get_media_queryset(project, query_params, dry_run=False):
 
     if md5 is not None:
         bools.append({'match': {'_md5': {'query': md5}}})
+
+    if gid is not None:
+        bools.append({'match': {'_gid': {'query': gid}}})
+
+    if uid is not None:
+        bools.append({'match': {'_uid': {'query': uid}}})
 
     if start is not None:
         query['from'] = int(start)
