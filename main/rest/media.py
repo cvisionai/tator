@@ -431,12 +431,12 @@ class MediaDetailAPI(BaseDetailView):
 
         # Send progress message if we have a gid/uid and at least one streaming
         # file is available.
-        if ('gid' in params) and ('uid' in params) and len(obj.media_files['streaming']) > 0:
+        if len(obj.media_files['streaming']) > 0:
             prog = ProgressProducer(
                 'upload',
                 project,
-                str(params['gid']),
-                params['uid'],
+                obj.gid,
+                obj.uid,
                 obj.name,
                 self.request.user,
                 {'section': obj.attributes['tator_user_sections']},
