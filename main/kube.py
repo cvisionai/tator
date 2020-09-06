@@ -344,8 +344,6 @@ class TatorTranscode(JobManagerMixin):
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
                          '--resolutions', '{{inputs.parameters.resolutions}}',
-                         '--gid', '{{workflow.parameters.gid}}',
-                         '--uid', '{{workflow.parameters.uid}}',
                          '--output', '{{inputs.parameters.transcoded}}',
                          '--input', '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
