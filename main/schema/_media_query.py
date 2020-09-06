@@ -42,6 +42,20 @@ media_filter_parameter_schema = [
         'schema': {'type': 'string'},
     },
     {
+        'name': 'gid',
+        'in': 'query',
+        'required': False,
+        'description': 'Upload group ID of the media file.',
+        'schema': {'type': 'string'},
+    },
+    {
+        'name': 'uid',
+        'in': 'query',
+        'required': False,
+        'description': 'Upload unique ID of the media file.',
+        'schema': {'type': 'string'},
+    },
+    {
         'name': 'after',
         'in': 'query',
         'required': False,
