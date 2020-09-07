@@ -151,6 +151,9 @@ class TatorTranscode(JobManagerMixin):
         # workflow global to support the onExit handler
         self.download_task = {
             'name': 'download',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'retryStrategy': {
                 'limit': 3,
                 'backoff': {
@@ -181,6 +184,9 @@ class TatorTranscode(JobManagerMixin):
         # Deletes the remote TUS file
         self.delete_task = {
             'name': 'delete',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': {'parameters' : spell_out_params(['url'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -209,6 +215,9 @@ class TatorTranscode(JobManagerMixin):
                                'valueFrom': {'path': f'/work/states_{x}.json'}} for x in range(NUM_WORK_PACKETS)])
         self.unpack_task = {
             'name': 'unpack',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
             'container': {
@@ -258,6 +267,9 @@ class TatorTranscode(JobManagerMixin):
 
         self.create_media_task = {
             'name': 'create-media',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -295,6 +307,9 @@ class TatorTranscode(JobManagerMixin):
 
         self.determine_transcode_task = {
             'name': 'determine-transcode',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -328,6 +343,9 @@ class TatorTranscode(JobManagerMixin):
 
         self.transcode_task = {
             'name': 'transcode',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
                                                         'category', 'raw_width', 'raw_height',
@@ -361,6 +379,9 @@ class TatorTranscode(JobManagerMixin):
         }
         self.thumbnail_task = {
             'name': 'thumbnail',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
@@ -390,6 +411,9 @@ class TatorTranscode(JobManagerMixin):
 
         self.image_upload_task = {
             'name': 'image-upload',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -423,6 +447,9 @@ class TatorTranscode(JobManagerMixin):
         # Define task to send progress message in case of failure.
         self.progress_task = {
             'name': 'progress',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': {'parameters' : spell_out_params(['state',
                                                         'message',
                                                         'progress'])},
@@ -525,6 +552,9 @@ class TatorTranscode(JobManagerMixin):
 
         unpack_task = {
             'name': 'unpack-pipeline',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'dag': {
                 # First download, unpack and delete archive. Then Iterate over each video and upload
                 # Lastly iterate over all localization and state files.
@@ -586,6 +616,9 @@ class TatorTranscode(JobManagerMixin):
 
         pipeline_task = {
             'name': 'transcode-pipeline',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
             'inputs': passthrough_parameters,
             'dag': {
                 'tasks': [{
