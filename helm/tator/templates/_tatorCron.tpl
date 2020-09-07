@@ -101,6 +101,8 @@ spec:
                   value: {{ .tlsCertSecretName | default "tls-cert" }}
                 - name: TRANSCODER_PVC_SIZE
                   value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
+                - name: WORKFLOW_STORAGE_CLASS
+                  value: {{ .Values.workflowStorageClass | default "nfs-client" | quote }}
                 {{- if hasKey .Values "slackToken" }}
                 - name: TATOR_SLACK_TOKEN
                   valueFrom:
