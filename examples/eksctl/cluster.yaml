@@ -56,3 +56,11 @@ fargateProfiles:
       - namespace: default
         labels:
           app: daphne
+  - name: fargate-workflows
+    selectors:
+      - namespace: default
+        labels:
+          app: transcoder
+      - namespace: default
+        labels:
+          app: move
