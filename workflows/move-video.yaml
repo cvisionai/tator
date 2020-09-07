@@ -22,6 +22,9 @@ spec:
       claimName: main-pv-claim
   templates:
   - name: main
+    metadata:
+      labels:
+        app: move
     steps:
     - - name: move-file
         template: move
@@ -46,8 +49,8 @@ spec:
       args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
       resources:
         requests:
-          memory: 128Mi
-          cpu: 200m
+          memory: 500Mi
+          cpu: 250m
       volumeMounts:
       - mountPath: /data/uploads
         name: main-pv-claim
@@ -66,6 +69,6 @@ spec:
       args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_update}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
         requests:
-          memory: 64Mi
-          cpu: 100m
+          memory: 500Mi
+          cpu: 250m
 
