@@ -131,7 +131,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': 'transcode-scratch',
             },
             'spec': {
-                'storageClassName': 'nfs-client',
+                'storageClassName': os.getenv('WORKFLOW_STORAGE_CLASS'),
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
@@ -881,7 +881,7 @@ class TatorAlgorithm(JobManagerMixin):
                 for claim in self.manifest['spec']['volumeClaimTemplates']:
                     storage_class_name = claim['spec'].get('storageClassName',None)
                     if storage_class_name is None:
-                        claim['storageClassName'] = 'nfs-client'
+                        claim['storageClassName'] = os.getenv('WORKFLOW_STORAGE_CLASS')
                         logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
 
         # Save off the algorithm name.
