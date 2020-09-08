@@ -627,9 +627,11 @@ class Resource(Model):
     count=IntegerField(null=True, default=1)
 
     @transaction.atomic
-    def add_resource(path):
-        if os.path.islink(path):
-            path=os.readlink(path)
+    def add_resource(path_or_link):
+        if os.path.islink(path_or_link):
+            path=os.readlink(path_or_link)
+        else:
+            path=path_or_link
         obj,created = Resource.objects.get_or_create(path=path)
         if not created:
             obj.count += 1
