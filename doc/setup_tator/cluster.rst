@@ -461,7 +461,7 @@ to determine your node name(s).
 
 * Install the nvidia device plugin (only required if you have GPU nodes)
 
-``kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta4/nvidia-device-plugin.yml``
+``kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.6.0/nvidia-device-plugin.yml``
 
 Join worker nodes to cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
