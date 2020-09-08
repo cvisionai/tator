@@ -662,7 +662,7 @@ def media_save(sender, instance, created, **kwargs):
 def safe_delete(path):
     try:
         logger.info(f"Deleting {path}")
-        os.remove(path)
+        Resource.delete_resource(path)
     except:
         logger.warning(f"Could not remove {path}")
         logger.warning(f"{traceback.format_exc()}")

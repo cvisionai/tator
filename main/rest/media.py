@@ -15,6 +15,7 @@ from ..models import MediaType
 from ..models import Localization
 from ..models import State
 from ..models import Project
+from ..models import Resource
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -407,6 +408,15 @@ class MediaDetailAPI(BaseDetailView):
             new_audio = params['media_files'].get('audio', [])
             old_audio = obj.media_files.get('audio', [])
             audio = new_audio + old_audio
+
+            for obj in new_streaming:
+                path = "/data" + obj['path']
+                seg_path = "/data" + obj['segment_info']
+                Resource.add_resource(path)
+                Resource.add_resource(seg_path)
+
+            for obj in new_archival:
+                Resource.add_resource(obj['path'])
 
             # Only fill in a key if it has at least one definition.
             obj.media_files = {}
