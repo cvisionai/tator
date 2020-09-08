@@ -33,6 +33,8 @@ certCron:
   enabled: true
 pv:
   enabled: true
+  # EFS filesystem ID for main pv.
+  filesystemId: <Your filesystem ID>
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10
@@ -98,8 +100,6 @@ kibana:
 awsStorage:
   # Enable this if you are using EFS storage.
   enabled: true
-  # EFS filesystem ID.
-  filesystemId: <Your filesystem ID>
 awsFargate:
   # Enable this if you are using fargate for containers.
   enabled: true
