@@ -432,24 +432,25 @@ class MediaDetailAPI(BaseDetailView):
         # Send progress message if we have a gid/uid and at least one streaming
         # file is available.
         if obj.media_files is not None:
-            if len(obj.media_files['streaming']) > 0:
-                prog = ProgressProducer(
-                    'upload',
-                    project,
-                    obj.gid,
-                    obj.uid,
-                    obj.name,
-                    self.request.user,
-                    {'section': obj.attributes['tator_user_sections']},
-                )
-                info = {
-                    'id': obj.id,
-                    'thumbnail': str(obj.thumbnail),
-                    'thumbnail_gif': str(obj.thumbnail_gif),
-                    'name': obj.name,
-                    'section': obj.attributes['tator_user_sections'],
-                }
-                prog.finished("Uploaded successfully!", info)
+            if 'streaming' in obj.media_files:
+                if len(obj.media_files['streaming']) > 0:
+                    prog = ProgressProducer(
+                        'upload',
+                        project,
+                        obj.gid,
+                        obj.uid,
+                        obj.name,
+                        self.request.user,
+                        {'section': obj.attributes['tator_user_sections']},
+                    )
+                    info = {
+                        'id': obj.id,
+                        'thumbnail': str(obj.thumbnail),
+                        'thumbnail_gif': str(obj.thumbnail_gif),
+                        'name': obj.name,
+                        'section': obj.attributes['tator_user_sections'],
+                    }
+                    prog.finished("Uploaded successfully!", info)
 
         return {'message': f'Media {params["id"]} successfully updated!'}
 
