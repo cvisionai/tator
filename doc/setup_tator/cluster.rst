@@ -429,9 +429,9 @@ The master node is where the Kubernetes cluster is administered.
 
 * Initialize the master node:
 
-``sudo kubeadm init --apiserver-advertise-address=<MASTER_NODE_IP_ADDRESS> --pod-network-cidr=10.100.0.0/21``
+``sudo kubeadm init --apiserver-advertise-address=<MASTER_NODE_IP_ADDRESS> --pod-network-cidr=10.217.0.0/16``
 
-Replace the master node ip address with the IP address of your machine. You may change the pod network CIDR to something else if you want. It will take a little while for kubeadm to initialize the master node.
+Replace the master node ip address with the IP address of your machine. Note that the pod network CIDR above is required to use the CNI plugin Cilium. It will take a little while for kubeadm to initialize the master node.
 
 * Configure kubectl to run without sudo:
 
@@ -443,9 +443,13 @@ Replace the master node ip address with the IP address of your machine. You may 
    sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
-* Install weave:
+* Install Cilium:
 
-``kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"``
+``kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.6/install/kubernetes/quick-install.yaml``
+
+and wait until all Cilium pods are marked as READY by monitoring with:
+
+``kubectl get pods -n kube-system --selector=k8s-app=cilium``
 
 * Allow the master node to run Tator pods (if desired):
 
