@@ -32,7 +32,6 @@ certCron:
   # example of how to do this.
   enabled: true
 pv:
-  enabled: true
   # EFS filesystem ID for main pv.
   filesystemId: <Your filesystem ID>
   # Specifies a series of persistent volumes for storing media. If given,
