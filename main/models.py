@@ -128,7 +128,7 @@ class TatorUserManager(UserManager):
             return self.get(cognito_id=cognito_id)
         except self.model.DoesNotExist:
             pass
-        
+
         first_name = payload['given_name']
         last_name = payload['family_name']
         initials = f"{first_name[0]}{last_name[0]}"
@@ -473,7 +473,7 @@ class StateType(Model):
                      as the default for datetime dtype.
     """
     delete_child_localizations = BooleanField(default=False)
-    """ If enabled, child localizations will be deleted when states of this 
+    """ If enabled, child localizations will be deleted when states of this
         type are deleted.
     """
     def __str__(self):
@@ -586,11 +586,11 @@ class Media(Model):
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     gid = CharField(max_length=36, null=True, blank=True)
-    """ Group ID for the upload that created this media. Note we intentionally do 
+    """ Group ID for the upload that created this media. Note we intentionally do
         not use UUIDField because this field is provided by the uploader and not
         guaranteed to be an actual UUID. """
     uid = CharField(max_length=36, null=True, blank=True)
-    """ Unique ID for the upload that created this media. Note we intentionally do 
+    """ Unique ID for the upload that created this media. Note we intentionally do
         not use UUIDField because this field is provided by the uploader and not
         guaranteed to be an actual UUID. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -620,6 +620,10 @@ class Media(Model):
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
+
+class Resource(Model):
+    path = CharField(db_index=True, max_length=256)
+    count=IntegerField(null=True, default=1)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
