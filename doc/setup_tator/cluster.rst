@@ -301,8 +301,8 @@ Create a file called at `/etc/exports` in your node home directory that we will 
 .. code-block:: text
    :linenos:
 
-   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,vers=4.1,rsize=1048576,wsize=1048576,hard)
-   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,vers=4.1,rsize=1048576,wsize=1048576,hard)
+   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,async,no_subtree_check)
+   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check)
 
 .. _NFS Setup:
 
