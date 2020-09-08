@@ -4,6 +4,7 @@ import time
 import subprocess
 import json
 import datetime
+import shutil
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
@@ -244,7 +245,7 @@ def clearOldFilebeatIndices():
             es.indices.delete(str(index))
 
 
-def hard_link_media(source, section_list, dest):
+def soft_link_media(source, section_list, dest):
     dest_proj = Project.objects.get(pk=dest)
     dest_type = MediaType.objects.filter(project=dest_proj,dtype="video")[0]
     for section in section_list:
@@ -260,10 +261,11 @@ def hard_link_media(source, section_list, dest):
                 name=os.path.basename(orig['path'])
                 new_path=os.path.join("/data/raw", str(dest), name)
                 try:
-                    os.link(orig['path'], new_path)
+                    os.symlink(orig['path'], new_path)
                 except Exception as e:
                     print("Already copied")
                 new_obj.media_files["archival"][idx]['path']=new_path
+                Resource.add_resource(new_path)
             streaming = new_obj.media_files["streaming"]
             for idx,stream in enumerate(streaming):
                 name=os.path.basename(stream['path'])
@@ -273,7 +275,8 @@ def hard_link_media(source, section_list, dest):
                         source=f"/data{stream['path']}"
                     else:
                         source=os.path.join("/data", stream['path'])
-                    os.link(source, os.path.join('/data',new_path))
+                    os.symlink(source, os.path.join('/data',new_path))
+                    Resource.add_resource(new_path)
                 except Exception as e:
                     print(f"Already copied {e}")
                 new_obj.media_files["streaming"][idx]['path']="/"+new_path
@@ -295,7 +298,7 @@ def hard_link_media(source, section_list, dest):
             orig_thumb_path = os.path.join("/data/media", orig_thumb)
             new_thumb = os.path.join("/data/media/",str(dest), name)
             try:
-                os.link(orig_thumb_path, new_thumb)
+                shutil.copyfile(orig_thumb_path, new_thumb)
             except Exception as e:
                 print(f"Already copied thumbnail {e}")
             new_obj.thumbnail = os.path.join(str(dest),name)
@@ -305,7 +308,7 @@ def hard_link_media(source, section_list, dest):
             orig_thumb_path = os.path.join("/data/media", orig_thumb)
             new_thumb = os.path.join("/data/media/",str(dest), name)
             try:
-                os.link(orig_thumb_path, new_thumb)
+                shutil.copyfile(orig_thumb_path, new_thumb)
             except Exception as e:
                 print(f"Already copied thumbnail {e}")
             new_obj.thumbnail_gif = os.path.join(str(dest),name)
