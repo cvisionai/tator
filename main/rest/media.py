@@ -259,6 +259,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             # Delete any state many to many relations to these localizations.
             state_loc_qs = State.localizations.through.objects.filter(localization__in=loc_qs)
             state_loc_qs._raw_delete(state_loc_qs.db)
+            loc_state_qs = State.localizations.through.objects.filter(state__in=state_qs)
+            loc_state_qs._raw_delete(loc_state_qs.db)
+
+            # Delete states and localizations.
             state_qs._raw_delete(state_qs.db)
             loc_qs._raw_delete(loc_qs.db)
 
