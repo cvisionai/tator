@@ -38,6 +38,7 @@ from django.conf import settings
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
+from django.db import transaction
 
 from .search import TatorSearch
 
@@ -624,6 +625,35 @@ class Media(Model):
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     count=IntegerField(null=True, default=1)
+
+    @transaction.atomic
+    def add_resource(path):
+        if os.path.islink(path):
+            path=os.readlink(path)
+        obj,created = Resource.objects.get_or_create(path=path)
+        if not created:
+            obj.count += 1
+            obj.save()
+
+    @transaction.atomic
+    def delete_resource(path):
+        if os.path.islink(path):
+            link_path=path
+            path=os.readlink(path)
+            os.remove(link_path)
+        try:
+            obj = Resource.objects.get(path=path)
+            obj.count -= 1
+            if obj.count <= 0:
+                obj.delete()
+                os.remove(path)
+            else:
+                obj.save()
+        except self.model.DoesNotExist as dne:
+            logger.info(f"Removing legacy resource {path}")
+            os.remove(path)
+        except Exception as e:
+            logger.error(f"{e} when lowering resource count of {path}")
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
