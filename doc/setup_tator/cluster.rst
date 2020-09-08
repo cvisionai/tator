@@ -149,6 +149,59 @@ For GPU nodes, install nvidia-docker
     sudo apt-get install nvidia-430
     sudo apt-get install nvidia-docker2``
 
+Configure the docker daemon
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unless the local registry is setup to use authentication, the docker client on each node needs to add it to its list of
+insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
+
+* Open /etc/docker/daemon.json
+* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'localhost':
+
+.. code-block:: json
+   :linenos:
+
+   {
+     "exec-opts": ["native.cgroupdriver=systemd"],
+     "log-driver": "json-file",
+     "log-opts": {
+       "max-size": "100m"
+     },
+     "storage-driver": "overlay2",
+     "insecure-registries":["localhost:5000"]
+   }
+
+
+* If the node is a GPU worker, add the following:
+
+.. code-block:: json
+   :linenos:
+
+   {
+     "default-runtime": "nvidia",
+       "runtimes": {
+           "nvidia": {
+               "path": "/usr/bin/nvidia-container-runtime",
+               "runtimeArgs": []
+           }
+       },
+     "exec-opts": ["native.cgroupdriver=systemd"],
+     "log-driver": "json-file",
+     "log-opts": {
+       "max-size": "100m"
+     },
+     "storage-driver": "overlay2",
+     "insecure-registries":["localhost:5000"]
+   }
+
+* Restart the docker daemon:
+
+.. code-block:: bash
+   :linenos:
+
+   sudo systemctl daemon-reload
+   sudo systemctl restart docker
+
 Install Kubernetes
 ^^^^^^^^^^^^^^^^^^
 
@@ -247,60 +300,6 @@ Set the docker values in values.yaml
 
 * Set :term:`dockerRegistry` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
 * Set :term:`dockerUsername` and :term:`dockerPassword` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
-
-Configure the docker daemon
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Unless the local registry is setup to use authentication, the docker client on each node needs to add it to its list of
-insecure-registries. Additionally, the maximum log size and parameters for GPU nodes should be set here.
-
-* Open /etc/docker/daemon.json
-* If the node is CPU only, add the following content with the hostname of the node running the registry instead of 'localhost':
-
-.. code-block:: json
-   :linenos:
-
-   {
-     "exec-opts": ["native.cgroupdriver=systemd"],
-     "log-driver": "json-file",
-     "log-opts": {
-       "max-size": "100m"
-     },
-     "storage-driver": "overlay2",
-     "insecure-registries":["localhost:5000"]
-   }
-
-
-* If the node is a GPU worker, add the following:
-
-.. code-block:: json
-   :linenos:
-
-   {
-     "default-runtime": "nvidia",
-       "runtimes": {
-           "nvidia": {
-               "path": "/usr/bin/nvidia-container-runtime",
-               "runtimeArgs": []
-           }
-       },
-     "exec-opts": ["native.cgroupdriver=systemd"],
-     "log-driver": "json-file",
-     "log-opts": {
-       "max-size": "100m"
-     },
-     "storage-driver": "overlay2",
-     "insecure-registries":["localhost:5000"]
-   }
-
-* Restart the docker daemon:
-
-.. code-block:: bash
-   :linenos:
-
-   sudo systemctl daemon-reload
-   sudo systemctl restart docker
-
 
 Setting up NFS
 ==============
