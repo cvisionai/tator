@@ -409,14 +409,14 @@ class MediaDetailAPI(BaseDetailView):
             old_audio = obj.media_files.get('audio', [])
             audio = new_audio + old_audio
 
-            for obj in new_streaming:
-                path = "/data" + obj['path']
-                seg_path = "/data" + obj['segment_info']
+            for fp in new_streaming:
+                path = "/data" + fp['path']
+                seg_path = "/data" + fp['segment_info']
                 Resource.add_resource(path)
                 Resource.add_resource(seg_path)
 
-            for obj in new_archival:
-                Resource.add_resource(obj['path'])
+            for fp in new_archival:
+                Resource.add_resource(fp['path'])
 
             # Only fill in a key if it has at least one definition.
             obj.media_files = {}
