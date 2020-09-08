@@ -278,7 +278,7 @@ def soft_link_media(source, section_list, dest):
                     os.symlink(source, os.path.join('/data',new_path))
                 except Exception as e:
                     print(f"Already copied {e}")
-                Resource.add_resource(new_path)
+                Resource.add_resource(os.path.join('/data',new_path))
                 new_obj.media_files["streaming"][idx]['path']="/"+new_path
                 name=os.path.basename(stream['segment_info'])
                 new_path=os.path.join("media", str(dest), name)

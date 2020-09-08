@@ -638,11 +638,12 @@ class Resource(Model):
             obj.save()
 
     @transaction.atomic
-    def delete_resource(path):
-        if os.path.islink(path):
-            link_path=path
-            path=os.readlink(path)
-            os.remove(link_path)
+    def delete_resource(path_or_link):
+        if os.path.islink(path_or_link):
+            path=os.readlink(path_or_link)
+            os.remove(path_or_link)
+        else:
+            path=path_or_link
         try:
             obj = Resource.objects.get(path=path)
             obj.count -= 1
