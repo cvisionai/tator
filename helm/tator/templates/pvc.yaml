@@ -15,6 +15,10 @@ spec:
 {{- $settings := dict "Values" $.Values "shard" . }}
 {{ include "shard.pvc" $settings }}
 {{- end }}
+{{- range .Values.pv.uploadShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pvc" $settings }}
+{{- end }}
 {{ if .Values.postgis.enabled }}
 ---
 kind: PersistentVolumeClaim

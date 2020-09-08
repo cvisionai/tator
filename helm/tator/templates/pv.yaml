@@ -30,6 +30,10 @@ spec:
 {{- $settings := dict "Values" $.Values "shard" . }}
 {{ include "shard.pv" $settings }}
 {{- end }}
+{{- range .Values.pv.uploadShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pv" $settings }}
+{{- end }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
