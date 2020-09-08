@@ -472,6 +472,10 @@ class StateType(Model):
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
     """
+    delete_child_localizations = BooleanField(default=False)
+    """ If enabled, child localizations will be deleted when states of this 
+        type are deleted.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
