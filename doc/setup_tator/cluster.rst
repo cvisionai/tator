@@ -651,7 +651,7 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
   useMinJs
     Boolean indicating whether to minify JavaScript code. Should be true for production, false for development.
 
-  httpsRequired
+  requireHttps
     Boolean indicating whether accessing Tator should require HTTPS. This should be true for production, up to you for development.
     
   dockerRegistry
