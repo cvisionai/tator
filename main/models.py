@@ -652,7 +652,7 @@ class Resource(Model):
                 os.remove(path)
             else:
                 obj.save()
-        except self.model.DoesNotExist as dne:
+        except Resource.DoesNotExist as dne:
             logger.info(f"Removing legacy resource {path}")
             os.remove(path)
         except Exception as e:
