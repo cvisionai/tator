@@ -296,13 +296,13 @@ A second NFS share is used for dynamic provisioning of persistent volumes. In th
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
-Create a file called *exports* in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
+Create a file called at `/etc/exports` in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
 
 .. code-block:: text
    :linenos:
 
-   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
+   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,vers=4.1,rsize=1048576,wsize=1048576,hard)
+   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,vers=4.1,rsize=1048576,wsize=1048576,hard)
 
 .. _NFS Setup:
 
@@ -334,46 +334,20 @@ Preparing NFS server node
    sudo chmod -R 777 /media/kubernetes_share
 
 
-NFS version
-^^^^^^^^^^^
+Start NFS share
+^^^^^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4.
-
-Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
-
-* Disable rpcbind:
+* Install NFS server package
 
 .. code-block:: bash
-   :linenos:
 
-   sudo systemctl stop rpcbind
-   sudo systemctl disable rpcbind
+   sudo apt-get install nfs-kernel-server
 
-
-* Load the nfs drivers:
+* If this was already installed, restart after modifying `/etc/exports`:
 
 .. code-block:: bash
-   :linenos:
 
-   sudo modprobe nfs
-   sudo modprobe nfsd
-
-
-* Configure node to load modules on boot by adding ``nfs`` and ``nfsd`` to ``/etc/modules``
-
-* Use the following command to create the NFS shares using the exports file, assuming the exports file is in $HOME:
-
-.. code-block:: bash
-   :linenos:
-
-   sudo docker run -d --privileged --name nfs3 --restart always -v /media/kubernetes_share:/media/kubernetes_share -v $HOME/exports:/etc/exports:ro --cap-add SYS_ADMIN --cap-add SYS_MODULE -p 2049:2049 -p 2049:2049/udp -p 111:111 -p 111:111/udp -p 32765:32765 -p 32765:32765/udp -p 32767:32767 -p 32767:32767/udp -e NFS_VERSION=3 erichough/nfs-server
-
-
-* You can check the status of the nfs server using:
-
-``docker logs nfs3``
-
-It should show the message "READY AND WAITING FOR NFS CLIENT CONNECTIONS"
+   sudo systemctl restart nfs-kernel-server.service
 
 Database storage
 ================
@@ -532,7 +506,7 @@ Install the nfs-client-provisioner helm chart
 
    kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
-   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false --set nfs.mountOptions="{nfsvers=3,nolock}"
+   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
 * This sets up a new storage class called `nfs-client` any pvc request needs to
   specify this as a storage class to use this provisioner.
