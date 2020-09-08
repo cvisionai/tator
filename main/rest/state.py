@@ -343,7 +343,11 @@ class StateDetailAPI(BaseDetailView):
         return {'message': f'State {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        State.objects.get(pk=params['id']).delete()
+        state = State.objects.get(pk=params['id'])
+        if state.meta.delete_child_localizations:
+            loc_qs = state.localizations.all()
+            loc_qs._raw_delete(loc_qs.db)
+        state.delete()
         return {'message': f'State {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
