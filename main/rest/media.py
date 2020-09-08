@@ -252,13 +252,14 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Delete any states that now have null media many-to-many.
             state_qs = State.objects.filter(project=params['project'], media__isnull=True)
-            state_qs._raw_delete(state_qs.db)
 
             # Delete any localizations associated to this media
             loc_qs = Localization.objects.filter(media__in=media_ids)
+
             # Delete any state many to many relations to these localizations.
             state_loc_qs = State.localizations.through.objects.filter(localization__in=loc_qs)
             state_loc_qs._raw_delete(state_loc_qs.db)
+            state_qs._raw_delete(state_qs.db)
             loc_qs._raw_delete(loc_qs.db)
 
             # Mark media for deletion by setting project to null.
