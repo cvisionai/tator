@@ -11,6 +11,10 @@ spec:
   {{- if .Values.awsStorage.enabled }}
   storageClassName: efs-sc
   {{- end }}
+{{- range .Values.pv.mediaShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pvc" $settings }}
+{{- end }}
 {{ if .Values.postgis.enabled }}
 ---
 kind: PersistentVolumeClaim

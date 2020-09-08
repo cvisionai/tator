@@ -25,6 +25,11 @@ spec:
   nfs:
     server: {{ .Values.pv.nfsServer }}
     path: {{ .Values.pv.path }}
+  {{- end }} # .Values.awsStorage.enabled
+{{- range .Values.pv.mediaShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pv" $settings }}
+{{- end }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
