@@ -1,4 +1,3 @@
-{{ if .Values.awsStorage.enabled }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -6,23 +5,12 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.pvc.size | default "10Ti" }}
+  {{- if .Values.awsStorage.enabled }}
   storageClassName: efs-sc
-  resources:
-    requests:
-      storage: 5Gi
-{{ else }}
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: main-pv-claim
-  labels:
-    app: static
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.pvc.size }}
+  {{- end }}
 {{ if .Values.postgis.enabled }}
 ---
 kind: PersistentVolumeClaim
@@ -37,5 +25,4 @@ spec:
   resources:
     requests:
       storage: {{ .Values.postgis.persistence.size }}
-{{ end }}
 {{ end }}
