@@ -455,7 +455,11 @@ class MediaDetailAPI(BaseDetailView):
                         'name': obj.name,
                         'section': obj.attributes['tator_user_sections'],
                     }
-                    prog.finished("Uploaded successfully!", info)
+                    # Never want to fail a move for a progress message.
+                    try:
+                        prog.finished("Uploaded successfully!", info)
+                    except:
+                        pass
 
         return {'message': f'Media {params["id"]} successfully updated!'}
 
