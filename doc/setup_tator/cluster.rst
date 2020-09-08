@@ -251,26 +251,6 @@ Get a domain from DuckDNS
 * Click "Add domain".
 
 
-
-Clone the Tator repository
-==========================
-
-* Make sure git is installed and clone the repo:
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get install git
-   git clone https://github.com/cvisionai/tator.git
-   cd tator
-
-Values file
-^^^^^^^^^^^
-
-* Copy the example values.yaml.
-
-``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
-
 Node setup
 ==========
 
@@ -653,10 +633,30 @@ The API server certificate can be obtained via the following (run on the job clu
 
 These should be used to update the ``remoteTranscodes`` section of ``values.yaml`` if remote transcodes are desired. They may also be used to create a JobCluster object via the admin interface for use with algorithm registrations.
 
+
 Tator build system
 ==================
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
+
+Clone the Tator repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Make sure git is installed and clone the repo:
+
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get install git
+   git clone https://github.com/cvisionai/tator.git
+   cd tator
+
+Values file
+^^^^^^^^^^^
+
+* Copy the example values.yaml.
+
+``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
 
 Update the configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -676,6 +676,9 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
   useMinJs
     Boolean indicating whether to minify JavaScript code. Should be true for production, false for development.
+
+  httpsRequired
+    Boolean indicating whether accessing Tator should require HTTPS. This should be true for production, up to you for development.
     
   dockerRegistry
     The host and port of the cluster's local docker registry that was set up earlier in this tutorial.
