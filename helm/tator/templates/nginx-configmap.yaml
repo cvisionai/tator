@@ -238,6 +238,7 @@ data:
           proxy_set_header Host $host;
           proxy_set_header Content-Length "";
           proxy_set_header X-Original-URI $request_uri;
+          proxy_set_header X-Original-METHOD $request_method;
           proxy_pass_header Authorization;
           proxy_pass_header Upload-Uid;
 
@@ -255,7 +256,7 @@ data:
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Host $server_name;
         }
-{{ if .Values.kibana.enabled }}
+        {{- if .Values.kibana.enabled }}
         location /logs/ {
           auth_request /auth-admin;
           proxy_pass http://tator-kibana:{{ .Values.kibana.httpPort }}/;
@@ -268,7 +269,7 @@ data:
           proxy_set_header Connection "Keep-Alive";
           proxy_set_header Proxy-Connection "Keep-Alive";
         }
-{{ end }}
+        {{- end }}
         location /auth-admin {
           internal;
           proxy_pass http://gunicorn-svc:8000/auth-admin;
