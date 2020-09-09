@@ -160,17 +160,7 @@ spec:
           command: ["redis-cli"]
           args: ["-h", {{ .Values.redisHost | quote }}, "-p", "6379", "ping"]
       volumes:
-        - name: main-pv-claim
-          persistentVolumeClaim:
-            claimName: main-pv-claim
-        {{- if .Values.remoteTranscodes.enabled }}
-        - name: remote-transcode-cert
-          secret:
-            secretName: tator-secrets
-            items:
-            - key: remoteTranscodeCert
-              path: ca.crt
-        {{- end }}
+        {{ include "volumes.template" . | indent 8 }}
         {{- if .Values.cognito.enabled }}
         - name: cognito-config
           secret:

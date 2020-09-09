@@ -113,7 +113,5 @@ spec:
               name: main-pv-claim
               subPath: migrations
       volumes:
-        - name: main-pv-claim
-          persistentVolumeClaim:
-            claimName: main-pv-claim
+        {{ include "volumes.template" . | indent 8 }}
 {{ end }}

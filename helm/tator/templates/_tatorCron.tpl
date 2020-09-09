@@ -18,17 +18,7 @@ spec:
             {{ .selector }}
           terminationGracePeriodSeconds: 10
           volumes:
-            - name: main-pv-claim
-              persistentVolumeClaim:
-                claimName: main-pv-claim
-            {{- if .Values.remoteTranscodes.enabled }}
-            - name: remote-transcode-cert
-              secret:
-                secretName: tator-secrets
-                items:
-                - key: remoteTranscodeCert
-                  path: ca.crt
-            {{- end }}
+            {{ include "volumes.template" . | indent 12 }}
           containers:
             - name: tator-online
               image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
