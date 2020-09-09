@@ -1,5 +1,6 @@
 import logging
 import os
+import mimetypes
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
