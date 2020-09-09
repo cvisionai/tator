@@ -143,7 +143,8 @@ class TatorCache:
         return granted
 
     def set_upload_uid_cache(self, upload_url, upload_uid):
-        self.rds.hset('upload_uids', upload_url, upload_uid)
+        if not self.rds.hexists('upload_uids', upload_url):
+            self.rds.hset('upload_uids', upload_url, upload_uid)
 
     def get_upload_uid_cache(self, upload_url):
         return self.rds.hget('upload_uids', upload_url).decode()
