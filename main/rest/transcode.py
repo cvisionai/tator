@@ -4,8 +4,10 @@ import os
 from rest_framework.authtoken.models import Token
 from django.conf import settings
 from urllib import parse as urllib_parse
+import requests
 
 from ..kube import TatorTranscode
+from ..cache import TatorCache
 from ..consumers import ProgressProducer
 from ..models import MediaType
 from ..schema import TranscodeSchema
@@ -67,13 +69,14 @@ class TranscodeAPI(BaseListView):
             raise Exception(f"For project {project} given type {entity_type}, can not find a "
                              "destination media type")
 
-        # Get the file size of the uploaded blob if local
-        netloc = urllib_parse.urlsplit(url).netloc
-        logger.info(f"{netloc} vs. {self.request.get_host()}")
-        if netloc == self.request.get_host():
-            upload_uid = url.split('/')[-1]
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
-            upload_size = os.stat(upload_path).st_size
+        # Get the file size of the uploaded blob
+        parsed = urllib_parse.urlsplit(url)
+        logger.info(f"{parsed.netloc} vs. {self.request.get_host()}")
+        if parsed.netloc == self.request.get_host():
+            upload_uid = TatorCache().get_upload_uid_cache(parsed.path)
+            response = requests.head(url, allow_redirects=True, headers={'Authorization': f'Token {token}',
+                                                                         'Upload-Uid': f'{upload_uid}'})
+            upload_size = response.headers.get('Upload-Length', None)
         else:
             # TODO: get file size of remote
             upload_size = None
