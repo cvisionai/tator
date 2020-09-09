@@ -167,7 +167,10 @@ class TatorTranscode(JobManagerMixin):
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
-                'args': ['-O', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
+                'args': ['-O', '{{inputs.parameters.original}}', 
+                         '--header=\"Authorization: {{workflow.parameters.token}}\"',
+                         '--header=\"Upload-Uid: {{workflow.parameters.uid}}\"',
+                         '{{inputs.parameters.url}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
