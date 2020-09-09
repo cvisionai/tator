@@ -142,6 +142,12 @@ class TatorCache:
             granted = self.rds.hget('uploads', upload_uid).decode() == token
         return granted
 
+    def set_upload_uid_cache(self, upload_url, upload_uid):
+        self.rds.hset('upload_uids', upload_url, upload_uid)
+
+    def get_upload_uid_cache(self, upload_url):
+        return self.rds.hget('upload_uids', upload_url).decode()
+
     def invalidate_all(self):
         """Invalidates all caches.
         """
