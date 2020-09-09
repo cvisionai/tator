@@ -685,15 +685,23 @@ def media_delete(sender, instance, **kwargs):
         if files is None:
             files = []
         for obj in files:
-            path = "/data" + '/' + obj['path']
+            if os.path.isabs(obj['path']):
+                path = "/data" + obj['path']
+            else:
+                path = os.path.join("/data", obj['path'])
             safe_delete(path)
-            path = "/data" + '/' + obj['segment_info']
+
+            if os.path.isabs(obj['segment_info']):
+                path = "/data" + obj['segment_info']
+            else:
+                path = os.path.join("/data", obj['segment_info'])
             safe_delete(path)
         files = instance.media_files.get('archival', [])
         if files is None:
             files = []
         for obj in files:
-            safe_delete(obj['path'])
+            path = obj['path']
+            safe_delete(path)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
