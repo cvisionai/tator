@@ -220,10 +220,16 @@ class AuthUploadView(View):
         authorized = False
         if (upload_uid is not None) and (token is not None):
             if original_method == 'POST':
+                # Store token and upload uid. Susequent calls with same upload UID
+                # will require the same token.
                 TatorCache().set_upload_permission_cache(upload_uid, token)
                 authorized = True
             else:
                 authorized = TatorCache().get_upload_permission_cache(upload_uid, token)
+            if original_method == 'PATCH':
+                # Store uri and upload uid. This is used by the move video endpoint
+                # to include uid in the header for download.
+                TatorCache().set_upload_uid_cache(original_url, upload_uid)
 
         if authorized:
             return HttpResponse(status=200)
