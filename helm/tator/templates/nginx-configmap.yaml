@@ -15,16 +15,6 @@ data:
       server_names_hash_bucket_size 128;
       proxy_ignore_client_abort on;
 
-      # If using upload shards, define load balancer here.
-      {{- if hasKey .Values.pv "uploadShards" }}
-      upstream tusd-load-balancer {
-        hash $http_hashkey consistent;
-        {{- range .Values.pv.uploadShards }}
-        server tusd-{{ .name }}-svc:1080;
-        {{- end }}
-      }
-      {{- end }}
-
       {{- if hasKey .Values "redirects" }}
       {{- range .Values.redirects }}
 
@@ -73,6 +63,16 @@ data:
         location / {
           return 301 https://{{ .Values.domain }}$request_uri;
         }
+      }
+      {{- end }}
+
+      # If using upload shards, define load balancer here.
+      {{- if hasKey .Values.pv "uploadShards" }}
+      upstream tusd-load-balancer {
+        hash $cookie_sessionid;
+        {{- range .Values.pv.uploadShards }}
+        server tusd-{{ .name }}-svc:1080;
+        {{- end }}
       }
       {{- end }}
 
@@ -211,13 +211,11 @@ data:
           proxy_set_header Tus-Version 1.0.0;
           proxy_set_header Tus-Resumable 1.0.0;
           proxy_set_header X-Forwarded-Host $host;
-          proxy_set_header HashKey $cookie_sessionid;
           {{- if .Values.requireHttps }} 
           proxy_set_header X-Forwarded-Proto https;
           {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
-          proxy_pass_request_headers on;
           {{- if hasKey .Values.pv "uploadShards" }}
           proxy_pass http://tusd-load-balancer/files/;
           {{- else }}
