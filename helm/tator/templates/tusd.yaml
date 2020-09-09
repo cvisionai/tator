@@ -10,12 +10,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: tusd
+      app: tusd-{{ .name }}
       type: web
   template:
     metadata:
       labels:
-        app: tusd
+        app: tusd-{{ .name }}
         type: web
     spec:
       {{- if $.Values.awsFargate.enabled }}
@@ -24,7 +24,7 @@ spec:
         webServer: "yes"
       {{- end }}
       containers:
-        - name: tusd
+        - name: tusd-{{ .name }}
           image: {{ $.Values.dockerRegistry }}/tator_tusd
           command: ["tusd"]
           args: ["-behind-proxy", "-upload-dir", "/{{ .name }}"]
@@ -51,14 +51,14 @@ kind: Service
 metadata:
   name: tusd-{{ .name }}-svc
   labels:
-    app: tusd
+    app: tusd-{{ .name }}
 spec:
   ports:
-  - name: tus
+  - name: tus-{{ .name }}
     port: 1080
     targetPort: 1080
   selector:
-    app: tusd
+    app: tusd-{{ .name }}
     type: web
   type: NodePort
 ---
