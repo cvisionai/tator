@@ -11,13 +11,17 @@ spec:
   {{- if .Values.awsStorage.enabled }}
   storageClassName: efs-sc
   {{- end }}
+{{- if hasKey .Values.pv "mediaShards" }}
 {{- range .Values.pv.mediaShards }}
 {{- $settings := dict "Values" $.Values "shard" . }}
 {{ include "shard.pvc" $settings }}
 {{- end }}
+{{- end }}
+{{- if hasKey .Values.pv "uploadShards" }}
 {{- range .Values.pv.uploadShards }}
 {{- $settings := dict "Values" $.Values "shard" . }}
 {{ include "shard.pvc" $settings }}
+{{- end }}
 {{- end }}
 {{ if .Values.postgis.enabled }}
 ---
