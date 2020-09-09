@@ -204,8 +204,8 @@ class Upload {
       },
       chunkSize: 5*1024*1024, // 5MB
       headers: {
-        Authorization: "Token " + this.token,
-        Upload-Uid: this.upload_uid,
+        "Authorization": "Token " + this.token,
+        "Upload-Uid": this.upload_uid,
       },
       onProgress: (bytesSent, bytesTotal) => {
         // Throttle progress requests to every 3 seconds.
