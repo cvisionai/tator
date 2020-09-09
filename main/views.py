@@ -197,6 +197,8 @@ class AuthUploadView(View):
         we check for the existence of this key/value pair.
         """
 
+        original_url = request.headers['X-Original-URI']
+        original_method = request.headers['X-Original-METHOD']
         upload_uid = request.headers.get('Upload-Uid', None)
         token = request.headers.get('Authorization', None)
 
@@ -210,14 +212,14 @@ class AuthUploadView(View):
                 (user, _) = TokenAuthentication().authenticate(request)
             except Exception as e:
                 msg = "*Security Alert:* "
-                msg += f"Attempted to access unauthorized upload."
+                msg += f"Attempted to access unauthorized upload {original_url}."
                 Notify.notify_admin_msg(msg)
                 logger.warn(msg)
                 return HttpResponse(status=403)
 
         authorized = False
         if (upload_uid is not None) and (token is not None):
-            if request.method == 'POST':
+            if original_method == 'POST':
                 TatorCache().set_upload_permission_cache(upload_uid, token)
                 authorized = True
             else:
@@ -228,7 +230,7 @@ class AuthUploadView(View):
         else:
             # Files that aren't in the whitelist or database are forbidden
             msg = f"({user}/{user.id}): "
-            msg += f"Attempted to access unauthorized upload."
+            msg += f"Attempted to access unauthorized upload {original_url}."
             Notify.notify_admin_msg(msg)
             return HttpResponse(status=403)
 
