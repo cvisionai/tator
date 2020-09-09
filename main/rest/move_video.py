@@ -47,8 +47,16 @@ class MoveVideoAPI(BaseListView):
         move_list = []
         if 'archival' in media_files:
             for video_def in media_files['archival']:
+
+                # Determine extension based on codec_mime field, if present. If it is
+                # not present, assume the file is a copy of the original with a name
+                # matching the name of the media record.
+                if 'codec_mime' in video_def:
+                    ext = mimetypes.guess_extension(video_def['codec_mime'].split(';')[0])
+                else:
+                    ext = os.path.splitext(media.name)[1]
                 upload_base = os.path.basename(video_def['url'])
-                path = f"{project}/{str(uuid1())}.mp4"
+                path = f"{project}/{str(uuid1())}{ext}"
                 move_list.append({
                     'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
                     'dst': os.path.join(settings.RAW_ROOT, path),
@@ -76,7 +84,7 @@ class MoveVideoAPI(BaseListView):
         if 'audio' in media_files:
             for audio_def in media_files['audio']:
                 upload_base = os.path.basename(audio_def['url'])
-                path = f"{project}/{str(uuid1())}.mp4"
+                path = f"{project}/{str(uuid1())}.m4a"
                 move_list.append({
                     'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
                     'dst': os.path.join(settings.MEDIA_ROOT, path),
