@@ -122,6 +122,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if hasKey .Values.pv "mediaShards" }}
+            {{- $media_shards := "" }}
+            {{- range .Values.pv.mediaShards }}
+            {{- $media_shards = cat $media_shards "," .name }}
+            {{- end }}
+            {{- $media_shards = nospace $media_shards }}
+            {{- $media_shards = trimPrefix "," $media_shards }}
+            - name: MEDIA_SHARDS
+              value: {{ $media_shards }}
+            {{- end }}
           ports:
             - containerPort: 8000
               name: gunicorn
