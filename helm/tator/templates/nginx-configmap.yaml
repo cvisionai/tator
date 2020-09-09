@@ -18,9 +18,9 @@ data:
       # If using upload shards, define load balancer here.
       {{- if hasKey .Values.pv "uploadShards" }}
       upstream tusd-load-balancer {
-        hash $request_uri consistent;
+        hash $http_hashkey consistent;
         {{- range .Values.pv.uploadShards }}
-        server tusd-{{ .name }}-svc/files/:1080;
+        server tusd-{{ .name }}-svc:1080;
         {{- end }}
       }
       {{- end }}
@@ -211,13 +211,15 @@ data:
           proxy_set_header Tus-Version 1.0.0;
           proxy_set_header Tus-Resumable 1.0.0;
           proxy_set_header X-Forwarded-Host $host;
+          proxy_set_header HashKey $cookie_sessionid;
           {{- if .Values.requireHttps }} 
           proxy_set_header X-Forwarded-Proto https;
           {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
+          proxy_pass_request_headers on;
           {{- if hasKey .Values.pv "uploadShards" }}
-          proxy_pass http://tusd-load-balancer;
+          proxy_pass http://tusd-load-balancer/files/;
           {{- else }}
           proxy_pass http://tusd-svc:1080/files/;
           {{- end }}
