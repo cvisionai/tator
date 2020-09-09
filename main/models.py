@@ -38,6 +38,7 @@ from django.conf import settings
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
+from django.db import transaction
 
 from .search import TatorSearch
 
@@ -128,7 +129,7 @@ class TatorUserManager(UserManager):
             return self.get(cognito_id=cognito_id)
         except self.model.DoesNotExist:
             pass
-        
+
         first_name = payload['given_name']
         last_name = payload['family_name']
         initials = f"{first_name[0]}{last_name[0]}"
@@ -473,7 +474,7 @@ class StateType(Model):
                      as the default for datetime dtype.
     """
     delete_child_localizations = BooleanField(default=False)
-    """ If enabled, child localizations will be deleted when states of this 
+    """ If enabled, child localizations will be deleted when states of this
         type are deleted.
     """
     def __str__(self):
@@ -586,11 +587,11 @@ class Media(Model):
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     gid = CharField(max_length=36, null=True, blank=True)
-    """ Group ID for the upload that created this media. Note we intentionally do 
+    """ Group ID for the upload that created this media. Note we intentionally do
         not use UUIDField because this field is provided by the uploader and not
         guaranteed to be an actual UUID. """
     uid = CharField(max_length=36, null=True, blank=True)
-    """ Unique ID for the upload that created this media. Note we intentionally do 
+    """ Unique ID for the upload that created this media. Note we intentionally do
         not use UUIDField because this field is provided by the uploader and not
         guaranteed to be an actual UUID. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -621,6 +622,42 @@ class Media(Model):
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
 
+class Resource(Model):
+    path = CharField(db_index=True, max_length=256)
+    count=IntegerField(null=True, default=1)
+
+    @transaction.atomic
+    def add_resource(path_or_link):
+        if os.path.islink(path_or_link):
+            path=os.readlink(path_or_link)
+        else:
+            path=path_or_link
+        obj,created = Resource.objects.get_or_create(path=path)
+        if not created:
+            obj.count += 1
+            obj.save()
+
+    @transaction.atomic
+    def delete_resource(path_or_link):
+        if os.path.islink(path_or_link):
+            path=os.readlink(path_or_link)
+            os.remove(path_or_link)
+        else:
+            path=path_or_link
+        try:
+            obj = Resource.objects.get(path=path)
+            obj.count -= 1
+            if obj.count <= 0:
+                obj.delete()
+                os.remove(path)
+            else:
+                obj.save()
+        except Resource.DoesNotExist as dne:
+            logger.info(f"Removing legacy resource {path}")
+            os.remove(path)
+        except Exception as e:
+            logger.error(f"{e} when lowering resource count of {path}")
+
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
@@ -628,7 +665,7 @@ def media_save(sender, instance, created, **kwargs):
 def safe_delete(path):
     try:
         logger.info(f"Deleting {path}")
-        os.remove(path)
+        Resource.delete_resource(path)
     except:
         logger.warning(f"Could not remove {path}")
         logger.warning(f"{traceback.format_exc()}")
@@ -648,15 +685,23 @@ def media_delete(sender, instance, **kwargs):
         if files is None:
             files = []
         for obj in files:
-            path = "/data" + obj['path']
+            if os.path.isabs(obj['path']):
+                path = "/data" + obj['path']
+            else:
+                path = os.path.join("/data", obj['path'])
             safe_delete(path)
-            path = "/data" + obj['segment_info']
+
+            if os.path.isabs(obj['segment_info']):
+                path = "/data" + obj['segment_info']
+            else:
+                path = os.path.join("/data", obj['segment_info'])
             safe_delete(path)
         files = instance.media_files.get('archival', [])
         if files is None:
             files = []
         for obj in files:
-            safe_delete(obj['path'])
+            path = obj['path']
+            safe_delete(path)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
