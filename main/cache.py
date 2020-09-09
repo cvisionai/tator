@@ -139,7 +139,7 @@ class TatorCache:
     def get_upload_permission_cache(self, upload_uid, token):
         granted = False
         if self.rds.hexists('uploads', upload_uid):
-            granted = self.rds.hget('uploads', upload_uid) == token
+            granted = self.rds.hget('uploads', upload_uid).decode() == token
         return granted
 
     def invalidate_all(self):
