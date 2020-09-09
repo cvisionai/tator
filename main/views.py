@@ -188,6 +188,52 @@ class AuthAdminView(View):
 
         return HttpResponse(status=403)
 
+class AuthUploadView(View):
+    def dispatch(self, request, *args, **kwargs):
+        """ Identifies permissions for an uploaded file.
+
+        If this is a POST, we create a key/value pair in redis between
+        upload uid and auth token. If this is a PATCH or GET request,
+        we check for the existence of this key/value pair.
+        """
+
+        upload_uid = request.headers.get('Upload-Uid', None)
+        token = request.headers.get('Authorization', None)
+
+        # For some reason, TokenAuthentication doesn't work by default
+        # So if the session authentication didn't trigger, manually check
+        # to see if a token was provided. Bail out if the user is anonymous
+        # before we get too far
+        user = request.user
+        if isinstance(user, AnonymousUser):
+            try:
+                (user, _) = TokenAuthentication().authenticate(request)
+            except Exception as e:
+                msg = "*Security Alert:* "
+                msg += f"Attempted to access unauthorized upload."
+                Notify.notify_admin_msg(msg)
+                logger.warn(msg)
+                return HttpResponse(status=403)
+
+        authorized = False
+        if (upload_uid is not None) and (token is not None):
+            if request.method == 'POST':
+                TatorCache().set_upload_permission_cache(upload_uid, token)
+                authorized = True
+            else:
+                authorized = TatorCache().get_upload_permission_cache(upload_uid, token)
+
+        if authorized:
+            return HttpResponse(status=200)
+        else:
+            # Files that aren't in the whitelist or database are forbidden
+            msg = f"({user}/{user.id}): "
+            msg += f"Attempted to access unauthorized upload."
+            Notify.notify_admin_msg(msg)
+            return HttpResponse(status=403)
+
+        return HttpResponse(status=403)
+
 def ErrorNotifierView(request, code,message,details=None):
 
     context = {}
