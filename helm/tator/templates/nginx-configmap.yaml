@@ -15,6 +15,16 @@ data:
       server_names_hash_bucket_size 128;
       proxy_ignore_client_abort on;
 
+      # If using upload shards, define load balancer here.
+      {{- if hasKey .Values.pv "uploadShards" }}
+      upstream tusd-load-balancer {
+        hash $request_uri consistent;
+        {{- range .Values.pv.uploadShards }}
+        server tusd-{{ .name }}-svc/files/:1080;
+        {{- end }}
+      }
+      {{- end }}
+
       {{- if hasKey .Values "redirects" }}
       {{- range .Values.redirects }}
 
@@ -188,7 +198,7 @@ data:
           proxy_pass_header Authorization;
 
           proxy_http_version 1.1;
-        }  
+        }
         location /files/ {
           {{- if .Values.requireHttps }} 
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
@@ -206,7 +216,11 @@ data:
           {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
+          {{- if hasKey .Values.pv "uploadShards" }}
+          proxy_pass http://tusd-load-balancer;
+          {{- else }}
           proxy_pass http://tusd-svc:1080/files/;
+          {{- end }}
         }
         location /ws {
           proxy_pass http://daphne-svc:8001;
