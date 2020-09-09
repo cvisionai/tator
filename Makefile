@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx al
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings tus-image postgis-image client-image
+IMAGES=python-bindings tus-image postgis-image client-image tator-lite
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -166,6 +166,12 @@ externals/build_tools/%.py:
 	echo $@ $<
 	./externals/build_tools/makocc.py -o $@ $<
 
+.PHONY: tator-lite
+tator-lite: containers/tator_lite/Dockerfile
+	docker build -t $(DOCKERHUB_USER)/tator_lite:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
 
 .PHONY: tator-image
 tator-image: containers/tator/Dockerfile.gen
