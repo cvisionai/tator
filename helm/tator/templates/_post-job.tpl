@@ -97,21 +97,7 @@ spec:
             - containerPort: 8001
               name: daphne
           volumeMounts:
-            - mountPath: /data/static
-              name: main-pv-claim
-              subPath: static
-            - mountPath: /data/uploads
-              name: main-pv-claim
-              subPath: upload
-            - mountPath: /data/media
-              name: main-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: main-pv-claim
-              subPath: raw
-            - mountPath: /tator_online/main/migrations
-              name: main-pv-claim
-              subPath: migrations
+            {{ include "volumeMounts.template" . | indent 12 }}
       volumes:
         {{ include "volumes.template" . | indent 8 }}
 {{ end }}

@@ -128,26 +128,7 @@ spec:
             - containerPort: 8001
               name: daphne
           volumeMounts:
-            - mountPath: /data/static
-              name: main-pv-claim
-              subPath: static
-            - mountPath: /data/uploads
-              name: main-pv-claim
-              subPath: upload
-            - mountPath: /data/media
-              name: main-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: main-pv-claim
-              subPath: raw
-            - mountPath: /tator_online/main/migrations
-              name: main-pv-claim
-              subPath: migrations
-            {{- if .Values.remoteTranscodes.enabled }}
-            - mountPath: /remote_transcodes
-              name: remote-transcode-cert
-              readOnly: true
-            {{- end }}
+            {{ include "volumeMounts.template" . | indent 12 }}
             {{- if .Values.cognito.enabled }}
             - mountPath: /cognito
               name: cognito-config
