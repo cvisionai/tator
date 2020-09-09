@@ -168,7 +168,7 @@ externals/build_tools/%.py:
 
 .PHONY: tator-lite
 tator-lite: containers/tator_lite/Dockerfile
-	docker build -t $(DOCKERHUB_USER)/tator_lite:$(GIT_VERSION) -f $< . || exit 255
+	docker build -t $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
