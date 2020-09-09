@@ -133,6 +133,15 @@ class TatorCache:
         group = f'project_{project_id}'
         self.rds.delete(group)
 
+    def set_upload_permission_cache(self, upload_uid, token):
+        self.rds.hset('uploads', upload_uid, token)
+
+    def get_upload_permission_cache(self, upload_uid, token):
+        granted = False
+        if self.rds.hexists('uploads', upload_uid):
+            granted = self.rds.hget('uploads', upload_uid) == token
+        return granted
+
     def invalidate_all(self):
         """Invalidates all caches.
         """
