@@ -162,7 +162,7 @@ data:
         {{- if hasKey .Values.pv "mediaShards" }}
         {{- range .Values.pv.mediaShards }}
         location /{{ .name }} {
-          alias /data/{{ .name }}/;
+          alias /{{ .name }}/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
           add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
