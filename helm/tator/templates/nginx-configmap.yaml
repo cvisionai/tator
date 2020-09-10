@@ -30,7 +30,7 @@ data:
 
         # Proxy acme challenge files.
         location /.well-known/acme-challenge/ {
-          alias /data/static/challenges/;
+          alias /static/challenges/;
           try_files $uri =404;
         }
         {{- end }}
@@ -56,7 +56,7 @@ data:
 
         # Proxy acme challenge files.
         location /.well-known/acme-challenge/ {
-          alias /data/static/challenges/;
+          alias /static/challenges/;
           try_files $uri =404;
         }
 
@@ -122,25 +122,25 @@ data:
           return 404;
         }
         location /favicon.ico {
-          alias /data/static/images/favicon.ico;
+          alias /static/images/favicon.ico;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
         location /gnocchi {
-          alias /data/static/gnocchi;
+          alias /static/gnocchi;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /static {
-          alias /data/static/;
+          alias /static/;
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /docs {
-          alias /data/static/docs;
+          alias /static/docs;
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /media {
-          alias /data/media/;
+          alias /media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
           add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;

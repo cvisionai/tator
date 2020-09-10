@@ -1,5 +1,5 @@
 {{- define "volumeMounts.template" }}
-- mountPath: /data/static
+- mountPath: /static
   name: main-pv-claim
   subPath: static
 - mountPath: /tator_online/main/migrations
@@ -11,7 +11,7 @@
   name: {{ .name }}-pv-claim
 {{- end }}
 {{- else }}
-- mountPath: /data/uploads
+- mountPath: /uploads
   name: main-pv-claim
   subPath: upload
 {{- end }}
@@ -21,7 +21,7 @@
   name: {{ .name }}-pv-claim
 {{- end }}
 {{- end }}
-- mountPath: /data/media
+- mountPath: /media
   name: main-pv-claim
   subPath: media
 - mountPath: /data/raw

@@ -385,8 +385,8 @@ class MediaDetailAPI(BaseDetailView):
             audio = new_audio + old_audio
 
             for fp in new_streaming:
-                path = "/data" + fp['path']
-                seg_path = "/data" + fp['segment_info']
+                path = fp['path']
+                seg_path = fp['segment_info']
                 Resource.add_resource(path)
                 Resource.add_resource(seg_path)
 
