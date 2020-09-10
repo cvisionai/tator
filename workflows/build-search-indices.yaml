@@ -141,14 +141,4 @@ spec:
         value: "{{workflow.parameters.tatorDebug}}"
       - name: TATOR_USE_MIN_JS
         value: "{{workflow.parameters.useMinJs}}"
-      volumeMounts:
-        - mountPath: /data/media
-          name: main-pv-claim
-          subPath: raw
-        - mountPath: /data/raw
-          name: main-pv-claim
-          subPath: raw
-  volumes:
-    - name: main-pv-claim
-      persistentVolumeClaim:
-        claimName: main-pv-claim
+
