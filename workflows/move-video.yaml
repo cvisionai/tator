@@ -42,8 +42,9 @@ spec:
   - name: move
     inputs:
       parameters:
-      - name: src
+      - name: url
       - name: dst
+      - name: upload_uid
     container:
       image: "{{workflow.parameters.wget_image}}"
       imagePullPolicy: IfNotPresent
