@@ -30,10 +30,12 @@ spec:
         template: move
         arguments:
           parameters:
-          - name: src
-            value: "{{item.src}}"
+          - name: url
+            value: "{{item.url}}"
           - name: dst
             value: "{{item.dst}}"
+          - name: upload_uid
+            value: "{{item.upload_uid}}"
         withParam: "{{workflow.parameters.move_list}}"
     - - name: patch-media
         template: patch
@@ -43,10 +45,13 @@ spec:
       - name: src
       - name: dst
     container:
-      image: "{{workflow.parameters.client_image}}"
+      image: "{{workflow.parameters.wget_image}}"
       imagePullPolicy: IfNotPresent
-      command: [mv]
-      args: ["{{inputs.parameters.src}}", "{{inputs.parameters.dst}}"]
+      command: [wget]
+      args: ["--header=Authorization: Token {{workflow.parameters.token}}",
+             "--header=Upload-Uid: {{inputs.parameters.upload_uid}}",
+             "-O", "{{inputs.parameters.dst}}",
+             "{{inputs.parameters.url}}"]
       resources:
         requests:
           memory: 500Mi
@@ -63,10 +68,15 @@ spec:
         subPath: raw
   - name: patch
     container:
-      image: "{{workflow.parameters.client_image}}"
+      image: "{{workflow.parameters.curl_image}}"
       imagePullPolicy: IfNotPresent
       command: [curl]
-      args: ["--retry", "5", "--connect-timeout", "60", "-H", "Content-Type: application/json", "-H", "Authorization: Token {{workflow.parameters.token}}", "-X", "PATCH", "-d", "{{workflow.parameters.media_update}}", "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
+      args: ["--retry", "5", "--connect-timeout", "60",
+             "-H", "Content-Type: application/json",
+             "-H", "Authorization: Token {{workflow.parameters.token}}",
+             "-X", "PATCH",
+             "-d", "{{workflow.parameters.media_update}}",
+             "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
         requests:
           memory: 500Mi
