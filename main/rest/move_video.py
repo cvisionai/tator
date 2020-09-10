@@ -15,20 +15,9 @@ from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
+from ._uploads import get_destination_path
 
 logger = logging.getLogger(__name__)
-
-def get_destination_path(default, project):
-    # Select a shard or use default.
-    media_shards = os.getenv('MEDIA_SHARDS')
-    if media_shards is None:
-        path = default
-    else:
-        path = f"/{random.choice(media_shards.split(','))}"
-    # Make sure project path exists.
-    project_path = os.path.join(path, str(project))
-    os.makedirs(project_path, exist_ok=True)
-    return path
 
 def get_upload_uid(url):
     return TatorCache().get_upload_uid_cache(url)
