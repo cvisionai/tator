@@ -9,9 +9,9 @@ spec:
     secondsAfterFailure: 86400
   arguments:
     parameters:
-    - name: client_image
-    - name: move_list # List of objects with src/dst.
-                      # Example: [{"src": "/src/path", "dst": "/dst/path"}]
+    - name: wget_image
+    - name: curl_image
+    - name: move_list # List of objects with url, dst, upload_uid
     - name: media_update 
     - name: media_id
     - name: host
