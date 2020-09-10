@@ -60,15 +60,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
-            - mountPath: /data/static
-              name: main-pv-claim
-              subPath: static
-            - mountPath: /data/media
-              name: main-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: main-pv-claim
-              subPath: raw
+            {{ include "volumeMounts.template" . | indent 12 }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -103,9 +95,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- end }}
-        - name: main-pv-claim
-          persistentVolumeClaim:
-            claimName: main-pv-claim
+        {{ include "volumes.template" . | indent 8 }}
 ---
 apiVersion: v1
 kind: Service
