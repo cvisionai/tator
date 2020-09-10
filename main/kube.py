@@ -330,7 +330,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.determine_transcode',
