@@ -6,7 +6,7 @@ import os
 from rest_framework.authtoken.models import Token
 from urllib import parse as urllib_parse
 
-from ..cache import TatorCache
+from .cache import TatorCache
 
 def download_uploaded_file(url, user, dst):
     """ Attempts to download the uploaded file using the given token.
