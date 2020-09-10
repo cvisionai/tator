@@ -20,14 +20,13 @@
 - mountPath: /{{ .name }}
   name: {{ .name }}-pv-claim
 {{- end }}
-{{- else }}
+{{- end }}
 - mountPath: /data/media
   name: main-pv-claim
   subPath: media
 - mountPath: /data/raw
   name: main-pv-claim
   subPath: raw
-{{- end }}
 {{- if .Values.remoteTranscodes.enabled }}
 - mountPath: /remote_transcodes
   name: remote-transcode-cert
