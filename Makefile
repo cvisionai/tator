@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx al
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings tus-image postgis-image client-image tator-lite
+IMAGES=python-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -178,6 +178,20 @@ tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css docs
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+
+.PHONY: wget-image
+wget-image: containers/wget/Dockerfile
+	docker build -t $(DOCKERHUB_USER)/wget:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:latest
+
+.PHONY: curl-image
+curl-image: containers/curl/Dockerfile
+	docker build -t $(DOCKERHUB_USER)/curl:$(GIT_VERSION) -f $< . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
 
 PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
