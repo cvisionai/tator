@@ -11,8 +11,6 @@ import sys
 
 from django.conf import settings
 
-from ._uploads import download_uploaded_file
-
 logger = logging.getLogger(__name__)
 
 class MediaUtil:

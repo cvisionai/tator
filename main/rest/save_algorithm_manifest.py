@@ -6,9 +6,9 @@ from django.conf import settings
 
 from ..schema import SaveAlgorithmManifestSchema
 from ..schema.components.algorithm import manifest_fields as fields
+from ..uploads import download_uploaded_file
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
-from ._uploads import download_uploaded_file
 
 logger = logging.getLogger(__name__)
 

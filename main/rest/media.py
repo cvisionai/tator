@@ -25,6 +25,8 @@ from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..consumers import ProgressProducer
 from ..notify import Notify
+from ..uploads import download_uploaded_file
+from ..uploads import get_destination_path
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -35,8 +37,6 @@ from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectTransferPermission
-from ._uploads import download_uploaded_file
-from ._uploads import get_destination_path
 
 logger = logging.getLogger(__name__)
 

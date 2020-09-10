@@ -12,10 +12,11 @@ from ..kube import TatorMove
 from ..models import Media
 from ..schema import MoveVideoSchema
 from ..cache import TatorCache
+from ..uploads import download_uploaded_file
+from ..uploads import get_destination_path
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
-from ._uploads import get_destination_path
 
 logger = logging.getLogger(__name__)
 
