@@ -1112,6 +1112,20 @@ class TatorMove:
         self.corev1 = CoreV1Api()
         self.custom = CustomObjectsApi()
 
+        # If media shards are enabled, set up volumes and mounts.
+        media_shards = os.getenv('MEDIA_SHARDS')
+        if media_shards is not None:
+            media_shards = media_shards.split(',')
+            volumes = [{'name': f'{shard}-pv-claim',
+                        'persistentVolumeClaime': {
+                            'claimName': f'{shard}-pv-claim',
+                        }} for shard in media_shards]
+            mounts = [{'mountPath': f'/{shard}',
+                       'name': f'{shard}-pv-claim'}
+                       for shard in media_shards]
+            self.workflow['spec']['volumes'] += volumes
+            self.workflow['spec']['templates'][1]['container']['volumeMounts'] += mounts
+
     def _set_parameter(self, name, value):
         for param in self.workflow['spec']['arguments']['parameters']:
             if param['name'] == name:
