@@ -75,7 +75,7 @@ class MoveVideoAPI(BaseListView):
                 else:
                     ext = os.path.splitext(media.name)[1]
                 path = f"{project}/{str(uuid1())}{ext}"
-                dst = os.path.join(get_destination_path(settings.RAW_ROOT), path)
+                dst = os.path.join(get_destination_path(settings.RAW_ROOT, project), path)
                 upload_uid = get_upload_uid(urllib_parse.urlsplit(video_def['url']).path)
                 move_list.append({
                     'url': video_def['url'],
@@ -89,8 +89,8 @@ class MoveVideoAPI(BaseListView):
                 uuid = str(uuid1())
                 path = f"{project}/{uuid}.mp4"
                 segment_info = f"{project}/{uuid}_segments.json"
-                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT), path)
-                segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT), segment_info)
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
+                segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), segment_info)
                 upload_uid = get_upload_uid(urllib_parse.urlsplit(video_def['url']).path)
                 segment_upload_uid = get_upload_uid(urllib_parse.urlsplit(video_def['segments_url']).path)
                 move_list += [{
@@ -109,7 +109,7 @@ class MoveVideoAPI(BaseListView):
         if 'audio' in media_files:
             for audio_def in media_files['audio']:
                 path = f"{project}/{str(uuid1())}.m4a"
-                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT), path)
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
                 upload_uid = get_upload_uid(urllib_parse.urlsplit(audio_def['url']).path)
                 move_list.append({
                     'url': audio_def['url'],
