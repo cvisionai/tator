@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Case, When
 from django.conf import settings
 from PIL import Image
+import requests
 
 from ..models import Media
 from ..models import MediaType
@@ -34,6 +35,7 @@ from ._attributes import patch_attributes
 from ._attributes import validate_attributes
 from ._permissions import ProjectEditPermission
 from ._permissions import ProjectTransferPermission
+from ._uploads import download_uploaded_file
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +141,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 {'section': section},
             )
 
-            # Make sure uploaded file exists
+            # Make sure uploaded file exists and is accessible by the user.
             if os.path.exists(upload_path):
                 media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
             else:
@@ -376,21 +378,17 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'thumbnail_url' in params:
             # Save the thumbnail.
-            upload_uid = params['thumbnail_url'].split('/')[-1]
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
             save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
             media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
-            with open(upload_path, 'rb') as f:
-                obj.thumbnail.save(media_base, f, save=False)
+            download_uploaded_file(params['thumbnail_url'], self.request.user, save_path)
+            obj.thumbnail.name = media_base
 
         if 'thumbnail_gif_url' in params:
             # Save the thumbnail gif.
-            upload_uid = params['thumbnail_gif_url'].split('/')[-1]
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
             save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
             media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
-            with open(upload_path, 'rb') as f:
-                obj.thumbnail_gif.save(media_base, f, save=False)
+            download_uploaded_file(params['thumbnail_gif_url'], self.request.user, save_path)
+            obj.thumbnail_gif.name = media_base
 
         # Media definitions may be appended but not replaced or deleted.
         if 'media_files' in params:
