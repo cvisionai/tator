@@ -1,5 +1,6 @@
 """ Utilities to interact with uploaded files from rest endpoints. """
 import subprocess
+import random
 import os
 
 from rest_framework.authtoken.models import Token
