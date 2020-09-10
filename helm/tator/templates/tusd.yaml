@@ -35,7 +35,7 @@ spec:
               memory: 2Gi
             requests:
               cpu: 250m
-              memory: 1Gi
+              memory: 500Mi
           ports:
             - containerPort: 1080
           volumeMounts:
@@ -99,7 +99,7 @@ spec:
               memory: 2Gi
             requests:
               cpu: 250m
-              memory: 1Gi
+              memory: 500Mi
           ports:
             - containerPort: 1080
           volumeMounts:
