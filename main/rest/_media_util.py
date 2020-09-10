@@ -55,7 +55,7 @@ class MediaUtil:
                 self._width = video.width
 
             # Make file relative to URL to be consistent with streaming files below
-            this._video_file = video.file.path
+            self._video_file = video.file.path
 
         self._fps = video.fps
 
