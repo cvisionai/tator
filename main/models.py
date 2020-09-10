@@ -312,14 +312,17 @@ class TemporaryFile(Model):
         self.eol_datetime = past
         self.save()
 
-    def from_local(path, name, project, user, lookup, hours):
+    def from_local(path, name, project, user, lookup, hours, is_upload=False):
         """ Given a local file create a temporary file storage object
         :returns A saved TemporaryFile:
         """
         extension = os.path.splitext(name)[-1]
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
-        shutil.copyfile(path, destination_fp)
+        if is_upload:
+            download_uploaded_file(path, user, destination_fp)
+        else:
+            shutil.copyfile(path, destination_fp)
 
         now = datetime.datetime.utcnow()
         eol =  now + datetime.timedelta(hours=hours)
