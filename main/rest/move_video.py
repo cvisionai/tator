@@ -18,12 +18,17 @@ from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
-def get_destination_path(default):
+def get_destination_path(default, project):
+    # Select a shard or use default.
     media_shards = os.getenv('MEDIA_SHARDS')
     if media_shards is None:
-        return default
+        path = default
     else:
-        return f"/{random.choice(media_shards.split(','))}"
+        path = f"/{random.choice(media_shards.split(','))}"
+    # Make sure project path exists.
+    project_path = os.path.join(path, str(project))
+    os.makedirs(project_path, exist_ok=True)
+    return path
 
 def get_upload_uid(url):
     return TatorCache().get_upload_uid_cache(url)
