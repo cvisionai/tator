@@ -244,6 +244,25 @@ def clearOldFilebeatIndices():
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
 
+def cleanup_uploads():
+    """ Removes uploads that are greater than a day old.
+    """
+    NUM_DAYS = 1
+    upload_paths = [settings.UPLOAD_ROOT]
+    upload_shards = os.getenv('UPLOAD_SHARDS')
+    if upload_shards is not None:
+        upload_paths += [f'/{shard}' for shard in upload_shards.split(',')]
+    now = time.time()
+    for path in upload_paths:
+        num_removed = 0
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                file_path = os.path.join(root, f)
+                if os.stat(file_path).st_mtime < now - 86400 * NUM_DAYS:
+                    os.remove(file_path)
+                    num_removed += 1
+        logger.info(f"Deleted {num_removed} files from {path} that were > {NUM_DAYS} old...")
+    logger.info("Cleanup finished!")
 
 def soft_link_media(source, section_list, dest):
     dest_proj = Project.objects.get(pk=dest)
