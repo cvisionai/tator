@@ -4,7 +4,7 @@
 %>
 
 % if multiArch.arch=="x86_64":
-FROM cvisionai/svt_encoder as builder
+FROM cvisionai/svt_encoder:v0.0.2 as builder
 ENV LANG C.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget unzip \
@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 --no-cache-dir install wheel
 RUN pip3 --no-cache-dir install pillow==6.2.1 imageio==2.6.1 progressbar2==3.47.0 boto3==1.14.19 pandas==1.1.0
 
-RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev && rm -rf /var/lib/apt/lists
+RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 && rm -rf /var/lib/apt/lists
 
 # Copy over scripts
 COPY scripts/transcoder /scripts
