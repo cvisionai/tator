@@ -223,6 +223,7 @@ data:
           {{- else }}
           proxy_pass http://tusd-svc:1080/files/;
           {{- end }}
+          add_header X-Upstream $upstream_addr always;
           auth_request /auth-upload;
         }
         location /auth-upload {
