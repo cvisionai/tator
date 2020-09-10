@@ -205,9 +205,7 @@ def migrateVideosToNewSchema(project):
             os.path.join(settings.MEDIA_URL,
                          video.file.name))
         if video.segment_info:
-            streaming_definition['segment_info'] = os.path.relpath(
-                video.segment_info,
-                '/data')
+            streaming_definition['segment_info'] = video.segment_info
         if video.original:
             archival_definition = make_video_definition(video.original,
                                                         video.original)
@@ -290,33 +288,27 @@ def soft_link_media(source, section_list, dest):
                 name=os.path.basename(stream['path'])
                 new_path=os.path.join("media", str(dest), name)
                 try:
-                    if os.path.isabs(stream['path']):
-                        source=f"/data{stream['path']}"
-                    else:
-                        source=os.path.join("/data", stream['path'])
-                    os.symlink(source, os.path.join('/data',new_path))
+                    source=stream['path']
+                    os.symlink(source, new_path)
                 except Exception as e:
                     print(f"Already copied {e}")
-                Resource.add_resource(os.path.join('/data',new_path))
+                Resource.add_resource(new_path)
                 new_obj.media_files["streaming"][idx]['path']="/"+new_path
                 name=os.path.basename(stream['segment_info'])
                 new_path=os.path.join("media", str(dest), name)
                 try:
-                    if os.path.isabs(stream['segment_info']):
-                        source=f"/data{stream['segment_info']}"
-                    else:
-                        source=os.path.join("/data", stream['segment_info'])
-                    os.symlink(source, os.path.join('/data',new_path))
+                    source=stream['segment_info']
+                    os.symlink(source, os.path.join(new_path))
                 except Exception as e:
                     print(f"Already copied {e}")
-                Resource.add_resource(os.path.join('/data',new_path))
+                Resource.add_resource(new_path)
                 new_obj.media_files["streaming"][idx]['segment_info']=new_path
 
             #Handle thumbnail
             orig_thumb = new_obj.thumbnail.name
             name = os.path.basename(orig_thumb)
-            orig_thumb_path = os.path.join("/data/media", orig_thumb)
-            new_thumb = os.path.join("/data/media/",str(dest), name)
+            orig_thumb_path = os.path.join("/media", orig_thumb)
+            new_thumb = os.path.join("/media/",str(dest), name)
             try:
                 shutil.copyfile(orig_thumb_path, new_thumb)
             except Exception as e:
@@ -325,8 +317,8 @@ def soft_link_media(source, section_list, dest):
 
             rig_thumb = new_obj.thumbnail_gif.name
             name = os.path.basename(orig_thumb)
-            orig_thumb_path = os.path.join("/data/media", orig_thumb)
-            new_thumb = os.path.join("/data/media/",str(dest), name)
+            orig_thumb_path = os.path.join("/media", orig_thumb)
+            new_thumb = os.path.join("/media/",str(dest), name)
             try:
                 shutil.copyfile(orig_thumb_path, new_thumb)
             except Exception as e:

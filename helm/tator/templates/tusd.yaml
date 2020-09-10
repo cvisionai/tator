@@ -91,7 +91,7 @@ spec:
         - name: tusd
           image: {{ .Values.dockerRegistry }}/tator_tusd
           command: ["tusd"]
-          args: ["-behind-proxy", "-upload-dir", "/data/uploads"]
+          args: ["-behind-proxy", "-upload-dir", "/uploads"]
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -103,7 +103,7 @@ spec:
           ports:
             - containerPort: 1080
           volumeMounts:
-            - mountPath: /data/uploads
+            - mountPath: /uploads
               name: main-pv-claim
               subPath: upload
       volumes:
