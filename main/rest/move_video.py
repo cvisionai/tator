@@ -102,8 +102,8 @@ class MoveVideoAPI(BaseListView):
                     'dst': segment_dst,
                     'upload_uid': segment_upload_uid,
                 }]
-                video_def['path'] = '/media/' + path
-                video_def['segment_info'] = '/media/' + segment_info
+                video_def['path'] = dst
+                video_def['segment_info'] = segment_dst
                 del video_def['url']
                 del video_def['segments_url']
         if 'audio' in media_files:
@@ -116,7 +116,7 @@ class MoveVideoAPI(BaseListView):
                     'dst': dst,
                     'upload_uid': upload_uid,
                 })
-                audio_def['path'] = '/media/' + path
+                audio_def['path'] = dst
                 del audio_def['url']
 
         # Create the move workflow
