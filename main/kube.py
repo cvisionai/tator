@@ -11,6 +11,7 @@ from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.config import load_incluster_config
+from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .consumers import ProgressProducer
@@ -119,8 +120,9 @@ class TatorTranscode(JobManagerMixin):
         port = os.getenv('REMOTE_TRANSCODE_PORT')
         token = os.getenv('REMOTE_TRANSCODE_TOKEN')
         cert = os.getenv('REMOTE_TRANSCODE_CERT')
+        self.remote = host is not None
 
-        if host:
+        if self.remote:
             conf = Configuration()
             conf.api_key['authorization'] = token
             conf.host = f'{PROTO}{host}:{port}'
@@ -744,10 +746,15 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+        if remote:
+            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        else:
+            host = 'http://nginx-internal-svc'
+            url = urljoin(host, urlsplit(url).path)
         global_args = {'upload_name': name,
-                       'host': f'{PROTO}{os.getenv("MAIN_HOST")}',
-                       'rest_url': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
+                       'host': host,
+                       'rest_url': f'{host}/rest',
+                       'tus_url' : f'{host}/files/',
                        'project' : str(project),
                        'token' : str(token),
                        'section' : section,
@@ -836,10 +843,16 @@ class TatorTranscode(JobManagerMixin):
             self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+        
+        if remote:
+            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        else:
+            host = 'http://nginx-internal-svc'
+            url = urljoin(host, urlsplit(url).path)
         global_args = {'upload_name': name,
-                       'host' : f'{PROTO}{os.getenv("MAIN_HOST")}',
-                       'rest_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
+                       'host': host,
+                       'rest_url': f'{host}/rest',
+                       'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
                        'section' : section,
