@@ -125,7 +125,7 @@ class TatorTranscode(JobManagerMixin):
         if self.remote:
             conf = Configuration()
             conf.api_key['authorization'] = token
-            conf.host = f'{PROTO}{host}:{port}'
+            conf.host = f'https://{host}:{port}'
             conf.verify_ssl = True
             conf.ssl_ca_cert = cert
             api_client = ApiClient(conf)
