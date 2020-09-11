@@ -154,6 +154,7 @@ externals/build_tools/%.py:
 .PHONY: tator-lite
 tator-lite: containers/tator_lite/Dockerfile
 	docker build -t $(DOCKERHUB_USER)/tator_lite:$(GIT_VERSION) -f $< . || exit 255
+	docker tag $(DOCKERHUB_USER)/tator_lite:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION)
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
@@ -167,6 +168,7 @@ tator-image: containers/tator/Dockerfile.gen
 .PHONY: wget-image
 wget-image: containers/wget/Dockerfile
 	docker build -t $(DOCKERHUB_USER)/wget:$(GIT_VERSION) -f $< . || exit 255
+	docker tag $(DOCKERHUB_USER)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
 	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:latest
@@ -174,6 +176,7 @@ wget-image: containers/wget/Dockerfile
 .PHONY: curl-image
 curl-image: containers/curl/Dockerfile
 	docker build -t $(DOCKERHUB_USER)/curl:$(GIT_VERSION) -f $< . || exit 255
+	docker tag $(DOCKERHUB_USER)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
 	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
