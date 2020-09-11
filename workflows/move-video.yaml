@@ -86,12 +86,12 @@ spec:
       image: "{{workflow.parameters.curl_image}}"
       imagePullPolicy: IfNotPresent
       command: [curl]
-      args: ["--retry", "5", "--connect-timeout", "60",
+      args: ["--retry", "5", "--connect-timeout", "5",
              "-H", "Content-Type: application/json",
              "-H", "Authorization: Token {{workflow.parameters.token}}",
              "-X", "PATCH",
              "-d", "{{workflow.parameters.media_update}}",
-             "{{workflow.parameters.host}}/rest/Media/{{workflow.parameters.media_id}}"]
+             "http://gunicorn-svc:8000/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
         requests:
           memory: 500Mi
