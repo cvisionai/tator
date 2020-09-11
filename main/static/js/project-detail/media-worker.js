@@ -167,6 +167,9 @@ class SectionData {
     // Map of media ID to media, sorted by REST API.
     this._mediaById = new Map();
 
+    // Map of media upload UID to media.
+    this._mediaByUid = new Map();
+
     // List of media IDs.
     this._mediaIds = [];
 
@@ -237,6 +240,7 @@ class SectionData {
             console.error("Media with ID " + media.id + " was fetched more than once!");
           } else {
             this._mediaById.set(media.id, media);
+            this._mediaByUid.set(media.uid, media);
             this._mediaIds.push(media.id);
           }
         }
@@ -250,6 +254,7 @@ class SectionData {
 
   setFilter(numMedia, search) {
     this._mediaById = new Map();
+    this._mediaByUid = new Map();
     this._mediaIds = [];
     this._search = search;
     this._numMedia = this._getNumMedia(numMedia);
@@ -271,35 +276,42 @@ class SectionData {
   }
 
   uploadProgress(process) {
-    // Updates an existing process or adds a new one
-    if (!this._uploadProcesses.has(process.uid)) {
-      this._numMedia++;
-    }
-    // If the process already exists, update it instead of rewriting it,
-    // since it may contain thumbnail info.
-    if (this._uploadProcesses.has(process.uid)) {
-      const existing = this._uploadProcesses.get(process.uid);
-      this._uploadProcesses.set(process.uid, {...existing, ...process});
+    if (this._mediaByUid.has(process.uid)) {
+      const media = this._mediaByUid.get(process.uid);
+      this._mediaProcesses.set(media.id, process);
+      this._uploadProcesses.delete(process.uid);
+      this._emitUpdate();
     } else {
-      this._uploadProcesses.set(process.uid, process);
+      // Updates an existing process or adds a new one
+      if (!this._uploadProcesses.has(process.uid)) {
+        this._numMedia++;
+      }
+      // If the process already exists, update it instead of rewriting it,
+      // since it may contain thumbnail info.
+      if (this._uploadProcesses.has(process.uid)) {
+        const existing = this._uploadProcesses.get(process.uid);
+        this._uploadProcesses.set(process.uid, {...existing, ...process});
+      } else {
+        this._uploadProcesses.set(process.uid, process);
+      }
+      const currentIndex = this._uploadIds.indexOf(process.uid);
+      const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
+      if (currentIndex > -1) {
+        this._uploadIds.splice(currentIndex, 1);
+        this._uploadProgress.splice(currentIndex, 1);
+      }
+      let sortMetric = process.progress;
+      if (process.state == "finished") {
+        sortMetric = -1;
+      } else if (process.state == "failed") { // Failures bubble to top
+        sortMetric = 100;
+      }
+      const sortedIndex = findSortedIndex(this._uploadProgress, sortMetric);
+      this._uploadIds.splice(sortedIndex, 0, process.uid);
+      this._uploadProgress.splice(sortedIndex, 0, sortMetric);
+      const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
+      this._emitUpdate();
     }
-    const currentIndex = this._uploadIds.indexOf(process.uid);
-    const currentInRange = currentIndex >= this._start && currentIndex < this._stop;
-    if (currentIndex > -1) {
-      this._uploadIds.splice(currentIndex, 1);
-      this._uploadProgress.splice(currentIndex, 1);
-    }
-    let sortMetric = process.progress;
-    if (process.state == "finished") {
-      sortMetric = -1;
-    } else if (process.state == "failed") { // Failures bubble to top
-      sortMetric = 100;
-    }
-    const sortedIndex = findSortedIndex(this._uploadProgress, sortMetric);
-    this._uploadIds.splice(sortedIndex, 0, process.uid);
-    this._uploadProgress.splice(sortedIndex, 0, sortMetric);
-    const sortedInRange = sortedIndex >= this._start && sortedIndex < this._stop;
-    this._emitUpdate();
   }
 
   removeMedia(mediaId) {
@@ -310,6 +322,7 @@ class SectionData {
       const currentIndex = this._mediaIds.indexOf(mediaId);
       this._mediaIds.splice(currentIndex, 1)[0];
       this._mediaById.delete(mediaId);
+      this._mediaByUid.delete(media.uid);
       this._numMedia--;
       if (this._numMedia <= 0) {
         removeSection(this._name);
@@ -329,6 +342,7 @@ class SectionData {
     // is not preserved on reload.
     this._mediaIds.unshift(media.id);
     this._mediaById.set(media.id, media);
+    this._mediaByUid.set(media.uid, media);
     this._numMedia++;
     this.fetchMedia();
     self.postMessage({
