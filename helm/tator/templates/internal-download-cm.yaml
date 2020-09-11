@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: internal-download-cm
+  name: nginx-internal-conf
 data:
   nginx.conf: |
     worker_processes 1;
@@ -20,7 +20,7 @@ data:
       server {
         listen 80;
 
-        server_name internal-download-svc;
+        server_name nginx-internal-svc;
 
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log;

@@ -69,7 +69,7 @@ class MoveVideoAPI(BaseListView):
                 parsed = urllib_parse.urlsplit(video_def['url'])
                 upload_uid = get_upload_uid(parsed.path)
                 move_list.append({
-                    'url': urllib_parse.urljoin('http://internal-download-svc', parsed.path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
                     'dst': dst,
                     'upload_uid': upload_uid,
                 })
@@ -87,11 +87,11 @@ class MoveVideoAPI(BaseListView):
                 segment_parsed = urllib_parse.urlsplit(video_def['segments_url'])
                 segment_upload_uid = get_upload_uid(segment_parsed.path)
                 move_list += [{
-                    'url': urllib_parse.urljoin('http://internal-download-svc', parsed.path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
                     'dst': dst,
                     'upload_uid': upload_uid,
                 }, {
-                    'url': urllib_parse.urljoin('http://internal-download-svc', segment_parsed.path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', segment_parsed.path),
                     'dst': segment_dst,
                     'upload_uid': segment_upload_uid,
                 }]
@@ -106,7 +106,7 @@ class MoveVideoAPI(BaseListView):
                 parsed = urllib_parse.urlsplit(audio_def['url'])
                 upload_uid = get_upload_uid(parsed.path)
                 move_list.append({
-                    'url': urllib_parse.urljoin('http://internal-download-svc', parsed.path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
                     'dst': dst,
                     'upload_uid': upload_uid,
                 })

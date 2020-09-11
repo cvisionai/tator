@@ -21,7 +21,7 @@ def download_uploaded_file(url, user, dst):
           f'--header=Authorization: Token {token}',
           f'--header=Upload-Uid: {upload_uid}',
            '-O', f'{dst}',
-          f"{urllib_parse.urljoin('http://internal-download-svc', parsed.path)}"]
+          f"{urllib_parse.urljoin('http://nginx-internal-svc', parsed.path)}"]
     subprocess.run(cmd, check=True)
 
 def get_destination_path(default, project):
