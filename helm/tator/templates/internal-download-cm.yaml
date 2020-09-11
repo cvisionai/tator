@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-download-cm
+data:
+  nginx.conf: |
+    worker_processes 1;
+
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      include mime.types;
+      server_names_hash_bucket_size 128;
+      proxy_ignore_client_abort on;
+
+      {{ include "tusdProxy.upstream" . | indent 6 }}
+
+      server {
+        listen 80;
+
+        server_name internal-download-svc;
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+        client_max_body_size 0;
+
+        {{ include "tusdProxy.locations" . | indent 8 }}
+
+        location / {
+          return 404;
+        }
+      }
+    }
