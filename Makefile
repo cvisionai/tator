@@ -53,11 +53,6 @@ help:
 	@echo "\t\t - imageHold: Hold sentinel files to current time"
 	@echo "\t\t - imageClean: Delete sentinel files + generated dockerfiles"
 
-# Global reset:
-reset:
-	make $(foreach container, $(CONTAINERS), $(container)-reset)
-	kubectl delete jobs --all
-
 # Create backup with pg_dump
 backup:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_dump -Fc -U django -d tator_online -f /backup/tator_online_$$(date +"%Y_%m_%d__%H_%M_%S")_$(GIT_VERSION).sql;
@@ -67,17 +62,6 @@ ecr_update:
 	$(eval KEY := $(shell echo $(LOGIN) | python3 -c 'import sys; print(sys.stdin.read().split()[5])'))
 	$(LOGIN)
 	echo $(KEY) | python3 -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
-
-psql_cloud:
-	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
-	kubectl exec -it $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///') -- psql -h $(POSTGRES_HOST) -U $(POSTGRES_USERNAME)
-	kubectl delete deployment.apps/psql
-
-restore_cloud: check_restore
-	kubectl run psql --image=postgres:11.6 --env="PGPASSWORD=$(POSTGRES_PASSWORD)" --labels="app=psql"
-	kubectl cp $(SQL_FILE) $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///'):/.
-	kubectl exec -it $$(kubectl get pod -l "app=psql" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -C -h $(POSTGRES_HOST) -U $(POSTGRES_USERNAME) -d tator_online --no-owner --role=$(POSTGRES_USERNAME) --jobs 8 /$(SQL_FILE)
-	kubectl delete deployment.apps/psql
 
 # Restore database from specified backup (base filename only)
 # Example:
@@ -141,14 +125,15 @@ cluster-install:
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-upgrade: main/version.py images
-	kubectl delete cronjobs --all
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
 	kubectl delete apiservice v1beta1.metrics.k8s.io
 	kubectl delete all --namespace kubernetes-dashboard --all
 	helm uninstall tator
-	kubectl delete pvc --all
+
+.PHONY: clean
+clean: cluster-uninstall
 
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
@@ -425,21 +410,6 @@ testinit:
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; import os; es = Elasticsearch(host=os.getenv("ELASTICSEARCH_HOST")).indices.delete("test*")'
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'ELASTICSEARCH_PREFIX=test python3 manage.py test --keep'
-
-mrclean:
-	kubectl patch pvc media-pv-claim -p '{"metadata":{"finalizers":null}}'
-	make clean_js
-clean:
-	kubectl delete deployment.apps --all
-	kubectl delete statefulsets --all
-	kubectl delete daemonsets --all
-	kubectl delete jobs --all
-	kubectl delete pods --all
-	kubectl delete svc --all
-	kubectl delete pvc --all
-	kubectl delete pv --all
-	kubectl delete networkpolicy --all
-	kubectl delete configmaps --all
 
 .PHONY: cache_clear
 cache-clear:
