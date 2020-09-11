@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: internal-download-deployment
+  name: nginx-internal-deployment
 spec:
   selector:
     matchLabels:
-      app: internal-download
+      app: nginx-internal
   replicas: 1
   template:
     metadata:
       labels:
-        app: internal-download
+        app: nginx-internal
       annotations:
-        checksum/cm: {{ include (print $.Template.BasePath "/internal-download-cm.yaml") . | sha256sum }}
+        checksum/cm: {{ include (print $.Template.BasePath "/nginx-internal-cm.yaml") . | sha256sum }}
         checksum/tusdproxy: {{ include (print $.Template.BasePath "/_tusdProxy.tpl") . | sha256sum }}
     spec:
       {{- if .Values.awsFargate.enabled }}
@@ -36,18 +36,18 @@ spec:
             - mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
               readOnly: true
-              name: internal-download-cm
+              name: nginx-internal-conf
             {{ include "volumeMounts.template" . | indent 12 }}
       volumes:
-        - name: internal-download-cm
+        - name: nginx-internal-conf
           configMap:
-            name: internal-download-cm
+            name: nginx-internal-conf
         {{ include "volumes.template" . | indent 8 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: internal-download-svc
+  name: nginx-internal-svc
 spec:
   ports:
   - name: http
@@ -55,5 +55,5 @@ spec:
     protocol: TCP
     targetPort: 80
   selector:
-    app: internal-download
+    app: nginx-internal
   type: NodePort
