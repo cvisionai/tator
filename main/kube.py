@@ -746,7 +746,7 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        if remote:
+        if self.remote:
             host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         else:
             host = 'http://nginx-internal-svc'
@@ -844,7 +844,7 @@ class TatorTranscode(JobManagerMixin):
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         
-        if remote:
+        if self.remote:
             host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         else:
             host = 'http://nginx-internal-svc'
