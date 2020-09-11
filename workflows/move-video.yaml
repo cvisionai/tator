@@ -40,6 +40,13 @@ spec:
     - - name: patch-media
         template: patch
   - name: move
+    retryStrategy:
+      limit: 10
+      retryPolicy: "Always"
+      backoff:
+        duration: "10"
+        factor: 2
+        maxDuration: "2h"
     inputs:
       parameters:
       - name: url
@@ -68,6 +75,13 @@ spec:
         name: main-pv-claim
         subPath: raw
   - name: patch
+    retryStrategy:
+      limit: 10
+      retryPolicy: "Always"
+      backoff:
+        duration: "10"
+        factor: 2
+        maxDuration: "2h"
     container:
       image: "{{workflow.parameters.curl_image}}"
       imagePullPolicy: IfNotPresent
