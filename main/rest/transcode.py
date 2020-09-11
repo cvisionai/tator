@@ -74,8 +74,10 @@ class TranscodeAPI(BaseListView):
         logger.info(f"{parsed.netloc} vs. {self.request.get_host()}")
         if parsed.netloc == self.request.get_host():
             upload_uid = TatorCache().get_upload_uid_cache(parsed.path)
-            response = requests.head(url, allow_redirects=True, headers={'Authorization': f'Token {token}',
-                                                                         'Upload-Uid': f'{upload_uid}'})
+            response = requests.head(f"{urllib_parse.urljoin('http://internal-download-svc', parsed.path)}",
+                                     allow_redirects=True,
+                                     headers={'Authorization': f'Token {token}',
+                                              'Upload-Uid': f'{upload_uid}'})
             upload_size = response.headers.get('Upload-Length', None)
         else:
             # TODO: get file size of remote
