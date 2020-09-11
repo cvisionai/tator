@@ -91,7 +91,7 @@ spec:
              "-H", "Authorization: Token {{workflow.parameters.token}}",
              "-X", "PATCH",
              "-d", "{{workflow.parameters.media_update}}",
-             "http://gunicorn-svc:8000/rest/Media/{{workflow.parameters.media_id}}"]
+             "http://nginx-internal-svc/rest/Media/{{workflow.parameters.media_id}}"]
       resources:
         requests:
           memory: 500Mi
