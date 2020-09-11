@@ -14,7 +14,6 @@ spec:
       # Force nginx update whenever this file changes.
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
-        checksum/tusdproxy: {{ include (print $.Template.BasePath "/_tusdProxy.tpl") . | sha256sum }}
     spec:
       {{- if .Values.awsFargate.enabled }}
       {{- else }}

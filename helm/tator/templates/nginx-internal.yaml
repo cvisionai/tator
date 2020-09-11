@@ -13,7 +13,6 @@ spec:
         app: nginx-internal
       annotations:
         checksum/cm: {{ include (print $.Template.BasePath "/nginx-internal-conf.yaml") . | sha256sum }}
-        checksum/tusdproxy: {{ include (print $.Template.BasePath "/_tusdProxy.tpl") . | sha256sum }}
     spec:
       {{- if .Values.awsFargate.enabled }}
       {{- else }}
