@@ -41,6 +41,7 @@ try:
     ALLOWED_HOSTS = [
         os.getenv('MAIN_HOST'),
         socket.gethostbyname('nginx-svc'), # Allows internal cluster access
+        'internal-download-svc', # For downloading uploaded files
     ]
 except: # Support standalone `docker run`
     ALLOWED_HOSTS = [
