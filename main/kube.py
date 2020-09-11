@@ -241,7 +241,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['bash',],
                 'args': ['unpack.sh', '{{inputs.parameters.original}}', '/work'],
@@ -262,7 +262,7 @@ class TatorTranscode(JobManagerMixin):
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['importDataFromCsv.py',
@@ -435,7 +435,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
