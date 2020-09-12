@@ -170,6 +170,8 @@ wget-image: containers/wget/Dockerfile
 	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:latest
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
+	docker push $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
 
 .PHONY: curl-image
 curl-image: containers/curl/Dockerfile
@@ -177,6 +179,8 @@ curl-image: containers/curl/Dockerfile
 	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
+	docker push $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 
 PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
 .PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
