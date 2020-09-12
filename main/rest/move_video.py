@@ -2,6 +2,7 @@ import logging
 import os
 import mimetypes
 import random
+import shutil
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
@@ -14,6 +15,8 @@ from ..schema import MoveVideoSchema
 from ..cache import TatorCache
 from ..uploads import download_uploaded_file
 from ..uploads import get_destination_path
+from ..uploads import get_file_path
+from ..uploads import make_symlink
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -26,9 +29,8 @@ def get_upload_uid(url):
 class MoveVideoAPI(BaseListView):
     """ Moves a video file.
 
-        This endpoint creates an Argo workflow that moves an uploaded video file into the
-        appropriate project directory. When the move is complete, the workflow will make
-        a PATCH request to the Media endpoint for the given media ID using the given 
+        This endpoint creates a symlink for an uploaded video file in the
+        appropriate project directory and updates the media object with the given 
         `media_files` definitions.
 
         Videos in Tator must be transcoded to a multi-resolution streaming format before they
@@ -66,13 +68,7 @@ class MoveVideoAPI(BaseListView):
                     ext = os.path.splitext(media.name)[1]
                 path = f"{project}/{str(uuid1())}{ext}"
                 dst = os.path.join(get_destination_path(settings.RAW_ROOT, project), path)
-                parsed = urllib_parse.urlsplit(video_def['url'])
-                upload_uid = get_upload_uid(parsed.path)
-                move_list.append({
-                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
-                    'dst': dst,
-                    'upload_uid': upload_uid,
-                })
+                make_symlink(video_def['url'], token, dst)
                 video_def['path'] = dst
                 del video_def['url']
         if 'streaming' in media_files:
@@ -82,19 +78,8 @@ class MoveVideoAPI(BaseListView):
                 segment_info = f"{project}/{uuid}_segments.json"
                 dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
                 segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), segment_info)
-                parsed = urllib_parse.urlsplit(video_def['url'])
-                upload_uid = get_upload_uid(parsed.path)
-                segment_parsed = urllib_parse.urlsplit(video_def['segments_url'])
-                segment_upload_uid = get_upload_uid(segment_parsed.path)
-                move_list += [{
-                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
-                    'dst': dst,
-                    'upload_uid': upload_uid,
-                }, {
-                    'url': urllib_parse.urljoin('http://nginx-internal-svc', segment_parsed.path),
-                    'dst': segment_dst,
-                    'upload_uid': segment_upload_uid,
-                }]
+                make_symlink(video_def['url'], token, dst)
+                make_symlink(video_def['segments_url'], token, segment_dst)
                 video_def['path'] = dst
                 video_def['segment_info'] = segment_dst
                 del video_def['url']
@@ -103,22 +88,13 @@ class MoveVideoAPI(BaseListView):
             for audio_def in media_files['audio']:
                 path = f"{project}/{str(uuid1())}.m4a"
                 dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
-                parsed = urllib_parse.urlsplit(audio_def['url'])
-                upload_uid = get_upload_uid(parsed.path)
-                move_list.append({
-                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
-                    'dst': dst,
-                    'upload_uid': upload_uid,
-                })
+                make_symlink(video_def['url'], token, dst)
                 audio_def['path'] = dst
                 del audio_def['url']
 
-        # Create the move workflow
-        response = TatorMove().move_video(project, params['id'], str(token), move_list,
-                                          media_files, media.gid, media.uid)
-
-        response_data = {'message': f"Moving video for media {params['id']} in workflow "
-                                    f"{response['metadata']['name']}!",
+        media.update_media_files(media_files)
+        media.save()
+        response_data = {'message': f"Moved video for media {params['id']}!",
                          'id': params['id']}
         return response_data
         
