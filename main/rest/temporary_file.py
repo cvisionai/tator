@@ -48,25 +48,16 @@ class TemporaryFileListAPI(BaseListView):
         if hours == None:
             hours = 24
 
-        local_file_path = os.path.join(settings.UPLOAD_ROOT,url.split('/')[-1])
-        temp_file = TemporaryFile.from_local(path=local_file_path,
+        temp_file = TemporaryFile.from_local(path=url,
                                              name=params['name'],
                                              project=Project.objects.get(pk=project),
                                              user=self.request.user,
                                              lookup=params['lookup'],
-                                             hours = hours)
+                                             hours = hours,
+                                             is_upload=True)
         response = {'message': f"Temporary file of {name} created!",
                     'id': temp_file.id}
 
-        # Delete files from the uploads directory.
-        if 'local_file_path' in locals():
-            logger.info(f"Removing uploaded file {local_file_path}")
-            if os.path.exists(local_file_path):
-                logger.info(f"{local_file_path} exists and is being removed!")
-                os.remove(local_file_path)
-            info_path = os.path.splitext(local_file_path)[0] + '.info'
-            if os.path.exists(info_path):
-                os.remove(info_path)
         return response
 
     def get_queryset(self):

@@ -1,19 +1,27 @@
 import logging
 import os
 import mimetypes
+import random
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
 from django.conf import settings
+from urllib import parse as urllib_parse
 
 from ..kube import TatorMove
 from ..models import Media
 from ..schema import MoveVideoSchema
+from ..cache import TatorCache
+from ..uploads import download_uploaded_file
+from ..uploads import get_destination_path
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
+
+def get_upload_uid(url):
+    return TatorCache().get_upload_uid_cache(url)
 
 class MoveVideoAPI(BaseListView):
     """ Moves a video file.
@@ -56,41 +64,53 @@ class MoveVideoAPI(BaseListView):
                     ext = mimetypes.guess_extension(video_def['codec_mime'].split(';')[0])
                 else:
                     ext = os.path.splitext(media.name)[1]
-                upload_base = os.path.basename(video_def['url'])
                 path = f"{project}/{str(uuid1())}{ext}"
+                dst = os.path.join(get_destination_path(settings.RAW_ROOT, project), path)
+                parsed = urllib_parse.urlsplit(video_def['url'])
+                upload_uid = get_upload_uid(parsed.path)
                 move_list.append({
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.RAW_ROOT, path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
+                    'dst': dst,
+                    'upload_uid': upload_uid,
                 })
-                video_def['path'] = '/data/raw/' + path
+                video_def['path'] = dst
                 del video_def['url']
         if 'streaming' in media_files:
             for video_def in media_files['streaming']:
-                upload_base = os.path.basename(video_def['url'])
-                segment_upload_base = os.path.basename(video_def['segments_url'])
                 uuid = str(uuid1())
                 path = f"{project}/{uuid}.mp4"
                 segment_info = f"{project}/{uuid}_segments.json"
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
+                segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), segment_info)
+                parsed = urllib_parse.urlsplit(video_def['url'])
+                upload_uid = get_upload_uid(parsed.path)
+                segment_parsed = urllib_parse.urlsplit(video_def['segments_url'])
+                segment_upload_uid = get_upload_uid(segment_parsed.path)
                 move_list += [{
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
+                    'dst': dst,
+                    'upload_uid': upload_uid,
                 }, {
-                    'src': os.path.join(settings.UPLOAD_ROOT, segment_upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, segment_info),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', segment_parsed.path),
+                    'dst': segment_dst,
+                    'upload_uid': segment_upload_uid,
                 }]
-                video_def['path'] = '/media/' + path
-                video_def['segment_info'] = '/media/' + segment_info
+                video_def['path'] = dst
+                video_def['segment_info'] = segment_dst
                 del video_def['url']
                 del video_def['segments_url']
         if 'audio' in media_files:
             for audio_def in media_files['audio']:
-                upload_base = os.path.basename(audio_def['url'])
                 path = f"{project}/{str(uuid1())}.m4a"
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
+                parsed = urllib_parse.urlsplit(audio_def['url'])
+                upload_uid = get_upload_uid(parsed.path)
                 move_list.append({
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, path),
+                    'url': urllib_parse.urljoin('http://nginx-internal-svc', parsed.path),
+                    'dst': dst,
+                    'upload_uid': upload_uid,
                 })
-                audio_def['path'] = '/media/' + path
+                audio_def['path'] = dst
                 del audio_def['url']
 
         # Create the move workflow

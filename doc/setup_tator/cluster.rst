@@ -149,105 +149,6 @@ For GPU nodes, install nvidia-docker
     sudo apt-get install nvidia-430
     sudo apt-get install nvidia-docker2``
 
-Install Kubernetes
-^^^^^^^^^^^^^^^^^^
-
-* Install Kubernetes 1.17.11 on all cluster nodes.
-
-.. code-block:: bash
-   :linenos:
-
-   sudo su
-   apt-get update
-   apt-get install -y apt-transport-https curl
-   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-   deb https://apt.kubernetes.io/ kubernetes-xenial main
-   EOF
-   apt-get update
-   apt-get install -qy kubelet=1.17.11-00 kubectl=1.17.11-00 kubeadm=1.17.11-00
-   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
-   sysctl net.bridge.bridge-nf-call-iptables=1
-   iptables -P FORWARD ACCEPT
-   exit
-
-Install helm
-^^^^^^^^^^^^
-
-To build Tator you will need Helm 3 somewhere on your path.
-
-* Download and extract helm:
-
-.. code-block:: bash
-   :linenos:
-
-   wget https://get.helm.sh/helm-v3.2.3-linux-amd64.tar.gz
-   tar xzvf helm-v3.2.3-linux-amd64.tar.gz
-
-
-* Add the executable to your PATH in bashrc:
-
-``export PATH=$HOME/linux-amd64:$PATH``
-
-Get a domain from DuckDNS
-=========================
-
-* Navigate to `DuckDNS <http://www.duckdns.org/>`_ to setup domain.
-* Choose a login method and log in.
-* Type in a subdomain (for example, mydomain.duckdns.org). This is the address you will use to access Tator from your browser.
-* Click "Add domain".
-
-
-
-Clone the Tator repository
-==========================
-
-* Make sure git is installed and clone the repo:
-
-.. code-block:: bash
-   :linenos:
-
-   sudo apt-get install git
-   git clone https://github.com/cvisionai/tator.git
-   cd tator
-
-Values file
-^^^^^^^^^^^
-
-* Copy the example values.yaml.
-
-``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
-
-Node setup
-==========
-
-Make sure each of your nodes is running Ubuntu 20.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
-
-Kubernetes Pre-flight Setup
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Kubernetes requires that swap be disabled. Run the following on all cluster nodes:
-
-``sudo swapoff -a``
-
-* Modify /etc/fstab and comment out the swap volume.
-
-Configuring a local docker registry
-===================================
-
-Depending on your `values.yaml` configuration, Tator requires a local registry is available for storing custom Docker images.
-We will set up a docker registry using the registry docker container.
-
-Start the docker registry
-^^^^^^^^^^^^^^^^^^^^^^^^^
-``docker run -d -p 5000:5000 --restart=always --name registry registry:2``
-
-Set the docker values in values.yaml
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* Set :term:`dockerRegistry` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
-* Set :term:`dockerUsername` and :term:`dockerPassword` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
-
 Configure the docker daemon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -301,6 +202,84 @@ insecure-registries. Additionally, the maximum log size and parameters for GPU n
    sudo systemctl daemon-reload
    sudo systemctl restart docker
 
+Install Kubernetes
+^^^^^^^^^^^^^^^^^^
+
+* Install Kubernetes 1.17.11 on all cluster nodes.
+
+.. code-block:: bash
+   :linenos:
+
+   sudo su
+   apt-get update
+   apt-get install -y apt-transport-https curl
+   curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+   cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+   deb https://apt.kubernetes.io/ kubernetes-xenial main
+   EOF
+   apt-get update
+   apt-get install -qy kubelet=1.17.11-00 kubectl=1.17.11-00 kubeadm=1.17.11-00
+   apt-mark hold kubelet kubectl kubeadm kubernetes-cni
+   sysctl net.bridge.bridge-nf-call-iptables=1
+   iptables -P FORWARD ACCEPT
+   exit
+
+Install helm
+^^^^^^^^^^^^
+
+To build Tator you will need Helm 3 somewhere on your path.
+
+* Download and extract helm:
+
+.. code-block:: bash
+   :linenos:
+
+   wget https://get.helm.sh/helm-v3.2.3-linux-amd64.tar.gz
+   tar xzvf helm-v3.2.3-linux-amd64.tar.gz
+
+
+* Add the executable to your PATH in bashrc:
+
+``export PATH=$HOME/linux-amd64:$PATH``
+
+Get a domain from DuckDNS
+=========================
+
+* Navigate to `DuckDNS <http://www.duckdns.org/>`_ to setup domain.
+* Choose a login method and log in.
+* Type in a subdomain (for example, mydomain.duckdns.org). This is the address you will use to access Tator from your browser.
+* Click "Add domain".
+
+
+Node setup
+==========
+
+Make sure each of your nodes is running Ubuntu 20.04 LTS and that all nodes are connected in a LAN. It is recommended that the nodes that will be used for your Kubernetes cluster are not used for any other purpose.
+
+Kubernetes Pre-flight Setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Kubernetes requires that swap be disabled. Run the following on all cluster nodes:
+
+``sudo swapoff -a``
+
+* Modify /etc/fstab and comment out the swap volume.
+
+Configuring a local docker registry
+===================================
+
+Depending on your `values.yaml` configuration, Tator requires a local registry is available for storing custom Docker images.
+We will set up a docker registry using the registry docker container.
+
+Start the docker registry
+^^^^^^^^^^^^^^^^^^^^^^^^^
+``docker run -d -p 5000:5000 --restart=always --name registry registry:2``
+
+Set the docker values in values.yaml
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Set :term:`dockerRegistry` to the registry you plan to use. For the default case, this will be the node name and port where you set up the docker registry. For instance, ``mydockernode:5000``.
+* Set :term:`dockerUsername` and :term:`dockerPassword` to the credentials for that registry. These can be left blank if you did not set them when creating the local docker registry.
 
 Setting up NFS
 ==============
@@ -317,13 +296,13 @@ A second NFS share is used for dynamic provisioning of persistent volumes. In th
 
 Example exports file
 ^^^^^^^^^^^^^^^^^^^^^^^
-Create a file called *exports* in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
+Create a file called at `/etc/exports` in your node home directory that we will use for defining the NFS shares and put the following content into it, changing the subnet to the subnet your master node is on (e.g. 192.168.0.0 or 169.254.0.0):
 
 .. code-block:: text
    :linenos:
 
-   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
-   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check,no_root_squash)
+   /media/kubernetes_share 192.168.1.0/255.255.255.0(rw,async,no_subtree_check)
+   /media/kubernetes_share/scratch 192.168.1.0/255.255.255.0(rw,async,no_subtree_check)
 
 .. _NFS Setup:
 
@@ -355,46 +334,20 @@ Preparing NFS server node
    sudo chmod -R 777 /media/kubernetes_share
 
 
-NFS version
-^^^^^^^^^^^
+Start NFS share
+^^^^^^^^^^^^^^^
 
-We recommend using NFS3 with Tator because we have experienced stability issues with NFS4.
-
-Because NFS3 is not part of the standard Ubuntu image, the easiest way to use NFS3 is with a docker image.
-
-* Disable rpcbind:
+* Install NFS server package
 
 .. code-block:: bash
-   :linenos:
 
-   sudo systemctl stop rpcbind
-   sudo systemctl disable rpcbind
+   sudo apt-get install nfs-kernel-server
 
-
-* Load the nfs drivers:
+* If this was already installed, restart after modifying `/etc/exports`:
 
 .. code-block:: bash
-   :linenos:
 
-   sudo modprobe nfs
-   sudo modprobe nfsd
-
-
-* Configure node to load modules on boot by adding ``nfs`` and ``nfsd`` to ``/etc/modules``
-
-* Use the following command to create the NFS shares using the exports file, assuming the exports file is in $HOME:
-
-.. code-block:: bash
-   :linenos:
-
-   sudo docker run -d --privileged --name nfs3 --restart always -v /media/kubernetes_share:/media/kubernetes_share -v $HOME/exports:/etc/exports:ro --cap-add SYS_ADMIN --cap-add SYS_MODULE -p 2049:2049 -p 2049:2049/udp -p 111:111 -p 111:111/udp -p 32765:32765 -p 32765:32765/udp -p 32767:32767 -p 32767:32767/udp -e NFS_VERSION=3 erichough/nfs-server
-
-
-* You can check the status of the nfs server using:
-
-``docker logs nfs3``
-
-It should show the message "READY AND WAITING FOR NFS CLIENT CONNECTIONS"
+   sudo systemctl restart nfs-kernel-server.service
 
 Database storage
 ================
@@ -553,7 +506,7 @@ Install the nfs-client-provisioner helm chart
 
    kubectl create namespace provisioner
    helm repo add stable https://kubernetes-charts.storage.googleapis.com
-   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false --set nfs.mountOptions="{nfsvers=3,nolock}"
+   helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
 * This sets up a new storage class called `nfs-client` any pvc request needs to
   specify this as a storage class to use this provisioner.
@@ -654,10 +607,30 @@ The API server certificate can be obtained via the following (run on the job clu
 
 These should be used to update the ``remoteTranscodes`` section of ``values.yaml`` if remote transcodes are desired. They may also be used to create a JobCluster object via the admin interface for use with algorithm registrations.
 
+
 Tator build system
 ==================
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
+
+Clone the Tator repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Make sure git is installed and clone the repo:
+
+.. code-block:: bash
+   :linenos:
+
+   sudo apt-get install git
+   git clone https://github.com/cvisionai/tator.git
+   cd tator
+
+Values file
+^^^^^^^^^^^
+
+* Copy the example values.yaml.
+
+``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
 
 Update the configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -677,6 +650,9 @@ The Tator configuration file is located at ``helm/tator/values.yaml``. Modify th
 
   useMinJs
     Boolean indicating whether to minify JavaScript code. Should be true for production, false for development.
+
+  requireHttps
+    Boolean indicating whether accessing Tator should require HTTPS. This should be true for production, up to you for development.
     
   dockerRegistry
     The host and port of the cluster's local docker registry that was set up earlier in this tutorial.

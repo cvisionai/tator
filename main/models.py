@@ -41,6 +41,7 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
+from .uploads import download_uploaded_file
 
 from collections import UserDict
 
@@ -312,14 +313,17 @@ class TemporaryFile(Model):
         self.eol_datetime = past
         self.save()
 
-    def from_local(path, name, project, user, lookup, hours):
+    def from_local(path, name, project, user, lookup, hours, is_upload=False):
         """ Given a local file create a temporary file storage object
         :returns A saved TemporaryFile:
         """
         extension = os.path.splitext(name)[-1]
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
-        shutil.copyfile(path, destination_fp)
+        if is_upload:
+            download_uploaded_file(path, user, destination_fp)
+        else:
+            shutil.copyfile(path, destination_fp)
 
         now = datetime.datetime.utcnow()
         eol =  now + datetime.timedelta(hours=hours)
@@ -685,16 +689,10 @@ def media_delete(sender, instance, **kwargs):
         if files is None:
             files = []
         for obj in files:
-            if os.path.isabs(obj['path']):
-                path = "/data" + obj['path']
-            else:
-                path = os.path.join("/data", obj['path'])
+            path = obj['path']
             safe_delete(path)
 
-            if os.path.isabs(obj['segment_info']):
-                path = "/data" + obj['segment_info']
-            else:
-                path = os.path.join("/data", obj['segment_info'])
+            path = obj['segment_info']
             safe_delete(path)
         files = instance.media_files.get('archival', [])
         if files is None:

@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 class MediaUtil:
     def __init__(self, video, temp_dir, quality=None):
         self._temp_dir = temp_dir
-        # Do this for testing:
-        #self._temp_dir = '/data/media/temp'
         # If available we only attempt to fetch
         # the part of the file we need to
         self._segment_info = None
@@ -35,8 +33,6 @@ class MediaUtil:
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            segment_file = os.path.relpath(segment_file, settings.MEDIA_URL)
-            segment_file = os.path.join(settings.MEDIA_ROOT, segment_file)
             with open(segment_file, 'r') as fp:
                 self._segment_info = json.load(fp)
                 self._moof_data = [(i,x) for i,x in enumerate(self._segment_info['segments']) if x['name'] == 'moof']
@@ -59,12 +55,7 @@ class MediaUtil:
                 self._width = video.width
 
             # Make file relative to URL to be consistent with streaming files below
-            video_file = video.file.path
-            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
-            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
-
-        self._video_file = os.path.relpath(self._video_file, settings.MEDIA_URL)
-        self._video_file = os.path.join(settings.MEDIA_ROOT, self._video_file)
+            self._video_file = video.file.path
 
         self._fps = video.fps
 

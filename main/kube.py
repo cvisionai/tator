@@ -11,6 +11,7 @@ from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
 from kubernetes.config import load_incluster_config
+from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .consumers import ProgressProducer
@@ -34,6 +35,21 @@ def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
     return f"{registry}/tator_client:{Git.sha}"
+
+def get_lite_image_name():
+    """ Returns the location and version of the client image to use """
+    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+    return f"{registry}/tator_lite:{Git.sha}"
+
+def get_wget_image_name():
+    """ Returns the location and version of the client image to use """
+    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+    return f"{registry}/wget:{Git.sha}"
+
+def get_curl_image_name():
+    """ Returns the location and version of the client image to use """
+    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+    return f"{registry}/curl:{Git.sha}"
 
 class JobManagerMixin:
     """ Defines functions for job management.
@@ -104,11 +120,12 @@ class TatorTranscode(JobManagerMixin):
         port = os.getenv('REMOTE_TRANSCODE_PORT')
         token = os.getenv('REMOTE_TRANSCODE_TOKEN')
         cert = os.getenv('REMOTE_TRANSCODE_CERT')
+        self.remote = host is not None
 
-        if host:
+        if self.remote:
             conf = Configuration()
             conf.api_key['authorization'] = token
-            conf.host = f'{PROTO}{host}:{port}'
+            conf.host = f'https://{host}:{port}'
             conf.verify_ssl = True
             conf.ssl_ca_cert = cert
             api_client = ApiClient(conf)
@@ -164,10 +181,13 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['original',
                                                         'url'])},
             'container': {
-                'image': '{{workflow.parameters.client_image}}',
+                'image': '{{workflow.parameters.wget_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
-                'args': ['-O', '{{inputs.parameters.original}}', '{{inputs.parameters.url}}'],
+                'args': ['-O', '{{inputs.parameters.original}}', 
+                         '--header=Authorization: Token {{workflow.parameters.token}}',
+                         '--header=Upload-Uid: {{workflow.parameters.uid}}',
+                         '{{inputs.parameters.url}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
                     'mountPath': '/work',
@@ -189,7 +209,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['url'])},
             'container': {
-                'image': '{{workflow.parameters.client_image}}',
+                'image': '{{workflow.parameters.curl_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
@@ -272,7 +292,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
-                'image': '{{workflow.parameters.client_image}}',
+                'image': '{{workflow.parameters.lite_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.create_media',
@@ -454,7 +474,7 @@ class TatorTranscode(JobManagerMixin):
                                                         'message',
                                                         'progress'])},
             'container': {
-                'image': '{{workflow.parameters.client_image}}',
+                'image': '{{workflow.parameters.lite_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': [
@@ -726,17 +746,25 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+        if self.remote:
+            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        else:
+            host = 'http://nginx-internal-svc'
+            url = urljoin(host, urlsplit(url).path)
         global_args = {'upload_name': name,
-                       'host': f'{PROTO}{os.getenv("MAIN_HOST")}',
-                       'rest_url': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
+                       'host': host,
+                       'rest_url': f'{host}/rest',
+                       'tus_url' : f'{host}/files/',
                        'project' : str(project),
                        'token' : str(token),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'client_image' : f"{docker_registry}/tator_client:{Git.sha}"}
+                       'client_image' : get_client_image_name(),
+                       'lite_image' : get_lite_image_name(),
+                       'wget_image' : get_wget_image_name(),
+                       'curl_image' : get_curl_image_name()}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -815,17 +843,26 @@ class TatorTranscode(JobManagerMixin):
             self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
+        
+        if self.remote:
+            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+        else:
+            host = 'http://nginx-internal-svc'
+            url = urljoin(host, urlsplit(url).path)
         global_args = {'upload_name': name,
-                       'host' : f'{PROTO}{os.getenv("MAIN_HOST")}',
-                       'rest_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
-                       'tus_url' : f'{PROTO}{os.getenv("MAIN_HOST")}/files/',
+                       'host': host,
+                       'rest_url': f'{host}/rest',
+                       'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
-                       'client_image' : f"{docker_registry}/tator_client:{Git.sha}"}
+                       'client_image' : get_client_image_name(),
+                       'lite_image' : get_lite_image_name(),
+                       'wget_image' : get_wget_image_name(),
+                       'curl_image' : get_curl_image_name()}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
@@ -973,7 +1010,7 @@ class TatorAlgorithm(JobManagerMixin):
             failed_task = {
                 'name': 'tator-failed',
                 'container': {
-                    'image': get_client_image_name(),
+                    'image': get_lite_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -1002,7 +1039,7 @@ class TatorAlgorithm(JobManagerMixin):
             succeeded_task = {
                 'name': 'tator-succeeded',
                 'container': {
-                    'image': get_client_image_name(),
+                    'image': get_lite_image_name(),
                     'imagePullPolicy': 'Always',
                     'command': ['python3',],
                     'args': [
@@ -1088,6 +1125,20 @@ class TatorMove:
         self.corev1 = CoreV1Api()
         self.custom = CustomObjectsApi()
 
+        # If media shards are enabled, set up volumes and mounts.
+        media_shards = os.getenv('MEDIA_SHARDS')
+        if media_shards is not None:
+            media_shards = media_shards.split(',')
+            volumes = [{'name': f'{shard}-pv-claim',
+                        'persistentVolumeClaim': {
+                            'claimName': f'{shard}-pv-claim',
+                        }} for shard in media_shards]
+            mounts = [{'mountPath': f'/{shard}',
+                       'name': f'{shard}-pv-claim'}
+                       for shard in media_shards]
+            self.workflow['spec']['volumes'] += list(volumes)
+            self.workflow['spec']['templates'][1]['container']['volumeMounts'] += list(mounts)
+
     def _set_parameter(self, name, value):
         for param in self.workflow['spec']['arguments']['parameters']:
             if param['name'] == name:
@@ -1114,7 +1165,8 @@ class TatorMove:
             media_update['uid'] = uid
 
         # Set required workflow parameters.
-        self._set_parameter('client_image', f"{docker_registry}/tator_client:{Git.sha}")
+        self._set_parameter('wget_image', get_wget_image_name())
+        self._set_parameter('curl_image', get_curl_image_name())
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', str(media_id))

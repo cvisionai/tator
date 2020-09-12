@@ -18,17 +18,7 @@ spec:
             {{ .selector }}
           terminationGracePeriodSeconds: 10
           volumes:
-            - name: main-pv-claim
-              persistentVolumeClaim:
-                claimName: main-pv-claim
-            {{- if .Values.remoteTranscodes.enabled }}
-            - name: remote-transcode-cert
-              secret:
-                secretName: tator-secrets
-                items:
-                - key: remoteTranscodeCert
-                  path: ca.crt
-            {{- end }}
+            {{ include "volumes.template" . | indent 12 }}
           containers:
             - name: tator-online
               image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
@@ -132,30 +122,31 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
+                {{- if hasKey .Values.pv "mediaShards" }}
+                {{- $media_shards := "" }}
+                {{- range .Values.pv.mediaShards }}
+                {{- $media_shards = cat $media_shards "," .name }}
+                {{- end }}
+                {{- $media_shards = nospace $media_shards }}
+                {{- $media_shards = trimPrefix "," $media_shards }}
+                - name: MEDIA_SHARDS
+                  value: {{ $media_shards }}
+                {{- end }}
+                {{- if hasKey .Values.pv "uploadShards" }}
+                {{- $upload_shards := "" }}
+                {{- range .Values.pv.uploadShards }}
+                {{- $upload_shards = cat $upload_shards "," .name }}
+                {{- end }}
+                {{- $upload_shards = nospace $upload_shards }}
+                {{- $upload_shards = trimPrefix "," $upload_shards }}
+                - name: UPLOAD_SHARDS
+                  value: {{ $upload_shards }}
+                {{- end }}
               ports:
                 - containerPort: 8000
                   name: gunicorn
                 - containerPort: 8001
                   name: daphne
               volumeMounts:
-                - mountPath: /data/static
-                  name: main-pv-claim
-                  subPath: static
-                - mountPath: /data/uploads
-                  name: main-pv-claim
-                  subPath: upload
-                - mountPath: /data/media
-                  name: main-pv-claim
-                  subPath: media
-                - mountPath: /data/raw
-                  name: main-pv-claim
-                  subPath: raw
-                - mountPath: /tator_online/main/migrations
-                  name: main-pv-claim
-                  subPath: migrations
-                {{- if .Values.remoteTranscodes.enabled }}
-                - mountPath: /remote_transcodes
-                  name: remote-transcode-cert
-                  readOnly: true
-                {{- end }}
+                {{ include "volumeMounts.template" . | indent 16 }}
 {{ end }}

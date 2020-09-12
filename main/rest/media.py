@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Case, When
 from django.conf import settings
 from PIL import Image
+import requests
 
 from ..models import Media
 from ..models import MediaType
@@ -24,6 +25,8 @@ from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..consumers import ProgressProducer
 from ..notify import Notify
+from ..uploads import download_uploaded_file
+from ..uploads import get_destination_path
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -126,7 +129,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
             os.makedirs(raw_project_dir, exist_ok=True)
             thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
 
             # Set up interface for sending progress messages.
             prog = ProgressProducer(
@@ -138,14 +140,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 self.request.user,
                 {'section': section},
             )
-
-            # Make sure uploaded file exists
-            if os.path.exists(upload_path):
-                media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
-            else:
-                fail_msg = f"Failed to create media, unknown upload path {upload_path}"
-                prog.failed(fail_msg)
-                raise RuntimeError(fail_msg)
 
             # Create the media object.
             media_obj = Media(
@@ -160,33 +154,29 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 uid=uid,
             )
 
+            # Download the file to specified path.
+            media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
+            download_uploaded_file(url, self.request.user, media_path)
+
+            # Set media location in database.
+            media_obj.file.name = os.path.relpath(media_path, settings.MEDIA_ROOT)
+
             if thumbnail_url is None:
                 # Create the thumbnail.
                 thumb_size = (256, 256)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-                image = Image.open(upload_path)
+                image = Image.open(media_path)
                 media_obj.width, media_obj.height = image.size
                 image = image.convert('RGB') # Remove alpha channel for jpeg
                 image.thumbnail(thumb_size, Image.ANTIALIAS)
                 image.save(thumb_path)
                 image.close()
             else:
-                thumbnail_uid = thumbnail_url.split('/')[-1]
-                provided_thumbnail_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid)
-                shutil.move(provided_thumbnail_path, thumb_path)
-                info_path = os.path.join(settings.UPLOAD_ROOT, thumbnail_uid + '.info')
-                if os.path.exists(info_path):
-                    os.remove(info_path)
+                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-                image = Image.open(upload_path)
+                image = Image.open(media_path)
                 media_obj.width, media_obj.height = image.size
                 image.close()
-
-
-            # Save the image.
-            media_base = os.path.relpath(media_path, settings.MEDIA_ROOT)
-            with open(upload_path, 'rb') as f:
-                media_obj.file.save(media_base, f, save=False)
             media_obj.save()
 
             # Send info to consumer.
@@ -200,15 +190,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             prog.finished("Uploaded successfully!", {**info})
 
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
-
-            # Delete files from the uploads directory.
-            if 'upload_path' in locals():
-                logger.info(f"Removing uploaded file {upload_path}")
-                if os.path.exists(upload_path):
-                    os.remove(upload_path)
-                info_path = os.path.splitext(upload_path)[0] + '.info'
-                if os.path.exists(info_path):
-                    os.remove(info_path)
 
         else:
             # Create the media object.
@@ -376,21 +357,15 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'thumbnail_url' in params:
             # Save the thumbnail.
-            upload_uid = params['thumbnail_url'].split('/')[-1]
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
             save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
-            media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
-            with open(upload_path, 'rb') as f:
-                obj.thumbnail.save(media_base, f, save=False)
+            download_uploaded_file(params['thumbnail_url'], self.request.user, save_path)
+            obj.thumbnail.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         if 'thumbnail_gif_url' in params:
             # Save the thumbnail gif.
-            upload_uid = params['thumbnail_gif_url'].split('/')[-1]
-            upload_path = os.path.join(settings.UPLOAD_ROOT, upload_uid)
             save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
-            media_base = os.path.relpath(save_path, settings.MEDIA_ROOT)
-            with open(upload_path, 'rb') as f:
-                obj.thumbnail_gif.save(media_base, f, save=False)
+            download_uploaded_file(params['thumbnail_gif_url'], self.request.user, save_path)
+            obj.thumbnail_gif.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         # Media definitions may be appended but not replaced or deleted.
         if 'media_files' in params:
@@ -410,8 +385,8 @@ class MediaDetailAPI(BaseDetailView):
             audio = new_audio + old_audio
 
             for fp in new_streaming:
-                path = "/data" + fp['path']
-                seg_path = "/data" + fp['segment_info']
+                path = fp['path']
+                seg_path = fp['segment_info']
                 Resource.add_resource(path)
                 Resource.add_resource(seg_path)
 

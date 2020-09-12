@@ -30,7 +30,7 @@ data:
 
         # Proxy acme challenge files.
         location /.well-known/acme-challenge/ {
-          alias /data/static/challenges/;
+          alias /static/challenges/;
           try_files $uri =404;
         }
         {{- end }}
@@ -56,13 +56,23 @@ data:
 
         # Proxy acme challenge files.
         location /.well-known/acme-challenge/ {
-          alias /data/static/challenges/;
+          alias /static/challenges/;
           try_files $uri =404;
         }
 
         location / {
           return 301 https://{{ .Values.domain }}$request_uri;
         }
+      }
+      {{- end }}
+
+      # If using upload shards, define load balancer here.
+      {{- if hasKey .Values.pv "uploadShards" }}
+      upstream tusd-load-balancer {
+        hash $http_upload_uid;
+        {{- range .Values.pv.uploadShards }}
+        server tusd-{{ .name }}-svc:1080;
+        {{- end }}
       }
       {{- end }}
 
@@ -112,25 +122,25 @@ data:
           return 404;
         }
         location /favicon.ico {
-          alias /data/static/images/favicon.ico;
+          alias /static/images/favicon.ico;
           add_header Cache-Control "max-age=3600, must-revalidate";
         }
         location /gnocchi {
-          alias /data/static/gnocchi;
+          alias /static/gnocchi;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /static {
-          alias /data/static/;
+          alias /static/;
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /docs {
-          alias /data/static/docs;
+          alias /static/docs;
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
         }
         location /media {
-          alias /data/media/;
+          alias /media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
           add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
@@ -149,6 +159,30 @@ data:
           }
           auth_request /auth-project;
         }
+        {{- if hasKey .Values.pv "mediaShards" }}
+        {{- range .Values.pv.mediaShards }}
+        location /{{ .name }} {
+          alias /{{ .name }}/;
+          autoindex off;
+          add_header Cache-Control "max-age=3600, must-revalidate";
+          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
+          add_header 'Access-Control-Allow-Headers' 'Authorization' always;
+
+          # Send CORS response from nginx
+          if ($request_method = OPTIONS)
+          {
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
+            add_header Access-Control-Allow-Credentials true;
+            return 200;
+          }
+          auth_request /auth-project;
+        }
+        {{- end }}
+        {{- end }}
         location /media/working
         {
           return 403;
@@ -188,7 +222,7 @@ data:
           proxy_pass_header Authorization;
 
           proxy_http_version 1.1;
-        }  
+        }
         location /files/ {
           {{- if .Values.requireHttps }} 
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
@@ -206,7 +240,34 @@ data:
           {{- end }}
           proxy_set_header Upgrade $http_upgrade;
           proxy_set_header Connection "upgrade";
+          proxy_pass_header Authorization;
+          proxy_pass_header Upload-Uid;
+          {{- if hasKey .Values.pv "uploadShards" }}
+          proxy_pass http://tusd-load-balancer/files/;
+          {{- else }}
           proxy_pass http://tusd-svc:1080/files/;
+          {{- end }}
+          add_header X-Upstream $upstream_addr always;
+          auth_request /auth-upload;
+        }
+        location /auth-upload {
+          internal;
+          # Allow for long responses.
+          proxy_connect_timeout 1200;
+          proxy_send_timeout 1200;
+          proxy_read_timeout 1200;
+          send_timeout 1200;
+
+          proxy_pass http://gunicorn-svc:8000/auth-upload;
+          proxy_pass_request_body off;
+          proxy_set_header Host $host;
+          proxy_set_header Content-Length "";
+          proxy_set_header X-Original-URI $request_uri;
+          proxy_set_header X-Original-METHOD $request_method;
+          proxy_pass_header Authorization;
+          proxy_pass_header Upload-Uid;
+
+          proxy_http_version 1.1;
         }
         location /ws {
           proxy_pass http://daphne-svc:8001;
@@ -220,7 +281,7 @@ data:
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Host $server_name;
         }
-{{ if .Values.kibana.enabled }}
+        {{- if .Values.kibana.enabled }}
         location /logs/ {
           auth_request /auth-admin;
           proxy_pass http://tator-kibana:{{ .Values.kibana.httpPort }}/;
@@ -233,7 +294,7 @@ data:
           proxy_set_header Connection "Keep-Alive";
           proxy_set_header Proxy-Connection "Keep-Alive";
         }
-{{ end }}
+        {{- end }}
         location /auth-admin {
           internal;
           proxy_pass http://gunicorn-svc:8000/auth-admin;
