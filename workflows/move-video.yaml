@@ -58,6 +58,9 @@ spec:
       command: [wget]
       args: ["--header=Authorization: Token {{workflow.parameters.token}}",
              "--header=Upload-Uid: {{inputs.parameters.upload_uid}}",
+             "--retry-connrefused", "--waitretry=1",
+             "--read-timeout=1", "--timeout=1",
+             "-t", "0",
              "-O", "{{inputs.parameters.dst}}",
              "{{inputs.parameters.url}}"]
       resources:
@@ -89,7 +92,8 @@ spec:
       image: "{{workflow.parameters.curl_image}}"
       imagePullPolicy: IfNotPresent
       command: [curl]
-      args: ["--retry", "5", "--connect-timeout", "5",
+      args: ["--retry", "10", "--retry-delay", "0", "--connect-timeout", "1",
+             "--max-time", "5", "--retry-max-time", "60",
              "-H", "Content-Type: application/json",
              "-H", "Authorization: Token {{workflow.parameters.token}}",
              "-X", "PATCH",
