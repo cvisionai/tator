@@ -1,1 +1,1 @@
-FROM curlimages/curl
+FROM curlimages/curl:7.71.1
