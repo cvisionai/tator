@@ -111,7 +111,7 @@ class MoveVideoAPI(BaseListView):
             for audio_def in media_files['audio']:
                 path = f"{project}/{str(uuid1())}.m4a"
                 dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
-                make_symlink(video_def['url'], token, dst)
+                make_symlink(audio_def['url'], token, dst)
                 audio_def['path'] = dst
                 del audio_def['url']
 
