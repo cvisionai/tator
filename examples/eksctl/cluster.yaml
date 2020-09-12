@@ -56,8 +56,6 @@ fargateProfiles:
       - namespace: default
         labels:
           app: daphne
-  - name: fargate-workflows
-    selectors:
       - namespace: default
         labels:
-          app: move
+          role: uploader
