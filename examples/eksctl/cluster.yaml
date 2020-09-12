@@ -59,8 +59,3 @@ fargateProfiles:
       - namespace: default
         labels:
           role: uploader
-  - name: fargate-workflows
-    selectors:
-      - namespace: default
-        labels:
-          app: move
