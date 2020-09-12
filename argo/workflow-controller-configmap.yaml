@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+data:
+  config: |   # This is optional in v2.7+, see docs/workflow-controller-configmap.md
+    # Specifies the container runtime interface to use (default: docker)
+    # must be one of: docker, kubelet, k8sapi, pns
+    containerRuntimeExecutor: k8sapi

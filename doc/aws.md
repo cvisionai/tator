@@ -198,6 +198,13 @@ kubectl get svc | grep nginx
 
 Use your DNS to make a CNAME rule pointing your domain to the service given under `EXTERNAL_IP`.
 
+## Using argo workflows on Fargate
+
+On fargate, workflows cannot use volumes of certain types (EBS or host path, but EFS works). By default, the Argo workflow controller uses a controller that creates a volume called docker-sock. The following command will use the k8sapi controller:
+
+```
+kubectl apply -n argo argo/workflow-controller-configmap.yaml
+```
 
 ## Using AWS Cognito
 
