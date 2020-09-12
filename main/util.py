@@ -256,7 +256,8 @@ def cleanup_uploads():
         for root, dirs, files in os.walk(path):
             for f in files:
                 file_path = os.path.join(root, f)
-                if os.stat(file_path).st_mtime < now - 86400 * NUM_DAYS:
+                not_resource = Resource.objects.filter(path=file_path).count() == 0
+                if os.stat(file_path).st_mtime < now - 86400 * NUM_DAYS and not_resource:
                     os.remove(file_path)
                     num_removed += 1
         logger.info(f"Deleted {num_removed} files from {path} that were > {NUM_DAYS} old...")
