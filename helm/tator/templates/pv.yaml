@@ -17,6 +17,8 @@ spec:
   csi:
     driver: efs.csi.aws.com
     volumeHandle: {{ .Values.pv.filesystemId }}
+    volumeAttributes:
+      encryptInTransit: "false"
   {{- else }}
   mountOptions:
     {{- range .Values.pv.nfsMountOptions }}
