@@ -22,9 +22,6 @@ spec:
       claimName: main-pv-claim
   templates:
   - name: main
-    metadata:
-      labels:
-        app: move
     steps:
     - - name: move-file
         template: move
@@ -40,6 +37,9 @@ spec:
     - - name: patch-media
         template: patch
   - name: move
+    metadata:
+      labels:
+        app: move
     retryStrategy:
       limit: 10
       retryPolicy: "Always"
@@ -75,6 +75,9 @@ spec:
         name: main-pv-claim
         subPath: raw
   - name: patch
+    metadata:
+      labels:
+        app: move
     retryStrategy:
       limit: 10
       retryPolicy: "Always"
