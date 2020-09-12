@@ -16,7 +16,6 @@ from ..models import MediaType
 from ..models import Localization
 from ..models import State
 from ..models import Project
-from ..models import Resource
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -369,39 +368,7 @@ class MediaDetailAPI(BaseDetailView):
 
         # Media definitions may be appended but not replaced or deleted.
         if 'media_files' in params:
-            # Handle null existing value.
-            if obj.media_files is None:
-                obj.media_files = {}
- 
-            # Append to existing definitions.
-            new_streaming = params['media_files'].get('streaming', [])
-            old_streaming = obj.media_files.get('streaming', [])
-            streaming = new_streaming + old_streaming
-            new_archival = params['media_files'].get('archival', [])
-            old_archival = obj.media_files.get('archival', [])
-            archival = new_archival + old_archival
-            new_audio = params['media_files'].get('audio', [])
-            old_audio = obj.media_files.get('audio', [])
-            audio = new_audio + old_audio
-
-            for fp in new_streaming:
-                path = fp['path']
-                seg_path = fp['segment_info']
-                Resource.add_resource(path)
-                Resource.add_resource(seg_path)
-
-            for fp in new_archival:
-                Resource.add_resource(fp['path'])
-
-            # Only fill in a key if it has at least one definition.
-            obj.media_files = {}
-            if streaming:
-                streaming.sort(key=lambda x: x['resolution'][0], reverse=True)
-                obj.media_files['streaming'] = streaming
-            if archival:
-                obj.media_files['archival'] = archival
-            if audio:
-                obj.media_files['audio'] = audio
+            obj.update_media_files(params['media_files'])
 
         if 'fps' in params:
             obj.fps = params['fps']
