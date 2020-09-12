@@ -1165,8 +1165,8 @@ class TatorMove:
             media_update['uid'] = uid
 
         # Set required workflow parameters.
-        self._set_parameter('wget_image', get_wget_image_name())
-        self._set_parameter('curl_image', get_curl_image_name())
+        self._set_parameter('wget_image', f'{os.getenv("DOCKER_REGISTRY")}/wget:{Git.sha}')
+        self._set_parameter('curl_image', f'{os.getenv("DOCKER_REGISTRY")}/curl:{Git.sha}')
         self._set_parameter('host', host)
         self._set_parameter('token', token)
         self._set_parameter('media_id', str(media_id))
