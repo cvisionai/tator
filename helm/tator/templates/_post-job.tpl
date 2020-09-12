@@ -27,8 +27,11 @@ spec:
     spec:
       restartPolicy: Never
       terminationGracePeriodSeconds: 10
+      {{- if .Values.awsFargate.enabled }}
+      {{- else }}
       nodeSelector:
         {{ .selector }}
+      {{- end }}
       containers:
         - name: tator-online
           image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}

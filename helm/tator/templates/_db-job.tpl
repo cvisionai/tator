@@ -26,8 +26,11 @@ spec:
     spec:
       restartPolicy: Never
       terminationGracePeriodSeconds: 10
+      {{- if .Values.awsFargate.enabled }}
+      {{- else }}
       nodeSelector:
         {{ .selector }}
+      {{- end }}
       containers:
         - name: postgis
           image: postgres:11.6
