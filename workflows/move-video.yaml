@@ -92,8 +92,8 @@ spec:
       image: "{{workflow.parameters.curl_image}}"
       imagePullPolicy: IfNotPresent
       command: [curl]
-      args: ["--retry", "10", "--retry-delay", "0", "--connect-timeout", "1",
-             "--max-time", "5", "--retry-max-time", "60",
+      args: ["--retry-connrefused", "--retry-delay", "1",
+             "--connect-timeout", "1",
              "-H", "Content-Type: application/json",
              "-H", "Authorization: Token {{workflow.parameters.token}}",
              "-X", "PATCH",
