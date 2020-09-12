@@ -50,13 +50,13 @@ def get_destination_path(default, project):
 def get_file_path(url, token):
     """ Given an upload url, finds the path on disk.
     """
+    parsed = urllib_parse.urlsplit(url)
     upload_shards = os.getenv('UPLOAD_SHARDS')
     if upload_shards is None:
         # No media shards, the path is /uploads
         path = '/uploads'
     else:
         # Get metadata for this URL.
-        parsed = urllib_parse.urlsplit(url)
         upload_uid = TatorCache().get_upload_uid_cache(parsed.path)
         response = requests.head(f"{urllib_parse.urljoin('http://nginx-internal-svc', parsed.path)}",
                                  allow_redirects=True,
