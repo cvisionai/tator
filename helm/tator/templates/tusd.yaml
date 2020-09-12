@@ -17,6 +17,7 @@ spec:
       labels:
         app: tusd-{{ .name }}
         type: web
+        role: uploader
     spec:
       {{- if $.Values.awsFargate.enabled }}
       {{- else }}
