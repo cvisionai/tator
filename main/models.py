@@ -653,6 +653,9 @@ class Media(Model):
         for fp in new_archival:
             Resource.add_resource(fp['path'])
 
+        for fp in new_audio:
+            Resource.add_resource(fp['path'])
+
         # Only fill in a key if it has at least one definition.
         self.media_files = {}
         if streaming:
@@ -732,6 +735,12 @@ def media_delete(sender, instance, **kwargs):
             path = obj['segment_info']
             safe_delete(path)
         files = instance.media_files.get('archival', [])
+        if files is None:
+            files = []
+        for obj in files:
+            path = obj['path']
+            safe_delete(path)
+        files = instance.media_files.get('audio', [])
         if files is None:
             files = []
         for obj in files:
