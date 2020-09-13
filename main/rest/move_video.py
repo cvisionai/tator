@@ -2,7 +2,6 @@ import logging
 import os
 import mimetypes
 import random
-import shutil
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
@@ -98,9 +97,9 @@ class MoveVideoAPI(BaseListView):
             for video_def in media_files['streaming']:
                 uuid = str(uuid1())
                 path = f"{project}/{uuid}.mp4"
-                segment_info = f"{project}/{uuid}_segments.json"
+                segment_info = f"{uuid}_segments.json"
                 dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
-                segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), segment_info)
+                segment_dst = os.path.join(os.path.dirname(dst), segment_info)
                 make_symlink(video_def['url'], token, dst)
                 download_uploaded_file(video_def['segments_url'], self.request.user, segment_dst)
                 video_def['path'] = dst
