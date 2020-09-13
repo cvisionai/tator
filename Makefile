@@ -195,8 +195,8 @@ postgis-image:  containers/postgis/Dockerfile.gen
 
 .PHONY: tus-image
 tus-image: containers/tus/Dockerfile.gen
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:latest -f $< containers || exit 255
-	docker push $(DOCKERHUB_USER)/tator_tusd:latest
+	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION) -f $< containers || exit 255
+	docker push $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION)
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
