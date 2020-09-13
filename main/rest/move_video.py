@@ -102,7 +102,7 @@ class MoveVideoAPI(BaseListView):
                 dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
                 segment_dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), segment_info)
                 make_symlink(video_def['url'], token, dst)
-                make_symlink(video_def['segments_url'], token, segment_dst)
+                download_uploaded_file(video_def['segments_url'], self.request.user, segment_dst)
                 video_def['path'] = dst
                 video_def['segment_info'] = segment_dst
                 del video_def['url']
