@@ -74,6 +74,7 @@ class CustomGenerator(SchemaGenerator):
                 'ProgressSummarySpec': progress_summary_spec,
                 'ProjectSpec': project_spec,
                 'Project': project,
+                'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,
                 'SectionSpec': section_spec,
                 'Section': section,
