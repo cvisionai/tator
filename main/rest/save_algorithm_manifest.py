@@ -6,6 +6,7 @@ from django.conf import settings
 
 from ..schema import SaveAlgorithmManifestSchema
 from ..schema.components.algorithm import manifest_fields as fields
+from ..uploads import download_uploaded_file
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -39,13 +40,6 @@ class SaveAlgorithmManifestAPI(BaseListView):
 
         # Verify the provided file has been uploaded
         upload_url = params[fields.upload_url]
-        basename = os.path.basename(upload_url)
-        upload_path = os.path.join(settings.UPLOAD_ROOT, basename)
-
-        if not os.path.exists(upload_path):
-            log_msg = f"Upload file does not exist {upload_path}"
-            logger.error(log_msg)
-            raise RuntimeError(log_msg)
 
         # Move the file to the right location using the provided name
         project_id = str(params[fields.project])
@@ -54,6 +48,7 @@ class SaveAlgorithmManifestAPI(BaseListView):
         new_filename = filename + extension
         final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
+        # Make sure there's not a duplicate of this file.
         file_index = -1
         while os.path.exists(final_path):
             file_index += 1
@@ -61,12 +56,10 @@ class SaveAlgorithmManifestAPI(BaseListView):
             final_path = os.path.join(settings.MEDIA_ROOT, project_id, new_filename)
 
         project_folder = os.path.dirname(final_path)
-        if not os.path.exists(project_folder):
-            os.makedirs(project_folder, exist_ok=True)
+        os.makedirs(project_folder, exist_ok=True)
 
-        log_msg = f'Moving {upload_path} to {final_path}'
-        logger.info(log_msg)
-        shutil.move(src=upload_path, dst=final_path)
+        # Download the file to the final path.
+        download_uploaded_file(upload_url, self.request.user, final_path)
 
         # Create the response back to the user
         new_url = os.path.join(project_id, new_filename)

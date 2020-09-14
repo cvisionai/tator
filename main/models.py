@@ -41,6 +41,7 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
+from .uploads import download_uploaded_file
 
 from collections import UserDict
 
@@ -312,14 +313,17 @@ class TemporaryFile(Model):
         self.eol_datetime = past
         self.save()
 
-    def from_local(path, name, project, user, lookup, hours):
+    def from_local(path, name, project, user, lookup, hours, is_upload=False):
         """ Given a local file create a temporary file storage object
         :returns A saved TemporaryFile:
         """
         extension = os.path.splitext(name)[-1]
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
-        shutil.copyfile(path, destination_fp)
+        if is_upload:
+            download_uploaded_file(path, user, destination_fp)
+        else:
+            shutil.copyfile(path, destination_fp)
 
         now = datetime.datetime.utcnow()
         eol =  now + datetime.timedelta(hours=hours)
@@ -622,6 +626,46 @@ class Media(Model):
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
 
+    def update_media_files(self, media_files):
+        """ Updates media files by merging a new key into existing JSON object.
+        """
+        # Handle null existing value.
+        if self.media_files is None:
+            self.media_files = {}
+
+        # Append to existing definitions.
+        new_streaming = media_files.get('streaming', [])
+        old_streaming = self.media_files.get('streaming', [])
+        streaming = new_streaming + old_streaming
+        new_archival = media_files.get('archival', [])
+        old_archival = self.media_files.get('archival', [])
+        archival = new_archival + old_archival
+        new_audio = media_files.get('audio', [])
+        old_audio = self.media_files.get('audio', [])
+        audio = new_audio + old_audio
+
+        for fp in new_streaming:
+            path = fp['path']
+            seg_path = fp['segment_info']
+            Resource.add_resource(path)
+            Resource.add_resource(seg_path)
+
+        for fp in new_archival:
+            Resource.add_resource(fp['path'])
+
+        for fp in new_audio:
+            Resource.add_resource(fp['path'])
+
+        # Only fill in a key if it has at least one definition.
+        self.media_files = {}
+        if streaming:
+            streaming.sort(key=lambda x: x['resolution'][0], reverse=True)
+            self.media_files['streaming'] = streaming
+        if archival:
+            self.media_files['archival'] = archival
+        if audio:
+            self.media_files['audio'] = audio
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     count=IntegerField(null=True, default=1)
@@ -685,18 +729,18 @@ def media_delete(sender, instance, **kwargs):
         if files is None:
             files = []
         for obj in files:
-            if os.path.isabs(obj['path']):
-                path = "/data" + obj['path']
-            else:
-                path = os.path.join("/data", obj['path'])
+            path = obj['path']
             safe_delete(path)
 
-            if os.path.isabs(obj['segment_info']):
-                path = "/data" + obj['segment_info']
-            else:
-                path = os.path.join("/data", obj['segment_info'])
+            path = obj['segment_info']
             safe_delete(path)
         files = instance.media_files.get('archival', [])
+        if files is None:
+            files = []
+        for obj in files:
+            path = obj['path']
+            safe_delete(path)
+        files = instance.media_files.get('audio', [])
         if files is None:
             files = []
         for obj in files:

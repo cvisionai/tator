@@ -1,26 +1,58 @@
 import logging
 import os
 import mimetypes
+import random
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
 from django.conf import settings
+from urllib import parse as urllib_parse
 
-from ..kube import TatorMove
 from ..models import Media
 from ..schema import MoveVideoSchema
+from ..cache import TatorCache
+from ..uploads import download_uploaded_file
+from ..uploads import get_destination_path
+from ..uploads import get_file_path
+from ..uploads import make_symlink
+from ..consumers import ProgressProducer
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
+def get_upload_uid(url):
+    return TatorCache().get_upload_uid_cache(url)
+
+def notify_ready(media, user):
+    prog = ProgressProducer(
+        'upload',
+        media.project.pk,
+        media.gid,
+        media.uid,
+        media.name,
+        user,
+        {'section': media.attributes['tator_user_sections']},
+    )
+    info = {
+        'id': media.id,
+        'thumbnail': str(media.thumbnail),
+        'thumbnail_gif': str(media.thumbnail_gif),
+        'name': media.name,
+        'section': media.attributes['tator_user_sections'],
+    }
+    try:
+        prog.finished("Media Import Complete", info)
+    except:
+        logger.error(f"Failed to send progress from PATCH on media ID {media.id}!")
+
+
 class MoveVideoAPI(BaseListView):
     """ Moves a video file.
 
-        This endpoint creates an Argo workflow that moves an uploaded video file into the
-        appropriate project directory. When the move is complete, the workflow will make
-        a PATCH request to the Media endpoint for the given media ID using the given 
+        This endpoint creates a symlink for an uploaded video file in the
+        appropriate project directory and updates the media object with the given 
         `media_files` definitions.
 
         Videos in Tator must be transcoded to a multi-resolution streaming format before they
@@ -56,49 +88,42 @@ class MoveVideoAPI(BaseListView):
                     ext = mimetypes.guess_extension(video_def['codec_mime'].split(';')[0])
                 else:
                     ext = os.path.splitext(media.name)[1]
-                upload_base = os.path.basename(video_def['url'])
                 path = f"{project}/{str(uuid1())}{ext}"
-                move_list.append({
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.RAW_ROOT, path),
-                })
-                video_def['path'] = '/data/raw/' + path
+                dst = os.path.join(get_destination_path(settings.RAW_ROOT, project), path)
+                make_symlink(video_def['url'], token, dst)
+                video_def['path'] = dst
                 del video_def['url']
         if 'streaming' in media_files:
             for video_def in media_files['streaming']:
-                upload_base = os.path.basename(video_def['url'])
-                segment_upload_base = os.path.basename(video_def['segments_url'])
                 uuid = str(uuid1())
                 path = f"{project}/{uuid}.mp4"
-                segment_info = f"{project}/{uuid}_segments.json"
-                move_list += [{
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, path),
-                }, {
-                    'src': os.path.join(settings.UPLOAD_ROOT, segment_upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, segment_info),
-                }]
-                video_def['path'] = '/media/' + path
-                video_def['segment_info'] = '/media/' + segment_info
+                segment_info = f"{uuid}_segments.json"
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
+                segment_dst = os.path.join(os.path.dirname(dst), segment_info)
+                make_symlink(video_def['url'], token, dst)
+                download_uploaded_file(video_def['segments_url'], self.request.user, segment_dst)
+                video_def['path'] = dst
+                video_def['segment_info'] = segment_dst
                 del video_def['url']
                 del video_def['segments_url']
         if 'audio' in media_files:
             for audio_def in media_files['audio']:
-                upload_base = os.path.basename(audio_def['url'])
                 path = f"{project}/{str(uuid1())}.m4a"
-                move_list.append({
-                    'src': os.path.join(settings.UPLOAD_ROOT, upload_base),
-                    'dst': os.path.join(settings.MEDIA_ROOT, path),
-                })
-                audio_def['path'] = '/media/' + path
+                dst = os.path.join(get_destination_path(settings.MEDIA_ROOT, project), path)
+                make_symlink(audio_def['url'], token, dst)
+                audio_def['path'] = dst
                 del audio_def['url']
 
-        # Create the move workflow
-        response = TatorMove().move_video(project, params['id'], str(token), move_list,
-                                          media_files, media.gid, media.uid)
+        media.update_media_files(media_files)
+        media.save()
 
-        response_data = {'message': f"Moving video for media {params['id']} in workflow "
-                                    f"{response['metadata']['name']}!",
+        # Send a progress message indicating streaming file is available.
+        if (media.media_files is not None) and (media.gid is not None) and (media.uid is not None):
+            if 'streaming' in media.media_files:
+                if len(media.media_files['streaming']) > 0:
+                    notify_ready(media, self.request.user)
+
+        response_data = {'message': f"Moved video for media {params['id']}!",
                          'id': params['id']}
         return response_data
         

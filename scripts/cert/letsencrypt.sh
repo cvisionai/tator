@@ -52,7 +52,7 @@ fi
 
 ACCOUNT_KEY=/tmp/account.key
 DOMAIN_CSR=/tmp/domain.csr
-CHALLENGES_DIR=/data/static/challenges
+CHALLENGES_DIR=/static/challenges
 
 openssl genrsa 4096 > $ACCOUNT_KEY
 openssl genrsa 4096 > $DOMAIN_KEY

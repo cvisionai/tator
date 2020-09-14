@@ -38,12 +38,54 @@ certCron:
   # tls-cert and tls-key must be created manually.
   enabled: false
 pv:
-  enabled: true
   nfsServer: "192.168.1.114"
   nfsMountOptions:
-    - nfsvers=3
-    - nolock
+    - nfsvers=4.1
   path: "/media/kubernetes_share"
+  # Specifies a series of persistent volumes for storing media. If given,
+  # the main pv is no longer used for storing new media, and instead each
+  # media file is written to a randomly selected shard from those given.
+  # Media files stored on a shard use the name given to construct a URI.
+  # This is shown here for an example, but typically in dev environments
+  # there should be no shards.
+  #mediaShards:
+  #  - name: media000
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/media000"
+  #  - name: media001
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/media001"
+  #  - name: media002
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/media002"
+  # Specifies a series of persistent volumes for storing uploads. If given,
+  # the main pv is no longer used for storing uploads, and instead each
+  # upload will be routed to one of the shards given below by hashing the
+  # upload UID. One TUS service will be created for each shard.
+  # This is shown here for an example, but typically in dev environments
+  # there should be no shards.
+  #uploadShards:
+  #  - name: upload000
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/upload000"
+  #  - name: upload001
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/upload001"
+  #  - name: upload002
+  #    nfsServer: "192.168.1.114"
+  #    nfsMountOptions:
+  #      - nfsvers=4.1
+  #    path: "/media/kubernetes_share/upload002"
 pvc:
   size: 10Ti
 hpa:

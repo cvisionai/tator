@@ -1,3 +1,70 @@
+{{- if hasKey .Values.pv "uploadShards" }}
+{{- range .Values.pv.uploadShards }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tusd-{{ .name }}-deployment
+  labels:
+    app: tusd
+    type: web
+spec:
+  selector:
+    matchLabels:
+      app: tusd-{{ .name }}
+      type: web
+  template:
+    metadata:
+      labels:
+        app: tusd-{{ .name }}
+        type: web
+        role: uploader
+    spec:
+      {{- if $.Values.awsFargate.enabled }}
+      {{- else }}
+      nodeSelector:
+        webServer: "yes"
+      {{- end }}
+      containers:
+        - name: tusd-{{ .name }}
+          image: {{ $.Values.dockerRegistry }}/tator_tusd:{{ $.Values.gitRevision }}
+          command: ["tusd"]
+          args: ["-behind-proxy", "-upload-dir", "/{{ .name }}"]
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 250m
+              memory: 500Mi
+          ports:
+            - containerPort: 1080
+          volumeMounts:
+            - mountPath: /{{ .name }}
+              name: {{ .name }}-pv-claim
+      volumes:
+        - name: {{ .name }}-pv-claim
+          persistentVolumeClaim:
+            claimName: {{ .name }}-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tusd-{{ .name }}-svc
+  labels:
+    app: tusd-{{ .name }}
+spec:
+  ports:
+  - name: tus-{{ .name }}
+    port: 1080
+    targetPort: 1080
+  selector:
+    app: tusd-{{ .name }}
+    type: web
+  type: NodePort
+---
+{{- end }}
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,23 +77,22 @@ spec:
     matchLabels:
       app: tusd
       type: web
-  replicas: 1
   template:
     metadata:
       labels:
         app: tusd
         type: web
     spec:
-{{ if .Values.awsFargate.enabled }}
-{{ else }}
+      {{- if .Values.awsFargate.enabled }}
+      {{- else }}
       nodeSelector:
         webServer: "yes"
-{{ end }}
+      {{- end }}
       containers:
         - name: tusd
-          image: {{ .Values.dockerRegistry }}/tator_tusd
+          image: {{ .Values.dockerRegistry }}/tator_tusd:{{ .Values.gitRevision }}
           command: ["tusd"]
-          args: ["-behind-proxy","-upload-dir","/data/uploads"]
+          args: ["-behind-proxy", "-upload-dir", "/uploads"]
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -34,11 +100,11 @@ spec:
               memory: 2Gi
             requests:
               cpu: 250m
-              memory: 1Gi
+              memory: 500Mi
           ports:
             - containerPort: 1080
           volumeMounts:
-            - mountPath: /data/uploads
+            - mountPath: /uploads
               name: main-pv-claim
               subPath: upload
       volumes:
@@ -61,3 +127,4 @@ spec:
     app: tusd
     type: web
   type: NodePort
+{{- end }}

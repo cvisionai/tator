@@ -40,7 +40,7 @@ else:
 try:
     ALLOWED_HOSTS = [
         os.getenv('MAIN_HOST'),
-        socket.gethostbyname('nginx-svc'), # Allows internal cluster access
+        'nginx-internal-svc', # Allows internal cluster access
     ]
 except: # Support standalone `docker run`
     ALLOWED_HOSTS = [
@@ -189,14 +189,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/data/static'
+STATIC_ROOT = '/static'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/data/media'
+MEDIA_ROOT = '/media'
 
 RAW_ROOT = '/data/raw'
 
-UPLOAD_ROOT = '/data/uploads'
+UPLOAD_ROOT = '/uploads'
 ASGI_APPLICATION = 'tator_online.routing.application'
 
 

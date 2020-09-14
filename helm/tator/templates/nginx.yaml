@@ -15,14 +15,14 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
     spec:
-{{ if .Values.awsFargate.enabled }}
-{{ else }}
+      {{- if .Values.awsFargate.enabled }}
+      {{- else }}
       nodeSelector:
         webServer: "yes"
-{{ end }}
+      {{- end }}
       containers:
         - name: nginx
-          image: nginx:1.16
+          image: nginx:1.19.2
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:
@@ -60,15 +60,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
-            - mountPath: /data/static
-              name: main-pv-claim
-              subPath: static
-            - mountPath: /data/media
-              name: main-pv-claim
-              subPath: media
-            - mountPath: /data/raw
-              name: main-pv-claim
-              subPath: raw
+            {{ include "volumeMounts.template" . | indent 12 }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -103,9 +95,7 @@ spec:
         {{- end }}
         {{- end }}
         {{- end }}
-        - name: main-pv-claim
-          persistentVolumeClaim:
-            claimName: main-pv-claim
+        {{ include "volumes.template" . | indent 8 }}
 ---
 apiVersion: v1
 kind: Service

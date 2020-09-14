@@ -1,33 +1,25 @@
-{{ if .Values.pv.enabled }}
-{{ if .Values.awsStorage.enabled }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: main-pv
 spec:
   capacity:
-    storage: 5Gi
-  volumeMode: Filesystem
+    storage: {{ .Values.pvc.size | default "10Ti" }}
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: efs-sc
-  csi:
-    driver: efs.csi.aws.com
-    volumeHandle: {{ .Values.awsStorage.filesystemId }}
-{{ else }}
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: main-pv
-spec:
-  capacity:
-    storage: {{ .Values.pvc.size }}
-  accessModes:
-    - ReadWriteMany
   claimRef:
     namespace: default
     name: main-pv-claim
+  {{- if .Values.awsStorage.enabled }}
+  volumeMode: Filesystem
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: {{ .Values.pv.filesystemId }}
+    volumeAttributes:
+      encryptInTransit: "false"
+  {{- else }}
   mountOptions:
     {{- range .Values.pv.nfsMountOptions }}
     - {{ . }}
@@ -35,6 +27,19 @@ spec:
   nfs:
     server: {{ .Values.pv.nfsServer }}
     path: {{ .Values.pv.path }}
+  {{- end }} # .Values.awsStorage.enabled
+{{- if hasKey .Values.pv "mediaShards" }}
+{{- range .Values.pv.mediaShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pv" $settings }}
+{{- end }}
+{{- end }}
+{{- if hasKey .Values.pv "uploadShards" }}
+{{- range .Values.pv.uploadShards }}
+{{- $settings := dict "Values" $.Values "shard" . }}
+{{ include "shard.pv" $settings }}
+{{- end }}
+{{- end }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
@@ -71,5 +76,3 @@ spec:
   hostPath:
     path: {{ $.Values.postgis.hostPath }}
 {{ end }}
-{{ end }} # .Values.awsStorage.enabled
-{{ end }} # .Values.pv.enabled 
