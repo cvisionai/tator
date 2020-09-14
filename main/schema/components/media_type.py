@@ -48,8 +48,8 @@ media_type_properties = {
     },
     'streaming_config': {
         'description': 'Streaming config defintion. If null, the default will be used.',
-        'type': 'object',
-        'additionalProperties': {'$ref': '#/components/schemas/StreamingConfig'},
+        'type': 'array',
+        'items': {'$ref': '#/components/schemas/ResolutionConfig'},
     },
 }
 

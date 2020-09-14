@@ -85,7 +85,6 @@ class CustomGenerator(SchemaGenerator):
                 'StateTypeSpec': state_type_spec,
                 'StateTypeUpdate': state_type_update,
                 'StateType': state_type,
-                'StreamingConfig': streaming_config,
                 'TemporaryFileSpec': temporary_file_spec,
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,

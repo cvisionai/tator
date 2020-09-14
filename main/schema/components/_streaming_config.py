@@ -25,17 +25,3 @@ resolution_config = {
         }
     },
 }
-
-streaming_config = {
-    'type': 'object',
-    'description': 'Settings for streaming video encode.',
-    'properties': {
-        'resolutions': {
-            'type': 'array',
-            'description': 'Array of resolutions to encode for streaming.'
-            'If set to null, the defaults are used '
-            '(libx264 at 144p,320p,480p,720p,1080p)',
-            'items': {'$ref': '#/components/schemas/ResolutionConfig'},
-        },
-    }
-}
