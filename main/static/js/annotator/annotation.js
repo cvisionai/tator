@@ -539,9 +539,15 @@ class AnnotationCanvas extends TatorElement
   {
     super();
 
+    // Context menu (right-click)
+    this._contextMenu = document.createElement("canvas-context-menu");
+    this._contextMenu._div.style.display="none";
+    this._shadow.appendChild(this._contextMenu);
+
     this._canvas=document.createElement("canvas");
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
+    this._canvas.style.display="block";
     this._shadow.appendChild(this._canvas);
     this._clipboard = new Clipboard(this);
 
@@ -556,10 +562,10 @@ class AnnotationCanvas extends TatorElement
     this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
     this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
     this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
+    this._canvas.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
     document.addEventListener("keyup", this.keyupHandler.bind(this));
-
     // Setup data
     this._framedData=new Map();
     this._recent = new Map();
@@ -729,6 +735,21 @@ class AnnotationCanvas extends TatorElement
   updateType(typeObj, callback)
   {
     this._data.updateType(typeObj, callback);
+  }
+
+  contextMenuHandler(event)
+  {
+    console.log(event);
+    event.preventDefault();
+
+    var clickLocation = this.scaleToViewport([event.offsetX, event.offsetY]);
+    var x = clickLocation[0];
+    var y = clickLocation[1];
+    console.log(clickLocation)
+
+    this._contextMenu._div.style.left = x + "px";
+    this._contextMenu._div.style.right = y + "px";
+    this._contextMenu._div.style.display = "block";
   }
 
   keyupHandler(event)
@@ -1442,7 +1463,7 @@ class AnnotationCanvas extends TatorElement
       }
       return [[x0*sf[0],y0*sf[1]],[x1*sf[0],y1*sf[1]]];
     };
-  
+
     //Scale box dimenisons
     var actX0 = (localization.x - roi[0]) / roi[2];
     var actY0 = (localization.y - roi[1]) / roi[3];

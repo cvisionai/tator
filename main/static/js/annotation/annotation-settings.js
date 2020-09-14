@@ -47,6 +47,7 @@ class AnnotationSettings extends TatorElement {
     });
   }
 
+
   static get observedAttributes() {
     return ["rate", "zoom", "media-id", "project-id"];
   }
