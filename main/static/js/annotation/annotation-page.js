@@ -47,6 +47,11 @@ class AnnotationPage extends TatorPage {
     this._browser.undoBuffer = this._undo;
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
+
+    window.addEventListener("error", (evt) => {
+      this._shadow.removeChild(this._loading);
+      window.alert("Critical system fault");
+    });
   }
 
   static get observedAttributes() {
