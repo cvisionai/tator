@@ -539,16 +539,32 @@ class AnnotationCanvas extends TatorElement
   {
     super();
 
-    // Context menu (right-click)
-    this._contextMenu = document.createElement("canvas-context-menu");
-    this._contextMenu._div.style.display="none";
-    this._shadow.appendChild(this._contextMenu);
-
     this._canvas=document.createElement("canvas");
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
-    this._canvas.style.display="block";
     this._shadow.appendChild(this._canvas);
+
+    // Context menu (right-click): Tracks
+    this._contextMenuTrack = document.createElement("canvas-context-menu");
+    this._contextMenuTrack.hideMenu();
+    this._shadow.appendChild(this._contextMenuTrack);
+
+    this._contextMenuTrack.addMenuEntry("Extend track", this.entry1_callback);
+    this._contextMenuTrack.addMenuEntry("Clip track", this.entry1_callback);
+    this._contextMenuTrack.addMenuEntry("Set track to merge", this.entry1_callback);
+    this._contextMenuTrack.addMenuEntry("Merge into this track", this.entry1_callback);
+    this._contextMenuTrack.disableEntry("Merge into this track", true);
+
+    // Context menu (right-click): Localizations/detections
+    this._contextMenuLoc = document.createElement("canvas-context-menu");
+    this._contextMenuLoc.hideMenu();
+    this._shadow.appendChild(this._contextMenuLoc);
+
+    this._contextMenuLoc.addMenuEntry("Create track", this.entry1_callback);
+    this._contextMenuLoc.addMenuEntry("Add to track", this.entry1_callback);
+
+    this._contextMenuFrame = 0;
+
     this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
@@ -589,6 +605,12 @@ class AnnotationCanvas extends TatorElement
 
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
+  }
+
+  // Context menu stuff
+  entry1_callback()
+  {
+    console.log("entry1");
   }
 
   resetRoi()
@@ -737,19 +759,22 @@ class AnnotationCanvas extends TatorElement
     this._data.updateType(typeObj, callback);
   }
 
-  contextMenuHandler(event)
+  contextMenuHandler(clickEvent)
   {
-    console.log(event);
-    event.preventDefault();
+    // Disable the normal right click menu
+    clickEvent.preventDefault();
+    var clickLocation = [clickEvent.clientX, clickEvent.clientY];
 
-    var clickLocation = this.scaleToViewport([event.offsetX, event.offsetY]);
-    var x = clickLocation[0];
-    var y = clickLocation[1];
-    console.log(clickLocation)
-
-    this._contextMenu._div.style.left = x + "px";
-    this._contextMenu._div.style.right = y + "px";
-    this._contextMenu._div.style.display = "block";
+    // Determine if the user right clicked on a state/track or a stand-alone localization/detection
+    if (this.activeLocalization) {
+      let localizationInTrack = this.activeLocalization.id in this._data._trackDb;
+      if (localizationInTrack) {    
+        this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
+      }
+      else {
+        this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+      }
+    }
   }
 
   keyupHandler(event)
@@ -1651,6 +1676,10 @@ class AnnotationCanvas extends TatorElement
   mouseDownHandler(clickEvent)
   {
     this._clickTime = performance.now();
+
+    this._contextMenuTrack.hideMenu();
+    this._contextMenuLoc.hideMenu();
+
     if (document.body.classList.contains("shortcuts-disabled")) {
       document.body.classList.remove("shortcuts-disabled");
       document.activeElement.blur();
@@ -2990,10 +3019,20 @@ class AnnotationCanvas extends TatorElement
     {
       drawContext = this._draw;
     }
+
     // scale factor based on canvas height versus image height
     // Draw commands are in viewspace coordinates, but annotations
     // are in image coordinates.
     var frameIdx = frameInfo.frame;
+
+    // #TODO Consider moving this outside of this function into its own
+    //       routine that is called when a frame change occurs.
+    if (this.currentFrame() != this._contextMenuFrame)
+    {
+      this._contextMenuFrame = frameIdx;
+      this._contextMenuTrack.hideMenu();
+      this._contextMenuLoc.hideMenu();
+    }
 
     if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)
     {

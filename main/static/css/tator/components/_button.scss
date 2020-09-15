@@ -64,6 +64,11 @@
   }
 }
 
+.btn-border {
+  border: 1px solid $color-gray--dark50;
+  color: $color-gray--dark; 
+}
+
 .btn-small {
   height: 32px;
   width: 85px;
