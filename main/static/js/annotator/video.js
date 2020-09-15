@@ -1272,10 +1272,15 @@ class VideoCanvas extends AnnotationCanvas {
       // Set the seek buffer, and command worker to get the seek
       // response
       document.body.style.cursor = "progress";
+
       this._masked=true;
-      this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
+      // Only mask edits if seeking to a different frame
+      if (this.currentFrame() != frame)
+      {
+        this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: true}}));
+      }
       video = this._videoElement[this._hq_idx].seekBuffer();
       this._seekStart = performance.now();
 
@@ -1301,6 +1306,7 @@ class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          // if we are masked, take it off
           if (that._masked == true)
           {
             that._masked = false;
