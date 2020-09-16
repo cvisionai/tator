@@ -660,7 +660,9 @@ class AnnotationCanvas extends TatorElement
           //this._draw.resizeViewport(dims[0], dims[1]);
           if (this.isPaused() == true)
           {
-            this.refresh(true);
+            this.refresh(false).then(() => {
+              this.refresh(true);
+            });
           }
           resizeHandler();
         }, 10);
@@ -1442,7 +1444,7 @@ class AnnotationCanvas extends TatorElement
       }
       return [[x0*sf[0],y0*sf[1]],[x1*sf[0],y1*sf[1]]];
     };
-  
+
     //Scale box dimenisons
     var actX0 = (localization.x - roi[0]) / roi[2];
     var actY0 = (localization.y - roi[1]) / roi[3];
