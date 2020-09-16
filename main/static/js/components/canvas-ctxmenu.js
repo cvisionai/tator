@@ -13,14 +13,14 @@ class CanvasContextMenu extends TatorElement {
     this._buttons = {};
   }
 
-  addMenuEntry(newText, callback)
+  addMenuEntry(newText, clickCallback)
   {
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white");
     button.textContent = newText;
     button.addEventListener("click", () => {
       this.hideMenu();
-      callback();
+      clickCallback(newText);
     });
     this._div.appendChild(button);
     this._buttons[newText] = button;

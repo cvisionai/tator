@@ -560,6 +560,8 @@ class AnnotationPage extends TatorPage {
           }
         });
 
+        this._setupContextMenuDialogs(canvas, canvasElement);
+
         canvas.addEventListener("maximize", () => {
           this._browser.style.display = "none";
         });
@@ -568,6 +570,32 @@ class AnnotationPage extends TatorPage {
           this._browser.style.display = "block";
         });
       });
+    });
+  }
+
+  _setupContextMenuDialogs(canvas, canvasElement) {
+    // This is a bit of a hack, but the modals will share the same
+    // methods used by the save localization dialogs since the
+    // appearance to the user is the same.
+
+    const menu = document.createElement("modify-track-dialog");
+    this._main.appendChild(menu);
+    this._saves['modifyTrack'] = menu;
+    menu.addEventListener("cancel", () => {
+      this._closeModal(menu);
+      canvas.refresh();
+    });
+
+    canvas.addEventListener("modifyTrack", evt => {
+      const metaMode = evt.detail.metaMode;
+      const objDescription = evt.detail.objDescription;
+      const dragInfo = evt.detail.dragInfo;
+      const requestObj = evt.detail.requestObj;
+      const canvasPosition = canvasElement.getBoundingClientRect();
+
+      const save = this._saves[objDescription.id];
+      this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
+      this._makePreview(objDescription, dragInfo, canvasPosition);
     });
   }
 

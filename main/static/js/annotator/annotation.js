@@ -549,10 +549,10 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
 
-    this._contextMenuTrack.addMenuEntry("Extend track", this.entry1_callback);
-    this._contextMenuTrack.addMenuEntry("Clip track", this.entry1_callback);
-    this._contextMenuTrack.addMenuEntry("Set track to merge", this.entry1_callback);
-    this._contextMenuTrack.addMenuEntry("Merge into this track", this.entry1_callback);
+    this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Clip track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Set track to merge", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Merge into this track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into this track", true);
 
     // Context menu (right-click): Localizations/detections
@@ -560,8 +560,8 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuLoc.hideMenu();
     this._shadow.appendChild(this._contextMenuLoc);
 
-    this._contextMenuLoc.addMenuEntry("Create track", this.entry1_callback);
-    this._contextMenuLoc.addMenuEntry("Add to track", this.entry1_callback);
+    this._contextMenuLoc.addMenuEntry("Create track", this.contextMenuCallback.bind(this));
+    this._contextMenuLoc.addMenuEntry("Add to track", this.contextMenuCallback.bind(this));
 
     this._contextMenuFrame = 0;
 
@@ -607,10 +607,46 @@ class AnnotationCanvas extends TatorElement
     this._canEdit = hasPermission(val, "Can Edit");
   }
 
-  // Context menu stuff
-  entry1_callback()
+  contextMenuCallback(menuText)
   {
-    console.log("entry1");
+    const objDescription = {};
+    objDescription.id = 'modifyTrack';
+
+    // See modify-track-dialog for interface types.
+    if (menuText == "Extend track")
+    {
+      objDescription.interface = 'extend';
+    }
+    else if (menuText == "Clip track")
+    {
+      objDescription.interface = 'clip';
+    }
+    else if (menuText == "Merge into this track")
+    {
+      objDescription.interface = 'merge';
+    }
+    else
+    {
+      return; //#TODO
+    }
+
+    const poly = this.localizationToPoly(this.activeLocalization)
+
+    const dragInfo = {};
+    dragInfo.start = {x: poly[0][0], y: poly[0][1]};
+    dragInfo.current = dragInfo.start;
+    dragInfo.end = {x: poly[2][0], y: poly[2][1]};
+    dragInfo.url = this._draw.viewport.toDataURL();
+
+    this.dispatchEvent(new CustomEvent("modifyTrack", {
+      detail: {
+        objDescription: objDescription,
+        dragInfo: this.normalizeDrag(dragInfo),
+        requestObj: null,
+        metaMode: null,
+      },
+      composed: true,
+    }));    
   }
 
   resetRoi()
