@@ -1291,6 +1291,18 @@ class VideoCanvas extends AnnotationCanvas {
                                   "frame": frame,
                                   "time": time,
                                   "buf_idx": this._hq_idx});
+
+      if (this._seek_expire)
+      {
+        clearTimeout(this._seek_expire);
+      }
+      this._seek_expire = setTimeout(() => {
+        this._seekFrame = -1;
+        this._seek_expire = null;
+        document.body.style.cursor = null;
+        console.warn("Network Seek expired");
+        this.refresh(false);
+      },500);
     }
     else if (video == null)
     {
@@ -1306,6 +1318,8 @@ class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          clearTimeout(that._seek_expire);
+          that._seek_expire = null;
           // if we are masked, take it off
           if (that._masked == true)
           {
