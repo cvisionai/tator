@@ -550,10 +550,11 @@ class AnnotationCanvas extends TatorElement
     this._shadow.appendChild(this._contextMenuTrack);
 
     this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Clip track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Trim track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set track to merge", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Merge into this track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into this track", true);
+    this._selectedMergeTrack = null;
 
     // Context menu (right-click): Localizations/detections
     this._contextMenuLoc = document.createElement("canvas-context-menu");
@@ -611,19 +612,33 @@ class AnnotationCanvas extends TatorElement
   {
     const objDescription = {};
     objDescription.id = 'modifyTrack';
+    objDescription.track = this._activeTrack;
+    objDescription.localization = this.activeLocalization;
 
     // See modify-track-dialog for interface types.
     if (menuText == "Extend track")
     {
       objDescription.interface = 'extend';
     }
-    else if (menuText == "Clip track")
+    else if (menuText == "Trim track")
     {
-      objDescription.interface = 'clip';
+      objDescription.interface = 'trim';
     }
     else if (menuText == "Merge into this track")
     {
+      if (this._selectedMergeTrack.id == this._activeTrack.id)
+      {
+        window.alert("Cannot merge. Same track selected.");
+        return;
+      }
       objDescription.interface = 'merge';
+      objDescription.trackToMerge = this._selectedMergeTrack;
+    }
+    else if (menuText == "Set track to merge")
+    {
+      this._selectedMergeTrack = this._activeTrack;
+      this._contextMenuTrack.disableEntry("Merge into this track", false);
+      return;
     }
     else
     {
@@ -648,6 +663,8 @@ class AnnotationCanvas extends TatorElement
       composed: true,
     }));    
   }
+
+  
 
   resetRoi()
   {

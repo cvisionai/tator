@@ -593,7 +593,9 @@ class AnnotationPage extends TatorPage {
       const requestObj = evt.detail.requestObj;
       const canvasPosition = canvasElement.getBoundingClientRect();
 
-      const save = this._saves[objDescription.id];
+      const dialog = this._saves[objDescription.id];
+      dialog.setUI(objDescription);
+
       this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
       this._makePreview(objDescription, dragInfo, canvasPosition);
     });

@@ -18,7 +18,9 @@ class ModifyTrackDialog extends TatorElement {
     this._contentDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between annotation__panel-group py-3");
     this._div.appendChild(this._contentDiv);
 
+    this._createTrimDialogDiv();
     this._createExtendDialogDiv();
+    this._createMergeDialogDiv();
     this._resetUI();
 
     const buttons = document.createElement("div");
@@ -45,24 +47,26 @@ class ModifyTrackDialog extends TatorElement {
     });
   }
 
-  _createClipDialogDiv() {
+  _createTrimDialogDiv() {
 
     const div = document.createElement("div");
-    this._clipDirection = document.createElement("enum-input");
+    this._trimDirection = document.createElement("enum-input");
+    this._trimDirection.setAttribute("name", "Direction");
     let choices = [];
-    choices.push({'value': 'Forward'});
-    choices.push({'value': 'Backward'});
-    this._clipDirection.choices = choices;
-    div.appendChild(this._clipDirection);
+    choices.push({'value': 'Trim to here'});
+    choices.push({'value': 'Trim after here'});
+    this._trimDirection.choices = choices;
+    div.appendChild(this._trimDirection);
 
-    this._clipDiv = div;
+    this._trimDiv = div;
     this._contentDiv.appendChild(div);
   }
 
   _createMergeDialogDiv() {
 
     const div = document.createElement("div");
-    this._span = document.createElement("span");
+    this._mergeSpan = document.createElement("span");
+    div.appendChild(this._mergeSpan);
     this._mergeDiv = div;
     this._contentDiv.appendChild(div);
   }
@@ -87,7 +91,7 @@ class ModifyTrackDialog extends TatorElement {
     div.appendChild(this._extendDirection);
 
     this._extendFrames = document.createElement("text-input");
-    this._extendFrames.setAttribute("name", "Number of frames");
+    this._extendFrames.setAttribute("name", "Num Frames");
     div.appendChild(this._extendFrames);
 
     this._extendDiv = div;
@@ -98,25 +102,31 @@ class ModifyTrackDialog extends TatorElement {
     this._span.textContent = "";
     this._extendDiv.style.display = "none";
     this._mergeDiv.style.display = "none";
-    this._clipDiv.style.display = "none";
+    this._trimDiv.style.display = "none";
   }
 
   _setToExtendUI() {
     this._span.textContent = "Extend Track";
     this._extendDiv.style.display = "block";
+    this._yesButton.textContent = "Extend";
   }
 
   _setToMergeUI() {
     this._span.textContent = "Merge Tracks";
     this._mergeDiv.style.display = "block";
+    this._yesButton.textContent = "Merge";
   }
 
-  _setToClipUI() {
-    this._span.textContent = "Clip Track End";
-    this._clipDiv.style.display = "block";
+  _setToTrimUI() {
+    this._span.textContent = "Trim Track Frames";
+    this._trimDiv.style.display = "block";
+    this._yesButton.textContent = "Trim";
   }
 
-  setUI(dialogType) {
+  setUI(data) {
+    this._data = data;
+    const dialogType = data.interface;
+
     this._resetUI();
     if (dialogType == "extend")
     {
@@ -126,10 +136,14 @@ class ModifyTrackDialog extends TatorElement {
     {
       this._setToMergeUI();
     }
-    else if (dialogType == "clip")
+    else if (dialogType == "trim")
     {
-      this._setToClipUI();
+      this._setToTrimUI();
     }
+  }
+
+  set trackData(val) {
+    this_trackData = val;
   }
 
   set version(val) {
