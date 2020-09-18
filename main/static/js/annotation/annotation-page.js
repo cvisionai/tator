@@ -606,7 +606,7 @@ class AnnotationPage extends TatorPage {
         await new Promise(r => setTimeout(r, 1000));
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track trimming completed.")
+        window.alert("Track trimming completed. Refresh the page to view changes.")
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame, true);
       });
     });
@@ -634,7 +634,7 @@ class AnnotationPage extends TatorPage {
         await new Promise(r => setTimeout(r, 1000));
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track merge completed.")
+        window.alert("Track merge completed. Refresh the page to view changes.")
         canvas.selectTrack(evt.detail.targetTrackId, evt.detail.frame, true);
       });
     });

@@ -196,8 +196,6 @@ class AttributePanel extends TatorElement {
     let trackSegmentsUpdated = false;
     if (this._trackSegments && values.segments){
        trackSegmentsUpdated = this._trackSegments != values.segments;
-       console.log("blah *************");
-       console.log(values);
     }
 
     // Skip resetting slider if we already display this track
