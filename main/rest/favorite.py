@@ -53,6 +53,7 @@ class FavoriteListAPI(BaseListView):
             project=Project.objects.get(pk=params['project']),
             user=self.request.user,
             meta=LocalizationType.objects.get(pk=params['type']),
+            page=params['page'],
             values=params['values'],
         )
         return {'message': 'Successfully created favorite {fave.id}!.', 'id': fave.id}

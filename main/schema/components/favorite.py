@@ -1,9 +1,4 @@
 favorite_properties = {
-    'type': {
-        'description': 'Unique integer identifying a localization type.',
-        'type': 'integer',
-        'minimum': 1,
-    },
     'name': {
         'description': 'Name of the favorite.',
         'type': 'string',
@@ -24,7 +19,14 @@ favorite_properties = {
 
 favorite_spec = {
     'type': 'object',
-    'properties': favorite_properties,
+    'properties': {
+        'type': {
+            'description': 'Unique integer identifying a localization type.',
+            'type': 'integer',
+            'minimum': 1,
+        },
+        **favorite_properties,
+    },
 }
 
 favorite_update = {
@@ -46,6 +48,10 @@ favorite = {
             'description': 'Unique integer identifying a user.',
             'type': 'integer',
             'minimum': 1,
+        },
+        'meta': {
+            'type': 'integer',
+            'description': 'Unique integer identifying entity type of this localization.',
         },
         **favorite_properties,
     },
