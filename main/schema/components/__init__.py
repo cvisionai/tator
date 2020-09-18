@@ -9,6 +9,9 @@ from .analysis import analysis
 from .attribute_type import autocomplete_service
 from .attribute_type import attribute_type
 from .attribute_value import attribute_value
+from .favorite import favorite_spec
+from .favorite import favorite_update
+from .favorite import favorite
 from .leaf_type import leaf_type_spec
 from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
