@@ -378,7 +378,7 @@ class AnnotationPage extends TatorPage {
           selected_version_idx++;
         }
 
-        
+
         // TODO: Whats the right way to do a default here
         if (this._version == null)
         {
@@ -494,7 +494,7 @@ class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("close", evt => {
           this._settings.removeAttribute("type-id");
-          
+
           // The canvas can either be the annotation player or image. The player is the only
           // annotation that has the concepts of tracks, so the following check is performed.
           if (typeof canvas.deselectTrack === "function") {
@@ -581,6 +581,64 @@ class AnnotationPage extends TatorPage {
     const menu = document.createElement("modify-track-dialog");
     this._main.appendChild(menu);
     this._saves['modifyTrack'] = menu;
+
+    menu.addEventListener("trimTrack", evt => {
+
+      // Create new localizations.
+      const promise = fetchRetry("/rest/TrimStateEnd/" + evt.detail.trackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            frame: evt.detail.frame,
+            endpoint: evt.detail.endpoint
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(async () => {
+        // Update data after a second.
+        await new Promise(r => setTimeout(r, 1000));
+        this._data.updateAll(this._data._dataTypesRaw, this._data.version);
+        window.alert("Track trimming completed.")
+      });
+    });
+
+    menu.addEventListener("mergeTracks", evt => {
+
+      // Create new localizations.
+      const promise = fetchRetry("/rest/MergeStates/" + evt.detail.targetTrackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            merge_state_id: evt.detail.sourceTrackId,
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(async () => {
+        // Update data after a second.
+        await new Promise(r => setTimeout(r, 1000));
+        this._data.updateAll(this._data._dataTypesRaw, this._data.version);
+        window.alert("Track merge completed.")
+      });
+    });
+
+    menu.addEventListener("yes", () => {
+      this._closeModal(menu);
+    });
+
     menu.addEventListener("cancel", () => {
       this._closeModal(menu);
       canvas.refresh();

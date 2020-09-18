@@ -549,7 +549,7 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
 
-    this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
+    //this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set track to merge", this.contextMenuCallback.bind(this));
@@ -615,6 +615,7 @@ class AnnotationCanvas extends TatorElement
     objDescription.id = 'modifyTrack';
     objDescription.track = this._activeTrack;
     objDescription.localization = this.activeLocalization;
+    objDescription.frame = this.currentFrame();
 
     // See modify-track-dialog for interface types.
     if (menuText == "Extend track")
@@ -832,7 +833,9 @@ class AnnotationCanvas extends TatorElement
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
       else {
-        this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+        return;
+        //#TODO Add this when it's ready
+        //this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
       }
     }
   }

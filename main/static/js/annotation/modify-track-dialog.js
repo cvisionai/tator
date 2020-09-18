@@ -29,7 +29,6 @@ class ModifyTrackDialog extends TatorElement {
 
     this._yesButton = document.createElement("button");
     this._yesButton.setAttribute("class", "btn btn-clear");
-    this._yesButton.setAttribute("disabled", "");
     this._yesButton.textContent = "Extend";
     buttons.appendChild(this._yesButton);
 
@@ -37,10 +36,6 @@ class ModifyTrackDialog extends TatorElement {
     cancel.setAttribute("class", "btn-clear px-4 text-gray hover-text-white");
     cancel.textContent = "Cancel";
     buttons.appendChild(cancel);
-
-    this._yesButton.addEventListener("click", () => {
-      this.dispatchEvent(new Event("cancel"));
-    });
 
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
@@ -69,7 +64,13 @@ class ModifyTrackDialog extends TatorElement {
   _createMergeDialogDiv() {
 
     const div = document.createElement("div");
+
+    var questionText = document.createElement("p");
+    questionText.textContent = "Merge tracks?";
+    div.appendChild(questionText);
+
     this._mergeText = document.createElement("p");
+    this._mergeText.setAttribute("class", "text-gray f2 py-3");
     div.appendChild(this._mergeText);
 
     const warning = document.createElement("p");
@@ -126,8 +127,19 @@ class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "block";
     this._yesButton.textContent = "Merge";
 
-    let text = "Merge track (ID: " + this._data.trackToMerge.id.toString() + ") into track (ID: " + this._data.track.id.toString() + ") ?";
+    let text = "Detections from track " + this._data.trackToMerge.id.toString() + " will be merged into track " + this._data.track.id.toString() + ".";
     this._mergeText.textContent = text;
+
+    this._yesButton.addEventListener("click", () => {
+      this.dispatchEvent(
+        new Event("yes"));
+      this.dispatchEvent(
+        new CustomEvent("mergeTracks",
+          {composed: true,
+           detail: {
+             sourceTrackId: this._data.trackToMerge.id,
+             targetTrackId: this._data.track.id}}));
+    });
   }
 
   _setToTrimUI() {
@@ -149,6 +161,18 @@ class ModifyTrackDialog extends TatorElement {
     }
     this._trimTextQuestion.textContent = question;
     this._trimText.textContent = text;
+
+    this._yesButton.addEventListener("click", () => {
+      this.dispatchEvent(
+        new Event("yes"));
+      this.dispatchEvent(
+        new CustomEvent("trimTrack",
+          {composed: true,
+           detail: {
+             endpoint: this._data.trimEndpoint,
+             frame: this._data.frame,
+             trackId: this._data.track.id}}));
+    });
   }
 
   setUI(data) {
