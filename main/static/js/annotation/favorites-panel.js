@@ -45,32 +45,87 @@ class FavoritesPanel extends TatorElement {
     this._shadow.appendChild(this._buttons);
 
     this._identifier = null;
+    this._maxPages = 10;
+    this._page = 1;
 
     addFavorite.addEventListener("click", () => {
       this.dispatchEvent(new Event("store"));
     });
+
+    nextPage.addEventListener("click", () => {
+      this._page = Math.min(this._page + 1, this._maxPages);
+      this._updatePage();
+    });
+
+    prevPage.addEventListener("click", () => {
+      this._page = Math.max(this._page - 1, 1);
+      this._updatePage();
+    });
   }
 
-  set dataType(val) {
-    this._identifier = identifyingAttribute(val);
+  init(dataType, favorites) {
+    this._identifier = identifyingAttribute(dataType);
+    this._dataType = dataType;
+    this._typeId = Number(this._dataType.id.split("_")[1]);
+    this._favorites = new Map(); // Map between page number and list of favorites
+    for (let page = 0; page < this._maxPages; page++) {
+      this._favorites.set(page, []);
+    }
+    for (const favorite of favorites) {
+      if (favorite.meta == this._typeId) {
+        this._favorites.get(favorite.page).push(favorite);
+      }
+    }
+    this._updatePage();
   }
 
   store(values) {
-    this.style.display = "block";
+    const name = values[this._identifier.name];
+    const favorite = {
+      'name': name,
+      'page': this._page,
+      'type': this._typeId,
+      'values': values,
+    };
+    fetchRetry("/rest/Favorites/" + this._dataType.project, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(favorite),
+    })
+    .then(response => response.json())
+    .then(data => {
+      favorite.id = data.id;
+      this._favorites.get(this._page).push(favorite);
+      this._makeButton(favorite);
+    });
+  }
+
+  _updatePage() {
+    // Clear out existing buttons.
+    while (this._buttons.firstChild) {
+      this._buttons.removeChild(this._buttons.firstChild);
+    }
+
+    // Create buttons for favorites on this page.
+    for (const favorite of this._favorites.get(this._page)) {
+      this._makeButton(favorite);
+    }
+  }
+
+  _makeButton(favorite) {
     const button = document.createElement("button");
     button.setAttribute("class", "btn btn-outline btn-small f2");
-    button.textContent = values[this._identifier.name];
-    for (const other of this._buttons.children) {
-      if (other.textContent == button.textContent) {
-        this._buttons.removeChild(other);
-        break;
-      }
-    }
-    this._buttons.insertBefore(button, this._buttons.firstChild);
-    
+    button.textContent = favorite.name;
+    this._buttons.appendChild(button);
+
     button.addEventListener("click", () => {
       this.dispatchEvent(new CustomEvent("load", {
-        detail: values,
+        detail: favorite.values,
       }));
     });
   }
