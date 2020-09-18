@@ -24,6 +24,9 @@ class FavoritesPanel extends TatorElement {
     this._pageHeader.textContent = "";
     header.appendChild(this._pageHeader);
 
+    this._pageText = document.createTextNode("");
+    this._pageHeader.appendChild(this._pageText);
+
     const prevPage = document.createElement("button");
     prevPage.setAttribute("class", "btn btn-outline btn-small f2 px-1");
     prevPage.style.marginLeft = "6px"
@@ -68,7 +71,7 @@ class FavoritesPanel extends TatorElement {
     this._dataType = dataType;
     this._typeId = Number(this._dataType.id.split("_")[1]);
     this._favorites = new Map(); // Map between page number and list of favorites
-    for (let page = 0; page < this._maxPages; page++) {
+    for (let page = 1; page <= this._maxPages; page++) {
       this._favorites.set(page, []);
     }
     for (const favorite of favorites) {
@@ -115,6 +118,9 @@ class FavoritesPanel extends TatorElement {
     for (const favorite of this._favorites.get(this._page)) {
       this._makeButton(favorite);
     }
+
+    // Set page text.
+    this._pageText.textContent = `Page ${this._page}`;
   }
 
   _makeButton(favorite) {
