@@ -70,6 +70,16 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },        
+        'localization_ids_add': {
+            'description': 'List of new localization IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+        'localization_ids_remove': {
+            'description': 'List of new localization IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
         },
     },
 }

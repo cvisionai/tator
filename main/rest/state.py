@@ -336,6 +336,14 @@ class StateDetailAPI(BaseDetailView):
             localizations = Localization.objects.filter(pk__in=params['localization_ids'])
             obj.localizations.set(localizations)
 
+        if 'localization_ids_add' in params:
+            localizations = Localization.objects.filter(pk__in=params['localization_ids_add'])
+            obj.localizations.add(*list(localizations))
+
+        if 'localization_ids_remove' in params:
+            localizations = Localization.objects.filter(pk__in=params['localization_ids_remove'])
+            obj.localizations.remove(*list(localizations))
+
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         # Update modified_by to be the last user
@@ -373,9 +381,9 @@ class MergeStatesAPI(BaseDetailView):
         localization_ids = list(localizations.values_list('id', flat=True))
         obj.localizations.add(*localization_ids)
         obj.save()
-        
+
         otherObj.delete()
-        
+
         return {'message': f'Localizations from state {params["merge_state_id"]} has been merged into {params["id"]}. State {params["merge_state_id"]} has been deleted.'}
 
     def get_queryset(self):
@@ -397,10 +405,10 @@ class TrimStateEndAPI(BaseDetailView):
         localizations = obj.localizations.order_by('frame')
 
         if params['endpoint'] == 'start':
-            keep_localization = lambda frame: frame >= params['frame'] 
+            keep_localization = lambda frame: frame >= params['frame']
 
         elif params['endpoint'] == 'end':
-            keep_localization = lambda frame: frame <= params['frame'] 
+            keep_localization = lambda frame: frame <= params['frame']
 
         else:
             raise ValueError("ERROR: Invalid endpoint parameter provided.")
