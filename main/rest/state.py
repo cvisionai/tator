@@ -422,10 +422,16 @@ class TrimStateEndAPI(BaseDetailView):
         obj.localizations.remove(*list(localizations))
         obj.save()
 
-        qs = Localization.objects.filter(pk__in=localizations_to_remove)
+        deleted_localizations = []
+        for loc_id in localizations_to_remove:
+            qs = State.objects.filter(localizations__pk=loc_id)
+            if not qs.exists():
+                deleted_localizations.append(loc_id)
+
+        qs = Localization.objects.filter(pk__in=deleted_localizations)
         qs._raw_delete(qs.db)
 
-        return {'message': f'State {params["id"]} has been updated. Deleted {len(localizations_to_remove)} localizations.'}
+        return {'message': f'State {params["id"]} has been updated. Deleted {len(deleted_localizations)} localizations.'}
 
     def get_queryset(self):
         return State.objects.all()

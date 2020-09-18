@@ -40,6 +40,8 @@ class ModifyTrackDialog extends TatorElement {
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
     });
+
+    this._yesButton.addEventListener("click", this._yesClickHandler.bind(this));
   }
 
   _createTrimDialogDiv() {
@@ -109,6 +111,31 @@ class ModifyTrackDialog extends TatorElement {
     this._contentDiv.appendChild(div);
   }
 
+  _yesClickHandler() {
+    this.dispatchEvent(new Event("yes"));
+
+    if (this._data.interface == "merge")
+    {
+      this.dispatchEvent(
+        new CustomEvent("mergeTracks",
+          {composed: true,
+           detail: {
+             frame: this._data.frame,
+             sourceTrackId: this._data.trackToMerge.id,
+             targetTrackId: this._data.track.id}}));
+    }
+    else if (this._data.interface == "trim")
+    {
+      this.dispatchEvent(
+        new CustomEvent("trimTrack",
+          {composed: true,
+           detail: {
+             endpoint: this._data.trimEndpoint,
+             frame: this._data.frame,
+             trackId: this._data.track.id}}));
+    }
+  }
+
   _resetUI() {
     this._span.textContent = "";
     this._extendDiv.style.display = "none";
@@ -129,17 +156,6 @@ class ModifyTrackDialog extends TatorElement {
 
     let text = "Detections from track " + this._data.trackToMerge.id.toString() + " will be merged into track " + this._data.track.id.toString() + ".";
     this._mergeText.textContent = text;
-
-    this._yesButton.addEventListener("click", () => {
-      this.dispatchEvent(
-        new Event("yes"));
-      this.dispatchEvent(
-        new CustomEvent("mergeTracks",
-          {composed: true,
-           detail: {
-             sourceTrackId: this._data.trackToMerge.id,
-             targetTrackId: this._data.track.id}}));
-    });
   }
 
   _setToTrimUI() {
@@ -161,18 +177,6 @@ class ModifyTrackDialog extends TatorElement {
     }
     this._trimTextQuestion.textContent = question;
     this._trimText.textContent = text;
-
-    this._yesButton.addEventListener("click", () => {
-      this.dispatchEvent(
-        new Event("yes"));
-      this.dispatchEvent(
-        new CustomEvent("trimTrack",
-          {composed: true,
-           detail: {
-             endpoint: this._data.trimEndpoint,
-             frame: this._data.frame,
-             trackId: this._data.track.id}}));
-    });
   }
 
   setUI(data) {
