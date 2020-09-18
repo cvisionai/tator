@@ -84,6 +84,8 @@ class CustomGenerator(SchemaGenerator):
                 'StateTypeSpec': state_type_spec,
                 'StateTypeUpdate': state_type_update,
                 'StateType': state_type,
+                'StateMergeSpec': state_merge_spec,
+                'StateTrimSpec': state_trim_spec,
                 'TemporaryFileSpec': temporary_file_spec,
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,

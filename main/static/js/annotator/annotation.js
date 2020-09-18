@@ -550,7 +550,8 @@ class AnnotationCanvas extends TatorElement
     this._shadow.appendChild(this._contextMenuTrack);
 
     this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Trim track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set track to merge", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Merge into this track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into this track", true);
@@ -620,9 +621,15 @@ class AnnotationCanvas extends TatorElement
     {
       objDescription.interface = 'extend';
     }
-    else if (menuText == "Trim track")
+    else if (menuText == "Set as track start point")
     {
       objDescription.interface = 'trim';
+      objDescription.trimEndpoint = 'start';
+    }
+    else if (menuText == "Set as track end point")
+    {
+      objDescription.interface = 'trim';
+      objDescription.trimEndpoint = 'end';
     }
     else if (menuText == "Merge into this track")
     {

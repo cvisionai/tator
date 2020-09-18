@@ -38,15 +38,9 @@ class CanvasContextMenu extends TatorElement {
 
   displayMenu(x, y)
   {
-    this._div.style.zIndex = -100;
-    this._div.style.display = "block";
-
-    var finalX = x;// + this._div.offsetWidth;
-    var finalY = y;// + this._div.offsetHeight * 0.75;
-
     this._div.style.zIndex = 1;
-    this._div.style.left = finalX + "px";
-    this._div.style.top = finalY + "px";
+    this._div.style.left = x + "px";
+    this._div.style.top = y + "px";
     this._div.style.display = "block";
   }
 }

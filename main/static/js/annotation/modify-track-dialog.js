@@ -50,13 +50,17 @@ class ModifyTrackDialog extends TatorElement {
   _createTrimDialogDiv() {
 
     const div = document.createElement("div");
-    this._trimDirection = document.createElement("enum-input");
-    this._trimDirection.setAttribute("name", "Direction");
-    let choices = [];
-    choices.push({'value': 'Trim to here'});
-    choices.push({'value': 'Trim after here'});
-    this._trimDirection.choices = choices;
-    div.appendChild(this._trimDirection);
+    this._trimTextQuestion = document.createElement("p");
+    div.appendChild(this._trimTextQuestion);
+
+    this._trimText = document.createElement("p");
+    this._trimText.setAttribute("class", "text-gray f2 py-3");
+    div.appendChild(this._trimText);
+
+    const warning = document.createElement("p");
+    warning.setAttribute("class", "text-semibold py-3");
+    warning.textContent = "Warning: This cannot be undone";
+    div.appendChild(warning);
 
     this._trimDiv = div;
     this._contentDiv.appendChild(div);
@@ -65,8 +69,14 @@ class ModifyTrackDialog extends TatorElement {
   _createMergeDialogDiv() {
 
     const div = document.createElement("div");
-    this._mergeSpan = document.createElement("span");
-    div.appendChild(this._mergeSpan);
+    this._mergeText = document.createElement("p");
+    div.appendChild(this._mergeText);
+
+    const warning = document.createElement("p");
+    warning.setAttribute("class", "text-semibold py-3");
+    warning.textContent = "Warning: This cannot be undone";
+    div.appendChild(warning);
+
     this._mergeDiv = div;
     this._contentDiv.appendChild(div);
   }
@@ -115,12 +125,30 @@ class ModifyTrackDialog extends TatorElement {
     this._span.textContent = "Merge Tracks";
     this._mergeDiv.style.display = "block";
     this._yesButton.textContent = "Merge";
+
+    let text = "Merge track (ID: " + this._data.trackToMerge.id.toString() + ") into track (ID: " + this._data.track.id.toString() + ") ?";
+    this._mergeText.textContent = text;
   }
 
   _setToTrimUI() {
-    this._span.textContent = "Trim Track Frames";
+    this._span.textContent = "Trim Track";
     this._trimDiv.style.display = "block";
     this._yesButton.textContent = "Trim";
+
+    var text;
+    var question;
+    if (this._data.trimEndpoint == 'start')
+    {
+      question = "Set track's new start point?";
+      text = "This will trim all previous frames from the track.";
+    }
+    else
+    {
+      question = "Set track's new end point?"
+      text = "This will trim all following frames from the track.";
+    }
+    this._trimTextQuestion.textContent = question;
+    this._trimText.textContent = text;
   }
 
   setUI(data) {

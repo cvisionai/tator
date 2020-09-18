@@ -82,3 +82,31 @@ state = {
         **state_properties,
     },
 }
+
+state_trim_spec = {
+    'type': 'object',
+    'required': ['frame', 'endpoint'],
+    'properties': {
+        'frame' : {
+            'description': 'Frame number of new end point',
+            'type': 'integer',
+            'minimum': 0,
+        },
+        'endpoint' : {
+            'description': 'End point to trim to using the provided frame number.',
+            'type': 'string',
+            'enum': ['start', 'end'],
+        }
+    }
+}
+
+state_merge_spec = {
+    'type': 'object',
+    'required': ['merge_state_id'],
+    'properties': {
+        'merge_state_id' : {
+            'description': "Unique integer identifying the state whose localizations will merge with this state.",
+            'type': 'integer',
+        },
+    }
+}
