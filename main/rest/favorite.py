@@ -33,7 +33,7 @@ class FavoriteListAPI(BaseListView):
             and user.
         """
         qs = Favorite.objects.filter(project=params['project'],
-                                     user=self.request.user)
+                                     user=self.request.user).order_by('id')
         return database_qs(qs)
 
     def get_queryset(self):
