@@ -118,16 +118,9 @@ class FavoritesPanel extends TatorElement {
   }
 
   _makeButton(favorite) {
-    const button = document.createElement("button");
-    button.setAttribute("class", "btn btn-outline btn-small f2");
-    button.textContent = favorite.name;
+    const button = document.createElement("favorite-button");
+    button.init(favorite);
     this._buttons.appendChild(button);
-
-    button.addEventListener("click", () => {
-      this.dispatchEvent(new CustomEvent("load", {
-        detail: favorite.values,
-      }));
-    });
   }
 }
 

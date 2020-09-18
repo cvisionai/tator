@@ -192,12 +192,11 @@ save-dialog {
 
 .annotation__recents {
   flex-wrap: wrap;
+}
 
-  button {
-    margin-bottom: $spacing-2;
-    margin-right: $spacing-2;
-    width: initial;
-  }
+favorite-button {
+  margin-bottom: $spacing-2;
+  margin-right: $spacing-2;
 }
 
 .annotation__video-player {
