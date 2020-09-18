@@ -365,14 +365,18 @@ class MergeStatesAPI(BaseDetailView):
     http_method_names = ['patch']
 
     @transaction.atomic
-    def _patch(self, params):
+    def _patch(self, params: dict) -> dict:
+
         obj = State.objects.get(pk=params['id'])
         otherObj = State.objects.get(pk=params['merge_state_id'])
-
-        print("woo")
-
+        localizations = otherObj.localizations.all()
+        localization_ids = list(localizations.values_list('id', flat=True))
+        obj.localizations.add(*localization_ids)
         obj.save()
-        return {'message': f'State {params["merge_state_id"]} has been merged into {params["id"]} and has been deleted.'}
+        
+        otherObj.delete()
+        
+        return {'message': f'Localizations from state {params["merge_state_id"]} has been merged into {params["id"]}. State {params["merge_state_id"]} has been deleted.'}
 
     def get_queryset(self):
         return State.objects.all()
@@ -409,9 +413,6 @@ class TrimStateEndAPI(BaseDetailView):
         localizations = Localization.objects.filter(pk__in=localizations_to_remove)
         obj.localizations.remove(*list(localizations))
         obj.save()
-
-        #state_qs = State.localizations.through.objects.filter(localization__in=localizations_to_remove)
-        #state_qs._raw_delete(state_qs.db)
 
         qs = Localization.objects.filter(pk__in=localizations_to_remove)
         qs._raw_delete(qs.db)
