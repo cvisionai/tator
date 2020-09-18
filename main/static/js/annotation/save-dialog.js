@@ -73,7 +73,7 @@ class SaveDialog extends TatorElement {
     });
   }
 
-  init(projectId, mediaId, dataType, undo, version) {
+  init(projectId, mediaId, dataType, undo, version, favorites) {
     this._projectId = projectId;
     this._mediaId = mediaId;
     this._dataType = dataType;
@@ -81,7 +81,7 @@ class SaveDialog extends TatorElement {
     this._version = version;
     this._span.textContent = dataType.name;
     this._attributes.dataType = dataType;
-    this._favorites.dataType = dataType;
+    this._favorites.init(dataType, favorites);
     this._attributes.dispatchEvent(new Event("change"));
   }
 
