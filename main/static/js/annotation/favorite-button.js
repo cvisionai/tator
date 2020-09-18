@@ -51,6 +51,10 @@ class FavoriteButton extends TatorElement {
     input.addEventListener("blur", evt => {
       if (evt.target.value !== "") {
         this._button.textContent = evt.target.value;
+        this._favorite.name = evt.target.value;
+        this.dispatchEvent(new CustomEvent("rename", {
+          detail: this._favorite,
+        }));
         fetchRetry("/rest/Favorite/" + this._favorite.id, {
           method: "PATCH",
           headers: {
@@ -66,7 +70,10 @@ class FavoriteButton extends TatorElement {
     });
 
     remove.addEventListener("click", () => {
-      this.style.display = "none";
+      this.parentNode.removeChild(this);
+      this.dispatchEvent(new CustomEvent("remove", {
+        detail: this._favorite,
+      }));
       fetchRetry("/rest/Favorite/" + this._favorite.id, {
         method: "DELETE",
         headers: {

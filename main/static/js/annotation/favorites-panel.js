@@ -177,6 +177,24 @@ class FavoritesPanel extends TatorElement {
     const button = document.createElement("favorite-button");
     button.init(favorite);
     this._buttons.appendChild(button);
+    button.addEventListener("rename", evt => {
+      const update = evt.detail;
+      for (const [index, favorite] of this._favorites.get(update.page).entries()) {
+        if (favorite.id == update.id) {
+          this._favorites.get(update.page)[index] = update;
+          break;
+        }
+      }
+    });
+    button.addEventListener("remove", evt => {
+      const removed = evt.detail;
+      for (const [index, favorite] of this._favorites.get(removed.page).entries()) {
+        if (favorite.id == removed.id) {
+          this._favorites.get(removed.page).splice(index, 1);
+          break;
+        }
+      }
+    });
   }
 }
 
