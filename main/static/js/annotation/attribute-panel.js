@@ -139,7 +139,9 @@ class AttributePanel extends TatorElement {
 
   setValues(values) {
     // Set the ID widget
-    this._idWidget.setValue(values.id);
+    if (typeof values.id !== "undefined") {
+      this._idWidget.setValue(values.id);
+    }
 
     // Skip resetting slider if we already display this track
     if (this._track && this._track.id == values.id)
@@ -170,7 +172,7 @@ class AttributePanel extends TatorElement {
       const name = widget.getAttribute("name");
       const value = values.attributes[name];
       // Only set the name if it is defined
-      if (value != undefined)
+      if (typeof value !== "undefined")
       {
         widget.setValue(values.attributes[name]);
       }
