@@ -16,8 +16,32 @@ class FavoritesPanel extends TatorElement {
     addFavorite.style.marginLeft = "6px"
     addFavorite.style.width = "24px"
     addFavorite.style.height = "24px"
-    addFavorite.textContent = "+";
     header1.appendChild(addFavorite);
+
+    const addSvg = document.createElementNS(svgNamespace, "svg");
+    addSvg.setAttribute("viewBox", "0 0 24 24");
+    addSvg.setAttribute("width", "24");
+    addSvg.setAttribute("height", "24");
+    addSvg.setAttribute("fill", "none");
+    addSvg.setAttribute("stroke", "currentColor");
+    addSvg.setAttribute("stroke-width", "2");
+    addSvg.setAttribute("stroke-linecap", "round");
+    addSvg.setAttribute("stroke-linejoin", "round");
+    addFavorite.appendChild(addSvg);
+
+    const line1 = document.createElementNS(svgNamespace, "line");
+    line1.setAttribute("x1", "12");
+    line1.setAttribute("y1", "5");
+    line1.setAttribute("x2", "12");
+    line1.setAttribute("y2", "19");
+    addSvg.appendChild(line1);
+
+    const line2 = document.createElementNS(svgNamespace, "line");
+    line2.setAttribute("x1", "5");
+    line2.setAttribute("y1", "12");
+    line2.setAttribute("x2", "19");
+    line2.setAttribute("y2", "12");
+    addSvg.appendChild(line2);
 
     this._pageHeader = document.createElement("div");
     this._pageHeader.setAttribute("class", "d-flex flex-items-center py-3 text-semibold");
