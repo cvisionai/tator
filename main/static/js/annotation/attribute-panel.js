@@ -56,6 +56,8 @@ class AttributePanel extends TatorElement {
           }));
         }
       });
+
+      this._currentFrame = 0;
     }
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
@@ -137,9 +139,66 @@ class AttributePanel extends TatorElement {
     return values;
   }
 
+  setFrame(frame) {
+    this._currentFrame = frame;
+    let sliderData = {};
+    sliderData.currentFrame = this._currentFrame;
+    this.setSlider(sliderData);
+  }
+
+  setSlider(data) {
+    // If there's no slider as a part of this panel, then just ignored this call.
+    if (!this._slider){ return; }
+
+    // Set the slider max and corresponding frame index list if
+    // the track frame segments are provided (which are start/end pairs)
+    if (data.segments){
+      this._trackSegments = data.segments;
+      this._frames = [];
+      for (const [start, end] of data.segments) {
+        for (let i = start; i <= end; i++) {
+          this._frames.push(i);
+        }
+      }
+      this._slider.max = this._frames.length - 1;
+      this._frame_max = Math.max(...this._frames);
+    }
+
+    // Set the current value of the slider based on the provided frame
+    // If no frame is provided, then just pick the beginning
+    if (data.currentFrame && this._frames) {
+      let slider_index = this._frames.indexOf(data.currentFrame);
+
+      // Current frame is not part of this track's frameset. Set the slider
+      // based on the current frame number by picking the closest entry
+      // (without going over)
+      if (slider_index == -1) {
+        for (let i = 0; i < this._frames.length; i++) {
+          if (this._frames[i] <= data.currentFrame) {
+            slider_index = i;
+          }
+        }
+      }
+
+      this._slider.value = slider_index;
+    }
+    else {
+      this._slider.value = 0;
+    }
+  }
+
   setValues(values) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
+
+    // Check if the slider needs to be updated if there's different track data now.
+    // If so, then update it.
+    let trackSegmentsUpdated = false;
+    if (this._trackSegments && values.segments){
+       trackSegmentsUpdated = this._trackSegments != values.segments;
+       console.log("blah *************");
+       console.log(values);
+    }
 
     // Skip resetting slider if we already display this track
     if (this._track && this._track.id == values.id)
@@ -155,7 +214,7 @@ class AttributePanel extends TatorElement {
     {
       this._track = values;
     }
-    
+
     if (this._slider) {
       this._frames = [];
       for (const [start, end] of values.segments) {

@@ -120,6 +120,8 @@ class ModifyTrackDialog extends TatorElement {
         new CustomEvent("mergeTracks",
           {composed: true,
            detail: {
+             localizationType: this._data.localization.meta,
+             trackType: this._data.track.meta,
              frame: this._data.frame,
              sourceTrackId: this._data.trackToMerge.id,
              targetTrackId: this._data.track.id}}));
@@ -130,8 +132,10 @@ class ModifyTrackDialog extends TatorElement {
         new CustomEvent("trimTrack",
           {composed: true,
            detail: {
-             endpoint: this._data.trimEndpoint,
+             localizationType: this._data.localization.meta,
+             trackType: this._data.track.meta,
              frame: this._data.frame,
+             endpoint: this._data.trimEndpoint,
              trackId: this._data.track.id}}));
     }
   }

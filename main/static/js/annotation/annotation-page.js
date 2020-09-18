@@ -604,8 +604,10 @@ class AnnotationPage extends TatorPage {
       .then(async () => {
         // Update data after a second.
         await new Promise(r => setTimeout(r, 1000));
-        this._data.updateAll(this._data._dataTypesRaw, this._data.version);
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         window.alert("Track trimming completed.")
+        canvas.selectTrack(evt.detail.trackId, evt.detail.frame, true);
       });
     });
 
@@ -630,8 +632,10 @@ class AnnotationPage extends TatorPage {
       .then(async () => {
         // Update data after a second.
         await new Promise(r => setTimeout(r, 1000));
-        this._data.updateAll(this._data._dataTypesRaw, this._data.version);
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         window.alert("Track merge completed.")
+        canvas.selectTrack(evt.detail.targetTrackId, evt.detail.frame, true);
       });
     });
 

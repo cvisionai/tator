@@ -2012,7 +2012,7 @@ class AnnotationCanvas extends TatorElement
     this._activeTrack = null;
   }
 
-  selectTrack(track, frameHint)
+  selectTrack(track, frameHint, forceGoToFrame)
   {
     let frame = frameHint;
     if (frame == undefined)
@@ -2040,7 +2040,7 @@ class AnnotationCanvas extends TatorElement
       });
     };
 
-    if (frame != this.currentFrame())
+    if (frame != this.currentFrame() && forceGoToFrame)
     {
       this.gotoFrame(frame).then(trackSelectFunctor);
     }
