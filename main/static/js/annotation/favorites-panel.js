@@ -32,16 +32,42 @@ class FavoritesPanel extends TatorElement {
     prevPage.style.marginLeft = "6px"
     prevPage.style.width = "24px"
     prevPage.style.height = "24px"
-    prevPage.textContent = "<";
     this._pageHeader.appendChild(prevPage);
+
+    const prevSvg = document.createElementNS(svgNamespace, "svg");
+    prevSvg.setAttribute("viewBox", "0 0 32 32");
+    prevSvg.setAttribute("height", "1em");
+    prevSvg.setAttribute("width", "1em");
+    prevPage.appendChild(prevSvg);
+
+    const prevTitle = document.createElementNS(svgNamespace, "title");
+    prevTitle.textContent = "Previous Page";
+    prevSvg.appendChild(prevTitle);
+
+    const prevPath = document.createElementNS(svgNamespace, "path");
+    prevPath.setAttribute("d", "M20.943 23.057l-7.057-7.057 7.057-7.057c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-8 8c-0.521 0.521-0.521 1.365 0 1.885l8 8c0.521 0.521 1.365 0.521 1.885 0s0.521-1.365 0-1.885z");
+    prevSvg.appendChild(prevPath);
 
     const nextPage = document.createElement("button");
     nextPage.setAttribute("class", "btn btn-outline btn-small f2 px-1");
     nextPage.style.marginLeft = "6px"
     nextPage.style.width = "24px"
     nextPage.style.height = "24px"
-    nextPage.textContent = ">";
     this._pageHeader.appendChild(nextPage);
+
+    const nextSvg = document.createElementNS(svgNamespace, "svg");
+    nextSvg.setAttribute("viewBox", "0 0 32 32");
+    nextSvg.setAttribute("height", "1em");
+    nextSvg.setAttribute("width", "1em");
+    nextPage.appendChild(nextSvg);
+
+    const nextTitle = document.createElementNS(svgNamespace, "title");
+    nextTitle.textContent = "Previous Page";
+    nextSvg.appendChild(nextTitle);
+
+    const nextPath = document.createElementNS(svgNamespace, "path");
+    nextPath.setAttribute("d", "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z");
+    nextSvg.appendChild(nextPath);
 
     this._buttons = document.createElement("div");
     this._buttons.setAttribute("class", "annotation__recents d-flex");
