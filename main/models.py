@@ -969,6 +969,7 @@ class Favorite(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
     name = CharField(max_length=128)
+    page = PositiveIntegerField(default=1)
     values = JSONField()
 
 def type_to_obj(typeObj):
