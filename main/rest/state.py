@@ -354,10 +354,23 @@ class StateDetailAPI(BaseDetailView):
 
     def _delete(self, params):
         state = State.objects.get(pk=params['id'])
+
+        delete_localizations = []
         if state.meta.delete_child_localizations:
-            loc_qs = state.localizations.all()
-            loc_qs._raw_delete(loc_qs.db)
+
+            # Only delete localizations that are not not a part of other states
+            for loc in state.localizations.all():
+
+                loc_qs = Localization.state_set.through.objects.filter(localization_id=loc.id).exclude(state_id=state.id)
+
+                if not loc_qs.exists():
+                    delete_localizations.append(loc.id)
+
         state.delete()
+
+        qs = Localization.objects.filter(pk__in=delete_localizations)
+        qs._raw_delete(qs.db)
+
         return {'message': f'State {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
