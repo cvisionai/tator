@@ -12,6 +12,7 @@ from .attribute_value import attribute_value
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
+from .job import job
 from .leaf_type import leaf_type_spec
 from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
