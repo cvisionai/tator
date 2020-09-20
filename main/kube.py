@@ -78,6 +78,18 @@ class JobManagerMixin:
             project = int(response['items'][0]['metadata']['labels']['project'])
         return project
 
+    def get_jobs(self, selector):
+        """ Retrieves argo workflow by selector.
+        """
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=f'{selector},job_type={self._job_type()}',
+        )
+        return response['items']
+
     def cancel_jobs(self, selector):
         """ Deletes argo workflows by selector.
         """
