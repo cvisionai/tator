@@ -29,7 +29,24 @@ class JobDetailAPI(BaseDetailView):
     """
     schema = JobDetailSchema()
     permission_classes = [ProjectTransferPermission]
-    http_method_names = ['delete']
+    http_method_names = ['get', 'delete']
+
+    def _get(self, params):
+        run_uid = params['run_uid']
+        rds = Redis(host=os.getenv('REDIS_HOST'))
+        if rds.hexists('uids', run_uid):
+            msg = json.loads(rds.hget('uids', run_uid))
+            jobs = []
+            if msg['prefix'] == 'upload':
+                jobs = TatorTranscode().get_jobs(f'uid={run_uid}')
+            elif msg['prefix'] == 'algorithm':
+                alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
+                jobs = TatorAlgorithm(alg).get_jobs(f'uid={run_uid}')
+            if len(jobs) != 1:
+                raise Http404
+        else:
+            raise Http404
+        return jobs[0]
 
     def _delete(self, params):
         # Parse parameters
