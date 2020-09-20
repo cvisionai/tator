@@ -25,11 +25,13 @@ job_node = {
             'description': 'Start time of this node.',
             'type': 'string',
             'nullable': True,
+            'format': 'date-time',
         },
         'stop_time': {
             'description': 'Stop time of this node.',
             'type': 'string',
             'nullable': True,
+            'format': 'date-time',
         },
     }
 }
@@ -53,11 +55,13 @@ job = {
             'description': 'Start time of this job.',
             'type': 'string',
             'nullable': True,
+            'format': 'date-time',
         },
         'stop_time': {
             'description': 'Stop time of this job.',
             'type': 'string',
             'nullable': True,
+            'format': 'date-time',
         },
     },
 }
