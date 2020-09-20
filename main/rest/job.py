@@ -13,6 +13,7 @@ from ..schema import JobDetailSchema
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._job import workflow_to_job
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class JobDetailAPI(BaseDetailView):
                 raise Http404
         else:
             raise Http404
-        return jobs[0]
+        return workflow_to_job(jobs[0])
 
     def _delete(self, params):
         # Parse parameters
