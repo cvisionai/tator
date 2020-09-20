@@ -10,9 +10,6 @@ Algorithms and transcodes create argo workflows that are annotated with two
 uuid1 strings, one identifying the run and the other identifying the group.
 Jobs that are submitted together have the same group id, but each workflow
 has a unique run id.
-
-This endpoint allows the user to get or cancel a job using the `run_uid`
-returned by either the `AlgorithmLaunch` or `Transcode` endpoints.
 """)
 class JobDetailSchema(AutoSchema):
     def get_operation(self, path, method):
