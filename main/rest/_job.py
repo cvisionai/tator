@@ -1,27 +1,37 @@
 """ Utilities for job endpoints. """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def node_to_job_node(node):
     job_node = {}
-    job_node['id'] = node['Id']
-    job_node['children'] = list(node['Children'])
-    job_node['task'] = node['Template Name']
-    job_node['status'] = node['Phase']
-    if 'Started At' in node:
-        job_node['start_time'] = node['Started At']
-    if 'Finished At' in node:
-        job_node['stop_time'] = node['Finished At']
+    job_node['id'] = node['id']
+    job_node['children'] = []
+    if 'children' in node:
+        job_node['children'] = list(node['children'])
+    job_node['task'] = node['templateName']
+    job_node['status'] = node['phase']
+    if 'startedAt' in node:
+        job_node['start_time'] = node['startedAt']
+    if 'finishedAt' in node:
+        job_node['stop_time'] = node['finishedAt']
     return job_node
 
 def workflow_to_job(workflow):
+    logger.info(f"WORKFLOW KEYS: {workflow.keys()}")
+    logger.info(f"WORKFLOW METADATA KEYS: {workflow['metadata'].keys()}")
+    import json
+    logger.info(f"FULL WORKFLOW: {json.dumps(workflow, indent=4)}")
     job = {}
-    job['id'] = workflow['Name']
-    status = workflow['Status']
-    job['status'] = status['Phase']
-    if 'Started At' in status:
-        job['start_time'] = status['Started At']
-    if 'Finished At' in status:
-        job['stop_time'] = status['Finished At']
-    job['nodes'] = [node_to_job_node(status['Nodes'][node_id])
-                    for node_id in status['Nodes']]
+    job['id'] = workflow['metadata']['name']
+    status = workflow['status']
+    job['status'] = status['phase']
+    if 'startedAt' in status:
+        job['start_time'] = status['startedAt']
+    if 'finishedAt' in status:
+        job['stop_time'] = status['finishedAt']
+    job['nodes'] = [node_to_job_node(status['nodes'][node_id])
+                    for node_id in status['nodes']]
     return job
 
