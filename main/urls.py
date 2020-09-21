@@ -97,12 +97,12 @@ urlpatterns += [
          GetClipAPI.as_view(),
     ),
     path(
-        'rest/Job/<str:run_uid>',
-        JobDetailAPI.as_view(),
+        'rest/Jobs/<int:project>',
+        JobListAPI.as_view(),
     ),
     path(
-        'rest/JobGroup/<str:group_id>',
-        JobGroupDetailAPI.as_view(),
+        'rest/Job/<str:uid>',
+        JobDetailAPI.as_view(),
     ),
     path(
         'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
