@@ -820,6 +820,11 @@ class AnnotationCanvas extends TatorElement
     this._data.updateType(typeObj, callback);
   }
 
+  updateAllLocalizations()
+  {
+    this._data.updateLocalizations(this.refresh.bind(this), null);
+  }
+
   contextMenuHandler(clickEvent)
   {
     // Disable the normal right click menu
@@ -2012,7 +2017,7 @@ class AnnotationCanvas extends TatorElement
     this._activeTrack = null;
   }
 
-  selectTrack(track, frameHint, forceGoToFrame)
+  selectTrack(track, frameHint)
   {
     let frame = frameHint;
     if (frame == undefined)
@@ -2040,7 +2045,7 @@ class AnnotationCanvas extends TatorElement
       });
     };
 
-    if (frame != this.currentFrame() && forceGoToFrame)
+    if (frame != this.currentFrame())
     {
       this.gotoFrame(frame).then(trackSelectFunctor);
     }

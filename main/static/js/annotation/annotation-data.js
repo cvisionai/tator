@@ -124,6 +124,23 @@ class AnnotationData extends HTMLElement {
     return initDone;
   }
 
+  updateLocalizations(callback, search) {
+    for (const key in this._dataTypes)
+    {
+      let dataType = this._dataTypes[key];
+      let isLocalization=false;
+      if ("dtype" in dataType)
+      {
+        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+      }
+
+      if (isLocalization)
+      {
+        this.updateType(dataType, callback, search);
+      }
+    }
+  }
+
   updateTypeLocal(method, id, body, typeObj) {
     const typeId = typeObj.id;
     if (this._updateUrls.has(typeId) == false) {

@@ -144,7 +144,11 @@ class EntitySelector extends TatorElement {
         this._canvas.deleteLocalization(this._data[index]);
       } else {
         endpoint = "State";
-        this._undo.del(endpoint, this._data[index].id, this._dataType);
+        this._undo.del(endpoint, this._data[index].id, this._dataType).then(() => {
+          if (this._dataType.delete_child_localizations) {
+            this._canvas.updateAllLocalizations();
+          }
+        });
       }
       
     });
