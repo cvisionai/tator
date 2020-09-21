@@ -189,9 +189,7 @@ class AttributePanel extends TatorElement {
 
   setValues(values) {
     // Set the ID widget
-    if (typeof values.id !== "undefined") {
-      this._idWidget.setValue(values.id);
-    }
+    this._idWidget.setValue(values.id);
 
     // Check if the slider needs to be updated if there's different track data now.
     // If so, then update it.
@@ -201,7 +199,7 @@ class AttributePanel extends TatorElement {
     }
 
     // Skip resetting slider if we already display this track
-    if (this._track && this._track.id == values.id)
+    if (this._track && this._track.id == values.id && !trackSegmentsUpdated)
     {
       return;
     }
@@ -215,21 +213,16 @@ class AttributePanel extends TatorElement {
       this._track = values;
     }
 
-    if (this._slider) {
-      this._frames = [];
-      for (const [start, end] of values.segments) {
-        for (let i = start; i <= end; i++) {
-          this._frames.push(i);
-        }
-      }
-      this._slider.value = 0;
-      this._slider.max = this._frames.length - 1;
-    }
+    let sliderData = {};
+    sliderData.segments = values.segments;
+    sliderData.currentFrame = this._currentFrame;
+    this.setSlider(sliderData);
+
     for (const widget of this._div.children) {
       const name = widget.getAttribute("name");
       const value = values.attributes[name];
       // Only set the name if it is defined
-      if (typeof value !== "undefined")
+      if (value != undefined)
       {
         widget.setValue(values.attributes[name]);
       }

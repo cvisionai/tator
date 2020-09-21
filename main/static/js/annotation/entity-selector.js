@@ -171,15 +171,6 @@ class EntitySelector extends TatorElement {
           this._del.style.display = "none";
           redraw.style.display = "none";
         }
-        /* #TODO Ask jtak about this
-        // Enable snapshots for boxes
-        if (this._dataType.isLocalization &&
-            (this._dataType.dtype == "box" ||
-            this._dataType.dtype == "dot" ||
-            this._dataType.dtype == "line")) {
-          capture.style.display = null;
-        }
-        */
         // Clear out the display regardless of whether this is a localization or state (e.g. track)
         capture.style.display = null;
       } else {

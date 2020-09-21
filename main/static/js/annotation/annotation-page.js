@@ -618,12 +618,10 @@ class AnnotationPage extends TatorPage {
         ),
       })
       .then(response => response.json())
-      .then(async () => {
-        // Update data after a second.
-        await new Promise(r => setTimeout(r, 1000));
+      .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track trimming completed. Refresh the page to view changes.")
+        window.alert("Track trimming completed.")
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
       });
     });
@@ -646,12 +644,10 @@ class AnnotationPage extends TatorPage {
         ),
       })
       .then(response => response.json())
-      .then(async () => {
-        // Update data after a second.
-        await new Promise(r => setTimeout(r, 1000));
+      .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track merge completed. Refresh the page to view changes.")
+        window.alert("Track merge completed.")
         canvas.selectTrack(evt.detail.targetTrackId, evt.detail.frame);
       });
     });
