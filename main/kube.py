@@ -93,7 +93,7 @@ class JobManagerMixin:
     def cancel_jobs(self, selector):
         """ Deletes argo workflows by selector.
         """
-        cancelled = False
+        cancelled = 0
 
         # Get the object by selecting on uid label.
         response = self.custom.list_namespaced_custom_object(
@@ -117,7 +117,7 @@ class JobManagerMixin:
                     body={'spec': {'shutdown': 'Stop'}},
                 )
                 if response['status'] == 'Success':
-                    cancelled = True
+                    cancelled += 1
         return cancelled
 
 class TatorTranscode(JobManagerMixin):
