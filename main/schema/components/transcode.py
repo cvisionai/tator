@@ -49,11 +49,11 @@ transcode = {
             'type': 'string',
             'description': 'Message indicating transcode started successfully.',
         },
-        'run_uid': {
+        'uid': {
             'type': 'string',
             'description': 'UUID identifying the job.',
         },
-        'group_id': {
+        'gid': {
             'type': 'string',
             'description': 'UUID identifying the job group.',
         },

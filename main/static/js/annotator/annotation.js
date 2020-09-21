@@ -749,7 +749,9 @@ class AnnotationCanvas extends TatorElement
           //this._draw.resizeViewport(dims[0], dims[1]);
           if (this.isPaused() == true)
           {
-            this.refresh(true);
+            this.refresh(false).then(() => {
+              this.refresh(true);
+            });
           }
           resizeHandler();
         }, 10);

@@ -46,6 +46,11 @@ media_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/ArchiveConfig'},
     },
+    'streaming_config': {
+        'description': 'Streaming config defintion. If null, the default will be used.',
+        'type': 'array',
+        'items': {'$ref': '#/components/schemas/ResolutionConfig'},
+    },
 }
 
 media_type_spec = {
@@ -61,6 +66,8 @@ media_type_update = {
         'description': media_type_properties['description'],
         'file_format': media_type_properties['file_format'],
         'keep_original': media_type_properties['keep_original'],
+        'archive_config': media_type_properties['archive_config'],
+        'streaming_config': media_type_properties['streaming_config'],
     },
 }
 

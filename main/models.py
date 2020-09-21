@@ -386,6 +386,7 @@ class MediaType(Model):
                      as the default for datetime dtype.
     """
     archive_config = JSONField(default=None, null=True, blank=True)
+    streaming_config = JSONField(default=None, null=True,blank=True)
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -960,6 +961,16 @@ class Section(Model):
     """ Optional list of elasticsearch boolean queries that should be applied
         to annotations. These are applied to the boolean query "filter" list.
     """
+
+class Favorite(Model):
+    """ Stores an annotation saved by a user.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
+    name = CharField(max_length=128)
+    page = PositiveIntegerField(default=1)
+    values = JSONField()
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

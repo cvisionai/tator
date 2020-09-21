@@ -30,7 +30,7 @@ class CancelConfirm extends ModalDialog {
         "gid": this._gid,
       });
       await new Promise(resolve => setTimeout(resolve, 300));
-      fetch("/rest/JobGroup/" + this._gid, {
+      fetch(`/rest/Jobs/${this._project}?gid=${this._gid}`, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
@@ -44,8 +44,9 @@ class CancelConfirm extends ModalDialog {
     });
   }
 
-  set gid(val) {
-    this._gid = val;
+  init(gid, project) {
+    this._gid = gid;
+    this._project = project;
   }
 
   static get observedAttributes() {

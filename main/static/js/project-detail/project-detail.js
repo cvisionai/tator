@@ -202,7 +202,7 @@ class ProjectDetail extends TatorPage {
     });
 
     this._progress.addEventListener("groupCancel", evt => {
-      cancelJob.gid = evt.detail.gid;
+      cancelJob.init(evt.detail.gid, this.getAttribute("project-id"));
       cancelJob.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });

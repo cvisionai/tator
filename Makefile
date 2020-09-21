@@ -353,8 +353,9 @@ FILES = \
     annotation/enum-input.js \
     annotation/text-input.js \
     annotation/attribute-panel.js \
-    annotation/recents-panel.js \
     annotation/modify-track-dialog.js \
+    annotation/favorite-button.js \
+    annotation/favorites-panel.js \
     annotation/save-dialog.js \
     annotation/entity-button.js \
     annotation/media-panel.js \

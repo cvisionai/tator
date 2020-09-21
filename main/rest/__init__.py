@@ -4,9 +4,11 @@ from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI
 from .analysis import AnalysisListAPI
 from .analysis import AnalysisDetailAPI
+from .favorite import FavoriteListAPI
+from .favorite import FavoriteDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
-from .job_group import JobGroupDetailAPI
+from .job import JobListAPI
 from .job import JobDetailAPI
 from .leaf import LeafSuggestionAPI
 from .leaf import LeafListAPI

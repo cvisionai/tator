@@ -17,8 +17,12 @@ class SaveDialog extends TatorElement {
     this._attributes = document.createElement("attribute-panel");
     this._div.appendChild(this._attributes);
 
-    this._recents = document.createElement("recents-panel");
-    this._div.appendChild(this._recents);
+    const favesDiv = document.createElement("div");
+    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._div.appendChild(favesDiv);
+
+    this._favorites = document.createElement("favorites-panel");
+    favesDiv.appendChild(this._favorites);
 
     const buttons = document.createElement("div");
     buttons.setAttribute("class", "d-flex flex-items-center py-4");
@@ -44,8 +48,12 @@ class SaveDialog extends TatorElement {
       }
     });
 
-    this._recents.addEventListener("recent", evt => {
+    this._favorites.addEventListener("load", evt => {
       this._attributes.setValues({attributes: evt.detail});
+    });
+
+    this._favorites.addEventListener("store", evt => {
+      this._favorites.store(this._values);
     });
 
     this._save.addEventListener("click", () => {
@@ -65,7 +73,7 @@ class SaveDialog extends TatorElement {
     });
   }
 
-  init(projectId, mediaId, dataType, undo, version) {
+  init(projectId, mediaId, dataType, undo, version, favorites) {
     this._projectId = projectId;
     this._mediaId = mediaId;
     this._dataType = dataType;
@@ -73,7 +81,7 @@ class SaveDialog extends TatorElement {
     this._version = version;
     this._span.textContent = dataType.name;
     this._attributes.dataType = dataType;
-    this._recents.dataType = dataType;
+    this._favorites.init(dataType, favorites);
     this._attributes.dispatchEvent(new Event("change"));
   }
 
@@ -89,7 +97,6 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    this._recents.store(this._values);
     const body = {
       type: Number(this._dataType.id.split("_")[1]),
       name: this._dataType.name,

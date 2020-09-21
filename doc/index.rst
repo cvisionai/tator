@@ -26,9 +26,12 @@ Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
    :maxdepth: 2
    :caption: Tator Documentation
 
-   Setup a cluster <setup_tator/cluster.rst>
+   Architectural Pieces <architecture.rst>
+   Single Node Local Install <setup_tator/single_node.rst>
    Administrative Functions <administration/admin.md>
-   Utilizing an AWS deployment <aws.md>
+   LAN Deployment <setup_tator/multi_node.rst>
+   Cloud Deployment (AWS) <aws.md>
+   Remote Transcodes/Algorithms <setup_tator/remote.rst>
    Media Management <usage/media_management.rst>
    Using HTTPS <https.rst>
 

@@ -9,6 +9,11 @@ from .analysis import analysis
 from .attribute_type import autocomplete_service
 from .attribute_type import attribute_type
 from .attribute_value import attribute_value
+from .favorite import favorite_spec
+from .favorite import favorite_update
+from .favorite import favorite
+from .job import job_node
+from .job import job
 from .leaf_type import leaf_type_spec
 from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
@@ -68,6 +73,7 @@ from ._archive_config import archive_config
 from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import media_files
+from ._streaming_config import resolution_config
 from ._color import rgb_color
 from ._color import rgba_color
 from ._color import hex_color

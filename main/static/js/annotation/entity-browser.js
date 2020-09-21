@@ -60,6 +60,7 @@ class EntityBrowser extends TatorElement {
 
     this._selectors = {};
     this._attributes = {};
+    this._initialized = false;
 
     back.addEventListener("click", evt => {
       this.style.display = "none";
@@ -95,7 +96,10 @@ class EntityBrowser extends TatorElement {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
       if (evt.detail.typeObj.id === this._dataType.id) {
-        this._group.setValue(this._dataType.grouping_default);
+        if (!this._initialized) {
+          this._group.setValue(this._dataType.grouping_default);
+          this._initialized = true;
+        }
         this._evt = evt;
         this._drawControls();
       }

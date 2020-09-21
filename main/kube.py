@@ -78,10 +78,22 @@ class JobManagerMixin:
             project = int(response['items'][0]['metadata']['labels']['project'])
         return project
 
+    def get_jobs(self, selector):
+        """ Retrieves argo workflow by selector.
+        """
+        response = self.custom.list_namespaced_custom_object(
+            group='argoproj.io',
+            version='v1alpha1',
+            namespace='default',
+            plural='workflows',
+            label_selector=f'{selector},job_type={self._job_type()}',
+        )
+        return response['items']
+
     def cancel_jobs(self, selector):
         """ Deletes argo workflows by selector.
         """
-        cancelled = False
+        cancelled = 0
 
         # Get the object by selecting on uid label.
         response = self.custom.list_namespaced_custom_object(
@@ -104,8 +116,19 @@ class JobManagerMixin:
                     name=name,
                     body={'spec': {'shutdown': 'Stop'}},
                 )
+                # TODO: Switch to below when websockets are removed.
+                """
+                response = self.custom.delete_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    name=name,
+                    body={},
+                )
+                """
                 if response['status'] == 'Success':
-                    cancelled = True
+                    cancelled += 1
         return cancelled
 
 class TatorTranscode(JobManagerMixin):
@@ -290,6 +313,13 @@ class TatorTranscode(JobManagerMixin):
             'metadata': {
                 'labels': {'app': 'transcoder'},
             },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
                 'image': '{{workflow.parameters.lite_image}}',
@@ -330,6 +360,13 @@ class TatorTranscode(JobManagerMixin):
             'metadata': {
                 'labels': {'app': 'transcoder'},
             },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -365,6 +402,13 @@ class TatorTranscode(JobManagerMixin):
             'name': 'transcode',
             'metadata': {
                 'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
             },
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
@@ -402,6 +446,13 @@ class TatorTranscode(JobManagerMixin):
             'metadata': {
                 'labels': {'app': 'transcoder'},
             },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
@@ -433,6 +484,13 @@ class TatorTranscode(JobManagerMixin):
             'name': 'image-upload',
             'metadata': {
                 'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
             },
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -469,6 +527,13 @@ class TatorTranscode(JobManagerMixin):
             'name': 'progress',
             'metadata': {
                 'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
             },
             'inputs': {'parameters' : spell_out_params(['state',
                                                         'message',
@@ -1011,7 +1076,7 @@ class TatorAlgorithm(JobManagerMixin):
                 'name': 'tator-failed',
                 'container': {
                     'image': get_lite_image_name(),
-                    'imagePullPolicy': 'Always',
+                    'imagePullPolicy': 'IfNotPresent',
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',
@@ -1040,7 +1105,7 @@ class TatorAlgorithm(JobManagerMixin):
                 'name': 'tator-succeeded',
                 'container': {
                     'image': get_lite_image_name(),
-                    'imagePullPolicy': 'Always',
+                    'imagePullPolicy': 'IfNotPresent',
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',

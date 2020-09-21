@@ -1,35 +1,43 @@
-domain: your.domain.com
+# This can be a domain that points to a LAN IP address if you
+# are accessing the site from another machine's browser or you
+# are installing Tator in a VM. Using localhost only works in 
+# a browser running on the same machine running Tator.
+domain: localhost
 # Requests for these domains will be redirected to the actual domain.
-redirects:
-  - domain: mysite.duckdns.org
-    # Key filename that will be used in secret for this domain.
-    tlsKeyFile: mysite_key.key
-    # Cert filename that will be used in secret for this domain.
-    tlsCertFile: mysite_cert.crt
-    # Key secret name that will be used in secret for this domain.
-    tlsKeySecretName: mysite-tls-key
-    # Cert secret name that will be used in secret for this domain.
-    tlsCertSecretName: mysite-tls-cert
+#redirects:
+#  - domain: mysite.duckdns.org
+#    # Key filename that will be used in secret for this domain.
+#    tlsKeyFile: mysite_key.key
+#    # Cert filename that will be used in secret for this domain.
+#    tlsCertFile: mysite_cert.crt
+#    # Key secret name that will be used in secret for this domain.
+#    tlsKeySecretName: mysite-tls-key
+#    # Cert secret name that will be used in secret for this domain.
+#    tlsCertSecretName: mysite-tls-cert
 # Enables debug mode for gunicorn. Do NOT enable this in production.
 tatorDebug: true
 # Enables javascript minification.
 useMinJs: false
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
-nginxReplicas: 1
-gunicornReplicas: 1 
-djangoSecretKey: "<Your django secret key>"
+# Secret key for django. Feel free to change this.
+djangoSecretKey: "9q@$1)+x+zh-3csau(zqhheos2e+ncygac#ol2)1@x2w#kkaer"
 postgresHost: "pgbouncer-svc"
-postgresUsername: "<Your postgres username>"
-postgresPassword: "<Your postgres password>"
+# Postgres username. Some make commands expect username django, but otherwise
+# it can be changed.
+postgresUsername: "django"
+# Postgres password. Change this for production.
+postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
+# If you are using the docker registry container for your registry, you can
+# leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
 dockerPassword: "test"
 dockerRegistry: "localhost:5000"
 systemImageRepo: "localhost:5000"
-slackToken: "<Your slack API token>" # Optional, for slack notifications
-slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
+#slackToken: "<Your slack API token>" # Optional, for slack notifications
+#slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
 # Enable this to require HTTPS. Be sure to set true for production deployments!
 requireHttps: false
 certCron:
@@ -38,7 +46,7 @@ certCron:
   # tls-cert and tls-key must be created manually.
   enabled: false
 pv:
-  nfsServer: "192.168.1.114"
+  nfsServer: "127.0.0.1"
   nfsMountOptions:
     - nfsvers=4.1
   path: "/media/kubernetes_share"
@@ -50,17 +58,17 @@ pv:
   # there should be no shards.
   #mediaShards:
   #  - name: media000
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/media000"
   #  - name: media001
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/media001"
   #  - name: media002
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/media002"
@@ -72,17 +80,17 @@ pv:
   # there should be no shards.
   #uploadShards:
   #  - name: upload000
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/upload000"
   #  - name: upload001
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/upload001"
   #  - name: upload002
-  #    nfsServer: "192.168.1.114"
+  #    nfsServer: "127.0.0.1"
   #    nfsMountOptions:
   #      - nfsvers=4.1
   #    path: "/media/kubernetes_share/upload002"
@@ -105,15 +113,17 @@ metallb:
   # Enable this to provide a load balancer implementation on bare metal.
   enabled: true
   existingConfigMap: metallb-config
-  ipRangeStart: 192.168.1.220
-  ipRangeStop: 192.168.1.224
-  loadBalancerIp: 192.168.1.221
+  # Change these to your LAN IP if you are accessing Tator via a browser on
+  # another machine or you are running Tator in a VM.
+  ipRangeStart: 127.0.0.1
+  ipRangeStop: 127.0.0.1
+  loadBalancerIp: 127.0.0.1
 postgis:
   # Enable this if you want to use the postgis docker image.
   enabled: true
   persistence:
     size: 10Gi
-  hostPath: /media/ssd/postgis
+  hostPath: /media/kubernetes_share/postgis
 redis:
   # Enable this to install the redis helm chart.
   enabled: true
@@ -146,7 +156,7 @@ elasticsearch:
         storage: 30Gi
   nodeSelector: 
     dbServer: "yes"
-  hostPath: /media/ssd/elasticsearch
+  hostPath: /media/kubernetes_share/elasticsearch
 filebeat:
   enabled: true
   image: docker.elastic.co/beats/filebeat-oss

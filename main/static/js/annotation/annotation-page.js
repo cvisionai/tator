@@ -47,6 +47,12 @@ class AnnotationPage extends TatorPage {
     this._browser.undoBuffer = this._undo;
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
+
+    window.addEventListener("error", (evt) => {
+      this._shadow.removeChild(this._loading);
+      window.alert("System error detected");
+      Utilities.warningAlert("System error detected","#ff3e1d");
+    });
   }
 
   static get observedAttributes() {
@@ -327,6 +333,15 @@ class AnnotationPage extends TatorPage {
     const projectId = Number(this.getAttribute("project-id"));
     const mediaId = Number(this.getAttribute("media-id"));
     const query = "?media_id=" + mediaId;
+    const favoritePromise = fetch("/rest/Favorites/" + projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
       method: "GET",
       credentials: "same-origin",
@@ -352,13 +367,15 @@ class AnnotationPage extends TatorPage {
       getMetadataType("LocalizationTypes"),
       getMetadataType("StateTypes"),
       versionPromise,
+      favoritePromise,
     ])
-    .then(([localizationResponse, stateResponse, versionResponse]) => {
+    .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
       const versionData = versionResponse.json();
-      Promise.all([localizationData, stateData, versionData])
-      .then(([localizationTypes, stateTypes, versions]) => {
+      const favoriteData = favoriteResponse.json();
+      Promise.all([localizationData, stateData, versionData, favoriteData])
+      .then(([localizationTypes, stateTypes, versions, favorites]) => {
         for (let version of versions)
         {
           this._versionLookup[version['id']] = version;
@@ -520,7 +537,7 @@ class AnnotationPage extends TatorPage {
 
         for (const dataType of localizationTypes) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version);
+          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
