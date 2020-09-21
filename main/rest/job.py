@@ -35,12 +35,10 @@ class JobListAPI(BaseListView):
             selector += f',gid={gid}'
 
         jobs = []
-        if msg['prefix'] == 'upload':
-            jobs = TatorTranscode().get_jobs(selector)
-        elif msg['prefix'] == 'algorithm':
-            algs = Algorithm.objects.get(project=project)
-            for alg in algs:
-                jobs += TatorAlgorithm(alg).get_jobs(selector)
+        jobs += TatorTranscode().get_jobs(selector)
+        algs = Algorithm.objects.get(project=project)
+        for alg in algs:
+            jobs += TatorAlgorithm(alg).get_jobs(selector)
         return [workflow_to_job(job) for job in jobs]
 
     def _delete(self, params):
@@ -54,11 +52,10 @@ class JobListAPI(BaseListView):
 
         # Attempt to cancel.
         cancelled = 0
-        if msg['prefix'] == 'upload':
-            cancelled = TatorTranscode().cancel_jobs(selector)
-        elif msg['prefix'] == 'algorithm':
-            alg = Algorithm.objects.get(project=project)
-            cancelled = TatorAlgorithm(alg).cancel_jobs(selector)
+        cancelled += TatorTranscode().cancel_jobs(selector)
+        algs = Algorithm.objects.get(project=project)
+        for alg in algs:
+            cancelled += TatorAlgorithm(alg).cancel_jobs(selector)
 
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 
