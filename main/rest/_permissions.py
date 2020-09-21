@@ -45,18 +45,14 @@ class ProjectPermissionBase(BasePermission):
             project = self._project_from_object(obj)
             if project is None:
                 raise Http404
-        elif 'run_uid' in view.kwargs:
-            uid = view.kwargs['run_uid']
+        elif 'uid' in view.kwargs:
+            uid = view.kwargs['uid']
             rds = Redis(host=os.getenv('REDIS_HOST'))
             if rds.hexists('uids', uid):
                 msg = json.loads(rds.hget('uids', uid))
                 project = msg['project_id']
-        elif 'group_id' in view.kwargs:
-            group_id = view.kwargs['group_id']
-            rds = Redis(host=os.getenv('REDIS_HOST'))
-            if rds.hexists('gids', group_id):
-                msg = json.loads(rds.hget('gids', group_id))
-                project = msg['project_id']
+            else:
+                raise Http404
         else:
             # If this is a request from schema view, show all endpoints.
             return _for_schema_view(request, view)

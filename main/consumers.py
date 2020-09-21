@@ -91,7 +91,9 @@ class ProgressProducer:
         if num_procs <= num_complete:
             self.rds.delete(self.gid + ':started')
             self.rds.delete(self.gid + ':done')
-            self.rds.hdel('gids', self.gid)
+            # This is not cleared so that we can continue polling progress with the Job
+            # GET method.
+            #self.rds.hdel('gids', self.gid)
         else:
             json_msg = json.dumps(msg)
             self.rds.hset('gids', self.gid, json_msg)
@@ -108,7 +110,10 @@ class ProgressProducer:
         self.rds.hset(self.gid + ':done', self.uid, json.dumps(msg))
 
     def _clear_latest(self):
-        self.rds.hdel('uids', self.uid)
+        # This is not cleared so that we can continue polling progress with the Job
+        # GET method.
+        #self.rds.hdel('uids', self.uid)
+        pass
 
     def queued(self, msg):
         """Broadcast a queued message, add to group processes.

@@ -8,7 +8,7 @@ from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
-from .job_group import JobGroupDetailSchema
+from .job import JobListSchema
 from .job import JobDetailSchema
 from .jwt import JwtGatewaySchema
 from .leaf import LeafSuggestionSchema

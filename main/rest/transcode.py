@@ -114,8 +114,8 @@ class TranscodeAPI(BaseListView):
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
-                         'run_uid': uid,
-                         'group_id': gid}
+                         'uid': uid,
+                         'gid': gid}
 
         # Send notification that transcode started.
         logger.info(msg)

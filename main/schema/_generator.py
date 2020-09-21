@@ -45,6 +45,8 @@ class CustomGenerator(SchemaGenerator):
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
+                'JobNode': job_node,
+                'Job': job,
                 'LeafTypeSpec': leaf_type_spec,
                 'LeafTypeUpdate': leaf_type_update,
                 'LeafType': leaf_type,

@@ -71,8 +71,8 @@ class AlgorithmLaunchAPI(BaseListView):
         submitter = TatorAlgorithm(alg_obj)
         token, _ = Token.objects.get_or_create(user=self.request.user)
         for batch in media_batches(media_ids, files_per_job):
-            run_uid = str(uuid1())
-            uids.append(run_uid)
+            uid = str(uuid1())
+            uids.append(uid)
             batch_str = ','.join(batch)
             batch_int = [int(pk) for pk in batch]
             batch_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(batch_int)])
@@ -83,7 +83,7 @@ class AlgorithmLaunchAPI(BaseListView):
                 media_ids=batch_str,
                 sections=sections,
                 gid=gid,
-                uid=run_uid,
+                uid=uid,
                 token=token,
                 project=project_id,
                 user=self.request.user.pk,
@@ -94,7 +94,7 @@ class AlgorithmLaunchAPI(BaseListView):
                 'algorithm',
                 project_id,
                 gid,
-                run_uid,
+                uid,
                 alg_name,
                 self.request.user,
                 {'media_ids': batch_str, 'sections': sections},
@@ -102,6 +102,6 @@ class AlgorithmLaunchAPI(BaseListView):
             prog.queued("Queued...")
 
         return {'message': f"Algorithm {alg_name} started successfully!",
-                'run_uids': uids,
-                'group_id': gid}
+                'uid': uids,
+                'gid': gid}
 
