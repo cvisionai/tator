@@ -36,7 +36,7 @@ class JobListAPI(BaseListView):
 
         jobs = []
         jobs += TatorTranscode().get_jobs(selector)
-        algs = Algorithm.objects.get(project=project)
+        algs = Algorithm.objects.filter(project=project)
         for alg in algs:
             jobs += TatorAlgorithm(alg).get_jobs(selector)
         return [workflow_to_job(job) for job in jobs]
@@ -53,7 +53,7 @@ class JobListAPI(BaseListView):
         # Attempt to cancel.
         cancelled = 0
         cancelled += TatorTranscode().cancel_jobs(selector)
-        algs = Algorithm.objects.get(project=project)
+        algs = Algorithm.objects.filter(project=project)
         for alg in algs:
             cancelled += TatorAlgorithm(alg).cancel_jobs(selector)
 
