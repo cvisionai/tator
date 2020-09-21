@@ -1065,7 +1065,7 @@ class TatorAlgorithm(JobManagerMixin):
                 'name': 'tator-failed',
                 'container': {
                     'image': get_lite_image_name(),
-                    'imagePullPolicy': 'Always',
+                    'imagePullPolicy': 'IfNotPresent',
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',
@@ -1094,7 +1094,7 @@ class TatorAlgorithm(JobManagerMixin):
                 'name': 'tator-succeeded',
                 'container': {
                     'image': get_lite_image_name(),
-                    'imagePullPolicy': 'Always',
+                    'imagePullPolicy': 'IfNotPresent',
                     'command': ['python3',],
                     'args': [
                         '-m', 'tator.progress',
