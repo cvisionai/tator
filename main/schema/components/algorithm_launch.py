@@ -27,15 +27,15 @@ algorithm_launch = {
             'type': 'string',
             'description': 'Message indicating successful launch.',
         },
-        'run_uids': {
+        'uid': {
             'type': 'array',
-            'description': 'A list of uuid1 strings identifying each job '
+            'description': 'A list of uuid strings identifying each job '
                            'started.',
             'items': {'type': 'string'},
         },
-        'group_id': {
+        'gid': {
             'type': 'string',
-            'description': 'A uuid1 string identifying the group of jobs '
+            'description': 'A uuid string identifying the group of jobs '
                            'started.',
         },
     },
