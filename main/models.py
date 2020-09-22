@@ -961,6 +961,11 @@ class Section(Model):
     """ Optional list of elasticsearch boolean queries that should be applied
         to annotations. These are applied to the boolean query "filter" list.
     """
+    tator_user_sections = CharField(max_length=128, null=True, blank=True)
+    """ Identifier used to label media that is part of this section via the 
+        tator_user_sections attribute. If not set, this search is not scoped
+        to a "folder".
+    """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.
