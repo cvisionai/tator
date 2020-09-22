@@ -21,6 +21,7 @@ class ModifyTrackDialog extends TatorElement {
     this._createTrimDialogDiv();
     this._createExtendDialogDiv();
     this._createMergeDialogDiv();
+    this._createAddDetectionDialogDiv();
     this._resetUI();
 
     const buttons = document.createElement("div");
@@ -68,7 +69,7 @@ class ModifyTrackDialog extends TatorElement {
     const div = document.createElement("div");
 
     var questionText = document.createElement("p");
-    questionText.textContent = "Merge tracks?";
+    questionText.textContent = "Merge selected track into main track?";
     div.appendChild(questionText);
 
     this._mergeText = document.createElement("p");
@@ -81,6 +82,27 @@ class ModifyTrackDialog extends TatorElement {
     div.appendChild(warning);
 
     this._mergeDiv = div;
+    this._contentDiv.appendChild(div);
+  }
+
+  _createAddDetectionDialogDiv() {
+
+    const div = document.createElement("div");
+
+    var questionText = document.createElement("p");
+    questionText.textContent = "Add selected detection to main track?";
+    div.appendChild(questionText);
+
+    this._addDetectionText = document.createElement("p");
+    this._addDetectionText.setAttribute("class", "text-gray f2 py-3");
+    div.appendChild(this._addDetectionText);
+
+    const warning = document.createElement("p");
+    warning.setAttribute("class", "text-semibold py-3");
+    warning.textContent = "Warning: This cannot be undone";
+    div.appendChild(warning);
+
+    this._addDetectionDiv = div;
     this._contentDiv.appendChild(div);
   }
 
@@ -114,17 +136,29 @@ class ModifyTrackDialog extends TatorElement {
   _yesClickHandler() {
     this.dispatchEvent(new Event("yes"));
 
-    if (this._data.interface == "merge")
+    if (this._data.interface == "mergeTrack")
     {
       this.dispatchEvent(
         new CustomEvent("mergeTracks",
           {composed: true,
            detail: {
              localizationType: this._data.localization.meta,
-             trackType: this._data.track.meta,
+             trackType: this._data.mainTrack.meta,
              frame: this._data.frame,
-             sourceTrackId: this._data.trackToMerge.id,
-             targetTrackId: this._data.track.id}}));
+             mainTrackId: this._data.mainTrack.id,
+             mergeTrackId: this._data.track.id}}));
+    }
+    else if (this._data.interface == "addDetection")
+    {
+      this.dispatchEvent(
+        new CustomEvent("addDetectionToTrack",
+          {composed: true,
+           detail: {
+             localizationType: this._data.localization.meta,
+             trackType: this._data.mainTrack.meta,
+             frame: this._data.frame,
+             mainTrackId: this._data.mainTrack.id,
+             detectionId: this._data.localization.id}}));
     }
     else if (this._data.interface == "trim")
     {
@@ -144,6 +178,7 @@ class ModifyTrackDialog extends TatorElement {
     this._span.textContent = "";
     this._extendDiv.style.display = "none";
     this._mergeDiv.style.display = "none";
+    this._addDetectionDiv.style.display = "none";
     this._trimDiv.style.display = "none";
   }
 
@@ -158,8 +193,14 @@ class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "block";
     this._yesButton.textContent = "Merge";
 
-    let text = "Detections from track " + this._data.trackToMerge.id.toString() + " will be merged into track " + this._data.track.id.toString() + ".";
+    let text = "Detections from track " + this._data.track.id.toString() + " will be merged into track " + this._data.mainTrack.id.toString() + ".";
     this._mergeText.textContent = text;
+  }
+
+  _setToAddDetectionUI() {
+    this._span.textContent = "Add Detection To Track";
+    this._addDetectionDiv.style.display = "block";
+    this._yesButton.textContent = "Add";
   }
 
   _setToTrimUI() {
@@ -192,9 +233,13 @@ class ModifyTrackDialog extends TatorElement {
     {
       this._setToExtendUI();
     }
-    else if(dialogType == "merge")
+    else if (dialogType == "mergeTrack")
     {
       this._setToMergeUI();
+    }
+    else if (dialogType == "addDetection")
+    {
+      this._setToAddDetectionUI();
     }
     else if (dialogType == "trim")
     {

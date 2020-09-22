@@ -621,15 +621,14 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track trimming completed.")
+        window.alert("Track trimming done.")
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
       });
     });
 
-    menu.addEventListener("mergeTracks", evt => {
+    menu.addEventListener("addDetectionToTrack", evt => {
 
-      // Create new localizations.
-      const promise = fetchRetry("/rest/MergeStates/" + evt.detail.targetTrackId, {
+      const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
         method: "PATCH",
         credentials: "same-origin",
         headers: {
@@ -639,7 +638,31 @@ class AnnotationPage extends TatorPage {
         },
         body: JSON.stringify(
           {
-            merge_state_id: evt.detail.sourceTrackId,
+            localization_ids_add: [evt.detail.detectionId],
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+        window.alert("Detection added to track.")
+        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
+      });
+    });
+
+    menu.addEventListener("mergeTracks", evt => {
+
+      const promise = fetchRetry("/rest/MergeStates/" + evt.detail.mainTrackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            merge_state_id: evt.detail.mergeTrackId,
           }
         ),
       })
@@ -647,8 +670,8 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track merge completed.")
-        canvas.selectTrack(evt.detail.targetTrackId, evt.detail.frame);
+        window.alert("Track merged.")
+        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
       });
     });
 

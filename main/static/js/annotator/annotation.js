@@ -550,11 +550,11 @@ class AnnotationCanvas extends TatorElement
     this._shadow.appendChild(this._contextMenuTrack);
 
     //this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Set track to merge", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Merge into this track", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.disableEntry("Merge into this track", true);
+    this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.disableEntry("Merge into main track", true);
     this._selectedMergeTrack = null;
 
     // Context menu (right-click): Localizations/detections
@@ -562,8 +562,9 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuLoc.hideMenu();
     this._shadow.appendChild(this._contextMenuLoc);
 
-    this._contextMenuLoc.addMenuEntry("Create track", this.contextMenuCallback.bind(this));
-    this._contextMenuLoc.addMenuEntry("Add to track", this.contextMenuCallback.bind(this));
+    //this._contextMenuLoc.addMenuEntry("Create new track", this.contextMenuCallback.bind(this));
+    this._contextMenuLoc.addMenuEntry("Add to main track", this.contextMenuCallback.bind(this));
+    this._contextMenuLoc.disableEntry("Add to main track", true);
 
     this._contextMenuFrame = 0;
 
@@ -609,6 +610,10 @@ class AnnotationCanvas extends TatorElement
     this._canEdit = hasPermission(val, "Can Edit");
   }
 
+  /**
+   * Routine that's executed when a user select a right-click menu option.
+   * @param {string} menuText Text of selected menu option
+   */
   contextMenuCallback(menuText)
   {
     const objDescription = {};
@@ -632,21 +637,27 @@ class AnnotationCanvas extends TatorElement
       objDescription.interface = 'trim';
       objDescription.trimEndpoint = 'end';
     }
-    else if (menuText == "Merge into this track")
+    else if (menuText == "Merge into main track")
     {
       if (this._selectedMergeTrack.id == this._activeTrack.id)
       {
-        window.alert("Cannot merge. Same track selected.");
+        window.alert("Cannot merge. Same track selected as main track.");
         return;
       }
-      objDescription.interface = 'merge';
-      objDescription.trackToMerge = this._selectedMergeTrack;
+      objDescription.interface = 'mergeTrack';
+      objDescription.mainTrack = this._selectedMergeTrack;
     }
-    else if (menuText == "Set track to merge")
+    else if (menuText == "Set as main track")
     {
       this._selectedMergeTrack = this._activeTrack;
-      this._contextMenuTrack.disableEntry("Merge into this track", false);
+      this._contextMenuTrack.disableEntry("Merge into main track", false);
+      this._contextMenuLoc.disableEntry("Add to main track", false);
       return;
+    }
+    else if (menuText == "Add to main track")
+    {
+      objDescription.interface = 'addDetection';
+      objDescription.mainTrack = this._selectedMergeTrack;
     }
     else
     {
@@ -840,9 +851,7 @@ class AnnotationCanvas extends TatorElement
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
       else {
-        return;
-        //#TODO Add this when it's ready
-        //this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+        this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
       }
     }
   }
