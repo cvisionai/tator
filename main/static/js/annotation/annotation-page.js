@@ -552,6 +552,23 @@ class AnnotationPage extends TatorPage {
           });
         }
 
+        for (const dataType of stateTypes) {
+          const save = document.createElement("save-dialog");
+          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          this._settings.setAttribute("version", this._version.id);
+          this._main.appendChild(save);
+          this._saves[dataType.id] = save;
+
+          save.addEventListener("cancel", () => {
+            this._closeModal(save);
+            canvas.refresh();
+          });
+
+          save.addEventListener("save", () => {
+            this._closeModal(save);
+          });
+        }
+
         canvas.addEventListener("create", evt => {
           const metaMode = evt.detail.metaMode;
           const objDescription = evt.detail.objDescription;
@@ -577,7 +594,7 @@ class AnnotationPage extends TatorPage {
           }
         });
 
-        this._setupContextMenuDialogs(canvas, canvasElement);
+        this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
         canvas.addEventListener("maximize", () => {
           this._browser.style.display = "none";
@@ -590,7 +607,7 @@ class AnnotationPage extends TatorPage {
     });
   }
 
-  _setupContextMenuDialogs(canvas, canvasElement) {
+  _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
     // appearance to the user is the same.
@@ -601,7 +618,6 @@ class AnnotationPage extends TatorPage {
 
     menu.addEventListener("trimTrack", evt => {
 
-      // Create new localizations.
       const promise = fetchRetry("/rest/TrimStateEnd/" + evt.detail.trackId, {
         method: "PATCH",
         credentials: "same-origin",
@@ -697,6 +713,12 @@ class AnnotationPage extends TatorPage {
       this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
       this._makePreview(objDescription, dragInfo, canvasPosition);
     });
+
+    if (typeof canvas.addCreateTrackType !== "undefined") {
+      for (const dataType of stateTypes) {
+        canvas.addCreateTrackType(dataType);
+      }
+    }
   }
 
   _closeModal(save) {

@@ -548,8 +548,6 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack = document.createElement("canvas-context-menu");
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
-
-    //this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
@@ -561,10 +559,9 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuLoc = document.createElement("canvas-context-menu");
     this._contextMenuLoc.hideMenu();
     this._shadow.appendChild(this._contextMenuLoc);
-
-    //this._contextMenuLoc.addMenuEntry("Create new track", this.contextMenuCallback.bind(this));
     this._contextMenuLoc.addMenuEntry("Add to main track", this.contextMenuCallback.bind(this));
     this._contextMenuLoc.disableEntry("Add to main track", true);
+    this._createNewTrackMenuEntries = [];
 
     this._contextMenuFrame = 0;
 
@@ -611,16 +608,30 @@ class AnnotationCanvas extends TatorElement
   }
 
   /**
+   * @param stateType
+   */
+  addCreateTrackType(stateTypeObj)
+  {
+    var text = "Create new track (" + stateTypeObj.name + ")";
+    this._contextMenuLoc.addMenuEntry(text, this.contextMenuCallback.bind(this));
+    this._createNewTrackMenuEntries.push(
+      {menuText: text,
+       stateType: stateTypeObj});
+  }
+
+  /**
    * Routine that's executed when a user select a right-click menu option.
    * @param {string} menuText Text of selected menu option
    */
   contextMenuCallback(menuText)
   {
-    const objDescription = {};
+    var objDescription = {};
     objDescription.id = 'modifyTrack';
     objDescription.track = this._activeTrack;
     objDescription.localization = this.activeLocalization;
     objDescription.frame = this.currentFrame();
+
+    var createNewTrack = false;
 
     // See modify-track-dialog for interface types.
     if (menuText == "Extend track")
@@ -661,7 +672,21 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      return; //#TODO
+      // Check to see if the menu matches the new track type
+      for (const menuData of this._createNewTrackMenuEntries)
+      {
+        if (menuData.menuText == menuText)
+        {
+          objDescription = menuData.stateType;
+          createNewTrack = true;
+        }
+      }
+
+      if (!createNewTrack)
+      {
+        window.alert("Unrecognized right-click menu option caught: " + menuText)
+        return;
+      }
     }
 
     const poly = this.localizationToPoly(this.activeLocalization)
@@ -672,15 +697,35 @@ class AnnotationCanvas extends TatorElement
     dragInfo.end = {x: poly[2][0], y: poly[2][1]};
     dragInfo.url = this._draw.viewport.toDataURL();
 
-    this.dispatchEvent(new CustomEvent("modifyTrack", {
-      detail: {
-        objDescription: objDescription,
-        dragInfo: this.normalizeDrag(dragInfo),
-        requestObj: null,
-        metaMode: null,
-      },
-      composed: true,
-    }));    
+    if (createNewTrack)
+    {
+      var requestObj = {
+        frame: this.currentFrame(),
+        localization_ids: [this.activeLocalization.id]
+      };
+
+      this.dispatchEvent(new CustomEvent("create", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: requestObj,
+          metaMode: false,
+        },
+        composed: true,
+      }));
+    }
+    else
+    {
+      this.dispatchEvent(new CustomEvent("modifyTrack", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: null,
+          metaMode: null,
+        },
+        composed: true,
+      }));    
+    }
   }
 
   
@@ -851,7 +896,12 @@ class AnnotationCanvas extends TatorElement
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
       else {
-        this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+        // Right now, there are only track related right-click options for localizations.
+        // The right-click menu might have been disabled if we are in image mode.
+        if (this._createNewTrackMenuEntries.length > 0)
+        {
+          this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+        }
       }
     }
   }

@@ -97,16 +97,22 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    const body = {
+    var body = {
       type: Number(this._dataType.id.split("_")[1]),
       name: this._dataType.name,
-      media_id: this._mediaId,
       version: this._version.id,
       ...requestObj,
       ...values,
     };
 
-    this._undo.post("Localizations", body, this._dataType);
+    if (this._dataType.dtype.includes("state")) {
+      body.media_ids = [this._mediaId]
+      this._undo.post("States", body, this._dataType);
+    }
+    else {
+      body.media_id = this._mediaId
+      this._undo.post("Localizations", body, this._dataType);
+    }
   }
 
   set version(val) {
