@@ -62,7 +62,7 @@
 .col-9 { width: (9 / 12 * 100%); }
 .col-10 { width: (10 / 12 * 100%); }
 .col-11 { width: (11 / 12 * 100%); }
-.col-12 { width: 100%; }
+.col-12 { width: 100% !important; }
 
 .py-0 {
   padding-bottom: $spacing-0;

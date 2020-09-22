@@ -1,0 +1,140 @@
+.analysis__panel-group {
+  border-top: 1px solid $color-charcoal--light;
+}
+
+.analysis__labels {
+  flex-wrap: wrap;
+
+  button {
+    margin-bottom: $spacing-2;
+    margin-right: $spacing-2;
+    width: initial;
+  }
+}
+
+.analysis {
+  background-color: $color-charcoal--light;
+  bottom: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  position: fixed;
+  left: 100%;
+  top: 0;
+  transition-duration: .25s;
+  transition-property: transform;
+  width: calc(100% - 400px);
+  z-index: 2;
+  &.is-open {
+    transform: translateX(calc(-100% - 400px));
+  }
+}
+
+.analysis__parameters {
+  overflow: hidden;
+}
+
+.analysis__parameters input {
+  background-color: $color-charcoal--medium;
+  color: transparent;
+}
+
+.analysis__parameters input:focus {
+  color: $color-white;
+}
+
+.analysis__parameters input:focus + div {
+  opacity: 0;
+}
+
+.analysis__parameters div {
+  border: 1px solid transparent;
+  opacity: .6;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.analysis__nav-wrap {
+  border-bottom: 1px solid $color-gray--dark50;
+}
+
+.analysis__nav a.is-active {
+  color: $color-white;
+
+  &:after {
+    background-color: $color-purple;
+    bottom: -1px;
+    content: "";
+    height: 1px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+  }
+}
+
+.analysis__block {
+  background-color: $color-charcoal--medium;
+  height: 430px;
+}
+
+.analysis__subnav {
+  background-color: $color-charcoal--medium;
+}
+
+.analysis__subnav a.is-active {
+  color: $color-white;
+
+  &:after {
+    background-color: $color-purple;
+    bottom: 0;
+    content: "";
+    height: 1px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+  }
+}
+
+.analysis__annotations {
+  display: grid;
+  grid-gap: 20px 10px;
+  grid-template-columns: repeat(auto-fill,minmax(87px,1fr));
+}
+
+.analysis__annotation {
+  background-color: $color-charcoal--medium;
+  overflow: hidden;
+  position: relative;
+  &:hover,
+  &:focus {
+    box-shadow: 0 0 0 3px $color-purple;
+  }
+
+  &.is-selected {
+    box-shadow: 0 0 0 3px $color-purple;
+    &:before {
+      content: "";
+      background-color: $color-purple;
+      opacity: .3;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  img {
+    height: 87px;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  & > span {
+    box-sizing: border-box;
+    height: 24px;
+    width: 87px;
+  }
+}

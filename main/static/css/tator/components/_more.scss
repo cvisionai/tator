@@ -11,6 +11,9 @@
     width: 265px;
   }
 
+  .load-parameters &,
+  .sections &,
+  .project__file &,
   .files-wrap & {
     right: 0;
     top: calc(100% + 6px);
@@ -24,6 +27,11 @@
     width: 420px;
   }
 
+  .add-parameter & {
+    top: calc(100% + 6px);
+    width: 225px;
+  }
+
   .annotation__panel--popup & {
     top: calc(100% + 6px);
     width: 200px;
@@ -33,6 +41,12 @@
     top: calc(100% - 2px);
     width: 200px;
     z-index: 2;
+  }
+
+  .analysis__export & {
+    right: 0;
+    top: calc(100% - 6px);
+    width: 225px;
   }
 
   .project__search & {
@@ -45,13 +59,7 @@
     width: calc(100% - 50px);
   }
 
-  algorithm-menu {
-    &:not(:last-child) {
-      border-bottom: 1px solid $color-charcoal--light;
-    }
-  }
-
-  media-move {
+  div {
     &:not(:last-child) {
       border-bottom: 1px solid $color-charcoal--light;
     }

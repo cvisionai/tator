@@ -10,16 +10,27 @@
   }
 }
 
+.annotation__settings {
+  padding-right: 142px; // To line up with right side of video player
+}
+
 .annotation__setting {
   background-color: $color-charcoal--light;
   margin-left: $spacing-2;
   height: 32px;
 
-  &:disabled,
-  [disabled] {
-    background-color: $color-charcoal--light;
-    color: $color-gray--dark;
-    cursor: not-allowed;
+  button {
+    background-color: $color-charcoal--medium;
+    height: $spacing-3;
+    width: $spacing-3;
+    line-height: 0;
+    transition-duration: .25s;
+    transition-property: background-color, color;
+    &:hover,
+    &:focus {
+      background-color: $color-white;
+      color: $color-charcoal--medium;
+    }
   }
 }
 
@@ -28,13 +39,6 @@
   margin-bottom: $spacing-2;
   &.is-selected {
     color: $color-white;
-  }
-
-  &:disabled,
-  [disabled] {
-    background-color: $color-charcoal--light;
-    color: $color-gray--dark;
-    cursor: not-allowed;
   }
 
   svg {
@@ -55,30 +59,18 @@
   transition-duration: .25s;
   transition-property: transform;
 
-  box-button.is-selected + line-button + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  button.is-selected + button + & {
     transform: translateY(62px);
   }
 
-  line-button.is-selected + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  button.is-selected + & {
     transform: translateY(124px);
-  }
-
-  point-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
-    transform: translateY(186px);
-  }
-
-  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
-    transform: translateY(248px);
-  }
-
-  pan-button.is-selected + & {
-    transform: translateY(372px);
   }
 }
 
 .annotation__panels {
   flex-shrink: 0;
-  width: 334px;
+  width: 280px;
 }
 
 .annotation__panel {
@@ -87,7 +79,7 @@
   overflow: hidden;
 }
 
-save-dialog {
+.annotation__panel--popup {
   box-sizing: border-box;
   width: 334px;
   opacity: 0;
@@ -106,8 +98,6 @@ save-dialog {
 }
 
 .annotation__panel-group {
-  max-height: calc(100vh - 307px);
-  overflow-y: auto;
   border-top: 1px solid $color-charcoal--light;
   padding-bottom: $spacing-3;
 
@@ -119,22 +109,20 @@ save-dialog {
 
 .annotation__entities {
   max-height: calc(100vh - 207px);
-  overflow-y: auto;
+  overflow-y: scroll;
+
   li {
-    attribute-panel {
-      display: none;
-      background-color: $color-charcoal--dark;
-    }
     &.is-open,
     &:hover {
       background-color: $color-charcoal--light;
+
+      .annotation__entity-count {
+        opacity: 1;
+      }
     }
     &.is-open {
       .annotation__frame-player {
         display: grid;
-      }
-      attribute-panel {
-        display: block;
       }
     }
     &:last-child {
@@ -143,19 +131,12 @@ save-dialog {
   }
 }
 
-.entity__selector {
-  &.is-open,
-  &:hover {
-    background-color: $color-charcoal--light;
-
-    .annotation__entity-count {
-      opacity: 1;
-    }
-  }
-}
-
 .annotation__entity {
   height: 45px;
+}
+
+.annotation__panel--entity {
+  display: none;
 }
 
 .annotation__entity-count {
@@ -163,16 +144,16 @@ save-dialog {
   opacity: 0;
   position: absolute;
   right: 0;
-}
 
-.entity__button {
-  background-color: $color-charcoal--medium;
-  transition-duration: .25s;
-  transition-property: background-color, color;
-  &:hover,
-  &:focus {
-    background-color: $color-white;
-    color: $color-charcoal--medium;
+  button {
+    background-color: $color-charcoal--medium;
+    transition-duration: .25s;
+    transition-property: background-color, color;
+    &:hover,
+    &:focus {
+      background-color: $color-white;
+      color: $color-charcoal--medium;
+    }
   }
 }
 
@@ -192,11 +173,12 @@ save-dialog {
 
 .annotation__recents {
   flex-wrap: wrap;
-}
 
-favorite-button {
-  margin-bottom: $spacing-2;
-  margin-right: $spacing-2;
+  button {
+    margin-bottom: $spacing-2;
+    margin-right: $spacing-2;
+    width: initial;
+  }
 }
 
 .annotation__video-player {
@@ -219,28 +201,27 @@ favorite-button {
       display: block;
     }
   }
+  .nav-right & {
+    margin-top: $spacing-2;
+  }
 }
 
 .video__minimize {
   display: none;
 }
 
-annotation-player {
-  width: 100%;
-}
-
-video-canvas {
-  width: 100%;
-}
-
 .video {
-  width: 100%;
-  background: black;
+  height: calc(100vh - 170px);
+  object-fit: contain;
 }
 
 .video__controls {
   background-color: $color-charcoal--medium;
   height: 76px;
+  .nav-right & {
+    background-color: $color-charcoal--light;
+    height: 38px;
+  }
 }
 
 .video__rewind,
@@ -276,63 +257,4 @@ video-canvas {
 
 .video__pause {
   display: none;
-}
-
-.select-crosshair {
-    cursor: crosshair;
-}
-
-.select-pointer {
-    cursor: pointer;
-}
-
-.select-grabbing {
-    cursor: grabbing;
-}
-
-.select-grab {
-    cursor: grab;
-}
-
-.select-move {
-    cursor: move;
-}
-.select-vertical-resize
-{
-    cursor: ns-resize;
-}
-
-.select-horizontal-resize
-{
-    cursor: ew-resize;
-}
-
-.select-ne-resize
-{
-    cursor: ne-resize;
-}
-
-.select-se-resize
-{
-    cursor: se-resize;
-}
-
-.select-nw-resize
-{
-    cursor: nw-resize;
-}
-
-.select-sw-resize
-{
-    cursor: sw-resize;
-}
-
-.select-zoom-roi
-{
-    cursor: zoom-in;
-}
-
-.select-not-allowed
-{
-    cursor: not-allowed;
 }

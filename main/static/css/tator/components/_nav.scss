@@ -2,15 +2,43 @@
   background-color: $color-charcoal--medium;
   bottom: 0;
   box-sizing: border-box;
+  overflow-y: auto;
   position: fixed;
   right: 100%;
   top: 0;
   transition-duration: .25s;
   transition-property: transform;
   width: 316px;
-  z-index: 2;
+  z-index: 3;
   &.is-open {
     transform: translateX(100%);
+  }
+}
+
+.nav-right {
+  right: initial;
+  left: 100%;
+  width: 400px;
+  &.is-open {
+    transform: translateX(-100%);
+  }
+
+  .nav__close {
+    margin-bottom: 0;
+  }
+
+  .more .search {
+    border-bottom: none;
+    margin-bottom: 12px;
+
+    input {
+      background-color: $color-charcoal--light;
+      height: 40px;
+    }
+
+    svg {
+      margin-top: -2px;
+    }
   }
 }
 
@@ -21,6 +49,10 @@
   &:hover,
   &:focus {
     color: $color-white;
+  }
+
+  &.has-background svg {
+    background-color: $color-charcoal--light;
   }
 }
 

@@ -18,8 +18,8 @@
 
 .projects__image {
   height: 84px;
-  width: 84px;
   object-fit: cover;
+  width: 84px;
 }
 
 .projects__collaborators {
@@ -28,7 +28,7 @@
 
 .projects__nav {
   height: 28px; // Chrome and Safari were not consistent without this
-  left: calc(-60% - 10px);
+  left: calc(-100% - 10px);
   position: absolute;
   top: 0;
 }
@@ -36,6 +36,11 @@
 
 
 // Project Detail
+
+.project__main {
+  padding-bottom: 100px;
+  padding-left: 420px;
+}
 
 .project__description {
   max-width: 480px;
@@ -98,6 +103,63 @@
   }
 }
 
+.project__files {
+  display: grid;
+  grid-gap: 20px;
+  grid-template-columns: repeat(auto-fill,minmax(272px,1fr));
+}
+
+.project__file {
+  background-color: $color-charcoal--medium;
+  padding: 6px;
+  position: relative;
+
+  &:hover,
+  &:focus {
+    details {
+      opacity: 1;
+    }
+  }
+
+  a > div {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 70px;
+    justify-content: center;
+  }
+
+  details {
+    opacity: 0;
+  }
+}
+
+.project__file:hover .project__delete-file, .project__file:focus .project__delete-file {
+  opacity: 1;
+}
+
+.project__file.is-processing img {
+  opacity: .08;
+}
+
+.project__file img {
+  height: 130px;
+  object-fit: cover;
+}
+
+.project__file progress {
+  width: 100%;
+}
+
+.project__file summary {
+  line-height: 0;
+}
+
+.project__header .more {
+  right: 0;
+  width: 265px;
+}
+
 .project__file--is-empty {
   height: 300px;
   margin-bottom: 20px;
@@ -106,6 +168,24 @@
   label {
     margin-bottom: $spacing-3;
   }
+}
+
+.project__select {
+  left: $spacing-3;
+  position: absolute;
+  top: $spacing-3;
+
+  input, input + svg {
+    opacity: 0;
+  }
+
+  input:checked, input:checked + svg {
+    opacity: 1;
+  }
+}
+
+.project__file:hover .project__select input, .project__file:focus .project__select input {
+  opacity: 1;
 }
 
 .project__processing {

@@ -44,6 +44,21 @@
   }
 }
 
+.search--alt {
+  width: initial;
+
+  input {
+    background-color: $color-charcoal--medium;
+    margin-top: 0;
+    padding-right: 36px;
+  }
+
+  svg {
+    position: absolute;
+    right: 0;
+  }
+}
+
 .search__map-button {
   display: none;
   position: absolute;

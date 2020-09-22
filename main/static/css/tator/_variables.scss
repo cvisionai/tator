@@ -2,13 +2,16 @@
 ** Colors
 **/
 
-$color-white: #ffffff;
 $color-purple: #696cff;
 $color-green: #85d81d;
 $color-blue: #1b9ffb;
 $color-yellow: #d8cd1d;
 $color-coral: #ff6969;
 $color-red: #ff3e1d;
+$color-brown: #9e702b;
+
+$color-white: #ffffff;
+$color-white--50: rgba($color-white, .5);
 
 $color-gray--light: #a2afcd;
 $color-gray--medium: #72809d;
@@ -21,6 +24,7 @@ $color-charcoal--medium: #151b28;
 $color-charcoal--medium70: rgba($color-charcoal--medium, .7);
 $color-charcoal--dark: #00070d;
 $color-charcoal--dark70: rgba($color-charcoal--dark, .7);
+$color-charcoal--brown: #2E2314;
 $color-charcoal--red: #281d26;
 
 

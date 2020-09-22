@@ -4,7 +4,7 @@
   margin: 15vh auto;
   opacity: 0;
   pointer-events: none;
-  position: fixed;
+  position: absolute;
   right: 0;
   top: 0;
   transform: scale(.95);
@@ -22,15 +22,19 @@
   }
 }
 
-.modal-wide {
-  width: 968px;
-}
-
 .modal {
   background-color: $color-charcoal--medium;
   overflow: hidden;
   position: relative;
   width: 100%;
+}
+
+.modal-narrow {
+  width: 500px;
+}
+
+.modal-wide {
+  width: 968px;
 }
 
 .modal__close {
@@ -93,14 +97,4 @@
 .modal__map {
   height: 50vh;
   width: 100%;
-}
-
-.loading {
-  position: fixed;
-  top: 150px;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  margin-left: -150px;
-  z-index: 1;
 }
