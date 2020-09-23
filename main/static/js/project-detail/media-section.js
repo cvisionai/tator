@@ -68,11 +68,13 @@ class MediaSection extends TatorElement {
     */
   }
 
-  init(project, name, username, token) {
+  init(project, section, username, token) {
+    this._project = project;
+    this._section = section;
+    this._sectionName = section.name;
     this._files.setAttribute("project-id", project);
     //this._overview.setAttribute("project-id", project);
-    this._nameText.nodeValue = name;
-    this._sectionName = name;
+    this._nameText.nodeValue = section.name;
     this._files.setAttribute("section", this._sectionName);
     this._files.setAttribute("username", username);
     this._files.setAttribute("token", token);
@@ -81,6 +83,7 @@ class MediaSection extends TatorElement {
     this._upload.setAttribute("username", username);
     this._upload.setAttribute("token", token);
     this._upload.setAttribute("section", this._sectionName);
+    this._loadMedia();
   }
 
   set permission(val) {
@@ -107,15 +110,13 @@ class MediaSection extends TatorElement {
     } else {
       //this._overview.style.display = "block";
       this._files.style.display = "block";
-      if (val != this._files.numMedia) {
-        this._files.numMedia = val;
-      }
+      this._files.numMedia = val;
     }
   }
 
   set sectionFilter(val) {
     this._attributeFilter = val;
-    this._overview.updateForAll();
+    //this._overview.updateForAll();
   }
 
   get sectionFilter() {
@@ -138,6 +139,7 @@ class MediaSection extends TatorElement {
 
   set algorithms(val) {
     this._more.algorithms = val;
+    this._files.algorithms = val;
   }
 
   set sections(val) {
@@ -159,6 +161,33 @@ class MediaSection extends TatorElement {
 
   _sectionFilter() {
     return this._attributeFilter;
+  }
+
+  _loadMedia() {
+    const start = 0;
+    const stop = 100;
+    const countPromise = fetch(`/rest/MediaCount/${this._project}?section=${this._section.id}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+    .then(response => response.json())
+    .then(count => this.numMedia = count);
+    const mediaPromise = fetch(`/rest/Medias/${this._project}?start=${start}&stop=${stop}&section=${this._section.id}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+    .then(response => response.json())
+    .then(media => this._files.cardInfo = media);
   }
 
   _setCallbacks() {

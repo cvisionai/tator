@@ -94,6 +94,8 @@ class ProjectDetail extends TatorPage {
     this._projects = document.createElement("div");
     mainSection.appendChild(this._projects);
 
+    this._mediaSection = document.createElement("media-section");
+    this._projects.appendChild(this._mediaSection);
     //this._newSection = document.createElement("new-section");
     //this._newSection.worker = this._worker;
     //this._projects.appendChild(this._newSection);
@@ -347,7 +349,7 @@ class ProjectDetail extends TatorPage {
         }
         if (!hasPermission(project.permission, "Can Transfer")) {
           this._uploadButton.style.display = "none";
-          this._newSection.style.display = "none";
+          //this._newSection.style.display = "none";
         }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
@@ -373,10 +375,7 @@ class ProjectDetail extends TatorPage {
             this._savedSearches.appendChild(card);
           }
           card.addEventListener("click", () => {
-            while (this._projects.firstChild) {
-              this._projects.removeChild(this._projects.firstChild);
-            }
-            this._createNewSection(section.name, projectId);
+            this._selectSection(section, projectId);
           });
         }
         /*
@@ -412,21 +411,18 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _createNewSection(sectionName, projectId) {
-    const newSection = document.createElement("media-section");
-    newSection.init(projectId, sectionName, this.getAttribute("username"),
-                                            this.getAttribute("token"));
-    newSection.permission = this._permission;
-    newSection.algorithms = this._algorithms;
-    newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    newSection.addEventListener("allset", this._allSetCallback.bind(this));
-    newSection.addEventListener("remove", this._removeCallback);
-    newSection.addEventListener("deleteFile", this._deleteFileCallback);
-    newSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-    newSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
-    this._projects.appendChild(newSection);
-    return newSection;
+  _selectSection(section, projectId) {
+    this._mediaSection.init(projectId, section, this.getAttribute("username"),
+                                        this.getAttribute("token"));
+    this._mediaSection.permission = this._permission;
+    this._mediaSection.algorithms = this._algorithms;
+    this._mediaSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
+    this._mediaSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
+    this._mediaSection.addEventListener("allset", this._allSetCallback.bind(this));
+    this._mediaSection.addEventListener("remove", this._removeCallback);
+    this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
+    this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
+    this._mediaSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
   }
 
   _updateSectionNames(allSections) {
@@ -469,7 +465,7 @@ class ProjectDetail extends TatorPage {
       this._progress.notify("Skipped " + numSkipped + " files with invalid extension!", false);
       this._leaveConfirmOk = false;
     }
-    this._newSection.close();
+    //this._newSection.close();
   };
 
   async _allSetCallback() {

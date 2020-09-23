@@ -18,8 +18,10 @@ class SectionFiles extends TatorElement {
     this._main.setAttribute("class", "files__main d-flex py-3 f2");
     wrap.appendChild(this._main);
 
+    /*
     this._paginator = document.createElement("section-paginator");
     wrap.appendChild(this._paginator);
+    */
 
     this._processes = [];
 
@@ -42,9 +44,11 @@ class SectionFiles extends TatorElement {
     this._updateNumCards(val);
   }
 
+  /*
   get numMedia() {
     return this._paginator.getAttribute("num-files");
   }
+  */
 
   set cardInfo(val) {
     this._makeCards(val);
@@ -55,6 +59,7 @@ class SectionFiles extends TatorElement {
     this._updateNumCards();
   }
 
+  /*
   set worker(val) {
     this._worker = val;
     this._paginator.addEventListener("change", evt => {
@@ -76,26 +81,19 @@ class SectionFiles extends TatorElement {
       });
     });
   }
+  */
 
   set algorithms(val) {
     this._algorithms = val;
   }
 
-  set sections(val) {
-    this._sections = val;
-    const cards = [...this._shadow.querySelectorAll("media-card")];
-    for (const card of cards) {
-      card.sections = val;
-    }
-  }
-
   _updateNumCards(numMedia) {
-    this._paginator.setAttribute("num-files", numMedia);
+    //this._paginator.setAttribute("num-files", numMedia);
   }
 
   _updateCard(card, media) {
     if ("id" in media) {
-      card.sections = this._sections;
+      //card.sections = this._sections;
       card.setAttribute("media-id", media.id);
 
       if (media.thumbnail) {
@@ -111,6 +109,7 @@ class SectionFiles extends TatorElement {
     } else {
       card.removeAttribute("media-id");
     }
+    /*
     const inProgress = media.state == "started" || media.state == "queued";
     if ("uid" in media && inProgress) {
       if (!("thumbnail" in media)) {
@@ -135,15 +134,16 @@ class SectionFiles extends TatorElement {
     card.updateProgress(media.state, percent, message);
     card.setAttribute("name", media.name);
     card.setAttribute("project-id", this.getAttribute("project-id"));
+    */
   }
 
   _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
-    const hasSections = typeof this._sections !== "undefined";
+    //const hasSections = typeof this._sections !== "undefined";
     const hasProject = this.hasAttribute("project-id");
-    const hasStart = typeof this._start !== "undefined";
-    const hasStop = typeof this._stop !== "undefined";
-    if (hasAlgorithms && hasSections && hasProject && hasStart && hasStop) {
+    //const hasStart = typeof this._start !== "undefined";
+    //const hasStop = typeof this._stop !== "undefined";
+    if (hasAlgorithms && hasProject) {
       const children = this._main.children;
       for (const [index, media] of cardInfo.entries()) {
         const newCard = index >= children.length;
@@ -174,7 +174,7 @@ class SectionFiles extends TatorElement {
           this._main.appendChild(card);
         }
       }
-      if (children.length > this._stop - this._start) {
+      if (children.length > cardInfo.length) {
         const len = children.length;
         for (let idx = len - 1; idx >= this._stop; idx--) {
           this._main.removeChild(children[idx]);
