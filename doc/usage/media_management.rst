@@ -1,6 +1,12 @@
 Media Management Examples
 =========================
 
+Embedded Video Player
+---------------------
+
+An experimental feature in **Tator** is to embed the frame accurate video
+player. An example how to do this in present `here </static/demo/embedded_video.html>`_.
+
 Archive Based Uploads
 ---------------------
 
