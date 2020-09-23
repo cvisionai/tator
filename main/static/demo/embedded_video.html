@@ -8,7 +8,6 @@
         <script src="/static/js/annotator/annotation.js"></script>
         <script src="/static/js/annotator/video.js"></script>
         <script src="/static/js/annotator/image.js"></script>
-        <script src="/static/js/utilities.js"></script>
         <script>
          // TODO: An example of where supplying an attribute
          // to the web component may be useful
@@ -17,6 +16,15 @@
          function *enumerate(array) {
              for (let i = 0; i < array.length; i += 1) {
                  yield [i,array[i]];
+             }
+         }
+
+         class Utilities
+         {
+             // Blank function to meet interface
+             static sendNotification(msg,bool)
+             {
+
              }
          }
 
