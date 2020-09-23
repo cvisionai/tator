@@ -157,6 +157,11 @@ urlpatterns += [
         name='Media'
     ),
     path(
+        'rest/MediaCount/<int:project>',
+        MediaCountAPI.as_view(),
+        name='MediaCount'
+    ),
+    path(
         'rest/MediaNext/<int:id>',
         MediaNextAPI.as_view(),
         name='MediaNext',

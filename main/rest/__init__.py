@@ -22,6 +22,7 @@ from .localization_type import LocalizationTypeDetailAPI
 from .localization_graphic import LocalizationGraphicAPI
 from .media import MediaListAPI
 from .media import MediaDetailAPI
+from .media_count import MediaCountAPI
 from .media_next import MediaNextAPI
 from .media_prev import MediaPrevAPI
 from .media_type import MediaTypeListAPI

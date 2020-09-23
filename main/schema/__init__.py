@@ -23,6 +23,7 @@ from .localization_type import LocalizationTypeListSchema
 from .localization_type import LocalizationTypeDetailSchema
 from .media import MediaListSchema
 from .media import MediaDetailSchema
+from .media_count import MediaCountSchema
 from .media_next import MediaNextSchema
 from .media_prev import MediaPrevSchema
 from .media_type import MediaTypeListSchema
