@@ -29,11 +29,11 @@ class GetClipAPI(BaseDetailView):
         # upon success we can return an image
         video = Media.objects.get(pk=params['id'])
         project = video.project
-        frameRangesStr = params.get('frameRanges', None)
-        frameRangesTuple=[frameRange.split(':') for frameRange in frameRangesStr]
-        frameRanges=[]
-        for t in frameRangesTuple:
-            frameRanges.append((int(t[0]), int(t[1])))
+        frame_ranges_str = params.get('frameRanges', None)
+        frame_ranges_tuple=[frame_range.split(':') for frame_range in frame_ranges_str]
+        frame_ranges=[]
+        for t in frame_ranges_tuple:
+            frame_ranges.append((int(t[0]), int(t[1])))
 
         quality = params.get('quality', None)
         h = hashlib.new('md5', f"{params}".encode())
@@ -46,8 +46,7 @@ class GetClipAPI(BaseDetailView):
         else:
             with tempfile.TemporaryDirectory() as temp_dir:
                 media_util = MediaUtil(video, temp_dir, quality)
-                fp = media_util.getClip(frameRanges)
-
+                fp = media_util.get_clip(frame_ranges)
                 temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, self.request.user, lookup=lookup, hours=24)
 
         responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data

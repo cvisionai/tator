@@ -254,7 +254,7 @@ class LocalizationGraphicAPI(BaseDetailView):
 
             else:
                 # Grab the ROI from the image
-                response_data = media_util.getCroppedImage(
+                response_data = media_util.get_cropped_image(
                     roi=roi,
                     render_format=self.request.accepted_renderer.format,
                     force_scale=force_image_size)

@@ -62,11 +62,10 @@ class MediaUtil:
 
         self._fps = video.fps
 
-    def get_impacted_segments(self, frames):
+    def _get_impacted_segments(self, frames):
         """ TODO: add documentation for this """
         if self._segment_info is None:
             return None
-
 
         segment_list = []
         for frame_str in frames:
@@ -110,15 +109,15 @@ class MediaUtil:
         logger.info(f"Given {frames}, we need {segment_list}")
         return segment_list
 
-    def get_impacted_segments_from_ranges(self, frame_ranges):
+    def _get_impacted_segments_from_ranges(self, frame_ranges):
         """ TODO: add documentation for this """
         segment_list = []
         logger.info(f"Frame Ranges = {frame_ranges}")
         for frame_range in frame_ranges:
             begin = frame_range[0]
             end = frame_range[1]
-            begin_segments = self._getImpactedSegments([begin])
-            end_segments = self._getImpactedSegments([end])
+            begin_segments = self._get_impacted_segments([begin])
+            end_segments = self._get_impacted_segments([end])
             range_segment_set = set()
             for frame, frame_seg in [*begin_segments, *end_segments]:
                 for segment in frame_seg:
@@ -167,7 +166,7 @@ class MediaUtil:
         return lookup
 
 
-    def frame_to_time_str(self, frame, relative_to=None):
+    def _frame_to_time_str(self, frame, relative_to=None):
         """ TODO: add documentation for this """
         if relative_to:
             frame -= relative_to
@@ -177,7 +176,7 @@ class MediaUtil:
         seconds = total_seconds % 60
         return f"{hours}:{minutes}:{seconds}"
 
-    def generate_frame_images(self, frames, rois=None, render_format="jpg", force_scale=None):
+    def _generate_frame_images(self, frames, rois=None, render_format="jpg", force_scale=None):
         """ Generate a jpg for each requested frame and store in the working directory """
         BATCH_SIZE = 30
         frame_idx = 0
@@ -205,10 +204,10 @@ class MediaUtil:
             outputs = []
 
             # attempt to make a temporary file in a fast manner to speed up AWS access
-            impacted_segments = self._getImpactedSegments(batch)
+            impacted_segments = self._get_impacted_segments(batch)
             lookup = {}
             if impacted_segments:
-                lookup = self.makeTemporaryVideos(impacted_segments)
+                lookup = self.make_temporary_videos(impacted_segments)
 
             for batch_idx, frame in enumerate(batch):
                 outputs.extend(["-map", f"{batch_idx}:v","-frames:v", "1", "-q:v", "3"])
@@ -217,11 +216,11 @@ class MediaUtil:
 
                 outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
                 if frame in lookup:
-                    inputs.extend(["-ss", self._frameToTimeStr(frame, lookup[frame][0]),
-                                                               "-i", lookup[frame][1]])
+                    inputs.extend(["-ss", self._frame_to_time_str(frame, lookup[frame][0]),
+                                                                  "-i", lookup[frame][1]])
                 else:
                     # If we didn't make per segment mp4s, use the big one
-                    inputs.extend(["-ss", self._frameToTimeStr(frame), "-i", self._video_file])
+                    inputs.extend(["-ss", self._frame_to_time_str(frame), "-i", self._video_file])
                 frame_idx += 1
 
             # Now add all the cmds in
@@ -234,15 +233,15 @@ class MediaUtil:
     def get_clip(self, frame_ranges):
         """ Given a list of frame ranges generate a temporary mp4
 
-            :param frameRanges: tuple or list of tuples representing (begin,
-                                                                      end) -- range is inclusive!
+            :param frame_ranges: tuple or list of tuples representing (begin,
+                                                                       end) -- range is inclusive!
         """
         if isinstance(frame_ranges, tuple):
             frame_ranges = [frame_ranges]
 
-        impacted_segments = self._getImpactedSegmentsFromRanges(frame_ranges)
+        impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
         assert not impacted_segments is None, "Unable to calculate impacted video segments"
-        lookup = self.makeTemporaryVideos(impacted_segments)
+        lookup = self.make_temporary_videos(impacted_segments)
 
         logger.info(f"Lookup = {lookup}")
         with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
@@ -267,19 +266,19 @@ class MediaUtil:
         proc = subprocess.run(args, check=True, capture_output=True)
         return output_file
 
-    def is_video(self) -> bool:
+    def isVideo(self) -> bool:
         """ Returns true if the media is video or not
         """
 
         return self._fps is not None
 
-    def get_width(self) -> int:
+    def getWidth(self) -> int:
         """ Gets the width of the video/image in pixels
         """
 
         return self._width
 
-    def get_height(self) -> int:
+    def getHeight(self) -> int:
         """ Gets the height of the video/image in pixels
         """
 
@@ -340,9 +339,9 @@ class MediaUtil:
             height = math.ceil(len(frames) / width)
             tile_size = f"{width}x{height}"
 
-        if self._generateFrameImages(frames, rois,
-                                     render_format=render_format,
-                                     force_scale=force_scale) == False:
+        if self._generate_frame_images(frames, rois,
+                                       render_format=render_format,
+                                       force_scale=force_scale) == False:
             return None
 
         output_file = None
@@ -364,9 +363,9 @@ class MediaUtil:
 
     def get_animation(self,frames, roi, fps, render_format, force_scale):
         """ TODO: add documentation for this """
-        if self._generateFrameImages(frames, roi,
-                                     render_format="jpg",
-                                     force_scale=force_scale) == False:
+        if self._generate_frame_images(frames, roi,
+                                       render_format="jpg",
+                                       force_scale=force_scale) == False:
             return None
 
         mp4_args = ["ffmpeg",
