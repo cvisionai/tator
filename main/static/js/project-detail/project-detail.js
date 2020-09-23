@@ -7,12 +7,54 @@ class ProjectDetail extends TatorPage {
     window._uploader = new Worker("/static/js/tasks/upload-worker.js");
 
     const main = document.createElement("main");
-    main.setAttribute("class", "layout-max py-4");
+    main.setAttribute("class", "d-flex");
     this._shadow.appendChild(main);
+
+    const section = document.createElement("section");
+    section.setAttribute("class", "sections-wrap py-6 px-5 col-3 text-gray");
+    main.appendChild(section);
+
+    const folderHeader = document.createElement("div");
+    folderHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    section.appendChild(folderHeader);
+
+    const folderText = document.createElement("h2");
+    folderText.setAttribute("class", "h3 text-semibold");
+    folderText.textContent = "Library";
+    folderHeader.appendChild(folderText);
+
+    const addFolderButton = document.createElement("button");
+    addFolderButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    folderHeader.appendChild(addFolderButton);
+
+    const addFolderSpan = document.createElement("span");
+    addFolderSpan.setAttribute("class", "f1 px-1");
+    addFolderSpan.textContent = "+";
+    addFolderButton.appendChild(addFolderSpan);
+
+    const addFolderText = document.createTextNode("Add folder");
+    addFolderButton.appendChild(addFolderText);
+
+    this._folders = document.createElement("ul");
+    this._folders.setAttribute("class", "sections");
+    section.appendChild(this._folders);
+
+    //const savedSearchesHeader = document.createElement("h2");
+    //savedSearchesHeader.setAttribute("class", "py-4 h3 text-semibold");
+    //savedSearchesHeader.textContent = "Saved Searches";
+    //section.appendChild(savedSearchesHeader);
+
+    //this._savedSearches = document.createElement("ul");
+    //this._savedSearches.setAttribute("class", "sections");
+    //section.appendChild(this._savedSearches);
+
+    const mainSection = document.createElement("section");
+    mainSection.setAttribute("class", "project__main py-3 px-6 flex-grow");
+    main.appendChild(mainSection);
 
     const div = document.createElement("div");
     div.setAttribute("class", "py-6");
-    main.appendChild(div);
+    mainSection.appendChild(div);
 
     const header = document.createElement("div");
     header.setAttribute("class", "main__header d-flex flex-justify-between");
@@ -41,7 +83,7 @@ class ProjectDetail extends TatorPage {
 
     const subheader = document.createElement("div");
     subheader.setAttribute("class", "d-flex flex-justify-between");
-    main.appendChild(subheader);
+    mainSection.appendChild(subheader);
 
     this._search = document.createElement("project-search");
     subheader.appendChild(this._search);
@@ -50,11 +92,11 @@ class ProjectDetail extends TatorPage {
     subheader.appendChild(this._collaborators);
 
     this._projects = document.createElement("div");
-    main.appendChild(this._projects);
+    mainSection.appendChild(this._projects);
 
-    this._newSection = document.createElement("new-section");
-    this._newSection.worker = this._worker;
-    this._projects.appendChild(this._newSection);
+    //this._newSection = document.createElement("new-section");
+    //this._newSection.worker = this._worker;
+    //this._projects.appendChild(this._newSection);
 
     const deleteSection = document.createElement("delete-section-form");
     this._projects.appendChild(deleteSection);
@@ -80,6 +122,7 @@ class ProjectDetail extends TatorPage {
 
     window.addEventListener("scroll", this._checkSectionVisibility.bind(this));
 
+    /*
     this._worker.addEventListener("message", evt => {
       const msg = evt.data;
       if (msg.command == "updateSection") {
@@ -119,6 +162,7 @@ class ProjectDetail extends TatorPage {
         this._checkSectionVisibility();
       }
     });
+    */
 
     window._uploader.addEventListener("message", evt => {
       const msg = evt.data;
@@ -216,9 +260,9 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    this._newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    this._newSection.addEventListener("allset", this._allSetCallback.bind(this));
+    //this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
+    //this._newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
+    //this._newSection.addEventListener("allset", this._allSetCallback.bind(this));
 
     this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
@@ -255,10 +299,10 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _updateMedia(projectFilter) {
+  _init() {
     const projectId = this.getAttribute("project-id");
     // Get info about the project.
-    fetch("/rest/Project/" + projectId, {
+    const projectPromise = fetch("/rest/Project/" + projectId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -266,35 +310,86 @@ class ProjectDetail extends TatorPage {
         "Accept": "application/json",
         "Content-Type": "application/json"
       }
-    })
-    .then(response => response.json())
-    .then(data => {
-      this._permission = data.permission;
-      if (!hasPermission(data.permission, "Can Execute")) {
-        this._algorithmButton.style.display = "none";
+    });
+    const sectionPromise = fetch("/rest/Sections/" + projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
       }
-      if (!hasPermission(data.permission, "Can Transfer")) {
-        this._uploadButton.style.display = "none";
-        this._newSection.style.display = "none";
+    });
+    const algoPromise = fetch("/rest/Algorithms/" + projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
       }
-      this._projectText.nodeValue = data.name;
-      this._search.setAttribute("project-name", data.name);
-      this._description.setAttribute("text", data.summary);
-      this._collaborators.usernames = data.usernames;
-      this._search.autocomplete = data.filter_autocomplete;
-      let projectFilter = null;
-      let params = new URLSearchParams(document.location.search.substring(1));
-      if (params.has("search")) {
-        projectFilter = params.get("search");
-      }
-      this._worker.postMessage({
-        command: "init",
-        projectId: projectId,
-        projectFilter: projectFilter,
-        token: this.getAttribute("token"),
-      });
-    })
-    .catch(err => console.log("Failed to retrieve project data: " + err));
+    });
+    Promise.all([
+      projectPromise,
+      sectionPromise,
+      algoPromise,
+    ])
+    .then(([projectResponse, sectionResponse, algoResponse]) => {
+      const projectData = projectResponse.json();
+      const sectionData = sectionResponse.json();
+      const algoData = algoResponse.json();
+      Promise.all([projectData, sectionData, algoData])
+      .then(([project, sections, algos]) => {
+        this._algorithms = algos;
+        this._permission = project.permission;
+        if (!hasPermission(project.permission, "Can Execute")) {
+          this._algorithmButton.style.display = "none";
+        }
+        if (!hasPermission(project.permission, "Can Transfer")) {
+          this._uploadButton.style.display = "none";
+          this._newSection.style.display = "none";
+        }
+        this._projectText.nodeValue = project.name;
+        this._search.setAttribute("project-name", project.name);
+        this._description.setAttribute("text", project.summary);
+        this._collaborators.usernames = project.usernames;
+        this._search.autocomplete = project.filter_autocomplete;
+        let projectFilter = null;
+        let params = new URLSearchParams(document.location.search.substring(1));
+        if (params.has("search")) {
+          projectFilter = params.get("search");
+        }
+        for (const section of sections) {
+          const hasSection = Boolean(section.tator_user_sections);
+          const hasSearch = (Boolean(section.lucene_search)
+                             || Boolean(section.media_bools)
+                             || Boolean(section.annotation_bools));
+          const isFolder = hasSection && !hasSearch;
+          const card = document.createElement("section-card");
+          card.init(section, isFolder);
+          if (isFolder) {
+            this._folders.appendChild(card);
+          } else {
+            this._savedSearches.appendChild(card);
+          }
+          card.addEventListener("click", () => {
+            while (this._projects.firstChild) {
+              this._projects.removeChild(this._projects.firstChild);
+            }
+            this._createNewSection(section.name, projectId);
+          });
+        }
+        /*
+        this._worker.postMessage({
+          command: "init",
+          projectId: projectId,
+          projectFilter: projectFilter,
+          token: this.getAttribute("token"),
+        });
+        */
+      })
+      .catch(err => console.log("Failed to retrieve project data: " + err));
+    });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -302,31 +397,26 @@ class ProjectDetail extends TatorPage {
     switch (name) {
       case "username":
         this._uploadButton.setAttribute("username", newValue);
-        this._newSection.setAttribute("username", newValue);
+        //this._newSection.setAttribute("username", newValue);
         break;
       case "project-id":
         this._uploadButton.setAttribute("project-id", newValue);
         this._algorithmButton.setAttribute("project-id", newValue);
-        this._newSection.setAttribute("project-id", newValue);
-        this._updateMedia();
+        //this._newSection.setAttribute("project-id", newValue);
+        this._init();
         break;
       case "token":
         this._uploadButton.setAttribute("token", newValue);
-        this._newSection.setAttribute("token", newValue);
+        //this._newSection.setAttribute("token", newValue);
         break;
     }
   }
 
-  _createNewSection(sectionName, projectId, numMedia, afterSection) {
+  _createNewSection(sectionName, projectId) {
     const newSection = document.createElement("media-section");
-    newSection.setAttribute("project-id", projectId);
-    newSection.setAttribute("name", sectionName);
-    newSection.setAttribute("id", sectionName);
-    newSection.setAttribute("username", this._uploadButton.getAttribute("username"));
-    newSection.setAttribute("token", this._uploadButton.getAttribute("token"));
+    newSection.init(projectId, sectionName, this.getAttribute("username"),
+                                            this.getAttribute("token"));
     newSection.permission = this._permission;
-    newSection.worker = this._worker;
-    newSection.numMedia = numMedia;
     newSection.algorithms = this._algorithms;
     newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
@@ -334,42 +424,8 @@ class ProjectDetail extends TatorPage {
     newSection.addEventListener("remove", this._removeCallback);
     newSection.addEventListener("deleteFile", this._deleteFileCallback);
     newSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-    newSection.addEventListener("moveFileToNew", evt => {
-      this._worker.postMessage({
-        command: "moveFileToNew",
-        fromSection: sectionName,
-        mediaId: evt.detail.mediaId,
-      });
-    });
-    newSection.addEventListener("moveFile", evt => {
-      this._worker.postMessage({
-        command: "moveFile",
-        fromSection: sectionName,
-        toSection: evt.detail.to,
-        mediaId: evt.detail.mediaId,
-      });
-    });
-    newSection.addEventListener("cancelUpload", evt => {
-      window._uploader.postMessage({
-        "command": "cancelUpload",
-        "uid": evt.detail.uid,
-      });
-    });
     newSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
-    if (typeof afterSection == "string") {
-      const refSection = this._shadow.querySelector("media-section[id='" + afterSection + "']");
-      if (refSection === null) {
-        this._projects.appendChild(newSection);
-      } else {
-        this._projects.insertBefore(newSection, refSection.nextSibling);
-      }
-    } else if (typeof afterSection === "number") {
-      if (afterSection == -1) {
-        this._projects.appendChild(newSection);
-      } else if (afterSection == 0) {
-        this._projects.insertBefore(newSection, this._newSection.nextSibling);
-      }
-    }
+    this._projects.appendChild(newSection);
     return newSection;
   }
 

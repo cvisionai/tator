@@ -14,22 +14,6 @@ class SectionFiles extends TatorElement {
     nav.setAttribute("class", "files__nav d-flex");
     header.appendChild(nav);
 
-    const actions = document.createElement("div");
-    actions.setAttribute("class", "files__actions d-flex flex-items-center py-3");
-    header.appendChild(actions);
-
-    this._search = document.createElement("section-search");
-    this._search.setAttribute("class", "px-2");
-    actions.appendChild(this._search);
-
-    this._upload = document.createElement("section-upload");
-    this._upload.setAttribute("class", "px-2");
-    actions.appendChild(this._upload);
-
-    this._more = document.createElement("section-more");
-    this._more.setAttribute("class", "px-2");
-    actions.appendChild(this._more);
-
     this._main = document.createElement("ul");
     this._main.setAttribute("class", "files__main d-flex py-3 f2");
     wrap.appendChild(this._main);
@@ -39,24 +23,6 @@ class SectionFiles extends TatorElement {
 
     this._processes = [];
 
-    this._more.addEventListener("algorithmMenu", evt => {
-      this.dispatchEvent(new CustomEvent("algorithm", {
-        detail: {algorithmName: evt.detail.algorithmName}
-      }));
-    });
-
-    this._more.addEventListener("download", evt => {
-      this.dispatchEvent(new CustomEvent("download", {
-        detail: {annotations: false}
-      }));
-    });
-
-    this._more.addEventListener("annotations", evt => {
-      this.dispatchEvent(new CustomEvent("downloadAnnotations", {
-        detail: {annotations: true}
-      }));
-    });
-
     this._loaded = 0;
   }
 
@@ -64,31 +30,7 @@ class SectionFiles extends TatorElement {
     return ["project-id", "username", "token", "section"];
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "project-id":
-        this._upload.setAttribute("project-id", newValue);
-        break;
-      case "username":
-        this._upload.setAttribute("username", newValue);
-        break;
-      case "token":
-        this._upload.setAttribute("token", newValue);
-        break;
-      case "section":
-        this._upload.setAttribute("section", newValue);
-        break;
-    }
-  }
-
   set permission(val) {
-    if (!hasPermission(val, "Can Edit")) {
-      this._more.style.display = "none";
-    }
-    if (!hasPermission(val, "Can Transfer")) {
-      this._upload.style.display = "none";
-    }
-    this._more.permission = val;
     this._permission = val;
   }
 
@@ -137,7 +79,6 @@ class SectionFiles extends TatorElement {
 
   set algorithms(val) {
     this._algorithms = val;
-    this._more.algorithms = val;
   }
 
   set sections(val) {
