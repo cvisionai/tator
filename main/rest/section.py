@@ -22,7 +22,7 @@ class SectionListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        qs = Section.objects.filter(project=params['project'])
+        qs = Section.objects.filter(project=params['project']).order_by('id')
         return database_qs(qs)
 
     def _post(self, params):
@@ -31,6 +31,7 @@ class SectionListAPI(BaseListView):
         lucene_search = params.get('lucene_search', None)
         media_bools = params.get('media_bools', None)
         annotation_bools = params.get('annotation_bools', None)
+        tator_user_sections = params.get('tator_user_sections', None)
         
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
@@ -39,6 +40,7 @@ class SectionListAPI(BaseListView):
             lucene_search=lucene_search,
             media_bools=media_bools,
             annotation_bools=annotation_bools,
+            tator_user_sections=tator_user_sections,
         )
         return {'message': f"Section {name} created!",
                 'id': section.id}
@@ -74,6 +76,8 @@ class SectionDetailAPI(BaseDetailView):
             section.media_bools = params['media_bools']
         if 'annotation_bools' in params:
             section.annotation_bools = params['annotation_bools']
+        if 'tator_user_sections' in params:
+            section.tator_user_sections = params['tator_user_sections']
         section.save()
         return {'message': f"Section {section.name} updated successfully!"}
 
