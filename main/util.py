@@ -326,3 +326,18 @@ def soft_link_media(source, section_list, dest):
             new_obj.thumbnail_gif = os.path.join(str(dest),name)
 
             new_obj.save()
+
+def make_sections():
+    for project in Project.objects.all().iterator():
+        es = Elasticsearch([os.getenv('ELASTICSEARCH_HOST')])
+        result = es.search(index=f'project_{project.pk}',
+                           body={'size': 0,
+                                 'aggs': {'sections': {'terms': {'field': 'tator_user_sections',
+                                                                 'size': 1000}}}},
+                           stored_fields=[])
+        for section in result['aggregations']['sections']['buckets']:
+            Section.objects.create(project=project,
+                                   name=section['key'],
+                                   tator_user_sections=section['key'])
+            logger.info(f"Created section {section['key']} in project {project.pk}!")
+
