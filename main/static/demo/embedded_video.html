@@ -48,6 +48,7 @@
              }
          }
          customElements.define("data-stub", DataStub);
+
          function load_metadata(host, project, media_id)
          {
              fetch(`${host}/rest/LocalizationTypes/${project}?media_id=${media_id}`)
@@ -106,6 +107,7 @@
                      if (loaded_meta == false)
                      {
                          load_metadata(host,project,media_id)
+                         loaded_meta = true;
                      }
                      // Something is weird where buffer hitting play in this
                      // particular callback is no bueno. For demo purposes
