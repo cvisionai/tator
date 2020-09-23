@@ -59,7 +59,7 @@
     width: calc(100% - 50px);
   }
 
-  div {
+  algorithm-menu {
     &:not(:last-child) {
       border-bottom: 1px solid $color-charcoal--light;
     }

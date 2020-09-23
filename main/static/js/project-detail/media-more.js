@@ -8,6 +8,7 @@ class MediaMore extends TatorElement {
 
     const summary = document.createElement("summary");
     summary.setAttribute("class", "btn-clear h2 text-gray hover-text-white");
+    summary.style.lineHeight = 0;
     details.appendChild(summary);
 
     const moreIcon = document.createElement("more-icon");
@@ -23,9 +24,6 @@ class MediaMore extends TatorElement {
 
     this._algorithmMenu = document.createElement("algorithm-menu");
     this._div.appendChild(this._algorithmMenu);
-
-    this._mediaMove = document.createElement("media-move");
-    this._div.appendChild(this._mediaMove);
 
     const otherButtons = document.createElement("div");
     otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
@@ -47,21 +45,7 @@ class MediaMore extends TatorElement {
     this._del.setAttribute("text", "Delete file");
     otherButtons.appendChild(this._del);
 
-    this._cancel = document.createElement("cancel-button");
-    this._cancel.setAttribute("text", "Cancel processing");
-    this._cancel.setAttribute("class", "py-2");
-    this._cancel.style.display = "none"; 
-    otherButtons.appendChild(this._cancel);
-
     this._algorithmMenu.addEventListener("click", () => {
-      details.removeAttribute("open");
-    });
-
-    this._mediaMove.addEventListener("move", () => {
-      details.removeAttribute("open");
-    });
-
-    this._mediaMove.addEventListener("moveToNew", () => {
       details.removeAttribute("open");
     });
 
@@ -83,11 +67,6 @@ class MediaMore extends TatorElement {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("delete"));
     });
-
-    this._cancel.addEventListener("click", () => {
-      details.removeAttribute("open");
-      this.dispatchEvent(new Event("cancel"));
-    });
   }
 
   static get observedAttributes() {
@@ -107,21 +86,17 @@ class MediaMore extends TatorElement {
       case "processing":
         if (newValue === null) {
           this._algorithmMenu.style.display = "block";
-          this._mediaMove.style.display = "block";
           this._download.style.display = "block";
           this._annotations.style.display = "block";
           this._rename.style.display = "block";
           this._del.style.display = "block";
-          this._cancel.style.display = "none";
           this.permission = this._permission;
         } else {
           this._algorithmMenu.style.display = "none";
-          this._mediaMove.style.display = "none";
           this._download.style.display = "none";
           this._annotations.style.display = "none";
           this._rename.style.display = "none";
           this._del.style.display = "none";
-          this._cancel.style.display = "block";
           this.permission = this._permission;
         }
         break;
@@ -132,7 +107,6 @@ class MediaMore extends TatorElement {
     this._permission = val;
     if (!hasPermission(val, "Can Execute")) {
       this._algorithmMenu.style.display = "none";
-      this._cancel.style.display = "none";
     }
     if (!hasPermission(val, "Can Transfer")) {
       this._download.style.display = "none";
@@ -140,17 +114,12 @@ class MediaMore extends TatorElement {
       this._del.style.display = "none";
     }
     if (!hasPermission(val, "Can Edit")) {
-      this._mediaMove.style.display = "none";
       this._rename.style.display = "none";
     }
   }
 
   set algorithms(val) {
     this._algorithmMenu.algorithms = val;
-  }
-
-  set sections(val) {
-    this._mediaMove.sections = val;
   }
 }
 

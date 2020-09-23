@@ -2,30 +2,14 @@ class SectionFiles extends TatorElement {
   constructor() {
     super();
 
-    const wrap = document.createElement("div");
-    wrap.setAttribute("class", "files-wrap px-4 rounded-2");
-    this._shadow.appendChild(wrap);
-
-    const header = document.createElement("div");
-    header.setAttribute("class", "files__header d-flex flex-justify-between f2");
-    wrap.appendChild(header);
-
-    const nav = document.createElement("div");
-    nav.setAttribute("class", "files__nav d-flex");
-    header.appendChild(nav);
-
     this._main = document.createElement("ul");
-    this._main.setAttribute("class", "files__main d-flex py-3 f2");
-    wrap.appendChild(this._main);
+    this._main.setAttribute("class", "project__files d-flex");
+    this._shadow.appendChild(this._main);
 
     /*
     this._paginator = document.createElement("section-paginator");
     wrap.appendChild(this._paginator);
     */
-
-    this._processes = [];
-
-    this._loaded = 0;
   }
 
   static get observedAttributes() {
@@ -132,9 +116,9 @@ class SectionFiles extends TatorElement {
       message = media.message;
     }
     card.updateProgress(media.state, percent, message);
+    */
     card.setAttribute("name", media.name);
     card.setAttribute("project-id", this.getAttribute("project-id"));
-    */
   }
 
   _makeCards(cardInfo) {
@@ -150,10 +134,8 @@ class SectionFiles extends TatorElement {
         let card;
         if (newCard) {
           card = document.createElement("media-card");
-          card.setAttribute("class", "col-6");
           card.permission = this._permission;
           card.algorithms = this._algorithms;
-          card.addEventListener("loaded", this._checkCardsLoaded.bind(this));
           card.addEventListener("mouseenter", () => {
             if (card.hasAttribute("media-id")) {
               this.dispatchEvent(new CustomEvent("cardMouseover", {
@@ -180,14 +162,6 @@ class SectionFiles extends TatorElement {
           this._main.removeChild(children[idx]);
         }
       }
-    }
-  }
-
-  _checkCardsLoaded() {
-    this._loaded += 1;
-    const cards = [...this._shadow.querySelectorAll("media-card")];
-    if (this._loaded >= cards.length) {
-      this.dispatchEvent(new Event("sectionLoaded", {composed: true}));
     }
   }
 }
