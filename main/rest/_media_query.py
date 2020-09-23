@@ -63,6 +63,10 @@ def get_media_queryset(project, query_params, dry_run=False):
             bools.append(section_object.media_bools)
         if section_object.annotation_bools:
             annotation_bools.append(section_object.annotation_bools)
+        if section_object.tator_user_sections:
+            bools.append({'match': {'tator_user_sections': {
+                'query': section_object.tator_user_sections,
+            }}})
 
     if md5 is not None:
         bools.append({'match': {'_md5': {'query': md5}}})
