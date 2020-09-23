@@ -69,12 +69,17 @@ class MediaSection extends TatorElement {
   }
 
   init(project, section, username, token) {
+    if (section === null) {
+      this._sectionName = "All Media";
+    } else {
+      this._sectionName = section.name;
+    }
     this._project = project;
     this._section = section;
-    this._sectionName = section.name;
+    this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
     //this._overview.setAttribute("project-id", project);
-    this._nameText.nodeValue = section.name;
+    this._nameText.nodeValue = this._sectionName;
     this._files.setAttribute("section", this._sectionName);
     this._files.setAttribute("username", username);
     this._files.setAttribute("token", token);
@@ -166,7 +171,11 @@ class MediaSection extends TatorElement {
   _loadMedia() {
     const start = 0;
     const stop = 100;
-    const countPromise = fetch(`/rest/MediaCount/${this._project}?section=${this._section.id}`, {
+    let sectionQuery = "";
+    if (this._section !== null) {
+      sectionQuery = `section=${this._section.id}`;
+    }
+    const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -177,7 +186,7 @@ class MediaSection extends TatorElement {
     })
     .then(response => response.json())
     .then(count => this.numMedia = count);
-    const mediaPromise = fetch(`/rest/Medias/${this._project}?start=${start}&stop=${stop}&section=${this._section.id}`, {
+    const mediaPromise = fetch(`/rest/Medias/${this._project}?start=${start}&stop=${stop}&${sectionQuery}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {

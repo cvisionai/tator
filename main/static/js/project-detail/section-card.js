@@ -19,20 +19,35 @@ class SectionCard extends TatorElement {
   init(section, isFolder) {
     this._section = section;
     this._isFolder = isFolder;
-    this._title.textContent = section.name;
-    if (isFolder) {
-        const svg = document.createElementNS(svgNamespace, "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("height", "1em");
-        svg.setAttribute("width", "1em");
-        svg.setAttribute("fill", "none");
-        svg.style.fill = "none";
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
-        svg.setAttribute("stroke-linecap", "round");
-        svg.setAttribute("stroke-linejoin", "round");
-        this._link.insertBefore(svg, this._title);
+    if (section === null) {
+      this._title.textContent = "All Media";
+    } else {
+      this._title.textContent = section.name;
+    }
 
+    const svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("height", "1em");
+    svg.setAttribute("width", "1em");
+    svg.setAttribute("fill", "none");
+    svg.style.fill = "none";
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    this._link.insertBefore(svg, this._title);
+
+    // Null section means display all media.
+    if (section === null) {
+        const path = document.createElementNS(svgNamespace, "path");
+        path.setAttribute("d", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z");
+        svg.appendChild(path);
+
+        const poly = document.createElementNS(svgNamespace, "polyline");
+        poly.setAttribute("points", "9 22 9 12 15 12 15 22");
+        svg.appendChild(poly);
+    }
+    if (isFolder) {
         const path = document.createElementNS(svgNamespace, "path");
         path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
         svg.appendChild(path);

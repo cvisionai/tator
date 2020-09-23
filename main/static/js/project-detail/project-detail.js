@@ -361,6 +361,16 @@ class ProjectDetail extends TatorPage {
         if (params.has("search")) {
           projectFilter = params.get("search");
         }
+        const home = document.createElement("section-card");
+        home.init(null, false);
+        home.addEventListener("click", () => {
+          this._selectSection(null, projectId);
+          for (const child of this._folders.children) {
+            child.active = false;
+          }
+          home.active = true;
+        });
+        this._folders.appendChild(home);
         for (const section of sections) {
           const hasSection = Boolean(section.tator_user_sections);
           const hasSearch = (Boolean(section.lucene_search)
@@ -376,8 +386,13 @@ class ProjectDetail extends TatorPage {
           }
           card.addEventListener("click", () => {
             this._selectSection(section, projectId);
+            for (const child of this._folders.children) {
+              child.active = false;
+            }
+            card.active = true;
           });
         }
+        home.click();
         /*
         this._worker.postMessage({
           command: "init",
@@ -386,8 +401,7 @@ class ProjectDetail extends TatorPage {
           token: this.getAttribute("token"),
         });
         */
-      })
-      .catch(err => console.log("Failed to retrieve project data: " + err));
+      });
     });
   }
 

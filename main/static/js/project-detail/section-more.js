@@ -29,7 +29,7 @@ class SectionMore extends TatorElement {
     this._div.appendChild(otherButtons);
 
     this._download = document.createElement("download-button");
-    this._download.setAttribute("text", "Download section");
+    this._download.setAttribute("text", "Download files");
     otherButtons.appendChild(this._download);
 
     this._annotations = document.createElement("download-button");
@@ -41,7 +41,7 @@ class SectionMore extends TatorElement {
     otherButtons.appendChild(this._rename);
 
     this._del = document.createElement("delete-button");
-    this._del.setAttribute("text", "Delete section");
+    this._del.setAttribute("text", "Delete files");
     otherButtons.appendChild(this._del);
 
     this._algorithmMenu.addEventListener("click", () => {
