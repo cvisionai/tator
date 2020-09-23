@@ -54,36 +54,15 @@ class MediaSection extends TatorElement {
     });
   }
 
-  static get observedAttributes() {
-    return ["project-id", "name", "username", "token"];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "project-id":
-        this._files.setAttribute("project-id", newValue);
-        this._overview.setAttribute("project-id", newValue);
-        this._setCallbacks();
-        break;
-      case "name":
-        if (newValue === "null") {
-          this._nameText.nodeValue = "Unnamed Section";
-          this._sectionName = "Unnamed Section";
-        }
-        else {
-          this._nameText.nodeValue = newValue;
-          this._sectionName = newValue;
-        }
-        this._files.setAttribute("section", this._sectionName);
-        this._setCallbacks();
-        break;
-      case "username":
-        this._files.setAttribute("username", newValue);
-        break;
-      case "token":
-        this._files.setAttribute("token", newValue);
-        break;
-    }
+  init(project, name, username, token) {
+    this._files.setAttribute("project-id", project);
+    this._overview.setAttribute("project-id", project);
+    this._nameText.nodeValue = name;
+    this._sectionName = name;
+    this._files.setAttribute("section", this._sectionName);
+    this._files.setAttribute("username", username);
+    this._files.setAttribute("token", token);
+    this._setCallbacks();
   }
 
   set permission(val) {
