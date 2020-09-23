@@ -22,6 +22,7 @@ class CanvasContextMenu extends TatorElement {
       this.hideMenu();
       clickCallback(newText);
     });
+
     this._div.appendChild(button);
     this._buttons[newText] = button;
   }
@@ -31,9 +32,16 @@ class CanvasContextMenu extends TatorElement {
     this._div.style.display = "none";
   }
 
-  disableEntry(entryText, disable)
+  disableEntry(entryText, disable, tooltipText)
   {
-    this._buttons[entryText].disabled = disable;
+    var button = this._buttons[entryText];
+    button.disabled = disable;
+
+    button.title = '';
+    if (tooltipText)
+    {
+      button.title = tooltipText;
+    }
   }
 
   displayMenu(x, y)

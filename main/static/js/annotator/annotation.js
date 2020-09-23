@@ -552,7 +552,7 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.disableEntry("Merge into main track", true);
+    this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
     this._selectedMergeTrack = null;
 
     // Context menu (right-click): Localizations/detections
@@ -560,7 +560,7 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuLoc.hideMenu();
     this._shadow.appendChild(this._contextMenuLoc);
     this._contextMenuLoc.addMenuEntry("Add to main track", this.contextMenuCallback.bind(this));
-    this._contextMenuLoc.disableEntry("Add to main track", true);
+    this._contextMenuLoc.disableEntry("Add to main track", true, "Need to set main track first");
     this._createNewTrackMenuEntries = [];
 
     this._contextMenuFrame = 0;

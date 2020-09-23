@@ -198,9 +198,12 @@ class ModifyTrackDialog extends TatorElement {
   }
 
   _setToAddDetectionUI() {
-    this._span.textContent = "Add Detection To Track";
+    this._span.textContent = "Add Track Detection";
     this._addDetectionDiv.style.display = "block";
     this._yesButton.textContent = "Add";
+
+    let text = "Detection " + this._data.localization.id.toString() + " will be added to track " + this._data.mainTrack.id.toString() + ".";
+    this._addDetectionText.textContent = text;
   }
 
   _setToTrimUI() {
