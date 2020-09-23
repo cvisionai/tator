@@ -65,7 +65,6 @@ class CustomGenerator(SchemaGenerator):
                 'MediaUpdate': media_update,
                 'Media': media,
                 'MediaFiles': media_files,
-                'MediaSections': media_sections,
                 'MediaSpec': media_spec,
                 'MediaTypeSpec': media_type_spec,
                 'MediaTypeUpdate': media_type_update,

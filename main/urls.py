@@ -167,11 +167,6 @@ urlpatterns += [
         name='MediaPrev',
     ),
     path(
-        'rest/MediaSections/<int:project>',
-        MediaSectionsAPI.as_view(),
-        name='MediaSections',
-    ),
-    path(
         'rest/MediaTypes/<int:project>',
         MediaTypeListAPI.as_view(),
     ),
