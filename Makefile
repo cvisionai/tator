@@ -299,6 +299,7 @@ FILES = \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
     project-detail/section-more.js \
+    project-detail/section-card.js \
     project-detail/media-move.js \
     project-detail/media-more.js \
     project-detail/media-description.js \
