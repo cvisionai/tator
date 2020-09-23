@@ -1,3 +1,4 @@
+from .algorithm_launch import algorithm_parameter
 from .algorithm_launch import algorithm_launch_spec
 from .algorithm_launch import algorithm_launch
 from .algorithm import algorithm

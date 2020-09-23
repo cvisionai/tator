@@ -28,6 +28,7 @@ class CustomGenerator(SchemaGenerator):
         # Set up schema components.
         schema['components'] = {
             'schemas': {
+                'AlgorithmParameter': algorithm_parameter,
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,

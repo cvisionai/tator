@@ -28,11 +28,11 @@ class AlgorithmLaunchAPI(BaseListView):
 
         This will create one or more Argo workflows that execute the named algorithm
         registration. To get a list of available algorithms, use the `Algorithms` endpoint.
-        A media list will be submitted for processing using either a query string or 
+        A media list will be submitted for processing using either a query string or
         a list of media IDs. If neither are included, the algorithm will be launched on
-        all media in the project. 
+        all media in the project.
 
-        Media is divided into batches for based on the `files_per_job` field of the 
+        Media is divided into batches for based on the `files_per_job` field of the
         `Algorithm` object. One batch is submitted to each Argo workflow.
 
         Submitted algorithm jobs may be cancelled via the `Job` or `JobGroup` endpoints.
@@ -65,6 +65,11 @@ class AlgorithmLaunchAPI(BaseListView):
             media_ids = list(media.values_list("id", flat=True))
         media_ids = [str(a) for a in media_ids]
 
+        # Harvest extra parameters to pass into the algorithm if requested
+        extra_params = []
+        if 'extra_params' in params:
+            extra_params = params['extra_params']
+
         # Create algorithm jobs
         gid = str(uuid1())
         uids = []
@@ -87,6 +92,7 @@ class AlgorithmLaunchAPI(BaseListView):
                 token=token,
                 project=project_id,
                 user=self.request.user.pk,
+                extra_params=extra_params
             )
 
             # Send out a progress message saying this launch is queued.
