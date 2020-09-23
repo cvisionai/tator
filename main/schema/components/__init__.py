@@ -32,7 +32,6 @@ from .media_prev import media_prev
 from .media import media_spec
 from .media import media_update
 from .media import media
-from .media_sections import media_sections
 from .media_type import media_type_spec
 from .media_type import media_type_update
 from .media_type import media_type
