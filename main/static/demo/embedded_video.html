@@ -166,12 +166,20 @@
                  let host = document.location.origin;
 
                  let params = new URLSearchParams(document.location.search);
-                 if (params.has("media_id") != true)
-                 {
-                     window.alert("Must supply 'media_id' query argument");
-                 }
+                 let media_id = null;
 
-                 let media_id = Number(params.get("media_id"));
+                 // If not in query prompt user
+                 if (params.has("media_id") == true)
+                 {
+                     media_id = Number(params.get("media_id"));
+                 }
+                 else
+                 {
+                     media_id = Number(window.prompt("Media ID?",1))
+                     const new_url = document.location.href + '?media_id=' +
+                                     media_id;
+                     history.replaceState(null, null, new_url);
+                 }
 
 
                  // Acquire pointer to
