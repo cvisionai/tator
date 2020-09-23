@@ -75,20 +75,19 @@ class SaveDialog extends TatorElement {
 
   init(projectId, mediaId, dataType, undo, version, favorites) {
 
-    // For the save dialog, the track search bar doesn't need to be shown.
-    // The user only needs to modify the attributes in the dialog window.
-    // Setting the .isTrack field to false will make that happen.
-    var modifiedDataType = {...dataType};
-    modifiedDataType.isTrack = false;
-
     this._projectId = projectId;
     this._mediaId = mediaId;
-    this._dataType = modifiedDataType;
+    this._dataType = dataType;
     this._undo = undo;
     this._version = version;
     this._span.textContent = dataType.name;
-    this._attributes.dataType = modifiedDataType;
+    this._attributes.dataType = dataType;
     this._favorites.init(dataType, favorites);
+
+    // For the save dialog, the track search bar doesn't need to be shown.
+    // The user only needs to modify the attributes in the dialog window.
+    this._attributes.displaySlider(false);
+
     this._attributes.dispatchEvent(new Event("change"));
   }
 

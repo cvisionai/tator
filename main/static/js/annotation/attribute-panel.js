@@ -146,6 +146,17 @@ class AttributePanel extends TatorElement {
     this.setSlider(sliderData);
   }
 
+  displaySlider(display) {
+    if (this._slider){
+      if (display) {
+        this._slider.style.display = "block";
+      }
+      else {
+        this._slider.style.display = "none";
+      }
+    }
+  }
+
   setSlider(data) {
     // If there's no slider as a part of this panel, then just ignored this call.
     if (!this._slider){ return; }
