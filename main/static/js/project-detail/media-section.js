@@ -88,6 +88,7 @@ class MediaSection extends TatorElement {
     this._upload.setAttribute("username", username);
     this._upload.setAttribute("token", token);
     this._upload.setAttribute("section", this._sectionName);
+    this._more.section = section;
     this._loadMedia();
   }
 

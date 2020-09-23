@@ -41,7 +41,7 @@ class SectionMore extends TatorElement {
     otherButtons.appendChild(this._rename);
 
     this._del = document.createElement("delete-button");
-    this._del.setAttribute("text", "Delete files");
+    this._del.setAttribute("text", "Delete section");
     otherButtons.appendChild(this._del);
 
     this._algorithmMenu.addEventListener("click", () => {
@@ -67,6 +67,16 @@ class SectionMore extends TatorElement {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("delete", {composed: true}));
     });
+  }
+
+  set section(val) {
+    if (val === null) {
+      this._rename.style.display = "none";
+      this._del.style.display = "none";
+    } else {
+      this._rename.style.display = "block";
+      this._del.style.display = "block";
+    }
   }
 
   set permission(val) {
