@@ -71,8 +71,10 @@ class MediaSection extends TatorElement {
   init(project, section, username, token) {
     if (section === null) {
       this._sectionName = "All Media";
+      this._attributeFilter = "";
     } else {
       this._sectionName = section.name;
+      this._attributeFilter = `?section=${section.id}`;
     }
     this._project = project;
     this._section = section;
@@ -211,8 +213,7 @@ class MediaSection extends TatorElement {
       {
         body["media_query"] = this._sectionFilter();
       }
-      const projectId = this.getAttribute("project-id");
-      fetch("/rest/AlgorithmLaunch/" + projectId, {
+      fetch("/rest/AlgorithmLaunch/" + this._project, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -235,20 +236,21 @@ class MediaSection extends TatorElement {
     });
 
     this._more.addEventListener("download", evt => {
-      const projectId = this.getAttribute("project-id");
       let mediaFilter = "";
-      if (evt.detail.mediaIds) {
-        mediaFilter = "&media_id=" + evt.detail.mediaIds;
+      if (evt.detail) {
+        if (evt.detail.mediaIds) {
+          mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        }
       }
       const getUrl = endpoint => {
-        return "/rest/" + endpoint + "/" + projectId + this._sectionFilter() + mediaFilter;
+        return "/rest/" + endpoint + "/" + this._project + this._sectionFilter() + mediaFilter;
       };
       const headers = {
         "X-CSRFToken": getCookie("csrftoken"),
         "Accept": "application/json",
         "Content-Type": "application/json"
       };
-      fetchRetry(getUrl("MediaSections"), {
+      fetchRetry(getUrl("MediaCount"), {
         method: "GET",
         credentials: "same-origin",
         headers: headers,
