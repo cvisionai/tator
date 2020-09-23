@@ -93,6 +93,7 @@ class SectionFiles extends TatorElement {
     } else {
       card.removeAttribute("media-id");
     }
+    card.style.display = "block";
     /*
     const inProgress = media.state == "started" || media.state == "queued";
     if ("uid" in media && inProgress) {
@@ -158,8 +159,8 @@ class SectionFiles extends TatorElement {
       }
       if (children.length > cardInfo.length) {
         const len = children.length;
-        for (let idx = len - 1; idx >= this._stop; idx--) {
-          this._main.removeChild(children[idx]);
+        for (let idx = len - 1; idx >= cardInfo.length; idx--) {
+          children[idx].style.display = "none";
         }
       }
     }
