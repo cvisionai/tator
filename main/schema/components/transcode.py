@@ -39,6 +39,10 @@ transcode_spec = {
             'description': 'MD5 sum of the media file.',
             'type': 'string',
         },
+        'attributes': {
+            'description': 'Attributes to apply upon upload',
+            'type': 'object'
+        },
     },
 }
 

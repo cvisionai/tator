@@ -145,6 +145,10 @@ media_spec = {
             'description': 'Replaces name in progress message.',
             'type': 'string',
         },
+        'attributes': {
+            'description': 'Attributes for the media',
+            'type': 'object',
+        },
     },
 }
 
