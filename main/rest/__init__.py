@@ -17,6 +17,7 @@ from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI
 from .localization import LocalizationDetailAPI
+from .localization_count import LocalizationCountAPI
 from .localization_type import LocalizationTypeListAPI
 from .localization_type import LocalizationTypeDetailAPI
 from .localization_graphic import LocalizationGraphicAPI
@@ -41,6 +42,7 @@ from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
+from .state_count import StateCountAPI
 from .state_graphic import StateGraphicAPI
 from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI

@@ -135,6 +135,10 @@ urlpatterns += [
         LocalizationDetailAPI.as_view(),
     ),
     path(
+        'rest/LocalizationCount/<int:project>',
+        LocalizationCountAPI.as_view(),
+    ),
+    path(
         'rest/LocalizationTypes/<int:project>',
         LocalizationTypeListAPI.as_view(),
     ),
@@ -170,6 +174,10 @@ urlpatterns += [
         'rest/MediaPrev/<int:id>',
         MediaPrevAPI.as_view(),
         name='MediaPrev',
+    ),
+    path(
+        'rest/MediaStats/<int:project>',
+        MediaStatsAPI.as_view(),
     ),
     path(
         'rest/MediaTypes/<int:project>',
@@ -231,7 +239,12 @@ urlpatterns += [
         StateListAPI.as_view(),
         name='States'
     ),
-      path(
+    path(
+        'rest/StateCount/<int:project>',
+        StateCountAPI.as_view(),
+        name='StateCount',
+    ),
+    path(
         'rest/StateGraphic/<int:id>',
         StateGraphicAPI.as_view(),
         name='StateGraphic'
