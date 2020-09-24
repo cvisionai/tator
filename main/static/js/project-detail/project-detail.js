@@ -344,6 +344,8 @@ class ProjectDetail extends TatorPage {
       .then(([project, sections, algos]) => {
         this._algorithms = algos;
         this._permission = project.permission;
+        this._mediaSection.permission = this._permission;
+        this._mediaSection.algorithms = this._algorithms;
         if (!hasPermission(project.permission, "Can Execute")) {
           this._algorithmButton.style.display = "none";
         }
@@ -428,8 +430,6 @@ class ProjectDetail extends TatorPage {
   _selectSection(section, projectId) {
     this._mediaSection.init(projectId, section, this.getAttribute("username"),
                                         this.getAttribute("token"));
-    this._mediaSection.permission = this._permission;
-    this._mediaSection.algorithms = this._algorithms;
     this._mediaSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._mediaSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     this._mediaSection.addEventListener("allset", this._allSetCallback.bind(this));
