@@ -73,7 +73,7 @@ class MediaCard extends TatorElement {
       const input = document.createElement("input");
       input.setAttribute("class", "form-control input-sm1 f1");
       input.setAttribute("value", this._name.textContent);
-      h3.replaceChild(input, this._name);
+      titleDiv.replaceChild(input, this._name);
       input.addEventListener("focus", evt => {
         evt.target.select();
       });
@@ -98,11 +98,11 @@ class MediaCard extends TatorElement {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            name: this._name.textContent + this._ext.textContent,
+            name: `${this._name.textContent}.${this._ext.textContent}`,
           }),
         })
         .catch(err => console.error("Failed to change name: " + err));
-        h3.replaceChild(this._name, evt.target);
+        titleDiv.replaceChild(this._name, evt.target);
       });
       input.focus();
     });

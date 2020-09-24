@@ -24,10 +24,6 @@ class SectionFiles extends TatorElement {
     this._mediaFilter = val;
   }
 
-  set numMedia(val) {
-    this._updateNumCards(val);
-  }
-
   /*
   get numMedia() {
     return this._paginator.getAttribute("num-files");
@@ -69,10 +65,6 @@ class SectionFiles extends TatorElement {
 
   set algorithms(val) {
     this._algorithms = val;
-  }
-
-  _updateNumCards(numMedia) {
-    //this._paginator.setAttribute("num-files", numMedia);
   }
 
   _updateCard(card, media) {

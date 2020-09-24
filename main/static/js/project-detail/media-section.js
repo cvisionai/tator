@@ -91,7 +91,7 @@ class MediaSection extends TatorElement {
     this._upload.setAttribute("token", token);
     this._upload.setAttribute("section", this._sectionName);
     this._more.section = section;
-    this._loadMedia();
+    this.reload();
   }
 
   set permission(val) {
@@ -118,7 +118,6 @@ class MediaSection extends TatorElement {
     } else {
       //this._overview.style.display = "block";
       this._files.style.display = "block";
-      this._files.numMedia = val;
     }
   }
 
@@ -159,6 +158,16 @@ class MediaSection extends TatorElement {
     this._files.sections = sections;
   }
 
+  removeMedia(mediaId) {
+    for (const mediaCard of this._files._main.children) {
+      if (mediaCard.getAttribute("media-id") == mediaId) {
+        mediaCard.parentNode.removeChild(mediaCard);
+        const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
+        this._numFiles.textContent = `${numFiles} Files`;
+      }
+    }
+  }
+
   _updateNumFiles(numFiles) {
     let fileText = " Files";
     if (numFiles == 1) {
@@ -171,7 +180,7 @@ class MediaSection extends TatorElement {
     return this._attributeFilter;
   }
 
-  _loadMedia() {
+  reload() {
     const start = 0;
     const stop = 100;
     let sectionQuery = "";

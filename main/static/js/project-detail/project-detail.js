@@ -221,10 +221,11 @@ class ProjectDetail extends TatorPage {
     });
 
     deleteFile.addEventListener("confirmFileDelete", evt => {
-      this._worker.postMessage({
-        command: "removeFile",
-        mediaId: evt.detail.mediaId,
-      });
+      //this._worker.postMessage({
+      //  command: "removeFile",
+      //  mediaId: evt.detail.mediaId,
+      //});
+      this._mediaSection.removeMedia(evt.detail.mediaId);
       deleteFile.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });
