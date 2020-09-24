@@ -335,6 +335,7 @@ class TatorTranscode(JobManagerMixin):
                          '--md5', '{{inputs.parameters.md5}}',
                          '--gid', '{{workflow.parameters.gid}}',
                          '--uid', '{{workflow.parameters.uid}}',
+                         '--attributes', '{{workflow.parameters.attributes}}',
                          '--output', '/work/media_id.txt'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
@@ -795,7 +796,8 @@ class TatorTranscode(JobManagerMixin):
                          gid,
                          uid,
                          user,
-                         upload_size):
+                         upload_size,
+                         attributes):
         """ Initiate a transcode based on the contents on an archive """
         comps = name.split('.')
         base = comps[0]
@@ -829,7 +831,8 @@ class TatorTranscode(JobManagerMixin):
                        'client_image' : get_client_image_name(),
                        'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name()}
+                       'curl_image' : get_curl_image_name(),
+                       'attributes' : json.dumps(attributes)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -886,8 +889,11 @@ class TatorTranscode(JobManagerMixin):
             body=manifest,
         )
 
-    def start_transcode(self, project, entity_type, token, url, name, section, md5, gid, uid,
-                        user, upload_size):
+    def start_transcode(self, project,
+                        entity_type, token, url, name,
+                        section, md5, gid, uid,
+                        user, upload_size,
+                        attributes):
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -900,7 +906,7 @@ class TatorTranscode(JobManagerMixin):
             'segments': '/work/' + base + '_segments.json',
             'entity_type': str(entity_type),
             'md5' : md5,
-            'name': name,
+            'name': name
         }
 
         if upload_size:
@@ -927,7 +933,8 @@ class TatorTranscode(JobManagerMixin):
                        'client_image' : get_client_image_name(),
                        'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name()}
+                       'curl_image' : get_curl_image_name(),
+                       'attributes' : json.dumps(attributes)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)

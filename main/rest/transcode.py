@@ -45,8 +45,10 @@ class TranscodeAPI(BaseListView):
         name = params['name']
         md5 = params['md5']
         project = params['project']
+        attributes = params['attributes']
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
+        logger.info(f"Got attributes = {attributes}")
         prog = ProgressProducer(
             'upload',
             project,
@@ -94,20 +96,22 @@ class TranscodeAPI(BaseListView):
                 gid,
                 uid,
                 self.request.user.pk,
-                upload_size)
+                upload_size,
+                attributes)
         else:
             TatorTranscode().start_transcode(
-            project,
-            entity_type,
-            token,
-            url,
-            name,
-            section,
-            md5,
-            gid,
-            uid,
-            self.request.user.pk,
-            upload_size)
+                project,
+                entity_type,
+                token,
+                url,
+                name,
+                section,
+                md5,
+                gid,
+                uid,
+                self.request.user.pk,
+                upload_size,
+                attributes)
 
         prog.progress("Transcoding...", 60)
 

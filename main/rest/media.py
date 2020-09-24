@@ -89,6 +89,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         project = params['project']
         gid = params.get('gid', None)
         uid = params.get('uid', None)
+        new_attributes = params.get('attributes', None)
         if gid is not None:
             gid = str(gid)
 
@@ -113,6 +114,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
+        attributes={'tator_user_sections': section}
+        if new_attributes:
+            attributes.update(new_attributes)
         if media_type.dtype == 'image':
             # Get image only parameters.
             url = params['url']
@@ -146,7 +150,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
-                attributes={'tator_user_sections': section},
+                attributes=attributes,
                 created_by=self.request.user,
                 modified_by=self.request.user,
                 gid=gid,
@@ -197,7 +201,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
-                attributes={'tator_user_sections': section},
+                attributes=attributes,
                 created_by=self.request.user,
                 modified_by=self.request.user,
                 gid=gid,
