@@ -44,28 +44,6 @@ class MediaSection extends TatorElement {
     this._files.setAttribute("class", "col-12");
     this._files.mediaFilter = this._sectionFilter.bind(this);
     div.appendChild(this._files);
-
-    //this._overview = document.createElement("section-overview");
-    //this._overview.setAttribute("class", "col-3");
-    //this._overview.mediaFilter = this._sectionFilter.bind(this);
-    //div.appendChild(this._overview);
-
-    /*
-    this._files.addEventListener("cardMouseover", evt => {
-      this._latestMouse = "enter";
-      this._overview.updateForMedia(evt.detail.media);
-    });
-
-    this._files.addEventListener("cardMouseexit", () => {
-      this._latestMouse = "exit";
-      new Promise(resolve => setTimeout(() => {
-        if (this._latestMouse === "exit") {
-          this._overview.updateForAllSoft();
-        }
-        resolve();
-      }, 200));
-    });
-    */
   }
 
   init(project, section, username, token) {
@@ -80,11 +58,7 @@ class MediaSection extends TatorElement {
     this._section = section;
     this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
-    //this._overview.setAttribute("project-id", project);
     this._nameText.nodeValue = this._sectionName;
-    this._files.setAttribute("section", this._sectionName);
-    this._files.setAttribute("username", username);
-    this._files.setAttribute("token", token);
     this._setCallbacks();
     this._upload.setAttribute("project-id", project);
     this._upload.setAttribute("username", username);
@@ -106,24 +80,17 @@ class MediaSection extends TatorElement {
     this._permission = val;
   }
 
-  //get overview() {
-  //  return this._overview;
-  //}
-
   set numMedia(val) {
     this._updateNumFiles(val);
     if (val == 0) {
-      //this._overview.style.display = "none";
       this._files.style.display = "none";
     } else {
-      //this._overview.style.display = "block";
       this._files.style.display = "block";
     }
   }
 
   set sectionFilter(val) {
     this._attributeFilter = val;
-    //this._overview.updateForAll();
   }
 
   get sectionFilter() {

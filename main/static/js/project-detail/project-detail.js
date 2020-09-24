@@ -96,9 +96,6 @@ class ProjectDetail extends TatorPage {
 
     this._mediaSection = document.createElement("media-section");
     this._projects.appendChild(this._mediaSection);
-    //this._newSection = document.createElement("new-section");
-    //this._newSection.worker = this._worker;
-    //this._projects.appendChild(this._newSection);
 
     const deleteSection = document.createElement("delete-section-form");
     this._projects.appendChild(deleteSection);
@@ -124,47 +121,6 @@ class ProjectDetail extends TatorPage {
 
     window.addEventListener("scroll", this._checkSectionVisibility.bind(this));
 
-    /*
-    this._worker.addEventListener("message", evt => {
-      const msg = evt.data;
-      if (msg.command == "updateSection") {
-        const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
-        if (section) {
-          if (section.sectionFilter != msg.sectionFilter) {
-            section.sectionFilter = msg.sectionFilter;
-          }
-          section.numMedia = msg.count;
-          section.cardInfo = msg.data;
-        }
-        this._updateSectionNames(msg.allSections);
-      } else if (msg.command == "updateOverview") {
-        const section = this._shadow.querySelector("media-section[id='" + msg.sectionName + "']");
-        if (section) {
-          section._overview.updateForAll();
-        }
-      } else if (msg.command == "removeSection") {
-        const section = this._shadow.querySelector("media-section[id='" + msg.name + "']");
-        if (section) {
-          this._projects.removeChild(section);
-          this._checkSectionVisibility();
-        }
-        this._updateSectionNames(msg.allSections);
-      } else if (msg.command == "addSection") {
-        const projectId = this.getAttribute("project-id");
-        this._createNewSection(msg.name, projectId, msg.count, msg.afterSection);
-        this._updateSectionNames(msg.allSections);
-      } else if (msg.command == "updateSectionNames") {
-        this._updateSectionNames(msg.allSections);
-      } else if (msg.command == "workerReady") {
-        window.dispatchEvent(new Event("readyForWebsocket"));
-      } else if (msg.command == "algorithms") {
-        this._algorithms = msg.algorithms;
-        this._algorithmButton.algorithms = msg.algorithms;
-      } else if (msg.command == "checkVisibility") {
-        this._checkSectionVisibility();
-      }
-    });
-    */
     this._mediaSection.addEventListener("newName", evt => {
       for (const sectionCard of this._folders.children) {
         if (sectionCard._section) {
@@ -193,10 +149,6 @@ class ProjectDetail extends TatorPage {
     });
 
     deleteSection.addEventListener("confirmDelete", evt => {
-      //this._worker.postMessage({
-      //  command: "removeSection",
-      //  sectionName: evt.detail.sectionName,
-      //});
       for (const sectionCard of this._folders.children) {
         if (sectionCard._section) {
           if (sectionCard._section.id == evt.detail.id) {
@@ -221,10 +173,6 @@ class ProjectDetail extends TatorPage {
     });
 
     deleteFile.addEventListener("confirmFileDelete", evt => {
-      //this._worker.postMessage({
-      //  command: "removeFile",
-      //  mediaId: evt.detail.mediaId,
-      //});
       this._mediaSection.removeMedia(evt.detail.mediaId);
       deleteFile.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
@@ -277,10 +225,6 @@ class ProjectDetail extends TatorPage {
     cancelJob.addEventListener("close", () => {
       this.removeAttribute("has-open-modal");
     });
-
-    //this._newSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    //this._newSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    //this._newSection.addEventListener("allset", this._allSetCallback.bind(this));
 
     this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
@@ -411,14 +355,6 @@ class ProjectDetail extends TatorPage {
           });
         }
         home.click();
-        /*
-        this._worker.postMessage({
-          command: "init",
-          projectId: projectId,
-          projectFilter: projectFilter,
-          token: this.getAttribute("token"),
-        });
-        */
       });
     });
   }
@@ -428,17 +364,14 @@ class ProjectDetail extends TatorPage {
     switch (name) {
       case "username":
         this._uploadButton.setAttribute("username", newValue);
-        //this._newSection.setAttribute("username", newValue);
         break;
       case "project-id":
         this._uploadButton.setAttribute("project-id", newValue);
         this._algorithmButton.setAttribute("project-id", newValue);
-        //this._newSection.setAttribute("project-id", newValue);
         this._init();
         break;
       case "token":
         this._uploadButton.setAttribute("token", newValue);
-        //this._newSection.setAttribute("token", newValue);
         break;
     }
   }
@@ -495,7 +428,6 @@ class ProjectDetail extends TatorPage {
       this._progress.notify("Skipped " + numSkipped + " files with invalid extension!", false);
       this._leaveConfirmOk = false;
     }
-    //this._newSection.close();
   };
 
   async _allSetCallback() {
