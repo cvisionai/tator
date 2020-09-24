@@ -55,7 +55,7 @@ class SectionMore extends TatorElement {
 
     this._annotations.addEventListener("click", () => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("annotations"));
+      this.dispatchEvent(new Event("downloadAnnotations"));
     });
 
     this._rename.addEventListener("click", evt => {

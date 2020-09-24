@@ -60,7 +60,7 @@ class MediaCard extends TatorElement {
     });
 
     this._more.addEventListener("annotations", evt => {
-      this.dispatchEvent(new CustomEvent("download", {
+      this.dispatchEvent(new CustomEvent("downloadAnnotations", {
         detail: {
           mediaIds: this.getAttribute("media-id"),
           annotations: true
