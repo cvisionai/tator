@@ -51,8 +51,8 @@ class DeleteSectionForm extends ModalDialog {
     });
 
     this._accept.addEventListener("click", async evt => {
-      const projectId = this.getAttribute("project-id");
-      const filter = this.getAttribute("section-filter");
+      const projectId = this._project;
+      const filter = this._sectionFilter;
       fetch("/rest/Medias/" + projectId + filter, {
         method: "DELETE",
         credentials: "same-origin",
@@ -63,31 +63,31 @@ class DeleteSectionForm extends ModalDialog {
         },
       })
       .catch(err => console.log(err));
+      fetch(`/rest/Section/${this._section.id}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      })
+      .catch(err => console.log(err));
       this.dispatchEvent(new CustomEvent("confirmDelete", {
-        detail: {sectionName: this.getAttribute("section-name")}
+        detail: {id: this._section.id}
       }));
     });
   }
 
-  static get observedAttributes() {
-    return ["section-name"].concat(ModalDialog.observedAttributes);
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "section-name":
-        this._title.nodeValue = "Delete \"" + newValue + "\"";
-        break;
-      case "is-open":
-        if (newValue === null) {
-          this._checks.forEach((item, index, array) => {
-            item.checked = false;
-          });
-          this._accept.setAttribute("disabled", "");
-        }
-        break;
-    }
+  init(project, section, sectionFilter) {
+    this._project = project;
+    this._section = section;
+    this._sectionFilter = sectionFilter;
+    this._title.nodeValue = `Delete "${section.name}"`;
+    this._checks.forEach((item, index, array) => {
+      item.checked = false;
+    });
+    this._accept.setAttribute("disabled", "");
   }
 }
 

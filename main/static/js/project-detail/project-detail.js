@@ -183,9 +183,7 @@ class ProjectDetail extends TatorPage {
     });
 
     this._removeCallback = evt => {
-      deleteSection.setAttribute("section-filter", evt.detail.sectionFilter);
-      deleteSection.setAttribute("section-name", evt.detail.sectionName);
-      deleteSection.setAttribute("project-id", evt.detail.projectId);
+      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionFilter);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
@@ -195,10 +193,18 @@ class ProjectDetail extends TatorPage {
     });
 
     deleteSection.addEventListener("confirmDelete", evt => {
-      this._worker.postMessage({
-        command: "removeSection",
-        sectionName: evt.detail.sectionName,
-      });
+      //this._worker.postMessage({
+      //  command: "removeSection",
+      //  sectionName: evt.detail.sectionName,
+      //});
+      for (const sectionCard of this._folders.children) {
+        if (sectionCard._section) {
+          if (sectionCard._section.id == evt.detail.id) {
+            sectionCard.parentNode.removeChild(sectionCard);
+            this._folders.children[0].click();
+          }
+        }
+      }
       deleteSection.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });

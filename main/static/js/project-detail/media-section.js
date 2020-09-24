@@ -584,7 +584,7 @@ class MediaSection extends TatorElement {
       this.dispatchEvent(new CustomEvent("remove", {
         detail: {
           sectionFilter: this._sectionFilter(),
-          sectionName: this._sectionName,
+          section: this._section,
           projectId: this._project,
         }
       }));
