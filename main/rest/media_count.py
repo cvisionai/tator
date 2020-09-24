@@ -12,8 +12,7 @@ class MediaCountAPI(BaseDetailView):
     """ Retrieve number of media in a media list.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
-        but only returns the next media ID from the media passed as a path parameter. This allows
-        iteration through a media list without serializing the entire list, which may be large.
+        but only returns the number of media objects.
     """
     schema = MediaCountSchema()
     permission_classes = [ProjectViewOnlyPermission]
@@ -23,9 +22,6 @@ class MediaCountAPI(BaseDetailView):
         """ Retrieve number of media in list of media.
         """
         response_data = []
-        media_ids, media_count, _ = get_media_queryset(
-            self.kwargs['project'],
-            params,
-        )
-        return len(media_ids)
+        _, _, query = get_media_queryset(params['project'], params, dry_run=True)
+        return TatorSearch().count(params['project'], query)
 
