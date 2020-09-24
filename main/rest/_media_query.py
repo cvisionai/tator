@@ -17,6 +17,7 @@ def get_media_queryset(project, query_params, dry_run=False):
     filter_type = query_params.get('type', None)
     name = query_params.get('name', None)
     section = query_params.get('section', None)
+    dtype = query_params.get('dtype', None)
     md5 = query_params.get('md5', None)
     gid = query_params.get('gid', None)
     uid = query_params.get('uid', None)
@@ -67,6 +68,9 @@ def get_media_queryset(project, query_params, dry_run=False):
             bools.append({'match': {'tator_user_sections': {
                 'query': section_object.tator_user_sections,
             }}})
+
+    if dtype is not None:
+        bools.append({'match': {'_dtype': {'query': dtype}}})
 
     if md5 is not None:
         bools.append({'match': {'_md5': {'query': md5}}})
