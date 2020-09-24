@@ -30,7 +30,7 @@ class MediaStatsAPI(BaseDetailView):
 
         # Do query.
         response_data = {}
-        response_data['count'] = TatorSearch().count(query)
+        response_data['count'] = TatorSearch().count(params['project'], query)
         result = TatorSearch().search_raw(params['project'], query)
         response_data['download_size'] = result['aggregations']['download_size']['value']
         response_data['total_size'] = result['aggregations']['total_size']['value']

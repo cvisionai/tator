@@ -6,7 +6,7 @@ from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 
-class MediaNextSchema(AutoSchema):
+class MediaStatsSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':

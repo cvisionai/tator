@@ -4,7 +4,7 @@ from ..search import TatorSearch
 from ..schema import StateCountSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_annotation_queryset
+from ._annotation_query import get_annotation_queryset
 from ._permissions import ProjectViewOnlyPermission
 
 class StateCountAPI(BaseDetailView):
