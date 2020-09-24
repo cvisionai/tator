@@ -9,7 +9,7 @@ from ._attribute_query import get_attribute_query
 
 logger = logging.getLogger(__name__)
 
-def get_annotation_queryset(project, query_params, annotation_type): #pylint: disable=too-many-locals,too-many-branches
+def get_annotation_queryset(project, query_params, annotation_type, dry_run=False): #pylint: disable=too-many-locals,too-many-branches
     """Converts annotation query string into a list of IDs and a count.
        annotation_type: Should be one of `localization` or `state`.
     """
@@ -42,6 +42,7 @@ def get_annotation_queryset(project, query_params, annotation_type): #pylint: di
         media_ids = query_string_to_media_ids(project, media_query)
         ids = [f'image_{id_}' for id_ in media_ids] + [f'video_{id_}' for id_ in media_ids]
         media_bools.append({'ids': {'values': ids}})
+
     elif media_id is not None:
         ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]
         media_bools.append({'ids': {'values': ids}})
@@ -75,6 +76,9 @@ def get_annotation_queryset(project, query_params, annotation_type): #pylint: di
     # TODO: Remove modified parameter.
     query = get_attribute_query(query_params, query, media_bools, project, False,
                                 annotation_bools, True)
+
+    if dry_run:
+        return [], [], query
 
     annotation_ids, annotation_count = TatorSearch().search(project, query)
 
