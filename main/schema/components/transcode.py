@@ -41,7 +41,8 @@ transcode_spec = {
         },
         'attributes': {
             'description': 'Attributes to apply upon upload',
-            'type': 'object'
+            'type': 'object',
+            'nullable': True
         },
     },
 }

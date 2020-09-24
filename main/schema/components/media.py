@@ -146,6 +146,7 @@ media_spec = {
             'type': 'string',
         },
         'attributes': {
+            'nullable': True,
             'description': 'Attributes for the media',
             'type': 'object',
         },
