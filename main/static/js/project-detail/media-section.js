@@ -250,26 +250,20 @@ class MediaSection extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       };
-      fetchRetry(getUrl("MediaCount"), {
+      fetchRetry(getUrl("MediaStats"), {
         method: "GET",
         credentials: "same-origin",
         headers: headers,
       })
       .then(response => response.json())
-      .then(async mediaCount => {
+      .then(async mediaStats => {
         let lastFilename = null;
         let numImages = 0;
         let numVideos = 0;
         let size = 0;
-        for (const key in mediaCount) {
-          numImages += mediaCount[key]["num_images"];
-          numVideos += mediaCount[key]["num_videos"];
-          size += mediaCount[key]["download_size_images"];
-          size += mediaCount[key]["download_size_videos"];
-        }
-        console.log("Download size: " + size);
-        console.log("Download num files: " + (numImages + numVideos));
-        if ((size > 60000000000) || (numImages + numVideos > 5000)) {
+        console.log("Download size: " + mediaStats.download_size);
+        console.log("Download num files: " + mediaStats.count);
+        if ((mediaStats.downloadSize > 60000000000) || (mediaStats.count > 5000)) {
           const bigDownload = document.createElement("big-download-form");
           const page = document.getElementsByTagName("project-detail")[0];
           page._projects.appendChild(bigDownload);
