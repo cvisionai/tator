@@ -25,6 +25,7 @@ from .media import MediaDetailAPI
 from .media_count import MediaCountAPI
 from .media_next import MediaNextAPI
 from .media_prev import MediaPrevAPI
+from .media_stats import MediaStatsAPI
 from .media_type import MediaTypeListAPI
 from .media_type import MediaTypeDetailAPI
 from .membership import MembershipListAPI

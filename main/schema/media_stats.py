@@ -6,20 +6,20 @@ from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 
-class MediaCountSchema(AutoSchema):
+class MediaNextSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetMediaCount'
+            operation['operationId'] = 'GetMediaNext'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
         return dedent("""\
-        Retrieve count of media in a media list.
+        Retrieve count, download size, and total size of a media list.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
-        but only returns the number of media.
+        but only returns statistics about the media.
         """)
 
     def _get_path_parameters(self, path, method):
@@ -44,10 +44,9 @@ class MediaCountSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Number of media in the list corresponding to query.',
+                'description': 'Statistics corresponding to media list.',
                 'content': {'application/json': {'schema': {
-                    'type': 'integer',
-                    'minimum': 0,
+                    '$ref': '#/components/schemas/MediaStats',
                 }}}
             }
         return responses
