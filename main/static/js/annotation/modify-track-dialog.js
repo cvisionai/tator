@@ -203,6 +203,7 @@ class ModifyTrackDialog extends TatorElement {
           new CustomEvent("extendTrack",
             {composed: true,
              detail: {
+               project: this._data.project,
                trackId: this._data.track.id,
                trackType: this._data.track.meta,
                localization: this._data.localization,

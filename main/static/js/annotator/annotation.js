@@ -628,11 +628,22 @@ class AnnotationCanvas extends TatorElement
    */
   contextMenuCallback(menuText)
   {
+    // It's possible that right clicking on a localization didn't actually set
+    // the active track.
+    // Handle case when localization is in a track
+    if (this.activeLocalization.id in this._data._trackDb)
+    {
+      const track = this._data._trackDb[this.activeLocalization.id];
+      this._activeTrack = track;
+    }
+
+    // Save the general data that will be passed along to the dialog window
     var objDescription = {};
     objDescription.id = 'modifyTrack';
     objDescription.track = this._activeTrack;
     objDescription.localization = this.activeLocalization;
     objDescription.frame = this.currentFrame();
+    objDescription.project = this._data._projectId;
 
     var createNewTrack = false;
 

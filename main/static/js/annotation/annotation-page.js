@@ -636,6 +636,10 @@ class AnnotationPage extends TatorPage {
             height: baseLocalization.height,
             version: baseLocalization.version
           };
+
+          if (typeof newLocalization.media === "undefined") {
+            newLocalization.media_id = baseLocalization.media_id;
+          }
       
           newLocalization = {...newLocalization, ...baseLocalization.attributes};
 
@@ -649,7 +653,7 @@ class AnnotationPage extends TatorPage {
         }
 
         // Make the request
-        const promise = fetchRetry("/rest/Localizations/" + evt.detail.localization.project, {
+        const promise = fetchRetry("/rest/Localizations/" + evt.detail.project, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -666,6 +670,10 @@ class AnnotationPage extends TatorPage {
         })
         .then(newLocIds => {
           try {
+            if (newLocIds.id.length < 1) {
+              throw "Problem creating localizations";
+            }
+
             const trackPromise = fetchRetry("/rest/State/" + evt.detail.trackId, {
               method: "PATCH",
               credentials: "same-origin",
