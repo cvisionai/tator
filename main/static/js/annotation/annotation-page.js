@@ -616,6 +616,91 @@ class AnnotationPage extends TatorPage {
     this._main.appendChild(menu);
     this._saves['modifyTrack'] = menu;
 
+    menu.addEventListener("extendTrack", evt => {
+
+      if (evt.detail.algorithm == "Duplicate") {
+
+        // Create the new localization objets
+        var localizationList = [];
+        const baseLocalization = evt.detail.localization;
+        for (let offset = 1; offset <= evt.detail.numFrames; offset++) {
+
+          var newLocalization = {
+            media_id: baseLocalization.media,
+            type: Number(baseLocalization.meta.split("_")[1]),
+            x: baseLocalization.x,
+            y: baseLocalization.y,
+            u: baseLocalization.u,
+            v: baseLocalization.v,
+            width: baseLocalization.width,
+            height: baseLocalization.height,
+            version: baseLocalization.version
+          };
+      
+          newLocalization = {...newLocalization, ...baseLocalization.attributes};
+
+          if (evt.detail.direction == "Forward") {
+            newLocalization.frame = evt.detail.localization.frame + offset;
+          }
+          else {
+            newLocalization.frame = evt.detail.localization.frame - offset;
+          }
+          localizationList.push(newLocalization);
+        }
+
+        // Make the request
+        const promise = fetchRetry("/rest/Localizations/" + evt.detail.localization.project, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(
+            localizationList
+          ),
+        })
+        .then (response => {
+          return response.json();
+        })
+        .then(newLocIds => {
+          try {
+            const trackPromise = fetchRetry("/rest/State/" + evt.detail.trackId, {
+              method: "PATCH",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(
+                {
+                  localization_ids_add: newLocIds.id
+                }
+              ),
+            })
+            .then (response => response.json());
+  
+            return trackPromise;
+            
+          } catch (error) {
+            window.alert("Error with track extension during localization creation process.");
+            return;
+          }
+        })
+        .then(() => {
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+          window.alert("Track extension done.")
+          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+        });
+      }
+      else {
+        window.alert("Unrecognized track extension algorithm. No track extension performed.");
+      }
+    });
+
     menu.addEventListener("trimTrack", evt => {
 
       const promise = fetchRetry("/rest/TrimStateEnd/" + evt.detail.trackId, {

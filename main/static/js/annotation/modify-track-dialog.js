@@ -111,15 +111,14 @@ class ModifyTrackDialog extends TatorElement {
     const div = document.createElement("div");
     this._extendMethod = document.createElement("enum-input");
     this._extendMethod.setAttribute("name", "Method");
-    let choices = [];
-    choices.push({'value': 'Auto-track'});
-    choices.push({'value': 'Duplicate'});
-    this._extendMethod.choices = choices;
+    this._extendMethodChoices = [];
+    this._extendMethodChoices.push({'value': 'Duplicate'});
+    this._extendMethod.choices = this._extendMethodChoices;
     div.appendChild(this._extendMethod);
 
     this._extendDirection = document.createElement("enum-input");
     this._extendDirection.setAttribute("name", "Direction");
-    choices = [];
+    let choices = [];
     choices.push({'value': 'Forward'});
     choices.push({'value': 'Backward'});
     this._extendDirection.choices = choices;
@@ -127,6 +126,7 @@ class ModifyTrackDialog extends TatorElement {
 
     this._extendFrames = document.createElement("text-input");
     this._extendFrames.setAttribute("name", "Num Frames");
+    this._extendFrames.setAttribute("type", "int");
     div.appendChild(this._extendFrames);
 
     this._extendDiv = div;
@@ -171,6 +171,48 @@ class ModifyTrackDialog extends TatorElement {
              frame: this._data.frame,
              endpoint: this._data.trimEndpoint,
              trackId: this._data.track.id}}));
+    }
+    else if (this._data.interface == "extend")
+    {
+      // Before proceeding forward, check the frame count and make sure it doesnt
+      // exceed the video length (in either direction). If there's a problem a window
+      // alert will be presented and the corresponding event is ignored.
+      try {
+        var extendFrames = parseInt(this._extendFrames.getValue());
+
+        if (isNaN(extendFrames)) {
+          throw "Invalid number of frames requested.";
+        }
+
+        var direction = this._extendDirection.getValue();
+        var endFrame = this._data.frame;
+        if (direction == "Forward") {
+          endFrame = endFrame + extendFrames;
+          if (endFrame > this._data.maxFrames) {
+            throw "Requested frames exceed video length.";
+          }
+        }
+        else {
+          endFrame = endFrame - extendFrames;
+          if (endFrame < 0) {
+            throw "Requested frames exceed video length.";
+          }
+        }
+
+        this.dispatchEvent(
+          new CustomEvent("extendTrack",
+            {composed: true,
+             detail: {
+               trackId: this._data.track.id,
+               trackType: this._data.track.meta,
+               localization: this._data.localization,
+               algorithm: this._extendMethod.getValue(),
+               numFrames: extendFrames,
+               direction: this._extendDirection.getValue()}}));
+
+      } catch (error) {
+        window.alert(error + " Extend track command ignored.");
+      }
     }
   }
 

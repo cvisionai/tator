@@ -549,8 +549,9 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
     this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Set as track start point", this.contextMenuCallback.bind(this));
-    this._contextMenuTrack.addMenuEntry("Set as track end point", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Trim start to here", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Trim end to here", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
     this._selectedMergeTrack = null;
@@ -608,7 +609,8 @@ class AnnotationCanvas extends TatorElement
   }
 
   /**
-   * @param stateType
+   * Routine used to create a new "create track" button in the right-click menu for localizations
+   * that are not part of tracks.
    */
   addCreateTrackType(stateTypeObj)
   {
@@ -620,8 +622,9 @@ class AnnotationCanvas extends TatorElement
   }
 
   /**
-   * Routine that's executed when a user select a right-click menu option.
-   * @param {string} menuText Text of selected menu option
+   * Routine that's executed when a user selects a right-click menu option.
+   * This will gather the appropriate information and dispatch the event
+   * that should launch the appropriate dialog.
    */
   contextMenuCallback(menuText)
   {
@@ -637,13 +640,14 @@ class AnnotationCanvas extends TatorElement
     if (menuText == "Extend track")
     {
       objDescription.interface = 'extend';
+      objDescription.maxFrames = this._numFrames;
     }
-    else if (menuText == "Set as track start point")
+    else if (menuText == "Trim start to here")
     {
       objDescription.interface = 'trim';
       objDescription.trimEndpoint = 'start';
     }
-    else if (menuText == "Set as track end point")
+    else if (menuText == "Trim end to here")
     {
       objDescription.interface = 'trim';
       objDescription.trimEndpoint = 'end';
@@ -672,7 +676,8 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      // Check to see if the menu matches the new track type
+      // Check to see if the menu matches the new track type.
+      // If so, proceed foward and dispatch the appropriate event.
       for (const menuData of this._createNewTrackMenuEntries)
       {
         if (menuData.menuText == menuText)
