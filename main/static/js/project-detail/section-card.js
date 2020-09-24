@@ -54,6 +54,10 @@ class SectionCard extends TatorElement {
     }
   }
 
+  rename(name) {
+    this._title.textContent = name;
+  }
+
   set active(enabled) {
     if (enabled) {
       this._li.classList.add("is-active");

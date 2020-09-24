@@ -536,14 +536,14 @@ class MediaSection extends TatorElement {
       });
       input.addEventListener("blur", evt => {
         if (evt.target.value !== "") {
-          this._worker.postMessage({
-            command: "renameSection",
-            fromName: this._sectionName,
-            toName: evt.target.value,
-          });
+          //this._worker.postMessage({
+          //  command: "renameSection",
+          //  fromName: this._sectionName,
+          //  toName: evt.target.value,
+          //});
           this._sectionName = evt.target.value;
         }
-        fetch("/rest/Medias/" + this._project + this._sectionFilter(), {
+        fetch("/rest/Section/" + this._section.id, {
           method: "PATCH",
           credentials: "same-origin",
           headers: {
@@ -552,13 +552,18 @@ class MediaSection extends TatorElement {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            "attributes": {"tator_user_sections": this._sectionName}
+            "name": this._sectionName
           }),
         });
-        this.setAttribute("name", this._sectionName);
-        this._files.setAttribute("section", this._sectionName);
+        this._nameText.textContent = this._sectionName;
+        this._section.name = this._sectionName;
         this._name.replaceChild(this._nameText, evt.target);
-        this.dispatchEvent(new Event("newName"));
+        this.dispatchEvent(new CustomEvent("newName", {
+          detail: {
+            id: this._section.id,
+            sectionName: this._sectionName,
+          },
+        }));
       });
       input.focus();
     }

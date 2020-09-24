@@ -165,6 +165,15 @@ class ProjectDetail extends TatorPage {
       }
     });
     */
+    this._mediaSection.addEventListener("newName", evt => {
+      for (const sectionCard of this._folders.children) {
+        if (sectionCard._section) {
+          if (sectionCard._section.id == evt.detail.id) {
+            sectionCard.rename(evt.detail.sectionName);
+          }
+        }
+      }
+    });
 
     window._uploader.addEventListener("message", evt => {
       const msg = evt.data;
