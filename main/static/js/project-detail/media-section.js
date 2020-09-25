@@ -207,35 +207,37 @@ class MediaSection extends TatorElement {
       }
     })
     .then(response => response.json())
-    .then(count => this.numMedia = count);
-    // Find an interval for use with "after". Super page size of
-    // 5000 guarantees that any start/stop fully falls within a
-    // super page interval.
-    let afterPromise = Promise.resolve("");
-    if (this._stop < 10000) {
-      sectionQuery.append("start", this._start);
-      sectionQuery.append("stop", this._stop);
-    } else {
-      const afterIndex = 5000 * Math.floor(this._start / 5000);
-      sectionQuery.append("start", this._start % afterIndex);
-      sectionQuery.append("stop", this._stop % afterIndex);
-      afterPromise = this._getAfter(afterIndex);
-    }
-    afterPromise.then(afterName => {
-      if (afterName) {
-        sectionQuery.append("after", afterName);
+    .then(count => this.numMedia = count)
+    .then(() => {
+      // Find an interval for use with "after". Super page size of
+      // 5000 guarantees that any start/stop fully falls within a
+      // super page interval.
+      let afterPromise = Promise.resolve("");
+      if (this._stop < 10000) {
+        sectionQuery.append("start", this._start);
+        sectionQuery.append("stop", this._stop);
+      } else {
+        const afterIndex = 5000 * Math.floor(this._start / 5000);
+        sectionQuery.append("start", this._start % afterIndex);
+        sectionQuery.append("stop", this._stop % afterIndex);
+        afterPromise = this._getAfter(afterIndex);
       }
-      return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
+      return afterPromise.then(afterName => {
+        if (afterName) {
+          sectionQuery.append("after", afterName);
         }
-      })
-      .then(response => response.json())
-      .then(media => this._files.cardInfo = media);
+        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
+          method: "GET",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        })
+        .then(response => response.json())
+        .then(media => this._files.cardInfo = media);
+      });
     });
   }
 
