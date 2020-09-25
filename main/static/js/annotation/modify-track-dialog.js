@@ -97,11 +97,6 @@ class ModifyTrackDialog extends TatorElement {
     this._addDetectionText.setAttribute("class", "text-gray f2 py-3");
     div.appendChild(this._addDetectionText);
 
-    const warning = document.createElement("p");
-    warning.setAttribute("class", "text-semibold py-3");
-    warning.textContent = "Warning: This cannot be undone";
-    div.appendChild(warning);
-
     this._addDetectionDiv = div;
     this._contentDiv.appendChild(div);
   }

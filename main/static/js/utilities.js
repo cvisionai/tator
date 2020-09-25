@@ -10,6 +10,40 @@ function getCookie(name) {
 
 class Utilities
 {
+  static showSuccessIcon(message, color, noFade)
+  {
+    const el = window.tator_success_light;
+    if (el)
+    {
+      el.style.transition = '0.25s';
+      el.style.opacity = '100';
+      el.style.visibility = 'visible';
+      el.message(message, color);
+
+      if (!noFade)
+      {
+        setTimeout(function() {
+            el.style.transition = '1.0s';
+            el.style.opacity = '0';
+            el.style.visibility = 'hidden';
+          }, 5000);
+      }
+    }
+    else
+    {
+      console.warn("Couldn't find tator_success_light element!");
+    }
+  }
+
+  static hideSuccessIcon()
+  {
+    const el = window.tator_success_light;
+    if (el)
+    {
+      el.hide();
+    }
+
+  }
 
   static warningAlert(message, color)
   {
@@ -74,7 +108,7 @@ class Utilities
 
     // We either have a url set (old way) or a path and potentially host
     // and http_auth
-    
+
     let request;
     if (url == undefined)
     {
@@ -116,10 +150,10 @@ class Utilities
                              headers: session_headers
                             });
     }
-    
+
     return request;
   }
-  
+
   // Returns a promise with the clients IP
   static getClientIP()
   {

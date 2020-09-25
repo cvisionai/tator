@@ -48,6 +48,8 @@ class AnnotationPage extends TatorPage {
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
 
+    this._successColor = "#54e37a";
+
     window.addEventListener("error", (evt) => {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
@@ -637,7 +639,7 @@ class AnnotationPage extends TatorPage {
             version: baseLocalization.version
           };
 
-          if (typeof newLocalization.media === "undefined") {
+          if (typeof baseLocalization.media === "undefined") {
             newLocalization.media_id = baseLocalization.media_id;
           }
       
@@ -700,7 +702,7 @@ class AnnotationPage extends TatorPage {
         .then(() => {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          window.alert("Track extension done.")
+          Utilities.showSuccessIcon("Track extension done.", this._successColor);
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
         });
       }
@@ -730,7 +732,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track trimming done.")
+        Utilities.showSuccessIcon("Track trimming done.", this._successColor);
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
       });
     });
@@ -754,7 +756,7 @@ class AnnotationPage extends TatorPage {
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Detection added to track.")
+        Utilities.showSuccessIcon("Detection added to track.", this._successColor);
         canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
       });
     });
@@ -779,7 +781,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        window.alert("Track merged.")
+        Utilities.showSuccessIcon("Track merged.", this._successColor);
         canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
       });
     });
