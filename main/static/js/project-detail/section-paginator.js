@@ -91,7 +91,12 @@ class SectionPaginator extends TatorElement {
     this._page = page;
 
     // Update appearance to reflect new page.
-    if (page == 0) {
+    if (this._numPages == 1) {
+      this._prev.removeAttribute("style");
+      this._prev.setAttribute("class", "is-disabled");
+      this._next.removeAttribute("style");
+      this._next.setAttribute("class", "is-disabled");
+    } else if (page == 0) {
       this._prev.removeAttribute("style");
       this._prev.setAttribute("class", "is-disabled");
       this._next.style.cursor = "pointer";
@@ -107,7 +112,27 @@ class SectionPaginator extends TatorElement {
       this._next.style.cursor = "pointer";
       this._next.classList.remove("is-disabled");
     }
-    if (page < Math.ceil(this._pages.length / 2)) {
+    const displayPages = Math.min(this._pages.length, this._numPages);
+    for (let idx = 0; idx < this._pages.length; idx++) {
+      if (idx < displayPages) {
+        this._pages[idx].style.display = "block";
+      } else {
+        this._pages[idx].style.display = "none";
+      }
+    }
+    if (displayPages < this._pages.length) {
+      for (let idx = 0; idx < displayPages; idx++) {
+        const val = idx + 1;
+        this._pages[idx].textContent = val;
+        if (val == page + 1) {
+          this._pages[idx].setAttribute("class", "is-active");
+        } else {
+          this._pages[idx].classList.remove("is-active");
+        }
+      }
+      this._ellipsis.style.display = "none";
+      this._last.style.display = "none";
+    } else if (page < Math.ceil(this._pages.length / 2)) {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = idx + 1;
         this._pages[idx].textContent = val;
@@ -117,19 +142,8 @@ class SectionPaginator extends TatorElement {
           this._pages[idx].classList.remove("is-active");
         }
       }
-      if (this._pages.length > this._numPages) {
-        for (let idx = this._numPages; idx < this._pages.length; idx++) {
-          this._pages[idx].style.display = "none";
-        }
-        this._ellipsis.style.display = "none";
-        this._last.style.display = "none";
-      } else {
-        for (let idx = 0; idx < this._pages.length; idx++) {
-          this._pages[idx].style.display = "block";
-        }
-        this._ellipsis.style.display = "block";
-        this._last.style.display = "block";
-      }
+      this._ellipsis.style.display = "block";
+      this._last.style.display = "block";
     } else if (page > Math.floor(this._numPages - (this._pages.length / 2))) {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = this._numPages - this._pages.length + idx + 1
