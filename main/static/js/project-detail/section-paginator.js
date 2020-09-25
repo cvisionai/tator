@@ -78,6 +78,15 @@ class SectionPaginator extends TatorElement {
     pageSize.selectedIndex = 2;
     div.appendChild(pageSize);
 
+    const goToPageText = document.createElement("span");
+    goToPageText.setAttribute("class", "pagination__ellipsis");
+    goToPageText.textContent = "Go To:";
+    div.appendChild(goToPageText);
+
+    const goToPage = document.createElement("input");
+    goToPage.setAttribute("class", "form-control input-sm2 has-border");
+    div.appendChild(goToPage);
+
     this._prev.addEventListener("click", () => {
       this._setPage(Math.max(0, this._page - 1));
       this._emit();
@@ -98,6 +107,18 @@ class SectionPaginator extends TatorElement {
         this._pageSize = Number(evt.target.value);
         this.init(this._numFiles);
         this._emit();
+      }
+    });
+
+    goToPage.addEventListener("keydown", evt => {
+      if (evt.keyCode == 13) {
+        evt.preventDefault();
+        const page = Number(evt.target.value);
+        goToPage.value = "";
+        if (page <= this._numPages && page >= 1) {
+          this._setPage(page - 1);
+          this._emit();
+        }
       }
     });
 
