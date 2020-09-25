@@ -93,8 +93,8 @@ def get_media_queryset(project, query_params, dry_run=False):
 
     if start is not None and stop is not None:
         query['size'] = int(stop) - int(start)
-        if start + stop > 10000:
-            raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
+        if stop > 10000:
+            raise ValueError("Parameter 'stop' must be less than 10000! Try using "
                              "'after'.")
 
     if after is not None:
