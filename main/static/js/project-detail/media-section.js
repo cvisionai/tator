@@ -45,6 +45,9 @@ class MediaSection extends TatorElement {
     this._files.mediaParams = this._sectionParams.bind(this);
     div.appendChild(this._files);
 
+    this._paginator = document.createElement("section-paginator");
+    section.appendChild(this._paginator);
+
     this._searchParams = new URLSearchParams();
   }
 
@@ -65,6 +68,9 @@ class MediaSection extends TatorElement {
     this._upload.setAttribute("token", token);
     this._upload.setAttribute("section", this._sectionName);
     this._more.section = section;
+    this._start = 0;
+    this._stop = this._paginator._pageSize;
+    this._after = new Map();
     this.reload();
   }
 
@@ -129,17 +135,23 @@ class MediaSection extends TatorElement {
       if (mediaCard.getAttribute("media-id") == mediaId) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
-        this._numFiles.textContent = `${numFiles} Files`;
+        this._updateNumFiles(numFiles);
       }
     }
   }
 
   _updateNumFiles(numFiles) {
-    let fileText = " Files";
+    let fileText = "Files";
     if (numFiles == 1) {
-      fileText = " File";
+      fileText = "File";
     }
-    this._numFiles.nodeValue = numFiles + fileText;
+    this._numFiles.nodeValue = `${numFiles} ${fileText}`;
+    if (numFiles != this._paginator._numFiles) {
+      this._start = 0;
+      this._stop = this._paginator._pageSize;
+      this._after = new Map();
+      this._paginator.init(numFiles);
+    }
   }
 
   _sectionParams() {
@@ -151,8 +163,6 @@ class MediaSection extends TatorElement {
   }
 
   reload() {
-    const start = 0;
-    const stop = 100;
     const sectionQuery = this._sectionParams();
     const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
@@ -165,8 +175,8 @@ class MediaSection extends TatorElement {
     })
     .then(response => response.json())
     .then(count => this.numMedia = count);
-    sectionQuery.append("start", start);
-    sectionQuery.append("stop", stop);
+    sectionQuery.append("start", this._start);
+    sectionQuery.append("stop", this._stop);
     const mediaPromise = fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
       credentials: "same-origin",
@@ -547,6 +557,16 @@ class MediaSection extends TatorElement {
     }
   }
 
+  _setPage(evt) {
+    this._start = evt.detail.start;
+    this._stop = evt.detail.stop;
+    this.reload();
+  }
+
+  _findAfters() {
+    // Find the media for each batch of 10000 medias.
+  }
+
   _setCallbacks() {
     this._more.addEventListener("algorithm", this._launchAlgorithm.bind(this));
     this._files.addEventListener("algorithm", this._launchAlgorithm.bind(this));
@@ -567,6 +587,8 @@ class MediaSection extends TatorElement {
         }
       }));
     });
+
+    this._paginator.addEventListener("selectPage", this._setPage.bind(this));
   }
 }
 
