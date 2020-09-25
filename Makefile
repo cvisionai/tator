@@ -246,6 +246,7 @@ FILES = \
     util/identifying-attribute.js \
     util/fetch-retry.js \
     util/has-permission.js \
+    util/join-params.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
