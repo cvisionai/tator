@@ -275,10 +275,6 @@ class ProjectDetail extends TatorPage {
         this._collaborators.usernames = project.usernames;
         this._search.autocomplete = project.filter_autocomplete;
         let projectParams = null;
-        let params = new URLSearchParams(document.location.search.substring(1));
-        if (params.has("search")) {
-          this._mediaSection.searchString = params.get("search");
-        }
         const home = document.createElement("section-card");
         home.init(null, false);
         home.addEventListener("click", () => {
@@ -310,7 +306,23 @@ class ProjectDetail extends TatorPage {
             card.active = true;
           });
         }
-        home.click();
+        const params = new URLSearchParams(document.location.search.substring(1));
+        if (params.has("search")) {
+          this._mediaSection.searchString = params.get("search");
+        }
+        if (params.has("section")) {
+          const sectionId = Number(params.get("section"));
+          for (const child of this._folders.children) {
+            if (child._section) {
+              if (child._section.id == sectionId) {
+                child.click();
+                break;
+              }
+            }
+          }
+        } else {
+          home.click();
+        }
       });
     });
   }
@@ -342,6 +354,20 @@ class ProjectDetail extends TatorPage {
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
     this._mediaSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
+    let params = new URLSearchParams(document.location.search.substring(1));
+    params.delete("section");
+    if (section !== null) {
+      params.set("section", section.id);
+    }
+    const path = document.location.pathname;
+    const searchArgs = params.toString();
+    let newUrl = path;
+    newUrl += "?" + searchArgs;
+    let sectionName = "All Media";
+    if (section !== null) {
+      sectionName = section.name;
+    }
+    window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
   }
 
   _updateSectionNames(allSections) {
