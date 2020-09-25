@@ -97,7 +97,6 @@ class AnnotationPage extends TatorPage {
             return;
           }
           this._breadcrumbs.setAttribute("media-name", data.name);
-          this._breadcrumbs.setAttribute("section-name", data.attributes.tator_user_sections);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
           this._settings.mediaInfo = data;

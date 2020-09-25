@@ -16,6 +16,7 @@ class AnnotationBreadcrumbs extends TatorElement {
 
     this._sectionText = document.createElement("a");
     this._sectionText.setAttribute("class", "text-gray");
+    this._sectionText.setAttribute("href", this._sectionUrl());
     div.appendChild(this._sectionText);
 
     const chevron2 = document.createElement("chevron-right");
@@ -25,6 +26,8 @@ class AnnotationBreadcrumbs extends TatorElement {
     this._fileText = document.createElement("span");
     this._fileText.setAttribute("class", "text-white text-semibold");
     div.appendChild(this._fileText);
+
+    this._sectionName();
   }
 
   static get observedAttributes() {
@@ -38,9 +41,6 @@ class AnnotationBreadcrumbs extends TatorElement {
         this._projectText.setAttribute("href", this._detailUrl());
         break;
       case "section-name":
-        const url = this._detailUrl() + "#" + newValue;
-        this._sectionText.textContent = newValue;
-        this._sectionText.setAttribute("href", url);
         break;
       case "media-name":
         this._fileText.textContent = newValue;
@@ -50,8 +50,38 @@ class AnnotationBreadcrumbs extends TatorElement {
 
   _detailUrl() {
     const project = window.location.pathname.split("/")[1];
-    const url = window.location.origin + "/" + project + "/project-detail";
-    return url;
+    return `${window.location.origin}/${project}/project-detail`;
+  }
+
+  _sectionUrl() {
+    const params = new URLSearchParams(document.location.search.substring(1));
+    const sectionParams = new URLSearchParams();
+    if (params.has("search")) {
+      sectionParams.set("search", params.get("search"));
+    }
+    if (params.has("section")) {
+      sectionParams.set("section", params.get("section"));
+    }
+    return `${this._detailUrl()}?${sectionParams.toString()}`;
+  }
+
+  _sectionName() {
+    const params = new URLSearchParams(document.location.search.substring(1));
+    if (params.has("section")) {
+      fetchRetry(`/rest/Section/${params.get("section")}`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.json())
+      .then(section => {this._sectionText.textContent = section.name});
+    } else {
+      this._sectionText.textContent = "All Media";
+    }
   }
 }
 
