@@ -162,6 +162,39 @@ class MediaSection extends TatorElement {
     return joinParams(sectionParams, this._searchParams);
   }
 
+  _getAfter(index) {
+    const url = `/rest/Medias/${this._project}`;
+    let params = this._sectionParams();
+    const recursiveFetch = (url, params, current) => {
+      let after = "";
+      if (this._after.has(current - 5000)) {
+        after = `&after=${this._after.get(current-5000)}`;
+      }
+      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        this._after.set(current, data[0].name);
+        if (current < index) {
+          return recursiveFetch(url, params, current + 5000);
+        }
+        return Promise.resolve(data[0]['name']);
+      });
+    }
+    if (this._after.has(index)) {
+      return Promise.resolve(this._after.get(index));
+    } else {
+      return recursiveFetch(url, params, 5000);
+    }
+  }
+
   reload() {
     const sectionQuery = this._sectionParams();
     const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
@@ -175,19 +208,35 @@ class MediaSection extends TatorElement {
     })
     .then(response => response.json())
     .then(count => this.numMedia = count);
-    sectionQuery.append("start", this._start);
-    sectionQuery.append("stop", this._stop);
-    const mediaPromise = fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
+    // Find an interval for use with "after". Super page size of
+    // 5000 guarantees that any start/stop fully falls within a
+    // super page interval.
+    let afterPromise = Promise.resolve("");
+    if (this._stop < 10000) {
+      sectionQuery.append("start", this._start);
+      sectionQuery.append("stop", this._stop);
+    } else {
+      const afterIndex = 5000 * Math.floor(this._start / 5000);
+      sectionQuery.append("start", this._start % afterIndex);
+      sectionQuery.append("stop", this._stop % afterIndex);
+      afterPromise = this._getAfter(afterIndex);
+    }
+    afterPromise.then(afterName => {
+      if (afterName) {
+        sectionQuery.append("after", afterName);
       }
-    })
-    .then(response => response.json())
-    .then(media => this._files.cardInfo = media);
+      return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.json())
+      .then(media => this._files.cardInfo = media);
+    });
   }
 
   _launchAlgorithm(evt) {

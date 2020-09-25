@@ -7,7 +7,7 @@ class SectionPaginator extends TatorElement {
     this._shadow.appendChild(div);
 
     this._prev = document.createElement("a");
-    this._prev.setAttribute("class", "is-disabled");
+    this._prev.setAttribute("class", "is-disabled unselectable");
     div.appendChild(this._prev);
 
     const prevSvg = document.createElementNS(svgNamespace, "svg");
