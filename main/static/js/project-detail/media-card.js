@@ -204,8 +204,8 @@ class MediaCard extends TatorElement {
   }
   */
 
-  set mediaFilter(val) {
-    this._mediaFilter = val;
+  set mediaParams(val) {
+    this._mediaParams = val;
   }
 
   set media(val) {
@@ -226,7 +226,7 @@ class MediaCard extends TatorElement {
       if(typeof(val.project) == "undefined") {
         project = val.project_id;
       }
-      var uri = encodeURI(`/${project}/annotation/${val.id}${this._mediaFilter()}`);
+      var uri = encodeURI(`/${project}/annotation/${val.id}?${this._mediaParams.toString()}`);
       this._link.setAttribute("href", uri);
     }
   }

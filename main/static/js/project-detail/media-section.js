@@ -42,17 +42,17 @@ class MediaSection extends TatorElement {
 
     this._files = document.createElement("section-files");
     this._files.setAttribute("class", "col-12");
-    this._files.mediaFilter = this._sectionFilter.bind(this);
+    this._files.mediaParams = this._sectionParams.bind(this);
     div.appendChild(this._files);
+
+    this._searchParams = new URLSearchParams();
   }
 
   init(project, section, username, token) {
     if (section === null) {
       this._sectionName = "All Media";
-      this._attributeFilter = "?";
     } else {
       this._sectionName = section.name;
-      this._attributeFilter = `?section=${section.id}`;
     }
     this._project = project;
     this._section = section;
@@ -89,17 +89,16 @@ class MediaSection extends TatorElement {
     }
   }
 
-  set sectionFilter(val) {
-    this._attributeFilter = val;
+  set searchString(val) {
+    if (val) {
+      this._searchParams.set("search", val);
+    } else {
+      this._searchParams = new URLSearchParams();
+    }
   }
 
-  get sectionFilter() {
-    return this._sectionFilter();
-  }
-
-  set worker(val) {
-    this._worker = val;
-    this._files.worker = val;
+  get sectionParams() {
+    return this._sectionParams();
   }
 
   set cardInfo(val) {
@@ -143,18 +142,19 @@ class MediaSection extends TatorElement {
     this._numFiles.nodeValue = numFiles + fileText;
   }
 
-  _sectionFilter() {
-    return this._attributeFilter;
+  _sectionParams() {
+    const sectionParams = new URLSearchParams();
+    if (this._section !== null) {
+      sectionParams.append("section", this._section.id);
+    }
+    return joinParams(sectionParams, this._searchParams);
   }
 
   reload() {
     const start = 0;
     const stop = 100;
-    let sectionQuery = "";
-    if (this._section !== null) {
-      sectionQuery = `section=${this._section.id}`;
-    }
-    const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery}`, {
+    const sectionQuery = this._sectionParams();
+    const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -165,7 +165,9 @@ class MediaSection extends TatorElement {
     })
     .then(response => response.json())
     .then(count => this.numMedia = count);
-    const mediaPromise = fetch(`/rest/Medias/${this._project}?start=${start}&stop=${stop}&${sectionQuery}`, {
+    sectionQuery.append("start", start);
+    sectionQuery.append("stop", stop);
+    const mediaPromise = fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -186,7 +188,7 @@ class MediaSection extends TatorElement {
     }
     else
     {
-      body["media_query"] = this._sectionFilter();
+      body["media_query"] = `?${this._sectionParams().toString()}`;
     }
     fetch(`/rest/AlgorithmLaunch/${this._project}`, {
       method: "POST",
@@ -211,14 +213,15 @@ class MediaSection extends TatorElement {
   }
 
   _downloadFiles(evt) {
-    let mediaFilter = "";
+    let mediaParams = URLSearchParams();
     if (evt.detail) {
       if (evt.detail.mediaIds) {
-        mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        mediaParams.append("media_id", evt.detail.mediaIds);
       }
     }
     const getUrl = endpoint => {
-      return "/rest/" + endpoint + "/" + this._project + this._sectionFilter() + mediaFilter;
+      const params = joinParams(this._sectionParams(), mediaParams);
+      return `/rest/${endpoint}/${this._project}?${params.toString()}`;
     };
     const headers = {
       "X-CSRFToken": getCookie("csrftoken"),
@@ -316,17 +319,16 @@ class MediaSection extends TatorElement {
   }
 
   _downloadAnnotations(evt) {
-    let mediaFilter = "";
     if (evt.detail) {
       if (evt.detail.mediaIds) {
-        mediaFilter = "&media_id=" + evt.detail.mediaIds;
+        mediaParams = new URLSearchParams({"media_id": evt.detail.mediaIds});
       }
     }
+    params = joinParams(mediaParams, this._sectionParams());
     const getUrl = endpoint => {
-      return "/rest/" + endpoint + "/" + this._project + "?media_query="
-             + this._sectionFilter() + mediaFilter;
+      return `/rest/${endpoint}/${this._project}?media_query=?${params.toString()}`;
     };
-    const mediaUrl = "/rest/Medias/" + this._project + this._sectionFilter() + mediaFilter;
+    const mediaUrl = `/rest/Medias/${this._project}?${params.toString()}`;
     const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
     let mediaTypes = null;
     let mediaFetcher = null;
@@ -559,7 +561,7 @@ class MediaSection extends TatorElement {
     this._more.addEventListener("delete", evt => {
       this.dispatchEvent(new CustomEvent("remove", {
         detail: {
-          sectionFilter: this._sectionFilter(),
+          sectionParams: this._sectionParams(),
           section: this._section,
           projectId: this._project,
         }

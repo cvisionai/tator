@@ -15,8 +15,8 @@ class SectionFiles extends TatorElement {
     this._permission = val;
   }
 
-  set mediaFilter(val) {
-    this._mediaFilter = val;
+  set mediaParams(val) {
+    this._mediaParams = val;
   }
 
   set cardInfo(val) {
@@ -43,7 +43,7 @@ class SectionFiles extends TatorElement {
     }else {
       card.removeAttribute("thumb-gif");
     }
-    card.mediaFilter = this._mediaFilter;
+    card.mediaParams = this._mediaParams();
     card.media = media;
     card.style.display = "block";
     card.setAttribute("name", media.name);

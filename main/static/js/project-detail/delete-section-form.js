@@ -52,8 +52,8 @@ class DeleteSectionForm extends ModalDialog {
 
     this._accept.addEventListener("click", async evt => {
       const projectId = this._project;
-      const filter = this._sectionFilter;
-      fetch("/rest/Medias/" + projectId + filter, {
+      const params = this._sectionParams;
+      fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
@@ -79,10 +79,10 @@ class DeleteSectionForm extends ModalDialog {
     });
   }
 
-  init(project, section, sectionFilter) {
+  init(project, section, sectionParams) {
     this._project = project;
     this._section = section;
-    this._sectionFilter = sectionFilter;
+    this._sectionParams = sectionParams;
     this._title.nodeValue = `Delete "${section.name}"`;
     this._checks.forEach((item, index, array) => {
       item.checked = false;

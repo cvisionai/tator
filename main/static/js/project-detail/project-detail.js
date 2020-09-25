@@ -73,7 +73,6 @@ class ProjectDetail extends TatorPage {
     buttons.appendChild(this._algorithmButton);
 
     this._uploadButton = document.createElement("upload-button");
-    this._uploadButton.worker = this._worker;
     buttons.appendChild(this._uploadButton);
 
     this._description = document.createElement("project-text");
@@ -101,9 +100,6 @@ class ProjectDetail extends TatorPage {
     const deleteFile = document.createElement("delete-file-form");
     this._projects.appendChild(deleteFile);
 
-    this._progress = document.createElement("progress-summary");
-    this._shadow.insertBefore(this._progress, main);
-
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
@@ -116,8 +112,6 @@ class ProjectDetail extends TatorPage {
         window.alert("Uploads are in progress. Still leave?");
       }
     });
-
-    window.addEventListener("scroll", this._checkSectionVisibility.bind(this));
 
     this._mediaSection.addEventListener("newName", evt => {
       for (const sectionCard of this._folders.children) {
@@ -137,7 +131,7 @@ class ProjectDetail extends TatorPage {
     });
 
     this._removeCallback = evt => {
-      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionFilter);
+      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
@@ -214,6 +208,8 @@ class ProjectDetail extends TatorPage {
         } else if (query == "") {
           this._lastQuery = null;
         }
+        this._mediaSection.searchString = this._lastQuery;
+        this._mediaSection.reload();
       }
     });
   }
@@ -278,10 +274,10 @@ class ProjectDetail extends TatorPage {
         this._description.setAttribute("text", project.summary);
         this._collaborators.usernames = project.usernames;
         this._search.autocomplete = project.filter_autocomplete;
-        let projectFilter = null;
+        let projectParams = null;
         let params = new URLSearchParams(document.location.search.substring(1));
         if (params.has("search")) {
-          projectFilter = params.get("search");
+          this._mediaSection.searchString = params.get("search");
         }
         const home = document.createElement("section-card");
         home.init(null, false);
@@ -338,7 +334,7 @@ class ProjectDetail extends TatorPage {
 
   _selectSection(section, projectId) {
     this._mediaSection.init(projectId, section, this.getAttribute("username"),
-                                        this.getAttribute("token"));
+                            this.getAttribute("token"));
     this._mediaSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
     this._mediaSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
     this._mediaSection.addEventListener("allset", this._allSetCallback.bind(this));
