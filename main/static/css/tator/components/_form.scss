@@ -132,6 +132,19 @@ textarea.form-control {
   -webkit-appearance: menulist;
 }
 
+.select-sm2 {
+  height: 30px;
+  line-height: inherit;
+  color: $color-gray--light;
+  &:focus {
+    color: $color-gray--light;
+  }
+  padding-left: 0px;
+  padding-right: 0px;
+  cursor: pointer;
+  -webkit-appearance: menulist;
+}
+
 .select-in-input {
   position: absolute;
   right: $spacing-2;

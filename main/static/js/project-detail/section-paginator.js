@@ -62,6 +62,22 @@ class SectionPaginator extends TatorElement {
     nextPath.setAttribute("d", "M11.293 5.707l5.293 5.293h-11.586c-0.552 0-1 0.448-1 1s0.448 1 1 1h11.586l-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l7-7c0.092-0.092 0.166-0.202 0.217-0.324 0.101-0.245 0.101-0.521 0-0.766-0.049-0.118-0.121-0.228-0.217-0.324l-7-7c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
     nextSvg.appendChild(nextPath);
 
+    const pageSizeText = document.createElement("span");
+    pageSizeText.setAttribute("class", "pagination__ellipsis");
+    pageSizeText.textContent = "Page Size:";
+    div.appendChild(pageSizeText);
+
+    const pageSize = document.createElement("select");
+    pageSize.setAttribute("class", "form-select select-sm2 has-border");
+    for (const pageOption of [10, 25, 50, 100]) {
+      const option = document.createElement("option");
+      option.setAttribute("value", pageOption);
+      option.textContent = pageOption;
+      pageSize.appendChild(option);
+    }
+    pageSize.selectedIndex = 2;
+    div.appendChild(pageSize);
+
     this._prev.addEventListener("click", () => {
       this._setPage(Math.max(0, this._page - 1));
       this._emit();
@@ -77,7 +93,15 @@ class SectionPaginator extends TatorElement {
       this._emit();
     });
 
-    this._pageSize = 100;
+    pageSize.addEventListener("change", evt => {
+      if (evt.target.value != "Page Size") {
+        this._pageSize = Number(evt.target.value);
+        this.init(this._numFiles);
+        this._emit();
+      }
+    });
+
+    this._pageSize = 50;
   }
 
   init(numFiles) {
