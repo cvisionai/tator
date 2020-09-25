@@ -2,8 +2,6 @@ class ProjectDetail extends TatorPage {
   constructor() {
     super();
 
-    this._worker = new Worker("/static/js/project-detail/media-worker.js");
-
     window._uploader = new Worker("/static/js/tasks/upload-worker.js");
 
     const main = document.createElement("main");
@@ -191,32 +189,6 @@ class ProjectDetail extends TatorPage {
 
     this._algorithmButton.addEventListener("newAlgorithm", this._newAlgorithmCallback);
 
-    this._progress.addEventListener("uploadProgress", evt => {
-      const msg = evt.detail.message;
-      if (msg.project_id == this.getAttribute("project-id")) {
-        this._worker.postMessage({
-          command: "uploadProgress",
-          ...msg
-        });
-      }
-    });
-
-    this._progress.addEventListener("algorithmProgress", evt => {
-      const msg = evt.detail.message;
-      if (msg.project_id == this.getAttribute("project-id")) {
-        this._worker.postMessage({
-          command: "algorithmProgress",
-          ...msg
-        });
-      }
-    });
-
-    this._progress.addEventListener("groupCancel", evt => {
-      cancelJob.init(evt.detail.gid, this.getAttribute("project-id"));
-      cancelJob.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
-    });
-
     cancelJob.addEventListener("confirmGroupCancel", () => {
       this.removeAttribute("has-open-modal");
       cancelJob.removeAttribute("is-open");
@@ -242,23 +214,12 @@ class ProjectDetail extends TatorPage {
         } else if (query == "") {
           this._lastQuery = null;
         }
-        this._worker.postMessage({
-          command: "filterProject",
-          query: this._lastQuery,
-        });
       }
     });
   }
 
   static get observedAttributes() {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
-  }
-
-  _checkSectionVisibility() {
-    const rect = this._projects.getBoundingClientRect();
-    if (rect.bottom < window.innerHeight + 300) {
-      this._worker.postMessage({command: "requestMoreSections"});
-    }
   }
 
   _init() {
@@ -311,7 +272,6 @@ class ProjectDetail extends TatorPage {
         }
         if (!hasPermission(project.permission, "Can Transfer")) {
           this._uploadButton.style.display = "none";
-          //this._newSection.style.display = "none";
         }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
