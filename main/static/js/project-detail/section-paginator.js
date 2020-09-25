@@ -117,8 +117,19 @@ class SectionPaginator extends TatorElement {
           this._pages[idx].classList.remove("is-active");
         }
       }
-      this._ellipsis.style.display = "block";
-      this._last.style.display = "block";
+      if (this._pages.length > this._numPages) {
+        for (let idx = this._numPages; idx < this._pages.length; idx++) {
+          this._pages[idx].style.display = "none";
+        }
+        this._ellipsis.style.display = "none";
+        this._last.style.display = "none";
+      } else {
+        for (let idx = 0; idx < this._pages.length; idx++) {
+          this._pages[idx].style.display = "block";
+        }
+        this._ellipsis.style.display = "block";
+        this._last.style.display = "block";
+      }
     } else if (page > Math.floor(this._numPages - (this._pages.length / 2))) {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = this._numPages - this._pages.length + idx + 1
