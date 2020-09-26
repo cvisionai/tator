@@ -626,7 +626,7 @@ class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
-    this._more.addEventListener("algorithm", this._launchAlgorithm.bind(this));
+    this._more.addEventListener("algorithmMenu", this._launchAlgorithm.bind(this));
     this._files.addEventListener("algorithm", this._launchAlgorithm.bind(this));
 
     this._more.addEventListener("download", this._downloadFiles.bind(this));
