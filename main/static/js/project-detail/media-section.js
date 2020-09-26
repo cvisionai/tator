@@ -218,8 +218,13 @@ class MediaSection extends TatorElement {
         sectionQuery.append("stop", this._stop);
       } else {
         const afterIndex = 5000 * Math.floor(this._start / 5000);
-        sectionQuery.append("start", this._start % afterIndex);
-        sectionQuery.append("stop", this._stop % afterIndex);
+        const start = this._start % afterIndex;
+        let stop = this._stop % afterIndex;
+        if (stop < start) {
+          stop += 5000;
+        }
+        sectionQuery.append("start", start);
+        sectionQuery.append("stop", stop);
         afterPromise = this._getAfter(afterIndex);
       }
       return afterPromise.then(afterName => {
