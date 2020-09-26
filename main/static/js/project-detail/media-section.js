@@ -386,12 +386,13 @@ class MediaSection extends TatorElement {
   }
 
   _downloadAnnotations(evt) {
+    const mediaParams = new URLSearchParams();
     if (evt.detail) {
       if (evt.detail.mediaIds) {
-        mediaParams = new URLSearchParams({"media_id": evt.detail.mediaIds});
+        mediaParams.append("media_id", evt.detail.mediaIds);
       }
     }
-    params = joinParams(mediaParams, this._sectionParams());
+    const params = joinParams(mediaParams, this._sectionParams());
     const getUrl = endpoint => {
       return `/rest/${endpoint}/${this._project}?media_query=?${params.toString()}`;
     };
