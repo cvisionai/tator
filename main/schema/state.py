@@ -323,3 +323,87 @@ class StateGraphicSchema(AutoSchema):
             }
         return responses
 
+
+class MergeStatesSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == 'PATCH':
+            operation['operationId'] = 'MergeStates'
+        operation['tags'] = ['Tator']
+        return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Merges the source state into the target state. 
+        The target state will inherit the the source's localizations and will be deleted.
+        """)
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying the target state to accept the merge.',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'PATCH':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/StateMergeSpec'},
+            }}}
+        return body
+
+    def _get_responses(self, path, method):
+        responses = {}
+        if method == 'PATCH':
+            responses['200'] = message_schema('update', 'state')
+        return responses
+
+class TrimStateEndSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == 'PATCH':
+            operation['operationId'] = 'TrimStateEnd'
+        operation['tags'] = ['Tator']
+        return operation
+
+    def get_description(self, path, method):
+        return dedent("""\
+        Trims the state's start or end point by deleting the localizations 
+        before the new start point or after the new end point.
+        """)
+
+    def _get_path_parameters(self, path, method):
+        return [{
+            'name': 'id',
+            'in': 'path',
+            'required': True,
+            'description': 'A unique integer identifying the state to trim',
+            'schema': {'type': 'integer'},
+        }]
+
+    def _get_filter_parameters(self, path, method):
+        return []
+
+    def _get_request_body(self, path, method):
+        body = {}
+        if method == 'PATCH':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/StateTrimSpec'},
+            }}}
+        return body
+
+    def _get_responses(self, path, method):
+        responses = {}
+        if method == 'PATCH':
+            responses['200'] = message_schema('update', 'state')
+        return responses

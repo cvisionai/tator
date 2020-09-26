@@ -43,6 +43,8 @@ from .section_analysis import SectionAnalysisAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
 from .state_count import StateCountAPI
+from .state import MergeStatesAPI
+from .state import TrimStateEndAPI
 from .state_graphic import StateGraphicAPI
 from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI

@@ -48,6 +48,8 @@ class AnnotationPage extends TatorPage {
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
 
+    this._successColor = "#54e37a";
+
     window.addEventListener("error", (evt) => {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
@@ -394,7 +396,7 @@ class AnnotationPage extends TatorPage {
           selected_version_idx++;
         }
 
-        
+
         // TODO: Whats the right way to do a default here
         if (this._version == null)
         {
@@ -510,7 +512,7 @@ class AnnotationPage extends TatorPage {
         });
         this._browser.addEventListener("close", evt => {
           this._settings.removeAttribute("type-id");
-          
+
           // The canvas can either be the annotation player or image. The player is the only
           // annotation that has the concepts of tracks, so the following check is performed.
           if (typeof canvas.deselectTrack === "function") {
@@ -535,6 +537,23 @@ class AnnotationPage extends TatorPage {
         this._saves = {};
 
         for (const dataType of localizationTypes) {
+          const save = document.createElement("save-dialog");
+          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          this._settings.setAttribute("version", this._version.id);
+          this._main.appendChild(save);
+          this._saves[dataType.id] = save;
+
+          save.addEventListener("cancel", () => {
+            this._closeModal(save);
+            canvas.refresh();
+          });
+
+          save.addEventListener("save", () => {
+            this._closeModal(save);
+          });
+        }
+
+        for (const dataType of stateTypes) {
           const save = document.createElement("save-dialog");
           save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
@@ -576,6 +595,8 @@ class AnnotationPage extends TatorPage {
           }
         });
 
+        this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
+
         canvas.addEventListener("maximize", () => {
           this._browser.style.display = "none";
         });
@@ -585,6 +606,213 @@ class AnnotationPage extends TatorPage {
         });
       });
     });
+  }
+
+  _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
+    // This is a bit of a hack, but the modals will share the same
+    // methods used by the save localization dialogs since the
+    // appearance to the user is the same.
+
+    const menu = document.createElement("modify-track-dialog");
+    this._main.appendChild(menu);
+    this._saves['modifyTrack'] = menu;
+
+    menu.addEventListener("extendTrack", evt => {
+
+      if (evt.detail.algorithm == "Duplicate") {
+
+        // Create the new localization objets
+        var localizationList = [];
+        const baseLocalization = evt.detail.localization;
+        for (let offset = 1; offset <= evt.detail.numFrames; offset++) {
+
+          var newLocalization = {
+            media_id: baseLocalization.media,
+            type: Number(baseLocalization.meta.split("_")[1]),
+            x: baseLocalization.x,
+            y: baseLocalization.y,
+            u: baseLocalization.u,
+            v: baseLocalization.v,
+            width: baseLocalization.width,
+            height: baseLocalization.height,
+            version: baseLocalization.version
+          };
+
+          if (typeof baseLocalization.media === "undefined") {
+            newLocalization.media_id = baseLocalization.media_id;
+          }
+      
+          newLocalization = {...newLocalization, ...baseLocalization.attributes};
+
+          if (evt.detail.direction == "Forward") {
+            newLocalization.frame = evt.detail.localization.frame + offset;
+          }
+          else {
+            newLocalization.frame = evt.detail.localization.frame - offset;
+          }
+          localizationList.push(newLocalization);
+        }
+
+        // Make the request
+        const promise = fetchRetry("/rest/Localizations/" + evt.detail.project, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(
+            localizationList
+          ),
+        })
+        .then (response => {
+          return response.json();
+        })
+        .then(newLocIds => {
+          try {
+            if (newLocIds.id.length < 1) {
+              throw "Problem creating localizations";
+            }
+
+            const trackPromise = fetchRetry("/rest/State/" + evt.detail.trackId, {
+              method: "PATCH",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(
+                {
+                  localization_ids_add: newLocIds.id
+                }
+              ),
+            })
+            .then (response => response.json());
+  
+            return trackPromise;
+            
+          } catch (error) {
+            window.alert("Error with track extension during localization creation process.");
+            return;
+          }
+        })
+        .then(() => {
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+        });
+      }
+      else {
+        window.alert("Unrecognized track extension algorithm. No track extension performed.");
+      }
+    });
+
+    menu.addEventListener("trimTrack", evt => {
+
+      const promise = fetchRetry("/rest/TrimStateEnd/" + evt.detail.trackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            frame: evt.detail.frame,
+            endpoint: evt.detail.endpoint
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+        Utilities.showSuccessIcon("Track trimming done.", this._successColor);
+        canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
+      });
+    });
+
+    menu.addEventListener("addDetectionToTrack", evt => {
+
+      const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            localization_ids_add: [evt.detail.detectionId],
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+        Utilities.showSuccessIcon("Detection added to track.", this._successColor);
+        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
+      });
+    });
+
+    menu.addEventListener("mergeTracks", evt => {
+
+      const promise = fetchRetry("/rest/MergeStates/" + evt.detail.mainTrackId, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          {
+            merge_state_id: evt.detail.mergeTrackId,
+          }
+        ),
+      })
+      .then(response => response.json())
+      .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
+        this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+        Utilities.showSuccessIcon("Track merged.", this._successColor);
+        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
+      });
+    });
+
+    menu.addEventListener("yes", () => {
+      this._closeModal(menu);
+    });
+
+    menu.addEventListener("cancel", () => {
+      this._closeModal(menu);
+      canvas.refresh();
+    });
+
+    canvas.addEventListener("modifyTrack", evt => {
+      const metaMode = evt.detail.metaMode;
+      const objDescription = evt.detail.objDescription;
+      const dragInfo = evt.detail.dragInfo;
+      const requestObj = evt.detail.requestObj;
+      const canvasPosition = canvasElement.getBoundingClientRect();
+
+      const dialog = this._saves[objDescription.id];
+      dialog.setUI(objDescription);
+
+      this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
+      this._makePreview(objDescription, dragInfo, canvasPosition);
+    });
+
+    if (typeof canvas.addCreateTrackType !== "undefined") {
+      for (const dataType of stateTypes) {
+        canvas.addCreateTrackType(dataType);
+      }
+    }
   }
 
   _closeModal(save) {

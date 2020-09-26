@@ -70,6 +70,16 @@ state_update = {
             'description': 'Object containing attribute values.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },        
+        'localization_ids_add': {
+            'description': 'List of new localization IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+        'localization_ids_remove': {
+            'description': 'List of new localization IDs that this state applies to.',
+            'type': 'array',
+            'items': {'type': 'integer'},
         },
     },
 }
@@ -81,4 +91,32 @@ state = {
         **version_properties,
         **state_properties,
     },
+}
+
+state_trim_spec = {
+    'type': 'object',
+    'required': ['frame', 'endpoint'],
+    'properties': {
+        'frame' : {
+            'description': 'Frame number of new end point',
+            'type': 'integer',
+            'minimum': 0,
+        },
+        'endpoint' : {
+            'description': 'End point to trim to using the provided frame number.',
+            'type': 'string',
+            'enum': ['start', 'end'],
+        }
+    }
+}
+
+state_merge_spec = {
+    'type': 'object',
+    'required': ['merge_state_id'],
+    'properties': {
+        'merge_state_id' : {
+            'description': "Unique integer identifying the state whose localizations will merge with this state.",
+            'type': 'integer',
+        },
+    }
 }

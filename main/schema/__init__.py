@@ -45,6 +45,8 @@ from .state import StateListSchema
 from .state import StateDetailSchema
 from .state import StateGraphicSchema
 from .state_count import StateCountSchema
+from .state import MergeStatesSchema
+from .state import TrimStateEndSchema
 from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema

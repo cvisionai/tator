@@ -254,6 +254,14 @@ urlpatterns += [
         StateDetailAPI.as_view(),
     ),
     path(
+        'rest/MergeStates/<int:id>',
+        MergeStatesAPI.as_view(),
+    ),
+    path(
+        'rest/TrimStateEnd/<int:id>',
+        TrimStateEndAPI.as_view(),
+    ),
+    path(
         'rest/StateTypes/<int:project>',
         StateTypeListAPI.as_view(),
     ),

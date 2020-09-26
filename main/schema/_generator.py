@@ -28,6 +28,7 @@ class CustomGenerator(SchemaGenerator):
         # Set up schema components.
         schema['components'] = {
             'schemas': {
+                'AlgorithmParameter': algorithm_parameter,
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,
@@ -90,6 +91,8 @@ class CustomGenerator(SchemaGenerator):
                 'StateTypeSpec': state_type_spec,
                 'StateTypeUpdate': state_type_update,
                 'StateType': state_type,
+                'StateMergeSpec': state_merge_spec,
+                'StateTrimSpec': state_trim_spec,
                 'TemporaryFileSpec': temporary_file_spec,
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,

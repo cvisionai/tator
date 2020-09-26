@@ -1031,7 +1031,8 @@ class TatorAlgorithm(JobManagerMixin):
     def _job_type(self):
         return 'algorithm'
 
-    def start_algorithm(self, media_ids, sections, gid, uid, token, project, user):
+    def start_algorithm(self, media_ids, sections, gid, uid, token, project, user, 
+                        extra_params: list=[]):
         """ Starts an algorithm job, substituting in parameters in the
             workflow spec.
         """
@@ -1069,6 +1070,11 @@ class TatorAlgorithm(JobManagerMixin):
                 'value': str(project),
             },
         ]}
+
+        # Add the non-standard extra parameters if provided
+        # Expected format of extra_params: list of dictionaries with 'name' and 'value' entries
+        # for each of the parameters. e.g. {{'name': 'hello_param', 'value': [1]}}
+        manifest['spec']['arguments']['parameters'].extend(extra_params)
 
         # If no exit process is defined, add one to close progress.
         if 'onExit' not in manifest['spec']:

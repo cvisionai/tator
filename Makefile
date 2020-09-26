@@ -273,6 +273,7 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
+    components/success-light.js \
     components/warning-light.js \
     projects/settings-button.js \
     projects/project-remove.js \
@@ -355,6 +356,7 @@ FILES = \
     annotation/enum-input.js \
     annotation/text-input.js \
     annotation/attribute-panel.js \
+    annotation/modify-track-dialog.js \
     annotation/favorite-button.js \
     annotation/favorites-panel.js \
     annotation/save-dialog.js \

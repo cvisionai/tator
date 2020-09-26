@@ -1,3 +1,21 @@
+algorithm_parameter = {
+    'type': 'object',
+    'required': ['name', 'value'],
+    'properties': {
+        'name': {
+            'description': 'Name of algorithm parameter',
+            'type': 'string',
+        },
+        'value': {
+            'description': 'Value of algorithm parameter',
+            'oneOf': [
+                {'type': 'number'},
+                {'type': 'string'},
+            ],
+        },
+    },
+}
+
 algorithm_launch_spec = {
     'type': 'object',
     'required': ['algorithm_name'],
@@ -16,6 +34,11 @@ algorithm_launch_spec = {
                            'or media_ids.',
             'type': 'array',
             'items': {'type': 'integer'},
+        },
+        'extra_params': {
+            'description': 'Extra parameters to pass into the algorithm',
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/AlgorithmParameter'},
         },
     },
 }

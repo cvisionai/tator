@@ -1,3 +1,4 @@
+from .algorithm_launch import algorithm_parameter
 from .algorithm_launch import algorithm_launch_spec
 from .algorithm_launch import algorithm_launch
 from .algorithm import algorithm
@@ -51,6 +52,8 @@ from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_update
 from .state import state
+from .state import state_merge_spec
+from .state import state_trim_spec
 from .state_type import state_type_spec
 from .state_type import state_type_update
 from .state_type import state_type

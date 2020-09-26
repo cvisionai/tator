@@ -74,6 +74,7 @@ class SaveDialog extends TatorElement {
   }
 
   init(projectId, mediaId, dataType, undo, version, favorites) {
+
     this._projectId = projectId;
     this._mediaId = mediaId;
     this._dataType = dataType;
@@ -82,6 +83,11 @@ class SaveDialog extends TatorElement {
     this._span.textContent = dataType.name;
     this._attributes.dataType = dataType;
     this._favorites.init(dataType, favorites);
+
+    // For the save dialog, the track search bar doesn't need to be shown.
+    // The user only needs to modify the attributes in the dialog window.
+    this._attributes.displaySlider(false);
+
     this._attributes.dispatchEvent(new Event("change"));
   }
 
@@ -97,16 +103,22 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    const body = {
+    var body = {
       type: Number(this._dataType.id.split("_")[1]),
       name: this._dataType.name,
-      media_id: this._mediaId,
       version: this._version.id,
       ...requestObj,
       ...values,
     };
 
-    this._undo.post("Localizations", body, this._dataType);
+    if (this._dataType.dtype.includes("state")) {
+      body.media_ids = [this._mediaId]
+      this._undo.post("States", body, this._dataType);
+    }
+    else {
+      body.media_id = this._mediaId
+      this._undo.post("Localizations", body, this._dataType);
+    }
   }
 
   set version(val) {

@@ -394,6 +394,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.deselectTrack();
   }
 
+  addCreateTrackType(stateTypeObj) {
+    this._video.addCreateTrackType(stateTypeObj);
+  }
+
   toggleBoxFills(fill) {
     this._video.toggleBoxFills(fill);
   }
