@@ -270,9 +270,13 @@ class MediaSection extends TatorElement {
     .then(response => {
       const page = document.querySelector("project-detail");
       if (response.status == 201) {
-        page._progress.notify("Algorithm launched!", true);
+        page._notify("Algorithm launched!",
+                     `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
+                     "ok");
       } else {
-        page._progress.error("Error launching algorithm!");
+        page._notify("Error launching algorithm!",
+                     `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
+                     "error");
       }
       return response.json();
     })

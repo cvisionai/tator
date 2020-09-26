@@ -251,7 +251,9 @@ FILES = \
     components/labeled-checkbox.js \
     components/modal-close.js \
     components/modal-warning.js \
+    components/modal-success.js \
     components/modal-dialog.js \
+    components/modal-notify.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
     components/big-upload-form.js \

@@ -100,6 +100,9 @@ class ProjectDetail extends TatorPage {
     const deleteFile = document.createElement("delete-file-form");
     this._projects.appendChild(deleteFile);
 
+    this._modalNotify = document.createElement("modal-notify");
+    this._projects.appendChild(this._modalNotify);
+
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
@@ -170,6 +173,10 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    this._modalNotify.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
     this._newAlgorithmCallback = evt => {
       const newAlgorithm = document.createElement("new-algorithm-form");
       this._projects.appendChild(newAlgorithm);
@@ -216,6 +223,12 @@ class ProjectDetail extends TatorPage {
 
   static get observedAttributes() {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
+  }
+
+  _notify(title, message, error_or_ok) {
+    this._modalNotify.init(title, message, error_or_ok);
+    this._modalNotify.setAttribute("is-open", "");
+    this.setAttribute("has-open-modal", "");
   }
 
   _init() {
