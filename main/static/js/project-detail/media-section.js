@@ -49,6 +49,8 @@ class MediaSection extends TatorElement {
     section.appendChild(this._paginator);
 
     this._searchParams = new URLSearchParams();
+
+    this._setCallbacks();
   }
 
   init(project, section, username, token) {
@@ -62,7 +64,6 @@ class MediaSection extends TatorElement {
     this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
     this._nameText.nodeValue = this._sectionName;
-    this._setCallbacks();
     this._upload.setAttribute("project-id", project);
     this._upload.setAttribute("username", username);
     this._upload.setAttribute("token", token);
