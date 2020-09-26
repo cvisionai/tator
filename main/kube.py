@@ -414,7 +414,7 @@ class TatorTranscode(JobManagerMixin):
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
                                                         'category', 'raw_width', 'raw_height',
-                                                        'resolutions'])},
+                                                        'configs'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -426,7 +426,7 @@ class TatorTranscode(JobManagerMixin):
                          '--category', '{{inputs.parameters.category}}',
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
-                         '--resolutions', '{{inputs.parameters.resolutions}}',
+                         '--configs', '{{inputs.parameters.configs}}',
                          '--output', '{{inputs.parameters.transcoded}}',
                          '--input', '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
@@ -739,8 +739,8 @@ class TatorTranscode(JobManagerMixin):
                             'name': 'raw_height',
                             'value': '{{item.raw_height}}',
                         }, {
-                            'name': 'resolutions',
-                            'value': '{{item.resolutions}}',
+                            'name': 'configs',
+                            'value': '{{item.configs}}',
                         }, {
                             'name': 'media',
                             'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
