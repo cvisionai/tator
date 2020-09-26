@@ -10,7 +10,7 @@ class MediaStatsSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetMediaNext'
+            operation['operationId'] = 'GetMediaStats'
         operation['tags'] = ['Tator']
         return operation
 
