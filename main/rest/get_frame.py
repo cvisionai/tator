@@ -101,14 +101,14 @@ class GetFrameAPI(BaseDetailView):
                     pass
                 else:
                     self.request.accepted_renderer = GifRenderer()
-                gif_fp = media_util.getAnimation(frames, roi_arg, fps=animate,
-                                                 render_format=self.request.accepted_renderer.format)
+                gif_fp = media_util.get_animation(frames, roi_arg, fps=animate,
+                                                  render_format=self.request.accepted_renderer.format)
                 with open(gif_fp, 'rb') as data_file:
                     response_data = data_file.read()
             else:
                 logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
-                tiled_fp = media_util.getTileImage(frames, roi_arg, tile_size,
-                                                   render_format=self.request.accepted_renderer.format)
+                tiled_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
+                                                     render_format=self.request.accepted_renderer.format)
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data

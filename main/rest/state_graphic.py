@@ -73,9 +73,9 @@ class StateGraphicAPI(BaseDetailView):
                     pass
                 else:
                     self.request.accepted_renderer = GifRenderer()
-                gif_fp = media_util.getAnimation(frames, roi, fps,
-                                                 self.request.accepted_renderer.format,
-                                                 force_scale=force_scale)
+                gif_fp = media_util.get_animation(frames, roi, fps,
+                                                  self.request.accepted_renderer.format,
+                                                  force_scale=force_scale)
                 with open(gif_fp, 'rb') as data_file:
                     self.request.accepted_renderer = GifRenderer()
                     response_data = data_file.read()
@@ -101,11 +101,11 @@ class StateGraphicAPI(BaseDetailView):
 
                 # Get a tiled fp as a film strip
                 tile_size=f"{len(frames)}x1"
-                tiled_fp = media_util.getTileImage(frames,
-                                                   new_rois,
-                                                   tile_size,
-                                                   render_format=self.request.accepted_renderer.format,
-                                                   force_scale=force_scale)
+                tiled_fp = media_util.get_tile_image(frames,
+                                                     new_rois,
+                                                     tile_size,
+                                                     render_format=self.request.accepted_renderer.format,
+                                                     force_scale=force_scale)
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data

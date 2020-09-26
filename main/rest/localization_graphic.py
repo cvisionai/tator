@@ -242,7 +242,7 @@ class LocalizationGraphicAPI(BaseDetailView):
             if media_util.isVideo():
                 # We will only pass a single frame and corresponding roi into this
                 # so the expected output is only one tile instead of many
-                image_path = media_util.getTileImage(
+                image_path = media_util.get_tile_image(
                     frames=[obj.frame],
                     rois=[roi],
                     tile_size=None,
@@ -254,7 +254,7 @@ class LocalizationGraphicAPI(BaseDetailView):
 
             else:
                 # Grab the ROI from the image
-                response_data = media_util.getCroppedImage(
+                response_data = media_util.get_cropped_image(
                     roi=roi,
                     render_format=self.request.accepted_renderer.format,
                     force_scale=force_image_size)
