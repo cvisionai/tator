@@ -249,6 +249,10 @@ class AnnotationMulti extends TatorElement {
     this._videos = []
 
     this._multi_layout = val.media_files['layout'];
+    if (val.media_files.quality)
+    {
+      this._quality = val.media_files.quality;
+    }
     const video_count = this._multi_layout[0] * this._multi_layout[1];
 
     if (video_count != val.media_files['ids'].length)
