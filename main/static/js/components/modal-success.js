@@ -3,9 +3,7 @@ class ModalSuccess extends TatorElement {
     super();
 
     const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("class", "h3");
-    svg.style.color = "#85d81d";
-    svg.setAttribute("id", "icon-alert-triangle");
+    svg.setAttribute("class", "h3 text-green");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("height", "1em");
     svg.setAttribute("width", "1em");
