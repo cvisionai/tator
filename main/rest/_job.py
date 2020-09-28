@@ -25,6 +25,10 @@ def workflow_to_job(workflow):
     logger.info(f"FULL WORKFLOW: {json.dumps(workflow, indent=4)}")
     job = {}
     job['id'] = workflow['metadata']['name']
+    job['uid'] = workflow['metadata']['labels']['uid']
+    job['gid'] = workflow['metadata']['labels']['gid']
+    job['project'] = workflow['metadata']['labels']['project']
+    job['user'] = workflow['metadata']['labels']['user']
     status = workflow['status']
     job['status'] = status['phase']
     if 'startedAt' in status:
