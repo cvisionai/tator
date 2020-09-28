@@ -195,7 +195,7 @@ class AnnotationMulti extends TatorElement {
     });
 
     /*
- 
+
     */
 
     this._timeline.addEventListener("select", evt => {
@@ -247,9 +247,10 @@ class AnnotationMulti extends TatorElement {
     this._mediaInfo = val;
 
     this._videos = []
-    
-    const video_count = val.media_files['roi'][0] * val.media_files['roi'][1];
-    this._multi_roi = val.media_files['roi'];
+
+    this._multi_layout = val.media_files['layout'];
+    const video_count = this._multi_layout[0] * this._multi_layout[1];
+
     if (video_count != val.media_files['ids'].length)
     {
       window.alert("Invalid object");
@@ -279,11 +280,11 @@ class AnnotationMulti extends TatorElement {
              this._currentTime.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrame.style.width = (15 * String(frame).length) + "px";
            });
-        
+
         prime.addEventListener("playbackEnded", evt => {
           this.pause();
         });
-        
+
         prime.addEventListener("safeMode", () => {
           this.safeMode();
         });
@@ -304,13 +305,25 @@ class AnnotationMulti extends TatorElement {
     };
 
     let video_resp = [];
+    let multi_container = document.createElement("div");
+    multi_container.style.display = "grid";
+    multi_container.style.gridTemplateColumns =
+      "auto ".repeat(this._multi_layout[1]);
+    multi_container.style.gridTemplateRows =
+      "auto ".repeat(this._multi_layout[0]);
+    this._vidDiv.appendChild(multi_container);
+    let idx = 0;
     for (const vid_id of val.media_files['ids'])
     {
       let roi_vid = document.createElement("video-canvas");
+      roi_vid.style.gridColumn = (idx % this._multi_layout[1])+1;
+      roi_vid.style.gridRow = Math.floor(idx / this._multi_layout[1])+1;
+
       this._videos.push(roi_vid);
       roi_vid.domParents.push({"object":this});
-      this._vidDiv.appendChild(roi_vid);
+      multi_container.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}`));
+      idx += 1;
     }
     let video_info = [];
     Promise.all(video_resp).then((values) => {
@@ -357,7 +370,7 @@ class AnnotationMulti extends TatorElement {
   {
     return this._play.hasAttribute("is-paused");
   }
-  
+
   play()
   {
     const paused = this.is_paused();
@@ -386,7 +399,7 @@ class AnnotationMulti extends TatorElement {
       this._play.setAttribute("is-paused", "")
     }
   }
-  
+
   refresh() {
     this._video.refresh();
   }
