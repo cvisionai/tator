@@ -154,12 +154,12 @@ class AnnotationMulti extends TatorElement {
     });
 
     fastForward.addEventListener("click", () => {
-      this._video.pause();
-      this._video.rateChange(2 * this._rate);
-      if (this._video.play())
+      for (let video of this._videos)
       {
-        play.removeAttribute("is-paused");
+        video.pause();
+        video.rateChange(2 * this._rate);
       }
+      this.play();
     });
 
     framePrev.addEventListener("click", () => {
@@ -415,7 +415,10 @@ class AnnotationMulti extends TatorElement {
 
   setRate(val) {
     this._rate = val;
-    this._video.rateChange(this._rate);
+    for (let video of this._videos)
+    {
+        video.rateChange(this._rate);
+    }
   }
 
   setQuality(quality) {
