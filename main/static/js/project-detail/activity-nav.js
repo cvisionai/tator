@@ -36,6 +36,8 @@ class ActivityNav extends TatorElement {
 
     this._reloadButton.addEventListener("click", this.reload.bind(this));
     closeButton.addEventListener("click", this.close.bind(this));
+
+    this._expanded = new Set(); // List of expanded jobs so we don't collapse on reload.
   }
 
   init(project) {
@@ -78,19 +80,19 @@ class ActivityNav extends TatorElement {
         this._panel.appendChild(ul);
 
         for (const job of jobs) {
-          this._showTask(job.id, job.status, job.start_time, job.stop_time, ul);
+          this._showTask(job, ul, "label-tree__group");
         }
       }
       this._reloadButton.classList.remove("is-rotating");
     });
   }
 
-  _showTask(name, state, start, stop, parentNode, deleteUrl) {
+  _showTask(job, parentNode, divStyle, deleteUrl) {
     const li = document.createElement("li");
     parentNode.appendChild(li);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "label-tree__group d-flex flex-items-center py-2");
+    div.setAttribute("class", `${divStyle} d-flex flex-items-center py-2`);
     li.appendChild(div);
 
     const actions = document.createElement("div");
@@ -99,6 +101,8 @@ class ActivityNav extends TatorElement {
 
     const expand = document.createElement("button");
     expand.setAttribute("class", "btn-clear d-flex flex-items-center flex-justify-center px-1 text-gray js-new-subgroup-trigger");
+    expand.style.opacity = "0";
+    expand.style.cursor = "none";
     actions.appendChild(expand);
 
     const plus = document.createElementNS(svgNamespace, "svg");
@@ -125,7 +129,7 @@ class ActivityNav extends TatorElement {
     icon.setAttribute("viewBox", "0 0 24 24");
     actions.appendChild(icon);
 
-    if (state == "Success") {
+    if (job.status == "Success") {
       icon.classList.add("text-green");
 
       const arc = document.createElementNS(svgNamespace, "path");
@@ -135,7 +139,7 @@ class ActivityNav extends TatorElement {
       const poly = document.createElementNS(svgNamespace, "polyline");
       poly.setAttribute("points", "22 4 12 14.01 9 11.01");
       icon.appendChild(poly);
-    } else if (state == "Failed") {
+    } else if (job.status == "Failed") {
       icon.classList.add("text-red");
 
       const circle = document.createElementNS(svgNamespace, "circle");
@@ -169,12 +173,16 @@ class ActivityNav extends TatorElement {
 
     const span = document.createElement("span");
     span.setAttribute("class", "text-semibold css-truncate");
-    span.textContent = name;
+    if (job.task) {
+      span.textContent = job.task;
+    } else {
+      span.textContent = job.id;
+    }
     div.appendChild(span);
 
-    const started = Date.parse(start);
+    const started = Date.parse(job.start_time);
     let duration;
-    if (stop) {
+    if (job.stop_time) {
       duration = Date.parse(stop) - started;
     } else {
       duration = Date.now() - started;
@@ -193,6 +201,34 @@ class ActivityNav extends TatorElement {
       time.textContent = `${(duration / 86400).toFixed(1)}d`;
     }
     div.appendChild(time);
+
+    if (job.nodes) {
+      const ul = document.createElement("ul");
+      ul.setAttribute("class", "label-tree__subgroups lh-default");
+      if (this._expanded.has(job.id)) {
+        ul.classList.add("is-open");
+      }
+      li.appendChild(ul);
+
+      div.addEventListener("mouseenter", () => {
+        expand.style.opacity = "1";
+        expand.style.cursor = "pointer";
+      });
+      div.addEventListener("mouseleave", () => {expand.style.opacity = "0";});
+
+      expand.addEventListener("click", () => {
+        ul.classList.toggle("is-open");
+        if (ul.classList.contains("is-open")) {
+          this._expanded.add(job.id);
+        } else {
+          this._expanded.delete(job.id);
+        }
+      });
+
+      for (const node of job.nodes) {
+        this._showTask(node, ul, "label-tree__subgroup");
+      }
+    }
   }
 }
 
