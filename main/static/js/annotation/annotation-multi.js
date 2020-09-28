@@ -436,29 +436,35 @@ class AnnotationMulti extends TatorElement {
   }
 
   zoomPlus() {
-    let [x, y, width, height] = this._video._roi;
-    width /= 2.0;
-    height /= 2.0;
-    x += width / 2.0;
-    y += height / 2.0;
-    this._video.setRoi(x, y, width, height);
-    this._video._dirty = true;
-    this._video.refresh();
+    for (let video of this._videos)
+    {
+      let [x, y, width, height] = video._roi;
+      width /= 2.0;
+      height /= 2.0;
+      x += width / 2.0;
+      y += height / 2.0;
+      video.setRoi(x, y, width, height);
+      video._dirty = true;
+      video.refresh();
+    }
   }
 
   zoomMinus() {
-    let [x, y, width, height] = this._video._roi;
-    width *= 2.0;
-    height *= 2.0;
-    x -= width / 4.0;
-    y -= height / 4.0;
-    width = Math.min(width, this._video._dims[0]);
-    height = Math.min(height, this._video._dims[1]);
-    x = Math.max(x, 0);
-    y = Math.max(y, 0);
-    this._video.setRoi(x, y, width, height);
-    this._video._dirty = true;
-    this._video.refresh();
+    for (let video of this._videos)
+    {
+      let [x, y, width, height] = video._roi;
+      width *= 2.0;
+      height *= 2.0;
+      x -= width / 4.0;
+      y -= height / 4.0;
+      width = Math.min(width, video._dims[0]);
+      height = Math.min(height, video._dims[1]);
+      x = Math.max(x, 0);
+      y = Math.max(y, 0);
+      video.setRoi(x, y, width, height);
+      video._dirty = true;
+      video.refresh();
+    }
   }
 
   zoomIn() {
