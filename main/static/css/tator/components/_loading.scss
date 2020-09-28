@@ -34,6 +34,7 @@
 
 .is-rotating {
   animation: rotating 1.4s infinite;
+  animation-timing-function: linear;
   transform-origin: 50% 50%;
   display: inline-block;
 }
