@@ -292,7 +292,7 @@ FILES = \
     project-detail/new-algorithm-button.js \
     project-detail/algorithm-menu.js \
     project-detail/algorithm-button.js \
-    project-detail/upload-button.js \
+    project-detail/activity-button.js \
     project-detail/project-text.js \
     project-detail/project-search.js \
     project-detail/new-section.js \
@@ -318,6 +318,7 @@ FILES = \
     project-detail/media-section.js \
     project-detail/delete-section-form.js \
     project-detail/delete-file-form.js \
+    project-detail/activity-nav.js \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
     project-settings/project-settings.js \

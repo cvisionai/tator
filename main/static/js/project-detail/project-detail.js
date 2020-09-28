@@ -72,8 +72,8 @@ class ProjectDetail extends TatorPage {
     this._algorithmButton = document.createElement("algorithm-button");
     buttons.appendChild(this._algorithmButton);
 
-    this._uploadButton = document.createElement("upload-button");
-    buttons.appendChild(this._uploadButton);
+    this._activityButton = document.createElement("activity-button");
+    buttons.appendChild(this._activityButton);
 
     this._description = document.createElement("project-text");
     div.appendChild(this._description);
@@ -106,6 +106,9 @@ class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
+    this._activityNav = document.createElement("activity-nav");
+    main.appendChild(this._activityNav);
+
     this._leaveConfirmOk = false;
 
     window.addEventListener("beforeunload", evt => {
@@ -131,6 +134,16 @@ class ProjectDetail extends TatorPage {
       if (msg.command == "uploadsDone") {
         this._leaveConfirmOk = false;
       }
+    });
+
+    this._activityButton.addEventListener("click", () => {
+      this._activityNav.open();
+      this._activityNav.reload();
+      this.setAttribute("has-open-modal", "");
+    });
+
+    this._activityNav.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
     });
 
     this._removeCallback = evt => {
@@ -199,9 +212,9 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    this._uploadButton.addEventListener("allset", this._allSetCallback.bind(this));
+    //this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
+    //this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
+    //this._uploadButton.addEventListener("allset", this._allSetCallback.bind(this));
 
     this._loaded = 0;
     this._needScroll = true;
@@ -233,6 +246,7 @@ class ProjectDetail extends TatorPage {
 
   _init() {
     const projectId = this.getAttribute("project-id");
+    this._activityNav.init(projectId);
     // Get info about the project.
     const projectPromise = fetch("/rest/Project/" + projectId, {
       method: "GET",
@@ -280,7 +294,7 @@ class ProjectDetail extends TatorPage {
           this._algorithmButton.style.display = "none";
         }
         if (!hasPermission(project.permission, "Can Transfer")) {
-          this._uploadButton.style.display = "none";
+          //this._uploadButton.style.display = "none";
         }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
@@ -309,7 +323,7 @@ class ProjectDetail extends TatorPage {
           if (isFolder) {
             this._folders.appendChild(card);
           } else {
-            this._savedSearches.appendChild(card);
+            //this._savedSearches.appendChild(card);
           }
           card.addEventListener("click", () => {
             this._selectSection(section, projectId);
@@ -344,15 +358,15 @@ class ProjectDetail extends TatorPage {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "username":
-        this._uploadButton.setAttribute("username", newValue);
+        //this._uploadButton.setAttribute("username", newValue);
         break;
       case "project-id":
-        this._uploadButton.setAttribute("project-id", newValue);
+        //this._uploadButton.setAttribute("project-id", newValue);
         this._algorithmButton.setAttribute("project-id", newValue);
         this._init();
         break;
       case "token":
-        this._uploadButton.setAttribute("token", newValue);
+        //this._uploadButton.setAttribute("token", newValue);
         break;
     }
   }
