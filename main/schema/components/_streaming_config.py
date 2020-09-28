@@ -7,8 +7,8 @@ resolution_config = {
         'vcodec': {
             'type': 'string',
             'description': 'Video codec.',
-            'enum': ['libx264'], #Growth for additional formats later
-            'default': 'libx264',
+            'enum': ['h264'], #Growth for additional formats later
+            'default': 'h264',
         },
         'crf': {
             'type': 'integer',
