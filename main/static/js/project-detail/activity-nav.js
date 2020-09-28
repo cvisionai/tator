@@ -26,15 +26,10 @@ class ActivityNav extends TatorElement {
     header.textContent = "Activity";
     headerDiv.appendChild(header);
 
-    this._reloadButton = document.createElement("reload-button");
-    this._reloadButton.setAttribute("class", "px-3");
-    headerDiv.appendChild(this._reloadButton);
-
     this._panel = document.createElement("div");
     this._panel.setAttribute("class", "analysis__panel-group py-3 f2");
     this._nav.appendChild(this._panel);
 
-    this._reloadButton.addEventListener("click", this.reload.bind(this));
     closeButton.addEventListener("click", this.close.bind(this));
 
     this._expanded = new Set(); // List of expanded jobs so we don't collapse on reload.
@@ -46,15 +41,16 @@ class ActivityNav extends TatorElement {
 
   open() {
     this._nav.classList.add("is-open");
+    this._intervalId = window.setInterval(this.reload.bind(this), 1000);
   }
 
   close() {
     this._nav.classList.remove("is-open");
     this.dispatchEvent(new Event("close"));
+    window.clearInterval(this._intervalId);
   }
 
   reload() {
-    this._reloadButton.classList.add("is-rotating");
     fetch(`/rest/Jobs/${this._project}`, {
       method: "GET",
       credentials: "same-origin",
@@ -80,19 +76,21 @@ class ActivityNav extends TatorElement {
         this._panel.appendChild(ul);
 
         for (const job of jobs) {
-          this._showTask(job, ul, "label-tree__group");
+          this._showTask(job, ul, false);
         }
       }
-      this._reloadButton.classList.remove("is-rotating");
     });
   }
 
-  _showTask(job, parentNode, divStyle, deleteUrl) {
+  _showTask(job, parentNode, isSubgroup, deleteUrl) {
     const li = document.createElement("li");
+    if (isSubgroup) {
+      li.classList.add("label-tree__subgroup");
+    }
     parentNode.appendChild(li);
 
     const div = document.createElement("div");
-    div.setAttribute("class", `${divStyle} d-flex flex-items-center py-2`);
+    div.setAttribute("class", "label-tree__group d-flex flex-items-center py-2");
     li.appendChild(div);
 
     const actions = document.createElement("div");
@@ -100,7 +98,7 @@ class ActivityNav extends TatorElement {
     div.appendChild(actions);
 
     const expand = document.createElement("button");
-    expand.setAttribute("class", "btn-clear d-flex flex-items-center flex-justify-center px-1 text-gray js-new-subgroup-trigger");
+    expand.setAttribute("class", "btn-clear d-flex flex-items-center flex-justify-center px-1 text-gray");
     expand.style.opacity = "0";
     expand.style.cursor = "none";
     actions.appendChild(expand);
@@ -129,7 +127,7 @@ class ActivityNav extends TatorElement {
     icon.setAttribute("viewBox", "0 0 24 24");
     actions.appendChild(icon);
 
-    if (job.status == "Success") {
+    if (job.status == "Succeeded") {
       icon.classList.add("text-green");
 
       const arc = document.createElementNS(svgNamespace, "path");
@@ -183,7 +181,7 @@ class ActivityNav extends TatorElement {
     const started = Date.parse(job.start_time);
     let duration;
     if (job.stop_time) {
-      duration = Date.parse(stop) - started;
+      duration = Date.parse(job.stop_time) - started;
     } else {
       duration = Date.now() - started;
     }
@@ -204,7 +202,7 @@ class ActivityNav extends TatorElement {
 
     if (job.nodes) {
       const ul = document.createElement("ul");
-      ul.setAttribute("class", "label-tree__subgroups lh-default");
+      ul.setAttribute("class", "label-tree__subgroups d-flex flex-column px-3");
       if (this._expanded.has(job.id)) {
         ul.classList.add("is-open");
       }
@@ -226,7 +224,7 @@ class ActivityNav extends TatorElement {
       });
 
       for (const node of job.nodes) {
-        this._showTask(node, ul, "label-tree__subgroup");
+        this._showTask(node, ul, true);
       }
     }
   }

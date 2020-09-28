@@ -292,7 +292,7 @@ class MediaSection extends TatorElement {
   }
 
   _downloadFiles(evt) {
-    let mediaParams = URLSearchParams();
+    let mediaParams = new URLSearchParams();
     if (evt.detail) {
       if (evt.detail.mediaIds) {
         mediaParams.append("media_id", evt.detail.mediaIds);
