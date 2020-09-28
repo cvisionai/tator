@@ -294,7 +294,7 @@ class AnnotationMulti extends TatorElement {
         });
       }
       this._videos[idx].loadFromVideoObject(video_info, this._quality)
-      this.parent._getMetadataTypes(this, this._videos[idx]._canvas);
+      this.parent._getMetadataTypes(this, this._videos[idx]._canvas, idx != 0);
       // Mute multi-video
       this._videos[idx].setVolume(0);
 
@@ -352,13 +352,19 @@ class AnnotationMulti extends TatorElement {
   }
 
   set annotationData(val) {
-    this._video.annotationData = val;
+    for (let video of this._videos)
+    {
+      video.annotationData = val;
+    }
     this._timeline.annotationData = val;
   }
 
   newMetadataItem(dtype, metaMode, objId) {
-    this._video.style.cursor = "crosshair";
-    this._video.newMetadataItem(dtype, metaMode, objId);
+    for (let video of this._videos)
+    {
+      video.style.cursor = "crosshair";
+      video.newMetadataItem(dtype, metaMode, objId);
+    }
   }
 
   submitMetadata(data) {
@@ -405,7 +411,10 @@ class AnnotationMulti extends TatorElement {
   }
 
   refresh() {
-    this._video.refresh();
+    for (let video of this._videos)
+    {
+      video.refresh();
+    }
   }
 
   defaultMode() {
@@ -468,17 +477,26 @@ class AnnotationMulti extends TatorElement {
   }
 
   zoomIn() {
-    this._video.style.cursor="zoom-in";
-    this._video.zoomIn();
+    for (let video of this._videos)
+    {
+      video.style.cursor="zoom-in";
+      video.zoomIn();
+    }
   }
 
   zoomOut() {
-    this._video.zoomOut();
+    for (let video of this._videos)
+    {
+      video.zoomOut();
+    }
   }
 
   pan() {
-    this._video.style.cursor="move";
-    this._video.pan();
+    for (let video of this._videos)
+    {
+      video.style.cursor="move";
+      video.pan();
+    }
   }
 
   // Go to the frame at the highest resolution

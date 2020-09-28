@@ -262,9 +262,16 @@ class AnnotationPage extends TatorPage {
 
     const _removeLoading = () => {
       if (this._dataInitialized && this._canvasInitialized) {
-        this._shadow.removeChild(this._loading);
-        this.removeAttribute("has-open-modal");
-        window.dispatchEvent(new Event("resize"));
+        try
+        {
+          this._shadow.removeChild(this._loading);
+          this.removeAttribute("has-open-modal");
+          window.dispatchEvent(new Event("resize"));
+        }
+        catch(exception)
+        {
+          //pass
+        }
       }
     }
 
@@ -351,7 +358,7 @@ class AnnotationPage extends TatorPage {
     });
   }
 
-  _getMetadataTypes(canvas, canvasElement) {
+  _getMetadataTypes(canvas, canvasElement, block_signals) {
     const projectId = Number(this.getAttribute("project-id"));
     const mediaId = Number(this.getAttribute("media-id"));
     const query = "?media_id=" + mediaId;
@@ -443,6 +450,10 @@ class AnnotationPage extends TatorPage {
           (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           return sec;
         }, {});
+        if (block_signals == true)
+        {
+          return;
+        }
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
@@ -626,7 +637,7 @@ class AnnotationPage extends TatorPage {
           this._browser.style.display = "block";
         });
       });
-    });
+   });
   }
 
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
