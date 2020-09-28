@@ -4,6 +4,7 @@ class SectionUpload extends UploadElement {
 
     const label = document.createElement("label");
     label.setAttribute("class", "h3 text-gray hover-text-white");
+    label.style.cursor = "pointer";
     this._shadow.appendChild(label);
 
     const svg = document.createElementNS(svgNamespace, "svg");
