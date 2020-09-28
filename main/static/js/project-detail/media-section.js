@@ -28,6 +28,10 @@ class MediaSection extends TatorElement {
     actions.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(actions);
 
+    this._reload = document.createElement("reload-button");
+    this._reload.setAttribute("class", "px-2");
+    actions.appendChild(this._reload);
+
     this._upload = document.createElement("section-upload");
     this._upload.setAttribute("class", "px-2");
     actions.appendChild(this._upload);
@@ -197,6 +201,7 @@ class MediaSection extends TatorElement {
   }
 
   reload() {
+    this._reload.busy();
     const sectionQuery = this._sectionParams();
     const countPromise = fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
@@ -242,7 +247,10 @@ class MediaSection extends TatorElement {
           }
         })
         .then(response => response.json())
-        .then(media => this._files.cardInfo = media);
+        .then(media => {
+          this._files.cardInfo = media;
+          this._reload.ready();
+        });
       });
     });
   }
@@ -651,6 +659,8 @@ class MediaSection extends TatorElement {
     });
 
     this._paginator.addEventListener("selectPage", this._setPage.bind(this));
+
+    this._reload.addEventListener("click", this.reload.bind(this));
   }
 }
 

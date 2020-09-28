@@ -31,3 +31,19 @@
     animation-delay: .4s;
   }
 }
+
+.is-rotating {
+  animation: rotating 1.4s infinite;
+  transform-origin: 50% 50%;
+  display: inline-block;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
