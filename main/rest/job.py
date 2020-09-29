@@ -6,7 +6,6 @@ from django.http import Http404
 from redis import Redis
 
 from ..models import Algorithm
-from ..consumers import ProgressProducer
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
 from ..schema import JobListSchema
