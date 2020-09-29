@@ -75,39 +75,67 @@ class ActivityNav extends TatorElement {
         ul.setAttribute("class", "label-tree__groups lh-default");
         this._panel.appendChild(ul);
 
-        // Build dom tree for jobs.
+        // Group jobs by gid.
+        const groups = new Map();
+        const gids = [];
         for (const job of jobs) {
-
-          // Top level workflow.
-          const workflow = this._showTask(job, false);
-          ul.appendChild(workflow.li);
-
-          // Need these to store child nodes.
-          const nodes = new Map();
-          const appended = new Set();
-
-          // Create but do not append nodes of workflow.
-          for (const node of job.nodes) {
-            nodes.set(node.id, this._showTask(node, true));
+          if (!groups.has(job.gid)) {
+            groups.set(job.gid, new Set());
+            gids.push({gid: job.gid,
+                       launched: job.start_time});
           }
+          groups.get(job.gid).add(job);
+        }
 
-          // Append child nodes.
-          for (const node of job.nodes) {
-            for (const child of node.children) {
-              nodes.get(node.id).ul.appendChild(nodes.get(child).li);
-              appended.add(child);
-            }
-          }
-
-          // Append top level nodes.
-          for (const node of job.nodes) {
-            if (!appended.has(node.id)) {
-              workflow.ul.appendChild(nodes.get(node.id).li);
-            }
-          }
+        // Display each group.
+        for (const gid of gids) {
+          this._showGroup(gid, groups.get(gid.gid), ul);
         }
       }
     });
+  }
+
+  _showGroup(gid, jobs, ul) {
+    // Create header for job group.
+    const li = document.createElement("li");
+    ul.appendChild(li);
+
+    const header = document.createElement("h3");
+    header.setAttribute("class", "text-semibold px-3 css-truncate");
+    header.textContent = `Launched ${new Date(gid.launched).toString().split("(")[0]}`;
+    ul.appendChild(header);
+    
+    // Build dom tree for jobs.
+    for (const job of jobs) {
+
+      // Top level workflow.
+      const workflow = this._showTask(job, false);
+      ul.appendChild(workflow.li);
+
+      // Need these to store child nodes.
+      const nodes = new Map();
+      const appended = new Set();
+
+      // Create but do not append nodes of workflow.
+      for (const node of job.nodes) {
+        nodes.set(node.id, this._showTask(node, true));
+      }
+
+      // Append child nodes.
+      for (const node of job.nodes) {
+        for (const child of node.children) {
+          nodes.get(node.id).ul.appendChild(nodes.get(child).li);
+          appended.add(child);
+        }
+      }
+
+      // Append top level nodes.
+      for (const node of job.nodes) {
+        if (!appended.has(node.id)) {
+          workflow.ul.appendChild(nodes.get(node.id).li);
+        }
+      }
+    }
   }
 
   _showTask(job, isSubgroup) {
