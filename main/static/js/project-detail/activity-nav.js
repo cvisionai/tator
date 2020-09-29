@@ -105,10 +105,20 @@ class ActivityNav extends TatorElement {
     const li = document.createElement("li");
     ul.appendChild(li);
 
+    const div = document.createElement("div");
+    div.setAttribute("class", "label-tree__groupinv d-flex flex-items-center flex-justify-between px-3 py-2");
+    li.appendChild(div);
+
     const header = document.createElement("h3");
-    header.setAttribute("class", "text-semibold px-3 css-truncate");
+    header.setAttribute("class", "text-semibold css-truncate");
     header.textContent = `Launched ${new Date(gid.launched).toString().split("(")[0]}`;
-    ul.appendChild(header);
+    div.appendChild(header);
+
+    const cancel = document.createElement("cancel-button");
+    cancel.style.opacity = "0";
+    div.addEventListener("mouseenter", () => {cancel.style.opacity = "1";});
+    div.addEventListener("mouseleave", () => {cancel.style.opacity = "0";});
+    div.appendChild(cancel);
     
     // Build dom tree for jobs.
     for (const job of jobs) {
@@ -150,7 +160,7 @@ class ActivityNav extends TatorElement {
     }
 
     const div = document.createElement("div");
-    div.setAttribute("class", "label-tree__group d-flex flex-items-center py-2");
+    div.setAttribute("class", "label-tree__groupinv d-flex flex-items-center py-2");
     li.appendChild(div);
 
     const actions = document.createElement("div");

@@ -28,6 +28,12 @@
   }
 }
 
+.label-tree__groupinv {
+  &:hover {
+    background-image: linear-gradient(to right, $color-charcoal--medium70, $color-charcoal--dark 20%, $color-charcoal--dark 80%, $color-charcoal--medium70);
+  }
+}
+
 .label-tree__subgroups {
   display: none;
   &.is-open {
