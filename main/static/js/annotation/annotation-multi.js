@@ -265,6 +265,10 @@ class AnnotationMulti extends TatorElement {
     let global_progress = new Array(video_count).fill(0);
     let handle_buffer_load = (vid_idx,evt) =>
         {
+          if (global_progress[vid_idx] == 0)
+          {
+            this._videos[vid_idx].refresh(); //draw first frame
+          }
           global_progress[vid_idx] = evt.detail.percent_complete;
           let fakeEvt = {
             detail: {
@@ -306,7 +310,7 @@ class AnnotationMulti extends TatorElement {
                              (evt) => {
                                handle_buffer_load(idx,evt);
                              });
-      this._videos[idx].loadFromVideoObject(video_info, this._quality)
+      this._videos[idx].loadFromVideoObject(video_info, this._quality, idx==0)
       this.parent._getMetadataTypes(this,
                                     this._videos[idx]._canvas,
                                     idx != 0, //whether to block signal registration
@@ -545,11 +549,26 @@ class AnnotationMulti extends TatorElement {
   }
 
   selectLocalization(loc) {
-    this._video.selectLocalization(loc);
+    for (let video of this._videos)
+    {
+      if (video.video_id() == loc.media ||
+          video.video_id() == loc.media_id)
+      {
+        video.selectLocalization(loc);
+      }
+    }
   }
 
   selectTrack(track, frameHint) {
-    this._video.selectTrack(track, frameHint);
+    for (let video of this._videos)
+    {
+      if (video.video_id() == track.media ||
+          video.video_id() == track.media_id)
+      {
+        video.selectTrack(track, frameHint);
+      }
+    }
+    
   }
 
   deselectTrack() {

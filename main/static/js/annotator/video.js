@@ -968,15 +968,24 @@ class VideoCanvas extends AnnotationCanvas {
 
     }
   }
+
+  video_id()
+  {
+    return this._videoObject.id;
+  }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, quality)
+  loadFromVideoObject(videoObject, quality, resizeHandler)
   {
     this._videoObject = videoObject;
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)
     {
       quality = 720;
+    }
+    if (resizeHandler == undefined)
+    {
+      resizeHandler = true;
     }
 
     // Note: dims is width,height here
@@ -1096,7 +1105,10 @@ class VideoCanvas extends AnnotationCanvas {
     //this._slider.slider("option", "max", numFrames);
     this.scrubThreshold = Math.max(25,numFrames/200);
     this._draw.resizeViewport(dims[0], dims[1]);
-    this.setupResizeHandler(dims);
+    if (resizeHandler)
+    {
+      this.setupResizeHandler(dims);
+    }
     // On load seek to frame 0
     return promise;
   }
