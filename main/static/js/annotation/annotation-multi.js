@@ -431,8 +431,11 @@ class AnnotationMulti extends TatorElement {
   }
 
   defaultMode() {
-    this._video.style.cursor = "default";
-    this._video.defaultMode();
+    for (let video of this._videos)
+    {
+      video.style.cursor = "default";
+      video.defaultMode();
+    }
   }
 
   setRate(val) {
@@ -514,12 +517,20 @@ class AnnotationMulti extends TatorElement {
 
   // Go to the frame at the highest resolution
   goToFrame(frame) {
-    this._video.onPlay();
-    return this._video.gotoFrame(frame, true);
+    p_list=[];
+    for (let video of this._videos)
+    {
+      video.onPlay();
+      p_list.push(video.gotoFrame(frame, true));
+    }
+    return Promise.all(p_list);
   }
 
   selectNone() {
-    this._video.selectNone();
+    for (let video of this._videos)
+    {
+      video.selectNone();
+    }
   }
 
   selectLocalization(loc) {
@@ -531,11 +542,17 @@ class AnnotationMulti extends TatorElement {
   }
 
   deselectTrack() {
-    this._video.deselectTrack();
+    for (let video of this._videos)
+    {
+      video.deselectTrack();
+    }
   }
 
   toggleBoxFills(fill) {
-    this._video.toggleBoxFills(fill);
+    for (let video of this._videos)
+    {
+      video.toggleBoxFills(fill);
+    }
   }
 
   safeMode() {
