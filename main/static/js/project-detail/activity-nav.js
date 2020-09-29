@@ -159,9 +159,20 @@ class ActivityNav extends TatorElement {
       li.classList.add("label-tree__subgroup");
     }
 
+    const div1 = document.createElement("div");
+    div1.setAttribute("class", "label-tree__groupinv d-flex flex-items-center flex-justify-between py-2");
+    li.appendChild(div1);
+
     const div = document.createElement("div");
-    div.setAttribute("class", "label-tree__groupinv d-flex flex-items-center py-2");
-    li.appendChild(div);
+    div.setAttribute("class", "d-flex flex-items-center");
+    div1.appendChild(div);
+
+    const cancel = document.createElement("cancel-button");
+    if (!isSubgroup) {
+      cancel.setAttribute("class", "px-3");
+      cancel.style.opacity = "0";
+      div1.appendChild(cancel);
+    }
 
     const actions = document.createElement("div");
     actions.setAttribute("class", "d-flex px-2");
@@ -278,11 +289,15 @@ class ActivityNav extends TatorElement {
     li.appendChild(ul);
 
     if (!isSubgroup) {
-      div.addEventListener("mouseenter", () => {
+      div1.addEventListener("mouseenter", () => {
         expand.style.opacity = "1";
         expand.style.cursor = "pointer";
+        cancel.style.opacity = "1";
       });
-      div.addEventListener("mouseleave", () => {expand.style.opacity = "0";});
+      div1.addEventListener("mouseleave", () => {
+        expand.style.opacity = "0";
+        cancel.style.opacity = "0";
+      });
 
       expand.addEventListener("click", () => {
         ul.classList.toggle("is-open");
