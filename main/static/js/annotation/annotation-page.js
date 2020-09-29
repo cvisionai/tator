@@ -443,8 +443,23 @@ class AnnotationPage extends TatorPage {
         }
         const dataTypes = localizationTypes.concat(stateTypes)
         // Replace the data type IDs so they are guaranteed to be unique.
-        for (const dataType of dataTypes) {
+        for (let [idx,dataType] of dataTypes.entries()) {
           dataType.id = dataType.dtype + "_" + dataType.id;
+          let isLocalization=false;
+          let isTrack=false;
+          let isTLState=false;
+          if ("dtype" in dataType) {
+            isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+          }
+          if ("association" in dataType) {
+            isTrack = (dataType.association == "Localization");
+          }
+          if ("interpolation" in dataType) {
+            isTLState = (dataType.interpolation == "latest");
+          }
+          dataType.isLocalization = isLocalization;
+          dataType.isTrack = isTrack;
+          dataType.isTLState = isTLState;
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update);
         this._browser.init(dataTypes, this._version);

@@ -14,13 +14,13 @@ class AnnotationData extends HTMLElement {
     {
       update = true;
     }
-    this._dataTypesRaw = dataTypes;
-    this._version = version;
-    this._projectId = projectId;
     this._mediaIds.push(mediaId);
 
     if (update)
     {
+      this._dataTypesRaw = dataTypes;
+      this._version = version;
+      this._projectId = projectId;
       this.updateAll(dataTypes, version)
       .then(() => {
         this.dispatchEvent(new Event("initialized"));
@@ -53,22 +53,8 @@ class AnnotationData extends HTMLElement {
     // Clear the track database
     this._trackDb = new Map();
     for (const [idx, dataType] of dataTypes.entries()) {
-      let isLocalization=false;
-      let isTrack=false;
-      let isTLState=false;
-      if ("dtype" in dataType) {
-        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
-      }
-      if ("association" in dataType) {
-        isTrack = (dataType.association == "Localization");
-      }
-      if ("interpolation" in dataType) {
-        isTLState = (dataType.interpolation == "latest");
-      }
-      dataType.isLocalization = isLocalization;
-      dataType.isTrack = isTrack;
-      dataType.isTLState = isTLState;
-      if (isTrack) {
+
+      if (dataType.isTrack) {
         trackTypeIds.push(idx);
       } else {
         localTypeIds.push(idx);
