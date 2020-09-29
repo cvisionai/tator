@@ -307,7 +307,7 @@ class AnnotationMulti extends TatorElement {
                                handle_buffer_load(idx,evt);
                              });
       this._videos[idx].loadFromVideoObject(video_info, this._quality)
-      this.parent._getMetadataTypes(this, this._videos[idx]._canvas, idx != 0);
+      this.parent._getMetadataTypes(this, this._videos[idx]._canvas, idx != 0, video_info.id);
       // Mute multi-video
       this._videos[idx].setVolume(0);
 

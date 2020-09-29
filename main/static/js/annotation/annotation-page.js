@@ -358,9 +358,13 @@ class AnnotationPage extends TatorPage {
     });
   }
 
-  _getMetadataTypes(canvas, canvasElement, block_signals) {
+  _getMetadataTypes(canvas, canvasElement, block_signals, subelement_id) {
     const projectId = Number(this.getAttribute("project-id"));
-    const mediaId = Number(this.getAttribute("media-id"));
+    let mediaId = Number(this.getAttribute("media-id"));
+    if (subelement_id)
+    {
+      mediaId = subelement_id;
+    }
     const query = "?media_id=" + mediaId;
     const favoritePromise = fetch("/rest/Favorites/" + projectId, {
       method: "GET",
