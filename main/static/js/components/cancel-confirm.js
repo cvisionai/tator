@@ -25,12 +25,8 @@ class CancelConfirm extends ModalDialog {
     this._title.nodeValue = "Stop Jobs";
 
     this._accept.addEventListener("click", async evt => {
-      window._uploader.postMessage({
-        "command": "cancelGroupUpload",
-        "gid": this._gid,
-      });
       await new Promise(resolve => setTimeout(resolve, 300));
-      fetch(`/rest/Jobs/${this._project}?gid=${this._gid}`, {
+      fetch(this._url, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
@@ -44,9 +40,12 @@ class CancelConfirm extends ModalDialog {
     });
   }
 
-  init(gid, project) {
-    this._gid = gid;
-    this._project = project;
+  init(uid, gid, project) {
+    if (uid) {
+      this._url = `/rest/Job/${uid}`;
+    } else {
+      this._url = `/rest/Jobs/${project}?gid=${gid}`;
+    }
   }
 
   static get observedAttributes() {

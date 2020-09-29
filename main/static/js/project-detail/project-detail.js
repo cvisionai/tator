@@ -146,6 +146,11 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
+    this._activityNav.addEventListener("deleteJobs", evt => {
+      cancelJob.init(evt.detail.uid, evt.detail.gid, this.getAttribute("project-id"));
+      cancelJob.setAttribute("is-open", "");
+    });
+
     this._removeCallback = evt => {
       deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams);
       deleteSection.setAttribute("is-open", "");
@@ -204,7 +209,6 @@ class ProjectDetail extends TatorPage {
     this._algorithmButton.addEventListener("newAlgorithm", this._newAlgorithmCallback);
 
     cancelJob.addEventListener("confirmGroupCancel", () => {
-      this.removeAttribute("has-open-modal");
       cancelJob.removeAttribute("is-open");
     });
 

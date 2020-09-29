@@ -119,6 +119,12 @@ class ActivityNav extends TatorElement {
     div.addEventListener("mouseenter", () => {cancel.style.opacity = "1";});
     div.addEventListener("mouseleave", () => {cancel.style.opacity = "0";});
     div.appendChild(cancel);
+
+    cancel.addEventListener("click", () => {
+      this.dispatchEvent(new CustomEvent("deleteJobs", {
+        detail: {gid: gid.gid},
+      }));
+    });
     
     // Build dom tree for jobs.
     for (const job of jobs) {
@@ -306,6 +312,12 @@ class ActivityNav extends TatorElement {
         } else {
           this._expanded.delete(job.id);
         }
+      });
+
+      cancel.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("deleteJobs", {
+          detail: {uid: job.uid},
+        }));
       });
     }
     return {li: li, ul: ul};
