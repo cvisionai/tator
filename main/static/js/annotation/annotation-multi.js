@@ -307,7 +307,12 @@ class AnnotationMulti extends TatorElement {
                                handle_buffer_load(idx,evt);
                              });
       this._videos[idx].loadFromVideoObject(video_info, this._quality)
-      this.parent._getMetadataTypes(this, this._videos[idx]._canvas, idx != 0, video_info.id);
+      this.parent._getMetadataTypes(this,
+                                    this._videos[idx]._canvas,
+                                    idx != 0, //whether to block signal registration
+                                    video_info.id, // sub-element real-id
+                                    idx == (this._videos.length - 1) // only update on last video
+                                    );
       // Mute multi-video
       this._videos[idx].setVolume(0);
 
@@ -365,6 +370,12 @@ class AnnotationMulti extends TatorElement {
   }
 
   set annotationData(val) {
+    // Debounce this
+    if (this._annotationData)
+    {
+      return;
+    }
+    this._annotationData = val;
     for (let video of this._videos)
     {
       video.annotationData = val;
@@ -517,7 +528,7 @@ class AnnotationMulti extends TatorElement {
 
   // Go to the frame at the highest resolution
   goToFrame(frame) {
-    p_list=[];
+    let p_list=[];
     for (let video of this._videos)
     {
       video.onPlay();

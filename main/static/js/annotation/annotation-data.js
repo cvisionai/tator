@@ -8,16 +8,24 @@ class AnnotationData extends HTMLElement {
     this._mediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId) {
+  init(dataTypes, version, projectId, mediaId, update) {
+    // Update defaults to true
+    if (update == undefined)
+    {
+      update = true;
+    }
     this._dataTypesRaw = dataTypes;
     this._version = version;
     this._projectId = projectId;
     this._mediaIds.push(mediaId);
 
-    this.updateAll(dataTypes, version)
-    .then(() => {
-      this.dispatchEvent(new Event("initialized"));
-    });
+    if (update)
+    {
+      this.updateAll(dataTypes, version)
+      .then(() => {
+        this.dispatchEvent(new Event("initialized"));
+      });
+    }
 
     // Convert datatypes array to a map for faster access
     this._dataTypes={}

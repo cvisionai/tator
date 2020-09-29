@@ -358,7 +358,7 @@ class AnnotationPage extends TatorPage {
     });
   }
 
-  _getMetadataTypes(canvas, canvasElement, block_signals, subelement_id) {
+  _getMetadataTypes(canvas, canvasElement, block_signals, subelement_id, update) {
     const projectId = Number(this.getAttribute("project-id"));
     let mediaId = Number(this.getAttribute("media-id"));
     if (subelement_id)
@@ -446,7 +446,7 @@ class AnnotationPage extends TatorPage {
         for (const dataType of dataTypes) {
           dataType.id = dataType.dtype + "_" + dataType.id;
         }
-        this._data.init(dataTypes, this._version, projectId, mediaId);
+        this._data.init(dataTypes, this._version, projectId, mediaId, update);
         this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
