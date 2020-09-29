@@ -8,8 +8,8 @@ encode_config = {
         'vcodec': {
             'type': 'string',
             'description': 'Video codec.',
-            'enum': ['libx264', 'libx265'],
-            'default': 'libx265',
+            'enum': ['h264', 'hevc'],
+            'default': 'hevc',
         },
         'crf': {
             'type': 'integer',
