@@ -260,17 +260,26 @@ class AnnotationMulti extends TatorElement {
       window.alert("Invalid object");
     }
 
+
+    // Functor to normalize the
+    let global_progress = new Array(video_count).fill(0);
+    let handle_buffer_load = (vid_idx,evt) =>
+        {
+          global_progress[vid_idx] = evt.detail.percent_complete;
+          let fakeEvt = {
+            detail: {
+              percent_complete:Math.min(...global_progress)
+            }
+          };
+          this._slider.onBufferLoaded(fakeEvt);
+        };
     let setup_video = (idx, video_info) => {
       this._slider.setAttribute("min", 0);
 
-      // TODO: Handle multi-video in browser somehow
       if (idx == 0)
       {
         let prime = this._videos[idx];
         this._slider.setAttribute("max", Number(video_info.num_frames)-1);
-        // TODO handle fact we are buffering multiple videos.
-        prime.addEventListener("bufferLoaded",
-                               this._slider.onBufferLoaded.bind(this._slider));
         this._fps = video_info.fps;
         this._totalTime.textContent = "/ " + this._frameToTime(video_info.num_frames);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
@@ -293,6 +302,10 @@ class AnnotationMulti extends TatorElement {
           this.safeMode();
         });
       }
+      this._videos[idx].addEventListener("bufferLoaded",
+                             (evt) => {
+                               handle_buffer_load(idx,evt);
+                             });
       this._videos[idx].loadFromVideoObject(video_info, this._quality)
       this.parent._getMetadataTypes(this, this._videos[idx]._canvas, idx != 0);
       // Mute multi-video
