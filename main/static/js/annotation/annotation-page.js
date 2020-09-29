@@ -462,7 +462,6 @@ class AnnotationPage extends TatorPage {
           dataType.isTLState = isTLState;
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update);
-        this._browser.init(dataTypes, this._version);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
@@ -473,6 +472,7 @@ class AnnotationPage extends TatorPage {
         {
           return;
         }
+        this._browser.init(dataTypes, this._version);
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
