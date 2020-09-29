@@ -75,19 +75,46 @@ class ActivityNav extends TatorElement {
         ul.setAttribute("class", "label-tree__groups lh-default");
         this._panel.appendChild(ul);
 
+        // Build dom tree for jobs.
         for (const job of jobs) {
-          this._showTask(job, ul, false);
+
+          // Top level workflow.
+          const workflow = this._showTask(job, false);
+          ul.appendChild(workflow.li);
+
+          // Need these to store child nodes.
+          const nodes = new Map();
+          const appended = new Set();
+
+          // Create but do not append nodes of workflow.
+          for (const node of job.nodes) {
+            nodes.set(node.id, this._showTask(node, true));
+          }
+
+          // Append child nodes.
+          for (const node of job.nodes) {
+            for (const child of node.children) {
+              nodes.get(node.id).ul.appendChild(nodes.get(child).li);
+              appended.add(child);
+            }
+          }
+
+          // Append top level nodes.
+          for (const node of job.nodes) {
+            if (!appended.has(node.id)) {
+              workflow.ul.appendChild(nodes.get(node.id).li);
+            }
+          }
         }
       }
     });
   }
 
-  _showTask(job, parentNode, isSubgroup, deleteUrl) {
+  _showTask(job, isSubgroup) {
     const li = document.createElement("li");
     if (isSubgroup) {
       li.classList.add("label-tree__subgroup");
     }
-    parentNode.appendChild(li);
 
     const div = document.createElement("div");
     div.setAttribute("class", "label-tree__group d-flex flex-items-center py-2");
@@ -200,14 +227,14 @@ class ActivityNav extends TatorElement {
     }
     div.appendChild(time);
 
-    if (job.nodes) {
-      const ul = document.createElement("ul");
-      ul.setAttribute("class", "label-tree__subgroups d-flex flex-column px-3");
-      if (this._expanded.has(job.id)) {
-        ul.classList.add("is-open");
-      }
-      li.appendChild(ul);
+    const ul = document.createElement("ul");
+    ul.setAttribute("class", "label-tree__subgroups d-flex flex-column px-3");
+    if (isSubgroup || this._expanded.has(job.id)) {
+      ul.classList.add("is-open");
+    }
+    li.appendChild(ul);
 
+    if (!isSubgroup) {
       div.addEventListener("mouseenter", () => {
         expand.style.opacity = "1";
         expand.style.cursor = "pointer";
@@ -222,11 +249,8 @@ class ActivityNav extends TatorElement {
           this._expanded.delete(job.id);
         }
       });
-
-      for (const node of job.nodes) {
-        this._showTask(node, ul, true);
-      }
     }
+    return {li: li, ul: ul};
   }
 }
 
