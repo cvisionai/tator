@@ -1201,6 +1201,11 @@ class AnnotationCanvas extends TatorElement
     for (var idx = 0; idx < data.length; idx++)
     {
       var element=data[idx];
+      if (element.media_id != this._videoObject.id &&
+          element.media != this._videoObject.id)
+      {
+        continue;
+      }
 
       var frameId=data[idx]['frame'];
       var typeid = typeObj.id;
