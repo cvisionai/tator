@@ -14,7 +14,6 @@ from kubernetes.config import load_incluster_config
 from urllib.parse import urljoin, urlsplit
 import yaml
 
-from .consumers import ProgressProducer
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -54,15 +53,6 @@ def get_curl_image_name():
 class JobManagerMixin:
     """ Defines functions for job management.
     """
-    def _get_progress_aux(self, job):
-        raise NotImplementedError
-
-    def _cancel_message(self):
-        raise NotImplementedError
-
-    def _job_type(self):
-        raise NotImplementedError
-
     def find_project(self, selector):
         """ Finds the project associated with a given selector.
         """
@@ -86,7 +76,7 @@ class JobManagerMixin:
             version='v1alpha1',
             namespace='default',
             plural='workflows',
-            label_selector=f'{selector},job_type={self._job_type()}',
+            label_selector=f'{selector}',
         )
         return response['items']
 
@@ -101,7 +91,7 @@ class JobManagerMixin:
             version='v1alpha1',
             namespace='default',
             plural='workflows',
-            label_selector=f'{selector},job_type={self._job_type()}',
+            label_selector=f'{selector}',
         )
 
         # Patch the workflow with shutdown=Stop.
@@ -512,82 +502,6 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        # Define task to send progress message in case of failure.
-        self.progress_task = {
-            'name': 'progress',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'inputs': {'parameters' : spell_out_params(['state',
-                                                        'message',
-                                                        'progress'])},
-            'container': {
-                'image': '{{workflow.parameters.lite_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': [
-                    '-m', 'tator.progress',
-                    '--host', '{{workflow.parameters.host}}',
-                    '--token', '{{workflow.parameters.token}}',
-                    '--project', '{{workflow.parameters.project}}',
-                    '--job_type', 'upload',
-                    '--gid', '{{workflow.parameters.gid}}',
-                    '--uid', '{{workflow.parameters.uid}}',
-                    '--state', '{{inputs.parameters.state}}',
-                    '--message', '{{inputs.parameters.message}}',
-                    '--progress', '{{inputs.parameters.progress}}',
-                    # Pull the name from the upload parameter
-                    '--name', '{{workflow.parameters.upload_name}}',
-                    '--section', '{{workflow.parameters.section}}',
-                ],
-                'workingDir': '/',
-                'resources': {
-                    'limits': {
-                        'memory': '32Mi',
-                        'cpu': '100m',
-                    },
-                },
-            },
-        }
-
-        # Define a exit handler.
-        self.exit_handler = {
-            'name': 'exit-handler',
-            'steps': [[
-                {
-                    'name': 'send-fail',
-                    'template': 'progress',
-                    'when': '{{workflow.status}} != Succeeded',
-                    'arguments' : {'parameters':
-                                   [
-                                       {'name': 'state', 'value': 'failed'},
-                                       {'name': 'message', 'value': 'Media Import Failed'},
-                                       {'name': 'progress', 'value': '0'},
-                                   ]
-                    }
-                },
-                {
-                    'name': 'send-success',
-                    'template': 'progress',
-                    'when': '{{workflow.status}} == Succeeded',
-                    'arguments' : {'parameters':
-                                   [
-                                       {'name': 'state', 'value': 'finished'},
-                                       {'name': 'message', 'value': 'Media Import Complete'},
-                                       {'name': 'progress', 'value': '100'},
-                                   ]
-                    }
-                }
-            ]],
-        }
-
     def get_unpack_and_transcode_tasks(self, paths, url):
         """ Generate a task object describing the dependencies of a transcode from tar"""
 
@@ -767,12 +681,6 @@ class TatorTranscode(JobManagerMixin):
 
         return pipeline
 
-
-    def _get_progress_aux(self, job):
-        return {'section': job['metadata']['annotations']['section']}
-
-    def _job_type(self):
-        return 'upload'
 
     def start_tar_import(self,
                          project,
@@ -1018,15 +926,6 @@ class TatorAlgorithm(JobManagerMixin):
         # Save off the algorithm name.
         self.name = alg.name
 
-    def _get_progress_aux(self, job):
-        return {
-            'sections': job['metadata']['annotations']['sections'],
-            'media_ids': job['metadata']['annotations']['media_ids'],
-        }
-
-    def _job_type(self):
-        return 'algorithm'
-
     def start_algorithm(self, media_ids, sections, gid, uid, token, project, user, 
                         extra_params: list=[]):
         """ Starts an algorithm job, substituting in parameters in the
@@ -1071,85 +970,6 @@ class TatorAlgorithm(JobManagerMixin):
         # Expected format of extra_params: list of dictionaries with 'name' and 'value' entries
         # for each of the parameters. e.g. {{'name': 'hello_param', 'value': [1]}}
         manifest['spec']['arguments']['parameters'].extend(extra_params)
-
-        # If no exit process is defined, add one to close progress.
-        if 'onExit' not in manifest['spec']:
-            failed_task = {
-                'name': 'tator-failed',
-                'container': {
-                    'image': get_lite_image_name(),
-                    'imagePullPolicy': 'IfNotPresent',
-                    'command': ['python3',],
-                    'args': [
-                        '-m', 'tator.progress',
-                        '--host', f'{PROTO}{os.getenv("MAIN_HOST")}',
-                        '--token', str(token),
-                        '--project', str(project),
-                        '--job_type', 'algorithm',
-                        '--gid', gid,
-                        '--uid', uid,
-                        '--state', 'failed',
-                        '--message', 'Algorithm failed!',
-                        '--progress', '0',
-                        '--name', self.name,
-                        '--sections', sections,
-                        '--media_ids', media_ids,
-                    ],
-                    'resources': {
-                        'limits': {
-                            'memory': '32Mi',
-                            'cpu': '100m',
-                        },
-                    },
-                },
-            }
-            succeeded_task = {
-                'name': 'tator-succeeded',
-                'container': {
-                    'image': get_lite_image_name(),
-                    'imagePullPolicy': 'IfNotPresent',
-                    'command': ['python3',],
-                    'args': [
-                        '-m', 'tator.progress',
-                        '--host', f'{PROTO}{os.getenv("MAIN_HOST")}',
-                        '--token', str(token),
-                        '--project', str(project),
-                        '--job_type', 'algorithm',
-                        '--gid', gid,
-                        '--uid', uid,
-                        '--state', 'finished',
-                        '--message', 'Algorithm complete!',
-                        '--progress', '100',
-                        '--name', self.name,
-                        '--sections', sections,
-                        '--media_ids', media_ids,
-                    ],
-                    'resources': {
-                        'limits': {
-                            'memory': '32Mi',
-                            'cpu': '100m',
-                        },
-                    },
-                },
-            }
-            exit_handler = {
-                'name': 'tator-exit-handler',
-                'steps': [[{
-                    'name': 'send-fail',
-                    'template': 'tator-failed',
-                    'when': '{{workflow.status}} != Succeeded',
-                }, {
-                    'name': 'send-succeed',
-                    'template': 'tator-succeeded',
-                    'when': '{{workflow.status}} == Succeeded',
-                }]],
-            }
-            manifest['spec']['onExit'] = 'tator-exit-handler'
-            manifest['spec']['templates'] += [
-                failed_task,
-                succeeded_task,
-                exit_handler
-            ]
 
         # Set labels and annotations for job management
         if 'labels' not in manifest['metadata']:
