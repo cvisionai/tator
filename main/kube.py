@@ -108,16 +108,6 @@ class JobManagerMixin:
         if len(response['items']) > 0:
             for job in response['items']:
                 name = job['metadata']['name']
-                response = self.custom.patch_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    name=name,
-                    body={'spec': {'shutdown': 'Stop'}},
-                )
-                # TODO: Switch to below when websockets are removed.
-                """
                 response = self.custom.delete_namespaced_custom_object(
                     group='argoproj.io',
                     version='v1alpha1',
@@ -126,7 +116,6 @@ class JobManagerMixin:
                     name=name,
                     body={},
                 )
-                """
                 if response['status'] == 'Success':
                     cancelled += 1
         return cancelled
