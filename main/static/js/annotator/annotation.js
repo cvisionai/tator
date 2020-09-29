@@ -2571,7 +2571,8 @@ class AnnotationCanvas extends TatorElement
           objDescription: objDescription,
           dragInfo: this.normalizeDrag(dragInfo),
           requestObj: requestObj,
-          metaMode: this._metaMode
+          metaMode: this._metaMode,
+          canvasElement: this
         },
         composed: true,
       }));

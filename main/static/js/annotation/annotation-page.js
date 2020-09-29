@@ -626,7 +626,7 @@ class AnnotationPage extends TatorPage {
           const objDescription = evt.detail.objDescription;
           const dragInfo = evt.detail.dragInfo;
           const requestObj = evt.detail.requestObj;
-          const canvasPosition = canvasElement.getBoundingClientRect();
+          const canvasPosition = evt.detail.canvasElement.getBoundingClientRect();
 
           // Get the save dialog for this type. It gets created
           // with a metamode flag that changes based on mode. If
