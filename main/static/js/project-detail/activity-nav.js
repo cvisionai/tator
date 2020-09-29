@@ -26,10 +26,15 @@ class ActivityNav extends TatorElement {
     header.textContent = "Activity";
     headerDiv.appendChild(header);
 
+    this._reloadButton = document.createElement("reload-button");
+    this._reloadButton.setAttribute("class", "px-3");
+    headerDiv.appendChild(this._reloadButton);
+
     this._panel = document.createElement("div");
     this._panel.setAttribute("class", "analysis__panel-group py-3 f2");
     this._nav.appendChild(this._panel);
 
+    this._reloadButton.addEventListener("click", this.reload.bind(this));
     closeButton.addEventListener("click", this.close.bind(this));
 
     this._expanded = new Set(); // List of expanded jobs so we don't collapse on reload.
@@ -41,16 +46,15 @@ class ActivityNav extends TatorElement {
 
   open() {
     this._nav.classList.add("is-open");
-    this._intervalId = window.setInterval(this.reload.bind(this), 1000);
   }
 
   close() {
     this._nav.classList.remove("is-open");
     this.dispatchEvent(new Event("close"));
-    window.clearInterval(this._intervalId);
   }
 
   reload() {
+    this._reloadButton.classList.add("is-rotating");
     fetch(`/rest/Jobs/${this._project}`, {
       method: "GET",
       credentials: "same-origin",
@@ -93,6 +97,7 @@ class ActivityNav extends TatorElement {
         }
       }
     });
+    this._reloadButton.classList.remove("is-rotating");
   }
 
   _showGroup(gid, jobs, ul) {
