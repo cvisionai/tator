@@ -5,13 +5,14 @@ class AnnotationData extends HTMLElement {
     this._trackDb = new Map();
     this._updateUrls = new Map();
     this._dataByType = new Map();
+    this._mediaIds = new Array();
   }
 
   init(dataTypes, version, projectId, mediaId) {
     this._dataTypesRaw = dataTypes;
     this._version = version;
     this._projectId = projectId;
-    this._mediaId = mediaId;
+    this._mediaIds.push(mediaId);
 
     this.updateAll(dataTypes, version)
     .then(() => {
@@ -67,10 +68,10 @@ class AnnotationData extends HTMLElement {
     }
 
     // Define function for getting data url.
-    const getDataUrl = dataType => {
+    const getDataUrl = (dataType) => {
       const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
       let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
-            this._mediaId + "&type=" + dataType.id.split("_")[1];
+          this._mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
       if (dataEndpoint == "Localizations")
       {
         // TODO probably want this for States as well once it is supported there
