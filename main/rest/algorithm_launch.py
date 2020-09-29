@@ -9,7 +9,6 @@ from django.http import Http404
 from ..models import Algorithm
 from ..models import Media
 from ..kube import TatorAlgorithm
-from ..consumers import ProgressProducer
 from ..schema import AlgorithmLaunchSchema
 
 from ._base_views import BaseListView
@@ -94,19 +93,6 @@ class AlgorithmLaunchAPI(BaseListView):
                 user=self.request.user.pk,
                 extra_params=extra_params
             )
-
-            # Send out a progress message saying this launch is queued.
-            prog = ProgressProducer(
-                'algorithm',
-                project_id,
-                gid,
-                uid,
-                alg_name,
-                self.request.user,
-                {'media_ids': batch_str, 'sections': sections},
-            )
-            prog.queued("Queued...")
-
         return {'message': f"Algorithm {alg_name} started successfully!",
                 'uid': uids,
                 'gid': gid}
