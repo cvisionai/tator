@@ -634,6 +634,9 @@ class AnnotationPage extends TatorPage {
           // the attributes from previous runs.
           // (Fixes Pulse #324572460)
           var save = this._getSave(objDescription);
+          // Because we can be annotating multiple media_ids, set the dialog save
+          // to the id the draw event came from
+          save._mediaId = evt.detail.mediaId;
           if (metaMode && save.metaMode)
           {
             save.saveObject(requestObj, save.metaCache);
