@@ -97,8 +97,6 @@ spec:
           ports:
             - containerPort: 8000
               name: gunicorn
-            - containerPort: 8001
-              name: daphne
           volumeMounts:
             {{ include "volumeMounts.template" . | indent 12 }}
       volumes:

@@ -27,19 +27,6 @@ spec:
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: daphne-hpa
-spec:
-  minReplicas: {{ .Values.hpa.daphneMinReplicas }}
-  maxReplicas: {{ .Values.hpa.daphneMaxReplicas }}
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: daphne-deployment
-  targetCPUUtilizationPercentage: {{ .Values.hpa.daphneCpuPercent }}
----
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
   name: tusd-hpa
 spec:
   minReplicas: {{ .Values.hpa.tusdMinReplicas }}
