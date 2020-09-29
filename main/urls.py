@@ -206,14 +206,6 @@ urlpatterns += [
         NotifyAPI.as_view(),
     ),
     path(
-        'rest/Progress/<int:project>',
-        ProgressAPI.as_view(),
-    ),
-    path(
-        'rest/ProgressSummary/<int:project>',
-        ProgressSummaryAPI.as_view(),
-    ),
-    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),

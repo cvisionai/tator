@@ -76,8 +76,6 @@ class CustomGenerator(SchemaGenerator):
                 'Membership': membership,
                 'MoveVideoSpec': move_video_spec,
                 'NotifySpec': notify_spec,
-                'ProgressSpec': progress_spec,
-                'ProgressSummarySpec': progress_summary_spec,
                 'ProjectSpec': project_spec,
                 'Project': project,
                 'ResolutionConfig': resolution_config,

@@ -42,8 +42,6 @@ from .membership import membership_update
 from .membership import membership
 from .move_video import move_video_spec
 from .notify import notify_spec
-from .progress import progress_spec
-from .progress_summary import progress_summary_spec
 from .project import project_spec
 from .project import project
 from .section import section_spec

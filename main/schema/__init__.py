@@ -34,8 +34,6 @@ from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
 from .move_video import MoveVideoSchema
 from .notify import NotifySchema
-from .progress import ProgressSchema
-from .progress_summary import ProgressSummarySchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
 from .section import SectionListSchema

@@ -33,8 +33,6 @@ from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
 from .move_video import MoveVideoAPI
 from .notify import NotifyAPI
-from .progress import ProgressAPI
-from .progress_summary import ProgressSummaryAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .section import SectionListAPI
