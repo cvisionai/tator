@@ -18,6 +18,7 @@ class CanvasContextMenu extends TatorElement {
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white");
     button.textContent = newText;
+    button.style.display = "block";
     button.addEventListener("click", () => {
       this.hideMenu();
       clickCallback(newText);
@@ -41,6 +42,18 @@ class CanvasContextMenu extends TatorElement {
     if (tooltipText)
     {
       button.title = tooltipText;
+    }
+  }
+
+  displayEntry(entryText, display)
+  {
+    var button = this._buttons[entryText];
+
+    if (display) {
+      button.style.display = "block";
+    }
+    else{
+      button.style.display = "none";
     }
   }
 

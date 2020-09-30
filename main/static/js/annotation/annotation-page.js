@@ -48,6 +48,14 @@ class AnnotationPage extends TatorPage {
     this._browser.annotationData = this._data;
     this._main.appendChild(this._browser);
 
+    this._progressDialog = document.createElement("progress-dialog");
+    this._main.appendChild(this._progressDialog);
+
+    this._progressDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
+      this._progressDialog.removeAttribute("is-open", "");
+    });
+
     this._successColor = "#54e37a";
 
     window.addEventListener("error", (evt) => {
@@ -56,6 +64,16 @@ class AnnotationPage extends TatorPage {
       Utilities.warningAlert("System error detected","#ff3e1d");
     });
   }
+
+  /**
+   * Returned promise resolves when job monitoring is done
+   */
+  showAlgoRunningDialog(uid, runningMsg, successfulMsg, failedMsg) {
+    const promise = this._progressDialog.monitorJob(uid, runningMsg, successfulMsg, failedMsg);
+    this._progressDialog.setAttribute("is-open", "");
+    this.setAttribute("has-open-modal", "");
+    return promise;
+  };
 
   static get observedAttributes() {
     return ["project-name", "project-id", "media-id"].concat(TatorPage.observedAttributes);
@@ -609,13 +627,93 @@ class AnnotationPage extends TatorPage {
   }
 
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
+
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
     // appearance to the user is the same.
-
     const menu = document.createElement("modify-track-dialog");
     this._main.appendChild(menu);
     this._saves['modifyTrack'] = menu;
+
+    // Look at the registered algorithms for this project. Set the modify track dialog
+    // options appropriately.
+    this._extend_track_algo_name = "tator_extend_track";
+    this._fill_track_gaps_algo_name = "tator_fill_track_gaps";
+    const algUrl = "/rest/Algorithms/" + this._data._projectId;
+    const algorithmPromise = fetchRetry(algUrl, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+    .then(response => { return response.json(); })
+    .then(result => {
+      var registeredAlgos = [];
+      for (const alg of result) {
+        registeredAlgos.push(alg.name);
+        if (alg.name == this._extend_track_algo_name) {
+          menu.enableExtendAutoMethod();
+        }
+        else if (alg.name == this._fill_track_gaps_algo_name) {
+          if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
+            canvas.enableFillTrackGapsOption();
+          }
+        }
+      }
+      console.log("Registered algorithms: " + registeredAlgos);
+    });
+
+    menu.addEventListener("fillTrackGaps", evt => {
+      let body = {
+        "algorithm_name": this._fill_track_gaps_algo_name,
+        "extra_params": [
+          {name: 'track', value: evt.detail.trackId}]};
+
+      if ('media' in evt.detail.localization)
+      {
+        body["media_ids"] = [evt.detail.localization.media];
+      }
+      else
+      {
+        body["media_ids"] = [evt.detail.localization.media_id];
+      }
+
+      fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+      })
+      .then(response => {
+        if (response.status != 201) {
+          window.alert("Error launching automatic track gaps fill algorithm!");
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log(data);
+        return this.showAlgoRunningDialog(
+          data.uid,
+          "Filling in track gaps using visual tracking...",
+          "Track gaps filled.",
+          "Error occured with the visual tracker. Track was not modified.");
+      })
+      .then((jobSuccessful) => {
+        if (jobSuccessful) {
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+        }
+      });
+    });
 
     menu.addEventListener("extendTrack", evt => {
 
@@ -641,7 +739,7 @@ class AnnotationPage extends TatorPage {
           if (typeof baseLocalization.media === "undefined") {
             newLocalization.media_id = baseLocalization.media_id;
           }
-      
+
           newLocalization = {...newLocalization, ...baseLocalization.attributes};
 
           if (evt.detail.direction == "Forward") {
@@ -690,9 +788,9 @@ class AnnotationPage extends TatorPage {
               ),
             })
             .then (response => response.json());
-  
+
             return trackPromise;
-            
+
           } catch (error) {
             window.alert("Error with track extension during localization creation process.");
             return;
@@ -703,6 +801,56 @@ class AnnotationPage extends TatorPage {
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon("Track extension done.", this._successColor);
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+        });
+      }
+      else if (evt.detail.algorithm == "Auto") {
+        let body = {
+          "algorithm_name": this._extend_track_algo_name,
+          "extra_params": [
+            {name: 'track', value: evt.detail.trackId},
+            {name: 'extend_direction', value: evt.detail.direction},
+            {name: 'extend_detection_id', value: evt.detail.localization.id}]
+          };
+        if ('media' in evt.detail.localization)
+        {
+          body["media_ids"] = [evt.detail.localization.media];
+        }
+        else
+        {
+          body["media_ids"] = [evt.detail.localization.media_id];
+        }
+
+        fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body),
+        })
+        .then(response => {
+          if (response.status != 201) {
+            window.alert("Error launching automatic track extension algorithm!");
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(data);
+          return this.showAlgoRunningDialog(
+            data.uid,
+            "Extending track with visual tracker...",
+            "Track extended.",
+            "Error occured with the visual tracker. Track was not extended.");
+        })
+        .then((jobSuccessful) => {
+          if (jobSuccessful) {
+            this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+            this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+            Utilities.showSuccessIcon("Track extension done.", this._successColor);
+            canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+          }
         });
       }
       else {

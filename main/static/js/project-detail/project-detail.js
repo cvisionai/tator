@@ -290,7 +290,13 @@ class ProjectDetail extends TatorPage {
       const algoData = algoResponse.json();
       Promise.all([projectData, sectionData, algoData])
       .then(([project, sections, algos]) => {
-        this._algorithms = algos;
+        // First hide algorithms if needed. These are not appropriate to be
+        // run at the project/section/media level.
+        const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
+        const parsedAlgos = algos.filter(function(alg) {
+          return !hiddenAlgos.includes(alg.name);
+        } );
+        this._algorithms = parsedAlgos;
         this._permission = project.permission;
         this._mediaSection.permission = this._permission;
         this._mediaSection.algorithms = this._algorithms;

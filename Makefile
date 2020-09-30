@@ -358,6 +358,7 @@ FILES = \
     annotation/text-input.js \
     annotation/attribute-panel.js \
     annotation/modify-track-dialog.js \
+    annotation/progress-dialog.js \
     annotation/favorite-button.js \
     annotation/favorites-panel.js \
     annotation/save-dialog.js \
