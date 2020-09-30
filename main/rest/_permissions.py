@@ -16,6 +16,7 @@ from ..models import Membership
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
+from ..cache import TatorCache
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +48,10 @@ class ProjectPermissionBase(BasePermission):
                 raise Http404
         elif 'uid' in view.kwargs:
             uid = view.kwargs['uid']
-            rds = Redis(host=os.getenv('REDIS_HOST'))
-            if rds.hexists('uids', uid):
-                msg = json.loads(rds.hget('uids', uid))
-                project = msg['project_id']
-            else:
+            try:
+                cache = TatorCache().get_jobs_by_uid(uid)
+                project = cache[0]['project']
+            except:
                 raise Http404
         else:
             # If this is a request from schema view, show all endpoints.
