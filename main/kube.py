@@ -754,7 +754,6 @@ class TatorTranscode(JobManagerMixin):
             'spec': {
                 'entrypoint': 'unpack-pipeline',
                 'arguments': {'parameters' : global_parameters},
-                'onExit': 'exit-handler',
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
@@ -770,8 +769,6 @@ class TatorTranscode(JobManagerMixin):
                     self.unpack_task,
                     self.get_transcode_dag(),
                     pipeline_task,
-                    self.progress_task,
-                    self.exit_handler,
                     self.data_import
                 ],
             },
@@ -855,7 +852,6 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'single-file-pipeline',
-                'onExit': 'exit-handler',
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
@@ -869,8 +865,6 @@ class TatorTranscode(JobManagerMixin):
                     self.image_upload_task,
                     self.get_transcode_dag(),
                     pipeline_task,
-                    self.progress_task,
-                    self.exit_handler,
                 ],
             },
         }
