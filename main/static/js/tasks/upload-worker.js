@@ -12,19 +12,12 @@ importScripts("/static/js/node-uuid.js");
 // Import fetch retry.
 importScripts("/static/js/util/fetch-retry.js");
 
-// UID for this service worker.
-const serviceWorkerId = uuidv1();
-console.log("This service worker's UID: " + serviceWorkerId);
-
 // List of uploads in progress.
 let activeUploads = {};
 const maxUploads = 1;
 
 // Buffer of uploads.
 let uploadBuffer = [];
-
-// Buffer of progress messages.
-let progressBuffer = {};
 
 // Define function for sending message to client.
 const emitMessage = msg => {
@@ -35,41 +28,6 @@ const emitMessage = msg => {
     }
   });
 };
-
-// Set up periodic function to send progress messages.
-self.setInterval(() => {
-  const maxMessages = 1000;
-  for (const key in progressBuffer) {
-    const [projectId, token] = key.split(",");
-    const messages = Object.values(progressBuffer[key]);
-    let start = 0;
-    while (start < messages.length) {
-      const sendMe = messages.slice(start, start + maxMessages);
-      fetchRetry("/rest/Progress/" + projectId, {
-        method: "POST",
-        headers: {
-          "Authorization": "Token " + token,
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(sendMe),
-        credentials: "omit",
-      })
-      .catch(err => console.error("Error while broadcasting progress:" + err));
-      start += sendMe.length;
-    }
-  }
-  progressBuffer = {};
-}, 50);
-
-// Define function to add message to progress buffer.
-const bufferMessage = (projectId, token, uid, msg) => {
-  const key = [projectId, token].join();
-  if (!(key in progressBuffer)) {
-    progressBuffer[key] = {};
-  }
-  progressBuffer[key][uid] = msg;
-}
 
 // Define function to remove a queued upload.
 const removeQueued = index => {
@@ -153,11 +111,6 @@ async function startUpload() {
 function removeFromActive(uid) {
   if (uid in activeUploads) {
     const key = [activeUploads[uid].projectId, activeUploads[uid].token].join();
-    if (key in progressBuffer) {
-      if (uid in progressBuffer) {
-        delete progressBuffer[key][uid];
-      }
-    }
     delete activeUploads[uid];
   }
   startUpload();
@@ -208,18 +161,7 @@ class Upload {
         "Upload-Uid": this.upload_uid,
       },
       onProgress: (bytesSent, bytesTotal) => {
-        // Throttle progress requests to every 3 seconds.
-        if (Date.now() - this.last_progress > 3000) {
-          let percent = 100.0 * bytesSent / bytesTotal
-          if (percent < 100) {
-            let message = "Uploading file (" + Math.round(percent) + "%)...";
-            // In the context of full upload pipeline, md5 check is 
-            // first 10%, upload is 10-50%, starting transcode is 60%,
-            // and argo workflow defines the rest.
-            this.progress("started", message, 10 + 0.4 * percent); 
-          }
-          this.last_progress = Date.now();
-        }
+        //TODO: Emit message indicating upload progress
       },
       onError: error => {
         console.log("Error during upload: " + error);
@@ -261,24 +203,10 @@ class Upload {
         })
         .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
+        //TODO: Emit message indicating upload progress
       }
     });
 
-  }
-
-  // Sends progress messages.
-  progress(state, msg, pct) {
-    bufferMessage(this.projectId, this.token, this.upload_uid, {
-      job_type: "upload",
-      gid: this.gid,
-      uid: this.upload_uid,
-      swid: serviceWorkerId,
-      section: this.section,
-      name: this.fname,
-      state: state,
-      message: msg,
-      progress: pct,
-    });
   }
 
   // Calculates md5 hash.
@@ -336,7 +264,6 @@ class Upload {
       this.tus.abort();
     }
     removeFromActive(this.upload_uid);
-    this.progress("failed", "Upload was aborted!", 0);
   }
 }
 
