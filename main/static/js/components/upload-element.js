@@ -10,7 +10,7 @@ class UploadElement extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["project-id", "username", "token"];
+    return ["project-id", "username", "token", "section"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -36,6 +36,9 @@ class UploadElement extends TatorElement {
     else if (name === "token") {
       this._token = newValue;
     }
+    else if (name === "section") {
+      this._section = newValue;
+    }
   }
 
   set worker(val) {
@@ -47,17 +50,6 @@ class UploadElement extends TatorElement {
         this._haveNewSection = true;
       }
     });
-  }
-
-  async _uploadSection() {
-    this._worker.postMessage({
-      command: "requestNewUploadSection",
-    });
-    while (!this._haveNewSection) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
-    this._haveNewSection = false;
-    return this._newSectionName;
   }
 
   _checkFile(file, gid) {
@@ -97,6 +89,7 @@ class UploadElement extends TatorElement {
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
           "mediaTypeId": (isArchive ? -1 : mediaType.id),
+          "section": this._section,
           "token": this._token,
           "isImage": isImage,
           "isArchive": isArchive
