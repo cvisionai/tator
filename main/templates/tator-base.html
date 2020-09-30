@@ -7,7 +7,6 @@
     <link rel="stylesheet" type="text/css" href={% static "css/tator/tator.min.css" %} />
     {% settings_value "USE_MIN_JS" as settings_min_js %}
     {% if not settings_min_js %}
-    <script src={% static "js/reconnecting-websocket.min.js" %}></script>
     <script src={% static "js/node-uuid.js" %}></script>
     <script src={% static "js/StreamSaver.js" %}></script>
     <script src={% static "js/zip-stream.js" %}></script>
@@ -28,8 +27,6 @@
     <script src={% static "js/components/canvas-ctxmenu.js" %}></script> 
     <script src={% static "js/components/big-upload-form.js" %}></script> 
     <script src={% static "js/components/upload-element.js" %}></script> 
-    <script src={% static "js/components/progress-job.js" %}></script> 
-    <script src={% static "js/components/progress-summary.js" %}></script> 
     <script src={% static "js/components/header-notification.js" %}></script> 
     <script src={% static "js/components/header-menu.js" %}></script> 
     <script src={% static "js/components/header-user.js" %}></script> 

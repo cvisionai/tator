@@ -238,7 +238,6 @@ min-css:
 	node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator/tator.min.css --style compressed
 
 FILES = \
-    reconnecting-websocket.min.js \
     node-uuid.js \
     StreamSaver.js \
     zip-stream.js \
@@ -258,8 +257,6 @@ FILES = \
     components/cancel-confirm.js \
     components/big-upload-form.js \
     components/upload-element.js \
-    components/progress-job.js \
-    components/progress-summary.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
