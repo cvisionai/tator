@@ -552,9 +552,13 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.addMenuEntry("Trim start to here", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Trim end to here", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Fill track gaps", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
     this._selectedMergeTrack = null;
+
+    // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
+    this._contextMenuTrack.displayEntry("Fill track gaps", false);
 
     // Context menu (right-click): Localizations/detections
     this._contextMenuLoc = document.createElement("canvas-context-menu");
@@ -606,6 +610,14 @@ class AnnotationCanvas extends TatorElement
 
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
+  }
+
+  /**
+   * Enables the fill track gaps context menu option
+   */
+  enableFillTrackGapsOption()
+  {
+    this._contextMenuTrack.displayEntry("Fill track gaps", true);
   }
 
   /**
@@ -684,6 +696,10 @@ class AnnotationCanvas extends TatorElement
     {
       objDescription.interface = 'addDetection';
       objDescription.mainTrack = this._selectedMergeTrack;
+    }
+    else if (menuText == "Fill track gaps")
+    {
+      objDescription.interface = "fillTrackGaps";
     }
     else
     {

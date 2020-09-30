@@ -113,8 +113,14 @@ class ProjectDetail extends TatorPage {
       } else if (msg.command == "workerReady") {
         window.dispatchEvent(new Event("readyForWebsocket"));
       } else if (msg.command == "algorithms") {
-        this._algorithms = msg.algorithms;
-        this._algorithmButton.algorithms = msg.algorithms;
+        // First hide algorithms if needed. These are not appropriate to be
+        // run at the project/section/media level.
+        const hiddenAlgorithms = ['tator_extend_track', 'tator_fill_track_gaps'];
+        const algs = msg.algorithms.filter(function(alg) {
+          return !hiddenAlgorithms.includes(alg.name);
+        } );
+        this._algorithms = algs;
+        this._algorithmButton.algorithms = algs;
       } else if (msg.command == "checkVisibility") {
         this._checkSectionVisibility();
       }

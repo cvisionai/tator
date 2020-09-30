@@ -18,6 +18,7 @@ class ModifyTrackDialog extends TatorElement {
     this._contentDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between annotation__panel-group py-3");
     this._div.appendChild(this._contentDiv);
 
+    this._createFillGapsDiv();
     this._createTrimDialogDiv();
     this._createExtendDialogDiv();
     this._createMergeDialogDiv();
@@ -43,6 +44,20 @@ class ModifyTrackDialog extends TatorElement {
     });
 
     this._yesButton.addEventListener("click", this._yesClickHandler.bind(this));
+  }
+
+  _createFillGapsDiv() {
+
+    const div = document.createElement("div");
+    this._fillGapsQuestion = document.createElement("p");
+    div.appendChild(this._fillGapsQuestion);
+
+    this._fillGapsText = document.createElement("p");
+    this._fillGapsText.setAttribute("class", "text-gray f2 py-3");
+    div.appendChild(this._fillGapsText);
+
+    this._fillGapsDiv = div;
+    this._contentDiv.appendChild(div);
   }
 
   _createTrimDialogDiv() {
@@ -157,6 +172,17 @@ class ModifyTrackDialog extends TatorElement {
              mainTrackId: this._data.mainTrack.id,
              mergeTrackId: this._data.track.id}}));
     }
+    else if (this._data.interface == "fillTrackGaps")
+    {
+      this.dispatchEvent(
+        new CustomEvent("fillTrackGaps",
+          {composed: true,
+           detail: {
+            project: this._data.project,
+            trackId: this._data.track.id,
+            trackType: this._data.track.meta,
+            localization: this._data.localization}}));
+    }
     else if (this._data.interface == "addDetection")
     {
       this.dispatchEvent(
@@ -216,7 +242,6 @@ class ModifyTrackDialog extends TatorElement {
           }
         }
 
-
         this.dispatchEvent(
           new CustomEvent("extendTrack",
             {composed: true,
@@ -237,11 +262,23 @@ class ModifyTrackDialog extends TatorElement {
 
   _resetUI() {
     this._span.textContent = "";
+    this._fillGapsDiv.style.display = "none";
     this._extendDiv.style.display = "none";
     this._mergeDiv.style.display = "none";
     this._addDetectionDiv.style.display = "none";
     this._trimDiv.style.display = "none";
     this._extendFrames.style.display = "block";
+  }
+
+  _setToFillTrackGapsUI() {
+    this._span.textContent = "Fill Track Gaps"
+    this._fillGapsDiv.style.display = "block";
+    this._yesButton.textContent = "Fill";
+
+    var text = "This will launch a visual tracker that will attempt to automatically fill in detections where there are track gaps.";
+    var question = "Automatically fill gaps of detections?";
+    this._fillGapsQuestion.textContent = question;
+    this._fillGapsText.textContent = text;
   }
 
   _setToExtendUI() {
@@ -309,6 +346,10 @@ class ModifyTrackDialog extends TatorElement {
     else if (dialogType == "trim")
     {
       this._setToTrimUI();
+    }
+    else if (dialogType == "fillTrackGaps")
+    {
+      this._setToFillTrackGapsUI();
     }
   }
 

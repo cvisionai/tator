@@ -628,10 +628,10 @@ class AnnotationPage extends TatorPage {
   }
 
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
+
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
     // appearance to the user is the same.
-
     const menu = document.createElement("modify-track-dialog");
     this._main.appendChild(menu);
     this._saves['modifyTrack'] = menu;
@@ -658,8 +658,62 @@ class AnnotationPage extends TatorPage {
         if (alg.name == this._extend_track_algo_name) {
           menu.enableExtendAutoMethod();
         }
+        else if (alg.name == this._fill_track_gaps_algo_name) {
+          if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
+            canvas.enableFillTrackGapsOption();
+          }
+        }
       }
       console.log("Registered algorithms: " + registeredAlgos);
+    });
+
+    menu.addEventListener("fillTrackGaps", evt => {
+      let body = {
+        "algorithm_name": this._fill_track_gaps_algo_name,
+        "extra_params": [
+          {name: 'track', value: evt.detail.trackId}]};
+
+      if ('media' in evt.detail.localization)
+      {
+        body["media_ids"] = [evt.detail.localization.media];
+      }
+      else
+      {
+        body["media_ids"] = [evt.detail.localization.media_id];
+      }
+
+      fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+      })
+      .then(response => {
+        if (response.status != 201) {
+          window.alert("Error launching automatic track gaps fill algorithm!");
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log(data);
+        return this.showAlgoRunningDialog(
+          data.uid,
+          "Filling in track gaps using visual tracking...",
+          "Track gaps filled.",
+          "Error occured with the visual tracker. Track was not modified.");
+      })
+      .then((jobSuccessful) => {
+        if (jobSuccessful) {
+          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+        }
+      });
     });
 
     menu.addEventListener("extendTrack", evt => {
