@@ -19,10 +19,6 @@ def node_to_job_node(node):
     return job_node
 
 def workflow_to_job(workflow):
-    logger.info(f"WORKFLOW KEYS: {workflow.keys()}")
-    logger.info(f"WORKFLOW METADATA KEYS: {workflow['metadata'].keys()}")
-    import json
-    logger.info(f"FULL WORKFLOW: {json.dumps(workflow, indent=4)}")
     job = {}
     job['id'] = workflow['metadata']['name']
     job['uid'] = workflow['metadata']['labels']['uid']
