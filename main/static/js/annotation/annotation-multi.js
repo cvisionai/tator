@@ -305,6 +305,14 @@ class AnnotationMulti extends TatorElement {
         prime.addEventListener("safeMode", () => {
           this.safeMode();
         });
+
+        prime.addPauseListener(() => {
+          const prime_frame = prime.currentFrame();
+          for (let idx = 1; idx < this._videos.length; idx++)
+          {
+            this._videos[idx]._dispFrame = prime_frame;
+          }
+        });
       }
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
