@@ -29,13 +29,17 @@ def workflow_to_job(workflow):
     job['gid'] = workflow['metadata']['labels']['gid']
     job['project'] = workflow['metadata']['labels']['project']
     job['user'] = workflow['metadata']['labels']['user']
-    status = workflow['status']
-    job['status'] = status['phase']
-    if 'startedAt' in status:
-        job['start_time'] = status['startedAt']
-    if 'finishedAt' in status:
-        job['stop_time'] = status['finishedAt']
-    job['nodes'] = [node_to_job_node(status['nodes'][node_id])
-                    for node_id in status['nodes']]
+    if 'status' in workflow:
+        status = workflow['status']
+        job['status'] = status['phase']
+        if 'startedAt' in status:
+            job['start_time'] = status['startedAt']
+        if 'finishedAt' in status:
+            job['stop_time'] = status['finishedAt']
+        job['nodes'] = [node_to_job_node(status['nodes'][node_id])
+                        for node_id in status['nodes']]
+    else:
+        job['status'] = 'Running'
+        job['nodes'] = []
     return job
 
