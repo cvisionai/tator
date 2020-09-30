@@ -173,32 +173,6 @@ class UploadElement extends TatorElement {
       }
     }
 
-    if (numStarted > 0) {
-      // Set the number of jobs in this job group.
-      fetchRetry("/rest/ProgressSummary/" + this.getAttribute("project-id"), {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          gid: gid,
-          num_jobs: numStarted,
-          num_complete: 0,
-        }),
-      });
-    
-      // For some reason calling await before using datatransfer corrupts
-      // the datatranfer.
-      const section = await this._uploadSection();
-      for (const [index, message] of this._messages.entries()) {
-        this._messages[index] = {...message, section: section};
-      }
-    }
-
-
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
       composed: true
