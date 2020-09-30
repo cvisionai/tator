@@ -261,7 +261,31 @@ class AnnotationMulti extends TatorElement {
     }
 
 
-    // Functor to normalize the
+    let global_frame = new Array(video_count).fill(0);
+    // Functor to monitor any frame drift
+    let global_frame_change = (vid_idx,evt) => {
+      global_frame[vid_idx] = evt.detail.frame;
+      if (evt.detail.frame % 60 == 0 && vid_idx == 0)
+      {
+        let max_diff = 0;
+        for (let j = 0; j < global_frame.length; j++)
+        {
+          for (let i = 0; i < global_frame.length; i++)
+          {
+            const diff = Math.abs(global_frame[i]-global_frame[j]);
+            if (diff > max_diff)
+            {
+              max_diff = diff;
+            }
+          }
+        }
+        if (max_diff > 10)
+        {
+          console.warn("Frame slippage occuring in multi-view " + max_diff);
+        }
+      }
+    }
+    // Functor to normalize the progress bar
     let global_progress = new Array(video_count).fill(0);
     let handle_buffer_load = (vid_idx,evt) =>
         {
@@ -319,6 +343,10 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
+                             });
+      this._videos[idx].addEventListener("frameChange",
+                             (evt) => {
+                               global_frame_change(idx,evt);
                              });
       this._videos[idx].loadFromVideoObject(video_info, this._quality, idx==0)
       this.parent._getMetadataTypes(this,
