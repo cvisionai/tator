@@ -310,7 +310,9 @@ class AnnotationMulti extends TatorElement {
           const prime_frame = prime.currentFrame();
           for (let idx = 1; idx < this._videos.length; idx++)
           {
-            this._videos[idx]._dispFrame = prime_frame;
+            this._videos[idx]._dispFrame =
+              Math.min(prime_frame,
+                       this._videos[idx]._numFrames-1);
           }
         });
       }
@@ -544,7 +546,7 @@ class AnnotationMulti extends TatorElement {
     for (let video of this._videos)
     {
       video.onPlay();
-      p_list.push(video.gotoFrame(frame, true));
+      p_list.push(video.gotoFrame(Math.max(frame,video._numFrames-1), true));
     }
     return Promise.all(p_list);
   }
