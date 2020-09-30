@@ -124,8 +124,22 @@ class ModifyTrackDialog extends TatorElement {
     this._extendFrames.setAttribute("type", "int");
     div.appendChild(this._extendFrames);
 
+    this._extendMethod.addEventListener("change", () => {
+      let alg = this._extendMethod.getValue();
+      if (alg == "Auto") {
+        this._extendFrames.style.visibility = "hidden";
+      }
+      else {
+        this._extendFrames.style.visibility = "initial";
+      }
+    })
+
     this._extendDiv = div;
     this._contentDiv.appendChild(div);
+  }
+
+  enableExtendAutoMethod() {
+    this._extendMethod.choices = [{'value': 'Auto'}];
   }
 
   _yesClickHandler() {
@@ -173,26 +187,35 @@ class ModifyTrackDialog extends TatorElement {
       // exceed the video length (in either direction). If there's a problem a window
       // alert will be presented and the corresponding event is ignored.
       try {
-        var extendFrames = parseInt(this._extendFrames.getValue());
 
-        if (isNaN(extendFrames)) {
-          throw "Invalid number of frames requested.";
-        }
-
+        let alg = this._extendMethod.getValue();
+        var extendFrames = 0;
         var direction = this._extendDirection.getValue();
-        var endFrame = this._data.frame;
-        if (direction == "Forward") {
-          endFrame = endFrame + extendFrames;
-          if (endFrame > this._data.maxFrames) {
-            throw "Requested frames exceed video length.";
+
+        if (alg === "Duplicate")
+        {
+          extendFrames = parseInt(this._extendFrames.getValue());
+  
+          if (isNaN(extendFrames)) {
+            throw "Invalid number of frames requested.";
+          }
+  
+          
+          var endFrame = this._data.frame;
+          if (direction == "Forward") {
+            endFrame = endFrame + extendFrames;
+            if (endFrame > this._data.maxFrames) {
+              throw "Requested frames exceed video length.";
+            }
+          }
+          else {
+            endFrame = endFrame - extendFrames;
+            if (endFrame < 0) {
+              throw "Requested frames exceed video length.";
+            }
           }
         }
-        else {
-          endFrame = endFrame - extendFrames;
-          if (endFrame < 0) {
-            throw "Requested frames exceed video length.";
-          }
-        }
+
 
         this.dispatchEvent(
           new CustomEvent("extendTrack",
@@ -202,7 +225,7 @@ class ModifyTrackDialog extends TatorElement {
                trackId: this._data.track.id,
                trackType: this._data.track.meta,
                localization: this._data.localization,
-               algorithm: this._extendMethod.getValue(),
+               algorithm: alg,
                numFrames: extendFrames,
                direction: this._extendDirection.getValue()}}));
 
@@ -218,6 +241,7 @@ class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "none";
     this._addDetectionDiv.style.display = "none";
     this._trimDiv.style.display = "none";
+    this._extendFrames.style.display = "block";
   }
 
   _setToExtendUI() {

@@ -26,7 +26,7 @@ class Utilities
             el.style.transition = '1.0s';
             el.style.opacity = '0';
             el.style.visibility = 'hidden';
-          }, 5000);
+          }, 3000);
       }
     }
     else
