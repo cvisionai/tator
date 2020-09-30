@@ -46,6 +46,13 @@ class TranscodeAPI(BaseListView):
         attributes = params.get('attributes',None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
+        # If section does not exist and is not an empty string, create a section.
+        if section:
+            if not Section.objects.filter(tator_user_sections=section).exists():
+                Section.objects.create(project=Project.objects.get(pk=project),
+                                       name=section,
+                                       tator_user_sections=section)
+
         type_objects = MediaType.objects.filter(project=project)
         if entity_type != -1:
             #If we are transcoding and not unpacking we know its a video type we need
