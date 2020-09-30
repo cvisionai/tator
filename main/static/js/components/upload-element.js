@@ -122,6 +122,15 @@ class UploadElement extends TatorElement {
     // Set a group ID on the upload.
     const gid = uuidv1();
 
+    // Get main page.
+    const page = document.getElementsByTagName("project-detail")[0];
+
+    // Show loading gif.
+    const loading = document.createElement("img");
+    loading.setAttribute("class", "loading");
+    loading.setAttribute("src", "/static/images/loading.svg");
+    page._shadow.appendChild(loading);
+
     let numSkipped = 0;
     let numStarted = 0;
     let totalFiles = 0;
@@ -153,6 +162,9 @@ class UploadElement extends TatorElement {
     while (numSkipped + numStarted < totalFiles) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+
+    // Remove loading gif.
+    page._shadow.removeChild(loading);
 
     if (totalSize > 60000000000 || numStarted > 5000) {
       const bigUpload = document.createElement("big-upload-form");
