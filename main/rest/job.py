@@ -84,7 +84,7 @@ class JobDetailAPI(BaseDetailView):
             cache = TatorCache().get_jobs_by_uid(uid)
         except:
             raise Http404
-        job = get_jobs(f'uid={uid}', cache)
+        jobs = get_jobs(f'uid={uid}', cache)
         if len(jobs) != 1:
             raise Http404
         return workflow_to_job(jobs[0])
