@@ -8,6 +8,7 @@ import requests
 
 from ..kube import TatorTranscode
 from ..cache import TatorCache
+from ..models import Project
 from ..models import MediaType
 from ..models import Section
 from ..schema import TranscodeSchema
