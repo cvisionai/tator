@@ -153,7 +153,7 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
-            } else if (type_data.dype == "image" ){
+            } else if (type_data.dtype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
               this._player.mediaType = type_data;
@@ -172,7 +172,7 @@ class AnnotationPage extends TatorPage {
                     player._image.captureFrame(e.detail.localizations);
                   });
             } else if (type_data.dtype == "multi") {
-		          player = document.createElement("annotation-multi");
+              player = document.createElement("annotation-multi");
               this._player = player;
               this._player.parent = this;
               this._player.mediaType = type_data;
@@ -189,9 +189,9 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
-	    } else {
-		window.alert(`Unknown media type ${type_data.dtype}`)
-	    }
+            } else {
+              window.alert(`Unknown media type ${type_data.dtype}`)
+            }
           });
           fetch("/rest/Project/" + data.project, {
             method: "GET",
