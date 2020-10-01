@@ -84,28 +84,38 @@ class TatorCache:
     def get_jobs_by_uid(self, uid):
         """ Retrieves job using UID.
         """
-        val = self.rds.hget('jobs', uid).decode()
-        return [json.loads(val)]
+        val = None
+        if self.rds.hexists('jobs', uid):
+            val = [json.loads(self.rds.hget('jobs', uid).decode())]
+        return val
 
     def get_jobs_by_gid(self, gid, first_only=False):
         """ Retrieves jobs using GID. Set first_only=True to only retrieve first job.
         """
-        uids = self.rds.get(gid).decode().split(',')
-        if first_only:
-            jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+        uids = self.rds.get(gid)
+        if uids:
+            uids = uids.decode().split(',')
+            if first_only:
+                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+            else:
+                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
         else:
-            jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+            jobs = []
         return jobs
 
     def get_jobs_by_project(self, project, first_only=False):
         """ Retrieves jobs using project ID. Set first_only=True to only retrieve first job.
         """
         project_key = f'jobs_{project}'
-        uids = self.rds.get(project_key).decode().split(',')
-        if first_only:
-            jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+        uids = self.rds.get(project_key)
+        if uids:
+            uids = uids.decode().split(',')
+            if first_only:
+                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+            else:
+                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
         else:
-            jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+            jobs = []
         return jobs
             
     def invalidate_all(self):

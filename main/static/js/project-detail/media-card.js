@@ -210,6 +210,7 @@ class MediaCard extends TatorElement {
 
   set media(val) {
     this._media = val;
+    this._more.media = val;
     if (this._media.file == '' &&
         (this._media.media_files == null ||
          (this._media.media_files &&
@@ -221,13 +222,15 @@ class MediaCard extends TatorElement {
     }
     else
     {
-      this._more.media = val;
       let project = val.project;
       if(typeof(val.project) == "undefined") {
         project = val.project_id;
       }
       var uri = encodeURI(`/${project}/annotation/${val.id}?${this._mediaParams.toString()}`);
       this._link.setAttribute("href", uri);
+      this._li.style.opacity = 1;
+      this._li.style.cursor = "pointer";
+      this._link.style.cursor = "pointer";
     }
   }
 

@@ -253,6 +253,7 @@ FILES = \
     components/modal-success.js \
     components/modal-dialog.js \
     components/modal-notify.js \
+    components/upload-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
     components/big-upload-form.js \

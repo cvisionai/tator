@@ -8,7 +8,7 @@ class BigUploadForm extends ModalDialog {
 
     const warning = document.createElement("p");
     warning.setAttribute("class", "text-semibold py-3");
-    warning.textContent = "Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try pytator or gnocchi.";
+    warning.textContent = "Recommended max browser upload size is 60GB or 5000 files.\n For larger uploads try tator-py or gnocchi.";
     this._main.appendChild(warning);
 
     this._accept = document.createElement("button");
