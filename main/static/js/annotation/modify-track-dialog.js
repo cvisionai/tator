@@ -225,8 +225,7 @@ class ModifyTrackDialog extends TatorElement {
           if (isNaN(extendFrames)) {
             throw "Invalid number of frames requested.";
           }
-  
-          
+            
           var endFrame = this._data.frame;
           if (direction == "Forward") {
             endFrame = endFrame + extendFrames;

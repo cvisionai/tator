@@ -840,7 +840,7 @@ class AnnotationPage extends TatorPage {
           console.log(data);
           return this.showAlgoRunningDialog(
             data.uid,
-            "Extending track with visual tracker...",
+            "Extending track with visual tracker (max of 50 frames)",
             "Track extended.",
             "Error occured with the visual tracker. Track was not extended.");
         })

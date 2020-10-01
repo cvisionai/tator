@@ -3,20 +3,17 @@ class ProgressDialog extends ModalDialog {
     super();
 
     this._div.setAttribute("class", "modal-wrap d-flex text-center");
+    this._div.style.width = "334px";
     this._modal.setAttribute("class", "modal rounded-2");
     this._titleDiv.setAttribute("class", "h2");
     this._title.nodeValue = "";
-    this._main.remove();
-
-    const otherDiv = document.createElement("div");
-    otherDiv.setAttribute("class", "");
-    this._header.appendChild(otherDiv);
+    this._footer.remove();
     
     // Loading Icon
     this._loadingImg = document.createElement("img");
     this._loadingImg.setAttribute("src", "/static/images/spinner-transparent.svg");
     this._loadingImg.style.margin = "auto";
-    otherDiv.appendChild(this._loadingImg);
+    this._header.appendChild(this._loadingImg);
 
     // Success Icon
     // Note: Scaled up version of success-light.js
@@ -33,7 +30,7 @@ class ProgressDialog extends ModalDialog {
     this._successSvg.style.fill = "none";
     this._successSvg.style.display = "none";
     this._successSvg.style.margin = "auto";
-    otherDiv.appendChild(this._successSvg);
+    this._header.appendChild(this._successSvg);
 
     const path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M 36 3 C 18 3 3 18 3 36 C 3 54 18 69 36 69 C 54 69 69 54 69 36 C 69 18 54 3 36 3");
@@ -58,7 +55,7 @@ class ProgressDialog extends ModalDialog {
     this._failedSvg.style.fill = "none";
     this._failedSvg.style.display = "none";
     this._failedSvg.style.margin = "auto";
-    otherDiv.appendChild(this._failedSvg);
+    this._header.appendChild(this._failedSvg);
 
     const path3 = document.createElementNS(svgNamespace, "path");
     path3.setAttribute("d", "M 30.87 11.58 L 5.46 54 a 6 6 90 0 0 5.13 9 h 50.82 a 6 6 90 0 0 5.13 -9 L 41.13 11.58 a 6 6 90 0 0 -10.26 0 z");
@@ -80,8 +77,10 @@ class ProgressDialog extends ModalDialog {
 
     // Message to display to the user that will be configurable with the monitorJob function
     this._contentDiv = document.createElement("div");
-    this._contentDiv.setAttribute("class", "py-6 text-center")
-    otherDiv.appendChild(this._contentDiv);
+    this._contentDiv.setAttribute("class", "text-center")
+    this._contentDiv.style.paddingTop = "30px";
+    this._contentDiv.style.paddingBottom = "60px";
+    this._main.appendChild(this._contentDiv);
     this._msg = document.createElement("p");
     this._contentDiv.appendChild(this._msg)
 
@@ -89,9 +88,10 @@ class ProgressDialog extends ModalDialog {
     this._okButton = document.createElement("button");
     this._okButton.setAttribute("class", "btn btn-clear");
     this._okButton.setAttribute("disabled", "");
+    this._okButton.style.margin = "auto";
     this._okButton.textContent = "Ok";
     this._okButton.addEventListener("click", this._okClickHandler.bind(this));
-    this._footer.appendChild(this._okButton);
+    this._main.appendChild(this._okButton);
   }
 
   /**
