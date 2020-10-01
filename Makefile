@@ -256,6 +256,7 @@ FILES = \
     components/upload-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
+    components/canvas-ctxmenu.js \
     components/big-upload-form.js \
     components/upload-element.js \
     components/header-notification.js \
@@ -273,6 +274,7 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
+    components/canvas-ctxmenu.js \
     components/success-light.js \
     components/warning-light.js \
     projects/settings-button.js \
@@ -298,6 +300,7 @@ FILES = \
     project-detail/section-search.js \
     project-detail/section-upload.js \
     project-detail/big-download-form.js \
+    project-detail/new-section-dialog.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
@@ -360,6 +363,7 @@ FILES = \
     annotation/text-input.js \
     annotation/attribute-panel.js \
     annotation/modify-track-dialog.js \
+    annotation/progress-dialog.js \
     annotation/favorite-button.js \
     annotation/favorites-panel.js \
     annotation/save-dialog.js \

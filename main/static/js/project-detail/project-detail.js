@@ -106,6 +106,9 @@ class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
+    const newSectionDialog = document.createElement("new-section-dialog");
+    this._projects.appendChild(newSectionDialog);
+
     const uploadDialog = document.createElement("upload-dialog");
     this._projects.appendChild(uploadDialog);
 
@@ -120,6 +123,57 @@ class ProjectDetail extends TatorPage {
         evt.returnValue = '';
         window.alert("Uploads are in progress. Still leave?");
       }
+    });
+
+    addFolderButton.addEventListener("click", evt => {
+      newSectionDialog.init("Add Folder", "folder");
+      newSectionDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    newSectionDialog.addEventListener("close", evt => {
+      if (newSectionDialog._confirm) {
+        let spec;
+        if (newSectionDialog._sectionType == "folder") {
+          spec = {name: newSectionDialog._input.value,
+                  tator_user_sections: uuidv1()};
+        } else if (newSectionDialog._sectionType == "savedSearch") {
+          //TODO: Handle adding saved search
+        } else if (newSectionDialog._sectionType == "playlist") {
+          //TODO: Handle adding playlist
+        }
+        const projectId = Number(this.getAttribute("project-id"));
+        fetch(`/rest/Sections/${projectId}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(spec),
+        })
+        .then(response => response.json())
+        .then(section => {
+          if (newSectionDialog._sectionType == "folder") {
+            const card = document.createElement("section-card");
+            const sectionObj = {id: section.id,
+                                project: projectId,
+                                name: spec.name,
+                                tator_user_sections: spec.tator_user_sections};
+            card.init(sectionObj, true);
+            this._folders.appendChild(card);
+            card.addEventListener("click", () => {
+              this._selectSection(sectionObj, projectId);
+              for (const child of this._folders.children) {
+                child.active = false;
+              }
+              card.active = true;
+            });
+          }
+        });
+      }
+      this.removeAttribute("has-open-modal");
     });
 
     this._mediaSection.addEventListener("filesadded", evt => {
@@ -312,7 +366,13 @@ class ProjectDetail extends TatorPage {
       const algoData = algoResponse.json();
       Promise.all([projectData, sectionData, algoData])
       .then(([project, sections, algos]) => {
-        this._algorithms = algos;
+        // First hide algorithms if needed. These are not appropriate to be
+        // run at the project/section/media level.
+        const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
+        const parsedAlgos = algos.filter(function(alg) {
+          return !hiddenAlgos.includes(alg.name);
+        } );
+        this._algorithms = parsedAlgos;
         this._permission = project.permission;
         this._mediaSection.permission = this._permission;
         this._mediaSection.algorithms = this._algorithms;
