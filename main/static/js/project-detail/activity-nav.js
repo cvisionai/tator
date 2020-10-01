@@ -288,7 +288,8 @@ class ActivityNav extends TatorElement {
     div.appendChild(time);
 
     const ul = document.createElement("ul");
-    ul.setAttribute("class", "label-tree__subgroups d-flex flex-column px-3");
+    ul.setAttribute("class", "label-tree__subgroups d-flex flex-column");
+    ul.style.paddingLeft = "16px";
     if (isSubgroup || this._expanded.has(job.id)) {
       ul.classList.add("is-open");
     }
