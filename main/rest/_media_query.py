@@ -31,6 +31,7 @@ def get_media_queryset(project, query_params, dry_run=False):
         'should': [
             {'match': {'_dtype': 'image'}},
             {'match': {'_dtype': 'video'}},
+            {'match': {'_dtype': 'multi'}},
         ],
         'minimum_should_match': 1,
     }}]

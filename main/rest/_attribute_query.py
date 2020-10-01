@@ -131,6 +131,7 @@ def get_attribute_query(query_params, query, bools, project,
                 'should': [
                     {'match': {'_dtype': 'image'}},
                     {'match': {'_dtype': 'video'}},
+                    {'match': {'_dtype': 'multi'}},
                 ],
                 'minimum_should_match': 1,
             }}]
