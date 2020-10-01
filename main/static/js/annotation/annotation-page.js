@@ -755,7 +755,7 @@ class AnnotationPage extends TatorPage {
         console.log(data);
         return this.showAlgoRunningDialog(
           data.uid,
-          "Filling in track gaps using visual tracking...",
+          "Filling in track gaps with a visual tracker...",
           "Track gaps filled.",
           "Error occured with the visual tracker. Track was not modified.");
       })
@@ -894,7 +894,7 @@ class AnnotationPage extends TatorPage {
           console.log(data);
           return this.showAlgoRunningDialog(
             data.uid,
-            "Extending track with visual tracker (max of 50 frames)",
+            "Extending track with a visual tracker...",
             "Track extended.",
             "Error occured with the visual tracker. Track was not extended.");
         })

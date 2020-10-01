@@ -733,7 +733,7 @@ class AnnotationCanvas extends TatorElement
     {
       var requestObj = {
         frame: this.currentFrame(),
-        localization_ids: [this.activeLocalization.id]
+        localization_ids: [this.activeLocalization.id],
       };
 
       this.dispatchEvent(new CustomEvent("create", {
@@ -742,6 +742,8 @@ class AnnotationCanvas extends TatorElement
           dragInfo: this.normalizeDrag(dragInfo),
           requestObj: requestObj,
           metaMode: false,
+          canvasElement: this,
+          mediaId: this._videoObject.id,
         },
         composed: true,
       }));
