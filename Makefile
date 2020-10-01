@@ -256,7 +256,6 @@ FILES = \
     components/upload-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
-    components/canvas-ctxmenu.js \
     components/big-upload-form.js \
     components/upload-element.js \
     components/header-notification.js \
