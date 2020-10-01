@@ -177,10 +177,10 @@ class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("filesadded", evt => {
-      uploadDialog.setAttribute("is-open", "");
-      uploadDialog.setTotalFiles(evt.detail.numStarted);
-      this.setAttribute("has-open-modal", "");
       this._leaveConfirmOk = true;
+      uploadDialog.setTotalFiles(evt.detail.numStarted);
+      uploadDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
 
     uploadDialog.addEventListener("cancel", evt => {

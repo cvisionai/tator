@@ -41,15 +41,15 @@ class UploadDialog extends ModalDialog {
     this._footer.appendChild(this._close);
 
     this._cancel.addEventListener("click", () => {
+      this.removeAttribute("is-open");
       this._cancelled = true;
       this.dispatchEvent(new Event("cancel"));
-      this.removeAttribute("is-open");
       this.reset();
     });
 
     this._close.addEventListener("click", () => {
-      this.dispatchEvent(new Event("close"));
       this.removeAttribute("is-open");
+      this.dispatchEvent(new Event("close"));
       this.reset();
     });
 
