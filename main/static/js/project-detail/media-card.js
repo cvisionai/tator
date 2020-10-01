@@ -211,10 +211,20 @@ class MediaCard extends TatorElement {
   set media(val) {
     this._media = val;
     this._more.media = val;
-    if (this._media.file == '' &&
-        (this._media.media_files == null ||
-         (this._media.media_files &&
-          !('streaming' in this._media.media_files))))
+    let valid = false;
+    if (this._media.file != '')
+    {
+      valid = true;
+    }
+    else if (this._media.media_files)
+    {
+      if ('streaming' in this._media.media_files ||
+          'layout' in this._media.media_files)
+      {
+        valid = true;
+      }
+    }
+    if (valid == false)
     {
       this._li.style.opacity = 0.35;
       this._li.style.cursor = "not-allowed";
