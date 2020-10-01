@@ -106,6 +106,9 @@ class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
+    const uploadDialog = document.createElement("upload-dialog");
+    this._projects.appendChild(uploadDialog);
+
     this._activityNav = document.createElement("activity-nav");
     main.appendChild(this._activityNav);
 
@@ -119,6 +122,36 @@ class ProjectDetail extends TatorPage {
       }
     });
 
+    this._mediaSection.addEventListener("filesadded", evt => {
+      uploadDialog.setAttribute("is-open", "");
+      uploadDialog.setTotalFiles(evt.detail.numStarted);
+      this.setAttribute("has-open-modal", "");
+      this._leaveConfirmOk = true;
+    });
+
+    uploadDialog.addEventListener("cancel", evt => {
+      window._uploader.postMessage({command: "cancelUploads"});
+      this.removeAttribute("has-open-modal");
+    });
+
+    uploadDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal");
+    });
+
+    window._uploader.addEventListener("message", evt => {
+      const msg = evt.data;
+      if (msg.command == "uploadProgress") {
+        uploadDialog.setProgress(msg.percent, `Uploading ${msg.filename}`);
+      } else if (msg.command == "uploadDone") {
+        uploadDialog.uploadFinished();
+      } else if (msg.command == "uploadFailed") {
+        uploadDialog.addError(`Failed to upload ${msg.filename}`);
+      } else if (msg.command == "allUploadsDone") {
+        this._leaveConfirmOk = false;
+        uploadDialog.finish();
+      }
+    });
+
     this._mediaSection.addEventListener("newName", evt => {
       for (const sectionCard of this._folders.children) {
         if (sectionCard._section) {
@@ -126,13 +159,6 @@ class ProjectDetail extends TatorPage {
             sectionCard.rename(evt.detail.sectionName);
           }
         }
-      }
-    });
-
-    window._uploader.addEventListener("message", evt => {
-      const msg = evt.data;
-      if (msg.command == "uploadsDone") {
-        this._leaveConfirmOk = false;
       }
     });
 

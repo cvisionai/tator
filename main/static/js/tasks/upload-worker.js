@@ -19,16 +19,6 @@ const maxUploads = 1;
 // Buffer of uploads.
 let uploadBuffer = [];
 
-// Define function for sending message to client.
-const emitMessage = msg => {
-  self.clients.matchAll({includeUncontrolled: true})
-  .then(clients => {
-    for (const client of clients) {
-      client.postMessage(msg);
-    }
-  });
-};
-
 // Define function to remove a queued upload.
 const removeQueued = index => {
   const record = uploadBuffer.splice(index, 1)[0];
@@ -41,49 +31,10 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
-  } else if (msg.command == "getNumUploads") {
-    console.log("Received get num uploads request.");
-    const numActive = Object.keys(activeUploads).length;
-    const numBuffered = uploadBuffer.length;
-    const numUploads = numActive + numBuffered;
-    console.log("Responding with " + numUploads + " uploads.");
-    emitMessage({msg: "numUploads", count: numUploads});
-  } else if (msg.command == "startUpload") {
-    startUpload();
-  } else if (msg.command == "cancelUpload") {
-    if (msg.uid in activeUploads) {
-      activeUploads[msg.uid].cancel();
-    } else {
-      // Get the record and use it to send failure message.
-      const index = uploadBuffer.findIndex(elem => elem.uid == msg.uid);
-      if (index != -1) {
-        removeQueued(index);
-      }
-    }
-  } else if (msg.command == "cancelGroupUpload") {
-    // Cancel queued uploads
-    while (true) {
-      const index = uploadBuffer.findIndex(elem => elem.gid == msg.gid);
-      if (index == -1) {
-        break;
-      } else {
-        removeQueued(index);
-      }
-    }
-    // Cancel active uploads
-    while (true) {
-      let found = false;
-      for (const uid in activeUploads) {
-        const upload = activeUploads[uid];
-        if (upload.gid == msg.gid) {
-          found = true;
-          upload.cancel();
-          break;
-        }
-      }
-      if (!found) {
-        break;
-      }
+  } else if (msg.command == "cancelUploads") {
+    uploadBuffer = [];
+    for (const key of Object.keys(activeUploads)) {
+      activeUploads[key].cancel();
     }
   }
 });
@@ -103,7 +54,7 @@ async function startUpload() {
     }
   }
   if (!haveUploads) {
-    self.postMessage({command: "uploadsDone"});
+    self.postMessage({command: "allUploadsDone"});
   }
 }
 
@@ -161,14 +112,17 @@ class Upload {
         "Upload-Uid": this.upload_uid,
       },
       onProgress: (bytesSent, bytesTotal) => {
-        //TODO: Emit message indicating upload progress
+        self.postMessage({command: "uploadProgress",
+                          percent: Math.floor(100 * bytesSent / bytesTotal),
+                          filename: this.file.name});
       },
       onError: error => {
         console.log("Error during upload: " + error);
         removeFromActive(this.upload_uid);
         this.uploadData.retries++;
         if (this.uploadData.retries > 2) {
-          this.progress("failed", error, 100);
+          self.postMessage({command: "uploadFailed",
+                            filename: this.uploadData.file.name});
         } else {
           uploadBuffer.push(this.uploadData);
           startUpload();
@@ -203,7 +157,8 @@ class Upload {
         })
         .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
-        //TODO: Emit message indicating upload progress
+        self.postMessage({command: "uploadDone",
+                          filename: this.file.name});
       }
     });
 
