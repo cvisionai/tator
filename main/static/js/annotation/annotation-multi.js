@@ -574,7 +574,7 @@ class AnnotationMulti extends TatorElement {
     for (let video of this._videos)
     {
       video.onPlay();
-      p_list.push(video.gotoFrame(Math.max(frame,video._numFrames-1), true));
+      p_list.push(video.gotoFrame(Math.min(frame,video._numFrames-1), true));
     }
     return Promise.all(p_list);
   }
