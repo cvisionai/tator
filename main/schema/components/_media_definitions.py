@@ -124,6 +124,15 @@ media_files = {
         'archival': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
+        # Multi-stream definitions
+        'ids': {'type': 'array',
+                'description': 'If multi-stream list of ids of sub-videos',
+                'items': {'type': 'integer'}},
+        'layout': {'type': 'array',
+                   'description': '2-element array to define rxc layout',
+                   'items': {'type': 'integer'}},
+        'quality': {'type': 'integer',
+                    'description': 'Resolution to fetch on each sub-video'},
     },
 }
 
