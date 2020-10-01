@@ -667,6 +667,11 @@ class Media(Model):
         if audio:
             self.media_files['audio'] = audio
 
+        # Handle roi, layout, and quality
+        for x in ['layout','ids','quality']:
+            if x in media_files:
+                self.media_files[x] = media_files[x]
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     count=IntegerField(null=True, default=1)
