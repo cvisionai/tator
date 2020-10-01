@@ -77,6 +77,10 @@ class Utilities
     var media_files = media_element.media_files;
     if (media_files)
     {
+      if (media_files.layout)
+      {
+        return null;
+      }
       if (media_files.archival)
       {
         path = media_files.archival[0].path;

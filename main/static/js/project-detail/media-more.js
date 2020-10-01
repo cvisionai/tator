@@ -76,7 +76,14 @@ class MediaMore extends TatorElement {
   set media(val)
   {
     let request = Utilities.getDownloadRequest(val);
-    this._download.request = request;
+    if (request == null)
+    {
+      this._download.style.display = "none";
+    }
+    else
+    {
+      this._download.request = request;
+    }
   }
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
