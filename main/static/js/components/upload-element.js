@@ -178,11 +178,11 @@ class UploadElement extends TatorElement {
     }
 
     // If no files were started, notify the user.
-    if (numStarted == 0) {
+    if (numStarted == 0 && totalFiles > 0) {
       page._notify("Invalid files!",
                    "No files were added! Make sure selected files are valid for this project.",
                    "error");
-    } else {
+    } else if (numStarted > 0) {
       this.dispatchEvent(new CustomEvent("filesadded", {
         detail: {numSkipped: numSkipped, numStarted: numStarted},
         composed: true

@@ -41,6 +41,7 @@ class UploadDialog extends ModalDialog {
     this._footer.appendChild(this._close);
 
     this._cancel.addEventListener("click", () => {
+      this._cancelled = true;
       this.dispatchEvent(new Event("cancel"));
       this.removeAttribute("is-open");
       this.reset();
@@ -55,7 +56,20 @@ class UploadDialog extends ModalDialog {
     this._doneFiles = 0;
   }
 
+  static get observedAttributes() {
+    return ModalDialog.observedAttributes;
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    switch (name) {
+      case "is-open":
+        break;
+    }
+  }
+
   setTotalFiles(numFiles) {
+    this._cancelled = false;
     this._fileProgress.setAttribute("max", numFiles);
     this._totalFiles = numFiles;
     this._fileText.textContent = `Uploaded 0/${this._totalFiles} Files`;
@@ -90,16 +104,24 @@ class UploadDialog extends ModalDialog {
   }
 
   finish() {
-    this._cancel.style.display = "none";
-    this._close.style.display = "flex";
-    this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
-    this._title.nodeValue = "Upload complete!";
+    if (!this._cancelled) {
+      this._cancel.style.display = "none";
+      this._close.style.display = "flex";
+      this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
+      this._title.nodeValue = "Upload Complete!";
+    }
   }
 
   reset() {
     this._cancel.style.display = "flex";
     this._close.style.display = "none";
+    this._title.nodeValue = "Uploading Files";
+    this._fileText.textContent = "";
+    this._fileProgress.setAttribute("value", 0);
+    this._uploadText.textContent = "";
+    this._uploadProgress.setAttribute("value", 0);
     this._doneFiles = 0;
+    
     while (this._errors.firstChild) {
       this._errors.removeChild(this._errors.firstChild);
     }
