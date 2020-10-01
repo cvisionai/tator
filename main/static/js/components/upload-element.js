@@ -1,7 +1,3 @@
-// Base class for elements that can initiate an upload.
-// @emits {filesadded} emitted when files have been listed and filtered.
-// Call _fileSelectCallback with an <input> element 'change' event or <div> element 'drop' event.
-// Listen to navigator.serviceWorker's message, with msg.data=allset when uploads have been copied over.
 class UploadElement extends TatorElement {
   constructor() {
     super();
@@ -122,7 +118,8 @@ class UploadElement extends TatorElement {
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
     loading.setAttribute("src", "/static/images/loading.svg");
-    page._shadow.appendChild(loading);
+    page._projects.appendChild(loading);
+    page.setAttribute("has-open-modal", "");
 
     let numSkipped = 0;
     let numStarted = 0;
@@ -157,8 +154,10 @@ class UploadElement extends TatorElement {
     }
 
     // Remove loading gif.
-    page._shadow.removeChild(loading);
+    page._projects.removeChild(loading);
+    page.removeAttribute("has-open-modal", "");
 
+    // If upload is big throw up a warning.
     if (totalSize > 60000000000 || numStarted > 5000) {
       const bigUpload = document.createElement("big-upload-form");
       const page = document.getElementsByTagName("project-detail")[0];
@@ -178,15 +177,19 @@ class UploadElement extends TatorElement {
       }
     }
 
-    this.dispatchEvent(new CustomEvent("filesadded", {
-      detail: {numSkipped: numSkipped, numStarted: numStarted},
-      composed: true
-    }));
-    for (const msg of this._messages) {
-      window._uploader.postMessage(msg);
-    }
-    if (numStarted > 0) {
-      this.dispatchEvent(new Event("allset", {composed: true}));
+    // If no files were started, notify the user.
+    if (numStarted == 0) {
+      page._notify("Invalid files!",
+                   "No files were added! Make sure selected files are valid for this project.",
+                   "error");
+    } else {
+      this.dispatchEvent(new CustomEvent("filesadded", {
+        detail: {numSkipped: numSkipped, numStarted: numStarted},
+        composed: true
+      }));
+      for (const msg of this._messages) {
+        window._uploader.postMessage(msg);
+      }
     }
   }
 }
