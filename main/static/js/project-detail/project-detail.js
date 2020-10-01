@@ -216,10 +216,6 @@ class ProjectDetail extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    //this._uploadButton.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    //this._uploadButton.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    //this._uploadButton.addEventListener("allset", this._allSetCallback.bind(this));
-
     this._loaded = 0;
     this._needScroll = true;
 
@@ -384,13 +380,9 @@ class ProjectDetail extends TatorPage {
   _selectSection(section, projectId) {
     this._mediaSection.init(projectId, section, this.getAttribute("username"),
                             this.getAttribute("token"));
-    this._mediaSection.addEventListener("addingfiles", this._addingFilesCallback.bind(this));
-    this._mediaSection.addEventListener("filesadded", this._filesAddedCallback.bind(this));
-    this._mediaSection.addEventListener("allset", this._allSetCallback.bind(this));
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-    this._mediaSection.addEventListener("sectionLoaded", this._scrollToHash.bind(this));
     let params = new URLSearchParams(document.location.search.substring(1));
     params.delete("section");
     if (section !== null) {
@@ -406,57 +398,6 @@ class ProjectDetail extends TatorPage {
     }
     window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
   }
-
-  _updateSectionNames(allSections) {
-    const sections = [...this._shadow.querySelectorAll("media-section")];
-    for (const section of sections) {
-      section.sections = allSections;
-    }
-  }
-
-  async _scrollToHash() {
-    if (this._needScroll) {
-      this._loaded += 1;
-      const sections = [...this._shadow.querySelectorAll("media-section")];
-      if (this._loaded >= sections.length) {
-        const hashName = decodeURI(window.location.hash.slice(1));
-        for (const section of sections) {
-          if (section.getAttribute("name") == hashName) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            section.scrollIntoView(true);
-            window.scrollBy(0, -62); // adjust for header height
-            this._needScroll = false;
-          }
-        }
-      }
-    }
-  }
-
-  _addingFilesCallback(evt) {
-    this._progress.notify("Adding files...", false);
-    this._leaveConfirmOk = true;
-  };
-
-  _filesAddedCallback(evt) {
-    const numFiles = evt.detail.numStarted;
-    const numSkipped = evt.detail.numSkipped;
-    if (numFiles > 0) {
-      this._progress.notify("Preparing " + numFiles + " files for upload...", false);
-      this._leaveConfirmOk = true;
-    } else {
-      this._progress.notify("Skipped " + numSkipped + " files with invalid extension!", false);
-      this._leaveConfirmOk = false;
-    }
-  };
-
-  async _allSetCallback() {
-    this._progress.notify("Please wait, uploads starting...", true);
-    await new Promise(resolve => setTimeout(resolve, 7000));
-    if (this._leaveConfirmOk) {
-      this._progress.notify("To keep working, open a new tab...", true);
-    }
-  }
-
 }
 
 customElements.define("project-detail", ProjectDetail);

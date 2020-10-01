@@ -10,7 +10,7 @@ class UploadElement extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["project-id", "username", "token"];
+    return ["project-id", "username", "token", "section"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -36,6 +36,9 @@ class UploadElement extends TatorElement {
     else if (name === "token") {
       this._token = newValue;
     }
+    else if (name === "section") {
+      this._section = newValue;
+    }
   }
 
   set worker(val) {
@@ -47,17 +50,6 @@ class UploadElement extends TatorElement {
         this._haveNewSection = true;
       }
     });
-  }
-
-  async _uploadSection() {
-    this._worker.postMessage({
-      command: "requestNewUploadSection",
-    });
-    while (!this._haveNewSection) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
-    this._haveNewSection = false;
-    return this._newSectionName;
   }
 
   _checkFile(file, gid) {
@@ -97,6 +89,7 @@ class UploadElement extends TatorElement {
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
           "mediaTypeId": (isArchive ? -1 : mediaType.id),
+          "section": this._section,
           "token": this._token,
           "isImage": isImage,
           "isArchive": isArchive
@@ -121,6 +114,15 @@ class UploadElement extends TatorElement {
 
     // Set a group ID on the upload.
     const gid = uuidv1();
+
+    // Get main page.
+    const page = document.getElementsByTagName("project-detail")[0];
+
+    // Show loading gif.
+    const loading = document.createElement("img");
+    loading.setAttribute("class", "loading");
+    loading.setAttribute("src", "/static/images/loading.svg");
+    page._shadow.appendChild(loading);
 
     let numSkipped = 0;
     let numStarted = 0;
@@ -154,6 +156,9 @@ class UploadElement extends TatorElement {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    // Remove loading gif.
+    page._shadow.removeChild(loading);
+
     if (totalSize > 60000000000 || numStarted > 5000) {
       const bigUpload = document.createElement("big-upload-form");
       const page = document.getElementsByTagName("project-detail")[0];
@@ -172,32 +177,6 @@ class UploadElement extends TatorElement {
         return;
       }
     }
-
-    if (numStarted > 0) {
-      // Set the number of jobs in this job group.
-      fetchRetry("/rest/ProgressSummary/" + this.getAttribute("project-id"), {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          gid: gid,
-          num_jobs: numStarted,
-          num_complete: 0,
-        }),
-      });
-    
-      // For some reason calling await before using datatransfer corrupts
-      // the datatranfer.
-      const section = await this._uploadSection();
-      for (const [index, message] of this._messages.entries()) {
-        this._messages[index] = {...message, section: section};
-      }
-    }
-
 
     this.dispatchEvent(new CustomEvent("filesadded", {
       detail: {numSkipped: numSkipped, numStarted: numStarted},
