@@ -93,7 +93,7 @@ state = {
     },
 }
 
-state_trim_spec = {
+state_trim_update = {
     'type': 'object',
     'required': ['frame', 'endpoint'],
     'properties': {
@@ -110,7 +110,7 @@ state_trim_spec = {
     }
 }
 
-state_merge_spec = {
+state_merge_update = {
     'type': 'object',
     'required': ['merge_state_id'],
     'properties': {

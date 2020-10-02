@@ -68,7 +68,7 @@ class GetClipSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Successful retrieval of video clip.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/TemporaryFile',
+                    '$ref': '#/components/schemas/VideoClip',
                 }}},
             }
         return responses

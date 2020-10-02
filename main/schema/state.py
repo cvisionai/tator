@@ -356,7 +356,7 @@ class MergeStatesSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/StateMergeSpec'},
+                'schema': {'$ref': '#/components/schemas/StateMergeUpdate'},
             }}}
         return body
 
@@ -398,7 +398,7 @@ class TrimStateEndSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/StateTrimSpec'},
+                'schema': {'$ref': '#/components/schemas/StateTrimUpdate'},
             }}}
         return body
 

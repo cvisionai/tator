@@ -50,8 +50,8 @@ from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_update
 from .state import state
-from .state import state_merge_spec
-from .state import state_trim_spec
+from .state import state_merge_update
+from .state import state_trim_update
 from .state_type import state_type_spec
 from .state_type import state_type_update
 from .state_type import state_type
@@ -66,6 +66,7 @@ from .user import user
 from .version import version_spec
 from .version import version_update
 from .version import version
+from .video_clip import video_clip
 from ._archive_config import encode_config
 from ._archive_config import s3_storage_config
 from ._archive_config import archive_config
