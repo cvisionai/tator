@@ -625,15 +625,24 @@ class MotionComp {
     }
     let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
-    let largeSize = regularSize + Math.round(fractional*3)
+    let largeSize = regularSize + Math.ceil(fractional*3)
+    let smallSize = regularSize + Math.floor(fractional*3)
     this._schedule = [ regularSize,
                        largeSize,
-                       regularSize];
-    this._lengthOfSchedule = regularSize * 2 + largeSize;
-    this._updatesAt = [0,
                        regularSize,
-                       regularSize + largeSize];
-    this._targetFPS = 3000 / (this._lengthOfSchedule * this._interval)
+                       regularSize,
+                       smallSize,
+                       regularSize];
+    this._lengthOfSchedule = 0;
+    let update = 0;
+    this._updatesAt = [];
+    for (let idx = 0; idx < this._schedule.length; idx++)
+    {
+      this._updatesAt.push(update);
+      update += this._schedule[idx];
+      this._lengthOfSchedule += this._schedule[idx];
+    }
+    this._targetFPS = 6000 / (this._lengthOfSchedule * this._interval)
     let msg = "Playback schedule = " + this._schedule + "\n";
     msg += "Updates @ " + this._updatesAt + "\n";
     msg += "Frame Increment = " + this.frameIncrement(videoFps, factor) + "\n";
