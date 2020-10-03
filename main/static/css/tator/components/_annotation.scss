@@ -104,6 +104,23 @@ save-dialog {
     transform: scale(1);
   }
 }
+modify-track-dialog {
+  box-sizing: border-box;
+  width: 334px;
+  opacity: 0;
+  overflow: initial;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(.95);
+  transition-duration: .25s;
+  transition-property: transform, opacity;
+  z-index: 2;
+  &.is-open {
+    opacity: 1;
+    pointer-events: initial;
+    transform: scale(1);
+  }
+}
 
 .annotation__panel-group {
   max-height: calc(100vh - 307px);
@@ -197,6 +214,26 @@ save-dialog {
 favorite-button {
   margin-bottom: $spacing-2;
   margin-right: $spacing-2;
+}
+
+.annotation__multi-player {
+  flex-grow: 1;
+  overflow: hidden;
+  &.is-full-screen {
+    margin-right: $spacing-3;
+
+    & + .annotation__panels {
+      display: none;
+    }
+
+    .video__maximize {
+      display: none;
+    }
+
+    .video__minimize {
+      display: block;
+    }
+  }
 }
 
 .annotation__video-player {

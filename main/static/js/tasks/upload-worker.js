@@ -12,64 +12,12 @@ importScripts("/static/js/node-uuid.js");
 // Import fetch retry.
 importScripts("/static/js/util/fetch-retry.js");
 
-// UID for this service worker.
-const serviceWorkerId = uuidv1();
-console.log("This service worker's UID: " + serviceWorkerId);
-
 // List of uploads in progress.
 let activeUploads = {};
 const maxUploads = 1;
 
 // Buffer of uploads.
 let uploadBuffer = [];
-
-// Buffer of progress messages.
-let progressBuffer = {};
-
-// Define function for sending message to client.
-const emitMessage = msg => {
-  self.clients.matchAll({includeUncontrolled: true})
-  .then(clients => {
-    for (const client of clients) {
-      client.postMessage(msg);
-    }
-  });
-};
-
-// Set up periodic function to send progress messages.
-self.setInterval(() => {
-  const maxMessages = 1000;
-  for (const key in progressBuffer) {
-    const [projectId, token] = key.split(",");
-    const messages = Object.values(progressBuffer[key]);
-    let start = 0;
-    while (start < messages.length) {
-      const sendMe = messages.slice(start, start + maxMessages);
-      fetchRetry("/rest/Progress/" + projectId, {
-        method: "POST",
-        headers: {
-          "Authorization": "Token " + token,
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(sendMe),
-        credentials: "omit",
-      })
-      .catch(err => console.error("Error while broadcasting progress:" + err));
-      start += sendMe.length;
-    }
-  }
-  progressBuffer = {};
-}, 50);
-
-// Define function to add message to progress buffer.
-const bufferMessage = (projectId, token, uid, msg) => {
-  const key = [projectId, token].join();
-  if (!(key in progressBuffer)) {
-    progressBuffer[key] = {};
-  }
-  progressBuffer[key][uid] = msg;
-}
 
 // Define function to remove a queued upload.
 const removeQueued = index => {
@@ -83,49 +31,10 @@ self.addEventListener("message", async msgEvent => {
     const upload_uid = SparkMD5.hash(msg.file.name + msg.file.type + msg.username + msg.file.size);
     uploadBuffer.push({...msg, uid: upload_uid, retries: 0});
     startUpload();
-  } else if (msg.command == "getNumUploads") {
-    console.log("Received get num uploads request.");
-    const numActive = Object.keys(activeUploads).length;
-    const numBuffered = uploadBuffer.length;
-    const numUploads = numActive + numBuffered;
-    console.log("Responding with " + numUploads + " uploads.");
-    emitMessage({msg: "numUploads", count: numUploads});
-  } else if (msg.command == "startUpload") {
-    startUpload();
-  } else if (msg.command == "cancelUpload") {
-    if (msg.uid in activeUploads) {
-      activeUploads[msg.uid].cancel();
-    } else {
-      // Get the record and use it to send failure message.
-      const index = uploadBuffer.findIndex(elem => elem.uid == msg.uid);
-      if (index != -1) {
-        removeQueued(index);
-      }
-    }
-  } else if (msg.command == "cancelGroupUpload") {
-    // Cancel queued uploads
-    while (true) {
-      const index = uploadBuffer.findIndex(elem => elem.gid == msg.gid);
-      if (index == -1) {
-        break;
-      } else {
-        removeQueued(index);
-      }
-    }
-    // Cancel active uploads
-    while (true) {
-      let found = false;
-      for (const uid in activeUploads) {
-        const upload = activeUploads[uid];
-        if (upload.gid == msg.gid) {
-          found = true;
-          upload.cancel();
-          break;
-        }
-      }
-      if (!found) {
-        break;
-      }
+  } else if (msg.command == "cancelUploads") {
+    uploadBuffer = [];
+    for (const key of Object.keys(activeUploads)) {
+      activeUploads[key].cancel();
     }
   }
 });
@@ -145,7 +54,7 @@ async function startUpload() {
     }
   }
   if (!haveUploads) {
-    self.postMessage({command: "uploadsDone"});
+    self.postMessage({command: "allUploadsDone"});
   }
 }
 
@@ -153,11 +62,6 @@ async function startUpload() {
 function removeFromActive(uid) {
   if (uid in activeUploads) {
     const key = [activeUploads[uid].projectId, activeUploads[uid].token].join();
-    if (key in progressBuffer) {
-      if (uid in progressBuffer) {
-        delete progressBuffer[key][uid];
-      }
-    }
     delete activeUploads[uid];
   }
   startUpload();
@@ -208,25 +112,17 @@ class Upload {
         "Upload-Uid": this.upload_uid,
       },
       onProgress: (bytesSent, bytesTotal) => {
-        // Throttle progress requests to every 3 seconds.
-        if (Date.now() - this.last_progress > 3000) {
-          let percent = 100.0 * bytesSent / bytesTotal
-          if (percent < 100) {
-            let message = "Uploading file (" + Math.round(percent) + "%)...";
-            // In the context of full upload pipeline, md5 check is 
-            // first 10%, upload is 10-50%, starting transcode is 60%,
-            // and argo workflow defines the rest.
-            this.progress("started", message, 10 + 0.4 * percent); 
-          }
-          this.last_progress = Date.now();
-        }
+        self.postMessage({command: "uploadProgress",
+                          percent: Math.floor(100 * bytesSent / bytesTotal),
+                          filename: this.file.name});
       },
       onError: error => {
         console.log("Error during upload: " + error);
         removeFromActive(this.upload_uid);
         this.uploadData.retries++;
         if (this.uploadData.retries > 2) {
-          this.progress("failed", error, 100);
+          self.postMessage({command: "uploadFailed",
+                            filename: this.uploadData.file.name});
         } else {
           uploadBuffer.push(this.uploadData);
           startUpload();
@@ -261,24 +157,11 @@ class Upload {
         })
         .catch(err => console.error("Error attempting to initiate transcode:" + err));
         removeFromActive(this.upload_uid);
+        self.postMessage({command: "uploadDone",
+                          filename: this.file.name});
       }
     });
 
-  }
-
-  // Sends progress messages.
-  progress(state, msg, pct) {
-    bufferMessage(this.projectId, this.token, this.upload_uid, {
-      job_type: "upload",
-      gid: this.gid,
-      uid: this.upload_uid,
-      swid: serviceWorkerId,
-      section: this.section,
-      name: this.fname,
-      state: state,
-      message: msg,
-      progress: pct,
-    });
   }
 
   // Calculates md5 hash.
@@ -336,7 +219,6 @@ class Upload {
       this.tus.abort();
     }
     removeFromActive(this.upload_uid);
-    this.progress("failed", "Upload was aborted!", 0);
   }
 }
 

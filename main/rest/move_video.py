@@ -15,38 +15,11 @@ from ..uploads import download_uploaded_file
 from ..uploads import get_destination_path
 from ..uploads import get_file_path
 from ..uploads import make_symlink
-from ..consumers import ProgressProducer
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
-
-def get_upload_uid(url):
-    return TatorCache().get_upload_uid_cache(url)
-
-def notify_ready(media, user):
-    prog = ProgressProducer(
-        'upload',
-        media.project.pk,
-        media.gid,
-        media.uid,
-        media.name,
-        user,
-        {'section': media.attributes['tator_user_sections']},
-    )
-    info = {
-        'id': media.id,
-        'thumbnail': str(media.thumbnail),
-        'thumbnail_gif': str(media.thumbnail_gif),
-        'name': media.name,
-        'section': media.attributes['tator_user_sections'],
-    }
-    try:
-        prog.finished("Media Import Complete", info)
-    except:
-        logger.error(f"Failed to send progress from PATCH on media ID {media.id}!")
-
 
 class MoveVideoAPI(BaseListView):
     """ Moves a video file.
@@ -116,12 +89,6 @@ class MoveVideoAPI(BaseListView):
 
         media.update_media_files(media_files)
         media.save()
-
-        # Send a progress message indicating streaming file is available.
-        if (media.media_files is not None) and (media.gid is not None) and (media.uid is not None):
-            if 'streaming' in media.media_files:
-                if len(media.media_files['streaming']) > 0:
-                    notify_ready(media, self.request.user)
 
         response_data = {'message': f"Moved video for media {params['id']}!",
                          'id': params['id']}

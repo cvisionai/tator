@@ -135,6 +135,10 @@ urlpatterns += [
         LocalizationDetailAPI.as_view(),
     ),
     path(
+        'rest/LocalizationCount/<int:project>',
+        LocalizationCountAPI.as_view(),
+    ),
+    path(
         'rest/LocalizationTypes/<int:project>',
         LocalizationTypeListAPI.as_view(),
     ),
@@ -157,6 +161,11 @@ urlpatterns += [
         name='Media'
     ),
     path(
+        'rest/MediaCount/<int:project>',
+        MediaCountAPI.as_view(),
+        name='MediaCount'
+    ),
+    path(
         'rest/MediaNext/<int:id>',
         MediaNextAPI.as_view(),
         name='MediaNext',
@@ -167,9 +176,8 @@ urlpatterns += [
         name='MediaPrev',
     ),
     path(
-        'rest/MediaSections/<int:project>',
-        MediaSectionsAPI.as_view(),
-        name='MediaSections',
+        'rest/MediaStats/<int:project>',
+        MediaStatsAPI.as_view(),
     ),
     path(
         'rest/MediaTypes/<int:project>',
@@ -198,14 +206,6 @@ urlpatterns += [
         NotifyAPI.as_view(),
     ),
     path(
-        'rest/Progress/<int:project>',
-        ProgressAPI.as_view(),
-    ),
-    path(
-        'rest/ProgressSummary/<int:project>',
-        ProgressSummaryAPI.as_view(),
-    ),
-    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),
@@ -231,7 +231,12 @@ urlpatterns += [
         StateListAPI.as_view(),
         name='States'
     ),
-      path(
+    path(
+        'rest/StateCount/<int:project>',
+        StateCountAPI.as_view(),
+        name='StateCount',
+    ),
+    path(
         'rest/StateGraphic/<int:id>',
         StateGraphicAPI.as_view(),
         name='StateGraphic'
@@ -239,6 +244,14 @@ urlpatterns += [
     path(
         'rest/State/<int:id>',
         StateDetailAPI.as_view(),
+    ),
+    path(
+        'rest/MergeStates/<int:id>',
+        MergeStatesAPI.as_view(),
+    ),
+    path(
+        'rest/TrimStateEnd/<int:id>',
+        TrimStateEndAPI.as_view(),
     ),
     path(
         'rest/StateTypes/<int:project>',

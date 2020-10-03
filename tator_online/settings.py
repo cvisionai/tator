@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
-    'channels',
     'main',
     'rest_framework',
     'rest_framework.authtoken',
@@ -65,15 +64,6 @@ INSTALLED_APPS = [
     'django_admin_json_editor',
     'django_ltree'
 ]
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [(os.getenv('REDIS_HOST'), 6379)],
-        },
-    },
-}
 
 GRAPH_MODELS = {
     'all_applications': True,

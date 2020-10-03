@@ -18,6 +18,8 @@ from ..models import database_query_ids
 from ..search import TatorSearch
 from ..schema import StateListSchema
 from ..schema import StateDetailSchema
+from ..schema import MergeStatesSchema
+from ..schema import TrimStateEndSchema
 from ..schema import parse
 
 from ._base_views import BaseListView
@@ -334,6 +336,14 @@ class StateDetailAPI(BaseDetailView):
             localizations = Localization.objects.filter(pk__in=params['localization_ids'])
             obj.localizations.set(localizations)
 
+        if 'localization_ids_add' in params:
+            localizations = Localization.objects.filter(pk__in=params['localization_ids_add'])
+            obj.localizations.add(*list(localizations))
+
+        if 'localization_ids_remove' in params:
+            localizations = Localization.objects.filter(pk__in=params['localization_ids_remove'])
+            obj.localizations.remove(*list(localizations))
+
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         # Update modified_by to be the last user
@@ -344,11 +354,97 @@ class StateDetailAPI(BaseDetailView):
 
     def _delete(self, params):
         state = State.objects.get(pk=params['id'])
+
+        delete_localizations = []
         if state.meta.delete_child_localizations:
-            loc_qs = state.localizations.all()
-            loc_qs._raw_delete(loc_qs.db)
+
+            # Only delete localizations that are not not a part of other states
+            for loc in state.localizations.all():
+
+                loc_qs = Localization.state_set.through.objects.filter(localization_id=loc.id).exclude(state_id=state.id)
+
+                if not loc_qs.exists():
+                    delete_localizations.append(loc.id)
+
         state.delete()
+
+        qs = Localization.objects.filter(pk__in=delete_localizations)
+        qs._raw_delete(qs.db)
+
         return {'message': f'State {params["id"]} successfully deleted!'}
+
+    def get_queryset(self):
+        return State.objects.all()
+
+class MergeStatesAPI(BaseDetailView):
+    """ #TODO
+    """
+
+    schema = MergeStatesSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
+    http_method_names = ['patch']
+
+    @transaction.atomic
+    def _patch(self, params: dict) -> dict:
+
+        obj = State.objects.get(pk=params['id'])
+        otherObj = State.objects.get(pk=params['merge_state_id'])
+        localizations = otherObj.localizations.all()
+        localization_ids = list(localizations.values_list('id', flat=True))
+        obj.localizations.add(*localization_ids)
+        obj.save()
+
+        otherObj.delete()
+
+        return {'message': f'Localizations from state {params["merge_state_id"]} has been merged into {params["id"]}. State {params["merge_state_id"]} has been deleted.'}
+
+    def get_queryset(self):
+        return State.objects.all()
+
+class TrimStateEndAPI(BaseDetailView):
+    """ #TODO
+    """
+
+    schema = TrimStateEndSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = 'id'
+    http_method_names = ['patch']
+
+    @transaction.atomic
+    def _patch(self, params: dict) -> dict:
+
+        obj = State.objects.get(pk=params['id'])
+        localizations = obj.localizations.order_by('frame')
+
+        if params['endpoint'] == 'start':
+            keep_localization = lambda frame: frame >= params['frame']
+
+        elif params['endpoint'] == 'end':
+            keep_localization = lambda frame: frame <= params['frame']
+
+        else:
+            raise ValueError("ERROR: Invalid endpoint parameter provided.")
+
+        localizations_to_remove = []
+        for loc in localizations:
+            if not keep_localization(frame=loc.frame):
+                localizations_to_remove.append(loc.id)
+
+        localizations = Localization.objects.filter(pk__in=localizations_to_remove)
+        obj.localizations.remove(*list(localizations))
+        obj.save()
+
+        deleted_localizations = []
+        for loc_id in localizations_to_remove:
+            qs = State.objects.filter(localizations__pk=loc_id)
+            if not qs.exists():
+                deleted_localizations.append(loc_id)
+
+        qs = Localization.objects.filter(pk__in=deleted_localizations)
+        qs._raw_delete(qs.db)
+
+        return {'message': f'State {params["id"]} has been updated. Deleted {len(deleted_localizations)} localizations.'}
 
     def get_queryset(self):
         return State.objects.all()

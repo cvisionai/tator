@@ -5,21 +5,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_media_list_hash(project_id, query_params):
-    group = f"media_{project_id}"
-    key = json.dumps(query_params, sort_keys=True)
-    return (group, key)
-
-def get_localization_list_hash(media_id, entity_type_id, query_params):
-    group = f"localization_{media_id}_{entity_type_id}"
-    key = json.dumps(query_params, sort_keys=True)
-    return (group, key)
-
-def get_treeleaf_list_hash(ancestor, query_params):
-    group = f"treeleaf_{ancestor}"
-    key = json.dumps(query_params, sort_keys=True)
-    return (group, key)
-
 class TatorCache:
     """Interface for caching responses.
     """
@@ -30,75 +15,12 @@ class TatorCache:
             health_check_interval=30,
         )
 
-    def get_media_list_cache(self, project_id, query_params):
-        """Returns media list cache or None if it is not cached.
-        """
-        group, key = get_media_list_hash(project_id, query_params)
-        val = None
-        if self.rds.hexists(group, key):
-            val = json.loads(self.rds.hget(group, key))
-        return val
-
-    def set_media_list_cache(self, project_id, query_params, val):
-        """Caches a media list response.
-        """
-        group, key = get_media_list_hash(project_id, query_params)
-        self.rds.hset(group, key, json.dumps(val))
-
-    def invalidate_media_list_cache(self, project_id):
-        """Clears media list cache.
-        """
-        group, _ = get_media_list_hash(project_id, {})
-        self.rds.delete(group)
-
-    def get_localization_list_cache(self, media_id, entity_type_id, query_params):
-        """Returns localization list cache or None if it is not cached.
-        """
-        group, key = get_localization_list_hash(media_id, entity_type_id, query_params)
-        val = None
-        if self.rds.hexists(group, key):
-            val = json.loads(self.rds.hget(group, key))
-        return val
-
-    def set_localization_list_cache(self, media_id, entity_type_id, query_params, val):
-        """Caches an localization list response.
-        """
-        group, key = get_localization_list_hash(media_id, entity_type_id, query_params)
-        self.rds.hset(group, key, json.dumps(val))
-
-    def invalidate_localization_list_cache(self, media_id, entity_type_id):
-        """Clears localization list cache.
-        """
-        group, _ = get_localization_list_hash(media_id, entity_type_id, {})
-        self.rds.delete(group)
-
-    def get_treeleaf_list_cache(self, ancestor, query_params):
-        """Returns tree leaf list cache or None if it is not cached.
-        """
-        group, key = get_treeleaf_list_hash(ancestor, query_params)
-        val = None
-        if self.rds.hexists(group, key):
-            val = json.loads(self.rds.hget(group, key))
-        return val
-
-    def set_treeleaf_list_cache(self, ancestor, query_params, val):
-        """Caches a suggestion response.
-        """
-        group, key = get_treeleaf_list_hash(ancestor, query_params)
-        self.rds.hset(group, key, json.dumps(val))
-
-    def invalidate_treeleaf_list_cache(self, ancestor):
-        """Clears treeleaf list cache.
-        """
-        group, _ = get_treeleaf_list_hash(ancestor, {})
-        self.rds.delete(group)
-
     def get_cred_cache(self, user_id, project_id):
         group = f'creds_{project_id}'
         key = f'creds_{project_id}_{user_id}'
         val = None
         if self.rds.hexists(group, key):
-            val = self.rds.hget(group,key)
+            val = self.rds.hget(group, key)
             if val == 'True':
                 val = True
             else:
@@ -112,25 +34,6 @@ class TatorCache:
 
     def invalidate_cred_cache(self, project_id):
         group = f'creds_{project_id}'
-        self.rds.delete(group)
-
-    def get_project_cache(self, project_id):
-        group = f'project_{project_id}'
-        key = f'project_{project_id}'
-        val = None
-        if self.rds.hexists(group, key):
-            val = self.rds.hget(group,key)
-        if val:
-            val=eval(val)
-        return val
-
-    def set_project_cache(self, project_id, val):
-        group = f'project_{project_id}'
-        key = f'project_{project_id}'
-        self.rds.hset(group, key, str(val))
-
-    def invalidate_project_cache(self, project_id):
-        group = f'project_{project_id}'
         self.rds.delete(group)
 
     def set_upload_permission_cache(self, upload_uid, token):
@@ -152,14 +55,73 @@ class TatorCache:
             uid = uid.decode()
         return uid
 
+    def set_job(self, job):
+        """ Stores a job for cancellation or authentication. Job is a dict including
+            uid, gid, user id, project id, algorithm id (-1 if not an algorithm), 
+            and time created.
+        """
+        val = json.dumps(job)
+        uid = job['uid']
+        gid = job['gid']
+        project = job['project']
+
+        # Set the job data by UID.
+        self.rds.hset('jobs', uid, val)
+
+        # Store list of UIDs under GID key.
+        if self.rds.exists(gid):
+            self.rds.append(gid, f',{uid}')
+        else:
+            self.rds.set(gid, uid)
+
+        # Store list of UIDs under project key.
+        project_key = f'jobs_{project}'
+        if self.rds.exists(project_key):
+            self.rds.append(project_key, f',{uid}')
+        else:
+            self.rds.set(project_key, uid)
+
+    def get_jobs_by_uid(self, uid):
+        """ Retrieves job using UID.
+        """
+        val = None
+        if self.rds.hexists('jobs', uid):
+            val = [json.loads(self.rds.hget('jobs', uid).decode())]
+        return val
+
+    def get_jobs_by_gid(self, gid, first_only=False):
+        """ Retrieves jobs using GID. Set first_only=True to only retrieve first job.
+        """
+        uids = self.rds.get(gid)
+        if uids:
+            uids = uids.decode().split(',')
+            if first_only:
+                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+            else:
+                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+        else:
+            jobs = []
+        return jobs
+
+    def get_jobs_by_project(self, project, first_only=False):
+        """ Retrieves jobs using project ID. Set first_only=True to only retrieve first job.
+        """
+        project_key = f'jobs_{project}'
+        uids = self.rds.get(project_key)
+        if uids:
+            uids = uids.decode().split(',')
+            if first_only:
+                jobs = [json.loads(self.rds.hget('jobs', uids[0]).decode())]
+            else:
+                jobs = [json.loads(self.rds.hget('jobs', uid).decode()) for uid in uids]
+        else:
+            jobs = []
+        return jobs
+            
     def invalidate_all(self):
         """Invalidates all caches.
         """
-        for prefix in ['media_',
-                       'localization_',
-                       'treeleaf_',
-                       'creds_',
-                       'project_']:
+        for prefix in ['creds_']:
             for key in self.rds.scan_iter(match=prefix + '*'):
                 logger.info(f"Deleting cache key {key}...")
                 self.rds.delete(key)

@@ -543,6 +543,33 @@ class AnnotationCanvas extends TatorElement
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
     this._shadow.appendChild(this._canvas);
+
+    // Context menu (right-click): Tracks
+    this._contextMenuTrack = document.createElement("canvas-context-menu");
+    this._contextMenuTrack.hideMenu();
+    this._shadow.appendChild(this._contextMenuTrack);
+    this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Trim start to here", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Trim end to here", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Extend track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Fill track gaps", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
+    this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
+    this._selectedMergeTrack = null;
+
+    // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
+    this._contextMenuTrack.displayEntry("Fill track gaps", false);
+
+    // Context menu (right-click): Localizations/detections
+    this._contextMenuLoc = document.createElement("canvas-context-menu");
+    this._contextMenuLoc.hideMenu();
+    this._shadow.appendChild(this._contextMenuLoc);
+    this._contextMenuLoc.addMenuEntry("Add to main track", this.contextMenuCallback.bind(this));
+    this._contextMenuLoc.disableEntry("Add to main track", true, "Need to set main track first");
+    this._createNewTrackMenuEntries = [];
+
+    this._contextMenuFrame = 0;
+
     this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
@@ -556,10 +583,10 @@ class AnnotationCanvas extends TatorElement
     this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
     this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
     this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
+    this._canvas.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
     document.addEventListener("keyup", this.keyupHandler.bind(this));
-
     // Setup data
     this._framedData=new Map();
     this._recent = new Map();
@@ -584,6 +611,158 @@ class AnnotationCanvas extends TatorElement
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
   }
+
+  /**
+   * Enables the fill track gaps context menu option
+   */
+  enableFillTrackGapsOption()
+  {
+    this._contextMenuTrack.displayEntry("Fill track gaps", true);
+  }
+
+  /**
+   * Routine used to create a new "create track" button in the right-click menu for localizations
+   * that are not part of tracks.
+   */
+  addCreateTrackType(stateTypeObj)
+  {
+    var text = "Create new track (" + stateTypeObj.name + ")";
+    this._contextMenuLoc.addMenuEntry(text, this.contextMenuCallback.bind(this));
+    this._createNewTrackMenuEntries.push(
+      {menuText: text,
+       stateType: stateTypeObj});
+  }
+
+  /**
+   * Routine that's executed when a user selects a right-click menu option.
+   * This will gather the appropriate information and dispatch the event
+   * that should launch the appropriate dialog.
+   */
+  contextMenuCallback(menuText)
+  {
+    // It's possible that right clicking on a localization didn't actually set
+    // the active track.
+    // Handle case when localization is in a track
+    if (this.activeLocalization.id in this._data._trackDb)
+    {
+      const track = this._data._trackDb[this.activeLocalization.id];
+      this._activeTrack = track;
+    }
+
+    // Save the general data that will be passed along to the dialog window
+    var objDescription = {};
+    objDescription.id = 'modifyTrack';
+    objDescription.track = this._activeTrack;
+    objDescription.localization = this.activeLocalization;
+    objDescription.frame = this.currentFrame();
+    objDescription.project = this._data._projectId;
+
+    var createNewTrack = false;
+
+    // See modify-track-dialog for interface types.
+    if (menuText == "Extend track")
+    {
+      objDescription.interface = 'extend';
+      objDescription.maxFrames = this._numFrames;
+    }
+    else if (menuText == "Trim start to here")
+    {
+      objDescription.interface = 'trim';
+      objDescription.trimEndpoint = 'start';
+    }
+    else if (menuText == "Trim end to here")
+    {
+      objDescription.interface = 'trim';
+      objDescription.trimEndpoint = 'end';
+    }
+    else if (menuText == "Merge into main track")
+    {
+      if (this._selectedMergeTrack.id == this._activeTrack.id)
+      {
+        window.alert("Cannot merge. Same track selected as main track.");
+        return;
+      }
+      objDescription.interface = 'mergeTrack';
+      objDescription.mainTrack = this._selectedMergeTrack;
+    }
+    else if (menuText == "Set as main track")
+    {
+      this._selectedMergeTrack = this._activeTrack;
+      this._contextMenuTrack.disableEntry("Merge into main track", false);
+      this._contextMenuLoc.disableEntry("Add to main track", false);
+      return;
+    }
+    else if (menuText == "Add to main track")
+    {
+      objDescription.interface = 'addDetection';
+      objDescription.mainTrack = this._selectedMergeTrack;
+    }
+    else if (menuText == "Fill track gaps")
+    {
+      objDescription.interface = "fillTrackGaps";
+    }
+    else
+    {
+      // Check to see if the menu matches the new track type.
+      // If so, proceed foward and dispatch the appropriate event.
+      for (const menuData of this._createNewTrackMenuEntries)
+      {
+        if (menuData.menuText == menuText)
+        {
+          objDescription = menuData.stateType;
+          createNewTrack = true;
+        }
+      }
+
+      if (!createNewTrack)
+      {
+        window.alert("Unrecognized right-click menu option caught: " + menuText)
+        return;
+      }
+    }
+
+    const poly = this.localizationToPoly(this.activeLocalization)
+
+    const dragInfo = {};
+    dragInfo.start = {x: poly[0][0], y: poly[0][1]};
+    dragInfo.current = dragInfo.start;
+    dragInfo.end = {x: poly[2][0], y: poly[2][1]};
+    dragInfo.url = this._draw.viewport.toDataURL();
+
+    if (createNewTrack)
+    {
+      var requestObj = {
+        frame: this.currentFrame(),
+        localization_ids: [this.activeLocalization.id],
+      };
+
+      this.dispatchEvent(new CustomEvent("create", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: requestObj,
+          metaMode: false,
+          canvasElement: this,
+          mediaId: this._videoObject.id,
+        },
+        composed: true,
+      }));
+    }
+    else
+    {
+      this.dispatchEvent(new CustomEvent("modifyTrack", {
+        detail: {
+          objDescription: objDescription,
+          dragInfo: this.normalizeDrag(dragInfo),
+          requestObj: null,
+          metaMode: null,
+        },
+        composed: true,
+      }));    
+    }
+  }
+
+  
 
   resetRoi()
   {
@@ -731,6 +910,34 @@ class AnnotationCanvas extends TatorElement
   updateType(typeObj, callback)
   {
     this._data.updateType(typeObj, callback);
+  }
+
+  updateAllLocalizations()
+  {
+    this._data.updateLocalizations(this.refresh.bind(this), null);
+  }
+
+  contextMenuHandler(clickEvent)
+  {
+    // Disable the normal right click menu
+    clickEvent.preventDefault();
+    var clickLocation = [clickEvent.clientX, clickEvent.clientY];
+
+    // Determine if the user right clicked on a state/track or a stand-alone localization/detection
+    if (this.activeLocalization) {
+      let localizationInTrack = this.activeLocalization.id in this._data._trackDb;
+      if (localizationInTrack) {    
+        this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
+      }
+      else {
+        // Right now, there are only track related right-click options for localizations.
+        // The right-click menu might have been disabled if we are in image mode.
+        if (this._createNewTrackMenuEntries.length > 0)
+        {
+          this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
+        }
+      }
+    }
   }
 
   keyupHandler(event)
@@ -1012,6 +1219,11 @@ class AnnotationCanvas extends TatorElement
     for (var idx = 0; idx < data.length; idx++)
     {
       var element=data[idx];
+      if (element.media_id != this._videoObject.id &&
+          element.media != this._videoObject.id)
+      {
+        continue;
+      }
 
       var frameId=data[idx]['frame'];
       var typeid = typeObj.id;
@@ -1632,6 +1844,10 @@ class AnnotationCanvas extends TatorElement
   mouseDownHandler(clickEvent)
   {
     this._clickTime = performance.now();
+
+    this._contextMenuTrack.hideMenu();
+    this._contextMenuLoc.hideMenu();
+
     if (document.body.classList.contains("shortcuts-disabled")) {
       document.body.classList.remove("shortcuts-disabled");
       document.activeElement.blur();
@@ -2373,7 +2589,9 @@ class AnnotationCanvas extends TatorElement
           objDescription: objDescription,
           dragInfo: this.normalizeDrag(dragInfo),
           requestObj: requestObj,
-          metaMode: this._metaMode
+          metaMode: this._metaMode,
+          canvasElement: this,
+          mediaId: this._videoObject.id
         },
         composed: true,
       }));
@@ -2971,10 +3189,20 @@ class AnnotationCanvas extends TatorElement
     {
       drawContext = this._draw;
     }
+
     // scale factor based on canvas height versus image height
     // Draw commands are in viewspace coordinates, but annotations
     // are in image coordinates.
     var frameIdx = frameInfo.frame;
+
+    // #TODO Consider moving this outside of this function into its own
+    //       routine that is called when a frame change occurs.
+    if (this.currentFrame() != this._contextMenuFrame)
+    {
+      this._contextMenuFrame = frameIdx;
+      this._contextMenuTrack.hideMenu();
+      this._contextMenuLoc.hideMenu();
+    }
 
     if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)
     {

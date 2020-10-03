@@ -32,6 +32,14 @@ state_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/AttributeType'},
     },
+    'delete_child_localizations': {
+        'type': 'boolean',
+        'description': 'True if child localizations should be '
+                       'deleted when this state is deleted. '
+                       'Localizations will only be deleted if they are not '
+                       'associated with another state. ',
+        'default': False,
+    }
 }
 
 state_type_spec = {
@@ -59,6 +67,7 @@ state_type_update = {
         'description': state_type_properties['description'],
         'visible': state_type_properties['visible'],
         'grouping_default': state_type_properties['grouping_default'],
+        'delete_child_localizations': state_type_properties['delete_child_localizations'],
     },
 }
 

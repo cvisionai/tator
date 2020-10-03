@@ -19,6 +19,10 @@ section_post_properties = {
                        'to annotations. These are applied to the boolean query "filter" list.',
         'items': {'type': 'object', 'additionalProperties': True},
     },
+    'tator_user_sections': {
+        'type': 'string',
+        'description': 'Attribute that is applied to media to identify membership to a section.',
+    },
 }
 
 section_spec = {

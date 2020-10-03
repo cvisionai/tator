@@ -1,3 +1,4 @@
+import logging
 import tempfile
 import traceback
 import hashlib
@@ -10,6 +11,8 @@ from ..schema import GetClipSchema
 from ._base_views import BaseDetailView
 from ._media_util import MediaUtil
 from ._permissions import ProjectViewOnlyPermission
+
+logger = logging.getLogger(__name__)
 
 class GetClipAPI(BaseDetailView):
     schema = GetClipSchema()
@@ -39,15 +42,27 @@ class GetClipAPI(BaseDetailView):
         h = hashlib.new('md5', f"{params}".encode())
         lookup = h.hexdigest()
 
+        # Disabling this for now, so we can force segments to be calculated
+        # #TODO worth revisiting 
         # Check to see if we already made this clip
-        matches=TemporaryFile.objects.filter(project=project, lookup=lookup)
-        if matches.exists():
-            temp_file = matches[0]
-        else:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                media_util = MediaUtil(video, temp_dir, quality)
-                fp = media_util.get_clip(frame_ranges)
-                temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, self.request.user, lookup=lookup, hours=24)
+        #matches=TemporaryFile.objects.filter(project=project, lookup=lookup)
+        #if matches.exists():
+        #    temp_file = matches[0]
+        #else:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            media_util = MediaUtil(video, temp_dir, quality)
+            fp, segments = media_util.get_clip(frame_ranges)
+            temp_file = TemporaryFile.from_local(fp, "clip.mp4", project, self.request.user, lookup=lookup, hours=24)
 
-        responseData = TemporaryFileSerializer(temp_file, context={"view": self}).data
-        return responseData
+        start_frames = []
+        end_frames = []
+        logger.info(segments)
+        for segment in segments:
+            start_frames.append(segment['frame_start'])
+            end_frames.append(segment['frame_start'] + segment['num_frames'] - 1)
+
+        response_data = {}
+        response_data['segment_start_frames'] = start_frames
+        response_data['segment_end_frames'] = end_frames
+        response_data['file'] = TemporaryFileSerializer(temp_file, context={"view": self}).data
+        return response_data

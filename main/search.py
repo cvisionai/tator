@@ -372,7 +372,11 @@ class TatorSearch:
 
     def count(self, project, query):
         index = self.index_name(project)
-        return self.es.count(index=index, body=query)['count']
+        count_query = dict(query)
+        count_query.pop('sort', None)
+        count_query.pop('aggs', None)
+        count_query.pop('size', None)
+        return self.es.count(index=index, body=count_query)['count']
 
     def refresh(self, project):
         """Force refresh on an index.

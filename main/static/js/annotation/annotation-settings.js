@@ -47,6 +47,7 @@ class AnnotationSettings extends TatorElement {
     });
   }
 
+
   static get observedAttributes() {
     return ["rate", "zoom", "media-id", "project-id"];
   }
@@ -190,7 +191,7 @@ class AnnotationSettings extends TatorElement {
 
   set mediaInfo(val)
   {
-    if (val.media_files)
+    if (val.media_files && 'streaming' in val.media_files)
     {
       let quality_list = [];
       for (let media_file of val.media_files["streaming"])

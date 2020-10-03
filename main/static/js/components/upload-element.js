@@ -1,7 +1,3 @@
-// Base class for elements that can initiate an upload.
-// @emits {filesadded} emitted when files have been listed and filtered.
-// Call _fileSelectCallback with an <input> element 'change' event or <div> element 'drop' event.
-// Listen to navigator.serviceWorker's message, with msg.data=allset when uploads have been copied over.
 class UploadElement extends TatorElement {
   constructor() {
     super();
@@ -10,7 +6,7 @@ class UploadElement extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["project-id", "username", "token"];
+    return ["project-id", "username", "token", "section"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -36,6 +32,9 @@ class UploadElement extends TatorElement {
     else if (name === "token") {
       this._token = newValue;
     }
+    else if (name === "section") {
+      this._section = newValue;
+    }
   }
 
   set worker(val) {
@@ -47,17 +46,6 @@ class UploadElement extends TatorElement {
         this._haveNewSection = true;
       }
     });
-  }
-
-  async _uploadSection() {
-    this._worker.postMessage({
-      command: "requestNewUploadSection",
-    });
-    while (!this._haveNewSection) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
-    this._haveNewSection = false;
-    return this._newSectionName;
   }
 
   _checkFile(file, gid) {
@@ -97,6 +85,7 @@ class UploadElement extends TatorElement {
           "username": this._username,
           "projectId": this.getAttribute("project-id"),
           "mediaTypeId": (isArchive ? -1 : mediaType.id),
+          "section": this._section,
           "token": this._token,
           "isImage": isImage,
           "isArchive": isArchive
@@ -121,6 +110,16 @@ class UploadElement extends TatorElement {
 
     // Set a group ID on the upload.
     const gid = uuidv1();
+
+    // Get main page.
+    const page = document.getElementsByTagName("project-detail")[0];
+
+    // Show loading gif.
+    const loading = document.createElement("img");
+    loading.setAttribute("class", "loading");
+    loading.setAttribute("src", "/static/images/loading.svg");
+    page._projects.appendChild(loading);
+    page.setAttribute("has-open-modal", "");
 
     let numSkipped = 0;
     let numStarted = 0;
@@ -154,6 +153,11 @@ class UploadElement extends TatorElement {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    // Remove loading gif.
+    page._projects.removeChild(loading);
+    page.removeAttribute("has-open-modal", "");
+
+    // If upload is big throw up a warning.
     if (totalSize > 60000000000 || numStarted > 5000) {
       const bigUpload = document.createElement("big-upload-form");
       const page = document.getElementsByTagName("project-detail")[0];
@@ -173,41 +177,19 @@ class UploadElement extends TatorElement {
       }
     }
 
-    if (numStarted > 0) {
-      // Set the number of jobs in this job group.
-      fetchRetry("/rest/ProgressSummary/" + this.getAttribute("project-id"), {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          gid: gid,
-          num_jobs: numStarted,
-          num_complete: 0,
-        }),
-      });
-    
-      // For some reason calling await before using datatransfer corrupts
-      // the datatranfer.
-      const section = await this._uploadSection();
-      for (const [index, message] of this._messages.entries()) {
-        this._messages[index] = {...message, section: section};
+    // If no files were started, notify the user.
+    if (numStarted == 0 && totalFiles > 0) {
+      page._notify("Invalid files!",
+                   "No files were added! Make sure selected files are valid for this project.",
+                   "error");
+    } else if (numStarted > 0) {
+      this.dispatchEvent(new CustomEvent("filesadded", {
+        detail: {numSkipped: numSkipped, numStarted: numStarted},
+        composed: true
+      }));
+      for (const msg of this._messages) {
+        window._uploader.postMessage(msg);
       }
-    }
-
-
-    this.dispatchEvent(new CustomEvent("filesadded", {
-      detail: {numSkipped: numSkipped, numStarted: numStarted},
-      composed: true
-    }));
-    for (const msg of this._messages) {
-      window._uploader.postMessage(msg);
-    }
-    if (numStarted > 0) {
-      this.dispatchEvent(new Event("allset", {composed: true}));
     }
   }
 }

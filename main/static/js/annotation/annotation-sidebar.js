@@ -68,9 +68,12 @@ class AnnotationSidebar extends TatorElement {
 
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
-      this._box.removeAttribute("disabled");
-      this._line.removeAttribute("disabled");
-      this._point.removeAttribute("disabled");
+      if (!this._box.permenantDisable)
+        this._box.removeAttribute("disabled");
+      if (!this._line.permenantDisable)
+        this._line.removeAttribute("disabled");
+      if (!this._point.permenantDisable)
+        this._point.removeAttribute("disabled");
     } else {
       this._box.setAttribute("disabled", "");
       this._line.setAttribute("disabled", "");
@@ -97,6 +100,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._box.setAttribute("disabled", "");
+      this._box.permenantDisable = true;
     }
 
     if (typeof val.line !== "undefined") {
@@ -117,6 +121,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._line.setAttribute("disabled", "");
+      this._line.permenantDisable = true;
     }
 
     if (typeof val.dot !== "undefined") {
@@ -137,6 +142,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._point.setAttribute("disabled", "");
+      this._point.permenantDisable = true;
     }
   }
 

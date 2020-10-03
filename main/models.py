@@ -346,7 +346,7 @@ def temporary_file_delete(sender, instance, **kwargs):
 # Entity types
 
 class MediaType(Model):
-    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video')])
+    dtype = CharField(max_length=16, choices=[('image', 'image'), ('video', 'video'), ('multi','multi')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
@@ -667,6 +667,11 @@ class Media(Model):
         if audio:
             self.media_files['audio'] = audio
 
+        # Handle roi, layout, and quality
+        for x in ['layout','ids','quality']:
+            if x in media_files:
+                self.media_files[x] = media_files[x]
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     count=IntegerField(null=True, default=1)
@@ -960,6 +965,11 @@ class Section(Model):
     annotation_bools = JSONField(null=True, blank=True)
     """ Optional list of elasticsearch boolean queries that should be applied
         to annotations. These are applied to the boolean query "filter" list.
+    """
+    tator_user_sections = CharField(max_length=128, null=True, blank=True)
+    """ Identifier used to label media that is part of this section via the 
+        tator_user_sections attribute. If not set, this search is not scoped
+        to a "folder".
     """
 
 class Favorite(Model):

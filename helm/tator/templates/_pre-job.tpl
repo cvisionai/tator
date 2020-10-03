@@ -82,6 +82,4 @@ spec:
           ports:
             - containerPort: 8000
               name: gunicorn
-            - containerPort: 8001
-              name: daphne
 {{ end }}

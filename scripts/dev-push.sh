@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for selector in "app=gunicorn" "app=daphne"; do
+for selector in "app=gunicorn"; do
 
     pods=$(kubectl get pod -l "${selector}" -o name)
 

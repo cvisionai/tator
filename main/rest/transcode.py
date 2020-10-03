@@ -8,8 +8,9 @@ import requests
 
 from ..kube import TatorTranscode
 from ..cache import TatorCache
-from ..consumers import ProgressProducer
+from ..models import Project
 from ..models import MediaType
+from ..models import Section
 from ..schema import TranscodeSchema
 from ..notify import Notify
 
@@ -29,8 +30,7 @@ class TranscodeAPI(BaseListView):
         type specified by the `type` parameter, the originally uploaded file may also be saved.
         Note that the raw video must be uploaded first via tus, which is a separate mechanism 
         from the REST API. This endpoint requires a group and run UUID associated with this 
-        upload. If no progress messages were generated during upload, then the group and run 
-        UUIDs can be newly generated.
+        upload.
     """
     schema = TranscodeSchema()
     permission_classes = [ProjectTransferPermission]
@@ -48,15 +48,12 @@ class TranscodeAPI(BaseListView):
         attributes = params.get('attributes',None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
-        prog = ProgressProducer(
-            'upload',
-            project,
-            gid,
-            uid,
-            name,
-            self.request.user,
-            {'section': section},
-        )
+        # If section does not exist and is not an empty string, create a section.
+        if section:
+            if not Section.objects.filter(tator_user_sections=section).exists():
+                Section.objects.create(project=Project.objects.get(pk=project),
+                                       name=section,
+                                       tator_user_sections=section)
 
         type_objects = MediaType.objects.filter(project=project)
         if entity_type != -1:
@@ -111,8 +108,6 @@ class TranscodeAPI(BaseListView):
                 self.request.user.pk,
                 upload_size,
                 attributes)
-
-        prog.progress("Transcoding...", 60)
 
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")

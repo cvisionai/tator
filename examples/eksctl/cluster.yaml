@@ -55,7 +55,4 @@ fargateProfiles:
           app: nginx
       - namespace: default
         labels:
-          app: daphne
-      - namespace: default
-        labels:
           role: uploader

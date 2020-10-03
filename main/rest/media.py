@@ -22,7 +22,6 @@ from ..search import TatorSearch
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
-from ..consumers import ProgressProducer
 from ..notify import Notify
 from ..uploads import download_uploaded_file
 from ..uploads import get_destination_path
@@ -121,7 +120,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             # Get image only parameters.
             url = params['url']
             thumbnail_url = params.get('thumbnail_url', None)
-            progress_name = params.get('progress_name', name)
 
             # Determine file paths
             upload_uid = url.split('/')[-1]
@@ -132,17 +130,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
             os.makedirs(raw_project_dir, exist_ok=True)
             thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-
-            # Set up interface for sending progress messages.
-            prog = ProgressProducer(
-                'upload',
-                project,
-                gid,
-                uid,
-                progress_name,
-                self.request.user,
-                {'section': section},
-            )
 
             # Create the media object.
             media_obj = Media(
@@ -181,16 +168,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 media_obj.width, media_obj.height = image.size
                 image.close()
             media_obj.save()
-
-            # Send info to consumer.
-            info = {
-                "id": media_obj.id,
-                "url": media_obj.file.url,
-                "thumbnail": str(media_obj.thumbnail),
-                "name": media_obj.name,
-                "section": section,
-            }
-            prog.finished("Uploaded successfully!", {**info})
 
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 

@@ -238,7 +238,6 @@ min-css:
 	node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator/tator.min.css --style compressed
 
 FILES = \
-    reconnecting-websocket.min.js \
     node-uuid.js \
     StreamSaver.js \
     zip-stream.js \
@@ -246,17 +245,19 @@ FILES = \
     util/identifying-attribute.js \
     util/fetch-retry.js \
     util/has-permission.js \
+    util/join-params.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
     components/modal-warning.js \
+    components/modal-success.js \
     components/modal-dialog.js \
+    components/modal-notify.js \
+    components/upload-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
     components/big-upload-form.js \
     components/upload-element.js \
-    components/progress-job.js \
-    components/progress-summary.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
@@ -272,6 +273,8 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
+    components/canvas-ctxmenu.js \
+    components/success-light.js \
     components/warning-light.js \
     projects/settings-button.js \
     projects/project-remove.js \
@@ -288,17 +291,20 @@ FILES = \
     project-detail/new-algorithm-button.js \
     project-detail/algorithm-menu.js \
     project-detail/algorithm-button.js \
-    project-detail/upload-button.js \
+    project-detail/activity-button.js \
     project-detail/project-text.js \
     project-detail/project-search.js \
     project-detail/new-section.js \
+    project-detail/reload-button.js \
     project-detail/section-search.js \
     project-detail/section-upload.js \
     project-detail/big-download-form.js \
+    project-detail/new-section-dialog.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
     project-detail/section-more.js \
+    project-detail/section-card.js \
     project-detail/media-move.js \
     project-detail/media-more.js \
     project-detail/media-description.js \
@@ -312,6 +318,7 @@ FILES = \
     project-detail/media-section.js \
     project-detail/delete-section-form.js \
     project-detail/delete-file-form.js \
+    project-detail/activity-nav.js \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
     project-settings/project-settings.js \
@@ -349,10 +356,13 @@ FILES = \
     annotator/image.js \
     annotation/annotation-player.js \
     annotation/annotation-image.js \
+    annotation/annotation-multi.js \
     annotation/bool-input.js \
     annotation/enum-input.js \
     annotation/text-input.js \
     annotation/attribute-panel.js \
+    annotation/modify-track-dialog.js \
+    annotation/progress-dialog.js \
     annotation/favorite-button.js \
     annotation/favorites-panel.js \
     annotation/save-dialog.js \

@@ -116,6 +116,14 @@ textarea.form-control {
   padding-right: $spacing-2;
 }
 
+.input-sm2 {
+  height: 30px;
+  padding-left: $spacing-2;
+  padding-right: $spacing-2;
+  color: $color-gray--light;
+  width: 50px;
+}
+
 .select-sm {
   height: 33px;
 
@@ -128,6 +136,19 @@ textarea.form-control {
   height: 24px;
   line-height: inherit;
   color: #ffffff;
+  cursor: pointer;
+  -webkit-appearance: menulist;
+}
+
+.select-sm2 {
+  height: 30px;
+  line-height: inherit;
+  color: $color-gray--light;
+  &:focus {
+    color: $color-gray--light;
+  }
+  padding-left: 0px;
+  padding-right: 0px;
   cursor: pointer;
   -webkit-appearance: menulist;
 }

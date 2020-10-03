@@ -26,6 +26,23 @@
   }
 }
 
+.btn.text-gray {
+  color: $color-gray--light;
+}
+
+.btn-warning {
+  background-color: $color-brown;
+  &:hover,
+  &:focus {
+    color: $color-brown;
+  }
+  &:disabled,
+  [disabled] {
+    background-color: $color-charcoal--brown;
+    color: $color-gray--dark;
+  }
+}
+
 .btn-red {
   background-color: $color-red;
   &:hover,
@@ -62,9 +79,28 @@
       color: $color-charcoal--light;
     }
   }
+  &:disabled,
+  [disabled] {
+    background-color: transparent;
+    border: 1px solid $color-gray--dark50;
+    color: $color-gray--dark; 
+  }
+}
+
+.btn-border {
+  border: 1px solid $color-gray--dark50;
+  color: $color-gray--dark; 
 }
 
 .btn-small {
   height: 32px;
   width: 85px;
+}
+
+.btn-width {
+  width: initial;
+}
+
+.btn-fit-content {
+  width: fit-content;
 }

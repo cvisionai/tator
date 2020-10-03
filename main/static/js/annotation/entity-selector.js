@@ -144,7 +144,11 @@ class EntitySelector extends TatorElement {
         this._canvas.deleteLocalization(this._data[index]);
       } else {
         endpoint = "State";
-        this._undo.del(endpoint, this._data[index].id, this._dataType);
+        this._undo.del(endpoint, this._data[index].id, this._dataType).then(() => {
+          if (this._dataType.delete_child_localizations) {
+            this._canvas.updateAllLocalizations();
+          }
+        });
       }
       
     });
@@ -167,15 +171,6 @@ class EntitySelector extends TatorElement {
           this._del.style.display = "none";
           redraw.style.display = "none";
         }
-        /* #TODO Ask jtak about this
-        // Enable snapshots for boxes
-        if (this._dataType.isLocalization &&
-            (this._dataType.dtype == "box" ||
-            this._dataType.dtype == "dot" ||
-            this._dataType.dtype == "line")) {
-          capture.style.display = null;
-        }
-        */
         // Clear out the display regardless of whether this is a localization or state (e.g. track)
         capture.style.display = null;
       } else {

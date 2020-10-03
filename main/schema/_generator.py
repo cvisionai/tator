@@ -28,6 +28,7 @@ class CustomGenerator(SchemaGenerator):
         # Set up schema components.
         schema['components'] = {
             'schemas': {
+                'AlgorithmParameter': algorithm_parameter,
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
                 'Algorithm': algorithm,
@@ -65,8 +66,8 @@ class CustomGenerator(SchemaGenerator):
                 'MediaUpdate': media_update,
                 'Media': media,
                 'MediaFiles': media_files,
-                'MediaSections': media_sections,
                 'MediaSpec': media_spec,
+                'MediaStats': media_stats,
                 'MediaTypeSpec': media_type_spec,
                 'MediaTypeUpdate': media_type_update,
                 'MediaType': media_type,
@@ -75,8 +76,6 @@ class CustomGenerator(SchemaGenerator):
                 'Membership': membership,
                 'MoveVideoSpec': move_video_spec,
                 'NotifySpec': notify_spec,
-                'ProgressSpec': progress_spec,
-                'ProgressSummarySpec': progress_summary_spec,
                 'ProjectSpec': project_spec,
                 'Project': project,
                 'ResolutionConfig': resolution_config,
@@ -90,6 +89,8 @@ class CustomGenerator(SchemaGenerator):
                 'StateTypeSpec': state_type_spec,
                 'StateTypeUpdate': state_type_update,
                 'StateType': state_type,
+                'StateMergeUpdate': state_merge_update,
+                'StateTrimUpdate': state_trim_update,
                 'TemporaryFileSpec': temporary_file_spec,
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,
@@ -100,6 +101,7 @@ class CustomGenerator(SchemaGenerator):
                 'VersionUpdate': version_update,
                 'Version': version,
                 'VideoDefinition': video_definition,
+                'VideoClip': video_clip,
                 'AttributeBulkUpdate': attribute_bulk_update,
                 'RgbColor': rgb_color,
                 'RgbaColor': rgba_color,

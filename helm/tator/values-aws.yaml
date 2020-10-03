@@ -63,9 +63,6 @@ hpa:
   gunicornMinReplicas: 4
   gunicornMaxReplicas: 10
   gunicornCpuPercent: 50
-  daphneMinReplicas: 2
-  daphneMaxReplicas: 10
-  daphneCpuPercent: 50
   tusdMinReplicas: 2
   tusdMaxReplicas: 10
   tusdCpuPercent: 50

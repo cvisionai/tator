@@ -29,7 +29,7 @@ class SectionMore extends TatorElement {
     this._div.appendChild(otherButtons);
 
     this._download = document.createElement("download-button");
-    this._download.setAttribute("text", "Download section");
+    this._download.setAttribute("text", "Download files");
     otherButtons.appendChild(this._download);
 
     this._annotations = document.createElement("download-button");
@@ -55,7 +55,7 @@ class SectionMore extends TatorElement {
 
     this._annotations.addEventListener("click", () => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("annotations"));
+      this.dispatchEvent(new Event("downloadAnnotations"));
     });
 
     this._rename.addEventListener("click", evt => {
@@ -67,6 +67,16 @@ class SectionMore extends TatorElement {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("delete", {composed: true}));
     });
+  }
+
+  set section(val) {
+    if (val === null) {
+      this._rename.style.display = "none";
+      this._del.style.display = "none";
+    } else {
+      this._rename.style.display = "block";
+      this._del.style.display = "block";
+    }
   }
 
   set permission(val) {

@@ -136,17 +136,25 @@ class MediaUtil:
         """ Return a temporary mp4 for each impacted segment to limit IO to
             cloud storage """
         lookup = {}
+        segment_info = []
         for frame, segments in segment_list:
             temp_video = os.path.join(self._temp_dir, f"{frame}.mp4")
             preferred_block_size = 16*1024
             sc_graph = [(0, 0)]
             segment_frame_start = sys.maxsize
+            segment_num_frames = 0
             # create a scatter/gather
             for segment_idx in segments:
                 segment = self._segment_info['segments'][segment_idx]
                 last_io = sc_graph[len(sc_graph)-1]
                 if segment.get('frame_start', sys.maxsize) < segment_frame_start:
                     segment_frame_start = segment['frame_start']
+
+                if 'frame_samples' in segment:
+                    segment_info.append({
+                        'frame_start': segment['frame_start'],
+                        'num_frames': segment['frame_samples']})
+
                 if last_io[0] + last_io[1] == segment['offset']:
                     # merge contigous blocks
                     sc_graph[len(sc_graph)-1] = (last_io[0], last_io[1] + segment['size'])
@@ -163,8 +171,7 @@ class MediaUtil:
                     for scatter in sc_graph:
                         out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
 
-        return lookup
-
+        return lookup, segment_info
 
     def _frame_to_time_str(self, frame, relative_to=None):
         """ TODO: add documentation for this """
@@ -241,7 +248,7 @@ class MediaUtil:
 
         impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
         assert not impacted_segments is None, "Unable to calculate impacted video segments"
-        lookup = self.make_temporary_videos(impacted_segments)
+        lookup, segment_info = self.make_temporary_videos(impacted_segments)
 
         logger.info(f"Lookup = {lookup}")
         with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
@@ -264,7 +271,7 @@ class MediaUtil:
                 "-c", "copy",
                 output_file]
         proc = subprocess.run(args, check=True, capture_output=True)
-        return output_file
+        return output_file, segment_info
 
     def isVideo(self) -> bool:
         """ Returns true if the media is video or not

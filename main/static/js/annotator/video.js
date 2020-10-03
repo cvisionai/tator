@@ -625,15 +625,59 @@ class MotionComp {
     }
     let regularSize = Math.round(animationCyclesPerFrame);
     let fractional = animationCyclesPerFrame - regularSize;
-    let largeSize = regularSize + Math.round(fractional*3)
-    this._schedule = [ regularSize,
-                       largeSize,
-                       regularSize];
-    this._lengthOfSchedule = regularSize * 2 + largeSize;
-    this._updatesAt = [0,
-                       regularSize,
-                       regularSize + largeSize];
-    this._targetFPS = 3000 / (this._lengthOfSchedule * this._interval)
+    let largeSize = regularSize + Math.ceil(fractional*3)
+    let smallSize = regularSize + Math.floor(fractional*3)
+    const MAX_SCHEDULE_LENGTH=12;
+    this._schedule = [];
+    this._lengthOfSchedule = 0;
+
+    for (let idx = 0; idx < MAX_SCHEDULE_LENGTH; idx++)
+    {
+      const mode = idx % 3;
+      let newSize = null;
+      if (mode == 0 || mode == 2)
+      {
+        newSize = regularSize;
+      }
+      else if (mode == 1)
+      {
+        if (idx < 3)
+        {
+          newSize = largeSize;
+        }
+        else if (idx < 6)
+        {
+          newSize = smallSize;
+        }
+        else
+        {
+          const largeProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+largeSize+regularSize)*this._interval);
+          const smallProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+smallSize+regularSize)*this._interval);
+          const largeDelta = Math.abs(largeProposed-videoFps);
+          const smallDelta = Math.abs(smallProposed-videoFps);
+          console.info(`largeD = ${largeDelta}; smallD = ${smallDelta}`);
+
+          if (largeDelta < smallDelta)
+          {
+            newSize = largeSize;
+          }
+          else
+          {
+            newSize = smallSize;
+          }
+        }
+      }
+      this._lengthOfSchedule += newSize;
+      this._schedule.push(newSize);
+    }
+    let update = 0;
+    this._updatesAt = [];
+    for (let idx = 0; idx < this._schedule.length; idx++)
+    {
+      this._updatesAt.push(update);
+      update += this._schedule[idx];
+    }
+    this._targetFPS = (this._schedule.length*1000) / (this._lengthOfSchedule * this._interval)
     let msg = "Playback schedule = " + this._schedule + "\n";
     msg += "Updates @ " + this._updatesAt + "\n";
     msg += "Frame Increment = " + this.frameIncrement(videoFps, factor) + "\n";
@@ -968,15 +1012,24 @@ class VideoCanvas extends AnnotationCanvas {
 
     }
   }
+
+  video_id()
+  {
+    return this._videoObject.id;
+  }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, quality)
+  loadFromVideoObject(videoObject, quality, resizeHandler)
   {
     this._videoObject = videoObject;
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)
     {
       quality = 720;
+    }
+    if (resizeHandler == undefined)
+    {
+      resizeHandler = true;
     }
 
     // Note: dims is width,height here
@@ -1096,7 +1149,10 @@ class VideoCanvas extends AnnotationCanvas {
     //this._slider.slider("option", "max", numFrames);
     this.scrubThreshold = Math.max(25,numFrames/200);
     this._draw.resizeViewport(dims[0], dims[1]);
-    this.setupResizeHandler(dims);
+    if (resizeHandler)
+    {
+      this.setupResizeHandler(dims);
+    }
     // On load seek to frame 0
     return promise;
   }

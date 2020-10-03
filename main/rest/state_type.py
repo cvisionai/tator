@@ -14,7 +14,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'interpolation', 'association', 'visible', 'grouping_default']
+          'interpolation', 'association', 'visible', 'grouping_default', 'delete_child_localizations']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
@@ -116,6 +116,7 @@ class StateTypeDetailAPI(BaseDetailView):
         description = params.get('description', None)
         visible = params.get('visible', None)
         grouping_default = params.get('grouping_default', None)
+        delete_child_localizations = params.get('delete_child_localizations', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
@@ -126,6 +127,8 @@ class StateTypeDetailAPI(BaseDetailView):
             obj.visible = visible
         if grouping_default is not None:
             obj.grouping_default = grouping_default
+        if delete_child_localizations is not None:
+            obj.delete_child_localizations = delete_child_localizations
 
         obj.save()
         return {'message': 'State type updated successfully!'}

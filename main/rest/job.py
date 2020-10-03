@@ -3,14 +3,13 @@ import json
 import logging
 
 from django.http import Http404
-from redis import Redis
 
 from ..models import Algorithm
-from ..consumers import ProgressProducer
-from ..kube import TatorTranscode
-from ..kube import TatorAlgorithm
+from ..kube import get_jobs
+from ..kube import cancel_jobs
 from ..schema import JobListSchema
 from ..schema import JobDetailSchema
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -33,12 +32,11 @@ class JobListAPI(BaseListView):
         selector = f'project={project}'
         if gid is not None:
             selector += f',gid={gid}'
-
-        jobs = []
-        jobs += TatorTranscode().get_jobs(selector)
-        algs = Algorithm.objects.filter(project=project)
-        for alg in algs:
-            jobs += TatorAlgorithm(alg).get_jobs(selector)
+            cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+            assert(cache[0]['project'] == project)
+        else:
+            cache = TatorCache().get_jobs_by_project(project)
+        jobs = get_jobs(selector, cache)
         return [workflow_to_job(job) for job in jobs]
 
     def _delete(self, params):
@@ -49,14 +47,17 @@ class JobListAPI(BaseListView):
         selector = f'project={project}'
         if gid is not None:
             selector += f',gid={gid}'
-
-        # Attempt to cancel.
-        cancelled = 0
-        cancelled += TatorTranscode().cancel_jobs(selector)
-        algs = Algorithm.objects.filter(project=project)
-        for alg in algs:
-            cancelled += TatorAlgorithm(alg).cancel_jobs(selector)
-
+            try:
+                cache = TatorCache().get_jobs_by_gid(gid, first_only=True)
+                assert(cache[0]['project'] == project)
+            except:
+                raise Http404
+        else:
+            try:
+                cache = TatorCache().get_jobs_by_project(project, first_only=True)
+            except:
+                raise Http404
+        cancelled = cancel_jobs(selector, cache)
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 
 class JobDetailAPI(BaseDetailView):
@@ -73,38 +74,21 @@ class JobDetailAPI(BaseDetailView):
 
     def _get(self, params):
         uid = params['uid']
-        rds = Redis(host=os.getenv('REDIS_HOST'))
-        if rds.hexists('uids', uid):
-            msg = json.loads(rds.hget('uids', uid))
-            jobs = []
-            if msg['prefix'] == 'upload':
-                jobs = TatorTranscode().get_jobs(f'uid={uid}')
-            elif msg['prefix'] == 'algorithm':
-                alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
-                jobs = TatorAlgorithm(alg).get_jobs(f'uid={uid}')
-            if len(jobs) != 1:
-                raise Http404
-        else:
+        cache = TatorCache().get_jobs_by_uid(uid)
+        if cache is None:
+            raise Http404
+        jobs = get_jobs(f'uid={uid}', cache)
+        if len(jobs) != 1:
             raise Http404
         return workflow_to_job(jobs[0])
 
     def _delete(self, params):
-        # Parse parameters
         uid = params['uid']
-
-        # Find the gid in redis.
-        rds = Redis(host=os.getenv('REDIS_HOST'))
-        if rds.hexists('uids', uid):
-            msg = json.loads(rds.hget('uids', uid))
-
-            # Attempt to cancel.
-            cancelled = False
-            if msg['prefix'] == 'upload':
-                cancelled = TatorTranscode().cancel_jobs(f'uid={uid}')
-            elif msg['prefix'] == 'algorithm':
-                alg = Algorithm.objects.get(project=msg['project_id'], name=msg['name'])
-                cancelled = TatorAlgorithm(alg).cancel_jobs(f'uid={uid}')
-        else:
+        cache = TatorCache().get_jobs_by_uid(uid)
+        if cache is None:
+            raise Http404
+        cancelled = cancel_jobs(f'uid={uid}', cache)
+        if cancelled != 1:
             raise Http404
 
         return {'message': f"Job with UID {uid} deleted!"}
