@@ -13,6 +13,7 @@ class ImageCanvas extends AnnotationCanvas
     super.mediaInfo = val;
     this._dims = [val.width, val.height];
     this.resetRoi();
+    this._videoObject = val;
 
     // Have to wait for canvas to draw.
     new Promise(async resolve => {
