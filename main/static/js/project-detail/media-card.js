@@ -24,8 +24,9 @@ class MediaCard extends TatorElement {
     titleDiv.setAttribute("class", "py-1 d-flex flex-justify-between");
     div.appendChild(titleDiv);
 
-    this._name = document.createElement("h3");
+    this._name = document.createElement("a");
     this._name.setAttribute("class", "text-semibold text-white css-truncate");
+    this._name.setAttribute("href", "#");
     titleDiv.appendChild(this._name);
 
     this._more = document.createElement("media-more");
@@ -37,10 +38,6 @@ class MediaCard extends TatorElement {
     this._ext.setAttribute("class", "f3 text-gray");
     div.appendChild(this._ext);
 
-    /*
-    this._description = document.createElement("media-description");
-    div.appendChild(this._description);
-    */
     this.addEventListener("mouseenter", () => {
       this._more.style.opacity = 1;
     });
@@ -116,28 +113,6 @@ class MediaCard extends TatorElement {
         composed: true
       }));
     });
-
-    /*
-    this._more.addEventListener("cancel", evt => {
-      this._description._label.textContent = "Cancelling...";
-      const processId = this.getAttribute("process-id");
-      this.dispatchEvent(new CustomEvent("cancelUpload", {
-        detail: {uid: processId},
-        composed: true
-      }));
-      fetch("/rest/Job/" + processId, {
-        method:"DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(data => console.log(data));
-    });
-    */
   }
 
   static get observedAttributes() {
@@ -174,7 +149,6 @@ class MediaCard extends TatorElement {
         this._ext.textContent = ext.toUpperCase();
         this._name.textContent = newValue.slice(0, dot);
         this._li.setAttribute("title", newValue);
-        //this._description.setAttribute("extension", ext.toUpperCase());
         this._more.setAttribute("name", newValue);
         break;
       case "processing":
@@ -198,12 +172,6 @@ class MediaCard extends TatorElement {
     this._more.algorithms = val;
   }
 
-  /*
-  set sections(val) {
-    this._more.sections = val;
-  }
-  */
-
   set mediaParams(val) {
     this._mediaParams = val;
   }
@@ -226,8 +194,9 @@ class MediaCard extends TatorElement {
     }
     if (valid == false)
     {
-      this._li.style.opacity = 0.35;
-      this._li.style.cursor = "not-allowed";
+      this._name.style.opacity = 0.35;
+      this._link.style.opacity = 0.35;
+      this._name.style.cursor = "not-allowed";
       this._link.style.cursor = "not-allowed";
     }
     else
@@ -237,9 +206,11 @@ class MediaCard extends TatorElement {
         project = val.project_id;
       }
       var uri = encodeURI(`/${project}/annotation/${val.id}?${this._mediaParams.toString()}`);
+      this._name.setAttribute("href", uri);
       this._link.setAttribute("href", uri);
-      this._li.style.opacity = 1;
-      this._li.style.cursor = "pointer";
+      this._name.style.opacity = 1;
+      this._link.style.opacity = 1;
+      this._name.style.cursor = "pointer";
       this._link.style.cursor = "pointer";
     }
   }
@@ -247,16 +218,6 @@ class MediaCard extends TatorElement {
   get media() {
     return this._media;
   }
-
-  /*
-  updateProgress(state, percent, msg) {
-    if (state == "failed") {
-      this.removeAttribute("thumb-gif");
-      this.setAttribute("thumb", "/static/images/alert-circle.svg");
-    }
-    this._description.setProgress(state, percent, msg);
-  }
-  */
 }
 
 customElements.define("media-card", MediaCard);
