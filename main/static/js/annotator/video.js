@@ -149,8 +149,7 @@ class VideoBufferDemux
               that._initData = undefined;
             }
           };
-          that.appendAllBuffers(that._initData, handleDataLag, true);
-          that._init = true;
+          that.appendAllBuffers(that._initData, () => {that._init = true; handleDataLag();}, true);
         }
         else
         {
@@ -491,7 +490,6 @@ class VideoBufferDemux
     for (var idx = 0; idx < buffersToUpdate.length; idx++)
     {
       var bIdx = buffersToUpdate[idx];
-      this._sourceBuffers[bIdx].onupdateend=wrapper.bind(idx);
       var error = this._vidBuffers[bIdx].error;
       if (error)
       {
@@ -499,7 +497,7 @@ class VideoBufferDemux
         updateStatus("Video Decode Error", "danger", -1);
         return;
       }
-      this._sourceBuffers[bIdx].appendBuffer(data);
+      this.safeUpdate(this._sourceBuffers[bIdx],data).then(wrapper.bind(idx));
       this._inUse[bIdx] += data.byteLength;
     }
   }
@@ -528,11 +526,8 @@ class VideoBufferDemux
       }
     }
 
-    // Update the seek buffer first; then the rest
-    this._seekBuffer.onupdateend=() =>
-      {
-        this._seekBuffer.onupdateend = null;
-        this._seekReady = true;
+    this.safeUpdate(this._seekBuffer,data).then(() => {
+      this._seekReady = true;
         // Handle any pending seeks
         if (this._pendingSeeks.length > 0)
         {
@@ -543,18 +538,33 @@ class VideoBufferDemux
         // Now fill the rest of the buffers
         for (var idx = 0; idx < this._numBuffers; idx++)
         {
-          this._sourceBuffers[idx].onupdateend=function()
-          {
-            this.onupdateend=null;
-            wrapper();
-          }
-
-          // We have raw control of the source buffer because of the initialization routine
-          this._sourceBuffers[idx].appendBuffer(data);
+          this.safeUpdate(this._sourceBuffers[idx], data).then(wrapper);
           this._inUse[idx] += data.byteLength;
         }
+    });
+  }
+
+  // Source buffers need a mutex to protect them, return a promise when
+  // the update is finished.
+  safeUpdate(buffer,data)
+  {
+    let promise = new Promise((resolve,reject) => {
+      if (buffer.updating)
+      {
+        setTimeout(() => {
+          this.safeUpdate(buffer,data).then(resolve);
+        },100);
       }
-    this._seekBuffer.appendBuffer(data);
+      else
+      {
+        buffer.onupdateend=() => {
+          buffer.onupdateend=null;
+          resolve();
+        };
+        buffer.appendBuffer(data);
+      }
+    });
+    return promise;
   }
 }
 
