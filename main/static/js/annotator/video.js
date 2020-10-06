@@ -68,7 +68,7 @@ var src_path="/static/js/annotator/";
 /// The default can be filled linearly or
 class VideoBufferDemux
 {
-  constructor(streaming_files, play_idx, scrub_idx, hq_idx)
+  constructor()
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
