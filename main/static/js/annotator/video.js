@@ -1743,7 +1743,7 @@ class VideoCanvas extends AnnotationCanvas {
           }
           else
           {
-            that._fpsScore = Math.min(that._fpsScore + 1,3);
+            that._fpsScore = Math.min(that._fpsScore + 1,7);
           }
 
           if (that._fpsScore == 0)
