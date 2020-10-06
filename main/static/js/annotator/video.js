@@ -68,7 +68,7 @@ var src_path="/static/js/annotator/";
 /// The default can be filled linearly or
 class VideoBufferDemux
 {
-  constructor(streaming_files, play_idx, scrub_idx, hq_idx)
+  constructor()
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
@@ -103,27 +103,79 @@ class VideoBufferDemux
       }
     };
 
-    this._seekVideo.src = URL.createObjectURL(this._seekSource);
-    var makeSourceBuffer = function(idx, event)
-    {
-      var args=this;
-      var ms = args["ms"];
-      var idx = args["idx"];
-      ms.onsourceopen=null;
-      // Need to add a source buffer for the video.
-      that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
-    }
-    var that = this;
     for (var idx = 0; idx < this._numBuffers; idx++)
     {
       this._vidBuffers.push(document.createElement("VIDEO"));
       this._inUse.push(0);
-      this._full.push(false);
-      var ms=new MediaSource();
-      this._mediaSources[idx] = ms;
       this._sourceBuffers.push(null);
-      this._vidBuffers[idx].src=URL.createObjectURL(this._mediaSources[idx]);
-      ms.onsourceopen=makeSourceBuffer.bind({"idx": idx, "ms": ms});
+      this._full.push(false);
+    }
+
+    this._init = false;
+    this._dataLag = [];
+    let init_buffers = () => {
+      console.info("Init buffers");
+      this._seekVideo.src = URL.createObjectURL(this._seekSource);
+      let that = this;
+      var makeSourceBuffer = function(idx, event)
+      {
+        var args=this;
+        var ms = args["ms"];
+        var idx = args["idx"];
+        ms.onsourceopen=null;
+        // Need to add a source buffer for the video.
+        that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
+        for (let idx = 0; idx < that._numBuffers; idx++)
+        {
+          if (that._sourceBuffers[idx] == null)
+            return;
+        }
+
+        if (that._initData)
+        {
+          let handleDataLag = () => {
+            if (that._pendingSeeks.length > 0)
+            {
+              var pending = that._pendingSeeks.shift();
+              that.appendSeekBuffer(pending.data, pending.time);
+            }
+            let lag = that._dataLag.shift();
+            if (lag)
+            {
+              setTimeout(() => {that.appendLatestBuffer(lag, handleDataLag);},0);
+            }
+            else
+            {
+              that._initData = undefined;
+            }
+          };
+          that.appendAllBuffers(that._initData, () => {that._init = true; handleDataLag();}, true);
+        }
+        else
+        {
+          that._init = true;
+        }
+      }
+      for (var idx = 0; idx < this._numBuffers; idx++)
+      {
+        var ms=new MediaSource();
+        this._mediaSources[idx] = ms;
+        this._vidBuffers[idx].src=URL.createObjectURL(this._mediaSources[idx]);
+        ms.onsourceopen=makeSourceBuffer.bind({"idx": idx, "ms": ms});
+      }
+    };
+    if (document.hidden == true)
+    {
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden == false && this._init == false)
+        {
+          init_buffers();
+        }
+      });
+    }
+    else
+    {
+      init_buffers();
     }
   }
 
@@ -285,8 +337,9 @@ class VideoBufferDemux
     var promise = new Promise(
       function(resolve,reject)
       {
-        that._vidBuffers[0].onloadeddata = function()
+        let loaded_data_callback = function()
         {
+          console.info("Called promise");
           // In version 2 buffers are immediately available
           if (video._videoVersion >= 2)
           {
@@ -303,6 +356,7 @@ class VideoBufferDemux
             });
           }
         }
+        that._vidBuffers[0].onloadeddata = loaded_data_callback;
         that._vidBuffers[0].onerror = function()
         {
           reject();
@@ -379,6 +433,12 @@ class VideoBufferDemux
 
   appendLatestBuffer(data, callback)
   {
+    if (this._init == false)
+    {
+      this._dataLag.push(data);
+      setTimeout(callback,0);
+      return;
+    }
     var latest=this.currentIdx();
     if (latest != null)
     {
@@ -430,7 +490,6 @@ class VideoBufferDemux
     for (var idx = 0; idx < buffersToUpdate.length; idx++)
     {
       var bIdx = buffersToUpdate[idx];
-      this._sourceBuffers[bIdx].onupdateend=wrapper.bind(idx);
       var error = this._vidBuffers[bIdx].error;
       if (error)
       {
@@ -438,13 +497,24 @@ class VideoBufferDemux
         updateStatus("Video Decode Error", "danger", -1);
         return;
       }
-      this._sourceBuffers[bIdx].appendBuffer(data);
+      this.safeUpdate(this._sourceBuffers[bIdx],data).then(wrapper.bind(idx));
       this._inUse[bIdx] += data.byteLength;
     }
   }
 
-  appendAllBuffers(data, callback)
+  appendAllBuffers(data, callback, force)
   {
+    if (force == undefined)
+    {
+      force = false;
+    }
+    if (this._init == false && force == false)
+    {
+      console.info("Waiting for init...");
+      this._initData = data;
+      setTimeout(callback, 0);
+      return;
+    }
     console.info(`VIDEO: Updating all buffers with ${data.byteLength}`)
     var semaphore = this._numBuffers;
     var wrapper = function()
@@ -456,11 +526,8 @@ class VideoBufferDemux
       }
     }
 
-    // Update the seek buffer first; then the rest
-    this._seekBuffer.onupdateend=() =>
-      {
-        this._seekBuffer.onupdateend = null;
-        this._seekReady = true;
+    this.safeUpdate(this._seekBuffer,data).then(() => {
+      this._seekReady = true;
         // Handle any pending seeks
         if (this._pendingSeeks.length > 0)
         {
@@ -471,16 +538,33 @@ class VideoBufferDemux
         // Now fill the rest of the buffers
         for (var idx = 0; idx < this._numBuffers; idx++)
         {
-          this._sourceBuffers[idx].onupdateend=function()
-          {
-            this.onupdateend=null;
-            wrapper();
-          }
-          this._sourceBuffers[idx].appendBuffer(data);
+          this.safeUpdate(this._sourceBuffers[idx], data).then(wrapper);
           this._inUse[idx] += data.byteLength;
         }
+    });
+  }
+
+  // Source buffers need a mutex to protect them, return a promise when
+  // the update is finished.
+  safeUpdate(buffer,data)
+  {
+    let promise = new Promise((resolve,reject) => {
+      if (buffer.updating)
+      {
+        setTimeout(() => {
+          this.safeUpdate(buffer,data).then(resolve);
+        },100);
       }
-    this._seekBuffer.appendBuffer(data);
+      else
+      {
+        buffer.onupdateend=() => {
+          buffer.onupdateend=null;
+          resolve();
+        };
+        buffer.appendBuffer(data);
+      }
+    });
+    return promise;
   }
 }
 
