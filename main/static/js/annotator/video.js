@@ -436,7 +436,7 @@ class VideoBufferDemux
     if (this._init == false)
     {
       this._dataLag.push(data);
-      setTimeout(callback,0);
+      setTimeout(callback,100);
       return;
     }
     var latest=this.currentIdx();
