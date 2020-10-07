@@ -11,7 +11,7 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
-          'default_volume', 'visible', 'archive_config', 'streaming_config']
+          'default_volume', 'visible', 'archive_config', 'streaming_config','overlay_config']
 
 class MediaTypeListAPI(BaseListView):
     """ Create or retrieve media types.
@@ -91,6 +91,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         keep_original = params.get('keep_original', None)
         archive_config = params.get('archive_config', None)
         streaming_config = params.get('streaming_config', None)
+        overlay_config = params.get('overlay_config', None)
 
         obj = MediaType.objects.get(pk=params['id'])
         if name is not None:
@@ -105,6 +106,8 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.archive_config = archive_config
         if streaming_config is not None:
             obj.streaming_config = streaming_config
+        if overlay_config is not None:
+            obj.overlay_config = overlay_config
 
         obj.save()
         return {'message': 'Media type updated successfully!'}
