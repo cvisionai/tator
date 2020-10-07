@@ -1,6 +1,9 @@
 <html>
     <head>
         <title>Embedded Tator Video Example</title>
+        <!-- Suggest copying these locally to avoid CORS. -->
+        <!-- As a benefit you might get some stability as you can -->
+        <!-- see changes as they come in via a merge. -->
         <script src="/static/js/components/tator-element.js"></script>
         <script src="/static/js/annotator/FrameBuffer.js"></script>
         <script src="/static/js/annotator/drawGL_colors.js"></script>
@@ -50,9 +53,9 @@
          }
          customElements.define("data-stub", DataStub);
 
-         function load_metadata(host, project, media_id)
+         function load_metadata(host, project, media_id, headers)
          {
-             fetch(`${host}/rest/LocalizationTypes/${project}?media_id=${media_id}`)
+             fetch(`${host}/rest/LocalizationTypes/${project}?media_id=${media_id}`,{headers:headers})
                  .then((resp) => {
                      return resp.json();
                  })
@@ -64,7 +67,7 @@
                      video_element.annotationData = data_stub;
                      for (let type_obj of json)
                      {
-                         let p = fetch(`${host}/rest/Localizations/${project}?media_id=${media_id}&type=${type_obj.id}`);
+                         let p = fetch(`${host}/rest/Localizations/${project}?media_id=${media_id}&type=${type_obj.id}`,{headers:headers});
                          pArray.push(p);
                      }
 
@@ -85,11 +88,20 @@
                  });
          }
 
-         function load_video(host,media_id)
+         function load_video(host,media_id, offsite_config)
          {
+             if (offsite_config == undefined || offsite_config == null)
+             {
+                 offsite_config = {};
+             }
+             headers={};
+             if (offsite_config.method)
+             {
+                 headers["Authorization"] = `${offsite_config.method} ${offsite_config.value}`;
+             }
              let loaded_meta = false;
              // TODO: Add token-based auth to header
-             fetch(`${host}/rest/Media/${media_id}`).then((resp) => {
+             fetch(`${host}/rest/Media/${media_id}`, {headers:headers}).then((resp) => {
                  return resp.json();
              }).then((json) => {
                  console.info(json);
@@ -107,7 +119,7 @@
                      // Load metadata after video starts
                      if (loaded_meta == false)
                      {
-                         load_metadata(host,project,media_id)
+                         load_metadata(host,project,media_id, headers)
                          loaded_meta = true;
                      }
                      // Something is weird where buffer hitting play in this
@@ -147,10 +159,11 @@
                      }
                  });
 
-                 // TODO: if embedded off-site need to supply authentication token
-                 // in this function as an optional argument.
                  video_element.loadFromVideoObject(json,
-                                                   720); //720 is quality/resolution
+                                                   720, //720 is quality
+                                                   true, //Let video resize
+                                                   offsite_config
+                 );
 
                  // Programatic controls presumable to hook into buttons:
                  // video_element.play()
@@ -184,14 +197,26 @@
                      history.replaceState(null, null, new_url);
                  }
 
+                 /////////////////////////////////
+                 // Example offsite config
+                 /////////////////////////////////
+                 //
+                 //let offsite_config = {
+                 //    "method": "Token", // Can be Bearer or Token
+                 //    "value": "<TOKEN_VALUE>",
+                 //    "host": "<HOST_NAME>"
+                 //};
+                 // Default we use null:
+                 let offsite_config = null;
 
                  // Acquire pointer to
                  video_element = document.getElementById("video_element");
                  console.info(video_element);
 
+
                  // load video, which loads metadata (e.g. boxes) after
                  // the first chunk of video arrives
-                 load_video(host, media_id);
+                 load_video(host, media_id, offsite_config);
 
              };
         </script>
