@@ -529,6 +529,30 @@ const MouseMode =
         // User is panning an roi
         PAN: 6,
       };
+
+
+class TextOverlay extends TatorElement {
+  constructor() {
+    super();
+    this._texts = [];
+  }
+
+  addText(x,y, content)
+  {
+    let div = document.createElement("div");
+    div.style.userSelect = "none";
+    div.style.position = "absolute";
+    div.style.width = "fit-content";
+    div.textContent = content;
+    this._shadow.appendChild(div);
+    div.style.marginLeft = `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
+    div.style.marginTop = `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
+    this._texts.push(div);
+    return this._texts.length;
+  }
+}
+customElements.define("text-overlay", TextOverlay);
+
 // Convenience class to handle displaying annotation files out of a
 // data source into a draw buffer.
 class AnnotationCanvas extends TatorElement
@@ -543,6 +567,11 @@ class AnnotationCanvas extends TatorElement
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
     this._shadow.appendChild(this._canvas);
+
+    this._textOverlay = document.createElement("text-overlay");
+    this._textOverlay.style.position = "absolute";
+    this._textOverlay.style.zIndex = "9";
+    this._shadow.appendChild(this._textOverlay);
 
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
@@ -808,6 +837,9 @@ class AnnotationCanvas extends TatorElement
       const maxWidth = maxHeight*ratio;
       that._canvas.style.maxHeight=`${maxHeight}px`;
       that.parentElement.style.maxWidth=`${maxWidth}px`;
+      that._textOverlay.style.marginLeft=`-${maxWidth}px`;
+      that._textOverlay.style.width=`${maxWidth}px`;
+      that._textOverlay.style.height=`${maxHeight}px`;
       that._domParents.forEach(parent =>
                                {
                                  var obj = parent.object;
