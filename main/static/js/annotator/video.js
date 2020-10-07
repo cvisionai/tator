@@ -913,7 +913,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  startDownload(streaming_files)
+  startDownload(streaming_files, offsite_config)
   {
     var that = this;
 
@@ -1043,7 +1043,8 @@ class VideoCanvas extends AnnotationCanvas {
                                 "media_files": streaming_files,
                                 "play_idx": this._play_idx,
                                 "hq_idx": this._hq_idx,
-                                "scrub_idx": this._scrub_idx});
+                                "scrub_idx": this._scrub_idx,
+                                "offsite_config": offsite_config});
   }
 
   setQuality(quality)
@@ -1103,7 +1104,7 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, quality, resizeHandler)
+  loadFromVideoObject(videoObject, quality, resizeHandler, offsite_config)
   {
     this._videoObject = videoObject;
     // If quality is not supplied default to 720
@@ -1114,6 +1115,10 @@ class VideoCanvas extends AnnotationCanvas {
     if (resizeHandler == undefined)
     {
       resizeHandler = true;
+    }
+    if (offsite_config == undefined)
+    {
+      offsite_config = {}
     }
 
     // Note: dims is width,height here
@@ -1152,6 +1157,10 @@ class VideoCanvas extends AnnotationCanvas {
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
       let host = `${window.location.protocol}//${window.location.host}`;
+      if (offsite_config.host)
+      {
+        host = offsite_config.host;
+      }
       if ('audio' in videoObject.media_files)
       {
         let audio_def = videoObject.media_files['audio'][0];
@@ -1216,7 +1225,8 @@ class VideoCanvas extends AnnotationCanvas {
 
     this.stopDownload();
     var promise = this._videoElement[this._play_idx].loadedDataPromise(this);
-    this.startDownload(streaming_files);
+
+    this.startDownload(streaming_files, offsite_config);
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;

@@ -2,10 +2,17 @@ importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
-  constructor(media_files, blockSize)
+  constructor(media_files, blockSize, offsite_config)
   {
     this._media_files = media_files;
     this._blockSize = blockSize;
+    this._offsite_config = offsite_config;
+    this._headers = {};
+    if (this._offsite_config.method)
+    {
+      const auth_str = `${this._offsite_config.method} ${this._offsite_config.value}`;
+      this._headers["Authorization"] = auth_str;
+    }
     this._num_res = media_files.length;
     this._currentPacket=[];
     this._numPackets=[];
@@ -27,7 +34,7 @@ class VideoDownloader
     {
       let url=this._media_files[buf_idx].path;
       let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
-      const info = new Request(info_url);
+      const info = new Request(info_url, {headers:this._headers});
       init_promises.push(fetch(info));
     }
     Promise.all(init_promises).then((responses) => {
@@ -157,8 +164,10 @@ class VideoDownloader
       offset += this._info[buf_idx]["segments"][idx]["size"];
     }
 
+    let headers = {'range':`bytes=${startByte}-${startByte+offset-1}`,
+                   ...self._headers};
     fetchRetry(this._media_files[buf_idx].path,
-          {headers: {'range':`bytes=${startByte}-${startByte+offset-1}`}}
+          {headers: headers}
          ).then(
            function(response)
            {
@@ -227,9 +236,10 @@ class VideoDownloader
     //console.log(`Downloading '${currentSize}' at '${startByte}' (${idx})`);
     this._currentPacket[buf_idx] = idx;
     var percent_complete=idx/this._numPackets[buf_idx];
-
+    let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
+                   ...self._headers};
     fetch(this._media_files[buf_idx].path,
-          {headers: {'range':`bytes=${startByte}-${startByte+currentSize-1}`}}
+          {headers: headers}
          ).then(
            (response) =>
            {
@@ -262,7 +272,8 @@ onmessage = function(e)
     if (ref == null)
     {
       ref = new VideoDownloader(msg.media_files,
-                                5*1024*1024);
+                                5*1024*1024,
+                                msg.offsite_config);
     }
   }
   else if (type == 'download')
