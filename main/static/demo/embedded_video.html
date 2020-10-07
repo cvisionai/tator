@@ -111,6 +111,28 @@
                  // Last frame is nice to have for frameChange event handler
                  let last_frame = json.num_frames-1;
 
+                 let seek_bar = document.getElementById("seek");
+                 seek.setAttribute("max", json.num_frames-1);
+                 let debouncer = null;
+                 let seek_func = (evt) => {
+                     //This fires as the user drags
+                     // Debounce so we only update at 33 ms or during a
+                     // drag else things get janky. (30 fps)
+
+                     // There are other ways to do this to be a bit more
+                     // responsive
+                     let delay = (debouncer != null ? 33 : 0);
+                     clearTimeout(debouncer);
+                     let frame_num = seek_bar.value;
+                     debouncer = setTimeout(() => {
+                         const hi_res = (evt.type == "change");
+                         video_element.gotoFrame(frame_num, hi_res)
+                         debouncer = null;
+                     },delay);
+                 };
+                 seek.addEventListener("input",seek_func);
+                 seek.addEventListener("change",seek_func);
+
                  // Monitor video buffering progress
                  video_element.addEventListener("bufferLoaded", (evt) => {
                      let complete = evt.detail.percent_complete;
@@ -152,6 +174,7 @@
                  // 'thread' but only so much protection in a browser.
                  video_element.addEventListener("frameChange", (evt) => {
                      // >= is just in case math blows up again
+                     seek.value = evt.detail.frame;
                      if (evt.detail.frame >= last_frame)
                      {
                          console.info(`Reached the end ${evt.detail.frame}`);
@@ -227,6 +250,7 @@
             <video-canvas id="video_element"> </video-canvas>
             <button id="play" onclick="video_element.play();" disabled>Play</button>
             <button id="pause" onclick="video_element.pause();" disabled>Pause</button>
+            <input id="seek" type="range" min="0" max="1", step="1" value="0"></input>
         </div>
     </body>
 </html>
