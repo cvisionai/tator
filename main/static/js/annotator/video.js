@@ -1161,7 +1161,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         host = offsite_config.host;
       }
-      if ('audio' in videoObject.media_files)
+      if ('audio' in videoObject.media_files && ! 'host' in offsite_config)
       {
         let audio_def = videoObject.media_files['audio'][0];
         this._audioPlayer = document.createElement("AUDIO");
