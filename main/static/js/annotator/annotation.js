@@ -537,6 +537,23 @@ class TextOverlay extends TatorElement {
     this._texts = [];
   }
 
+  resize(width,height)
+  {
+    this.style.marginLeft=`-${width}px`;
+    this.style.width=`${width}px`;
+    this.style.height=`${height}px`;
+    for (let text of this._texts)
+    {
+      let div = text.element;
+      let x = text.x;
+      let y = text.y;
+      div.style.marginLeft =
+        `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
+      div.style.marginTop =
+        `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
+    }
+  }
+
   addText(x,y, content)
   {
     let div = document.createElement("div");
@@ -545,9 +562,11 @@ class TextOverlay extends TatorElement {
     div.style.width = "fit-content";
     div.textContent = content;
     this._shadow.appendChild(div);
-    div.style.marginLeft = `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
-    div.style.marginTop = `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
-    this._texts.push(div);
+    div.style.marginLeft =
+      `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
+    div.style.marginTop =
+      `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
+    this._texts.push({element: div,x:x,y:y});
     return this._texts.length;
   }
 }
@@ -837,9 +856,6 @@ class AnnotationCanvas extends TatorElement
       const maxWidth = maxHeight*ratio;
       that._canvas.style.maxHeight=`${maxHeight}px`;
       that.parentElement.style.maxWidth=`${maxWidth}px`;
-      that._textOverlay.style.marginLeft=`-${maxWidth}px`;
-      that._textOverlay.style.width=`${maxWidth}px`;
-      that._textOverlay.style.height=`${maxHeight}px`;
       that._domParents.forEach(parent =>
                                {
                                  var obj = parent.object;
@@ -857,6 +873,8 @@ class AnnotationCanvas extends TatorElement
                                    obj.style.maxWidth=`${maxWidth}px`;
                                  }
                                });
+
+      that._textOverlay.resize(maxWidth, maxHeight);
     }
 
     // Set up resize handler.
