@@ -388,6 +388,11 @@ class MediaType(Model):
     archive_config = JSONField(default=None, null=True, blank=True)
     streaming_config = JSONField(default=None, null=True,blank=True)
     overlay_config = JSONField(default=None,null=True,blank=True)
+    """
+    Overlay configuration provides text overlay on video / image based on
+    configruation examples:
+    Example: {"mode": "constant", "source": "name"} Overlays file name
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 

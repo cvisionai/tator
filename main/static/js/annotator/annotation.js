@@ -741,7 +741,37 @@ class AnnotationCanvas extends TatorElement
 
   set mediaType(val) {
     this._mediaType = val;
+
+    // Handle overlay config
+    if (val.overlay_config)
+    {
+      const mode = val.overlay_config.mode;
+      let pos = [0.5,0.9];
+      let value = null;
+      if (val.overlay_config.pos)
+      {
+        pos = val.overlay_config.pos;
+      }
+      if (mode == "constant")
+      {
+        if (val.overlay_config.source == "name")
+        {
+          value = this._mediaInfo.name;
+        }
+        if (val.overlay_config.source == "constant")
+        {
+          value = val.overlay_config.consant;
+        }
+        if (val.overlay_config.source == "attribute")
+        {
+          value = this._mediaInfo.attributes[val.overlay_config.key];
+        }
+        this._textOverlay.addText(pos[0],pos[1],value);
+      }
+
+    }
   }
+
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
   }
