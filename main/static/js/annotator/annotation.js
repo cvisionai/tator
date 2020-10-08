@@ -550,13 +550,62 @@ class TextOverlay extends TatorElement {
       let div = text.element;
       let x = text.x;
       let y = text.y;
-      div.style.marginLeft =
-        `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
-      div.style.marginTop =
-        `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
+      this._setPosition(x,y,div);
     }
   }
 
+  // Set the position of a div object
+  _setPosition(x,y,div)
+  {
+    div.style.marginLeft =
+      `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
+    div.style.marginTop =
+      `${Math.round(y*this.clientHeight)-div.clientHeight/2}px`;
+  }
+
+  modifyText(idx,delta)
+  {
+    if (idx >= this._texts.length)
+    {
+      console.error("Out of bound access");
+      return;
+    }
+    if (delta == undefined || delta == null)
+    {
+      delta = {};
+    }
+
+    let text = this._texts[idx]
+    let div = text.element;
+
+    if (delta.style)
+    {
+      let style = delta.style;
+      // Apply style from object
+      const keys = Object.getOwnPropertyNames(style);
+      for (let key of keys)
+      {
+        div.style[key] = style[key];
+      }
+    }
+
+    // Set new text before positioning
+    if (delta.content)
+    {
+      div.textContent = delta.content;
+    }
+
+    if (delta.x)
+    {
+      text.x = delta.x;
+    }
+    if (delta.y)
+    {
+      text.y = delta.y;
+    }
+    this._setPosition(text.x,text.y,div);
+  }
+  
   // Add text at a given position
   // Default style is 24pt bold, style can be patched
   // via the userStyle object argument
@@ -588,10 +637,7 @@ class TextOverlay extends TatorElement {
     }
     div.textContent = content;
     this._shadow.appendChild(div);
-    div.style.marginLeft =
-      `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
-    div.style.marginTop =
-      `${Math.round(y*this.clientHeight) - div.clientHeight/2}px`;
+    this._setPosition(x,y,div);
     this._texts.push({element: div,x:x,y:y});
     return this._texts.length;
   }
