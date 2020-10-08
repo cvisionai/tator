@@ -739,6 +739,9 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  set mediaType(val) {
+    this._mediaType = val;
+  }
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
   }
