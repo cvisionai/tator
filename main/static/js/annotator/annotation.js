@@ -545,6 +545,7 @@ class TextOverlay extends TatorElement {
     this.style.marginLeft=`-${width}px`;
     this.style.width=`${width}px`;
     this.style.height=`${height}px`;
+    this.style.display = null;
     for (let text of this._texts)
     {
       let div = text.element;
@@ -670,6 +671,7 @@ class AnnotationCanvas extends TatorElement
     this._textOverlay = document.createElement("text-overlay");
     this._textOverlay.style.position = "absolute";
     this._textOverlay.style.zIndex = 1;
+    this._textOverlay.style.display = "none"; // Don't display until a resize
     this._shadow.appendChild(this._textOverlay);
 
     // Context menu (right-click): Tracks
