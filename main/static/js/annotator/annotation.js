@@ -531,12 +531,15 @@ const MouseMode =
       };
 
 
+
+// Defines a helper object to place text over the video canvas
 class TextOverlay extends TatorElement {
   constructor() {
     super();
     this._texts = [];
   }
 
+  // Resize the overlay to a given height/width
   resize(width,height)
   {
     this.style.marginLeft=`-${width}px`;
@@ -554,12 +557,35 @@ class TextOverlay extends TatorElement {
     }
   }
 
-  addText(x,y, content)
+  // Add text at a given position
+  // Default style is 24pt bold, style can be patched
+  // via the userStyle object argument
+  // Ex: {'fontSize': '36pt',color: 'red'} // bold red
+  addText(x,y, content, userStyle)
   {
     let div = document.createElement("div");
     div.style.userSelect = "none";
     div.style.position = "absolute";
     div.style.width = "fit-content";
+
+    let style = {"fontSize": "24pt",
+                 "fontWeight": "bold",
+                 "color": "white"};
+    if (userStyle)
+    {
+      const keys = Object.getOwnPropertyNames(userStyle);
+      for (let key of keys)
+      {
+        style[key] = userStyle[key];
+      }
+    }
+
+    // Apply style from object
+    const keys = Object.getOwnPropertyNames(style);
+    for (let key of keys)
+    {
+      div.style[key] = style[key];
+    }
     div.textContent = content;
     this._shadow.appendChild(div);
     div.style.marginLeft =
@@ -806,11 +832,11 @@ class AnnotationCanvas extends TatorElement
           metaMode: null,
         },
         composed: true,
-      }));    
+      }));
     }
   }
 
-  
+
 
   resetRoi()
   {
@@ -976,7 +1002,7 @@ class AnnotationCanvas extends TatorElement
     // Determine if the user right clicked on a state/track or a stand-alone localization/detection
     if (this.activeLocalization) {
       let localizationInTrack = this.activeLocalization.id in this._data._trackDb;
-      if (localizationInTrack) {    
+      if (localizationInTrack) {
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
       else {
