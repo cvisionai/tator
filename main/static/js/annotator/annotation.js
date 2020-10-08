@@ -647,7 +647,7 @@ class TextOverlay extends TatorElement {
     this._shadow.appendChild(div);
     this._setPosition(x,y,div);
     this._texts.push({element: div,x:x,y:y});
-    return this._texts.length;
+    return this._texts.length-1;
   }
 }
 customElements.define("text-overlay", TextOverlay);
