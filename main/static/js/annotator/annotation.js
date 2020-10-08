@@ -669,11 +669,12 @@ class AnnotationCanvas extends TatorElement
 
     this._textOverlay = document.createElement("text-overlay");
     this._textOverlay.style.position = "absolute";
-    this._textOverlay.style.zIndex = "9";
+    this._textOverlay.style.zIndex = 1;
     this._shadow.appendChild(this._textOverlay);
 
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
+    this._contextMenuTrack.style.zIndex = 2;
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
     this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
