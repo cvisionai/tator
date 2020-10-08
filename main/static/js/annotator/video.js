@@ -1104,8 +1104,9 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, quality, resizeHandler, offsite_config)
+  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config)
   {
+    this.mediaType = mediaType;
     this._videoObject = videoObject;
     // If quality is not supplied default to 720
     if (quality == undefined || quality == null)

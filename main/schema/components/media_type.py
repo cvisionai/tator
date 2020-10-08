@@ -51,6 +51,11 @@ media_type_properties = {
         'type': 'array',
         'items': {'$ref': '#/components/schemas/ResolutionConfig'},
     },
+    'overlay_config': {
+        'description': 'Overlay configuration',
+        'type': 'object',
+        'additionalProperties': True,
+    },
 }
 
 media_type_spec = {

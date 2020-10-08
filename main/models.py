@@ -387,6 +387,17 @@ class MediaType(Model):
     """
     archive_config = JSONField(default=None, null=True, blank=True)
     streaming_config = JSONField(default=None, null=True,blank=True)
+    overlay_config = JSONField(default=None,null=True,blank=True)
+    """
+    Overlay configuration provides text overlay on video / image based on
+    configruation examples:
+    Example: {"mode": "constant", "source": "name"} Overlays file name
+    Time example:
+             {"mode": "datetime", "locale": [locale], "options" : [options]}
+            options can contain 'timeZone' which comes from the TZ database name
+            https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+            Example: America/Los_Angeles or America/New_York
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -967,7 +978,7 @@ class Section(Model):
         to annotations. These are applied to the boolean query "filter" list.
     """
     tator_user_sections = CharField(max_length=128, null=True, blank=True)
-    """ Identifier used to label media that is part of this section via the 
+    """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
         to a "folder".
     """

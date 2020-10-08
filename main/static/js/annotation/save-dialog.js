@@ -4,6 +4,7 @@ class SaveDialog extends TatorElement {
 
     this._div = document.createElement("div");
     this._div.setAttribute("class", "annotation__panel--popup annotation__panel px-4 rounded-2");
+    this._div.style.zIndex = 3;
     this._shadow.appendChild(this._div);
 
     const header = document.createElement("div");

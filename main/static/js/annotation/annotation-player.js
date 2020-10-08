@@ -245,7 +245,7 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    this._video.loadFromVideoObject(val, this._quality)
+    this._video.loadFromVideoObject(val, this.mediaType, this._quality)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
           composed: true

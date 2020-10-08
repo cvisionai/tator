@@ -139,7 +139,7 @@ class CanvasDrag
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
   // @param dragLimiter minimum interval to report mouseMove
-  constructor(canvas, scaleFn, cb, dragLimiter)
+  constructor(parent, canvas, scaleFn, cb, dragLimiter)
   {
     this._cb = cb;
     this._canvas = canvas;
@@ -154,7 +154,7 @@ class CanvasDrag
       // Default to 30fps
       this.dragLimiter = 1000.0/60;
     }
-    canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
+    parent._textOverlay.addEventListener("mousedown", this.onMouseDown.bind(this));
 
     this._mouseMoveBound=this.onMouseMove.bind(this);
     this._mouseUpBound=this.onMouseUp.bind(this)
@@ -529,6 +529,130 @@ const MouseMode =
         // User is panning an roi
         PAN: 6,
       };
+
+
+
+// Defines a helper object to place text over the video canvas
+class TextOverlay extends TatorElement {
+  constructor() {
+    super();
+    this._texts = [];
+  }
+
+  // Resize the overlay to a given height/width
+  resize(width,height)
+  {
+    this.style.marginLeft=`-${width}px`;
+    this.style.width=`${width}px`;
+    this.style.height=`${height}px`;
+    this.style.display = null;
+    for (let text of this._texts)
+    {
+      let div = text.element;
+      let x = text.x;
+      let y = text.y;
+      this._setPosition(x,y,div);
+    }
+  }
+
+  // Set the position of a div object
+  _setPosition(x,y,div)
+  {
+    div.style.marginLeft =
+      `${Math.round(x*this.clientWidth)-div.clientWidth/2}px`;
+    div.style.marginTop =
+      `${Math.round(y*this.clientHeight)-div.clientHeight/2}px`;
+  }
+
+  modifyText(idx,delta)
+  {
+    if (idx >= this._texts.length)
+    {
+      console.error("Out of bound access");
+      return;
+    }
+    if (delta == undefined || delta == null)
+    {
+      delta = {};
+    }
+
+    let text = this._texts[idx]
+    let div = text.element;
+
+    if (delta.style)
+    {
+      let style = delta.style;
+      // Apply style from object
+      const keys = Object.getOwnPropertyNames(style);
+      for (let key of keys)
+      {
+        div.style[key] = style[key];
+      }
+    }
+
+    // Set new text before positioning
+    if (delta.content)
+    {
+      div.textContent = delta.content;
+    }
+
+    if (delta.x)
+    {
+      text.x = delta.x;
+    }
+    if (delta.y)
+    {
+      text.y = delta.y;
+    }
+    this._setPosition(text.x,text.y,div);
+  }
+
+  clearAll()
+  {
+    for (let text of this._texts)
+    {
+      this._shadow.removeChild(text.element);
+    }
+  }
+
+  // Add text at a given position
+  // Default style is 24pt bold, style can be patched
+  // via the userStyle object argument
+  // Ex: {'fontSize': '36pt',color: 'red'} // bold red
+  addText(x,y, content, userStyle)
+  {
+    let div = document.createElement("div");
+    div.style.userSelect = "none";
+    div.style.position = "absolute";
+    div.style.width = "fit-content";
+
+    let style = {"fontSize": "24pt",
+                 "fontWeight": "bold",
+                 "color": "white"};
+    if (userStyle)
+    {
+      const keys = Object.getOwnPropertyNames(userStyle);
+      for (let key of keys)
+      {
+        style[key] = userStyle[key];
+      }
+    }
+
+    // Apply style from object
+    const keys = Object.getOwnPropertyNames(style);
+    for (let key of keys)
+    {
+      div.style[key] = style[key];
+    }
+    div.textContent = content;
+    this._shadow.appendChild(div);
+    this._setPosition(x,y,div);
+    this._texts.push({element: div,x:x,y:y});
+    return this._texts.length-1;
+  }
+}
+customElements.define("text-overlay", TextOverlay);
+
 // Convenience class to handle displaying annotation files out of a
 // data source into a draw buffer.
 class AnnotationCanvas extends TatorElement
@@ -544,8 +668,15 @@ class AnnotationCanvas extends TatorElement
     this._canvas.setAttribute("height", "1");
     this._shadow.appendChild(this._canvas);
 
+    this._textOverlay = document.createElement("text-overlay");
+    this._textOverlay.style.position = "absolute";
+    this._textOverlay.style.zIndex = 1;
+    this._textOverlay.style.display = "none"; // Don't display until a resize
+    this._shadow.appendChild(this._textOverlay);
+
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
+    this._contextMenuTrack.style.zIndex = 2;
     this._contextMenuTrack.hideMenu();
     this._shadow.appendChild(this._contextMenuTrack);
     this._contextMenuTrack.addMenuEntry("Set as main track", this.contextMenuCallback.bind(this));
@@ -573,17 +704,19 @@ class AnnotationCanvas extends TatorElement
     this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
-    this._dragHandler = new CanvasDrag(this._canvas,
+    this._dragHandler = new CanvasDrag(this,
+                                       this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
                                        this.dragHandler.bind(this));
     this._draw.setPushCallback((frameInfo) => {return this.drawAnnotations(frameInfo);});
 
-    this._canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
-    this._canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
-    this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
-    this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
-    this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
-    this._canvas.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
+    // Text-overlay is in a higher z-index so mouse events get masked
+    this._textOverlay.addEventListener("mousedown", this.mouseDownHandler.bind(this));
+    this._textOverlay.addEventListener("mouseup", this.mouseUpHandler.bind(this));
+    this._textOverlay.addEventListener("mousemove", this.mouseOverHandler.bind(this));
+    this._textOverlay.addEventListener("mouseout", this.mouseOutHandler.bind(this));
+    this._textOverlay.addEventListener("dblclick", this.dblClickHandler.bind(this));
+    this._textOverlay.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
     document.addEventListener("keyup", this.keyupHandler.bind(this));
@@ -605,6 +738,84 @@ class AnnotationCanvas extends TatorElement
     catch
     {
       console.warn("No offscreen canvas capability.");
+    }
+  }
+
+  set mediaType(val) {
+    this._mediaType = val;
+
+    // Handle overlay config
+    if (val.overlay_config)
+    {
+      const mode = val.overlay_config.mode;
+      let pos = [0.5,0.9];
+      let value = null;
+      if (val.overlay_config.pos)
+      {
+        pos = val.overlay_config.pos;
+      }
+      if (mode == "constant")
+      {
+        if (val.overlay_config.source == "name")
+        {
+          value = this._mediaInfo.name;
+        }
+        if (val.overlay_config.source == "constant")
+        {
+          value = val.overlay_config.consant;
+        }
+        if (val.overlay_config.source == "attribute")
+        {
+          value = this._mediaInfo.attributes[val.overlay_config.key];
+        }
+        this._textOverlay.addText(pos[0],pos[1],value);
+      }
+
+      if (mode == "datetime")
+      {
+        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
+        const name = this._mediaInfo.name;
+        let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+        let time_since_epoch = Date.parse(start_time_8601);
+        let lastUpdate = null;
+
+        let locale = 'en-US';
+        let options = {"timeZone": "UTC", "timeZoneName": "short"};
+        if (val.locale)
+        {
+          locale = val.overlay_config.locale;
+        }
+        if (val.overlay_config.options)
+        {
+          const keys = Object.getOwnPropertyNames(val.overlay_config.options);
+          for (const key of keys)
+          {
+            options[key] = val.overlay_config.options[key];
+          }
+        }
+        let update_function = (seconds) => {
+          if (lastUpdate == seconds)
+          {
+            return;
+          }
+          lastUpdate = seconds;
+          const milliseconds = seconds * 1000;
+          const d = new Date(time_since_epoch + milliseconds);
+          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options)});
+        };
+
+        // Run first update
+        update_function(0);
+
+        if (val.dtype == "video")
+        {
+          this.addEventListener("frameChange", (evt) => {
+            const frame = evt.detail.frame;
+            const seconds = Math.floor(frame / this._mediaInfo.fps);
+            update_function(seconds);
+          });
+        }
+      }
     }
   }
 
@@ -758,11 +969,11 @@ class AnnotationCanvas extends TatorElement
           metaMode: null,
         },
         composed: true,
-      }));    
+      }));
     }
   }
 
-  
+
 
   resetRoi()
   {
@@ -825,6 +1036,8 @@ class AnnotationCanvas extends TatorElement
                                    obj.style.maxWidth=`${maxWidth}px`;
                                  }
                                });
+
+      that._textOverlay.resize(maxWidth, maxHeight);
     }
 
     // Set up resize handler.
@@ -926,7 +1139,7 @@ class AnnotationCanvas extends TatorElement
     // Determine if the user right clicked on a state/track or a stand-alone localization/detection
     if (this.activeLocalization) {
       let localizationInTrack = this.activeLocalization.id in this._data._trackDb;
-      if (localizationInTrack) {    
+      if (localizationInTrack) {
         this._contextMenuTrack.displayMenu(clickLocation[0], clickLocation[1]);
       }
       else {

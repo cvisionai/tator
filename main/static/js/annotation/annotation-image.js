@@ -26,6 +26,7 @@ class AnnotationImage extends TatorElement {
   }
 
   set mediaInfo(val) {
+    this._image.mediaType = this.mediaType;
     this._image.mediaInfo = val;
   }
 
