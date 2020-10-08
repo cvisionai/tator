@@ -605,6 +605,14 @@ class TextOverlay extends TatorElement {
     }
     this._setPosition(text.x,text.y,div);
   }
+
+  clearAll()
+  {
+    for (let text of this._texts)
+    {
+      this._shadow.removeChild(text.element);
+    }
+  }
   
   // Add text at a given position
   // Default style is 24pt bold, style can be patched
