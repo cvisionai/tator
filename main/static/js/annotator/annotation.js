@@ -139,7 +139,7 @@ class CanvasDrag
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
   // @param dragLimiter minimum interval to report mouseMove
-  constructor(canvas, scaleFn, cb, dragLimiter)
+  constructor(parent, canvas, scaleFn, cb, dragLimiter)
   {
     this._cb = cb;
     this._canvas = canvas;
@@ -154,7 +154,7 @@ class CanvasDrag
       // Default to 30fps
       this.dragLimiter = 1000.0/60;
     }
-    canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
+    parent._textOverlay.addEventListener("mousedown", this.onMouseDown.bind(this));
 
     this._mouseMoveBound=this.onMouseMove.bind(this);
     this._mouseUpBound=this.onMouseUp.bind(this)
@@ -701,17 +701,19 @@ class AnnotationCanvas extends TatorElement
     this._clipboard = new Clipboard(this);
 
     this._draw=new DrawGL(this._canvas);
-    this._dragHandler = new CanvasDrag(this._canvas,
+    this._dragHandler = new CanvasDrag(this,
+                                       this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
                                        this.dragHandler.bind(this));
     this._draw.setPushCallback((frameInfo) => {return this.drawAnnotations(frameInfo);});
 
-    this._canvas.addEventListener("mousedown", this.mouseDownHandler.bind(this));
-    this._canvas.addEventListener("mouseup", this.mouseUpHandler.bind(this));
-    this._canvas.addEventListener("mousemove", this.mouseOverHandler.bind(this));
-    this._canvas.addEventListener("mouseout", this.mouseOutHandler.bind(this));
-    this._canvas.addEventListener("dblclick", this.dblClickHandler.bind(this));
-    this._canvas.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
+    // Text-overlay is in a higher z-index so mouse events get masked
+    this._textOverlay.addEventListener("mousedown", this.mouseDownHandler.bind(this));
+    this._textOverlay.addEventListener("mouseup", this.mouseUpHandler.bind(this));
+    this._textOverlay.addEventListener("mousemove", this.mouseOverHandler.bind(this));
+    this._textOverlay.addEventListener("mouseout", this.mouseOutHandler.bind(this));
+    this._textOverlay.addEventListener("dblclick", this.dblClickHandler.bind(this));
+    this._textOverlay.addEventListener("contextmenu", this.contextMenuHandler.bind(this));
 
     document.addEventListener("keydown", this.keydownHandler.bind(this));
     document.addEventListener("keyup", this.keyupHandler.bind(this));
