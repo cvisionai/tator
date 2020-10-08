@@ -776,6 +776,21 @@ class AnnotationCanvas extends TatorElement
         let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
         let time_since_epoch = Date.parse(start_time_8601);
         let lastUpdate = null;
+
+        let locale = 'en-US';
+        let options = {"timeZone": "UTC", "timeZoneName": "short"};
+        if (val.locale)
+        {
+          locale = val.overlay_config.locale;
+        }
+        if (val.overlay_config.options)
+        {
+          const keys = Object.getOwnPropertyNames(val.overlay_config.options);
+          for (const key of keys)
+          {
+            options[key] = val.overlay_config.options[key];
+          }
+        }
         let update_function = (seconds) => {
           if (lastUpdate == seconds)
           {
@@ -784,7 +799,7 @@ class AnnotationCanvas extends TatorElement
           lastUpdate = seconds;
           const milliseconds = seconds * 1000;
           const d = new Date(time_since_epoch + milliseconds);
-          this._textOverlay.modifyText(time_idx,{content: d.toISOString()});
+          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options)});
         };
 
         // Run first update
