@@ -613,7 +613,7 @@ class TextOverlay extends TatorElement {
       this._shadow.removeChild(text.element);
     }
   }
-  
+
   // Add text at a given position
   // Default style is 24pt bold, style can be patched
   // via the userStyle object argument
@@ -769,6 +769,36 @@ class AnnotationCanvas extends TatorElement
         this._textOverlay.addText(pos[0],pos[1],value);
       }
 
+      if (mode == "datetime")
+      {
+        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
+        const name = this._mediaInfo.name;
+        let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+        let time_since_epoch = Date.parse(start_time_8601);
+        let lastUpdate = null;
+        let update_function = (seconds) => {
+          if (lastUpdate == seconds)
+          {
+            return;
+          }
+          lastUpdate = seconds;
+          const milliseconds = seconds * 1000;
+          const d = new Date(time_since_epoch + milliseconds);
+          this._textOverlay.modifyText(time_idx,{content: d.toISOString()});
+        };
+
+        // Run first update
+        update_function(0);
+
+        if (val.dtype == "video")
+        {
+          this.addEventListener("frameChange", (evt) => {
+            const frame = evt.detail.frame;
+            const seconds = Math.floor(frame / this._mediaInfo.fps);
+            update_function(seconds);
+          });
+        }
+      }
     }
   }
 
