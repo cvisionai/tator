@@ -773,10 +773,16 @@ class AnnotationCanvas extends TatorElement
 
       if (mode == "datetime")
       {
-        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
         const name = this._mediaInfo.name;
         let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
         let time_since_epoch = Date.parse(start_time_8601);
+        if (isNaN(time_since_epoch) == true)
+        {
+          console.info("Could not deduce time from file name");
+          return;
+        }
+
+        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
         let lastUpdate = null;
 
         let locale = 'en-US';
