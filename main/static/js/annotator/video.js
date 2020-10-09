@@ -1444,7 +1444,7 @@ class VideoCanvas extends AnnotationCanvas {
         document.body.style.cursor = null;
         console.warn("Network Seek expired");
         this.refresh(false);
-      },500);
+      },2500);
     }
     else if (video == null)
     {
