@@ -725,30 +725,19 @@ class MotionComp {
       }
       else if (mode == 1)
       {
-        if (idx < 3)
+        const largeProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+largeSize+regularSize)*this._interval);
+        const smallProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+smallSize+regularSize)*this._interval);
+        const largeDelta = Math.abs(largeProposed-videoFps);
+        const smallDelta = Math.abs(smallProposed-videoFps);
+        console.info(`largeD = ${largeDelta}; smallD = ${smallDelta}`);
+
+        if (largeDelta < smallDelta)
         {
           newSize = largeSize;
         }
-        else if (idx < 6)
-        {
-          newSize = smallSize;
-        }
         else
         {
-          const largeProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+largeSize+regularSize)*this._interval);
-          const smallProposed = ((2+this._schedule.length)*1000) / ((this._lengthOfSchedule+smallSize+regularSize)*this._interval);
-          const largeDelta = Math.abs(largeProposed-videoFps);
-          const smallDelta = Math.abs(smallProposed-videoFps);
-          console.info(`largeD = ${largeDelta}; smallD = ${smallDelta}`);
-
-          if (largeDelta < smallDelta)
-          {
-            newSize = largeSize;
-          }
-          else
-          {
-            newSize = smallSize;
-          }
+          newSize = smallSize;
         }
       }
       this._lengthOfSchedule += newSize;
