@@ -773,7 +773,13 @@ class AnnotationCanvas extends TatorElement
 
       if (mode == "datetime")
       {
-        const name = this._mediaInfo.name;
+        let name = this._mediaInfo.name;
+
+        // Trim off ID if it is there
+        if (name[1] == '_')
+        {
+          name = name.substr(2);
+        }
         let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
         let time_since_epoch = Date.parse(start_time_8601);
         if (isNaN(time_since_epoch) == true)
