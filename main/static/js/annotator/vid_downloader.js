@@ -8,7 +8,7 @@ class VideoDownloader
     this._blockSize = blockSize;
     this._offsite_config = offsite_config;
     this._headers = {};
-    if (this._offsite_config.method)
+    if (this._offsite_config && this._offsite_config.method)
     {
       const auth_str = `${this._offsite_config.method} ${this._offsite_config.value}`;
       this._headers["Authorization"] = auth_str;
