@@ -812,7 +812,20 @@ class AnnotationCanvas extends TatorElement
           }
           lastUpdate = seconds;
           const milliseconds = seconds * 1000;
-          const d = new Date(time_since_epoch + milliseconds);
+          // This is automatically in the wrong timezone (go javascript)
+          const d_bad_tz = new Date(time_since_epoch + milliseconds);
+
+          // Strip timezone from previous object resolve to UTC time
+          // and make a new timezone-aware object based on truth
+          let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
+                                    d_bad_tz.getMonth(),
+                                    d_bad_tz.getDate(),
+                                    d_bad_tz.getHours(),
+                                    d_bad_tz.getMinutes(),
+                                    d_bad_tz.getSeconds(),
+                                    d_bad_tz.getMilliseconds()));
+
+          // Output to the text format specified by the media type schema
           this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options)});
         };
 
