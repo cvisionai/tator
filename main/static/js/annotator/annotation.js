@@ -666,11 +666,11 @@ class AnnotationCanvas extends TatorElement
     this._canvas=document.createElement("canvas");
     this._canvas.setAttribute("class", "video");
     this._canvas.setAttribute("height", "1");
+    this._canvas.style.zIndex = -1;
     this._shadow.appendChild(this._canvas);
 
     this._textOverlay = document.createElement("text-overlay");
     this._textOverlay.style.position = "absolute";
-    this._textOverlay.style.zIndex = 1;
     this._textOverlay.style.display = "none"; // Don't display until a resize
     this._shadow.appendChild(this._textOverlay);
 
