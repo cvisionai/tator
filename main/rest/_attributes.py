@@ -147,11 +147,12 @@ def extract_attribute(kv_pair, meta, filter_op):
 
         # If meta is none, we treat this as a string/enum type.
         found = False
-        attr_type = None
+        attr_type = {'dtype': 'string', 'name': attr_name}
         type_ok = True
         if meta is not None:
-            for attr_type in meta.attribute_types:
-                if attr_type['name'] == attr_name:
+            for this_attr_type in meta.attribute_types:
+                if this_attr_type['name'] == attr_name:
+                    attr_type = this_attr_type
                     found = True
                     break
             if not found:
