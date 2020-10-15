@@ -329,12 +329,13 @@ class PermissionCreateTestMixin:
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
             if expected_status == status.HTTP_201_CREATED:
-                if isinstance(response.data['id'], list):
-                    created_id = response.data['id'][0]
-                else:
-                    created_id = response.data['id']
-                response = self.client.delete(f'/rest/{self.detail_uri}/{created_id}')
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                if 'id' in response.data:
+                    if isinstance(response.data['id'], list):
+                        created_id = response.data['id'][0]
+                    else:
+                        created_id = response.data['id']
+                    response = self.client.delete(f'/rest/{self.detail_uri}/{created_id}')
+                    self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -1716,6 +1717,7 @@ class AnalysisCountTestCase(
             data_query='Enum Test:enum_val1',
         )
         self.list_uri = 'Analyses'
+        self.detail_uri = 'Analysis'
         self.create_json = {
             'name': 'count_create_test',
             'data_query': 'Enum Test:enum_val2',
