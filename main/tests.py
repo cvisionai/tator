@@ -328,13 +328,13 @@ class PermissionCreateTestMixin:
             self.assertEqual(response.status_code, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
-            if expected_status == status.HTTP_200_OK:
+            if expected_status == status.HTTP_201_CREATED:
                 if isinstance(response.data['id'], list):
                     created_id = response.data['id'][0]
                 else:
                     created_id = response.data['id']
-                if hasattr(self, 'entities'):
-                    self.entities.append(obj_type.objects.get(pk=created_id))
+                response = self.client.delete(f'/rest/{self.detail_uri}/{created_id}')
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -386,6 +386,8 @@ class PermissionDetailTestMixin:
                 expected_status = status.HTTP_200_OK
             else:
                 expected_status = status.HTTP_403_FORBIDDEN
+            if 'name' in self.patch_json:
+                self.patch_json['name'] += f"_{index}"
             response = self.client.patch(
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
