@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 
 from ..models import Section
@@ -9,6 +11,8 @@ from ..schema import SectionDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectEditPermission
+
+logger = logging.getLogger(__name__)
 
 class SectionListAPI(BaseListView):
     """ Create or retrieve a list of project media sections.
@@ -32,6 +36,10 @@ class SectionListAPI(BaseListView):
         media_bools = params.get('media_bools', None)
         annotation_bools = params.get('annotation_bools', None)
         tator_user_sections = params.get('tator_user_sections', None)
+
+        if Section.objects.filter(
+            project=project, name__iexact=params['name']).exists():
+            raise Exception("Section with this name already exists!")
         
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
@@ -69,6 +77,9 @@ class SectionDetailAPI(BaseDetailView):
     def _patch(self, params):
         section = Section.objects.get(pk=params['id'])
         if 'name' in params:
+            if Section.objects.filter(
+                project=section.project, name__iexact=params['name']).exists():
+                raise Exception("Section with this name already exists!")
             section.name = params['name']
         if 'lucene_search' in params:
             section.lucene_search = params['lucene_search']
