@@ -78,6 +78,9 @@ class ProjectDetailAPI(BaseDetailView):
     def _patch(self, params):
         project = Project.objects.get(pk=params['id']) 
         if 'name' in params:
+            if Project.objects.filter(
+                membership__user=self.request.user).filter(name__iexact=params['name']).exists():
+                raise Exception("Project with this name already exists!")
             project.name = params['name']
         if 'summary' in params:
             project.summary = params['summary']
