@@ -31,7 +31,7 @@ class ProjectListAPI(BaseListView):
 
     def _post(self, params):
         if Project.objects.filter(
-            membership__user=self.request.user).filter(name=params['name']).exists():
+            membership__user=self.request.user).filter(name__iexact=params['name']).exists():
             raise Exception("Project with this name already exists!")
 
         project = Project.objects.create(
