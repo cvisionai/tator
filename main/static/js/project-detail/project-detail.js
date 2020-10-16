@@ -304,9 +304,9 @@ class ProjectDetail extends TatorPage {
 
     deleteSection.addEventListener("confirmDelete", evt => {
       for (const child of this._allSections()) {
-        if (sectionCard._section) {
-          if (sectionCard._section.id == evt.detail.id) {
-            sectionCard.parentNode.removeChild(sectionCard);
+        if (child._section) {
+          if (child._section.id == evt.detail.id) {
+            child.parentNode.removeChild(child);
             this._folders.children[0].click();
           }
         }

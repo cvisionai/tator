@@ -10,10 +10,7 @@ class DeleteSectionForm extends ModalDialog {
     warning.textContent = "Warning: This cannot be undone";
     this._main.appendChild(warning);
 
-    const texts = [
-      "Section files and annotations will be deleted",
-      "Section shared links will be inaccessible",
-    ];
+    const texts = ["", ""];
     this._checks = new Array(texts.length);
     texts.forEach((item, index, array) => {
       this._checks[index] = document.createElement("labeled-checkbox");
@@ -53,16 +50,18 @@ class DeleteSectionForm extends ModalDialog {
     this._accept.addEventListener("click", async evt => {
       const projectId = this._project;
       const params = this._sectionParams;
-      fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .catch(err => console.log(err));
+      if (this._deleteMedia) {
+        fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+        })
+        .catch(err => console.log(err));
+      }
       fetch(`/rest/Section/${this._section.id}`, {
         method: "DELETE",
         credentials: "same-origin",
@@ -79,11 +78,20 @@ class DeleteSectionForm extends ModalDialog {
     });
   }
 
-  init(project, section, sectionParams) {
+  init(project, section, sectionParams, deleteMedia) {
     this._project = project;
     this._section = section;
     this._sectionParams = sectionParams;
-    this._title.nodeValue = `Delete "${section.name}"`;
+    this._deleteMedia = deleteMedia;
+    if (deleteMedia) {
+      this._title.nodeValue = `Delete "${section.name}" Media`;
+      this._checks[0].setAttribute("text", "Section files and annotations will be deleted");
+      this._checks[1].setAttribute("text", "Section shared links will be inaccessible");
+    } else {
+      this._title.nodeValue = `Delete "${section.name}"`;
+      this._checks[0].setAttribute("text", "Section only will be deleted");
+      this._checks[1].setAttribute("text", "Media will still be accessible from \"All Media\"");
+    }
     this._checks.forEach((item, index, array) => {
       item.checked = false;
     });
