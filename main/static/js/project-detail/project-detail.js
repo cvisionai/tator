@@ -37,14 +37,30 @@ class ProjectDetail extends TatorPage {
     this._folders.setAttribute("class", "sections");
     section.appendChild(this._folders);
 
-    //const savedSearchesHeader = document.createElement("h2");
-    //savedSearchesHeader.setAttribute("class", "py-4 h3 text-semibold");
-    //savedSearchesHeader.textContent = "Saved Searches";
-    //section.appendChild(savedSearchesHeader);
+    const savedSearchHeader = document.createElement("div");
+    savedSearchHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    section.appendChild(savedSearchHeader);
 
-    //this._savedSearches = document.createElement("ul");
-    //this._savedSearches.setAttribute("class", "sections");
-    //section.appendChild(this._savedSearches);
+    const savedSearchText = document.createElement("h2");
+    savedSearchText.setAttribute("class", "h3 text-semibold");
+    savedSearchText.textContent = "Saved Searches";
+    savedSearchHeader.appendChild(savedSearchText);
+
+    const addSavedSearchButton = document.createElement("button");
+    addSavedSearchButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    savedSearchHeader.appendChild(addSavedSearchButton);
+
+    const addSavedSearchSpan = document.createElement("span");
+    addSavedSearchSpan.setAttribute("class", "f1 px-1");
+    addSavedSearchSpan.textContent = "+";
+    addSavedSearchButton.appendChild(addSavedSearchSpan);
+
+    const addSavedSearchText = document.createTextNode("Add saved search");
+    addSavedSearchButton.appendChild(addSavedSearchText);
+
+    this._savedSearches = document.createElement("ul");
+    this._savedSearches.setAttribute("class", "sections");
+    section.appendChild(this._savedSearches);
 
     const mainSection = document.createElement("section");
     mainSection.setAttribute("class", "project__main py-3 px-6 flex-grow");
