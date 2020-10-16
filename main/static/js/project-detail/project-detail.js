@@ -211,7 +211,7 @@ class ProjectDetail extends TatorPage {
                               project: projectId,
                               ...spec};
           if (newSectionDialog._sectionType == "folder") {
-            card.init(sectionObj, true);
+            card.init(sectionObj, "folder");
             this._folders.appendChild(card);
             card.addEventListener("click", () => {
               this._selectSection(sectionObj, projectId);
@@ -221,7 +221,7 @@ class ProjectDetail extends TatorPage {
               card.active = true;
             });
           } else if (newSectionDialog._sectionType == "savedSearch") {
-            card.init(sectionObj, false);
+            card.init(sectionObj, "savedSearch");
             this._savedSearches.appendChild(card);
             card.addEventListener("click", () => {
               this._selectSection(sectionObj, projectId);
@@ -292,7 +292,8 @@ class ProjectDetail extends TatorPage {
     });
 
     this._removeCallback = evt => {
-      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams);
+      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams,
+                         evt.detail.deleteMedia);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
@@ -473,10 +474,15 @@ class ProjectDetail extends TatorPage {
           const hasSearch = (Boolean(section.lucene_search)
                              || Boolean(section.media_bools)
                              || Boolean(section.annotation_bools));
-          const isFolder = hasSection && !hasSearch;
+          let sectionType;
+          if (hasSection && !hasSearch) {
+            sectionType = "folder";
+          } else {
+            sectionType = "savedSearch";
+          }
           const card = document.createElement("section-card");
-          card.init(section, isFolder);
-          if (isFolder) {
+          card.init(section, sectionType);
+          if (sectionType == "folder") {
             this._folders.appendChild(card);
           } else {
             this._savedSearches.appendChild(card);
