@@ -46,17 +46,19 @@ class ProjectDetail extends TatorPage {
     savedSearchText.textContent = "Saved Searches";
     savedSearchHeader.appendChild(savedSearchText);
 
-    const addSavedSearchButton = document.createElement("button");
-    addSavedSearchButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
-    savedSearchHeader.appendChild(addSavedSearchButton);
+    this._addSavedSearchButton = document.createElement("button");
+    this._addSavedSearchButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    this._addSavedSearchButton.style.opacity = 0.5;
+    this._addSavedSearchButton.style.cursor = "not-allowed";
+    savedSearchHeader.appendChild(this._addSavedSearchButton);
 
     const addSavedSearchSpan = document.createElement("span");
     addSavedSearchSpan.setAttribute("class", "f1 px-1");
     addSavedSearchSpan.textContent = "+";
-    addSavedSearchButton.appendChild(addSavedSearchSpan);
+    this._addSavedSearchButton.appendChild(addSavedSearchSpan);
 
-    const addSavedSearchText = document.createTextNode("Add saved search");
-    addSavedSearchButton.appendChild(addSavedSearchText);
+    const addSavedSearchText = document.createTextNode("Add current search");
+    this._addSavedSearchButton.appendChild(addSavedSearchText);
 
     this._savedSearches = document.createElement("ul");
     this._savedSearches.setAttribute("class", "sections");
@@ -145,6 +147,14 @@ class ProjectDetail extends TatorPage {
       newSectionDialog.init("Add Folder", "folder");
       newSectionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
+    });
+
+    this._addSavedSearchButton.addEventListener("click", evt => {
+      if (this._addSavedSearchButton.style.cursor == "pointer") {
+        newSectionDialog.init("Save current search", "savedSearch");
+        newSectionDialog.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
+      }
     });
 
     newSectionDialog.addEventListener("close", evt => {
@@ -321,8 +331,12 @@ class ProjectDetail extends TatorPage {
       if (query != this._lastQuery) {
         if (query.length >= 3) {
           this._lastQuery = query;
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
         } else if (query == "") {
           this._lastQuery = null;
+          this._addSavedSearchButton.style.opacity = 0.5;
+          this._addSavedSearchButton.style.cursor = "not-allowed";
         }
         this._mediaSection.searchString = this._lastQuery;
         this._mediaSection.reload();
@@ -438,6 +452,8 @@ class ProjectDetail extends TatorPage {
         const params = new URLSearchParams(document.location.search.substring(1));
         if (params.has("search")) {
           this._mediaSection.searchString = params.get("search");
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
         }
         if (params.has("section")) {
           const sectionId = Number(params.get("section"));
