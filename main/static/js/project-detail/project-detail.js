@@ -182,13 +182,23 @@ class ProjectDetail extends TatorPage {
             .then(response => response.json())
             .then(section => {spec = section;});
           }
-          spec = {name: newSectionDialog._input.value}
+          spec.name = newSectionDialog._input.value;
           if (params.has("search")) {
             if (spec.lucene_search) {
               spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
             } else {
               spec.lucene_search = params.get("search");
             }
+          }
+          delete spec.id;
+          if (spec.annotation_bools === null) {
+            delete spec.annotation_bools;
+          }
+          if (spec.media_bools === null) {
+            delete spec.media_bools;
+          }
+          if (spec.tator_user_sections === null) {
+            delete spec.tator_user_sections;
           }
         } else if (newSectionDialog._sectionType == "playlist") {
           //TODO: Handle adding playlist
