@@ -4,3 +4,6 @@
 [submodule "scripts/packages/tator-py"]
 	path = scripts/packages/tator-py
 	url = https://github.com/cvisionai/tator-py.git
+[submodule "scripts/packages/tator-r"]
+	path = scripts/packages/tator-r
+	url = https://github.com/cvisionai/tator-r
