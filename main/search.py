@@ -207,7 +207,8 @@ class TatorSearch:
             # Get total duration of this file.
             aux['_duration'] = 0.0
             if entity.meta.dtype == 'video':
-                aux['_duration'] = entity.num_frames / entity.fps
+                if entity.num_frames is not None and entity.fps is not None:
+                    aux['_duration'] = entity.num_frames / entity.fps
 
             # Copy section name.
             if entity.attributes is not None:
