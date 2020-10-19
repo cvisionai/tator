@@ -1952,7 +1952,7 @@ class AnnotationCanvas extends TatorElement
 
   mouseOutHandler(mouseEvent)
   {
-    this._canvas.classList.remove("select-pointer");
+    this._textOverlay.classList.remove("select-pointer");
     if (this._emphasis != null && this._emphasis != this.activeLocalization)
     {
       this._emphasis = null;
@@ -1968,17 +1968,17 @@ class AnnotationCanvas extends TatorElement
     if (this._mouseMode == MouseMode.QUERY || this._mouseMode == MouseMode.SELECT)
     {
       // Clear old pointer type
-      cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
+      cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
       var localization = this.localizationByLocation(location);
       if (localization)
       {
         if (localization.frame != this.currentFrame())
         {
-          this._canvas.classList.add("select-not-allowed");
+          this._textOverlay.classList.add("select-not-allowed");
           return;
         }
         if(localization != this.activeLocalization) {
-          this._canvas.classList.add("select-pointer");
+          this._textOverlay.classList.add("select-pointer");
           this.emphasizeLocalization(localization);
         }
       }
@@ -1989,7 +1989,7 @@ class AnnotationCanvas extends TatorElement
 
         if (this._emphasis != null && this._emphasis != this.activeLocalization)
         {
-          this._canvas.classList.remove("select-pointer");
+          this._textOverlay.classList.remove("select-pointer");
           this._emphasis = null;
           this.refresh();
         }
@@ -2015,13 +2015,13 @@ class AnnotationCanvas extends TatorElement
       var localization = this.localizationByLocation(location);
       if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
           this._clipboard.isCutting(localization) && localization.id == this.activeLocalization.id) {
-        this._canvas.classList.add("select-not-allowed");
+        this._textOverlay.classList.add("select-not-allowed");
         this.emphasizeLocalization(this.activeLocaliztion);
       }
       else if (resizeType)
       {
         console.log(`resize type = ${resizeType}`);
-        this._canvas.classList.add("select-"+resizeType[0]);
+        this._textOverlay.classList.add("select-"+resizeType[0]);
       }
       else
       {
@@ -2031,24 +2031,24 @@ class AnnotationCanvas extends TatorElement
           // If we tripped in during a select, don't override the pointer
           if (mouseEvent.buttons == 0)
           {
-            this._canvas.classList.add("select-grab");
+            this._textOverlay.classList.add("select-grab");
           }
           else
           {
-            this._canvas.classList.add("select-grabbing");
+            this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
         }
         else if (localization)
         {
           // User moved off localization
-          this._canvas.classList.add("select-pointer");
+          this._textOverlay.classList.add("select-pointer");
           this.emphasizeLocalization(localization);
         }
         else
         {
           // User moved off localization
-          this._canvas.classList.remove("select-pointer");
+          this._textOverlay.classList.remove("select-pointer");
           if (this._emphasis != null)
           {
             this._emphasis = null;
@@ -2059,13 +2059,13 @@ class AnnotationCanvas extends TatorElement
     }
     if (this._mouseMode == MouseMode.ZOOM_ROI)
     {
-      this._canvas.classList.add("select-zoom-roi");
+      this._textOverlay.classList.add("select-zoom-roi");
     }
 
     if (this._mouseMode == MouseMode.NEW)
     {
-      cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
-      this._canvas.classList.add("select-crosshair");
+      cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
+      this._textOverlay.classList.add("select-crosshair");
     }
   }
 
@@ -2074,7 +2074,7 @@ class AnnotationCanvas extends TatorElement
   {
     if (this._mouseMode == MouseMode.SELECT || this._mouseMode == MouseMode.RESIZE)
     {
-      cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
+      cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     }
   }
 
@@ -2090,7 +2090,7 @@ class AnnotationCanvas extends TatorElement
       document.body.classList.remove("shortcuts-disabled");
       document.activeElement.blur();
     }
-    cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
+    cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     clickEvent.preventDefault();
     var clickLocation =
         this.scaleToViewport([clickEvent.offsetX, clickEvent.offsetY]);
@@ -2160,7 +2160,7 @@ class AnnotationCanvas extends TatorElement
       {
         if (localization.frame != this.currentFrame())
         {
-          this._canvas.classList.add("select-not-allowed");
+          this._textOverlay.classList.add("select-not-allowed");
           return;
         }
         this.selectLocalization(localization);
@@ -2170,11 +2170,11 @@ class AnnotationCanvas extends TatorElement
                                               poly);
 
         if (this._clipboard.isCutting(localization)) {
-          this._canvas.classList.add("select-not-allowed");
+          this._textOverlay.classList.add("select-not-allowed");
         }
         // Grab the target
         else if (this._canEdit) {
-            this._canvas.classList.add("select-grabbing");
+            this._textOverlay.classList.add("select-grabbing");
         }
       }
     }
@@ -2201,23 +2201,23 @@ class AnnotationCanvas extends TatorElement
           this._clipboard.isCutting(localization) && localization == this.activeLocalization)
 
       {
-        this._canvas.classList.add("select-not-allowed");
+        this._textOverlay.classList.add("select-not-allowed");
       }
       else if (resizeType)
       {
         this._mouseMode = MouseMode.RESIZE;
         this._impactVector=resizeType[1];
-        this._canvas.classList.add("select-"+resizeType[0]);
+        this._textOverlay.classList.add("select-"+resizeType[0]);
       }
       else if (localization == this.activeLocalization && this._canEdit)
       {
-        this._canvas.classList.add("select-grabbing");
+        this._textOverlay.classList.add("select-grabbing");
       }
       else if (localization)
       {
         if (localization.frame != this.currentFrame())
         {
-          this._canvas.classList.add("select-not-allowed");
+          this._textOverlay.classList.add("select-not-allowed");
           return;
         }
 
@@ -2242,7 +2242,7 @@ class AnnotationCanvas extends TatorElement
     }
     if (this._mouseMode == MouseMode.ZOOM_ROI)
     {
-      this._canvas.classList.add("select-crosshair");
+      this._textOverlay.classList.add("select-crosshair");
     }
   }
 
@@ -2724,7 +2724,7 @@ class AnnotationCanvas extends TatorElement
         this._mouseMode = MouseMode.NEW;
       }
       this.draft=objDescription;
-      this._canvas.classList.add("select-draw");
+      this._textOverlay.classList.add("select-draw");
       updateStatus("Ready for annotation.", "primary", -1);
       this._metaMode = metaMode;
     }
@@ -3306,7 +3306,7 @@ class AnnotationCanvas extends TatorElement
         {
           console.log("Moved = " + JSON.stringify(dragEvent));
           // TODO: Handle move event
-          cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
+          cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
           if (objType.dtype == 'box')
           {
             var localization=this.scaleToRelative(polyToBox(translatedPoly(dragEvent.start, dragEvent.end)));
@@ -3633,7 +3633,7 @@ class AnnotationCanvas extends TatorElement
 
   zoomOut()
   {
-    cursorTypes.forEach((t) => {this._canvas.classList.remove("select-"+t);});
+    cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     this._mouseMode = MouseMode.QUERY;
     updateStatus("Reset to full frame");
     this.resetRoi();
