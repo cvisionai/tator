@@ -26,6 +26,7 @@ class MediaStatsAPI(BaseDetailView):
         # Update query with aggregations.
         query['aggs']['download_size'] = {'sum': {'field': '_download_size'}}
         query['aggs']['total_size'] = {'sum': {'field': '_total_size'}}
+        query['aggs']['duration'] = {'sum': {'field': '_duration'}}
         query['size'] = 0
 
         # Do query.
@@ -34,5 +35,6 @@ class MediaStatsAPI(BaseDetailView):
         result = TatorSearch().search_raw(params['project'], query)
         response_data['download_size'] = result['aggregations']['download_size']['value']
         response_data['total_size'] = result['aggregations']['total_size']['value']
+        response_data['duration'] = result['aggregations']['duration']['value']
         return response_data
 
