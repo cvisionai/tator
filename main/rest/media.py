@@ -13,6 +13,7 @@ import requests
 
 from ..models import Media
 from ..models import MediaType
+from ..models import Section
 from ..models import Localization
 from ..models import State
 from ..models import Project
@@ -92,6 +93,18 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         if gid is not None:
             gid = str(gid)
 
+        # If section does not exist and is not an empty string, create a section.
+        tator_user_sections = ""
+        if section:
+            section_obj = Section.objects.filter(project=project, name__iexact=section)
+            if section_obj.exists():
+                tator_user_sections = section_obj[0].tator_user_sections
+            else:
+                tator_user_sections = str(uuid1())
+                Section.objects.create(project=Project.objects.get(pk=project),
+                                       name=section,
+                                       tator_user_sections=tator_user_sections)
+
         # Get the media type.
         if int(entity_type) == -1:
             media_types = MediaType.objects.filter(project=project)
@@ -113,7 +126,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
-        attributes={'tator_user_sections': section}
+        attributes={'tator_user_sections': tator_user_sections}
         if new_attributes:
             attributes.update(new_attributes)
         if media_type.dtype == 'image':
