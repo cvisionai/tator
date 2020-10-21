@@ -1,0 +1,95 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: tator-spot
+  region: us-east-2
+  version: "1.17"
+vpc:
+  subnets:
+    private:
+      us-east-2a:
+        id: "subnet-0578ad872189527fc"
+      us-east-2b:
+        id: "subnet-02a883a9ceb6c9b1d"
+      us-east-2c:
+        id: "subnet-0f825d63f5d339291"
+    public:
+      us-east-2a:
+        id: "subnet-0c6988232799dd84f"
+      us-east-2b:
+        id: "subnet-09e92e10120fa3914"
+      us-east-2c:
+        id: "subnet-08476848ecab76d8e"
+nodeGroups:
+  - name: ng-t3-ondemand
+    instanceType: t3.medium
+    labels:
+      cpuWorker: "no"
+      gpuWorker: "no"
+      webServer: "no"
+      dbServer: "no"
+      lifecycle: Ec2OnDemand
+      aws.amazon.com/spot: "false"
+    minSize: 3
+    maxSize: 3
+    desiredCapacity: 3
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/lifecycle: Ec2OnDemand
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+  - name: ng-4vcpu-16gb-spot
+    minSize: 0
+    maxSize: 5
+    desiredCapacity: 1
+    instancesDistribution:
+      instanceTypes: ["m5.xlarge", "m5n.xlarge", "m5d.xlarge", "m5dn.xlarge","m5a.xlarge", "m4.xlarge"] 
+      onDemandBaseCapacity: 0
+      onDemandPercentageAboveBaseCapacity: 0
+      spotAllocationStrategy: capacity-optimized
+    labels:
+      cpuWorker: "yes"
+      gpuWorker: "no"
+      webServer: "yes"
+      dbServer: "no"
+      lifecycle: Ec2Spot
+      intent: apps
+      aws.amazon.com/spot: "true"
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/lifecycle: Ec2Spot
+      k8s.io/cluster-autoscaler/node-template/label/intent: apps
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+  - name: ng-8vcpu-32gb-spot
+    minSize: 0
+    maxSize: 5
+    desiredCapacity: 1
+    instancesDistribution:
+      instanceTypes: ["m5.2xlarge", "m5n.2xlarge", "m5d.2xlarge", "m5dn.2xlarge","m5a.2xlarge", "m4.2xlarge"] 
+      onDemandBaseCapacity: 0
+      onDemandPercentageAboveBaseCapacity: 0
+      spotAllocationStrategy: capacity-optimized
+    labels:
+      cpuWorker: "yes"
+      gpuWorker: "no"
+      webServer: "yes"
+      dbServer: "no"
+      lifecycle: Ec2Spot
+      intent: apps
+      aws.amazon.com/spot: "true"
+    tags:
+      k8s.io/cluster-autoscaler/node-template/label/lifecycle: Ec2Spot
+      k8s.io/cluster-autoscaler/node-template/label/intent: apps
+      k8s.io/cluster-autoscaler/node-template/label/cpuWorker: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "no"
+      k8s.io/cluster-autoscaler/node-template/label/webServer: "yes"
+      k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
+    iam:
+      withAddonPolicies:
+        autoScaler: true

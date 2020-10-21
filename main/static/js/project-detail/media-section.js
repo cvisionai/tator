@@ -63,7 +63,7 @@ class MediaSection extends TatorElement {
       this._upload.setAttribute("section", "");
     } else {
       this._sectionName = section.name;
-      this._upload.setAttribute("section", section.tator_user_sections);
+      this._upload.setAttribute("section", section.name);
     }
     this._project = project;
     this._section = section;
