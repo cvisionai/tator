@@ -69,7 +69,7 @@ class TranscodeAPI(BaseListView):
                                      allow_redirects=True,
                                      headers={'Authorization': f'Token {token}',
                                               'Upload-Uid': f'{upload_uid}'})
-            upload_size = response.headers.get('Upload-Length', None)
+            upload_size = int(response.headers.get('Upload-Length', None))
         else:
             # TODO: get file size of remote
             upload_size = None

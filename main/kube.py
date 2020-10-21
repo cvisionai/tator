@@ -31,7 +31,7 @@ else:
 
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
-    return "{}Mi".format(num_megabytes)
+    return f"{num_megabytes}Mi"
 
 def get_client_image_name():
     """ Returns the location and version of the client image to use """
