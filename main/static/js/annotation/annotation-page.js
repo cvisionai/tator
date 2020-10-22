@@ -542,7 +542,7 @@ class AnnotationPage extends TatorPage {
               // select track takes care of frame jump
               canvas.selectTrack(evt.detail.data);
             }
-            else if ('frame' in evt.detail.data)
+            else if ('frame' in evt.detail.data) {
               canvas.goToFrame(parseInt(evt.detail.data.frame));
             }
           }
