@@ -40,9 +40,13 @@ class SectionMore extends TatorElement {
     this._rename.setAttribute("text", "Rename section");
     otherButtons.appendChild(this._rename);
 
-    this._del = document.createElement("delete-button");
-    this._del.setAttribute("text", "Delete section");
-    otherButtons.appendChild(this._del);
+    this._deleteSection = document.createElement("delete-button");
+    this._deleteSection.init("Delete section");
+    otherButtons.appendChild(this._deleteSection);
+
+    this._deleteMedia = document.createElement("delete-button");
+    this._deleteMedia.init("Delete media", "text-red");
+    otherButtons.appendChild(this._deleteMedia);
 
     this._algorithmMenu.addEventListener("click", () => {
       details.removeAttribute("open");
@@ -63,19 +67,26 @@ class SectionMore extends TatorElement {
       this.dispatchEvent(new Event("rename", {composed: true}));
     });
 
-    this._del.addEventListener("click", evt => {
+    this._deleteSection.addEventListener("click", evt => {
       details.removeAttribute("open");
-      this.dispatchEvent(new Event("delete", {composed: true}));
+      this.dispatchEvent(new Event("deleteSection", {composed: true}));
+    });
+
+    this._deleteMedia.addEventListener("click", evt => {
+      details.removeAttribute("open");
+      this.dispatchEvent(new Event("deleteMedia", {composed: true}));
     });
   }
 
   set section(val) {
     if (val === null) {
       this._rename.style.display = "none";
-      this._del.style.display = "none";
+      this._deleteSection.style.display = "none";
+      this._deleteMedia.style.display = "none";
     } else {
       this._rename.style.display = "block";
-      this._del.style.display = "block";
+      this._deleteSection.style.display = "block";
+      this._deleteMedia.style.display = "block";
     }
   }
 
@@ -86,7 +97,8 @@ class SectionMore extends TatorElement {
     if (!hasPermission(val, "Can Transfer")) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
-      this._del.style.display = "none";
+      this._deleteSection.style.display = "none";
+      this._deleteMedia.style.display = "none";
     }
     if (!hasPermission(val, "Can Edit")) {
       this._rename.style.display = "none";

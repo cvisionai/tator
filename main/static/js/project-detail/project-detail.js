@@ -37,14 +37,32 @@ class ProjectDetail extends TatorPage {
     this._folders.setAttribute("class", "sections");
     section.appendChild(this._folders);
 
-    //const savedSearchesHeader = document.createElement("h2");
-    //savedSearchesHeader.setAttribute("class", "py-4 h3 text-semibold");
-    //savedSearchesHeader.textContent = "Saved Searches";
-    //section.appendChild(savedSearchesHeader);
+    const savedSearchHeader = document.createElement("div");
+    savedSearchHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    section.appendChild(savedSearchHeader);
 
-    //this._savedSearches = document.createElement("ul");
-    //this._savedSearches.setAttribute("class", "sections");
-    //section.appendChild(this._savedSearches);
+    const savedSearchText = document.createElement("h2");
+    savedSearchText.setAttribute("class", "h3 text-semibold");
+    savedSearchText.textContent = "Saved Searches";
+    savedSearchHeader.appendChild(savedSearchText);
+
+    this._addSavedSearchButton = document.createElement("button");
+    this._addSavedSearchButton.setAttribute("class", "px-0 f2 btn-clear text-gray hover-text-white");
+    this._addSavedSearchButton.style.opacity = 0.5;
+    this._addSavedSearchButton.style.cursor = "not-allowed";
+    savedSearchHeader.appendChild(this._addSavedSearchButton);
+
+    const addSavedSearchSpan = document.createElement("span");
+    addSavedSearchSpan.setAttribute("class", "f1 px-1");
+    addSavedSearchSpan.textContent = "+";
+    this._addSavedSearchButton.appendChild(addSavedSearchSpan);
+
+    const addSavedSearchText = document.createTextNode("Add current search");
+    this._addSavedSearchButton.appendChild(addSavedSearchText);
+
+    this._savedSearches = document.createElement("ul");
+    this._savedSearches.setAttribute("class", "sections");
+    section.appendChild(this._savedSearches);
 
     const mainSection = document.createElement("section");
     mainSection.setAttribute("class", "project__main py-3 px-6 flex-grow");
@@ -131,14 +149,57 @@ class ProjectDetail extends TatorPage {
       this.setAttribute("has-open-modal", "");
     });
 
-    newSectionDialog.addEventListener("close", evt => {
+    this._addSavedSearchButton.addEventListener("click", evt => {
+      if (this._addSavedSearchButton.style.cursor == "pointer") {
+        newSectionDialog.init("Save current search", "savedSearch");
+        newSectionDialog.setAttribute("is-open", "");
+        this.setAttribute("has-open-modal", "");
+      }
+    });
+
+    newSectionDialog.addEventListener("close", async evt => {
       if (newSectionDialog._confirm) {
         let spec;
         if (newSectionDialog._sectionType == "folder") {
           spec = {name: newSectionDialog._input.value,
                   tator_user_sections: uuidv1()};
         } else if (newSectionDialog._sectionType == "savedSearch") {
-          //TODO: Handle adding saved search
+          spec = {};
+
+          // Check if an existing section is selected.
+          const params = new URLSearchParams(document.location.search.substring(1));
+          if (params.has("section")) {
+            const sectionId = Number(params.get("section"));
+            await fetch(`/rest/Section/${sectionId}`, {
+              method: "GET",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+            })
+            .then(response => response.json())
+            .then(section => {spec = section;});
+          }
+          spec.name = newSectionDialog._input.value;
+          if (params.has("search")) {
+            if (spec.lucene_search) {
+              spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
+            } else {
+              spec.lucene_search = params.get("search");
+            }
+          }
+          delete spec.id;
+          if (spec.annotation_bools === null) {
+            delete spec.annotation_bools;
+          }
+          if (spec.media_bools === null) {
+            delete spec.media_bools;
+          }
+          if (spec.tator_user_sections === null) {
+            delete spec.tator_user_sections;
+          }
         } else if (newSectionDialog._sectionType == "playlist") {
           //TODO: Handle adding playlist
         }
@@ -155,17 +216,26 @@ class ProjectDetail extends TatorPage {
         })
         .then(response => response.json())
         .then(section => {
+          const card = document.createElement("section-card");
+          const sectionObj = {id: section.id,
+                              project: projectId,
+                              ...spec};
           if (newSectionDialog._sectionType == "folder") {
-            const card = document.createElement("section-card");
-            const sectionObj = {id: section.id,
-                                project: projectId,
-                                name: spec.name,
-                                tator_user_sections: spec.tator_user_sections};
-            card.init(sectionObj, true);
+            card.init(sectionObj, "folder");
             this._folders.appendChild(card);
             card.addEventListener("click", () => {
               this._selectSection(sectionObj, projectId);
-              for (const child of this._folders.children) {
+              for (const child of this._allSections()) {
+                child.active = false;
+              }
+              card.active = true;
+            });
+          } else if (newSectionDialog._sectionType == "savedSearch") {
+            card.init(sectionObj, "savedSearch");
+            this._savedSearches.appendChild(card);
+            card.addEventListener("click", () => {
+              this._selectSection(sectionObj, projectId);
+              for (const child of this._allSections()) {
                 child.active = false;
               }
               card.active = true;
@@ -207,7 +277,7 @@ class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("newName", evt => {
-      for (const sectionCard of this._folders.children) {
+      for (const child of this._allSections()) {
         if (sectionCard._section) {
           if (sectionCard._section.id == evt.detail.id) {
             sectionCard.rename(evt.detail.sectionName);
@@ -232,7 +302,8 @@ class ProjectDetail extends TatorPage {
     });
 
     this._removeCallback = evt => {
-      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams);
+      deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams,
+                         evt.detail.deleteMedia);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
@@ -242,10 +313,10 @@ class ProjectDetail extends TatorPage {
     });
 
     deleteSection.addEventListener("confirmDelete", evt => {
-      for (const sectionCard of this._folders.children) {
-        if (sectionCard._section) {
-          if (sectionCard._section.id == evt.detail.id) {
-            sectionCard.parentNode.removeChild(sectionCard);
+      for (const child of this._allSections()) {
+        if (child._section) {
+          if (child._section.id == evt.detail.id) {
+            child.parentNode.removeChild(child);
             this._folders.children[0].click();
           }
         }
@@ -303,10 +374,14 @@ class ProjectDetail extends TatorPage {
     this._search.addEventListener("filterProject", evt => {
       const query = evt.detail.query;
       if (query != this._lastQuery) {
-        if (query.length >= 3) {
+        if (query) {
           this._lastQuery = query;
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
         } else if (query == "") {
           this._lastQuery = null;
+          this._addSavedSearchButton.style.opacity = 0.5;
+          this._addSavedSearchButton.style.cursor = "not-allowed";
         }
         this._mediaSection.searchString = this._lastQuery;
         this._mediaSection.reload();
@@ -316,6 +391,12 @@ class ProjectDetail extends TatorPage {
 
   static get observedAttributes() {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
+  }
+
+  _allSections() {
+    const folders = Array.from(this._folders.children);
+    const savedSearches = Array.from(this._savedSearches.children);
+    return folders.concat(savedSearches);
   }
 
   _notify(title, message, error_or_ok) {
@@ -392,7 +473,7 @@ class ProjectDetail extends TatorPage {
         home.init(null, false);
         home.addEventListener("click", () => {
           this._selectSection(null, projectId);
-          for (const child of this._folders.children) {
+          for (const child of this._allSections()) {
             child.active = false;
           }
           home.active = true;
@@ -403,17 +484,22 @@ class ProjectDetail extends TatorPage {
           const hasSearch = (Boolean(section.lucene_search)
                              || Boolean(section.media_bools)
                              || Boolean(section.annotation_bools));
-          const isFolder = hasSection && !hasSearch;
+          let sectionType;
+          if (hasSection && !hasSearch) {
+            sectionType = "folder";
+          } else {
+            sectionType = "savedSearch";
+          }
           const card = document.createElement("section-card");
-          card.init(section, isFolder);
-          if (isFolder) {
+          card.init(section, sectionType);
+          if (sectionType == "folder") {
             this._folders.appendChild(card);
           } else {
-            //this._savedSearches.appendChild(card);
+            this._savedSearches.appendChild(card);
           }
           card.addEventListener("click", () => {
             this._selectSection(section, projectId);
-            for (const child of this._folders.children) {
+            for (const child of this._allSections()) {
               child.active = false;
             }
             card.active = true;
@@ -422,10 +508,12 @@ class ProjectDetail extends TatorPage {
         const params = new URLSearchParams(document.location.search.substring(1));
         if (params.has("search")) {
           this._mediaSection.searchString = params.get("search");
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
         }
         if (params.has("section")) {
           const sectionId = Number(params.get("section"));
-          for (const child of this._folders.children) {
+          for (const child of this._allSections()) {
             if (child._section) {
               if (child._section.id == sectionId) {
                 child.click();

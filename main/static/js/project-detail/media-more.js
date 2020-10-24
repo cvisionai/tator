@@ -42,7 +42,7 @@ class MediaMore extends TatorElement {
     otherButtons.appendChild(this._rename);
 
     this._del = document.createElement("delete-button");
-    this._del.setAttribute("text", "Delete file");
+    this._del.init("Delete file");
     otherButtons.appendChild(this._del);
 
     this._algorithmMenu.addEventListener("click", () => {
