@@ -1,5 +1,6 @@
 import logging
 import os
+from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
 from django.conf import settings
@@ -10,7 +11,6 @@ from ..kube import TatorTranscode
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
-from ..models import Section
 from ..schema import TranscodeSchema
 from ..notify import Notify
 
@@ -48,13 +48,6 @@ class TranscodeAPI(BaseListView):
         attributes = params.get('attributes',None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
-        # If section does not exist and is not an empty string, create a section.
-        if section:
-            if not Section.objects.filter(tator_user_sections=section).exists():
-                Section.objects.create(project=Project.objects.get(pk=project),
-                                       name=section,
-                                       tator_user_sections=section)
-
         type_objects = MediaType.objects.filter(project=project)
         if entity_type != -1:
             #If we are transcoding and not unpacking we know its a video type we need
@@ -76,7 +69,7 @@ class TranscodeAPI(BaseListView):
                                      allow_redirects=True,
                                      headers={'Authorization': f'Token {token}',
                                               'Upload-Uid': f'{upload_uid}'})
-            upload_size = response.headers.get('Upload-Length', None)
+            upload_size = int(response.headers.get('Upload-Length', None))
         else:
             # TODO: get file size of remote
             upload_size = None

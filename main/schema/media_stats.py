@@ -16,7 +16,7 @@ class MediaStatsSchema(AutoSchema):
 
     def get_description(self, path, method):
         return dedent("""\
-        Retrieve count, download size, and total size of a media list.
+        Retrieve count, download size, total size, and duration of a media list.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,
         but only returns statistics about the media.

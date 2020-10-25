@@ -63,7 +63,7 @@ class MediaSection extends TatorElement {
       this._upload.setAttribute("section", "");
     } else {
       this._sectionName = section.name;
-      this._upload.setAttribute("section", section.tator_user_sections);
+      this._upload.setAttribute("section", section.name);
     }
     this._project = project;
     this._section = section;
@@ -649,12 +649,24 @@ class MediaSection extends TatorElement {
 
     this._more.addEventListener("rename", this._rename.bind(this));
 
-    this._more.addEventListener("delete", evt => {
+    this._more.addEventListener("deleteSection", evt => {
       this.dispatchEvent(new CustomEvent("remove", {
         detail: {
           sectionParams: this._sectionParams(),
           section: this._section,
           projectId: this._project,
+          deleteMedia: false,
+        }
+      }));
+    });
+
+    this._more.addEventListener("deleteMedia", evt => {
+      this.dispatchEvent(new CustomEvent("remove", {
+        detail: {
+          sectionParams: this._sectionParams(),
+          section: this._section,
+          projectId: this._project,
+          deleteMedia: true,
         }
       }));
     });

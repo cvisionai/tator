@@ -16,9 +16,9 @@ class SectionCard extends TatorElement {
     this._link.appendChild(this._title);
   }
 
-  init(section, isFolder) {
+  init(section, sectionType) {
     this._section = section;
-    this._isFolder = isFolder;
+    this._sectionType = sectionType;
     if (section === null) {
       this._title.textContent = "All Media";
     } else {
@@ -39,18 +39,31 @@ class SectionCard extends TatorElement {
 
     // Null section means display all media.
     if (section === null) {
-        const path = document.createElementNS(svgNamespace, "path");
-        path.setAttribute("d", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z");
-        svg.appendChild(path);
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("d", "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z");
+      svg.appendChild(path);
 
-        const poly = document.createElementNS(svgNamespace, "polyline");
-        poly.setAttribute("points", "9 22 9 12 15 12 15 22");
-        svg.appendChild(poly);
+      const poly = document.createElementNS(svgNamespace, "polyline");
+      poly.setAttribute("points", "9 22 9 12 15 12 15 22");
+      svg.appendChild(poly);
     }
-    if (isFolder) {
-        const path = document.createElementNS(svgNamespace, "path");
-        path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
-        svg.appendChild(path);
+    if (sectionType == "folder") {
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
+      svg.appendChild(path);
+    } else if (sectionType == "savedSearch") {
+      const circle = document.createElementNS(svgNamespace, "circle");
+      circle.setAttribute("cx", "11");
+      circle.setAttribute("cy", "11");
+      circle.setAttribute("r", "8");
+      svg.appendChild(circle);
+
+      const line = document.createElementNS(svgNamespace, "line");
+      line.setAttribute("x1", "21");
+      line.setAttribute("y1", "21");
+      line.setAttribute("x2", "16.65");
+      line.setAttribute("y2", "16.65");
+      svg.appendChild(line);
     }
   }
 

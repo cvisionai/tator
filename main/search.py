@@ -130,6 +130,7 @@ class TatorSearch:
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
+                '_duration': {'type': 'float'},
                 '_gid': {'type': 'keyword'},
                 '_uid': {'type': 'keyword'},
             }},
@@ -202,6 +203,12 @@ class TatorSearch:
             total_size, download_size = mediaFileSizes(entity)
             aux['_total_size'] = total_size
             aux['_download_size'] = download_size
+
+            # Get total duration of this file.
+            aux['_duration'] = 0.0
+            if entity.meta.dtype == 'video':
+                if entity.num_frames is not None and entity.fps is not None:
+                    aux['_duration'] = entity.num_frames / entity.fps
 
             # Copy section name.
             if entity.attributes is not None:
