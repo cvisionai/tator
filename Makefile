@@ -461,6 +461,35 @@ python-bindings: tator-image
 	python3 setup.py sdist bdist_wheel
 	cd ../../..
 
+.PHONY: r-bindings
+r-bindings: tator-image
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
+	echo "About to cd"
+	cd scripts/packages/tator-r
+	echo "Done with cd"
+	rm -rf tmp
+	echo "Done with rm"
+	mkdir -p tmp
+	echo "Done with mkdir"
+	./codegen.py schema.yaml
+	echo "Done with codegen"
+	docker run -it --rm \
+		-v $(shell pwd):/pwd \
+		-v $(shell pwd)/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
+		generate -c /pwd/config.json \
+		-i /pwd/tator-openapi-schema.yaml \
+		-g r -o /out/tator-r-new-bindings -t /pwd/template
+	rm schema.yaml
+	rm -f R/generated_*
+	cd $(shell pwd)/tmp/tator-r-new-bindings/R && \
+		for f in $$(ls -l | awk -F':[0-9]* ' '/:/{print $$2}'); do cp -- "$$f" "../../../R/generated_$$f"; done
+	docker run -it --rm \
+		-v $(shell pwd):/pwd \
+		r-base:latest \
+		Rscript -e "devtools::document()" && \
+		Rscript -e "pkgdown::build_site()"
+	cd ../../..
+
 TOKEN=$(shell cat token.txt)
 HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
 .PHONY: pytest
