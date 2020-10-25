@@ -464,30 +464,23 @@ python-bindings: tator-image
 .PHONY: r-bindings
 r-bindings: tator-image
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
-	echo "About to cd"
-	cd scripts/packages/tator-r
-	echo "Done with cd"
-	rm -rf tmp
-	echo "Done with rm"
-	mkdir -p tmp
-	echo "Done with mkdir"
-	./codegen.py schema.yaml
-	echo "Done with codegen"
+	rm -rf scripts/packages/tator-r/tmp
+	mkdir -p scripts/packages/tator-r/tmp
+	./scripts/packages/tator-r/codegen.py scripts/packages/tator-r/schema.yaml
 	docker run -it --rm \
-		-v $(shell pwd):/pwd \
-		-v $(shell pwd)/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
+		-v $(shell pwd)/scripts/packages/tator-r:/pwd \
+		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
 		generate -c /pwd/config.json \
-		-i /pwd/tator-openapi-schema.yaml \
-		-g r -o /out/tator-r-new-bindings -t /pwd/template
-	rm schema.yaml
-	rm -f R/generated_*
-	cd $(shell pwd)/tmp/tator-r-new-bindings/R && \
+		-i /pwd/schema.yaml \
+		-g r -o /out/tator-r-new-bindings -t /pwd/templates
+	rm scripts/packages/tator-r/schema.yaml
+	rm -f scripts/packages/tator-r/R/generated_*
+	cd $(shell pwd)/scripts/packages/tator-r/tmp/tator-r-new-bindings/R && \
 		for f in $$(ls -l | awk -F':[0-9]* ' '/:/{print $$2}'); do cp -- "$$f" "../../../R/generated_$$f"; done
 	docker run -it --rm \
-		-v $(shell pwd):/pwd \
-		r-base:latest \
-		Rscript -e "devtools::document()" && \
-		Rscript -e "pkgdown::build_site()"
+		-v $(shell pwd)/scripts/packages/tator-r:/tator \
+		rocker/tidyverse:latest \
+		/bin/sh -c "R --slave -e \"devtools::install_deps('/tator')\"; R CMD build tator; R CMD INSTALL tator_*.tar.gz; R --slave -e \"install.packages('pkgdown')\"; Rscript -e \"devtools::document('tator')\"; Rscript -e \"pkgdown::build_site('tator')\""
 	cd ../../..
 
 TOKEN=$(shell cat token.txt)
