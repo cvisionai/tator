@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx al
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
+IMAGES=python-bindings r-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -465,6 +465,7 @@ python-bindings: tator-image
 r-bindings: tator-image
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
 	rm -rf scripts/packages/tator-r/tmp
+	rm -rf scripts/packages/tator-r/docs
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py scripts/packages/tator-r/schema.yaml
 	docker run -it --rm \
@@ -473,6 +474,9 @@ r-bindings: tator-image
 		generate -c /pwd/config.json \
 		-i /pwd/schema.yaml \
 		-g r -o /out/tator-r-new-bindings -t /pwd/templates
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
+		/bin/sh -c "chown -R nobody:nogroup /out"
 	rm scripts/packages/tator-r/schema.yaml
 	rm -f scripts/packages/tator-r/R/generated_*
 	cd $(shell pwd)/scripts/packages/tator-r/tmp/tator-r-new-bindings/R && \
@@ -480,8 +484,16 @@ r-bindings: tator-image
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-r:/tator \
 		rocker/tidyverse:latest \
-		/bin/sh -c "R --slave -e \"devtools::install_deps('/tator')\"; R CMD build tator; R CMD INSTALL tator_*.tar.gz; R --slave -e \"install.packages('pkgdown')\"; Rscript -e \"devtools::document('tator')\"; Rscript -e \"pkgdown::build_site('tator')\""
-	cd ../../..
+		/bin/sh -c "R --slave -e \"devtools::install_deps('/tator')\"; \
+		R CMD build tator; R CMD INSTALL tator_*.tar.gz; \
+		R --slave -e \"install.packages('pkgdown')\"; \
+		Rscript -e \"devtools::document('tator')\"; \
+		Rscript -e \"pkgdown::build_site('tator')\"; \
+		chown -R $(shell id -u):$(shell id -g) /tator"
+	rm -rf $(shell pwd)/doc/_build/html/tator-r
+	cp -r $(shell pwd)/scripts/packages/tator-r/docs $(shell pwd)/doc/_build/html/tator-r
+	touch $(shell pwd)/doc/tator-r/overview.rst
+	touch $(shell pwd)/doc/tator-r/reference/api.rst
 
 TOKEN=$(shell cat token.txt)
 HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')

@@ -60,7 +60,27 @@ Installing
    ../tator-py/examples
    ../tator-py/running-tests
 
+R API
++++++
 
+`tator` is the R package to interface with the web services provided by
+tator.
+
+Installing
+^^^^^^^^^^
+
+.. code-block:: bash
+
+   install.packages('tator')
+   # or
+   R CMD INSTALL tator_*.tar.gz
+
+.. toctree::
+   :maxdepth: 2
+   :caption: R Bindings (tator):
+
+   ../tator-r/overview
+   ../tator-r/reference/api
 
 Legacy Python API
 +++++++++++++++++
