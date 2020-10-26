@@ -55,7 +55,7 @@ class UploadElement extends TatorElement {
     let ext = comps.join('.'); // rejoin extension
 
     const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif)$/i);
-    const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov)$/i);
+    const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts)$/i);
     const isArchive = ext.match(/^(zip|tar)/i);
     for (let idx = 0; idx < this._mediaTypes.length; idx++) {
       // TODO: It is possible for users to define two media types with
