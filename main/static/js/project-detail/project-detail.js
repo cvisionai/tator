@@ -532,15 +532,12 @@ class ProjectDetail extends TatorPage {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "username":
-        //this._uploadButton.setAttribute("username", newValue);
         break;
       case "project-id":
-        //this._uploadButton.setAttribute("project-id", newValue);
         this._algorithmButton.setAttribute("project-id", newValue);
         this._init();
         break;
       case "token":
-        //this._uploadButton.setAttribute("token", newValue);
         break;
     }
   }
