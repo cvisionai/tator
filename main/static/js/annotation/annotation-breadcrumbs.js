@@ -27,6 +27,10 @@ class AnnotationBreadcrumbs extends TatorElement {
     this._fileText.setAttribute("class", "text-white text-semibold");
     div.appendChild(this._fileText);
 
+    this._posText = document.createElement("span");
+    this._posText.setAttribute("class", "text-gray px-1");
+    div.appendChild(this._posText);
+
     this._sectionName();
   }
 
@@ -46,6 +50,10 @@ class AnnotationBreadcrumbs extends TatorElement {
         this._fileText.textContent = newValue;
         break;
     }
+  }
+
+  setPosition(pos, count) {
+    this._posText.textContent = `(${pos} of ${count})`;
   }
 
   _detailUrl() {

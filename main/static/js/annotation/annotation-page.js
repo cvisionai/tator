@@ -207,7 +207,37 @@ class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             this.enableEditing(true);
           });
-
+          const searchParams = new URLSearchParams(window.location.search);
+          const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
+          searchParams.set("after", data.name);
+          const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
+          const countPromise = fetchRetry(countUrl, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+          const afterPromise = fetchRetry(afterUrl, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+          Promise.all([countPromise, afterPromise])
+          .then(([countResponse, afterResponse]) => {
+            const countData = countResponse.json();
+            const afterData = afterResponse.json();
+            Promise.all([countData, afterData])
+            .then(([count, after]) => {
+              this._breadcrumbs.setPosition(count - after, count);
+            });
+          });
         })
         .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
