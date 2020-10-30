@@ -241,6 +241,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
@@ -360,6 +361,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
@@ -408,6 +410,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
@@ -451,6 +454,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
@@ -494,6 +498,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
@@ -533,6 +538,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'retryStrategy': {
+                'retryPolicy': 'Always',
                 'limit': 3,
                 'backoff': {
                     'duration': '5s',
