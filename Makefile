@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx al
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings r-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
+IMAGES=r-bindings python-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -462,10 +462,9 @@ python-bindings: tator-image
 	cd ../../..
 
 .PHONY: r-bindings
-r-bindings: tator-image
+r-bindings: 
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
-	rm -rf scripts/packages/tator-r/tmp
-	rm -rf scripts/packages/tator-r/docs
+	rm -rf scripts/packages/tator-r/tmp scripts/packages/tator-r/docs
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py scripts/packages/tator-r/schema.yaml
 	docker run -it --rm \
