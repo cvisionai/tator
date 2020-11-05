@@ -674,6 +674,11 @@ class AnnotationCanvas extends TatorElement
     this._textOverlay.style.display = "none"; // Don't display until a resize
     this._shadow.appendChild(this._textOverlay);
 
+    this.overlayTextStyle =
+      {"fontSize": "24pt",
+       "fontWeight": "bold",
+       "color": "white"};
+
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
     this._contextMenuTrack.style.zIndex = 2;
@@ -826,13 +831,13 @@ class AnnotationCanvas extends TatorElement
                                     d_bad_tz.getMilliseconds()));
 
           // Output to the text format specified by the media type schema
-          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options)});
+          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
         };
 
         // Run first update
         update_function(0);
 
-        if (val.dtype == "video")
+        if (val.dtype == "video" || val.dtype == "multi")
         {
           this.addEventListener("frameChange", (evt) => {
             const frame = evt.detail.frame;
@@ -1033,14 +1038,20 @@ class AnnotationCanvas extends TatorElement
     return this._domParents;
   }
 
-  setupResizeHandler(dims)
+  setupResizeHandler(dims, numGridRows)
   {
     const ratio=dims[0]/dims[1];
     var that = this;
     var resizeHandler = function()
     {
       // 175 is a magic number here matching the header + footer
-      const maxHeight = window.innerHeight-175;
+      var maxHeight;
+      if (numGridRows) {
+         maxHeight = (window.innerHeight - 175) / numGridRows;
+      }
+      else {
+         maxHeight = window.innerHeight-175;
+      }
       const maxWidth = maxHeight*ratio;
       that._canvas.style.maxHeight=`${maxHeight}px`;
       that.parentElement.style.maxWidth=`${maxWidth}px`;

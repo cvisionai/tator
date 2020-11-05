@@ -216,9 +216,22 @@ favorite-button {
   margin-right: $spacing-2;
 }
 
+.annotation__multi-grid {
+  display: grid;
+}
+
+.annotation__multi-grid-entry {
+  justify-self: center;
+  align-self: center;
+}
+
 .annotation__multi-player {
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
+  margin-bottom: $spacing-3;
+  margin-top: $spacing-3;
   &.is-full-screen {
     margin-right: $spacing-3;
 

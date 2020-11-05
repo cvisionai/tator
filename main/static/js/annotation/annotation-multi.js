@@ -3,11 +3,10 @@ class AnnotationMulti extends TatorElement {
     super();
 
     this._playerDiv = document.createElement("div");
-    this._playerDiv.setAttribute("class", "annotation__video-player d-flex flex-column rounded-bottom-2");
+    this._playerDiv.setAttribute("class", "annotation__multi-player rounded-bottom-2");
     this._shadow.appendChild(this._playerDiv);
 
     this._vidDiv = document.createElement("div");
-    this._vidDiv.setAttribute("class", "annotation__multi-player d-flex flex-row rounded-bottom-2");
     this._playerDiv.appendChild(this._vidDiv);
 
     const div = document.createElement("div");
@@ -348,7 +347,12 @@ class AnnotationMulti extends TatorElement {
                              (evt) => {
                                global_frame_change(idx,evt);
                              });
-      this._videos[idx].loadFromVideoObject(video_info, this._quality, idx==0)
+      const smallTextStyle =
+        {"fontSize": "16pt",
+         "fontWeight": "bold",
+         "color": "white"};
+      this._videos[idx].overlayTextStyle = smallTextStyle;
+      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0]);
       this.parent._getMetadataTypes(this,
                                     this._videos[idx]._canvas,
                                     idx != 0, //whether to block signal registration
@@ -370,7 +374,7 @@ class AnnotationMulti extends TatorElement {
 
     let video_resp = [];
     let multi_container = document.createElement("div");
-    multi_container.style.display = "grid";
+    multi_container.setAttribute("class", "annotation__multi-grid")
     multi_container.style.gridTemplateColumns =
       "auto ".repeat(this._multi_layout[1]);
     multi_container.style.gridTemplateRows =
@@ -379,13 +383,16 @@ class AnnotationMulti extends TatorElement {
     let idx = 0;
     for (const vid_id of val.media_files['ids'])
     {
+      const wrapper_div = document.createElement("div");
+      wrapper_div.setAttribute("class", "annotation__multi-grid-entry d-flex flex-items-center ");
+      multi_container.appendChild(wrapper_div);
+
       let roi_vid = document.createElement("video-canvas");
       roi_vid.style.gridColumn = (idx % this._multi_layout[1])+1;
       roi_vid.style.gridRow = Math.floor(idx / this._multi_layout[1])+1;
 
       this._videos.push(roi_vid);
-      roi_vid.domParents.push({"object":this});
-      multi_container.appendChild(roi_vid);
+      wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}`));
       idx += 1;
     }
@@ -607,7 +614,7 @@ class AnnotationMulti extends TatorElement {
         video.selectTrack(track, frameHint);
       }
     }
-    
+
   }
 
   deselectTrack() {
