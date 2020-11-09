@@ -11,6 +11,7 @@ class CanvasContextMenu extends TatorElement {
     this._shadow.appendChild(this._div);
 
     this._buttons = {};
+    this._numEntries = 0;
   }
 
   addMenuEntry(newText, clickCallback)
@@ -26,6 +27,12 @@ class CanvasContextMenu extends TatorElement {
 
     this._div.appendChild(button);
     this._buttons[newText] = button;
+    this._numEntries += 1;
+  }
+
+  hasEntries()
+  {
+    return this._numEntries > 0;
   }
 
   hideMenu()

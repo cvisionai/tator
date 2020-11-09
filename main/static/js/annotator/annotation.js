@@ -704,6 +704,12 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuLoc.disableEntry("Add to main track", true, "Need to set main track first");
     this._createNewTrackMenuEntries = [];
 
+    // Context menu (right-click): Nothing selected
+    this._contextMenuNone = document.createElement("canvas-context-menu");
+    this._contextMenuNone.hideMenu();
+    this._shadow.appendChild(this._contextMenuNone);
+    this._createNewStateFrameMenuEntries = [];
+
     this._contextMenuFrame = 0;
 
     this._clipboard = new Clipboard(this);
@@ -867,11 +873,20 @@ class AnnotationCanvas extends TatorElement
    */
   addCreateTrackType(stateTypeObj)
   {
-    var text = "Create new track (" + stateTypeObj.name + ")";
-    this._contextMenuLoc.addMenuEntry(text, this.contextMenuCallback.bind(this));
-    this._createNewTrackMenuEntries.push(
-      {menuText: text,
-       stateType: stateTypeObj});
+    if (stateTypeObj.isTrack) {
+      var text = "Create new " + stateTypeObj.name;
+      this._contextMenuLoc.addMenuEntry(text, this.contextMenuCallback.bind(this));
+      this._createNewTrackMenuEntries.push(
+        {menuText: text,
+         stateType: stateTypeObj});
+    }
+    else {
+      var text = "Create new " + stateTypeObj.name;
+      this._contextMenuNone.addMenuEntry(text, this.contextMenuCallback.bind(this));
+      this._createNewStateFrameMenuEntries.push(
+        {menuText: text,
+         stateType: stateTypeObj});
+    }
   }
 
   /**
@@ -884,10 +899,12 @@ class AnnotationCanvas extends TatorElement
     // It's possible that right clicking on a localization didn't actually set
     // the active track.
     // Handle case when localization is in a track
-    if (this.activeLocalization.id in this._data._trackDb)
-    {
-      const track = this._data._trackDb[this.activeLocalization.id];
-      this._activeTrack = track;
+    if (this.activeLocalization) {
+      if (this.activeLocalization.id in this._data._trackDb)
+      {
+        const track = this._data._trackDb[this.activeLocalization.id];
+        this._activeTrack = track;
+      }
     }
 
     // Save the general data that will be passed along to the dialog window
@@ -957,14 +974,30 @@ class AnnotationCanvas extends TatorElement
 
       if (!createNewTrack)
       {
+        for (const menuData of this._createNewStateFrameMenuEntries)
+        {
+          if (menuData.menuText == menuText)
+          {
+            objDescription = menuData.stateType;
+            createNewTrack = true;
+          }
+        }
+      }
+
+      if (!createNewTrack)
+      {
         window.alert("Unrecognized right-click menu option caught: " + menuText)
         return;
       }
     }
 
-    const poly = this.localizationToPoly(this.activeLocalization)
-
     const dragInfo = {};
+    var poly = [[0,0],[0,0],[0,0],[0,0]];
+    if (this.activeLocalization)
+    {
+      poly = this.localizationToPoly(this.activeLocalization)
+    }
+
     dragInfo.start = {x: poly[0][0], y: poly[0][1]};
     dragInfo.current = dragInfo.start;
     dragInfo.end = {x: poly[2][0], y: poly[2][1]};
@@ -974,8 +1007,11 @@ class AnnotationCanvas extends TatorElement
     {
       var requestObj = {
         frame: this.currentFrame(),
-        localization_ids: [this.activeLocalization.id],
       };
+
+      if (this.activeLocalization) {
+        requestObj.localization_ids = [this.activeLocalization.id]
+      }
 
       this.dispatchEvent(new CustomEvent("create", {
         detail: {
@@ -1002,8 +1038,6 @@ class AnnotationCanvas extends TatorElement
       }));
     }
   }
-
-
 
   resetRoi()
   {
@@ -1185,6 +1219,13 @@ class AnnotationCanvas extends TatorElement
         {
           this._contextMenuLoc.displayMenu(clickLocation[0], clickLocation[1]);
         }
+      }
+    }
+    else {
+      // Nothing selected, display corresponding menu
+      if (this._contextMenuNone.hasEntries())
+      {
+        this._contextMenuNone.displayMenu(clickEvent.clientX, clickEvent.clientY);
       }
     }
   }
@@ -2096,6 +2137,7 @@ class AnnotationCanvas extends TatorElement
 
     this._contextMenuTrack.hideMenu();
     this._contextMenuLoc.hideMenu();
+    this._contextMenuNone.hideMenu();
 
     if (document.body.classList.contains("shortcuts-disabled")) {
       document.body.classList.remove("shortcuts-disabled");
@@ -3451,6 +3493,7 @@ class AnnotationCanvas extends TatorElement
       this._contextMenuFrame = frameIdx;
       this._contextMenuTrack.hideMenu();
       this._contextMenuLoc.hideMenu();
+      this._contextMenuNone.hideMenu();
     }
 
     if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)
