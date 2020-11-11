@@ -465,7 +465,7 @@ python-bindings: tator-image
 r-docs:
 	rm -rf scripts/packages/tator-r/tmp scripts/packages/tator-r/docs
 	mkdir -p scripts/packages/tator-r/tmp
-	./scripts/packages/tator-r/codegen.py scripts/packages/tator-py/schema.yaml
+	./scripts/packages/tator-r/codegen.py ../../../scripts/packages/tator-py/schema.yaml
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-r:/pwd \
 		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
