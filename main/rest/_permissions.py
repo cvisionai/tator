@@ -175,10 +175,15 @@ class ClonePermission(ProjectPermissionBase):
     insufficient_permissions = [Permission.VIEW_ONLY, Permission.CAN_EDIT]
 
     def has_permission(self, request, view):
-        src_project = view.kwargs['project']
-        src_project = get_object_or_404(Project, pk=int(src_project))
-        dst_project = request.body['project']
-        dst_project = get_object_or_404(Project, pk=int(dst_project))
+        if 'project' in view.kwargs:
+            src_project = view.kwargs['project']
+            src_project = get_object_or_404(Project, pk=int(src_project))
+            dst_project = request.data['dest_project']
+            dst_project = get_object_or_404(Project, pk=int(dst_project))
+        else:
+            # If this is a request from schema view, show all endpoints.
+            return _for_schema_view(request, view)
+
         return (self._validate_project(request, src_project)
                 and self._validate_project(request, dst_project))
 
