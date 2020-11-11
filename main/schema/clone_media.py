@@ -47,9 +47,7 @@ class CloneMediaListSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {
-                    'type': {'$ref': '#/components/schemas/CloneMediaSpec'},
-                },
+                'schema': {'$ref': '#/components/schemas/CloneMediaSpec'},
                 'examples': {
                     'section': {
                         'summary': 'Clone to section',
