@@ -722,6 +722,8 @@ class Resource(Model):
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
+    if instance.file and created:
+        Resource.add_resource(instance.file.path)
 
 def safe_delete(path):
     try:
