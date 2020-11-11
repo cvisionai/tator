@@ -10,6 +10,7 @@ from .analysis import analysis
 from .attribute_type import autocomplete_service
 from .attribute_type import attribute_type
 from .attribute_value import attribute_value
+from .clone_media import clone_media_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite

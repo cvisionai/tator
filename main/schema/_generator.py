@@ -42,6 +42,7 @@ class CustomGenerator(SchemaGenerator):
                 'AttributeValue': attribute_value,
                 'AudioDefinition': audio_definition,
                 'AutocompleteService': autocomplete_service,
+                'CloneMediaSpec': clone_media_spec,
                 'EncodeConfig': encode_config,
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
