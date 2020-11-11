@@ -4,6 +4,7 @@ from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI
 from .analysis import AnalysisListAPI
 from .analysis import AnalysisDetailAPI
+from .clone_media import CloneMediaListAPI
 from .favorite import FavoriteListAPI
 from .favorite import FavoriteDetailAPI
 from .get_clip import GetClipAPI
