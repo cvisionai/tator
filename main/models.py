@@ -737,7 +737,8 @@ def safe_delete(path):
 def media_delete(sender, instance, **kwargs):
     if instance.project:
         TatorSearch().delete_document(instance)
-    instance.file.delete(False)
+    if instance.file:
+        safe_delete(instance.file.path)
     if instance.original != None:
         path = str(instance.original)
         safe_delete(path)
