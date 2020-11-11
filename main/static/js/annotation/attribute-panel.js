@@ -11,6 +11,13 @@ class AttributePanel extends TatorElement {
     this._idWidget.permission = "View Only";
     this._idWidget.setAttribute("name", "ID");
     this._div.appendChild(this._idWidget);
+
+    this._createdByWidget = document.createElement("text-input");
+    this._createdByWidget.permission = "View Only";
+    this._createdByWidget.setAttribute("name", "Created By");
+    this._div.appendChild(this._createdByWidget);
+
+    this._userList = [];
   }
 
   static get observedAttributes() {
@@ -27,7 +34,7 @@ class AttributePanel extends TatorElement {
   set permission(val) {
     this._permission = val;
     for (const widget of this._div.children) {
-      if (widget.getAttribute("name") != "ID") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
           widget.permission = val;
       }
     }
@@ -198,9 +205,44 @@ class AttributePanel extends TatorElement {
     }
   }
 
+  _getUsername(userId) {
+    const userPromise = fetch("/rest/User/" + userId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+    .then(response => { return response.json(); })
+    .then(result => {
+      this._userList.push({result});
+      this._createdByWidget.setValue(result.username);
+    });
+  }
+
   setValues(values) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
+
+    // Set the user widget
+    var createdByUsername = null;
+    var foundUser = false;
+    for (let index = 0; index < this._userList.length; index++) {
+      if (this._userList[index].id == values.created_by) {
+        foudUser = true;
+        createdByUsername = this._userList[index].username;
+        break;
+      }
+    }
+
+    if (!foundUser) {
+      this._getUsername(values.created_by);
+    }
+    else {
+      this._createdByWidget.setValue(createdByUsername);
+    }
 
     // Check if the slider needs to be updated if there's different track data now.
     // If so, then update it.
