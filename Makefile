@@ -466,7 +466,7 @@ r-docs:
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
 	rm -rf scripts/packages/tator-r/tmp scripts/packages/tator-r/docs
 	mkdir -p scripts/packages/tator-r/tmp
-	./scripts/packages/tator-r/codegen.py schema.yaml
+	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-r:/pwd \
 		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
@@ -477,6 +477,7 @@ r-docs:
 		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
 		/bin/sh -c "chown -R nobody:nogroup /out"
 	rm -f scripts/packages/tator-r/R/generated_*
+	rm scripts/packages/tator-r/schema.yaml
 	cd $(shell pwd)/scripts/packages/tator-r/tmp/tator-r-new-bindings/R && \
 		for f in $$(ls -l | awk -F':[0-9]* ' '/:/{print $$2}'); do cp -- "$$f" "../../../R/generated_$$f"; done
 	docker run -it --rm \
