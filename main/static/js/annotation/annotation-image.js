@@ -105,6 +105,10 @@ class AnnotationImage extends TatorElement {
     this._image.selectLocalization(loc);
   }
 
+  addCreateTrackType(stateTypeObj) {
+    this._image.addCreateTrackType(stateTypeObj);
+  }
+
   toggleBoxFills(fill) {
     this._image.toggleBoxFills(fill);
   }
