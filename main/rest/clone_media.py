@@ -3,10 +3,15 @@ import os
 import shutil
 from uuid import uuid1
 
+from django.conf import settings
+
 from ..schema import CloneMediaListSchema
 from ..models import Project
 from ..models import MediaType
 from ..models import Media
+from ..models import Section
+from ..models import Resource
+from ..search import TatorSearch
 
 from ._media_query import get_media_queryset
 from ._base_views import BaseListView
@@ -36,12 +41,7 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
     MAX_NUM_MEDIA = 500
 
     def _post(self, params):
-        # Check that we are getting a localization list.
-        if 'body' in params:
-            clone_spec = params['body']
-        else:
-            raise Exception('Clone requires a clone spec!')
-        dest = clone_spec['project']
+        dest = params['dest_project']
 
         # Retrieve media that will be cloned.
         use_es = self.validate_attribute_filter(params)
@@ -58,12 +58,24 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                             'or after parameters.')
 
         # If given media type is not part of destination project, raise an exception.
-        if clone_spec['type'] == -1:
+        if params['dest_type'] == -1:
             meta = MediaType.objects.filter(project=dest)[0]
         else:
-            meta = MediaType.objects.get(pk=clone_spec['type'])
-            if meta.project != dest:
+            meta = MediaType.objects.get(pk=params['dest_type'])
+            if meta.project.pk != dest:
                 raise Exception('Destination media type is not part of destination project!')
+
+        # Look for destination section, if given.
+        section = None
+        if 'dest_section' in params:
+            sections = Section.objects.filter(project=dest,
+                                              name=params['dest_section'])
+            if sections.count() == 0:
+                section = Section.objects.create(project=Project.objects.get(pk=dest),
+                                                 name=params['dest_section'],
+                                                 tator_user_sections=str(uuid1()))
+            else:
+                section = sections[0]
 
         original_medias = Media.objects.filter(pk__in=media_ids)
         new_objs = []
@@ -71,14 +83,29 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             new_obj = media
             new_obj.pk = None
             new_obj.project = Project.objects.get(pk=dest)
-            new_obj.meta = clone_spec['type']
-            originals = new_obj.media_files["archival"]
+            new_obj.meta = MediaType.objects.get(pk=params['dest_type'])
+            if section:
+                new_obj.attributes['tator_user_sections'] = section.tator_user_sections
+            # Find archival files.
+            originals = []
+            if new_obj.media_files:
+                originals = new_obj.media_files["archival"]
+            elif new_obj.original:
+                originals = [new_obj.original]
+
+            # Create symlinks for archival files.
             for idx, orig in enumerate(originals):
                 name = os.path.basename(orig['path'])
                 new_path = os.path.join("/data/raw", str(dest), name)
                 _make_link(orig['path'], new_path)
                 new_obj.media_files["archival"][idx]['path'] = new_path
-            streaming = new_obj.media_files["streaming"]
+
+            # Find streaming files.
+            streaming = []
+            if new_obj.media_files:
+                streaming = new_obj.media_files["streaming"]
+
+            # Create symlinks for streaming files.
             for idx, stream in enumerate(streaming):
                 name = os.path.basename(stream['path'])
                 new_path = os.path.join("media", str(dest), name)
@@ -88,6 +115,14 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                 new_path=os.path.join("media", str(dest), name)
                 _make_link(stream['segment_info'], new_path)
                 new_obj.media_files["streaming"][idx]['segment_info']=new_path
+
+            # If this media is an image or legacy video, create symlink to
+            # the file.
+            if new_obj.file:
+                name = os.path.basename(new_obj.file.path)
+                new_path = os.path.join("/media", str(dest), name)
+                _make_link(new_obj.file.path, new_path)
+                new_obj.file.name = os.path.relpath(new_path, settings.MEDIA_ROOT)
 
             #Handle thumbnail
             orig_thumb = new_obj.thumbnail.name
@@ -105,7 +140,7 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             new_obj.thumbnail_gif = os.path.join(str(dest),name)
 
             new_objs.append(new_obj)
-        medias += Media.objects.bulk_create(new_objs)
+        medias = Media.objects.bulk_create(new_objs)
 
         # Build ES documents.
         ts = TatorSearch()

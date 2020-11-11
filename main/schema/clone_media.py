@@ -20,10 +20,13 @@ class CloneMediaListSchema(AutoSchema):
         Clone media list.
 
         This method copies media to a different project without copying the 
-        underlying files. It accepts the same query parameters as a Media GET
+        underlying files. It accepts the same query parameters as a `Media` `GET`
         request. All media matching the query will be copied to the project,
         media type, and section in the given request body. Section is passed as
         a section name; if the given section does not exist, it will be created.
+
+        This endpoint will only clone up to 500 media per request. Use the `start`,
+        `stop`, or `after` parameters to paginate a request.
         """)
 
     def _get_path_parameters(self, path, method):
@@ -37,7 +40,7 @@ class CloneMediaListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method == 'POST':
             params = media_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
@@ -52,9 +55,9 @@ class CloneMediaListSchema(AutoSchema):
                     'section': {
                         'summary': 'Clone to section',
                         'value': {
-                            'project': 1,
-                            'type': 1,
-                            'section': 'My section',
+                            'dest_project': 1,
+                            'dest_type': 1,
+                            'dest_section': 'My section',
                         },
                     },
                 }
