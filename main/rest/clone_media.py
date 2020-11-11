@@ -86,10 +86,25 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             new_obj.meta = MediaType.objects.get(pk=params['dest_type'])
             if section:
                 new_obj.attributes['tator_user_sections'] = section.tator_user_sections
+
+            # Find audio files.
+            originals = []
+            if new_obj.media_files:
+                if 'audio' in new_obj.media_files:
+                    originals = new_obj.media_files["audio"]
+
+            # Create symlinks for audio files.
+            for idx, orig in enumerate(originals):
+                name = os.path.basename(orig['path'])
+                new_path = os.path.join("/media", str(dest), name)
+                _make_link(orig['path'], new_path)
+                new_obj.media_files["audio"][idx]['path'] = new_path
+
             # Find archival files.
             originals = []
             if new_obj.media_files:
-                originals = new_obj.media_files["archival"]
+                if 'archival' in new_obj.media_files:
+                    originals = new_obj.media_files["archival"]
             elif new_obj.original:
                 originals = [new_obj.original]
 
@@ -103,7 +118,8 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             # Find streaming files.
             streaming = []
             if new_obj.media_files:
-                streaming = new_obj.media_files["streaming"]
+                if 'streaming' in new_obj.media_files:
+                    streaming = new_obj.media_files["streaming"]
 
             # Create symlinks for streaming files.
             for idx, stream in enumerate(streaming):
