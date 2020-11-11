@@ -4,6 +4,7 @@ from .algorithm import AlgorithmDetailSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
 from .analysis import AnalysisDetailSchema
+from .clone_media import CloneMediaListSchema
 from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
 from .get_frame import GetFrameSchema
