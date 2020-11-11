@@ -69,7 +69,7 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
         section = None
         if 'dest_section' in params:
             sections = Section.objects.filter(project=dest,
-                                              name=params['dest_section'])
+                                              name__iexact=params['dest_section'])
             if sections.count() == 0:
                 section = Section.objects.create(project=Project.objects.get(pk=dest),
                                                  name=params['dest_section'],
@@ -108,11 +108,11 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             # Create symlinks for streaming files.
             for idx, stream in enumerate(streaming):
                 name = os.path.basename(stream['path'])
-                new_path = os.path.join("media", str(dest), name)
+                new_path = os.path.join("/media", str(dest), name)
                 _make_link(stream['path'], new_path)
-                new_obj.media_files["streaming"][idx]['path'] = "/" + new_path
+                new_obj.media_files["streaming"][idx]['path'] = new_path
                 name = os.path.basename(stream['segment_info'])
-                new_path=os.path.join("media", str(dest), name)
+                new_path=os.path.join("/media", str(dest), name)
                 _make_link(stream['segment_info'], new_path)
                 new_obj.media_files["streaming"][idx]['segment_info']=new_path
 
