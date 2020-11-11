@@ -1,13 +1,17 @@
 import logging
 import os
+import shutil
 from uuid import uuid1
 
-from ..schema import MediaListSchema
+from ..schema import CloneMediaListSchema
+from ..models import Project
+from ..models import MediaType
+from ..models import Media
 
 from ._media_query import get_media_queryset
 from ._base_views import BaseListView
 from ._attributes import AttributeFilterMixin
-from ._permission import ClonePermission
+from ._permissions import ClonePermission
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +41,7 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             clone_spec = params['body']
         else:
             raise Exception('Clone requires a clone spec!')
+        dest = clone_spec['project']
 
         # Retrieve media that will be cloned.
         use_es = self.validate_attribute_filter(params)
@@ -53,17 +58,19 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                             'or after parameters.')
 
         # If given media type is not part of destination project, raise an exception.
-        meta = MediaType.objects.get(pk=clone_spec['type'])
-        if meta.project != clone_spec['project']:
-            raise Exception('Destination media type is not part of destination project!')
+        if clone_spec['type'] == -1:
+            meta = MediaType.objects.filter(project=dest)[0]
+        else:
+            meta = MediaType.objects.get(pk=clone_spec['type'])
+            if meta.project != dest:
+                raise Exception('Destination media type is not part of destination project!')
 
         original_medias = Media.objects.filter(pk__in=media_ids)
-        dest = clone_spec['project']
         new_objs = []
         for media in original_medias.iterator():
             new_obj = media
             new_obj.pk = None
-            new_obj.project = dest
+            new_obj.project = Project.objects.get(pk=dest)
             new_obj.meta = clone_spec['type']
             originals = new_obj.media_files["archival"]
             for idx, orig in enumerate(originals):
