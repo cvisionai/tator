@@ -243,7 +243,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Mark media for deletion by setting project to null.
             qs = Media.objects.filter(pk__in=media_ids)
-            qs.update(project=None, recycled_from=params['project'])
+            qs.update(project=None, recycled_from=Project.objects.get(pk=params['project']))
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does

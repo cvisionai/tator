@@ -595,7 +595,7 @@ class Media(Model):
 
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
-                         db_column='project', related_name='project')
+                         db_column='project', related_name='media_project')
     meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
