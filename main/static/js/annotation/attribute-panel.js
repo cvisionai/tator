@@ -91,7 +91,19 @@ class AttributePanel extends TatorElement {
           choices.push(choice);
         }
         widget.choices = choices;
-      } else {
+      } else if (column.style) {
+        if (column.dtype == "string" && column.style == "long_string") {
+          widget = document.createElement("text-area");
+          widget.setAttribute("name", column.name);
+          widget.setAttribute("type", column.dtype);
+        } else {
+          widget = document.createElement("text-input");
+          widget.setAttribute("name", column.name);
+          widget.setAttribute("type", column.dtype);
+          widget.autocomplete = column.autocomplete;
+        }
+      }
+      else {
         // TODO: Implement a better datetime widget
         // TODO: Implement a better geopos widget
         widget = document.createElement("text-input");
@@ -133,7 +145,7 @@ class AttributePanel extends TatorElement {
   getValues() {
     let values = {};
     for (const widget of this._div.children) {
-      if (widget.getAttribute("name") != "ID") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
         const val = widget.getValue();
         if ((val === null) && (widget.required)) {
           values = null;

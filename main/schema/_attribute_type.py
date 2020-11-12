@@ -34,6 +34,12 @@ attribute_type_example = [
         },
     },
     {
+        'name': 'My String (Text Area)',
+        'dtype': 'string',
+        'default': '---',
+        'style': 'long_string',
+    },
+    {
         'name': 'My Datetime',
         'dtype': 'datetime',
         'use_current': True,

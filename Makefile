@@ -360,6 +360,7 @@ FILES = \
     annotation/bool-input.js \
     annotation/enum-input.js \
     annotation/text-input.js \
+    annotation/text-area.js \
     annotation/attribute-panel.js \
     annotation/modify-track-dialog.js \
     annotation/progress-dialog.js \

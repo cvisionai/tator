@@ -64,6 +64,11 @@ attribute_type_properties = {
                        'datetime dtype.',
         'type': 'boolean',
     },
+    'style': {
+        'description': 'Currently only used to create a text area string if "long_string" is combined with "string" dtype.',
+        'type': 'string',
+        'enum': ['long_string'],
+    },
 }
 
 attribute_type = {
