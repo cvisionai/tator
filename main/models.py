@@ -594,7 +594,8 @@ class Media(Model):
 
 
     """
-    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
+                         db_column='project', related_name='project')
     meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
@@ -637,7 +638,8 @@ class Media(Model):
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
-    recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True)
+    recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
+                               related_name='recycled_from')
 
     def update_media_files(self, media_files):
         """ Updates media files by merging a new key into existing JSON object.
