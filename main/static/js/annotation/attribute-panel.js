@@ -218,20 +218,22 @@ class AttributePanel extends TatorElement {
   }
 
   _getUsername(userId) {
-    const userPromise = fetch("/rest/User/" + userId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    })
-    .then(response => { return response.json(); })
-    .then(result => {
-      this._userList.push({result});
-      this._createdByWidget.setValue(result.username);
-    });
+    if (userId){
+      const userPromise = fetch("/rest/User/" + userId, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => { return response.json(); })
+      .then(result => {
+        this._userList.push({result});
+        this._createdByWidget.setValue(result.username);
+      });
+    }
   }
 
   setValues(values) {
@@ -243,7 +245,7 @@ class AttributePanel extends TatorElement {
     var foundUser = false;
     for (let index = 0; index < this._userList.length; index++) {
       if (this._userList[index].id == values.created_by) {
-        foudUser = true;
+        foundUser = true;
         createdByUsername = this._userList[index].username;
         break;
       }
