@@ -18,7 +18,7 @@ class Command(BaseCommand):
             # We cannot delete with a LIMIT query, so make a separate query
             # using IDs.
             null_project = Media.objects.filter(project__isnull=True, 
-                                                modified_datetime__lte=max_datetime))
+                                                modified_datetime__lte=max_datetime)
             null_meta = Media.objects.filter(meta__isnull=True)
             media_ids = (null_project | null_meta).distinct()\
                                                   .values_list('pk', flat=True)[:BATCH_SIZE]
@@ -28,4 +28,4 @@ class Command(BaseCommand):
                 break
             media.delete()
             num_deleted += num_media
-            logger.info(f"Deleted a total of {num_deleted} media...")
+        logger.info(f"Deleted a total of {num_deleted} media...")
