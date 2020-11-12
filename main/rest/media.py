@@ -243,7 +243,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Mark media for deletion by setting project to null.
             qs = Media.objects.filter(pk__in=media_ids)
-            qs.update(project=None)
+            qs.update(project=None, recycled_from=params['project'])
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -390,6 +390,7 @@ class MediaDetailAPI(BaseDetailView):
         """
         qs = Media.objects.filter(pk=params['id'])
         TatorSearch().delete_document(qs[0])
+        qs.update(recycled_from=qs[0].project)
         qs.update(project=None)
         return {'message': f'Media {params["id"]} successfully deleted!'}
 

@@ -637,6 +637,7 @@ class Media(Model):
     segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
                                  blank=True)
     media_files = JSONField(null=True, blank=True)
+    recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True)
 
     def update_media_files(self, media_files):
         """ Updates media files by merging a new key into existing JSON object.
