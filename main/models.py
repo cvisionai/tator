@@ -692,7 +692,8 @@ class Media(Model):
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
-    count=IntegerField(null=True, default=1)
+    count = IntegerField(null=True, default=1)
+    media = ManyToManyField(Media, related_name='resource_media')
 
     @transaction.atomic
     def add_resource(path_or_link):
