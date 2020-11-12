@@ -3,6 +3,7 @@ import datetime
 import os
 import shutil
 import mimetypes
+import datetime
 from uuid import uuid1
 
 from django.db import transaction
@@ -243,7 +244,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Mark media for deletion by setting project to null.
             qs = Media.objects.filter(pk__in=media_ids)
-            qs.update(project=None, recycled_from=Project.objects.get(pk=params['project']))
+            qs.update(project=None,
+                      recycled_from=Project.objects.get(pk=params['project']),
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -391,7 +394,8 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'])
         TatorSearch().delete_document(qs[0])
         qs.update(recycled_from=qs[0].project)
-        qs.update(project=None)
+        qs.update(project=None,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         return {'message': f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
