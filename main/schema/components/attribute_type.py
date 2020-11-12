@@ -65,9 +65,10 @@ attribute_type_properties = {
         'type': 'boolean',
     },
     'style': {
-        'description': 'Currently only used to create a text area string if "long_string" is combined with "string" dtype.',
+        'description': 'Create a text area string if "long_string" is combined with "string" dtype. '
+                       '"start_frame" and "end_frame" used in conjunction with "attr_style_range" interpolation',
         'type': 'string',
-        'enum': ['long_string'],
+        'enum': ['long_string', 'start_frame', 'end_frame'],
     },
 }
 

@@ -219,7 +219,7 @@ class AttributePanel extends TatorElement {
 
   _getUsername(userId) {
     if (userId){
-      const userPromise = fetch("/rest/User/" + userId, {
+      fetch("/rest/User/" + userId, {
         method: "GET",
         credentials: "same-origin",
         headers: {

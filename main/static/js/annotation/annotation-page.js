@@ -579,6 +579,8 @@ class AnnotationPage extends TatorPage {
           this._settings.setAttribute("entity-id", evt.detail.data.id);
           this._settings.setAttribute("entity-type", evt.detail.data.meta);
           this._settings.setAttribute("type-id", evt.detail.data.meta);
+
+          this._player.selectTimelineData(evt.detail.data);
         });
         this._browser.addEventListener("capture", evt => {
           if ('_video' in canvas)

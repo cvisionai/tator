@@ -60,7 +60,10 @@ class AnnotationPlayer extends TatorElement {
     var innerDiv = document.createElement("div");
     this._timeline = document.createElement("timeline-canvas");
     this._timeline.rangeInput = this._slider;
+    this._timelineAttrRange = document.createElement("timeline-canvas");
+    this._timelineAttrRange.rangeInput = this._slider;
     innerDiv.appendChild(this._timeline);
+    innerDiv.appendChild(this._timelineAttrRange);
     outerDiv.appendChild(innerDiv);
     timelineDiv.appendChild(outerDiv);
 
@@ -262,6 +265,8 @@ class AnnotationPlayer extends TatorElement {
   set annotationData(val) {
     this._video.annotationData = val;
     this._timeline.annotationData = val;
+    this._timelineAttrRange.stateInterpolationType = "attr_style_range";
+    this._timelineAttrRange.annotationData = val;
   }
 
   newMetadataItem(dtype, metaMode, objId) {
@@ -282,7 +287,7 @@ class AnnotationPlayer extends TatorElement {
   {
     return this._play.hasAttribute("is-paused");
   }
-  
+
   play()
   {
     const paused = this.is_paused();
@@ -303,7 +308,7 @@ class AnnotationPlayer extends TatorElement {
       this._play.setAttribute("is-paused", "")
     }
   }
-  
+
   refresh() {
     this._video.refresh();
   }
@@ -414,6 +419,11 @@ class AnnotationPlayer extends TatorElement {
 
   drawTimeline(typeId) {
     this._timeline.draw(typeId);
+    this._timelineAttrRange.draw(typeId);
+  }
+
+  selectTimelineData(data) {
+    this._timelineAttrRange.selectData(data);
   }
 
   _frameToTime(frame) {

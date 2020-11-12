@@ -46,17 +46,19 @@ class AnnotationBrowser extends TatorElement {
       const isFrameState = dataType.association == "Frame";
       const isInterpolated = dataType.interpolation !== "none";
       if (isFrameState && isInterpolated) {
-        const frame = document.createElement("frame-panel");
-        frame.setAttribute("media-id", this._mediaId);
-        frame.undoBuffer = this._undo;
-        frame.annotationData = this._data;
-        frame.version = this._version;
-        frame.dataType = dataType;
-        if (typeof this._permission !== "undefined") {
-          frame.permission = this._permission;
+        if (dataType.interpolation === "latest"){
+          const frame = document.createElement("frame-panel");
+          frame.setAttribute("media-id", this._mediaId);
+          frame.undoBuffer = this._undo;
+          frame.annotationData = this._data;
+          frame.version = this._version;
+          frame.dataType = dataType;
+          if (typeof this._permission !== "undefined") {
+            frame.permission = this._permission;
+          }
+          this._panels.appendChild(frame);
+          this._framePanels[dataType.id] = frame;
         }
-        this._panels.appendChild(frame);
-        this._framePanels[dataType.id] = frame;
       }
     }
   }

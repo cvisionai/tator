@@ -60,7 +60,10 @@ class AnnotationMulti extends TatorElement {
     var innerDiv = document.createElement("div");
     this._timeline = document.createElement("timeline-canvas");
     this._timeline.rangeInput = this._slider;
+    this._timelineAttrRange = document.createElement("timeline-canvas");
+    this._timelineAttrRange.rangeInput = this._slider;
     innerDiv.appendChild(this._timeline);
+    innerDiv.appendChild(this._timelineAttrRange);
     outerDiv.appendChild(innerDiv);
     timelineDiv.appendChild(outerDiv);
 
@@ -431,6 +434,8 @@ class AnnotationMulti extends TatorElement {
       video.annotationData = val;
     }
     this._timeline.annotationData = val;
+    this._timelineAttrRange.stateInterpolationType = "attr_style_range";
+    this._timelineAttrRange.annotationData = val;
   }
 
   newMetadataItem(dtype, metaMode, objId) {
@@ -639,6 +644,11 @@ class AnnotationMulti extends TatorElement {
 
   drawTimeline(typeId) {
     this._timeline.draw(typeId);
+    this._timelineAttrRange.draw(typeId);
+  }
+
+  selectTimelineData(data) {
+    this._timelineAttrRange.selectData(data);
   }
 
   _frameToTime(frame) {

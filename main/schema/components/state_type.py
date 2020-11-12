@@ -16,7 +16,7 @@ state_type_properties = {
         'type': 'string',
         'description': 'Interpolation method used by the web interface.',
         'default': 'latest',
-        'enum': ['none', 'latest'],
+        'enum': ['none', 'latest', 'attr_style_range'],
     },
     'visible': {
         'type': 'boolean',
