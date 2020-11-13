@@ -277,11 +277,9 @@ def make_sections():
             logger.info(f"Created section {section['key']} in project {project.pk}!")
 
 def make_resources():
-    create_buffer = []
-    paths = []
 
     # Function to build resource objects from paths.
-    def _resources_from_paths():
+    def _resources_from_paths(paths):
         paths = [os.readlink(path) if os.path.islink(path) else path for path in paths]
         exists = list(Resource.objects.filter(path__in=paths).values_list('path', flat=True))
         needs_create = list(set(paths).difference(exists))
@@ -290,6 +288,7 @@ def make_resources():
 
     # Function to get paths from media.
     def _paths_from_media(media):
+        paths = []
         if media.file:
             paths.append(media.file.path)
         if media.media_files:
@@ -302,22 +301,25 @@ def make_resources():
                 paths += [f['path'] for f in media.media_files['archival']]
         if media.original:
             paths.append(media.original)
+        return paths
 
     # Create all resource objects that don't already exist.
     num_resources = 0
+    path_list = []
+    create_buffer = []
     for media in Media.objects.all().iterator():
-        _paths_from_media(media)
-        if len(paths) > 1000:
-            create_buffer += _resources_from_paths(paths)
-            paths = []
+        path_list += _paths_from_media(media)
+        if len(path_list) > 1000:
+            create_buffer += _resources_from_paths(path_list)
+            path_list = []
         if len(create_buffer) > 1000:
             Resource.objects.bulk_create(create_buffer)
             num_resources += len(create_buffer)
             create_buffer = []
             logger.info(f"Created {num_resources} resources...")
-    if len(paths) > 0:
-        create_buffer += _resources_from_paths(paths)
-        paths = []
+    if len(path_list) > 0:
+        create_buffer += _resources_from_paths(path_list)
+        path_list = []
     if len(create_buffer) > 0:
         Resource.objects.bulk_create(create_buffer)
         num_resources += len(create_buffer)
@@ -328,25 +330,25 @@ def make_resources():
     # Create many to many relations.
     Resource.media.through.objects.all().delete()
     num_relations = 0
+    media_relations = []
     for media in Media.objects.all().iterator():
-        _paths_from_media(media)
-        media_relations = []
-        for resource in Resource.objects.filter(path__in=paths).iterator():
+        path_list = _paths_from_media(media)
+        path_list = [os.readlink(path) if os.path.islink(path) else path for path in path_list]
+        for resource in Resource.objects.filter(path__in=path_list).iterator():
             media_relation = Resource.media.through(
                 resource_id=resource.id,
                 media_id=media.id,
             )
             media_relations.append(media_relation)
-        paths = []
         if len(media_relations) > 1000:
             Resource.media.through.objects.bulk_create(media_relations)
             num_relations += len(media_relations)
             media_relations = []
-            logger.info(f"Created {num_relations} resources...")
+            logger.info(f"Created {num_relations} media relations...")
     if len(media_relations) > 0:
         Resource.media.through.objects.bulk_create(media_relations)
         num_relations += len(media_relations)
         media_relations = []
-        logger.info(f"Created {num_relations} resources...")
+        logger.info(f"Created {num_relations} media relations...")
     logger.info("Media relation creation complete!")
 
