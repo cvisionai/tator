@@ -29,7 +29,6 @@ def _make_link(path_or_link, new_path):
         os.symlink(path, new_path)
     except:
         logger.info(f"Symlink already exists at {new_path}, pointing to {path}")
-    Resource.add_resource(new_path)
 
 class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
     """ Clone a list of media without copying underlying files.
@@ -158,6 +157,21 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
 
             new_objs.append(new_obj)
         medias = Media.objects.bulk_create(new_objs)
+
+        # Update resources.
+        for media in medias:
+            if media.file:
+                Resource.add_resource(media.file.path, media.id)
+            if media.media_files:
+                for f in media.media_files.get('audio', []):
+                    Resource.add_resource(f['path'], media.id)
+                for f in media.media_files.get('streaming', []):
+                    Resource.add_resource(f['path'], media.id)
+                    Resource.add_resource(f['segment_info'], media.id)
+                for f in media.media_files.get('archival', []):
+                    Resource.add_resource(f['path'], media.id)
+            if media.original:
+                Resource.add_resource(media.original, media.id)
 
         # Build ES documents.
         ts = TatorSearch()
