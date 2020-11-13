@@ -147,11 +147,14 @@ class AnnotationMulti extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
-      this._video.pause();
-      this._video.rateChange(this._rate);
-      if (this._video.playBackwards())
+      for (let video of this._videos)
       {
-        play.removeAttribute("is-paused");
+        video.pause();
+        video.rateChange(this._rate);
+        if (video.playBackwards())
+        {
+          play.removeAttribute("is-paused");
+        }
       }
     });
 
@@ -629,6 +632,20 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  addCreateTrackType(stateTypeObj) {
+    for (let video of this._videos)
+    {
+      video.addCreateTrackType(stateTypeObj);
+    }
+  }
+
+  enableFillTrackGapsOption() {
+    for (let video of this._videos)
+    {
+      this._video.enableFillTrackGapsOption();
+    }
+  }
+
   toggleBoxFills(fill) {
     for (let video of this._videos)
     {
@@ -649,6 +666,13 @@ class AnnotationMulti extends TatorElement {
 
   selectTimelineData(data) {
     this._timelineAttrRange.selectData(data);
+  }
+
+  frameChange(frame) {
+    for (let video of this._video)
+    {
+      video.goToFrame
+    }
   }
 
   _frameToTime(frame) {
