@@ -160,7 +160,7 @@ tator-lite: containers/tator_lite/Dockerfile
 
 .PHONY: tator-image
 tator-image: containers/tator/Dockerfile.gen
-	$(MAKE) min-js min-css docs r-docs
+	$(MAKE) min-js min-css r-docs docs
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
