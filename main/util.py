@@ -276,3 +276,63 @@ def make_sections():
                                    tator_user_sections=section['key'])
             logger.info(f"Created section {section['key']} in project {project.pk}!")
 
+def make_resources():
+    create_buffer = []
+    paths = []
+
+    # Function to build resource objects from paths.
+    def _resources_from_paths():
+        paths = [os.readlink(path) if os.path.islink(path) else path for path in paths]
+        exists = list(Resource.objects.filter(path__in=paths).values_list('path', flat=True))
+        needs_create = list(set(paths).difference(exists))
+        paths = []
+        return [Resource(path=p) for p in needs_create]
+
+    # Function to get paths from media.
+    def _paths_from_media(media):
+        if media.file:
+            paths.append(media.file.path)
+        if media.media_files:
+            if 'audio' in media.media_files:
+                paths += [f['path'] for f in media.media_files['audio']]
+            if 'streaming' in media.media_files:
+                paths += [f['path'] for f in media.media_files['streaming']]
+                paths += [f['segment_info'] for f in media.media_files['streaming']]
+            if 'archival' in media.media_files:
+                paths += [f['path'] for f in media.media_files['archival']]
+        if media.original:
+            paths.append(media.original)
+
+    # Create all resource objects that don't already exist.
+    for media in Media.objects.all().iterator():
+        _paths_from_media(media)
+        if len(paths) > 1000:
+            create_buffer += _resources_from_paths(paths)
+            paths = []
+        if len(create_buffer) > 1000:
+            Resource.objects.bulk_create(create_buffer)
+            create_buffer = []
+    if len(paths) > 0:
+        create_buffer += _resources_from_paths(paths)
+        paths = []
+    if len(create_buffer) > 0:
+        Resource.objects.bulk_create(create_buffer)
+        create_buffer = []
+
+    # Create many to many relations.
+    for media in Media.objects.all().iterator():
+        _paths_from_media(media)
+        media_relations = []
+        for resource in Resource.objects.filter(path__in=paths).iterator():
+            media_relation = Resource.media.through(
+                resource_id=resource.id,
+                media_id=media.id,
+            )
+            media_relations.append(media_relation)
+        paths = []
+        if len(media_relations) > 1000:
+            Resource.media.through.objects.bulk_create(media_relations)
+            media_relations = []
+    Resource.media.through.objects.bulk_create(media_relations)
+    media_relations = []
+
