@@ -719,6 +719,7 @@ class Resource(Model):
             obj = Resource.objects.get(path=path)
             obj.count -= 1
             if obj.media.all().count() == 0:
+                logger.info(f"Deleting file {path}")
                 obj.delete()
                 os.remove(path)
             else:
@@ -745,7 +746,7 @@ def media_save(sender, instance, created, **kwargs):
 
 def safe_delete(path):
     try:
-        logger.info(f"Deleting {path}")
+        logger.info(f"Deleting resource for {path}")
         Resource.delete_resource(path)
     except:
         logger.warning(f"Could not remove {path}")
