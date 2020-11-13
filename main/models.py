@@ -32,6 +32,7 @@ from django.core.validators import RegexValidator
 from django.db.models import FloatField, Transform,UUIDField
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_delete
+from django.db.models.signals import post_delete
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.conf import settings
@@ -666,14 +667,14 @@ class Media(Model):
         for fp in new_streaming:
             path = fp['path']
             seg_path = fp['segment_info']
-            Resource.add_resource(path)
-            Resource.add_resource(seg_path)
+            Resource.add_resource(path, self)
+            Resource.add_resource(seg_path, self)
 
         for fp in new_archival:
-            Resource.add_resource(fp['path'])
+            Resource.add_resource(fp['path'], self)
 
         for fp in new_audio:
-            Resource.add_resource(fp['path'])
+            Resource.add_resource(fp['path'], self)
 
         # Only fill in a key if it has at least one definition.
         self.media_files = {}
@@ -696,12 +697,13 @@ class Resource(Model):
     media = ManyToManyField(Media, related_name='resource_media')
 
     @transaction.atomic
-    def add_resource(path_or_link):
+    def add_resource(path_or_link, media):
         if os.path.islink(path_or_link):
-            path=os.readlink(path_or_link)
+            path = os.readlink(path_or_link)
         else:
-            path=path_or_link
-        obj,created = Resource.objects.get_or_create(path=path)
+            path = path_or_link
+        obj, created = Resource.objects.get_or_create(path=path)
+        obj.media.add(media)
         if not created:
             obj.count += 1
             obj.save()
@@ -716,7 +718,7 @@ class Resource(Model):
         try:
             obj = Resource.objects.get(path=path)
             obj.count -= 1
-            if obj.count <= 0:
+            if obj.media.all().count() == 0:
                 obj.delete()
                 os.remove(path)
             else:
@@ -731,7 +733,15 @@ class Resource(Model):
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
     if instance.file and created:
-        Resource.add_resource(instance.file.path)
+        Resource.add_resource(instance.file.path, instance)
+    if instance.media_files and created:
+        for fp in instance.media_files.get('audio', []):
+            Resource.add_resource(fp['path'], instance)
+        for fp in instance.media_files.get('streaming', []):
+            Resource.add_resource(fp['path'], instance)
+            Resource.add_resource(fp['segment_info'], instance)
+        for fp in instance.media_files.get('archival', []):
+            Resource.add_resource(fp['path'], instance)
 
 def safe_delete(path):
     try:
@@ -745,6 +755,9 @@ def safe_delete(path):
 def media_delete(sender, instance, **kwargs):
     if instance.project:
         TatorSearch().delete_document(instance)
+
+@receiver(post_delete, sender=Media)
+def media_post_delete(sender, instance, **kwargs):
     if instance.file:
         safe_delete(instance.file.path)
     if instance.original != None:
