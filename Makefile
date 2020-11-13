@@ -465,7 +465,7 @@ python-bindings: tator-image
 r-docs:
 	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
 	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
-	rm -rf scripts/packages/tator-r/tmp scripts/packages/tator-r/docs
+	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
 	docker run -it --rm \
