@@ -693,7 +693,6 @@ class Media(Model):
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
-    count = IntegerField(null=True, default=1)
     media = ManyToManyField(Media, related_name='resource_media')
 
     @transaction.atomic
@@ -704,9 +703,6 @@ class Resource(Model):
             path = path_or_link
         obj, created = Resource.objects.get_or_create(path=path)
         obj.media.add(media)
-        if not created:
-            obj.count += 1
-            obj.save()
 
     @transaction.atomic
     def delete_resource(path_or_link):
@@ -717,13 +713,10 @@ class Resource(Model):
             path=path_or_link
         try:
             obj = Resource.objects.get(path=path)
-            obj.count -= 1
             if obj.media.all().count() == 0:
                 logger.info(f"Deleting file {path}")
                 obj.delete()
                 os.remove(path)
-            else:
-                obj.save()
         except Resource.DoesNotExist as dne:
             logger.info(f"Removing legacy resource {path}")
             os.remove(path)
