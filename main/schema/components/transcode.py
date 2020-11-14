@@ -42,7 +42,14 @@ transcode_spec = {
         'attributes': {
             'description': 'Attributes to apply upon upload',
             'type': 'object',
-            'nullable': True
+            'nullable': True,
+        },
+        'media_id': {
+            'description': 'ID of an existing media. If given, this media '
+                           'will be used for the transcode operation rather than '
+                           'creating a new object.',
+            'type': 'integer',
+            'nullable': True,
         },
     },
 }
