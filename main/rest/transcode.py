@@ -11,6 +11,7 @@ from ..kube import TatorTranscode
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
+from ..models import Media
 from ..schema import TranscodeSchema
 from ..notify import Notify
 
@@ -46,6 +47,7 @@ class TranscodeAPI(BaseListView):
         md5 = params['md5']
         project = params['project']
         attributes = params.get('attributes',None)
+        media_id = params.get('media_id', None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
         type_objects = MediaType.objects.filter(project=project)
@@ -73,6 +75,13 @@ class TranscodeAPI(BaseListView):
         else:
             # TODO: get file size of remote
             upload_size = None
+
+        # Verify the given media ID exists and is part of the project,
+        # then update its fields with the given info.
+        if media_id:
+            media_obj = Media.objects.get(pk=media_id)
+            if media_obj.project.pk != project:
+                raise Exception(f"Media not part of specified project!")
         if entity_type == -1:
             TatorTranscode().start_tar_import(
                 project,
@@ -100,7 +109,8 @@ class TranscodeAPI(BaseListView):
                 uid,
                 self.request.user.pk,
                 upload_size,
-                attributes)
+                attributes,
+                media_id)
 
         msg = (f"Transcode job {uid} started for file "
                f"{name} on project {type_objects[0].project.name}")
