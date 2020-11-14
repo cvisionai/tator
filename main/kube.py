@@ -659,7 +659,7 @@ class TatorTranscode(JobManagerMixin):
                                              'withParam': f'{{{{tasks.unpack-task.outputs.parameters.localizations-{x}}}}}'}  for x in range(NUM_WORK_PACKETS)])
         return unpack_task
 
-    def get_transcode_dag(self):
+    def get_transcode_dag(self, media_id=None):
         """ Return the DAG that describes transcoding a single media file """
         def make_passthrough_arg(name):
             return {'name': name,
@@ -684,19 +684,15 @@ class TatorTranscode(JobManagerMixin):
             'inputs': passthrough_parameters,
             'dag': {
                 'tasks': [{
-                    'name': 'create-media-task',
-                    'template': 'create-media',
-                    'arguments': passthrough_parameters,
-                }, {
                     'name': 'thumbnail-task',
                     'template': 'thumbnail',
                     'arguments': {
                         'parameters': passthrough_parameters['parameters'] + [{
                             'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
+                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
+                                     if media_id is None else str(media_id),
                         }],
                     },
-                    'dependencies': ['create-media-task'],
                 }, {
                     'name': 'determine-transcode-task',
                     'template': 'determine-transcode',
@@ -719,7 +715,8 @@ class TatorTranscode(JobManagerMixin):
                             'value': '{{item.configs}}',
                         }, {
                             'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}',
+                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
+                                     if media_id is None else str(media_id),
                         }],
                     },
                     'dependencies': ['thumbnail-task', 'determine-transcode-task'],
@@ -727,6 +724,13 @@ class TatorTranscode(JobManagerMixin):
                 }],
             },
         }
+        if media_id is None:
+            pipeline_task['dag']['tasks'].insert(0, {
+                'name': 'create-media-task',
+                'template': 'create-media',
+                'arguments': passthrough_parameters,
+            })
+            pipeline_task['dag']['tasks'][1]['dependencies'] = ['create-media-task']
 
         return pipeline_task
     def get_transcode_task(self, item, url):
@@ -860,7 +864,7 @@ class TatorTranscode(JobManagerMixin):
                         entity_type, token, url, name,
                         section, md5, gid, uid,
                         user, upload_size,
-                        attributes):
+                        attributes, media_id):
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -936,7 +940,7 @@ class TatorTranscode(JobManagerMixin):
                     self.transcode_task,
                     self.thumbnail_task,
                     self.image_upload_task,
-                    self.get_transcode_dag(),
+                    self.get_transcode_dag(media_id),
                     pipeline_task,
                 ],
             },
