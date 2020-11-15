@@ -489,7 +489,13 @@ class AnnotationPage extends TatorPage {
         } else {
           this._versionButton.text = this._version.name;
         }
-        const dataTypes = localizationTypes.concat(stateTypes)
+
+        var dataTypes = localizationTypes.concat(stateTypes)
+
+        if (block_signals) {
+          dataTypes = localizationTypes;
+        }
+
         // Replace the data type IDs so they are guaranteed to be unique.
         for (let [idx,dataType] of dataTypes.entries()) {
           dataType.id = dataType.dtype + "_" + dataType.id;
@@ -509,18 +515,21 @@ class AnnotationPage extends TatorPage {
           dataType.isTrack = isTrack;
           dataType.isTLState = isTLState;
         }
-        this._data.init(dataTypes, this._version, projectId, mediaId, update);
+        this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
           (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           return sec;
         }, {});
+
         if (block_signals == true)
         {
           return;
         }
+
         this._browser.init(dataTypes, this._version);
+
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();

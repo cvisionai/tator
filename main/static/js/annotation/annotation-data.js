@@ -2,19 +2,34 @@ class AnnotationData extends HTMLElement {
   constructor() {
     super();
 
+    this._dataTypes = {};
     this._trackDb = new Map();
     this._updateUrls = new Map();
     this._dataByType = new Map();
-    this._mediaIds = new Array();
+    this._stateMediaIds = new Array();
+    this._localizationMediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId, update) {
+  init(dataTypes, version, projectId, mediaId, update, allowStateData) {
     // Update defaults to true
     if (update == undefined)
     {
       update = true;
     }
-    this._mediaIds.push(mediaId);
+
+    for (const dataType of dataTypes){
+      if (dataType.dtype == "state"){
+        if (allowStateData == undefined) {
+          this._stateMediaIds.push(mediaId);
+        }
+        else if (allowStateData) {
+          this._stateMediaIds.push(mediaId);
+        }
+      }
+      else {
+        this._localizationMediaIds.push(mediaId);
+      }
+    }
 
     if (update)
     {
@@ -28,10 +43,19 @@ class AnnotationData extends HTMLElement {
     }
 
     // Convert datatypes array to a map for faster access
-    this._dataTypes={}
     for (const dataType of dataTypes) {
-      this._dataTypes[dataType.id] = dataType;
+      let dataTypeRegistered = dataType.id in this._dataTypes;
+      if (!dataTypeRegistered ) {
+        this._dataTypes[dataType.id] = dataType;
+      }
     }
+  }
+
+  initialUpdate() {
+    this.updateAll(Object.keys(this._dataTypes), this._version)
+    .then(() => {
+      this.dispatchEvent(new Event("initialized"));
+    });
   }
 
   // Returns a promise when done
@@ -64,8 +88,9 @@ class AnnotationData extends HTMLElement {
     // Define function for getting data url.
     const getDataUrl = (dataType) => {
       const dataEndpoint = dataType.dtype == "state" ? "States" : "Localizations";
+      const mediaIds = dataType.dtype == "state" ? this._stateMediaIds : this._localizationMediaIds;
       let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
-          this._mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
+        mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
       if (dataEndpoint == "Localizations")
       {
         // TODO probably want this for States as well once it is supported there

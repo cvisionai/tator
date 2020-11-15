@@ -199,10 +199,6 @@ class AnnotationMulti extends TatorElement {
       }
     });
 
-    /*
-
-    */
-
     this._timeline.addEventListener("select", evt => {
       this.goToFrame(evt.detail.frame);
     });
@@ -359,11 +355,13 @@ class AnnotationMulti extends TatorElement {
          "color": "white"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
       this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0]);
+
+      // #TODO This should be changed to dispatched events vs. calling the parent directly.
       this.parent._getMetadataTypes(this,
                                     this._videos[idx]._canvas,
                                     idx != 0, //whether to block signal registration
                                     video_info.id, // sub-element real-id
-                                    idx == (this._videos.length - 1) // only update on last video
+                                    false// only update on last video
                                     );
       // Mute multi-video
       this._videos[idx].setVolume(0);
@@ -413,6 +411,10 @@ class AnnotationMulti extends TatorElement {
         {
           setup_video(idx, info[idx]);
         }
+
+        // #TODO Dispatch
+        this.parent._data.initialUpdate();
+
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
