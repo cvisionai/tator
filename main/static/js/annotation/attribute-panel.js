@@ -236,6 +236,35 @@ class AttributePanel extends TatorElement {
     }
   }
 
+  /**
+   * Sets frame range if there are attributes with "start_frame"
+   * and "end_frame" associated with it
+   *
+   * #TODO Should probably refactor finding the widget and setting the value
+   */
+  setFrameRange(startFrame, endFrame) {
+    for (const attr of this._dataType.attribute_types) {
+      if (attr.style === "start_frame") {
+        for (const widget of this._div.children) {
+          const name = widget.getAttribute("name");
+          if (name == attr.name) {
+            widget.setValue(startFrame);
+            break;
+          }
+        }
+      }
+      else if (attr.style === "end_frame") {
+        for (const widget of this._div.children) {
+          const name = widget.getAttribute("name");
+          if (name == attr.name) {
+            widget.setValue(endFrame);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   setValues(values) {
     // Set the ID widget
     this._idWidget.setValue(values.id);

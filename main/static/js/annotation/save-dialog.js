@@ -163,6 +163,10 @@ class SaveDialog extends TatorElement {
 
   set requestObj(val) {
     this._requestObj = val;
+
+    if (this._dataType.interpolation == "attr_style_range") {
+      this._attributes.setFrameRange(val.frame, val.frame);
+    }
   }
 
   addRecent(val) {

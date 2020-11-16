@@ -606,7 +606,10 @@ class AnnotationPage extends TatorPage {
             if (this._player.selectTimelineData) {
               this._player.selectTimelineData(evt.detail.data);
             }
-            this._player.goToFrame(evt.detail.data.frame);
+
+            if (this._player.mediaType.dtype == "multi") {
+              this._player.goToFrame(evt.detail.data.frame);
+            }
           }
           this._settings.setAttribute("entity-id", evt.detail.data.id);
           this._settings.setAttribute("entity-type", evt.detail.data.meta);
