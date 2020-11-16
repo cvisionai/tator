@@ -741,7 +741,8 @@ class AnnotationPage extends TatorPage {
     // options appropriately.
     this._extend_track_algo_name = "tator_extend_track";
     this._fill_track_gaps_algo_name = "tator_fill_track_gaps";
-    const algUrl = "/rest/Algorithms/" + this._data._projectId;
+    const projectId = Number(this.getAttribute("project-id"));
+    const algUrl = "/rest/Algorithms/" + projectId;
     const algorithmPromise = fetchRetry(algUrl, {
       method: "GET",
       credentials: "same-origin",
