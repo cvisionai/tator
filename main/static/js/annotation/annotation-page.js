@@ -136,6 +136,8 @@ class AnnotationPage extends TatorPage {
             this._browser.mediaType = type_data;
             this._undo.mediaType = type_data;
             let player;
+            this._numberOfMedia = 1;
+            this._mediaDataCount = 0;
             if (type_data.dtype == "video") {
               player = document.createElement("annotation-player");
               this._player = player;
@@ -181,6 +183,12 @@ class AnnotationPage extends TatorPage {
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
+
+              var mediaIdCount = 0;
+              for (const mediaId of data.media_files.ids.keys()) {
+                mediaIdCount += 1;
+              }
+              this._numberOfMedia = mediaIdCount;
               //this._getMetadataTypes(player, player._video._canvas);
               //this._browser.canvas = player._video;
               this._settings._capture.addEventListener(
@@ -516,6 +524,12 @@ class AnnotationPage extends TatorPage {
           dataType.isTLState = isTLState;
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
+        this._mediaDataCount += 1;
+
+        if (this._mediaDataCount == this._numberOfMedia && !update) {
+          this._data.initialUpdate();
+        }
+
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {

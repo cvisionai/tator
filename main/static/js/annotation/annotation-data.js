@@ -2,6 +2,7 @@ class AnnotationData extends HTMLElement {
   constructor() {
     super();
 
+    this._dataTypesRaw = [];
     this._dataTypes = {};
     this._trackDb = new Map();
     this._updateUrls = new Map();
@@ -31,11 +32,14 @@ class AnnotationData extends HTMLElement {
       }
     }
 
+    this._version = version;
+    this._projectId = projectId;
+
     if (update)
     {
-      this._dataTypesRaw = dataTypes;
-      this._version = version;
-      this._projectId = projectId;
+      for (const dataType of dataTypes) {
+        this._dataTypesRaw.push(dataType);
+      }
       this.updateAll(dataTypes, version)
       .then(() => {
         this.dispatchEvent(new Event("initialized"));
@@ -45,14 +49,15 @@ class AnnotationData extends HTMLElement {
     // Convert datatypes array to a map for faster access
     for (const dataType of dataTypes) {
       let dataTypeRegistered = dataType.id in this._dataTypes;
-      if (!dataTypeRegistered ) {
+      if (!dataTypeRegistered) {
         this._dataTypes[dataType.id] = dataType;
+        this._dataTypesRaw.push(dataType);
       }
     }
   }
 
   initialUpdate() {
-    this.updateAll(Object.keys(this._dataTypes), this._version)
+    this.updateAll(this._dataTypesRaw, this._version)
     .then(() => {
       this.dispatchEvent(new Event("initialized"));
     });

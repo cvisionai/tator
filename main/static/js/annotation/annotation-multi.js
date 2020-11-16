@@ -247,7 +247,7 @@ class AnnotationMulti extends TatorElement {
   set mediaInfo(val) {
     this._mediaInfo = val;
 
-    this._videos = []
+    this._videos = [];
 
     this._multi_layout = val.media_files['layout'];
     if (val.media_files.quality)
@@ -361,7 +361,7 @@ class AnnotationMulti extends TatorElement {
                                     this._videos[idx]._canvas,
                                     idx != 0, //whether to block signal registration
                                     video_info.id, // sub-element real-id
-                                    false// only update on last video
+                                    false,// only update on last video
                                     );
       // Mute multi-video
       this._videos[idx].setVolume(0);
@@ -398,8 +398,10 @@ class AnnotationMulti extends TatorElement {
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}`));
+
       idx += 1;
     }
+
     let video_info = [];
     Promise.all(video_resp).then((values) => {
       for (let resp of values)
@@ -411,9 +413,6 @@ class AnnotationMulti extends TatorElement {
         {
           setup_video(idx, info[idx]);
         }
-
-        // #TODO Dispatch
-        this.parent._data.initialUpdate();
 
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
