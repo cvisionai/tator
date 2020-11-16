@@ -136,6 +136,7 @@ class AnnotationPage extends TatorPage {
             this._browser.mediaType = type_data;
             this._undo.mediaType = type_data;
             let player;
+            this._mediaIds = [];
             this._numberOfMedia = 1;
             this._mediaDataCount = 0;
             if (type_data.dtype == "video") {
@@ -185,7 +186,8 @@ class AnnotationPage extends TatorPage {
               this._setupInitHandlers(player);
 
               var mediaIdCount = 0;
-              for (const mediaId of data.media_files.ids.keys()) {
+              for (const index of data.media_files.ids.keys()) {
+                this._mediaIds.push(data.media_files.ids[index]);
                 mediaIdCount += 1;
               }
               this._numberOfMedia = mediaIdCount;
@@ -526,7 +528,9 @@ class AnnotationPage extends TatorPage {
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
         this._mediaDataCount += 1;
 
-        if (this._mediaDataCount == this._numberOfMedia && !update) {
+        // Pull the data / iniitliaze the app if we are using the multi-view player and
+        // if all of the media has already registered their data types
+        if (this._mediaDataCount == this._numberOfMedia && this._player.mediaType.dtype == "multi") {
           this._data.initialUpdate();
         }
 
@@ -676,6 +680,12 @@ class AnnotationPage extends TatorPage {
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
+
+          // For states specifically, if we are using the multi-view, we will
+          // create the state across all media
+          if (this._player.mediaType.dtype == "multi") {
+            save.stateMediaIds = this._mediaIds;
+          }
 
           save.addEventListener("cancel", () => {
             this._closeModal(save);

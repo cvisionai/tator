@@ -92,6 +92,10 @@ class SaveDialog extends TatorElement {
     this._attributes.dispatchEvent(new Event("change"));
   }
 
+  set stateMediaIds(val) {
+    this._stateMediaIds = val;
+  }
+
   // Save the underlying object to the database
   saveObject(requestObj, values)
   {
@@ -113,7 +117,12 @@ class SaveDialog extends TatorElement {
     };
 
     if (this._dataType.dtype.includes("state")) {
-      body.media_ids = [this._mediaId]
+      if (this._stateMediaIds) {
+        body.media_ids = this._stateMediaIds;
+      }
+      else {
+        body.media_ids = [this._mediaId];
+      }
       this._undo.post("States", body, this._dataType);
     }
     else {
