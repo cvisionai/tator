@@ -602,18 +602,15 @@ class AnnotationPage extends TatorPage {
             else if ('frame' in evt.detail.data) {
               canvas.goToFrame(parseInt(evt.detail.data.frame));
             }
+
+            if (this._player.selectTimelineData) {
+              this._player.selectTimelineData(evt.detail.data);
+            }
+            this._player.goToFrame(evt.detail.data.frame);
           }
           this._settings.setAttribute("entity-id", evt.detail.data.id);
           this._settings.setAttribute("entity-type", evt.detail.data.meta);
           this._settings.setAttribute("type-id", evt.detail.data.meta);
-
-          if (this._player.selectTimelineData) {
-            this._player.selectTimelineData(evt.detail.data);
-          }
-
-          if (this._player.goToFrame) {
-            this._player.goToFrame(evt.detail.data.frame);
-          }
         });
         this._browser.addEventListener("capture", evt => {
           if ('_video' in canvas)
