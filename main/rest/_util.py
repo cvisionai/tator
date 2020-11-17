@@ -65,7 +65,7 @@ def check_required_fields(datafields, attr_types, body):
             convert_attribute(attr_type, body[field]) # Validates attr value
             attrs[field] = body[field];
         elif attr_type['dtype'] == 'datetime':
-            if attr_type['use_current']:
+            if 'use_current' in attr_type and attr_type['use_current']:
                 # Fill in current datetime.
                 attrs[field] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             elif attr_type.get('required', True):
