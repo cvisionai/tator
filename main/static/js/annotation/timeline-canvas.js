@@ -34,7 +34,14 @@ class TimelineCanvas extends TatorElement {
   set annotationData(val) {
     this._data = val;
     this._data.addEventListener("freshData", evt => {
-      this._updateCanvas(this._currentTypeId);
+      if (this._currentTypeId) {
+        // Update the state interpolation latest timeline
+        this._updateCanvas(this._currentTypeId);
+      }
+      else if (this._selectedData) {
+        // Update the state attr_style_range timeline
+        this._updateCanvas(this._selectedData.meta);
+      }
     });
     this._data.addEventListener("initialized", evt => {
       this._initialized = true;
