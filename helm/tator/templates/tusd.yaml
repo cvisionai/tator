@@ -19,11 +19,8 @@ spec:
         type: web
         role: uploader
     spec:
-      {{- if $.Values.awsFargate.enabled }}
-      {{- else }}
       nodeSelector:
         webServer: "yes"
-      {{- end }}
       containers:
         - name: tusd-{{ .name }}
           image: {{ $.Values.dockerRegistry }}/tator_tusd:{{ $.Values.gitRevision }}
@@ -83,11 +80,8 @@ spec:
         app: tusd
         type: web
     spec:
-      {{- if .Values.awsFargate.enabled }}
-      {{- else }}
       nodeSelector:
         webServer: "yes"
-      {{- end }}
       containers:
         - name: tusd
           image: {{ .Values.dockerRegistry }}/tator_tusd:{{ .Values.gitRevision }}

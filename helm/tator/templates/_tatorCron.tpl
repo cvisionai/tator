@@ -14,11 +14,8 @@ spec:
       template:
         spec:
           restartPolicy: "OnFailure"
-          {{- if .Values.awsFargate.enabled }}
-          {{- else }}
           nodeSelector:
             {{ .selector }}
-          {{- end }}
           terminationGracePeriodSeconds: 10
           volumes:
             {{ include "volumes.template" . | indent 12 }}
