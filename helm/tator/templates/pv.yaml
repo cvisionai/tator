@@ -11,15 +11,6 @@ spec:
   claimRef:
     namespace: default
     name: main-pv-claim
-  {{- if .Values.awsStorage.enabled }}
-  volumeMode: Filesystem
-  storageClassName: efs-sc
-  csi:
-    driver: efs.csi.aws.com
-    volumeHandle: {{ .Values.pv.filesystemId }}
-    volumeAttributes:
-      encryptInTransit: "false"
-  {{- else }}
   mountOptions:
     {{- range .Values.pv.nfsMountOptions }}
     - {{ . }}
@@ -27,7 +18,6 @@ spec:
   nfs:
     server: {{ .Values.pv.nfsServer }}
     path: {{ .Values.pv.path }}
-  {{- end }} # .Values.awsStorage.enabled
 {{- if hasKey .Values.pv "mediaShards" }}
 {{- range .Values.pv.mediaShards }}
 {{- $settings := dict "Values" $.Values "shard" . }}
