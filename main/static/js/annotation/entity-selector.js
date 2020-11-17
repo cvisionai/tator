@@ -150,7 +150,7 @@ class EntitySelector extends TatorElement {
           }
         });
       }
-      
+
     });
 
     redraw.addEventListener("click", () => {
@@ -242,10 +242,15 @@ class EntitySelector extends TatorElement {
       this._current.textContent = String(data.length);
       this._slider.value = data.length - 1;
     }
+
+    if (this._selectAttempt) {
+      this.selectEntity(this._selectAttempt, true);
+    }
+
     this._emitSelection(false, true);
   }
 
-  selectEntity(obj) {
+  selectEntity(obj, attemptPrevSelect) {
     for (const [index, data] of this._data.entries()) {
       if (data.id == obj.id) {
         this._div.classList.add("is-open");
@@ -254,6 +259,19 @@ class EntitySelector extends TatorElement {
         this._slider.value = index;
       }
     }
+
+    if (attemptPrevSelect) {
+      this._selectAttempt;
+      return;
+    }
+
+    // If the object was attempted to be selected, it might not have been
+    // a part of the data entries yet. Save it and when the data buffer is updated,
+    // attempt to select it.
+    if (!this._div.classList.contains("is-open")) {
+      this._selectAttempt = obj;
+    }
+
     this._emitSelection(false, false);
   }
 

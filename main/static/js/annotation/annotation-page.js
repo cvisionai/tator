@@ -526,6 +526,17 @@ class AnnotationPage extends TatorPage {
           dataType.isTLState = isTLState;
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
+        this._data.addEventListener("freshData", evt => {
+          if (this._newEntityId) {
+            for (const elem of evt.detail.data) {
+              if (elem.id == this._newEntityId) {
+                this._browser.selectEntity(elem);
+              }
+            }
+
+            this._newEntityId = null;
+          }
+        });
         this._mediaDataCount += 1;
 
         // Pull the data / iniitliaze the app if we are using the multi-view player and
@@ -584,6 +595,13 @@ class AnnotationPage extends TatorPage {
           this._settings.setAttribute("type-id", evt.detail.meta);
         });
         this._undo.addEventListener("update", evt => {
+
+          // Force selecting this new entity in the browser if a new object was created
+          // when the data is retrieved (ie freshData event)
+          if (evt.detail.method == "POST") {
+            this._newEntityId = evt.detail.id;
+          }
+
           this._data.updateTypeLocal(
             evt.detail.method,
             evt.detail.id,
