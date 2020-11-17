@@ -250,37 +250,28 @@ class EntitySelector extends TatorElement {
     this._emitSelection(false, true);
   }
 
-  // #TODO Potentially refactor with selectEntity
-  selectFirstEntity() {
-    for (const [index, data] of this._data.entries()) {
-      this._div.classList.add("is-open");
-      this.dispatchEvent(new Event("open"));
-      this._current.textContent = String(index + 1);
-      this._slider.value = index;
-    }
-
-    this._emitSelection(false, false);
-  }
-
   selectEntity(obj, attemptPrevSelect) {
+    var selectedObject = false;
     for (const [index, data] of this._data.entries()) {
       if (data.id == obj.id) {
         this._div.classList.add("is-open");
         this.dispatchEvent(new Event("open"));
         this._current.textContent = String(index + 1);
         this._slider.value = index;
+        selectedObject = true;
+        break;
       }
     }
 
     if (attemptPrevSelect) {
-      this._selectAttempt;
+      this._selectAttempt = null;
       return;
     }
 
     // If the object was attempted to be selected, it might not have been
     // a part of the data entries yet. Save it and when the data buffer is updated,
     // attempt to select it.
-    if (!this._div.classList.contains("is-open")) {
+    if (!selectedObject) {
       this._selectAttempt = obj;
     }
 

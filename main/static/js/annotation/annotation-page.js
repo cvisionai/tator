@@ -531,10 +531,15 @@ class AnnotationPage extends TatorPage {
             for (const elem of evt.detail.data) {
               if (elem.id == this._newEntityId) {
                 this._browser.selectEntity(elem);
+
+                if (this._player.selectTimelineData) {
+                  this._player.selectTimelineData(elem);
+                }
+
+                this._newEntityId = null;
+                break;
               }
             }
-
-            this._newEntityId = null;
           }
         });
         this._mediaDataCount += 1;

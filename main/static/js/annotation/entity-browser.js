@@ -237,8 +237,6 @@ class EntityBrowser extends TatorElement {
         selector.addEventListener("close", () => {
           li.classList.remove("is-open");
         });
-
-        selector.selectFirstEntity();
       }
     }
     for (const group in this._selectors) {
