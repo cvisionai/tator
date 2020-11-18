@@ -32,30 +32,92 @@ certCron:
   # example of how to do this.
   enabled: true
 pv:
-  # EFS filesystem ID for main pv.
-  filesystemId: <Your filesystem ID>
+  nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+  nfsMountOptions:
+    - nfsvers=4.1
+    - rsize=1048576
+    - wsize=1048576
+    - hard
+    - timeo=600
+    - retrans=2
+    - noresvport
+  path: "/"
   # Specifies a series of persistent volumes for storing media. If given,
   # the main pv is no longer used for storing new media, and instead each
   # media file is written to a randomly selected shard from those given.
   # Media files stored on a shard use the name given to construct a URI.
   mediaShards:
     - name: media000
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
     - name: media001
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
     - name: media002
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
   # Specifies a series of persistent volumes for storing uploads. If given,
   # the main pv is no longer used for storing uploads, and instead each
   # upload will be routed to one of the shards given below by hashing the
   # upload UID. One TUS service will be created for each shard.
   uploadShards:
     - name: upload000
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
     - name: upload001
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
     - name: upload002
-      filesystemId: <Your shard filesystem ID>
+      nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
+      nfsMountOptions:
+        - nfsvers=4.1
+        - rsize=1048576
+        - wsize=1048576
+        - hard
+        - timeo=600
+        - retrans=2
+        - noresvport
+      path: "/"
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10
@@ -115,12 +177,6 @@ kibana:
       server:
         basePath: /logs
   elasticsearchHosts: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
-awsStorage:
-  # Enable this if you are using EFS storage.
-  enabled: true
-awsFargate:
-  # Enable this if you are using fargate for containers.
-  enabled: true
 remoteTranscodes:
   # Enable this if you would like to do transcodes with a different
   # Kubernetes cluster, such as an on-premises cluster. Follow instructions

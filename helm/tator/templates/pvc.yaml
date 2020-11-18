@@ -8,9 +8,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.pvc.size | default "10Ti" }}
-  {{- if .Values.awsStorage.enabled }}
-  storageClassName: efs-sc
-  {{- end }}
 {{- if hasKey .Values.pv "mediaShards" }}
 {{- range .Values.pv.mediaShards }}
 {{- $settings := dict "Values" $.Values "shard" . }}

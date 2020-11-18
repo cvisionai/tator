@@ -19,11 +19,8 @@ spec:
         type: web
     spec:
       terminationGracePeriodSeconds: 60
-      {{ if .Values.awsFargate.enabled }}
-      {{ else }}
       nodeSelector:
         {{ .selector }}
-      {{ end }}
       containers:
         - name: tator-online
           image: {{ .Values.dockerRegistry }}/tator_online:{{ .Values.gitRevision }}
