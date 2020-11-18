@@ -18,7 +18,7 @@ class AnnotationBrowser extends TatorElement {
     });
   }
 
-  init(dataTypes, version) {
+  init(dataTypes, version, stateMediaIds) {
     this._version = version;
     this._media.dataTypes = dataTypes;
     for (const dataType of dataTypes) {
@@ -49,6 +49,11 @@ class AnnotationBrowser extends TatorElement {
         if (dataType.interpolation === "latest"){
           const frame = document.createElement("frame-panel");
           frame.setAttribute("media-id", this._mediaId);
+
+          if (stateMediaIds) {
+            frame.stateMediaIds = stateMediaIds;
+          }
+
           frame.undoBuffer = this._undo;
           frame.annotationData = this._data;
           frame.version = this._version;
@@ -125,7 +130,7 @@ class AnnotationBrowser extends TatorElement {
   frameChange(frame) {
     for (const typeId in this._framePanels) {
       this._framePanels[typeId].frameChange(frame);
-    }    
+    }
     for (const typeId in this._entityPanels) {
       this._entityPanels[typeId].frameChange(frame);
     }

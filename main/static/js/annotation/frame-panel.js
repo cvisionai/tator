@@ -22,6 +22,10 @@ class FramePanel extends TatorElement {
     this._undo = val;
   }
 
+  set stateMediaIds(val) {
+    this._stateMediaIds = val;
+  }
+
   set annotationData(val) {
     this._data = val;
   }
@@ -54,6 +58,11 @@ class FramePanel extends TatorElement {
             version: this._version.id,
             ...values,
           };
+
+          if (this._stateMediaIds) {
+            body.media_ids = this._stateMediaIds;
+          }
+
           this._undo.post("States", body, val);
         } else {
           const state = data[index];
@@ -76,6 +85,11 @@ class FramePanel extends TatorElement {
             frame: 0,
             version: this._version.id,
           }
+
+          if (this._stateMediaIds) {
+            body.media_ids = this._stateMediaIds;
+          }
+
           for (const column of val.attribute_types) {
             let defaultValue;
             if (column.default !== null) {

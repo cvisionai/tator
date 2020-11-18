@@ -181,6 +181,8 @@ class AnnotationPage extends TatorPage {
               this._player.mediaType = type_data;
               player.addDomParent({"object": this._headerDiv,
                                    "alignTo":  this._browser});
+
+              // Note: The player itself will set the metadatatypes and canvas info with this
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
@@ -191,8 +193,6 @@ class AnnotationPage extends TatorPage {
                 mediaIdCount += 1;
               }
               this._numberOfMedia = mediaIdCount;
-              //this._getMetadataTypes(player, player._video._canvas);
-              //this._browser.canvas = player._video;
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -562,7 +562,14 @@ class AnnotationPage extends TatorPage {
           return;
         }
 
-        this._browser.init(dataTypes, this._version);
+        // For states specifically, if we are using the multi-view, we will
+        // create the state across all media
+        var stateMediaIds = {};
+        if (this._player.mediaType.dtype == "multi") {
+          stateMediaIds = this._mediaIds;
+        }
+
+        this._browser.init(dataTypes, this._version, stateMediaIds);
 
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {
