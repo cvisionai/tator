@@ -187,7 +187,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
         else:
             # Create the media object.
-            media_obj = Media.objects.create(
+            media_obj = Media(
                 project=Project.objects.get(pk=project),
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
@@ -198,6 +198,18 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 gid=gid,
                 uid=uid,
             )
+
+            # Use thumbnails if they are given.
+            thumbnail_url = params.get('thumbnail_url', None)
+            thumbnail_gif_url = params.get('thumbnail_gif_url', None)
+            if thumbnail_url is not None:
+                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+            if thumbnail_gif_url is not None:
+                download_uploaded_file(thumbnail_gif_url, self.request.user, thumb_gif_path)
+                media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
+            media_obj.save()
+
             msg = (f"Media object {media_obj.id} created for video "
                    f"{name} on project {media_type.project.name}")
             response = {'message': msg, 'id': media_obj.id}
