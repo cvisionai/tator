@@ -463,7 +463,7 @@ class StateType(Model):
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
     interpolation = CharField(max_length=16,
-                              choices=[('none', 'none'), ('latest', 'latest')],
+                              choices=[('none', 'none'), ('latest', 'latest'), ('attr_style_range', 'attr_style_range')],
                               default='latest')
     association = CharField(max_length=64,
                             choices=AssociationTypes,
