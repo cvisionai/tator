@@ -199,6 +199,18 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 uid=uid,
             )
 
+            # Add optional parameters.
+            if 'fps' in params:
+                media_obj.fps = params['fps']
+            if 'num_frames' in params:
+                media_obj.num_frames = params['num_frames']
+            if 'codec' in params:
+                media_obj.codec = params['codec']
+            if 'width' in params:
+                media_obj.width = params['width']
+            if 'height' in params:
+                media_obj.height = params['height']
+
             # Use thumbnails if they are given.
             thumbnail_url = params.get('thumbnail_url', None)
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)

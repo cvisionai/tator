@@ -144,6 +144,31 @@ media_spec = {
             'description': 'MD5 sum of the media file.',
             'type': 'string',
         },
+        'num_frames': {
+            'type': 'integer',
+            'description': 'Number of frames for videos.',
+            'nullable': True,
+        },
+        'fps': {
+            'type': 'integer',
+            'description': 'Frame rate for videos.',
+            'nullable': True,
+        },
+        'codec': {
+            'type': 'string',
+            'description': 'Codec for videos.',
+            'nullable': True,
+        },
+        'width': {
+            'type': 'integer',
+            'description': 'Horizontal resolution in pixels.',
+            'nullable': True,
+        },
+        'height': {
+            'type': 'integer',
+            'description': 'Vertical resolution in pixels.',
+            'nullable': True,
+        },
         'progress_name': {
             'description': 'Replaces name in progress message.',
             'type': 'string',
