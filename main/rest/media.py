@@ -203,9 +203,11 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             thumbnail_url = params.get('thumbnail_url', None)
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)
             if thumbnail_url is not None:
+                thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
                 download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
             if thumbnail_gif_url is not None:
+                thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.gif')
                 download_uploaded_file(thumbnail_gif_url, self.request.user, thumb_gif_path)
                 media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
             media_obj.save()
