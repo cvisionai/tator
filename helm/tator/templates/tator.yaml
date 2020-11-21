@@ -23,9 +23,9 @@
 {{- $filebeatSettings := dict "Values" .Values "name" "prune-filebeat-cron" "app" "prune-filebeat" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunefilebeat\"]" "schedule" "40 4 * * *" }}
 {{include "tatorCron.template" $filebeatSettings }}
 ---
-#{{- $uploadCleanupSettings := dict "Values" .Values "name" "upload-cleanup-cron" "app" "upload-cleanup" "selector" "webServer: \"yes\"" "command" "[python3]" "args" "[\"manage.py\", \"uploadcleanup\"]" "schedule" "40 5 * * *" }}
-#{{include "tatorCron.template" $uploadCleanupSettings }}
-#---
+{{- $uploadCleanupSettings := dict "Values" .Values "name" "upload-cleanup-cron" "app" "upload-cleanup" "selector" "webServer: \"yes\"" "command" "[python3]" "args" "[\"manage.py\", \"uploadcleanup\"]" "schedule" "40 5 * * *" }}
+{{include "tatorCron.template" $uploadCleanupSettings }}
+---
 {{ if .Values.requireHttps }}
 {{ if .Values.certCron.enabled }}
 {{- $certSettings := dict "Values" .Values "name" "cert-cron" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "schedule" "50 5 15 * *" "domain" .Values.domain }}
