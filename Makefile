@@ -160,7 +160,7 @@ tator-lite: containers/tator_lite/Dockerfile
 
 .PHONY: tator-image
 tator-image: containers/tator/Dockerfile.gen
-	$(MAKE) min-js min-css docs
+	$(MAKE) min-js min-css r-docs docs
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -460,6 +460,41 @@ python-bindings: tator-image
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
+	cd ../../..
+
+.PHONY: r-docs
+r-docs:
+	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
+	rm -rf scripts/packages/tator-r/tmp
+	mkdir -p scripts/packages/tator-r/tmp
+	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-r:/pwd \
+		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
+		generate -c /pwd/config.json \
+		-i /pwd/schema.yaml \
+		-g r -o /out/tator-r-new-bindings -t /pwd/templates
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
+		/bin/sh -c "chown -R nobody:nogroup /out"
+	rm -f scripts/packages/tator-r/R/generated_*
+	rm scripts/packages/tator-r/schema.yaml
+	cd $(shell pwd)/scripts/packages/tator-r/tmp/tator-r-new-bindings/R && \
+		for f in $$(ls -l | awk -F':[0-9]* ' '/:/{print $$2}'); do cp -- "$$f" "../../../R/generated_$$f"; done
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-r:/tator \
+		rocker/tidyverse:latest \
+		/bin/sh -c "R --slave -e \"devtools::install_deps('/tator')\"; \
+		R CMD build tator; R CMD INSTALL tator_*.tar.gz; \
+		R --slave -e \"install.packages('pkgdown')\"; \
+		Rscript -e \"devtools::document('tator')\"; \
+		Rscript -e \"pkgdown::build_site('tator')\"; \
+		chown -R $(shell id -u):$(shell id -g) /tator"
+	rm -rf $(shell pwd)/doc/_build/html/tator-r
+	cp -r $(shell pwd)/scripts/packages/tator-r/docs $(shell pwd)/doc/_build/html/tator-r
+	touch $(shell pwd)/doc/tator-r/overview.rst
+	touch $(shell pwd)/doc/tator-r/reference/api.rst
 	cd ../../..
 
 TOKEN=$(shell cat token.txt)
