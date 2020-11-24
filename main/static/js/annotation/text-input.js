@@ -75,8 +75,10 @@ class TextInput extends TatorElement {
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
       this._input.removeAttribute("readonly");
+      this._input.classList.remove("disabled");
     } else {
       this._input.setAttribute("readonly", "");
+      this._input.classList.add("disabled");
     }
   }
 

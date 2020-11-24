@@ -70,6 +70,10 @@
     border-color: $color-red;
     color: $color-red;
   }
+  &.disabled {
+    color: $color-gray--dark;
+    background-color: $color-charcoal--medium;
+  }
   option {
     background-color: $color-charcoal--light;
   }

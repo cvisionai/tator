@@ -34,8 +34,13 @@ class AttributePanel extends TatorElement {
   set permission(val) {
     this._permission = val;
     for (const widget of this._div.children) {
+      // Specific attribute fields in this panel are always disabled
       if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
+        // Widget may have been marked as disabled, and its permission have already been
+        // set appropriately.
+        if (!widget.disabled) {
           widget.permission = val;
+        }
       }
     }
   }
@@ -71,6 +76,7 @@ class AttributePanel extends TatorElement {
     });
     for (const column of sorted) {
       let widget;
+      var ignorePermission = false;
 
       if (column.dtype == "bool") {
         widget = document.createElement("bool-input");
@@ -92,7 +98,8 @@ class AttributePanel extends TatorElement {
         }
         widget.choices = choices;
       } else if (column.style) {
-        if (column.dtype == "string" && column.style == "long_string") {
+        const style_options = column.style.split(' ');
+        if (column.dtype == "string" && style_options.includes("long_string")) {
           widget = document.createElement("text-area");
           widget.setAttribute("name", column.name);
           widget.setAttribute("type", column.dtype);
@@ -101,6 +108,12 @@ class AttributePanel extends TatorElement {
           widget.setAttribute("name", column.name);
           widget.setAttribute("type", column.dtype);
           widget.autocomplete = column.autocomplete;
+        }
+
+        if (style_options.includes("disabled")) {
+          widget.permission = "View Only";
+          widget.disabled = true;
+          ignorePermission = true;
         }
       }
       else {
@@ -125,7 +138,7 @@ class AttributePanel extends TatorElement {
         widget.required = column.required;
       }
 
-      if (typeof this._permission !== "undefined") {
+      if (typeof this._permission !== "undefined" && !ignorePermission) {
         widget.permission = this._permission;
       }
       this._div.appendChild(widget);
