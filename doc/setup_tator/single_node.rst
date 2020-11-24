@@ -390,7 +390,7 @@ Install the nfs-client-provisioner helm chart
    :linenos:
 
    kubectl create namespace provisioner
-   helm repo add stable https://kubernetes-charts.storage.googleapis.com
+   helm repo add stable https://charts.helm.sh/stable
    helm install -n provisioner nfs-client-provisioner stable/nfs-client-provisioner --set nfs.server=<NFS_SERVER> --set nfs.path=/media/kubernetes_share/scratch --set storageClass.archiveOnDelete=false
 
 * This sets up a new storage class called `nfs-client` any pvc request needs to
@@ -467,6 +467,7 @@ Install dependencies
    :linenos:
 
     sudo apt-get install python3-sphinx
+    sudo apt-get install python3-pip
     pip3 install sphinx-rtd-theme recommonmark
 
 
@@ -475,7 +476,6 @@ Install dependencies
 .. code-block:: bash
    :linenos:
 
-   sudo apt-get install python3-pip
    pip3 install mako progressbar2
 
 
