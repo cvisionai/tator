@@ -76,7 +76,9 @@ def _get_api(cluster):
         host = cluster_obj.host
         port = cluster_obj.port
         token = cluster_obj.token
-        cert = cluster_obj.cert
+        fd, cert = tempfile.mkstemp(text=True)
+        with open(fd, 'w') as f:
+            f.write(cluster_obj.cert)
         conf = Configuration()
         conf.api_key['authorization'] = token
         conf.host = f'https://{host}:{port}'
