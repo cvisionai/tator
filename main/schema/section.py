@@ -43,7 +43,13 @@ class SectionListSchema(AutoSchema):
         }]
 
     def _get_filter_parameters(self, path, method):
-        return []
+        return [{
+            'name': 'name',
+            'in': 'query',
+            'required': False,
+            'description': 'Name of the section.',
+            'schema': {'type': 'string'},
+        }]
 
     def _get_request_body(self, path, method):
         body = {}

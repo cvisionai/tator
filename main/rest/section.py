@@ -27,6 +27,8 @@ class SectionListAPI(BaseListView):
 
     def _get(self, params):
         qs = Section.objects.filter(project=params['project']).order_by('name')
+        if 'name' in params:
+            qs = qs.filter(name=params['name'])
         return database_qs(qs)
 
     def _post(self, params):
