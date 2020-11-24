@@ -65,10 +65,14 @@ attribute_type_properties = {
         'type': 'boolean',
     },
     'style': {
-        'description': 'Create a text area string if "long_string" is combined with "string" dtype. '
-                       '"start_frame" and "end_frame" used in conjunction with "attr_style_range" interpolation',
+        'description': 'Available options: disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check   '
+                       'Multiple options can be chained together separated by white space. '
+                       '"disabled" will not allow the user to edit the attribute in the Tator GUI. '
+                       'Create a text area string if "long_string" is combined with "string" dtype. '
+                       '"start_frame" and "end_frame" used in conjunction with "attr_style_range" interpolation. '
+                       '"start_frame_check and "end_frame_check" are used in conjunction with "attr_style_range" interpolation. '
+                       'When associated with a bool, these checks will result in Tator GUI changes with the corresponding start_frame and end_frame attributes.',
         'type': 'string',
-        'enum': ['long_string', 'start_frame', 'end_frame'],
     },
 }
 

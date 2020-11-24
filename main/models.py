@@ -385,7 +385,7 @@ class MediaType(Model):
                       dtype only.
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
-        style: (optional) "long_string" when combined with dtype: "string" for text area
+        style: (optional) String of GUI-related styles.
     """
     archive_config = JSONField(default=None, null=True, blank=True)
     streaming_config = JSONField(default=None, null=True,blank=True)
@@ -443,7 +443,7 @@ class LocalizationType(Model):
                       dtype only.
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
-        style: (optional) "long_string" when combined with dtype: "string" for text area
+        style: (optional) String of GUI-related styles.
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -491,7 +491,7 @@ class StateType(Model):
                       dtype only.
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
-        style: (optional) "long_string" when combined with dtype: "string" for text area
+        style: (optional) String of GUI-related styles.
     """
     delete_child_localizations = BooleanField(default=False)
     """ If enabled, child localizations will be deleted when states of this
@@ -534,7 +534,7 @@ class LeafType(Model):
                       dtype only.
         use_current: (optional) Boolean indicating whether to use the current time
                      as the default for datetime dtype.
-        style: (optional) "long_string" when combined with dtype: "string" for text area
+        style: (optional) String of GUI-related styles.
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
