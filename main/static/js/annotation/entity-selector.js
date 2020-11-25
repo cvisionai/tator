@@ -58,6 +58,10 @@ class EntitySelector extends TatorElement {
     const next = document.createElement("entity-next-button");
     controls.appendChild(next);
 
+    const goToFrame = document.createElement("entity-frame-button");
+    goToFrame.style.marginLeft = "8px";
+    controls.appendChild(goToFrame);
+
     this._del = document.createElement("entity-delete-button");
     this._del.style.marginLeft = "8px";
     this._del.style.display = "none";
@@ -109,7 +113,7 @@ class EntitySelector extends TatorElement {
       this._div.classList.toggle("is-open");
       if (this._div.classList.contains("is-open")) {
         this.dispatchEvent(new Event("open"));
-        this._emitSelection(true, true);
+        this._emitSelection(true, true, false);
       } else {
         this.dispatchEvent(new Event("close"));
       }
@@ -120,7 +124,7 @@ class EntitySelector extends TatorElement {
       if (index > 0) {
         this._current.textContent = String(index);
       }
-      this._emitSelection(true, true);
+      this._emitSelection(true, true, false);
     });
 
     next.addEventListener("click", () => {
@@ -128,8 +132,12 @@ class EntitySelector extends TatorElement {
       if (index <= this._data.length) {
         this._current.textContent = String(index);
       }
-      this._emitSelection(true, true);
+      this._emitSelection(true, true, false);
     });
+
+    goToFrame.addEventListener("click", () => {
+      this._emitSelection(true, true, true);
+    })
 
     capture.addEventListener("click", () => {
       capture.blur();
@@ -191,7 +199,7 @@ class EntitySelector extends TatorElement {
 
     this._slider.addEventListener("input", () => {
       this._current.textContent = String(Number(this._slider.value) + 1);
-      this._emitSelection(true, true);
+      this._emitSelection(true, true, false);
     });
   }
 
@@ -247,7 +255,7 @@ class EntitySelector extends TatorElement {
       this.selectEntity(this._selectAttempt, true);
     }
 
-    this._emitSelection(false, true);
+    this._emitSelection(false, true, false);
   }
 
   selectEntity(obj, attemptPrevSelect) {
@@ -275,17 +283,18 @@ class EntitySelector extends TatorElement {
       this._selectAttempt = obj;
     }
 
-    this._emitSelection(false, false);
+    this._emitSelection(false, false, false);
   }
 
-  _emitSelection(byUser, composed) {
+  _emitSelection(byUser, composed, goToEntityFrame) {
     var index = parseInt(this._current.textContent) - 1;
     index = Math.max(index, 0);
     this.dispatchEvent(new CustomEvent("select", {
       detail: {
         data: this._data[index],
         dataType: this._dataType,
-        byUser: byUser
+        byUser: byUser,
+        goToEntityFrame: goToEntityFrame
       },
       composed: composed,
     }));

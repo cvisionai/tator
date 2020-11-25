@@ -2340,16 +2340,21 @@ class AnnotationCanvas extends TatorElement
     return this.refresh();
   }
 
-  selectLocalization(localization, skipAnimation, muteOthers)
+  selectLocalization(localization, skipAnimation, muteOthers, skipGoToFrame)
   {
     // Seek to a frame if we aren't actually there but trying to display
     // a localization
     if (localization.frame != this.currentFrame())
     {
-      this.gotoFrame(localization.frame).then(() => {
-        this.selectLocalization(localization, skipAnimation, muteOthers);
-      });
-      return;
+      if (skipGoToFrame) {
+        return;
+      }
+      else {
+        this.gotoFrame(localization.frame).then(() => {
+          this.selectLocalization(localization, skipAnimation, muteOthers);
+        });
+        return;
+      }
     }
 
     var that = this;
@@ -2408,7 +2413,7 @@ class AnnotationCanvas extends TatorElement
     this._activeTrack = null;
   }
 
-  selectTrack(track, frameHint)
+  selectTrack(track, frameHint, skipGoToFrame)
   {
     let frame = frameHint;
     if (frame == undefined)
@@ -2438,7 +2443,9 @@ class AnnotationCanvas extends TatorElement
 
     if (frame != this.currentFrame())
     {
-      this.gotoFrame(frame).then(trackSelectFunctor);
+      if (!skipGoToFrame) {
+        this.gotoFrame(frame).then(trackSelectFunctor);
+      }
     }
     else
     {

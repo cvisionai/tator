@@ -624,13 +624,15 @@ class AnnotationPage extends TatorPage {
         this._browser.addEventListener("select", evt => {
           if (evt.detail.byUser) {
             if (evt.detail.dataType.isLocalization) {
-              canvas.selectLocalization(evt.detail.data);
+              canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
             } else if (evt.detail.dataType.isTrack) {
               // select track takes care of frame jump
-              canvas.selectTrack(evt.detail.data);
+              canvas.selectTrack(evt.detail.data, undefined, !evt.detail.goToEntityFrame);
             }
             else if ('frame' in evt.detail.data) {
-              canvas.goToFrame(parseInt(evt.detail.data.frame));
+              if (evt.detail.goToEntityFrame) {
+                canvas.goToFrame(parseInt(evt.detail.data.frame));
+              }
             }
 
             if (this._player.selectTimelineData) {
@@ -638,7 +640,9 @@ class AnnotationPage extends TatorPage {
             }
 
             if (this._player.mediaType.dtype == "multi") {
-              this._player.goToFrame(evt.detail.data.frame);
+              if (evt.detail.goToEntityFrame) {
+                this._player.goToFrame(evt.detail.data.frame);
+              }
             }
           }
           this._settings.setAttribute("entity-id", evt.detail.data.id);

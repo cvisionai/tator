@@ -387,12 +387,12 @@ class AnnotationPlayer extends TatorElement {
     this._video.selectNone();
   }
 
-  selectLocalization(loc) {
-    this._video.selectLocalization(loc);
+  selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
+    this._video.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
   }
 
-  selectTrack(track, frameHint) {
-    this._video.selectTrack(track, frameHint);
+  selectTrack(track, frameHint, skipGoToFrame) {
+    this._video.selectTrack(track, frameHint, skipGoToFrame);
   }
 
   deselectTrack() {

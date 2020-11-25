@@ -603,24 +603,24 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  selectLocalization(loc) {
+  selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
     for (let video of this._videos)
     {
       if (video.video_id() == loc.media ||
           video.video_id() == loc.media_id)
       {
-        video.selectLocalization(loc);
+        video.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
       }
     }
   }
 
-  selectTrack(track, frameHint) {
+  selectTrack(track, frameHint, skipGoToFrame) {
     for (let video of this._videos)
     {
       if (video.video_id() == track.media ||
           video.video_id() == track.media_id)
       {
-        video.selectTrack(track, frameHint);
+        video.selectTrack(track, frameHint, skipGoToFrame);
       }
     }
 

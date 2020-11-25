@@ -376,6 +376,7 @@ FILES = \
     annotation/entity-next-button.js \
     annotation/entity-delete-button.js \
     annotation/entity-redraw-button.js \
+		annotation/entity-frame-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
@@ -453,6 +454,14 @@ images:
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
+
+.PHONY: python-bindings-only
+python-bindings-only:
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	cd scripts/packages/tator-py
+	rm -rf dist
+	python3 setup.py sdist bdist_wheel
+	cd ../../..
 
 .PHONY: python-bindings
 python-bindings: tator-image

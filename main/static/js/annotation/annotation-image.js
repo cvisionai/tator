@@ -101,8 +101,8 @@ class AnnotationImage extends TatorElement {
     this._image.selectNone();
   }
 
-  selectLocalization(loc) {
-    this._image.selectLocalization(loc);
+  selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
+    this._image.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
   }
 
   addCreateTrackType(stateTypeObj) {
