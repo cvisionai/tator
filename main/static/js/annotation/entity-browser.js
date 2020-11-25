@@ -116,6 +116,9 @@ class EntityBrowser extends TatorElement {
     this._canvas = obj;
   }
 
+  set noFrames(val) {
+    this._noFrames = val;
+  }
 
   _drawControls() {
     const evt = this._evt;
@@ -164,6 +167,7 @@ class EntityBrowser extends TatorElement {
         this._ul.appendChild(li);
 
         const selector = document.createElement("entity-selector");
+        selector.noFrames = this._noFrames;
         selector.canvas = this._canvas;
         selector.permission = this._permission;
         selector.setAttribute("name", group);

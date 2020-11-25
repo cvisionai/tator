@@ -18,7 +18,7 @@ class AnnotationBrowser extends TatorElement {
     });
   }
 
-  init(dataTypes, version, stateMediaIds) {
+  init(dataTypes, version, stateMediaIds, isVideo) {
     this._version = version;
     this._media.dataTypes = dataTypes;
     for (const dataType of dataTypes) {
@@ -26,6 +26,7 @@ class AnnotationBrowser extends TatorElement {
         const entity = document.createElement("entity-browser");
         entity.dataType = dataType;
         entity.canvas = this._canvas;
+        entity.noFrames = !isVideo;
         if (typeof this._permission !== "undefined") {
           entity.permission = this._permission;
         }

@@ -569,7 +569,7 @@ class AnnotationPage extends TatorPage {
           stateMediaIds = this._mediaIds;
         }
 
-        this._browser.init(dataTypes, this._version, stateMediaIds);
+        this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
 
         this._sidebar.localizationTypes = byType;
         this._sidebar.addEventListener("default", evt => {

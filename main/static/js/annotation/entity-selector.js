@@ -58,9 +58,9 @@ class EntitySelector extends TatorElement {
     const next = document.createElement("entity-next-button");
     controls.appendChild(next);
 
-    const goToFrame = document.createElement("entity-frame-button");
-    goToFrame.style.marginLeft = "8px";
-    controls.appendChild(goToFrame);
+    this._goToFrameButton = document.createElement("entity-frame-button");
+    this._goToFrameButton.style.marginLeft = "8px";
+    controls.appendChild(this._goToFrameButton);
 
     this._del = document.createElement("entity-delete-button");
     this._del.style.marginLeft = "8px";
@@ -135,7 +135,7 @@ class EntitySelector extends TatorElement {
       this._emitSelection(true, true, false);
     });
 
-    goToFrame.addEventListener("click", () => {
+    this._goToFrameButton.addEventListener("click", () => {
       this._emitSelection(true, true, true);
     })
 
@@ -234,6 +234,16 @@ class EntitySelector extends TatorElement {
 
   set undoBuffer(val) {
     this._undo = val;
+  }
+
+  set noFrames(val) {
+    this._noFrames = val;
+    if (this._noFrames) {
+      this._goToFrameButton.style.display = "none";
+    }
+    else {
+      this._goToFrameButton.style.display = "block";
+    }
   }
 
   update(data) {
