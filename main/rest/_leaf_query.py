@@ -94,6 +94,9 @@ def get_leaf_queryset(query_params):
                         else:
                             raise Exception("Invalid value for attribute_null operation, must"
                                             " be <field>::<value> where <value> is true or false.")
+    if 'name' in params:
+        bools.append({'match': {'tator_treeleaf_name': params['name']}})
+
     attr_query['filter'] += bools
 
     for key in ['must_not', 'filter']:
