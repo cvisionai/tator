@@ -161,6 +161,13 @@ class LeafListSchema(AutoSchema):
                     'description': 'Name of the leaf element.',
                     'schema': {'type': 'string'},
                 },
+                {
+                    'name': 'search',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Search on all leaf fields.',
+                    'schema': {'type': 'string'},
+                },
             ] + attribute_filter_parameter_schema
             # Remove search as it is not yet supported.
             params = [p for p in params if p['name'] != 'search']
