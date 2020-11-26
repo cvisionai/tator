@@ -29,6 +29,7 @@ leaf_properties = {
     'parent': {
         'description': 'ID to use as parent if there is one.',
         'type': 'integer',
+        'nullable': True,
     },
 }
 

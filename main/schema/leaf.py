@@ -172,7 +172,7 @@ class LeafListSchema(AutoSchema):
                     'name': 'depth',
                     'in': 'query',
                     'required': False,
-                    'description': 'Get a specific tree depth.',
+                    'description': 'Get a specific tree depth. Root node depth is 0.',
                     'schema': {'type': 'integer'},
                 },
             ] + attribute_filter_parameter_schema
