@@ -94,11 +94,14 @@ def get_leaf_queryset(query_params):
                         else:
                             raise Exception("Invalid value for attribute_null operation, must"
                                             " be <field>::<value> where <value> is true or false.")
-    if 'name' in params:
-        bools.append({'match': {'tator_treeleaf_name': params['name']}})
+    if 'name' in query_params:
+        bools.append({'match': {'tator_treeleaf_name': query_params['name']}})
 
-    if 'depth' in params:
-        bools.append({'match': {'_treeleaf_depth': params['depth']}})
+    if 'depth' in query_params:
+        # Depth 0 corresponds to root node, but ltree thinks root node is depth 2, so do range
+        # query for depth + 2.
+        bools.append({'range': {'_treeleaf_depth': {'lt': query_params['depth'] + 3,
+                                                    'gt': query_params['depth'] + 1}}})
 
     attr_query['filter'] += bools
 
