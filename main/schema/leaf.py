@@ -168,6 +168,13 @@ class LeafListSchema(AutoSchema):
                     'description': 'Search on all leaf fields.',
                     'schema': {'type': 'string'},
                 },
+                {
+                    'name': 'depth',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Get a specific tree depth.',
+                    'schema': {'type': 'integer'},
+                },
             ] + attribute_filter_parameter_schema
             # Remove search as it is not yet supported.
             params = [p for p in params if p['name'] != 'search']

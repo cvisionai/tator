@@ -97,6 +97,9 @@ def get_leaf_queryset(query_params):
     if 'name' in params:
         bools.append({'match': {'tator_treeleaf_name': params['name']}})
 
+    if 'depth' in params:
+        bools.append({'match': {'_treeleaf_depth': params['depth']}})
+
     attr_query['filter'] += bools
 
     for key in ['must_not', 'filter']:
