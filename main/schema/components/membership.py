@@ -31,6 +31,7 @@ membership = {
             'type': 'integer',
             'description': 'Unique integer identifying a membership.',
         },
+        'user': membership_properties['user'],
         'username': {
             'description': 'Username for the membership.',
             'type': 'string',

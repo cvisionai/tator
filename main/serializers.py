@@ -119,7 +119,7 @@ class MembershipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Membership
-        fields = ['id', 'username', 'permission']
+        fields = ['id', 'user', 'username', 'permission']
 
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
