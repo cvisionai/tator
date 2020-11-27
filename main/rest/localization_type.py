@@ -61,6 +61,8 @@ class LocalizationTypeListAPI(BaseListView):
         """
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
+        if 'color_map' in params:
+            params['colorMap'] = params.pop('color_map')
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
