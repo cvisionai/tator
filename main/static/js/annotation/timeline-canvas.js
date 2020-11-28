@@ -160,7 +160,7 @@ class TimelineCanvas extends TatorElement {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
-      if (startFrame && endFrame) {
+      if (startFrame != null && endFrame != null) {
         if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
           this._context.fillStyle = "#695215";
           this._context.fillRect(
@@ -179,7 +179,7 @@ class TimelineCanvas extends TatorElement {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
-      if (startFrame && endFrame) {
+      if (startFrame != null && endFrame != null) {
         if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
           this._context.fillStyle = "#fcbf19";
           this._context.fillRect(
@@ -202,7 +202,7 @@ class TimelineCanvas extends TatorElement {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
-      if (startFrame && endFrame) {
+      if (startFrame != null && endFrame != null) {
         if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
           this._canvas.style.display = "block";
 
