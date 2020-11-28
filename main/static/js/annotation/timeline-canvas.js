@@ -16,6 +16,9 @@ class TimelineCanvas extends TatorElement {
     this._canvas.style.height="3px";
 
     this.stateInterpolationType = "latest";
+
+    this._grayColor = "#262e3d"
+
   }
 
   set stateInterpolationType(val) {
@@ -107,11 +110,83 @@ class TimelineCanvas extends TatorElement {
         if (dataType.interpolation === "attr_style_range" && this._interpolation === dataType.interpolation) {
           this._resetCanvas(1);
           const allData = this._data._dataByType.get(typeId);
-          for (const elem of allData) {
-            if (elem.id == this._selectedData.id) {
-              this._plotAttributeRange(elem, dataType);
+
+          var startFrameAttr;
+          var endFrameAttr;
+          for (const attr of dataType.attribute_types) {
+            if (attr['style']) {
+              if (attr['style'] === "start_frame") {
+                startFrameAttr = attr['name'];
+              }
+              else if (attr['style'] === "end_frame") {
+                endFrameAttr = attr['name'];
+              }
             }
           }
+
+          this._plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr);
+
+          for (const elem of allData) {
+            if (elem.id == this._selectedData.id) {
+              this._plotHighlightedRange(elem, startFrameAttr, endFrameAttr);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr) {
+
+    // Draw the background time range if there's data and the type is set up appropriately
+    var invalidData = true;
+    if (startFrameAttr && endFrameAttr) {
+      if (allData) {
+        if (allData.length > 0) {
+          this._canvas.style.display = "block";
+          this._context.fillStyle = this._grayColor;
+          this._context.fillRect(0, 0, this._canvasWidth, 1);
+          invalidData = false;
+        }
+      }
+    }
+
+    if (invalidData) {
+      return;
+    }
+
+    // Draw the colored time ranges
+    for (const data of allData) {
+      var startFrame = data.attributes[startFrameAttr];
+      var endFrame = data.attributes[endFrameAttr];
+
+      if (startFrame && endFrame) {
+        if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+          this._context.fillStyle = "#695215";
+          this._context.fillRect(
+              startFrame*this._canvasFactor,
+              0,
+              endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+              1);
+        }
+      }
+    }
+  }
+
+  _plotHighlightedRange(data, startFrameAttr, endFrameAttr) {
+
+    if (startFrameAttr && endFrameAttr) {
+      var startFrame = data.attributes[startFrameAttr];
+      var endFrame = data.attributes[endFrameAttr];
+
+      if (startFrame && endFrame) {
+        if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+          this._context.fillStyle = "#fcbf19";
+          this._context.fillRect(
+              startFrame*this._canvasFactor,
+              0,
+              endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+              1);
         }
       }
     }
@@ -121,21 +196,7 @@ class TimelineCanvas extends TatorElement {
    * Note: This assumes that there is a start_frame and potentially a end_frame.
    *       If either of these values are missing or are negative, then ignore coloring the timeline canvas.
    */
-  _plotAttributeRange(data, dataType) {
-
-    // Can just do this on initialization or something, #TODO
-    var startFrameAttr;
-    var endFrameAttr;
-    for (const attr of dataType.attribute_types) {
-      if (attr['style']) {
-        if (attr['style'] === "start_frame") {
-          startFrameAttr = attr['name'];
-        }
-        else if (attr['style'] === "end_frame") {
-          endFrameAttr = attr['name'];
-        }
-      }
-    }
+  _plotSingleAttributeRange(data, startFrameAttr, endFrameAttr) {
 
     if (startFrameAttr && endFrameAttr) {
       var startFrame = data.attributes[startFrameAttr];
@@ -145,13 +206,13 @@ class TimelineCanvas extends TatorElement {
         if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
           this._canvas.style.display = "block";
 
-          this._context.fillStyle = "#262e3d";
+          this._context.fillStyle = this._grayColor;
           this._context.fillRect(0, 0, this._canvasWidth, 1);
 
           this._context.fillStyle = "#fcbf19";
           this._context.fillRect(startFrame*this._canvasFactor, 0, this._canvasWidth, 1);
 
-          this._context.fillStyle = "#262e3d";
+          this._context.fillStyle = this._grayColor;
           this._context.fillRect(endFrame*this._canvasFactor, 0, this._canvasWidth, 1);
         }
       }
@@ -182,7 +243,7 @@ class TimelineCanvas extends TatorElement {
         }
 
       } else {
-        this._context.fillStyle = "#262e3d"; // Not highlighted color
+        this._context.fillStyle = this._grayColor; // Not highlighted color
       }
       this._context.fillRect(frame*this._canvasFactor, 0+col_idx, this._canvasWidth, 1+col_idx);
       values.push(value);
