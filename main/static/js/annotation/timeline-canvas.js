@@ -113,22 +113,31 @@ class TimelineCanvas extends TatorElement {
 
           var startFrameAttr;
           var endFrameAttr;
+          var startFrameCheckAttr;
+          var endFrameCheckAttr;
+
           for (const attr of dataType.attribute_types) {
-            if (attr['style']) {
-              if (attr['style'] === "start_frame") {
-                startFrameAttr = attr['name'];
-              }
-              else if (attr['style'] === "end_frame") {
-                endFrameAttr = attr['name'];
-              }
+            const style = attr['style'];
+            const name = attr['name'];
+            if (style === "start_frame") {
+              startFrameAttr = name;
+            }
+            else if (style === "end_frame") {
+              endFrameAttr = name;
+            }
+            else if (style === "start_frame_check") {
+              startFrameCheckAttr = name;
+            }
+            else if (style === "end_frame_check") {
+              endFrameCheckAttr = name;
             }
           }
 
-          this._plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr);
+          this._plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr);
 
           for (const elem of allData) {
             if (elem.id == this._selectedData.id) {
-              this._plotHighlightedRange(elem, startFrameAttr, endFrameAttr);
+              this._plotHighlightedRange(elem, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr);
             }
           }
         }
@@ -136,7 +145,7 @@ class TimelineCanvas extends TatorElement {
     }
   }
 
-  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr) {
+  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr) {
 
     // Draw the background time range if there's data and the type is set up appropriately
     var invalidData = true;
@@ -160,34 +169,46 @@ class TimelineCanvas extends TatorElement {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
-      if (startFrame != null && endFrame != null) {
-        if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
-          this._context.fillStyle = "#695215";
-          this._context.fillRect(
-              startFrame*this._canvasFactor,
-              0,
-              endFrame*this._canvasFactor - startFrame*this._canvasFactor,
-              1);
-        }
+      if (data.attributes[startFrameCheckAttr] === false) {
+        startFrame = 0;
+      }
+
+      if (data.attributes[endFrameCheckAttr] === false) {
+        endFrame = parseFloat(this._range.getAttribute("max"));
+      }
+
+      if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+        this._context.fillStyle = "#695215";
+        this._context.fillRect(
+            startFrame*this._canvasFactor,
+            0,
+            endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+            1);
       }
     }
   }
 
-  _plotHighlightedRange(data, startFrameAttr, endFrameAttr) {
+  _plotHighlightedRange(data, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr) {
 
     if (startFrameAttr && endFrameAttr) {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
-      if (startFrame != null && endFrame != null) {
-        if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
-          this._context.fillStyle = "#fcbf19";
-          this._context.fillRect(
-              startFrame*this._canvasFactor,
-              0,
-              endFrame*this._canvasFactor - startFrame*this._canvasFactor,
-              1);
-        }
+      if (data.attributes[startFrameCheckAttr] === false) {
+        startFrame = 0;
+      }
+
+      if (data.attributes[endFrameCheckAttr] === false) {
+        endFrame = parseFloat(this._range.getAttribute("max"));
+      }
+
+      if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+        this._context.fillStyle = "#fcbf19";
+        this._context.fillRect(
+            startFrame*this._canvasFactor,
+            0,
+            endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+            1);
       }
     }
   }
