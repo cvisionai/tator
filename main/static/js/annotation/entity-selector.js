@@ -299,6 +299,49 @@ class EntitySelector extends TatorElement {
   _emitSelection(byUser, composed, goToEntityFrame) {
     var index = parseInt(this._current.textContent) - 1;
     index = Math.max(index, 0);
+
+    // If this entity utilizes the last frame / start frame style, set the
+    // entity's frame as the last frame first, then attempt to set it using the start frame.
+    // Only bother doing this if the associated canvas is a video
+    if (this._canvas._numFrames) {
+
+      var endFrameCheck;
+      var endFrame;
+      var startFrameCheck;
+      var startFrame;
+
+      for (const attrType of this._dataType.attribute_types) {
+        if (attrType.style) {
+          const styleOptions = attrType.style.split(' ');
+          if (styleOptions.includes("end_frame_check")) {
+            endFrameCheck = this._data[index].attributes[attrType.name];
+          }
+          else if (styleOptions.includes("end_frame")) {
+            endFrame = this._data[index].attributes[attrType.name];
+          }
+          else if (styleOptions.includes("start_frame_check")) {
+            startFrameCheck = this._data[index].attributes[attrType.name];
+          }
+          else if (styleOptions.includes("start_frame")) {
+            startFrame = this._data[index].attributes[attrType.name];
+          }
+        }
+      }
+
+      if (endFrameCheck === false) {
+        this._data[index].frame = this._canvas._numFrames;
+      }
+      else if (endFrame > -1) {
+        this._data[index].frame = endFrame;
+      }
+      else if (startFrameCheck === false) {
+        this._data[index].frame = 0;
+      }
+      else if (startFrame > -1) {
+        this._data[index].frame = startFrame;
+      }
+    }
+
     this.dispatchEvent(new CustomEvent("select", {
       detail: {
         data: this._data[index],
