@@ -63,6 +63,10 @@ leaf = {
             'type': 'integer',
             'description': 'Unique integer identifying the leaf.',
         },
+        'meta': {
+            'type': 'integer',
+            'description': 'Unique integer identifying the entity type.',
+        },
         'project': {
             'type': 'integer',
             'description': 'Unique integer identifying a project.',
