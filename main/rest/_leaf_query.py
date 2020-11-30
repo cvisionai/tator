@@ -8,7 +8,7 @@ from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-def get_leaf_queryset(query_params):
+def get_leaf_queryset(query_params, dry_run=False):
     """ TODO: add documentation for this """
 
     # Get parameters.
@@ -113,6 +113,9 @@ def get_leaf_queryset(query_params):
     if search is not None:
         search_query = {'query_string': {'query': search}}
         query['query']['bool']['filter'].append(search_query)
+
+    if dry_run:
+        return [], [], query
 
     leaf_ids, leaf_count = TatorSearch().search(project, query)
     return leaf_ids, leaf_count, query
