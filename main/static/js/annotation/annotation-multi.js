@@ -254,13 +254,14 @@ class AnnotationMulti extends TatorElement {
     {
       this._quality = val.media_files.quality;
     }
-    const video_count = this._multi_layout[0] * this._multi_layout[1];
 
-    if (video_count != val.media_files['ids'].length)
+    const total_video_spots = this._multi_layout[0] * this._multi_layout[1];
+    if (val.media_files['ids'].length > total_video_spots)
     {
-      window.alert("Invalid object");
+      window.alert("Invalid multiview object! Not enough grid spots for media.");
     }
 
+    const video_count = val.media_files['ids'].length;
 
     let global_frame = new Array(video_count).fill(0);
     // Functor to monitor any frame drift
