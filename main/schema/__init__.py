@@ -15,6 +15,7 @@ from .jwt import JwtGatewaySchema
 from .leaf import LeafSuggestionSchema
 from .leaf import LeafListSchema
 from .leaf import LeafDetailSchema
+from .leaf_count import LeafCountSchema
 from .leaf_type import LeafTypeListSchema
 from .leaf_type import LeafTypeDetailSchema
 from .localization import LocalizationListSchema

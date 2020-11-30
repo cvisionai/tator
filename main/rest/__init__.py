@@ -14,6 +14,7 @@ from .job import JobDetailAPI
 from .leaf import LeafSuggestionAPI
 from .leaf import LeafListAPI
 from .leaf import LeafDetailAPI
+from .leaf_count import LeafCountAPI
 from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI

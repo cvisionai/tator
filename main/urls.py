@@ -121,6 +121,10 @@ urlpatterns += [
         LeafDetailAPI.as_view(),
     ),
     path(
+        'rest/LeafCount/<int:project>',
+        LeafCountAPI.as_view(),
+    ),
+    path(
         'rest/LeafTypes/<int:project>',
         LeafTypeListAPI.as_view(),
     ),
