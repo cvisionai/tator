@@ -35,4 +35,14 @@ leaf_filter_parameter_schema = [
         'description': 'Get a specific tree depth. Root node depth is 0.',
         'schema': {'type': 'integer'},
     },
+    {
+        'name': 'leaf_id',
+        'in': 'query',
+        'required': False,
+        'description': 'Comma-separated list of leaf IDs.',
+        'schema': {
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+    },
 ]

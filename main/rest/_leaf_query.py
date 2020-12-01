@@ -12,6 +12,7 @@ def get_leaf_queryset(query_params, dry_run=False):
     """ TODO: add documentation for this """
 
     # Get parameters.
+    leaf_id = query_params.get('leaf_id', None)
     project = query_params['project']
     filter_type = query_params.get('type', None)
     start = query_params.get('start', None)
@@ -22,6 +23,10 @@ def get_leaf_queryset(query_params, dry_run=False):
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
     bools = [{'match': {'_dtype': 'leaf'}}]
+
+    if leaf_id is not None:
+        ids = [f'leaf_{id_}' for id_ in leaf_id]
+        bools.append({'ids': {'values': ids}})
 
     if filter_type is not None:
         bools.append({'match': {'_meta': {'query': int(filter_type)}}})
