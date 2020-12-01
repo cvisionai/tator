@@ -106,20 +106,20 @@ class MembershipSerializer(serializers.ModelSerializer):
 
     def get_permission_str(self, obj):
         if obj.permission == Permission.VIEW_ONLY:
-            out = 'view_only'
+            out = 'View Only'
         elif obj.permission == Permission.CAN_EDIT:
-            out = 'can_edit'
+            out = 'Can Edit'
         elif obj.permission == Permission.CAN_EXECUTE:
-            out = 'can_execute'
+            out = 'Can Execute'
         elif obj.permission == Permission.FULL_CONTROL:
-            out = 'full_control'
+            out = 'Full Control'
         else:
             raise RuntimeError("Invalid permission setting!")
         return out
 
     class Meta:
         model = Membership
-        fields = ['id', 'username', 'permission']
+        fields = ['id', 'user', 'username', 'permission']
 
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:

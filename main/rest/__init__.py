@@ -14,6 +14,7 @@ from .job import JobDetailAPI
 from .leaf import LeafSuggestionAPI
 from .leaf import LeafListAPI
 from .leaf import LeafDetailAPI
+from .leaf_count import LeafCountAPI
 from .leaf_type import LeafTypeListAPI
 from .leaf_type import LeafTypeDetailAPI
 from .localization import LocalizationListAPI
@@ -50,6 +51,7 @@ from .state_type import StateTypeDetailAPI
 from .temporary_file import TemporaryFileListAPI
 from .temporary_file import TemporaryFileDetailAPI
 from .transcode import TranscodeAPI
+from .user import UserListAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI
 from .version import VersionListAPI

@@ -121,6 +121,10 @@ urlpatterns += [
         LeafDetailAPI.as_view(),
     ),
     path(
+        'rest/LeafCount/<int:project>',
+        LeafCountAPI.as_view(),
+    ),
+    path(
         'rest/LeafTypes/<int:project>',
         LeafTypeListAPI.as_view(),
     ),
@@ -277,12 +281,16 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
-        'rest/User/GetCurrent',
-        CurrentUserAPI.as_view(),
+        'rest/Users',
+        UserListAPI.as_view(),
     ),
     path(
         'rest/User/<int:id>',
         UserDetailAPI.as_view(),
+    ),
+    path(
+        'rest/User/GetCurrent',
+        CurrentUserAPI.as_view(),
     ),
     path(
         'rest/Versions/<int:project>',

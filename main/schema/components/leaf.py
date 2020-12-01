@@ -29,6 +29,7 @@ leaf_properties = {
     'parent': {
         'description': 'ID to use as parent if there is one.',
         'type': 'integer',
+        'nullable': True,
     },
 }
 
@@ -61,6 +62,10 @@ leaf = {
         'id': {
             'type': 'integer',
             'description': 'Unique integer identifying the leaf.',
+        },
+        'meta': {
+            'type': 'integer',
+            'description': 'Unique integer identifying the entity type.',
         },
         'project': {
             'type': 'integer',
