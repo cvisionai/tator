@@ -38,7 +38,8 @@ def get_media_queryset(project, query_params, dry_run=False):
     annotation_bools = []
 
     if media_id is not None:
-        ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]
+        ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]\
+            + [f'multi_{id_}' for id_ in media_id]
         bools.append({'ids': {'values': ids}})
 
     if filter_type is not None:
