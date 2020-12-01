@@ -191,7 +191,7 @@ class TatorSearch:
         aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
                                         # purpose is not recommended by ES.
         duplicates = []
-        if entity.meta.dtype in ['image', 'video']:
+        if entity.meta.dtype in ['image', 'video', 'multi']:
             aux['_media_relation'] = 'media'
             aux['tator_media_name'] = entity.name
             aux['_exact_name'] = entity.name
