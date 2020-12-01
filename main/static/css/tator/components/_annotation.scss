@@ -290,7 +290,7 @@ video-canvas {
 
 .video__controls {
   background-color: $color-charcoal--medium;
-  height: 76px;
+  min-height: 76px;
 }
 
 .video__rewind,

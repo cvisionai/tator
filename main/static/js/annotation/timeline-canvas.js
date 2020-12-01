@@ -5,6 +5,10 @@ class TimelineCanvas extends TatorElement {
     this._canvas = document.createElement("canvas");
     this._shadow.appendChild(this._canvas);
 
+    this._multiCanvasDiv = document.createElement("div");
+    this._shadow.appendChild(this._multiCanvasDiv);
+    this._multiCanvas = [];
+
     this._clickHandlers = {};
 
     this._canvas.addEventListener("click", evt => {
@@ -14,18 +18,27 @@ class TimelineCanvas extends TatorElement {
     });
     this._canvas.style.width="100%";
     this._canvas.style.height="3px";
+    this._canvasWidth = 2000;
 
-    this.stateInterpolationType = "latest";
+    this.stateInterpolationType = "latest"; // "latest" or "attr_style_range"
 
     this._grayColor = "#262e3d"
 
+    this._highlightColors = [
+      {highlight: "#FFDF6C", background: "#9e8c49"},
+    ]
   }
 
+  /**
+   * Mechanism to switch the timeline canvas from the traditional "latest" interpolation type
+   * to the "attr_style_range" type (and other future types)
+   *
+   * :param val: Valid strings - "latest"|"attr_style_range"
+   */
   set stateInterpolationType(val) {
     this._interpolation = val;
 
-    if (this._interpolation === "attr_style_range")
-    {
+    if (this._interpolation === "attr_style_range") {
       this._canvas.style.display = "none";
     }
   }
@@ -41,9 +54,66 @@ class TimelineCanvas extends TatorElement {
         // Update the state interpolation latest timeline
         this._updateCanvas(this._currentTypeId);
       }
-      else if (this._selectedData) {
+      else if (this._interpolation === "attr_style_range") {
         // Update the state attr_style_range timeline
-        this._updateCanvas(this._selectedData.meta);
+
+        for (const canvasData of this._multiCanvas) {
+          canvasData.canvas.remove();
+          canvasData.text.remove();
+        }
+
+        // Grab the number of state types that are attr_style_range
+        this._multiCanvas = [];
+        for (const typeId in this._data._dataTypes) {
+          const dataType = this._data._dataTypes[typeId];
+
+          if (dataType.interpolation === "attr_style_range") {
+            const text = document.createElement("span");
+            text.setAttribute("class", "f3 text-gray px-1 py-1");
+            text.textContent = dataType.name;
+
+            if (this._showLabels === true) {
+              text.style.display = "block";
+            }
+            else {
+              text.style.display = "none";
+            }
+
+            this._multiCanvasDiv.append(text);
+
+            const canvas = document.createElement("canvas");
+            canvas.setAttribute("class", "py-1");
+            canvas.style.width="100%";
+            canvas.style.height="3px";
+            this._multiCanvasDiv.append(canvas);
+
+            const context = canvas.getContext("2d");
+
+            const multiCanvasData = {
+              typeId: typeId,
+              text: text,
+              canvas: canvas,
+              context: context,
+            };
+
+            this._multiCanvas.push(multiCanvasData);
+          }
+        }
+
+        // Let parent know that the multi-canvas is being used.
+        this.dispatchEvent(new CustomEvent("multiCanvas", {
+          detail: {
+            active: this._multiCanvas.length > 0
+          }
+        }));
+
+        // Next, reset the canvas before drawing.
+        this._resetMultiCanvas();
+
+        // Draw the states
+        for (const typeId in this._data._dataTypes) {
+          this._updateCanvas(typeId);
+        }
       }
     });
     this._data.addEventListener("initialized", evt => {
@@ -57,10 +127,37 @@ class TimelineCanvas extends TatorElement {
     });
   }
 
-  selectData(val) {
-    this._selectedData = val;
-    this._updateCanvas(val.meta);
+  /**
+   * True shows labels for each attr_style_range canvas. False otherwise.
+   */
+  set showLabels(val) {
+    for (const canvasData of this._multiCanvas) {
+      if (val) {
+        canvasData.text.style.display = "block";
+      }
+      else {
+        canvasData.text.style.display = "none";
+      }
+    }
+
+    this._showLabels = val
   }
+
+  /**
+   * This method is used by the attr_style_range timeline type.
+   *
+   * Preconditions:
+   *    this._multiCanvas must have been set
+   */
+  selectData(val) {
+    if (this._interpolation === "attr_style_range") {
+      this._selectedData = val;
+      for (const canvasData of this._multiCanvas) {
+        this._updateCanvas(canvasData.typeId);
+      }
+    }
+  }
+
 
   clear() {
     const context = this._canvas.getContext("2d");
@@ -71,10 +168,23 @@ class TimelineCanvas extends TatorElement {
     this._updateCanvas(typeId);
   }
 
+  /**
+   * Preconditions: this._multiCanvas must have been set
+   */
+  _resetMultiCanvas() {
+    const numFrames = parseFloat(this._range.getAttribute("max"));
+    for (const data of this._multiCanvas) {
+      data.context.clearRect(0, 0, data.canvas.width, data.canvas.height);
+      data.canvas.setAttribute("width", this._canvasWidth);
+      data.canvas.setAttribute("height", 1);
+      data.canvas.style.height=`${3*1}px`;
+      data.canvasFactor = this._canvasWidth/numFrames;
+    }
+  }
+
   _resetCanvas(numColumns) {
     this.clear();
     const numFrames = parseFloat(this._range.getAttribute("max"));
-    this._canvasWidth=2000;
     this._canvasFactor=this._canvasWidth/numFrames;
     this._canvas.setAttribute("width", this._canvasWidth);
     this._canvas.setAttribute("height", numColumns);
@@ -83,6 +193,7 @@ class TimelineCanvas extends TatorElement {
   }
 
   _updateCanvas(typeId) {
+
     if (typeId in this._data._dataTypes) {
       const dataType = this._data._dataTypes[typeId];
       if (dataType.isTLState && this._interpolation === "latest") {
@@ -106,38 +217,55 @@ class TimelineCanvas extends TatorElement {
           }
         }
       }
-      else if (dataType.interpolation && this._selectedData) {
-        if (dataType.interpolation === "attr_style_range" && this._interpolation === dataType.interpolation) {
-          this._resetCanvas(1);
-          const allData = this._data._dataByType.get(typeId);
+      else if (dataType.interpolation === "attr_style_range" && this._interpolation === dataType.interpolation) {
+        const allData = this._data._dataByType.get(typeId);
 
-          var startFrameAttr;
-          var endFrameAttr;
-          var startFrameCheckAttr;
-          var endFrameCheckAttr;
+        var startFrameAttr;
+        var endFrameAttr;
+        var startFrameCheckAttr;
+        var endFrameCheckAttr;
 
-          for (const attr of dataType.attribute_types) {
-            const style = attr['style'];
-            const name = attr['name'];
-            if (style === "start_frame") {
-              startFrameAttr = name;
-            }
-            else if (style === "end_frame") {
-              endFrameAttr = name;
-            }
-            else if (style === "start_frame_check") {
-              startFrameCheckAttr = name;
-            }
-            else if (style === "end_frame_check") {
-              endFrameCheckAttr = name;
-            }
+        for (const attr of dataType.attribute_types) {
+          const style = attr['style'];
+          const name = attr['name'];
+          if (style === "start_frame") {
+            startFrameAttr = name;
           }
+          else if (style === "end_frame") {
+            endFrameAttr = name;
+          }
+          else if (style === "start_frame_check") {
+            startFrameCheckAttr = name;
+          }
+          else if (style === "end_frame_check") {
+            endFrameCheckAttr = name;
+          }
+        }
 
-          this._plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr);
+        for (const canvasData of this._multiCanvas) {
+          if (canvasData.typeId == typeId) {
 
-          for (const elem of allData) {
-            if (elem.id == this._selectedData.id) {
-              this._plotHighlightedRange(elem, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr);
+            this._plotAllAttributeRanges(
+              allData,
+              startFrameAttr,
+              endFrameAttr,
+              startFrameCheckAttr,
+              endFrameCheckAttr,
+              canvasData);
+
+            if (this._selectedData) {
+              const allData = this._data._dataByType.get(typeId);
+              for (const elem of allData) {
+                if (elem.id == this._selectedData.id) {
+                  this._plotHighlightedRange(
+                    elem,
+                    startFrameAttr,
+                    endFrameAttr,
+                    startFrameCheckAttr,
+                    endFrameCheckAttr,
+                    canvasData);
+                }
+              }
             }
           }
         }
@@ -145,16 +273,15 @@ class TimelineCanvas extends TatorElement {
     }
   }
 
-  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr) {
+  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr, canvasData) {
 
     // Draw the background time range if there's data and the type is set up appropriately
     var invalidData = true;
     if (startFrameAttr && endFrameAttr) {
       if (allData) {
         if (allData.length > 0) {
-          this._canvas.style.display = "block";
-          this._context.fillStyle = this._grayColor;
-          this._context.fillRect(0, 0, this._canvasWidth, 1);
+          canvasData.context.fillStyle = this._grayColor;
+          canvasData.context.fillRect(0, 0, this._canvasWidth, 1);
           invalidData = false;
         }
       }
@@ -178,17 +305,17 @@ class TimelineCanvas extends TatorElement {
       }
 
       if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
-        this._context.fillStyle = "#695215";
-        this._context.fillRect(
-            startFrame*this._canvasFactor,
+        canvasData.context.fillStyle = this._highlightColors[0].background;
+        canvasData.context.fillRect(
+            startFrame*canvasData.canvasFactor,
             0,
-            endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+            endFrame*canvasData.canvasFactor - startFrame*canvasData.canvasFactor,
             1);
       }
     }
   }
 
-  _plotHighlightedRange(data, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr) {
+  _plotHighlightedRange(data, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr, canvasData) {
 
     if (startFrameAttr && endFrameAttr) {
       var startFrame = data.attributes[startFrameAttr];
@@ -203,39 +330,12 @@ class TimelineCanvas extends TatorElement {
       }
 
       if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
-        this._context.fillStyle = "#fcbf19";
-        this._context.fillRect(
-            startFrame*this._canvasFactor,
+        canvasData.context.fillStyle = this._highlightColors[0].highlight;
+        canvasData.context.fillRect(
+            startFrame*canvasData.canvasFactor,
             0,
-            endFrame*this._canvasFactor - startFrame*this._canvasFactor,
+            endFrame*canvasData.canvasFactor - startFrame*canvasData.canvasFactor,
             1);
-      }
-    }
-  }
-
-  /**
-   * Note: This assumes that there is a start_frame and potentially a end_frame.
-   *       If either of these values are missing or are negative, then ignore coloring the timeline canvas.
-   */
-  _plotSingleAttributeRange(data, startFrameAttr, endFrameAttr) {
-
-    if (startFrameAttr && endFrameAttr) {
-      var startFrame = data.attributes[startFrameAttr];
-      var endFrame = data.attributes[endFrameAttr];
-
-      if (startFrame != null && endFrame != null) {
-        if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
-          this._canvas.style.display = "block";
-
-          this._context.fillStyle = this._grayColor;
-          this._context.fillRect(0, 0, this._canvasWidth, 1);
-
-          this._context.fillStyle = "#fcbf19";
-          this._context.fillRect(startFrame*this._canvasFactor, 0, this._canvasWidth, 1);
-
-          this._context.fillStyle = this._grayColor;
-          this._context.fillRect(endFrame*this._canvasFactor, 0, this._canvasWidth, 1);
-        }
       }
     }
   }

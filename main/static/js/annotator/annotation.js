@@ -1072,19 +1072,25 @@ class AnnotationCanvas extends TatorElement
     return this._domParents;
   }
 
-  setupResizeHandler(dims, numGridRows)
+  setupResizeHandler(dims, numGridRows, heightPadObject)
   {
+    if (heightPadObject == null) {
+      this.heightPadObject = {height: 175}; // Magic number here matching the header + footer
+    }
+    else {
+      this.heightPadObject = heightPadObject;
+    }
+
     const ratio=dims[0]/dims[1];
     var that = this;
     var resizeHandler = function()
     {
-      // 175 is a magic number here matching the header + footer
       var maxHeight;
       if (numGridRows) {
-         maxHeight = (window.innerHeight - 175) / numGridRows;
+         maxHeight = (window.innerHeight - that.heightPadObject.height) / numGridRows;
       }
       else {
-         maxHeight = window.innerHeight-175;
+         maxHeight = window.innerHeight - that.heightPadObject.height;
       }
       const maxWidth = maxHeight*ratio;
       that._canvas.style.maxHeight=`${maxHeight}px`;

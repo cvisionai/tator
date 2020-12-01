@@ -48,7 +48,13 @@ class AnnotationMulti extends TatorElement {
     this._totalTime.textContent = "/ 0:00";
     timeDiv.appendChild(this._totalTime);
 
+    this._timelineMore = document.createElement("entity-more");
+    this._timelineMore.style.display = "none";
+    timelineDiv.appendChild(this._timelineMore);
+    this._displayTimelineLabels = false;
+
     var outerDiv = document.createElement("div");
+    outerDiv.setAttribute("class", "py-2");
     outerDiv.style.width="100%";
     var seekDiv = document.createElement("div");
     this._slider = document.createElement("seek-bar");
@@ -94,12 +100,37 @@ class AnnotationMulti extends TatorElement {
     this._lastScrub = Date.now();
     this._rate = 1;
 
+    // Magic number matching standard header + footer
+    // #TODO This should be re-thought and more flexible initially
+    this._videoHeightPadObject = {height: 175};
+    this._headerFooterPad = 100; // Another magic number based on the header and padding below controls footer
+
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
     if (searchParams.has("quality"))
     {
       this._quality = Number(searchParams.get("quality"));
     }
+
+    this._timelineMore.addEventListener("click", () => {
+      this._displayTimelineLabels = !this._displayTimelineLabels;
+      this._timelineAttrRange.showLabels = this._displayTimelineLabels;
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    this._timelineAttrRange.addEventListener("multiCanvas", evt => {
+      if (evt.detail.active) {
+        this._timelineMore.style.display = "block";
+      }
+      else {
+        this._timelineMore.style.display = "none";
+      }
+
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
+    });
+
     this._slider.addEventListener("input", evt => {
       // Along allow a scrub display as the user is going
       // slow
@@ -355,7 +386,7 @@ class AnnotationMulti extends TatorElement {
          "fontWeight": "bold",
          "color": "white"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
-      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0]);
+      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject);
 
       // #TODO This should be changed to dispatched events vs. calling the parent directly.
       this.parent._getMetadataTypes(this,
