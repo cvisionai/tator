@@ -167,6 +167,23 @@ class UserPermission(BasePermission):
 
         return False
 
+class UserListPermission(BasePermission):
+    """ 1.) Reject all anonymous requests
+        2.) Allow any read-only requests
+    """
+    def has_permission(self, request, view):
+        if isinstance(request.user, AnonymousUser):
+            return False
+
+        if _for_schema_view(request, view):
+            return True
+
+        if request.method == 'GET':
+            # All users have read-only permission
+            return True
+
+        return False
+
 class ClonePermission(ProjectPermissionBase):
     """ Special permission that checks for transfer permission in two
         projects.
