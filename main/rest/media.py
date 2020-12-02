@@ -94,6 +94,12 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         if gid is not None:
             gid = str(gid)
 
+        # Make sure paths exist for this project.
+        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+        os.makedirs(project_dir, exist_ok=True)
+        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+        os.makedirs(raw_project_dir, exist_ok=True)
+
         # If section does not exist and is not an empty string, create a section.
         tator_user_sections = ""
         if section:
@@ -139,10 +145,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             upload_uid = url.split('/')[-1]
             media_uid = str(uuid1())
             ext = os.path.splitext(name)[1]
-            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
-            os.makedirs(project_dir, exist_ok=True)
-            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
-            os.makedirs(raw_project_dir, exist_ok=True)
             thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
 
             # Create the media object.
