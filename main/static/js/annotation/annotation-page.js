@@ -564,7 +564,7 @@ class AnnotationPage extends TatorPage {
 
         // For states specifically, if we are using the multi-view, we will
         // create the state across all media
-        var stateMediaIds = {};
+        var stateMediaIds;
         if (this._player.mediaType.dtype == "multi") {
           stateMediaIds = this._mediaIds;
         }
