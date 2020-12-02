@@ -288,29 +288,43 @@ class TimelineCanvas extends TatorElement {
     }
 
     if (invalidData) {
+      canvasData.canvas.style.display = "none";
       return;
     }
+
+    canvasData.canvas.style.display = "block";
 
     // Draw the colored time ranges
     for (const data of allData) {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
+      const maxFrame = parseFloat(this._range.getAttribute("max"));
+      const maxWidth = maxFrame * canvasData.canvasFactor;
+      const minRangeWidth = maxWidth * 0.002;
+
       if (data.attributes[startFrameCheckAttr] === false) {
         startFrame = 0;
       }
 
       if (data.attributes[endFrameCheckAttr] === false) {
-        endFrame = parseFloat(this._range.getAttribute("max"));
+        endFrame = maxFrame;
       }
 
-      if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+      if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
+
+        var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
+        if (width < minRangeWidth) {
+          width = minRangeWidth;
+        }
+
+        var startPoint = startFrame * canvasData.canvasFactor;
+        if ((startPoint + width) > maxWidth) {
+          startPoint = maxWidth - width;
+        }
+
         canvasData.context.fillStyle = this._highlightColors[0].background;
-        canvasData.context.fillRect(
-            startFrame*canvasData.canvasFactor,
-            0,
-            endFrame*canvasData.canvasFactor - startFrame*canvasData.canvasFactor,
-            1);
+        canvasData.context.fillRect(startPoint, 0, width, 1);
       }
     }
   }
@@ -321,21 +335,32 @@ class TimelineCanvas extends TatorElement {
       var startFrame = data.attributes[startFrameAttr];
       var endFrame = data.attributes[endFrameAttr];
 
+      const maxFrame = parseFloat(this._range.getAttribute("max"));
+      const maxWidth = maxFrame * canvasData.canvasFactor;
+      const minRangeWidth = maxWidth * 0.002;
+
       if (data.attributes[startFrameCheckAttr] === false) {
         startFrame = 0;
       }
 
       if (data.attributes[endFrameCheckAttr] === false) {
-        endFrame = parseFloat(this._range.getAttribute("max"));
+        endFrame = maxFrame
       }
 
-      if (startFrame > -1 && endFrame > -1 && startFrame < endFrame) {
+      if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
+
+        var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
+        if (width < minRangeWidth) {
+          width = minRangeWidth;
+        }
+
+        var startPoint = startFrame * canvasData.canvasFactor;
+        if ((startPoint + width) > maxWidth) {
+          startPoint = maxWidth - width;
+        }
+
         canvasData.context.fillStyle = this._highlightColors[0].highlight;
-        canvasData.context.fillRect(
-            startFrame*canvasData.canvasFactor,
-            0,
-            endFrame*canvasData.canvasFactor - startFrame*canvasData.canvasFactor,
-            1);
+        canvasData.context.fillRect(startPoint, 0, width, 1);
       }
     }
   }
