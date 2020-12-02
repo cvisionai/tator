@@ -463,7 +463,7 @@ class AnnotationMulti extends TatorElement {
     {
       return;
     }
-    val.init([],null,null, this._mediaInfo.id, false);
+
     this._annotationData = val;
     for (let video of this._videos)
     {
