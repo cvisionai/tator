@@ -1020,7 +1020,7 @@ class TatorAlgorithm(JobManagerMixin):
             if 'volumeClaimTemplates' in manifest['spec']:
                 for claim in manifest['spec']['volumeClaimTemplates']:
                     claim['spec']['storageClassName'] = _select_storage_class()
-                    logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
+                    logger.warning(f"Implicitly sc to pvc of Algo:{self.alg.pk}")
 
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
