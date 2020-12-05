@@ -31,6 +31,14 @@ certCron:
   # tls-cert and tls-key must be created manually. See scripts/cert.sh for an
   # example of how to do this.
   enabled: true
+# List of storage classes for use by workflows. One of these will be randomly
+# passed as a workflow parameter to algorithm workflows, and randomly selected
+# for transcode workflows.
+workflowStorageClasses:
+  - aws-efs
+  - aws-efs-01
+  - aws-efs-02
+  - aws-efs-03
 pv:
   nfsServer: "<Your efs filesystem ID>.efs.<Your aws region>.amazonaws.com"
   nfsMountOptions:

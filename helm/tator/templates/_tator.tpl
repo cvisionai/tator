@@ -88,8 +88,18 @@ spec:
               value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
             - name: TRANSCODER_CPU_LIMIT
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
-            - name: WORKFLOW_STORAGE_CLASS
-              value: {{ .Values.workflowStorageClass | default "nfs-client" | quote }}
+            - name: WORKFLOW_STORAGE_CLASSES
+              {{- if hasKey .Values "workflowStorageClasses" }}
+              {{- $storage_classes := "" }}
+              {{- range .Values.workflowStorageClasses }}
+              {{- $storage_classes = cat $storage_classes "," . }}
+              {{- end }}
+              {{- $storage_classes = nospace $storage_classes }}
+              {{- $storage_classes = trimPrefix "," $storage_classes }}
+              value: {{ $storage_classes }}
+              {{- else }}
+              value: nfs-client
+              {{- end }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
