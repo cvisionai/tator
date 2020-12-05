@@ -45,6 +45,11 @@ certCron:
   # periodically from LetsEncrypt. If this is not provided, the Secret objects
   # tls-cert and tls-key must be created manually.
   enabled: false
+# List of storage classes for use by workflows. One of these will be randomly
+# passed as a workflow parameter to algorithm workflows, and randomly selected
+# for transcode workflows.
+workflowStorageClasses:
+  - nfs-client
 pv:
   nfsServer: "127.0.0.1"
   nfsMountOptions:
