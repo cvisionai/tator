@@ -6,6 +6,7 @@ import copy
 import tarfile
 import json
 import datetime
+import random
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -28,6 +29,12 @@ if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     PROTO = 'https://'
 else:
     PROTO = 'http://'
+
+def _select_storage_class():
+    """ Randomly selects a workflow storage class.
+    """
+    storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
+    return random.choice(storage_classes)
 
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
@@ -219,7 +226,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': 'transcode-scratch',
             },
             'spec': {
-                'storageClassName': os.getenv('WORKFLOW_STORAGE_CLASS'),
+                'storageClassName': _select_storage_class(),
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
@@ -997,13 +1004,6 @@ class TatorAlgorithm(JobManagerMixin):
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
-            if 'volumeClaimTemplates' in self.manifest['spec']:
-                for claim in self.manifest['spec']['volumeClaimTemplates']:
-                    storage_class_name = claim['spec'].get('storageClassName',None)
-                    if storage_class_name is None:
-                        claim['storageClassName'] = os.getenv('WORKFLOW_STORAGE_CLASS')
-                        logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
-
         # Save off the algorithm.
         self.alg = alg
 
@@ -1014,6 +1014,13 @@ class TatorAlgorithm(JobManagerMixin):
         """
         # Make a copy of the manifest from the database.
         manifest = copy.deepcopy(self.manifest)
+
+        # Update the storage class of the spec if executing locally.
+        if self.alg.cluster is None:
+            if 'volumeClaimTemplates' in manifest['spec']:
+                for claim in manifest['spec']['volumeClaimTemplates']:
+                    claim['spec']['storageClassName'] = _select_storage_class()
+                    logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
 
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
