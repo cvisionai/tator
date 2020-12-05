@@ -259,6 +259,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['original',
                                                         'url'])},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.wget_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -287,6 +288,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'inputs': {'parameters' : spell_out_params(['url'])},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.curl_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -319,6 +321,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -340,6 +343,7 @@ class TatorTranscode(JobManagerMixin):
         self.data_import = {
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -377,6 +381,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
                 'image': '{{workflow.parameters.lite_image}}',
@@ -426,6 +431,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -554,6 +560,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
