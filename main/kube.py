@@ -7,6 +7,7 @@ import tarfile
 import json
 import datetime
 import random
+import time
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 NUM_WORK_PACKETS=20
+MAX_SUBMIT_RETRIES = 10 # Max number of retries for argo workflow create.
+SUBMIT_RETRY_BACKOFF = 1 # Number of seconds to back off if workflow create fails.
 
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     PROTO = 'https://'
@@ -868,13 +871,22 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Create the workflow
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
 
     def start_transcode(self, project,
                         entity_type, token, url, name,
@@ -1086,13 +1098,22 @@ class TatorAlgorithm(JobManagerMixin):
             'media_ids': media_ids,
         }
 
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
