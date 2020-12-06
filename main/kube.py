@@ -13,6 +13,7 @@ from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
+from kubernetes.client.rest import ApiException
 from kubernetes.config import load_incluster_config
 from urllib.parse import urljoin, urlsplit
 import yaml
