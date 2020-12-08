@@ -68,7 +68,7 @@ ecr_update:
 #   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
 restore: check_restore
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- createdb -U django $(DB_NAME) 
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d $(DB_NAME) -f /backup/$(SQL_FILE)
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
 
 .PHONY: check_restore
 check_restore:
