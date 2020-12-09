@@ -105,7 +105,6 @@ class TatorSearch:
                                     'media': 'annotation',
                                 }
                             },
-                            'tator_media_name': {'type': 'text'},
                             '_exact_name': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
                             '_md5': {'type': 'keyword'},
                             '_meta': {'type': 'integer'},
@@ -133,6 +132,7 @@ class TatorSearch:
                 '_duration': {'type': 'float'},
                 '_gid': {'type': 'keyword'},
                 '_uid': {'type': 'keyword'},
+                'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
             }},
         )
 
@@ -193,7 +193,7 @@ class TatorSearch:
         duplicates = []
         if entity.meta.dtype in ['image', 'video', 'multi']:
             aux['_media_relation'] = 'media'
-            aux['tator_media_name'] = entity.name
+            aux['filename'] = entity.name
             aux['_exact_name'] = entity.name
             aux['_md5'] = entity.md5
             aux['_gid'] = entity.gid
