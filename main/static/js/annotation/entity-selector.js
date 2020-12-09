@@ -307,8 +307,11 @@ class EntitySelector extends TatorElement {
 
       var endFrameCheck;
       var endFrame = -1;
+      var currentEndFrame;
       var startFrameCheck;
       var startFrame = -1;
+
+      //#TODO Adjust this to handle range_set / attr_style_range cases
 
       for (const attrType of this._dataType.attribute_types) {
         if (attrType.style) {
@@ -317,7 +320,10 @@ class EntitySelector extends TatorElement {
             endFrameCheck = this._data[index].attributes[attrType.name];
           }
           else if (styleOptions.includes("end_frame")) {
-            endFrame = this._data[index].attributes[attrType.name];
+            currentEndFrame = this._data[index].attributes[attrType.name];
+            if (currentEndFrame > endFrame) {
+              endFrame = currentEndFrame;
+            }
           }
           else if (styleOptions.includes("start_frame_check")) {
             startFrameCheck = this._data[index].attributes[attrType.name];
