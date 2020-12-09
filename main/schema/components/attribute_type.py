@@ -71,6 +71,7 @@ attribute_type_properties = {
                        'Create a text area string if "long_string" is combined with "string" dtype. '
                        '"start_frame" and "end_frame" used in conjunction with "attr_style_range" interpolation. '
                        '"start_frame_check and "end_frame_check" are used in conjunction with "attr_style_range" interpolation. '
+                       '"range_set and in_video_check" is used in conjunction with "attr_style_range" interpolation. '
                        'When associated with a bool, these checks will result in Tator GUI changes with the corresponding start_frame and end_frame attributes.',
         'type': 'string',
     },

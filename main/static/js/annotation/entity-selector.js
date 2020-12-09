@@ -306,9 +306,9 @@ class EntitySelector extends TatorElement {
     if (this._canvas._numFrames) {
 
       var endFrameCheck;
-      var endFrame;
+      var endFrame = -1;
       var startFrameCheck;
-      var startFrame;
+      var startFrame = -1;
 
       for (const attrType of this._dataType.attribute_types) {
         if (attrType.style) {

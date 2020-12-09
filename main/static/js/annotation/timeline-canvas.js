@@ -25,7 +25,7 @@ class TimelineCanvas extends TatorElement {
     this._grayColor = "#262e3d"
 
     this._highlightColors = [
-      {highlight: "#FFDF6C", background: "#9e8c49"},
+      {highlight: "#FFDF6C", background: "#696147"},
     ]
   }
 
@@ -45,6 +45,45 @@ class TimelineCanvas extends TatorElement {
 
   set rangeInput(val) {
     this._range = val;
+  }
+
+  _addToMultiCanvasData(
+    name,
+    typeId,
+    startFrameAttr,
+    endFrameAttr,
+    startFrameCheckAttr,
+    endFrameCheckAttr,
+    inVideoCheckAttr) {
+
+    const text = document.createElement("span");
+    text.setAttribute("class", "f3 text-gray px-1 py-1");
+    text.textContent = name + "(s)";
+    text.style.display = "none";
+
+    this._multiCanvasDiv.append(text);
+
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("class", "py-1");
+    canvas.style.width="100%";
+    canvas.style.height="3px";
+    this._multiCanvasDiv.append(canvas);
+
+    const context = canvas.getContext("2d");
+
+    const multiCanvasData = {
+      typeId: typeId,
+      text: text,
+      canvas: canvas,
+      context: context,
+      startFrameAttr: startFrameAttr,
+      endFrameAttr: endFrameAttr,
+      startFrameCheckAttr: startFrameCheckAttr,
+      endFrameCheckAttr: endFrameCheckAttr,
+      inVideoCheckAttr: inVideoCheckAttr,
+    };
+
+    this._multiCanvas.push(multiCanvasData);
   }
 
   set annotationData(val) {
@@ -68,37 +107,129 @@ class TimelineCanvas extends TatorElement {
           const dataType = this._data._dataTypes[typeId];
 
           if (dataType.interpolation === "attr_style_range") {
-            const text = document.createElement("span");
-            text.setAttribute("class", "f3 text-gray px-1 py-1");
-            text.textContent = dataType.name;
 
-            if (this._showLabels === true) {
-              text.style.display = "block";
+            // To support attr_style_range, there must at least be one set of
+            // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
+            //
+            // There can actually be multiple start_frame|end_frame pairs. If this is the case,
+            // there has to be a range associated. If not, then don't show anything and throw a
+            // warning. #TODO Is this the appropriate response?
+            //
+            var startFrameAttr;
+            var endFrameAttr;
+            var startFrameCheckAttr;
+            var endFrameCheckAttr;
+            var inVideoCheckAttr;
+            var inVideoCheckAttrList = [];
+            var startFrameAttrList = [];
+            var endFrameAttrList = [];
+            var rangeList = [];
+
+            for (const attr of dataType.attribute_types) {
+              const style = attr['style'];
+
+              if (style) {
+
+                const styleOptions = style.split(' ');
+                const name = attr['name'];
+
+                if (styleOptions.includes("start_frame")) {
+                  startFrameAttrList.push(name);
+                }
+                else if (styleOptions.includes("end_frame")) {
+                  endFrameAttrList.push(name);
+                }
+                else if (styleOptions.includes("start_frame_check")) {
+                  startFrameCheckAttr = name;
+                }
+                else if (styleOptions.includes("end_frame_check")) {
+                  endFrameCheckAttr = name;
+                }
+                else if (styleOptions.includes("in_video_check")) {
+                  inVideoCheckAttrList.push(name);
+                }
+                else if (styleOptions.includes("range_set")) {
+                  rangeList.push({name: name, data: attr["default"], order: attr["order"]});
+                }
+              }
+            }
+
+            if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
+              startFrameAttr = startFrameAttrList[0];
+              endFrameAttr = endFrameAttrList[0]
+              inVideoCheckAttr = null;
+
+              this._addToMultiCanvasData(
+                dataType.name,
+                typeId,
+                startFrameAttr,
+                endFrameAttr,
+                startFrameCheckAttr,
+                endFrameCheckAttr,
+                inVideoCheckAttr);
+            }
+            else if (startFrameAttrList.length > 1 &&
+              endFrameAttrList.length > 1 &&
+              startFrameAttrList.length == endFrameAttrList.length &&
+              startFrameAttrList.length == rangeList.length) {
+
+              rangeList.sort(function(a, b) {
+                  if (a.order < b.order) {
+                    return 1;
+                  }
+                  if (a.order > b.order) {
+                    return -1;
+                  }
+                  return 0;
+                }
+              );
+
+              for (const rangeInfo of rangeList) {
+                const rangeTokens = rangeInfo.data.split('|');
+
+                if (rangeTokens.length < 2 && rangeTokens.length > 3) {
+                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  break;
+                }
+
+                startFrameAttr = rangeTokens[0];
+                endFrameAttr = rangeTokens[1];
+                inVideoCheckAttr = null;
+
+                if (rangeTokens.length == 3) {
+                  if (inVideoCheckAttrList.includes(rangeTokens[2])) {
+                    inVideoCheckAttr = rangeTokens[2];
+                  }
+                }
+
+                if (!startFrameAttrList.includes(startFrameAttr)) {
+                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  break;
+                }
+
+                if (!endFrameAttrList.includes(endFrameAttr)) {
+                  console.error("Incorrect datatype setup with attr_style_range interpolation.")
+                  break;
+                }
+
+                this._addToMultiCanvasData(
+                  rangeInfo.name,
+                  typeId,
+                  startFrameAttr,
+                  endFrameAttr,
+                  null,
+                  null,
+                  inVideoCheckAttr);
+              }
             }
             else {
-              text.style.display = "none";
+              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              continue;
             }
-
-            this._multiCanvasDiv.append(text);
-
-            const canvas = document.createElement("canvas");
-            canvas.setAttribute("class", "py-1");
-            canvas.style.width="100%";
-            canvas.style.height="3px";
-            this._multiCanvasDiv.append(canvas);
-
-            const context = canvas.getContext("2d");
-
-            const multiCanvasData = {
-              typeId: typeId,
-              text: text,
-              canvas: canvas,
-              context: context,
-            };
-
-            this._multiCanvas.push(multiCanvasData);
           }
         }
+
+        this.showLabels = this._showLabels;
 
         // Let parent know that the multi-canvas is being used.
         this.dispatchEvent(new CustomEvent("multiCanvas", {
@@ -132,7 +263,10 @@ class TimelineCanvas extends TatorElement {
    */
   set showLabels(val) {
     for (const canvasData of this._multiCanvas) {
-      if (val) {
+
+      const allData = this._data._dataByType.get(canvasData.typeId);
+
+      if (val && allData.length > 0) {
         canvasData.text.style.display = "block";
       }
       else {
@@ -220,37 +354,11 @@ class TimelineCanvas extends TatorElement {
       else if (dataType.interpolation === "attr_style_range" && this._interpolation === dataType.interpolation) {
         const allData = this._data._dataByType.get(typeId);
 
-        var startFrameAttr;
-        var endFrameAttr;
-        var startFrameCheckAttr;
-        var endFrameCheckAttr;
-
-        for (const attr of dataType.attribute_types) {
-          const style = attr['style'];
-          const name = attr['name'];
-          if (style === "start_frame") {
-            startFrameAttr = name;
-          }
-          else if (style === "end_frame") {
-            endFrameAttr = name;
-          }
-          else if (style === "start_frame_check") {
-            startFrameCheckAttr = name;
-          }
-          else if (style === "end_frame_check") {
-            endFrameCheckAttr = name;
-          }
-        }
-
         for (const canvasData of this._multiCanvas) {
           if (canvasData.typeId == typeId) {
 
             this._plotAllAttributeRanges(
               allData,
-              startFrameAttr,
-              endFrameAttr,
-              startFrameCheckAttr,
-              endFrameCheckAttr,
               canvasData);
 
             if (this._selectedData) {
@@ -259,10 +367,6 @@ class TimelineCanvas extends TatorElement {
                 if (elem.id == this._selectedData.id) {
                   this._plotHighlightedRange(
                     elem,
-                    startFrameAttr,
-                    endFrameAttr,
-                    startFrameCheckAttr,
-                    endFrameCheckAttr,
                     canvasData);
                 }
               }
@@ -273,11 +377,65 @@ class TimelineCanvas extends TatorElement {
     }
   }
 
-  _plotAllAttributeRanges(allData, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr, canvasData) {
+  _drawRange(data, canvasData, color) {
+    var startFrame = data.attributes[canvasData.startFrameAttr];
+    var endFrame = data.attributes[canvasData.endFrameAttr];
+
+    const maxFrame = parseFloat(this._range.getAttribute("max"));
+    const maxWidth = maxFrame * canvasData.canvasFactor;
+    const minRangeWidth = maxWidth * 0.002;
+
+    if (canvasData.startFrameCheckAttr && canvasData.endFrameCheckAttr) {
+      // Start frame check and end frame check attributes exist.
+      // #TODO This capability may go away in lieu of just using -1 values.
+      if (data.attributes[canvasData.startFrameCheckAttr] === false) {
+        startFrame = 0;
+      }
+      if (data.attributes[canvasData.endFrameCheckAttr] === false) {
+        endFrame = maxFrame;
+      }
+    }
+    else {
+      // Start/end frame check attributes don't exist.
+      // Just assume if there's a -1, it's going to stretch
+      if (startFrame == -1) {
+        startFrame = 0;
+      }
+
+      if (endFrame == -1) {
+        endFrame = maxFrame;
+      }
+    }
+
+    if (canvasData.inVideoCheckAttr) {
+      // A "in video check" attribute is there. Don't draw if this value is false.
+      if (data.attributes[canvasData.inVideoCheckAttr] === false) {
+        return;
+      }
+    }
+
+    if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
+
+      var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
+      if (width < minRangeWidth) {
+        width = minRangeWidth;
+      }
+
+      var startPoint = startFrame * canvasData.canvasFactor;
+      if ((startPoint + width) > maxWidth) {
+        startPoint = maxWidth - width;
+      }
+
+      canvasData.context.fillStyle = color;
+      canvasData.context.fillRect(startPoint, 0, width, 1);
+    }
+  }
+
+  _plotAllAttributeRanges(allData, canvasData) {
 
     // Draw the background time range if there's data and the type is set up appropriately
     var invalidData = true;
-    if (startFrameAttr && endFrameAttr) {
+    if (canvasData.startFrameAttr && canvasData.endFrameAttr) {
       if (allData) {
         if (allData.length > 0) {
           canvasData.context.fillStyle = this._grayColor;
@@ -296,72 +454,20 @@ class TimelineCanvas extends TatorElement {
 
     // Draw the colored time ranges
     for (const data of allData) {
-      var startFrame = data.attributes[startFrameAttr];
-      var endFrame = data.attributes[endFrameAttr];
-
-      const maxFrame = parseFloat(this._range.getAttribute("max"));
-      const maxWidth = maxFrame * canvasData.canvasFactor;
-      const minRangeWidth = maxWidth * 0.002;
-
-      if (data.attributes[startFrameCheckAttr] === false) {
-        startFrame = 0;
-      }
-
-      if (data.attributes[endFrameCheckAttr] === false) {
-        endFrame = maxFrame;
-      }
-
-      if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
-
-        var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
-        if (width < minRangeWidth) {
-          width = minRangeWidth;
-        }
-
-        var startPoint = startFrame * canvasData.canvasFactor;
-        if ((startPoint + width) > maxWidth) {
-          startPoint = maxWidth - width;
-        }
-
-        canvasData.context.fillStyle = this._highlightColors[0].background;
-        canvasData.context.fillRect(startPoint, 0, width, 1);
-      }
+        this._drawRange(
+            data,
+            canvasData,
+            this._highlightColors[0].background);
     }
   }
 
-  _plotHighlightedRange(data, startFrameAttr, endFrameAttr, startFrameCheckAttr, endFrameCheckAttr, canvasData) {
+  _plotHighlightedRange(data, canvasData) {
 
-    if (startFrameAttr && endFrameAttr) {
-      var startFrame = data.attributes[startFrameAttr];
-      var endFrame = data.attributes[endFrameAttr];
-
-      const maxFrame = parseFloat(this._range.getAttribute("max"));
-      const maxWidth = maxFrame * canvasData.canvasFactor;
-      const minRangeWidth = maxWidth * 0.002;
-
-      if (data.attributes[startFrameCheckAttr] === false) {
-        startFrame = 0;
-      }
-
-      if (data.attributes[endFrameCheckAttr] === false) {
-        endFrame = maxFrame
-      }
-
-      if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
-
-        var width = endFrame * canvasData.canvasFactor - startFrame * canvasData.canvasFactor;
-        if (width < minRangeWidth) {
-          width = minRangeWidth;
-        }
-
-        var startPoint = startFrame * canvasData.canvasFactor;
-        if ((startPoint + width) > maxWidth) {
-          startPoint = maxWidth - width;
-        }
-
-        canvasData.context.fillStyle = this._highlightColors[0].highlight;
-        canvasData.context.fillRect(startPoint, 0, width, 1);
-      }
+    if (canvasData.startFrameAttr && canvasData.endFrameAttr) {
+      this._drawRange(
+        data,
+        canvasData,
+        this._highlightColors[0].highlight);
     }
   }
 
