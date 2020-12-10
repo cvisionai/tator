@@ -88,6 +88,9 @@ def create_test_favorite(name, project, user, meta):
     return Favorite.objects.create(name=name, project=project, user=user,
                                    meta=meta, values={})
 
+def create_test_bookmark(name, project, user):
+    return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
+
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
     img_path = os.path.join(this_path, 'static', 'images',
@@ -1859,6 +1862,36 @@ class FavoriteTestCase(
             'page': 1,
             'type': self.box_type.pk,
             'values': {'blah': 'asdf'},
+        }
+        self.patch_json = {
+            'name': 'New name',
+        }
+        self.edit_permission = Permission.CAN_EDIT
+
+class BookmarkTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entities = [create_test_bookmark(f"Bookmark {idx}", self.project,
+                                               self.user)
+                         for idx in range(random.randint(6, 10))]
+        self.list_uri = 'Bookmarks'
+        self.detail_uri = 'Bookmark'
+        self.create_json = {
+            'name': 'My bookmark',
+            'uri': '/projects',
         }
         self.patch_json = {
             'name': 'New name',
