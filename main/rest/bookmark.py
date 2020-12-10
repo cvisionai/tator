@@ -47,13 +47,13 @@ class BookmarkListAPI(BaseListView):
         """ Saves a new bookmark.
         """
         # Save the bookmark.
-        fave = Bookmark.objects.create(
+        bookmark = Bookmark.objects.create(
             name=params['name'],
             project=Project.objects.get(pk=params['project']),
             user=self.request.user,
             uri=params['uri'],
         )
-        return {'message': 'Successfully created bookmark {fave.id}!.', 'id': fave.id}
+        return {'message': f'Successfully created bookmark {bookmark.id}!.', 'id': bookmark.id}
 
 class BookmarkDetailAPI(BaseDetailView):
     """ Interact with a single bookmark.

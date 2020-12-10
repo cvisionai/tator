@@ -56,7 +56,7 @@ class FavoriteListAPI(BaseListView):
             page=params['page'],
             values=params['values'],
         )
-        return {'message': 'Successfully created favorite {fave.id}!.', 'id': fave.id}
+        return {'message': f'Successfully created favorite {fave.id}!.', 'id': fave.id}
 
 class FavoriteDetailAPI(BaseDetailView):
     """ Interact with a single favorite.
