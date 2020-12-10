@@ -946,7 +946,6 @@ class ProjectDeleteTestCase(APITestCase):
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1034,7 +1033,6 @@ class VideoTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1106,7 +1104,6 @@ class LocalizationBoxTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="boxes",
@@ -1170,7 +1167,6 @@ class LocalizationLineTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="lines",
@@ -1234,7 +1230,6 @@ class LocalizationDotTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="dots",
@@ -1297,7 +1292,6 @@ class StateTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = StateType.objects.create(
             name="states",
@@ -1431,7 +1425,6 @@ class StateTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             StateType.objects.create(
@@ -1477,7 +1470,6 @@ class MediaTypeTestCase(
         self.entities = [
             MediaType.objects.create(
                 name="videos",
-                keep_original=True,
                 project=self.project,
                 attribute_types=create_test_attribute_types(),
             ),
@@ -1493,7 +1485,6 @@ class MediaTypeTestCase(
         }
         self.create_json = {
             'name': 'videos',
-            'keep_original': True,
             'dtype': 'video',
             'attribute_types': create_test_attribute_types(),
         }
@@ -1515,7 +1506,6 @@ class LocalizationTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             LocalizationType.objects.create(
@@ -1675,7 +1665,6 @@ class TranscodeTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.create_json = {
             'type': self.entity_type.pk,
@@ -1704,7 +1693,6 @@ class AnalysisCountTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1742,7 +1730,6 @@ class VersionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
@@ -1780,7 +1767,6 @@ class SectionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, 'asdf', self.entity_type, self.project)
         self.entities = [create_test_section(f"Section {idx}", self.project)
@@ -1857,7 +1843,6 @@ class FavoriteTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",

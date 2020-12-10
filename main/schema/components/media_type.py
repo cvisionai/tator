@@ -20,15 +20,6 @@ media_type_properties = {
         'type': 'string',
         'maxLength': 4,
     },
-    'keep_original': {
-        'description': 'For video dtype, whether to keep the original '
-                       'video file for archival purposes after transcoding. '
-                       'If true, the originally uploaded file will be '
-                       'available for download, otherwise downloads will '
-                       'use the transcoded videos.',
-        'type': 'boolean',
-        'default': True,
-    },
     'default_volume': {
         'description': 'Default audio volume for this media type.',
         'type': 'integer',
@@ -70,7 +61,6 @@ media_type_update = {
         'name': media_type_properties['name'],
         'description': media_type_properties['description'],
         'file_format': media_type_properties['file_format'],
-        'keep_original': media_type_properties['keep_original'],
         'archive_config': media_type_properties['archive_config'],
         'streaming_config': media_type_properties['streaming_config'],
     },

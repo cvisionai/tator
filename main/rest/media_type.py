@@ -88,7 +88,6 @@ class MediaTypeDetailAPI(BaseDetailView):
         name = params.get('name', None)
         description = params.get('description', None)
         file_format = params.get('file_format', None)
-        keep_original = params.get('keep_original', None)
         archive_config = params.get('archive_config', None)
         streaming_config = params.get('streaming_config', None)
         overlay_config = params.get('overlay_config', None)
@@ -100,8 +99,6 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.description = description
         if file_format is not None:
             obj.file_format = file_format
-        if keep_original is not None:
-            obj.keep_original = keep_original
         if archive_config is not None:
             obj.archive_config = archive_config
         if streaming_config is not None:
