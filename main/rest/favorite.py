@@ -21,7 +21,7 @@ from ._permissions import ProjectEditPermission
 logger = logging.getLogger(__name__)
 
 class FavoriteListAPI(BaseListView):
-    """ Retrieves favorites saved by a user
+    """ Retrieves favorites saved by a user.
     """
     # pylint: disable=no-member,no-self-use
     schema = FavoriteListSchema()
@@ -59,7 +59,7 @@ class FavoriteListAPI(BaseListView):
         return {'message': 'Successfully created favorite {fave.id}!.', 'id': fave.id}
 
 class FavoriteDetailAPI(BaseDetailView):
-    """ Interact with a single favorite
+    """ Interact with a single favorite.
     """
 
     schema = FavoriteDetailSchema()
@@ -67,13 +67,13 @@ class FavoriteDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        """ Retrieve the requested algortihm entry by ID
+        """ Retrieve the requested favorite by ID.
         """
         return database_qs(Favorite.objects.filter(pk=params['id']))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
-        """ Patch operation on the algorithm entry
+        """ Patch operation on the favorite.
         """
         obj = Favorite.objects.select_for_update().get(pk=params['id'])
         name = params.get('name', None)
@@ -89,6 +89,6 @@ class FavoriteDetailAPI(BaseDetailView):
         return {'message': f"Favorite with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self):
-        """ Returns a queryset of all registered algorithms
+        """ Returns a queryset of all favorites.
         """
         return Favorite.objects.all()

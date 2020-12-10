@@ -56,7 +56,7 @@ class BookmarkListAPI(BaseListView):
         return {'message': 'Successfully created bookmark {fave.id}!.', 'id': fave.id}
 
 class BookmarkDetailAPI(BaseDetailView):
-    """ Interact with a single bookmark
+    """ Interact with a single bookmark.
     """
 
     schema = BookmarkDetailSchema()
@@ -64,13 +64,13 @@ class BookmarkDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        """ Retrieve the requested algortihm entry by ID
+        """ Retrieve the requested bookmark by ID.
         """
         return database_qs(Bookmark.objects.filter(pk=params['id']))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
-        """ Patch operation on the algorithm entry
+        """ Patch operation on the bookmark.
         """
         obj = Bookmark.objects.select_for_update().get(pk=params['id'])
         name = params.get('name', None)
@@ -86,6 +86,6 @@ class BookmarkDetailAPI(BaseDetailView):
         return {'message': f"Bookmark with ID {params['id']} deleted successfully!"}
 
     def get_queryset(self):
-        """ Returns a queryset of all registered algorithms
+        """ Returns a queryset of all bookmarks.
         """
         return Bookmark.objects.all()
