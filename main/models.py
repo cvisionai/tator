@@ -1010,6 +1010,14 @@ class Favorite(Model):
     page = PositiveIntegerField(default=1)
     values = JSONField()
 
+class Bookmark(Model):
+    """ Stores a link saved by a user.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    name = CharField(max_length=128)
+    uri = CharField(max_length=1024)
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {
