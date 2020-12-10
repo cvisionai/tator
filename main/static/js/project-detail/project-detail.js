@@ -64,6 +64,19 @@ class ProjectDetail extends TatorPage {
     this._savedSearches.setAttribute("class", "sections");
     section.appendChild(this._savedSearches);
 
+    const bookmarkHeader = document.createElement("div");
+    bookmarkHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
+    section.appendChild(bookmarkHeader);
+
+    const bookmarkText = document.createElement("h2");
+    bookmarkText.setAttribute("class", "h3 text-semibold");
+    bookmarkText.textContent = "Bookmarks";
+    bookmarkHeader.appendChild(bookmarkText);
+
+    this._bookmarks = document.createElement("ul");
+    this._bookmarks.setAttribute("class", "sections");
+    section.appendChild(this._bookmarks);
+
     const mainSection = document.createElement("section");
     mainSection.setAttribute("class", "project__main py-3 px-6 flex-grow");
     main.appendChild(mainSection);
@@ -427,6 +440,15 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    const bookmarkPromise = fetch("/rest/Bookmarks/" + projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const algoPromise = fetch("/rest/Algorithms/" + projectId, {
       method: "GET",
       credentials: "same-origin",
@@ -439,20 +461,22 @@ class ProjectDetail extends TatorPage {
     Promise.all([
       projectPromise,
       sectionPromise,
+      bookmarkPromise,
       algoPromise,
     ])
-    .then(([projectResponse, sectionResponse, algoResponse]) => {
+    .then(([projectResponse, sectionResponse, bookmarkResponse, algoResponse]) => {
       const projectData = projectResponse.json();
       const sectionData = sectionResponse.json();
+      const bookmarkData = bookmarkResponse.json();
       const algoData = algoResponse.json();
-      Promise.all([projectData, sectionData, algoData])
-      .then(([project, sections, algos]) => {
+      Promise.all([projectData, sectionData, bookmarkData, algoData])
+      .then(([project, sections, bookmarks, algos]) => {
         // First hide algorithms if needed. These are not appropriate to be
         // run at the project/section/media level.
         const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
         const parsedAlgos = algos.filter(function(alg) {
           return !hiddenAlgos.includes(alg.name);
-        } );
+        });
         this._algorithms = parsedAlgos;
         this._permission = project.permission;
         this._mediaSection.permission = this._permission;
@@ -504,6 +528,11 @@ class ProjectDetail extends TatorPage {
             }
             card.active = true;
           });
+        }
+        for (const bookmark of bookmarks) {
+          const card = document.createElement("section-card");
+          card.init(bookmark, "bookmark");
+          this._bookmarks.appendChild(card);
         }
         const params = new URLSearchParams(document.location.search.substring(1));
         if (params.has("search")) {
