@@ -1,47 +1,13 @@
-class ProjectEditName extends TatorElement {
-  constructor() {
-    super();
-  }
-
-  init(val, t){
-    console.log("/////////INIT PROJECT MAIN SETTTINGS OUTPUT//////////////////");
-    console.log(val);
-
-  }
-}
-
-customElements.define("project-edit-name", ProjectEditName);
-
-///////////
-
-
-
-
-class ProjectEditMediaTypes extends TatorElement {
-  constructor() {
-    super();
-  }
-
-  init(val, t){
-    console.log("###### INIT MEDIA TYPES OUTPUT ##############################");
-    console.log(val);
-  
-  }
-}
-
-customElements.define("project-edit-media-types", ProjectEditMediaTypes);
-
-
-///////////
-
 class ProjectSettings extends TatorPage {
   constructor() {
     super();
 
+    /* Construct template setup for Settings Page - Main Body with Heading*/
     const main = document.createElement("main");
     main.setAttribute("class", "layout-max py-4");
     main.id = "mainId";
     this._shadow.appendChild(main);
+
 
     const header = document.createElement("div");
     header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
@@ -55,13 +21,32 @@ class ProjectSettings extends TatorPage {
     this._headerText = document.createTextNode("");
     this._headerText.nodeValue = `Set rules and configurations.`;
     h1.appendChild(this._headerText);
+
+    // Temporary loading box until FETCH returns
+    /*this.settingsBoxHelper = new SettingsBox("loading-settings");
+    const loading = this.settingsBoxHelper.headingWrap("Loading", "Please wait...", 1);
+    const loadingBox = this.settingsBoxHelper.boxWrapDefault(loading);
+    main.after(loadingBox);*/
   }
 
-  /** UNDER DEVELOPMENT **/
+  /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
   }
+  attributeChangedCallback(name, oldValue, newValue) {
+    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    switch (name) {
+      case "username":
+        break;
+      case "project-id":
+        this._init();
+        break;
+      case "token":
+        break;
+    }
+  }
 
+  /* Run when project-id is set to run fetch the page content. */
   _init() {
     console.log("running init");
     const projectId = this.getAttribute("project-id");
@@ -100,32 +85,29 @@ class ProjectSettings extends TatorPage {
 
       Promise.all( [projectData, mediaTypesData] )
       .then( ([project, mediaTypes]) => {
-        console.log(project);
-        // Edit block for project name and description.
-        const projectEditBlock = document.createElement("project-edit-name");
-        projectEditBlock.init(project, this);
+        const settingsInputHelper = new SettingsInput("");
 
-        console.log(mediaTypes, this);
-        // Edit block for mediaTypes
-        // Loops over returned object creatinf and appending media Type
-        const mediaTypesBlock = document.createElement("project-edit-media-types");
-        mediaTypesBlock.init(mediaTypes);
+        this.after(settingsInputHelper.inputSubmitOrCancel());
+
+        const mediaTypesBlock = document.createElement("media-type-main-edit");
+        mediaTypesBlock.init(mediaTypes, this);
+
+
+        const projectBlock = document.createElement("project-main-edit");
+        projectBlock.init(project, this);
+
+
+
+
+        //Remove loading text? before or after html created?
+        //this.querySelector(".loading-settings").style("display", "none");
       })
+      /* @TODO  ------- ERROR CATCH */
+
     });
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "username":
-        break;
-      case "project-id":
-        this._init();
-        break;
-      case "token":
-        break;
-    }
-  }
+
 
 }
 
