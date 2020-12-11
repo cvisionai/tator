@@ -15,9 +15,39 @@ class SettingsInput {
       const inputTextElement = document.createElement("input");
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
+      if(type == "checkbox"){
+        if (value) inputTextElement.checked = true;
+        customCol = ""
+      }
+
       const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
       inputTextElement.setAttribute("name", setName);
       inputTextElement.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
+
+      const inputWithLabel = this.labelWrap({
+        "labelText": labelText,
+        "inputNode": inputTextElement,
+        "name": setName
+      });
+
+      return inputWithLabel;
+  }
+
+  /* Returns an input of type text with an initial value */
+  inputCheckbox({
+      value = '',
+      customCol = 'col-8',
+      labelText = '',
+      type = 'checkbox'} = {}
+    ){
+      const inputTextElement = document.createElement("input");
+      inputTextElement.setAttribute("type", type);
+      inputTextElement.setAttribute("value", value);
+      if (value) inputTextElement.checked = true;
+
+      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+      inputTextElement.setAttribute("name", setName);
+      inputTextElement.setAttribute("class", `${this.customClass} ${customCol}`);
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
@@ -97,23 +127,26 @@ class SettingsInput {
     /* Wraps any node in a label */
     labelWrap({
       labelText = '',
-      inputNode} = {}
+      inputNode } = {}
     ){
       const labelWrap = document.createElement("label");
       labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
 
       const spanTextNode = document.createElement("span");
+      const spanText = document.createTextNode("");
+      const labelDiv = document.createElement("div");
+
       spanTextNode.setAttribute("class", "col-4 text-gray");
-      let spanText = document.createTextNode("");
       spanText.nodeValue = labelText;
       spanTextNode.appendChild(spanText);
+
       labelWrap.append(spanTextNode);
-      labelWrap.appendChild(inputNode);
+      labelWrap.append(inputNode);
 
-      const labelDiv = document.createElement("div");
       labelDiv.setAttribute("class", "py-2 px-2 f2");
+      labelDiv.appendChild(labelWrap)
 
-      return labelDiv.appendChild(labelWrap);
+      return labelDiv;
     }
 
     /* Returns an number input with an initial value */
@@ -130,7 +163,8 @@ class SettingsInput {
       const cancelLink = document.createElement("a");
       cancelLink.setAttribute("href", "#");
       cancelLink.setAttribute("class", `px-5 f2 text-gray hover-text-white`);
-      let cancelLinkText = document.createTextNode("Cancel");
+      cancelLink.setAttribute("onclick", "this._init()");
+      let cancelLinkText = document.createTextNode("Reset");
       //cancelLinkText.nodeValue = `Set rules and configurations.`;
       cancelLink.appendChild( cancelLinkText );
 

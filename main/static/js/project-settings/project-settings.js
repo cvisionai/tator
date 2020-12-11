@@ -5,9 +5,7 @@ class ProjectSettings extends TatorPage {
     /* Construct template setup for Settings Page - Main Body with Heading*/
     const main = document.createElement("main");
     main.setAttribute("class", "layout-max py-4");
-    main.id = "mainId";
     this._shadow.appendChild(main);
-
 
     const header = document.createElement("div");
     header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
@@ -22,11 +20,6 @@ class ProjectSettings extends TatorPage {
     this._headerText.nodeValue = `Set rules and configurations.`;
     h1.appendChild(this._headerText);
 
-    // Temporary loading box until FETCH returns
-    /*this.settingsBoxHelper = new SettingsBox("loading-settings");
-    const loading = this.settingsBoxHelper.headingWrap("Loading", "Please wait...", 1);
-    const loadingBox = this.settingsBoxHelper.boxWrapDefault(loading);
-    main.after(loadingBox);*/
   }
 
   /* Get personlized information when we have project-id, and fill page. */
@@ -98,9 +91,6 @@ class ProjectSettings extends TatorPage {
 
 
 
-
-        //Remove loading text? before or after html created?
-        //this.querySelector(".loading-settings").style("display", "none");
       })
       /* @TODO  ------- ERROR CATCH */
 

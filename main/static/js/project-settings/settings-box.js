@@ -4,15 +4,19 @@ class SettingsBox {
     this.customClass = customClass || ""; // Feature-related class(es) to customize form element. Applies to all elements.
   }
 
-  boxWrapDefault( children ){
+  boxWrapDefault( { children = {}, level = 1 } = {} ){
     let settingsBox = document.createElement("div");
-    settingsBox.setAttribute("class", "new-project__config py-3 px-6 rounded-2 layout-max "+this.customClass);
-    settingsBox.appendChild( children );
+    settingsBox.setAttribute("class", `new-project__config py-3 px-6 rounded-2 ${this.customClass} ${level == 1 ? 'layout-max' : ''}`);
+    settingsBox.append( children );
 
     return settingsBox;
   }
 
-  headingWrap( headingText, descriptionText, level ){
+  headingWrap( {
+    headingText = "",
+    descriptionText = "",
+    level = 1 } = {}
+  ){
     /* Div to apppend the a HEADING and DESCRIPTION to. */
     let headingDiv = document.createElement("div");
     headingDiv.setAttribute("class", "dflex flex-items-center py-2 px-2 "+this.customClass);
