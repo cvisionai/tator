@@ -22,7 +22,7 @@ class FavoriteButton extends TatorElement {
     context.appendChild(rename);
 
     const remove = document.createElement("delete-button");
-    remove.setAttribute("text", "Delete");
+    remove.init("Delete");
     context.appendChild(remove);
 
     this._button.addEventListener("contextmenu", evt => {

@@ -75,19 +75,19 @@ class SectionCard extends TatorElement {
       const input = document.createElement("input");
       input.setAttribute("class", "form-control input-sm f1");
       input.style.display = "none";
-      this._li.appendChild(input);
+      this._link.appendChild(input);
 
       const context = document.createElement("div");
       context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
       context.style.display = "none";
-      this._li.appendChild(context);
+      this._shadow.appendChild(context);
 
       const rename = document.createElement("rename-button");
       rename.setAttribute("text", "Rename");
       context.appendChild(rename);
 
       const remove = document.createElement("delete-button");
-      remove.setAttribute("text", "Delete");
+      remove.init("Delete");
       context.appendChild(remove);
 
       this._link.addEventListener("contextmenu", evt => {
@@ -97,8 +97,8 @@ class SectionCard extends TatorElement {
 
       rename.addEventListener("click", () => {
         input.style.display = "block";
-        this._link.style.display = "none";
-        input.setAttribute("value", this._link.textContent);
+        this._title.style.display = "none";
+        input.setAttribute("value", this._title.textContent);
         input.focus();
       });
 
@@ -115,7 +115,7 @@ class SectionCard extends TatorElement {
 
       input.addEventListener("blur", evt => {
         if (evt.target.value !== "") {
-          this._link.textContent = evt.target.value;
+          this._title.textContent = evt.target.value;
           this._section.name = evt.target.value;
           fetchRetry("/rest/Bookmark/" + this._section.id, {
             method: "PATCH",
@@ -128,7 +128,7 @@ class SectionCard extends TatorElement {
           });
         }
         input.style.display = "none";
-        this._link.style.display = "block";
+        this._title.style.display = "block";
       });
 
       remove.addEventListener("click", () => {
