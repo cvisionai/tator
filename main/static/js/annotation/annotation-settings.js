@@ -12,6 +12,9 @@ class AnnotationSettings extends TatorElement {
     this._capture = document.createElement("media-capture-button");
     div.appendChild(this._capture);
 
+    this._bookmark = document.createElement("bookmark-button");
+    div.appendChild(this._bookmark);
+
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 

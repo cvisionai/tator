@@ -323,6 +323,7 @@ FILES = \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \
     annotation/media-capture-button.js \
+    annotation/bookmark-button.js \
     annotation/media-link-button.js \
     annotation/media-prev-button.js \
     annotation/media-next-button.js \
