@@ -137,7 +137,7 @@ class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
-    const newSectionDialog = document.createElement("new-section-dialog");
+    const newSectionDialog = document.createElement("name-dialog");
     this._projects.appendChild(newSectionDialog);
 
     const uploadDialog = document.createElement("upload-dialog");

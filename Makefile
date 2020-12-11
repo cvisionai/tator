@@ -273,6 +273,7 @@ FILES = \
     components/canvas-ctxmenu.js \
     components/success-light.js \
     components/warning-light.js \
+    components/name-dialog.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
@@ -296,7 +297,6 @@ FILES = \
     project-detail/section-search.js \
     project-detail/section-upload.js \
     project-detail/big-download-form.js \
-    project-detail/new-section-dialog.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
