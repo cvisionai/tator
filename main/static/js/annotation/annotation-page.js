@@ -100,6 +100,7 @@ class AnnotationPage extends TatorPage {
       case "project-id":
         this._settings.setAttribute("project-id", newValue);
         this._undo.setAttribute("project-id", newValue);
+        this._updateLastVisitedBookmark();
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
@@ -1224,6 +1225,49 @@ class AnnotationPage extends TatorPage {
     this._player.permission = permission;
     this._browser.permission = permission;
     this._sidebar.permission = permission;
+  }
+
+  _updateLastVisitedBookmark() {
+    const uri = window.location.pathname;
+    const name = "Last visited";
+    // Get the last visited, if it exists.
+    fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.length == 0) {
+        fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({name: name, uri: uri}),
+        });
+      } else {
+        const id = data[0].id;
+        fetch(`/rest/Bookmark/${id}`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({name: name, uri: uri}),
+        });
+      }
+    });
+      
   }
 }
 
