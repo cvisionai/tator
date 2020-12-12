@@ -529,6 +529,9 @@ class ProjectDetail extends TatorPage {
             card.active = true;
           });
         }
+        // Put "Last visited" bookmark on top
+        const first = "Last visited";
+        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;}); 
         for (const bookmark of bookmarks) {
           const card = document.createElement("section-card");
           card.init(bookmark, "bookmark");
