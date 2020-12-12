@@ -84,6 +84,14 @@ urlpatterns += [
         'rest/Analysis/<int:id>',
         AnalysisDetailAPI.as_view(),
     ),
+    path(
+        'rest/Bookmarks/<int:project>',
+        BookmarkListAPI.as_view(),
+    ),
+    path(
+        'rest/Bookmark/<int:id>',
+        BookmarkDetailAPI.as_view(),
+    ),
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
     ),

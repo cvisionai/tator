@@ -88,6 +88,9 @@ def create_test_favorite(name, project, user, meta):
     return Favorite.objects.create(name=name, project=project, user=user,
                                    meta=meta, values={})
 
+def create_test_bookmark(name, project, user):
+    return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
+
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
     img_path = os.path.join(this_path, 'static', 'images',
@@ -946,7 +949,6 @@ class ProjectDeleteTestCase(APITestCase):
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1034,7 +1036,6 @@ class VideoTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1106,7 +1107,6 @@ class LocalizationBoxTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="boxes",
@@ -1170,7 +1170,6 @@ class LocalizationLineTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="lines",
@@ -1234,7 +1233,6 @@ class LocalizationDotTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="dots",
@@ -1297,7 +1295,6 @@ class StateTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = StateType.objects.create(
             name="states",
@@ -1431,7 +1428,6 @@ class StateTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             StateType.objects.create(
@@ -1477,7 +1473,6 @@ class MediaTypeTestCase(
         self.entities = [
             MediaType.objects.create(
                 name="videos",
-                keep_original=True,
                 project=self.project,
                 attribute_types=create_test_attribute_types(),
             ),
@@ -1493,7 +1488,6 @@ class MediaTypeTestCase(
         }
         self.create_json = {
             'name': 'videos',
-            'keep_original': True,
             'dtype': 'video',
             'attribute_types': create_test_attribute_types(),
         }
@@ -1515,7 +1509,6 @@ class LocalizationTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             LocalizationType.objects.create(
@@ -1675,7 +1668,6 @@ class TranscodeTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.create_json = {
             'type': self.entity_type.pk,
@@ -1704,7 +1696,6 @@ class AnalysisCountTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1742,7 +1733,6 @@ class VersionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
@@ -1780,7 +1770,6 @@ class SectionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, 'asdf', self.entity_type, self.project)
         self.entities = [create_test_section(f"Section {idx}", self.project)
@@ -1857,7 +1846,6 @@ class FavoriteTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1874,6 +1862,36 @@ class FavoriteTestCase(
             'page': 1,
             'type': self.box_type.pk,
             'values': {'blah': 'asdf'},
+        }
+        self.patch_json = {
+            'name': 'New name',
+        }
+        self.edit_permission = Permission.CAN_EDIT
+
+class BookmarkTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entities = [create_test_bookmark(f"Bookmark {idx}", self.project,
+                                               self.user)
+                         for idx in range(random.randint(6, 10))]
+        self.list_uri = 'Bookmarks'
+        self.detail_uri = 'Bookmark'
+        self.create_json = {
+            'name': 'My bookmark',
+            'uri': '/projects',
         }
         self.patch_json = {
             'name': 'New name',

@@ -1,4 +1,4 @@
-class NewSectionDialog extends ModalDialog {
+class NameDialog extends ModalDialog {
   constructor() {
     super();
 
@@ -49,4 +49,4 @@ class NewSectionDialog extends ModalDialog {
   }
 }
 
-customElements.define("new-section-dialog", NewSectionDialog);
+customElements.define("name-dialog", NameDialog);

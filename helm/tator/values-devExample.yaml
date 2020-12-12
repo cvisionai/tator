@@ -22,7 +22,7 @@ useMinJs: false
 maintenance: false
 # Secret key for django. Feel free to change this.
 djangoSecretKey: "9q@$1)+x+zh-3csau(zqhheos2e+ncygac#ol2)1@x2w#kkaer"
-postgresHost: "pgbouncer-svc"
+postgresHost: "postgis-svc"
 # Postgres username. Some make commands expect username django, but otherwise
 # it can be changed.
 postgresUsername: "django"

@@ -359,7 +359,6 @@ class MediaType(Model):
                             null=True,
                             blank=True,
                             default=None)
-    keep_original = BooleanField(default=True, null=True, blank=True)
     default_volume = IntegerField(default=0)
     """ Default Volume for Videos (default is muted) """
     attribute_types = JSONField(default=list, null=True, blank=True)
@@ -1010,6 +1009,14 @@ class Favorite(Model):
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
+
+class Bookmark(Model):
+    """ Stores a link saved by a user.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    name = CharField(max_length=128)
+    uri = CharField(max_length=1024)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
