@@ -77,8 +77,11 @@ class BookmarkDetailAPI(BaseDetailView):
         """
         obj = Bookmark.objects.select_for_update().get(pk=params['id'])
         name = params.get('name', None)
+        uri = params.get('uri', None)
         if name is not None:
             obj.name = name
+        if uri is not None:
+            obj.uri = uri
         obj.save()
         return {'message': f'Bookmark {obj.id} updated successfully!'}
 

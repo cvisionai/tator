@@ -20,6 +20,7 @@ bookmark_update = {
     'type': 'object',
     'properties': {
         'name': bookmark_properties['name'],
+        'uri': bookmark_properties['uri'],
     },
 }
 
