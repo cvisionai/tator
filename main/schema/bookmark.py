@@ -39,7 +39,13 @@ class BookmarkListSchema(AutoSchema):
         }]
 
     def _get_filter_parameters(self, path, method):
-        return {}
+        return [{
+            'name': 'name',
+            'in': 'query',
+            'required': False,
+            'description': 'Name of the bookmark to filter on.',
+            'schema': {'type': 'string'},
+        }]
 
     def _get_request_body(self, path, method):
         body = {}

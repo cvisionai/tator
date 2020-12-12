@@ -31,8 +31,11 @@ class BookmarkListAPI(BaseListView):
         """ Returns the full database entries of bookmarks registered with this project
             and user.
         """
+        name = params.get('name', None)
         qs = Bookmark.objects.filter(project=params['project'],
                                      user=self.request.user).order_by('id')
+        if name is not None:
+            qs = qs.filter(name__iexact=f"\'{name}\'")
         return database_qs(qs)
 
     def get_queryset(self):
