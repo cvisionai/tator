@@ -33,7 +33,7 @@ class BookmarkListAPI(BaseListView):
         """
         name = params.get('name', None)
         qs = Bookmark.objects.filter(project=params['project'],
-                                     user=self.request.user).order_by('id')
+                                     user=self.request.user).order_by('name')
         if name is not None:
             qs = qs.filter(name__iexact=f"\'{name}\'")
         return database_qs(qs)
