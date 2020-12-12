@@ -97,6 +97,7 @@ class SectionCard extends TatorElement {
 
       rename.addEventListener("click", () => {
         input.style.display = "block";
+        this._link.style.pointerEvents = "none";
         this._title.style.display = "none";
         input.setAttribute("value", this._title.textContent);
         input.focus();
@@ -116,6 +117,7 @@ class SectionCard extends TatorElement {
       input.addEventListener("blur", evt => {
         if (evt.target.value !== "") {
           this._title.textContent = evt.target.value;
+          this._link.style.pointerEvents = "";
           this._section.name = evt.target.value;
           fetchRetry("/rest/Bookmark/" + this._section.id, {
             method: "PATCH",
