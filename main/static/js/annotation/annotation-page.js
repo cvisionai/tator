@@ -1228,7 +1228,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _updateLastVisitedBookmark() {
-    const uri = window.location.pathname;
+    const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
     fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
