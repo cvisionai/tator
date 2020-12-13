@@ -9,6 +9,7 @@ from ..schema import MediaTypeDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
           'default_volume', 'visible', 'archive_config', 'streaming_config','overlay_config']
@@ -51,6 +52,9 @@ class MediaTypeListAPI(BaseListView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
+        if params['name'] in attribute_keywords:
+            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
+                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         obj = MediaType(**params)
         obj.save()
