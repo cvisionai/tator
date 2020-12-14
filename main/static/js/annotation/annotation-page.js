@@ -534,10 +534,6 @@ class AnnotationPage extends TatorPage {
 
         var dataTypes = localizationTypes.concat(stateTypes)
 
-        if (block_signals) {
-          dataTypes = localizationTypes;
-        }
-
         // Replace the data type IDs so they are guaranteed to be unique.
         for (let [idx,dataType] of dataTypes.entries()) {
           dataType.id = dataType.dtype + "_" + dataType.id;

@@ -11,7 +11,7 @@ class AnnotationData extends HTMLElement {
     this._localizationMediaIds = new Array();
   }
 
-  init(dataTypes, version, projectId, mediaId, update, allowStateData) {
+  init(dataTypes, version, projectId, mediaId, update, allowNonTrackStateData) {
     // Update defaults to true
     if (update == undefined)
     {
@@ -20,10 +20,10 @@ class AnnotationData extends HTMLElement {
 
     for (const dataType of dataTypes){
       if (dataType.dtype == "state"){
-        if (allowStateData == undefined) {
+        if (allowNonTrackStateData == undefined || dataType.isTrack == true) {
           this._stateMediaIds.push(mediaId);
         }
-        else if (allowStateData) {
+        else if (allowNonTrackStateData) {
           this._stateMediaIds.push(mediaId);
         }
       }
