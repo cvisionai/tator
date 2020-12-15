@@ -109,6 +109,8 @@ class MembershipSerializer(serializers.ModelSerializer):
             out = 'View Only'
         elif obj.permission == Permission.CAN_EDIT:
             out = 'Can Edit'
+        elif obj.permission == Permission.CAN_TRANSFER:
+            out = 'Can Transfer'
         elif obj.permission == Permission.CAN_EXECUTE:
             out = 'Can Execute'
         elif obj.permission == Permission.FULL_CONTROL:
