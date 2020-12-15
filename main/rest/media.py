@@ -230,7 +230,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                    f"{name} on project {media_type.project.name}")
             response = {'message': msg, 'id': media_obj.id}
             logger.info(msg)
-            Notify.notify_admin_msg(msg)
 
         return response
 
