@@ -110,5 +110,4 @@ class TranscodeAPI(BaseListView):
 
         # Send notification that transcode started.
         logger.info(msg)
-        Notify.notify_admin_msg(msg)
         return response_data
