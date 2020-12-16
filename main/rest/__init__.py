@@ -37,6 +37,8 @@ from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
 from .move_video import MoveVideoAPI
 from .notify import NotifyAPI
+from .organization import OrganizationListAPI
+from .organization import OrganizationDetailAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .section import SectionListAPI
