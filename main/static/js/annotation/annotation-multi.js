@@ -686,6 +686,13 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  toggleTextOverlays(on) {
+    for (let video of this._videos)
+    {
+      video.toggleTextOverlays(on);
+    }
+  }
+
   safeMode() {
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");

@@ -112,6 +112,10 @@ class AnnotationImage extends TatorElement {
   toggleBoxFills(fill) {
     this._image.toggleBoxFills(fill);
   }
+
+  toggleTextOverlays(on) {
+    this._image.toggleTextOverlays(on);
+  }
 }
 
 customElements.define("annotation-image", AnnotationImage);

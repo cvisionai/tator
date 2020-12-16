@@ -322,6 +322,7 @@ FILES = \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \
+		annotation/toggle-text-button.js \
     annotation/media-capture-button.js \
     annotation/bookmark-button.js \
     annotation/media-link-button.js \

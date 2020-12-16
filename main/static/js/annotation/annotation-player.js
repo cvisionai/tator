@@ -443,6 +443,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.toggleBoxFills(fill);
   }
 
+  toggleTextOverlays(on) {
+    this._video.toggleTextOverlays(on);
+  }
+
   safeMode() {
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");

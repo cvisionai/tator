@@ -36,6 +36,9 @@ class AnnotationSettings extends TatorElement {
     this._fill_boxes = document.createElement("fill-boxes-button")
     div.appendChild(this._fill_boxes)
 
+    this._toggle_text = document.createElement("toggle-text-button")
+    div.appendChild(this._toggle_text)
+
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
       let url = window.location.origin + window.location.pathname;
@@ -188,6 +191,11 @@ class AnnotationSettings extends TatorElement {
       params.set("fill_boxes", 1);
     } else {
       params.set("fill_boxes", 0);
+    }
+    if (this._toggle_text.current_state == "on") {
+      params.set("toggle_text", 1);
+    } else {
+      params.set("toggle_text", 0);
     }
     return params;
   }
