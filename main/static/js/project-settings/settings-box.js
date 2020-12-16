@@ -1,12 +1,14 @@
 /* Class with methods return content in a styled DIV boxes.*/
 class SettingsBox {
   constructor( customClass) {
-    this.customClass = customClass || ""; // Feature-related class(es) to customize form element. Applies to all elements.
+    this.customClass = customClass || "";
+
+    this.chevron = this._chevron();
   }
 
   boxWrapDefault( { children = {}, level = 1 } = {} ){
     let settingsBox = document.createElement("div");
-    settingsBox.setAttribute("class", `new-project__config py-3 px-6 rounded-2 ${this.customClass} ${level == 1 ? 'layout-max' : ''}`);
+    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${this.customClass} ${level == 1 ? 'layout-max new-project__config ' : ''}`);
     settingsBox.append( children );
 
     return settingsBox;
@@ -15,7 +17,9 @@ class SettingsBox {
   headingWrap( {
     headingText = "",
     descriptionText = "",
-    level = 1 } = {}
+    level = 1,
+    collapsed = false,
+    callback = ""} = {}
   ){
     /* Div to apppend the a HEADING and DESCRIPTION to. */
     let headingDiv = document.createElement("div");
@@ -43,21 +47,61 @@ class SettingsBox {
 
     let _headingText = document.createTextNode("");
     _headingText.nodeValue = headingText;
-    heading.setAttribute("class", "py-1 col-4 text-semibold d-inline-flex ");
     heading.appendChild( _headingText );
 
-    /* 2. Make DESCRIPTION */
     let description = document.createElement("div");
-    description.setAttribute("class", "f2 text-gray d-inline-flex ");
 
-    let _descriptionText = document.createTextNode("");
-    _descriptionText.nodeValue = descriptionText;
-    description.appendChild( _descriptionText );
+    if(collapsed) {
+      heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex clickable");
+      let thisChevron = this._chevron();
+      heading.appendChild(thisChevron);
+    } else {
+      heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex ");
+
+      //let _descriptionText = document.createTextNode("");
+      //_descriptionText.nodeValue = descriptionText;
+      //description.setAttribute("class", "f2 text-gray d-inline-flex ");
+      //description.appendChild( _descriptionText );
+    }
 
     /* 3. Append to parent DIV element. */
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
+
+
     return headingDiv;
   }
+
+  hiddenBoxWrap( { heading = "Section", children = {}, level = 2 } = {} ){
+    let _hiddenWrapper = document.createElement("div");
+
+    let _collapsedBoxHeading = this.headingWrap({"headingText": heading, "level":2, "collapsed":true})
+    _hiddenWrapper.append( _collapsedBoxHeading );
+
+    let _collapsedBox = document.createElement("div");
+    _hiddenWrapper.append( children );
+
+    return panel;
+  }
+
+  _chevron({direction = "right"} = {}) {
+    const chevron = document.createElementNS(svgNamespace, "svg");
+    chevron.setAttribute("viewBox", "0 0 24 24");
+    chevron.setAttribute("height", "1em");
+    chevron.setAttribute("width", "1em");
+
+    const chevronPath = document.createElementNS(svgNamespace, "path");
+    chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+
+    chevron.appendChild(chevronPath);
+
+    return chevron;
+  }
+
+  turnChevron({element = this._chevron, degrees = 90} = {}){
+    element.style.transition = "transform 2s ease-in-out";
+    return element.style.transform = `rotate(${degrees}deg)`; /* Equal to rotateZ(45deg) */
+  }
+
 }

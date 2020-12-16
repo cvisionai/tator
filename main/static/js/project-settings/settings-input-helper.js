@@ -7,22 +7,24 @@ class SettingsInput {
 
   /* Returns an input of type text with an initial value */
   inputText({
-      value = '',
-      customCol = 'col-8',
-      labelText = '',
-      type = 'text'} = {}
+        value = '',
+        customCol = 'col-8',
+        labelText = '',
+        type = 'text',
+        disabled = 'false'
+      } = {}
     ){
       const inputTextElement = document.createElement("input");
+
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
-      if(type == "checkbox"){
-        if (value) inputTextElement.checked = true;
-        customCol = ""
-      }
+
+      console.log("type: "+type)
 
       const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
       inputTextElement.setAttribute("name", setName);
       inputTextElement.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
+      inputTextElement.disabled = disabled;
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
@@ -33,10 +35,34 @@ class SettingsInput {
       return inputWithLabel;
   }
 
+  inputTextArea({
+        value = '',
+        customCol = 'col-8',
+        labelText = '',
+        type = 'text',
+        disabled = 'false'
+      } = {}
+    ){
+      const textArea = document.createElement("textarea");
+      textArea.value = value;
+
+      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+      textArea.setAttribute("name", setName);
+      textArea.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
+
+      const inputWithLabel = this.labelWrap({
+        "labelText": labelText,
+        "inputNode": textArea,
+        "name": setName
+      });
+
+      return inputWithLabel;
+    }
+
   /* Returns an input of type text with an initial value */
   inputCheckbox({
       value = '',
-      customCol = 'col-8',
+      customCol = '',
       labelText = '',
       type = 'checkbox'} = {}
     ){
@@ -44,6 +70,7 @@ class SettingsInput {
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
       if (value) inputTextElement.checked = true;
+      inputTextElement.style.transform = "scale(1.5)";
 
       const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
       inputTextElement.setAttribute("name", setName);
@@ -144,35 +171,32 @@ class SettingsInput {
       labelWrap.append(inputNode);
 
       labelDiv.setAttribute("class", "py-2 px-2 f2");
-      labelDiv.appendChild(labelWrap)
+      labelDiv.style.borderBottom = "none";
+      labelDiv.appendChild(labelWrap);
 
       return labelDiv;
     }
 
     /* Returns an number input with an initial value */
-    inputSubmitOrCancel(){
-      console.log("inputSubmitOrCancel");
-      const inputSubmitOrCancelDiv = document.createElement("div");
-      inputSubmitOrCancelDiv.setAttribute("class", `d-flex flex-items-center flex-justify-center py-3 ${this.customClass}`);
-
+    saveButton({ text = "Save"} = {}){
       const inputSubmit = document.createElement("input");
       inputSubmit.setAttribute("type", "submit");
-      inputSubmit.setAttribute("value", "Submit");
+      inputSubmit.setAttribute("value", text);
       inputSubmit.setAttribute("class", `btn btn-clear f2 text-semibold`);
 
-      const cancelLink = document.createElement("a");
-      cancelLink.setAttribute("href", "#");
-      cancelLink.setAttribute("class", `px-5 f2 text-gray hover-text-white`);
-      cancelLink.setAttribute("onclick", "this._init()");
-      let cancelLinkText = document.createTextNode("Reset");
-      //cancelLinkText.nodeValue = `Set rules and configurations.`;
-      cancelLink.appendChild( cancelLinkText );
+      return inputSubmit;
+    }
 
-      // Put it all together...
-      inputSubmitOrCancelDiv.appendChild(inputSubmit);
-      inputSubmitOrCancelDiv.appendChild(cancelLink);
+    /* Returns an number input with an initial value */
+    resetLink({ text = "Reset"} = {}){
+      const resetLink = document.createElement("a");
+      resetLink.setAttribute("href", "#");
+      resetLink.setAttribute("class", `px-5 f2 text-gray hover-text-white`);
 
-      return inputSubmitOrCancelDiv;
+      let resetLinkText = document.createTextNode(text);
+      resetLink.appendChild( resetLinkText );
+
+      return resetLink;
     }
 
 }
