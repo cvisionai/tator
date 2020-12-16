@@ -35,10 +35,22 @@ def create_test_user():
         initials="JAS",
     )
 
-def create_test_project(user):
+def create_test_organization():
+    return Organization.objects.create(
+        name="my_org",
+    )
+
+def create_test_affiliation(user, organization):
+    return Affiliation.objects.create(
+        user=self.user,
+        organization=self.organization,
+    )
+
+def create_test_project(user, organization=None):
     return Project.objects.create(
         name="asdf",
         creator=user,
+        organization=organization,
     )
 
 def create_test_membership(user, project):
@@ -460,6 +472,48 @@ class PermissionDetailMembershipTestMixin:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
+
+class PermissionListAffiliationTestMixin:
+    def test_list_not_a_member_permissions(self):
+        self.affiliation.delete()
+        url = f'/rest/{self.list_uri}/{self.project.pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.affiliation.save()
+
+    def test_list_is_a_member_permissions(self):
+        self.affiliation.permission = 'Member'
+        self.affiliation.save()
+        url = f'/rest/{self.list_uri}/{self.project.pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.affiliation.permission = 'Admin'
+        self.affiliation.save()
+
+class PermissionDetailAffiliationTestMixin:
+    def test_detail_not_a_member_permissions(self):
+        self.affiliation.delete()
+        url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.affiliation.save()
+
+    def test_detail_is_a_member_permissions(self):
+        self.affiliation.permission = 'Member'
+        self.affiliation.save()
+        url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.affiliation.permission = 'Admin'
+        self.affiliation.save()
 
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
@@ -1897,4 +1951,27 @@ class BookmarkTestCase(
             'name': 'New name',
         }
         self.edit_permission = Permission.CAN_EDIT
+
+class OrganizationTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListAffiliationTestMixin,
+        PermissionDetailAffiliationTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.list_uri = 'Organizations'
+        self.detail_uri = 'Organization'
+        self.create_json = {
+            'name': 'My org'
+        }
+        self.patch_json = {
+            'name': 'My new org'
+        }
+        self.edit_permission = 'Admin'
 
