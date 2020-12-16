@@ -221,6 +221,14 @@ urlpatterns += [
         NotifyAPI.as_view(),
     ),
     path(
+        'rest/Organizations',
+        OrganizationListAPI.as_view(),
+    ),
+    path(
+        'rest/Organization/<int:id>',
+        OrganizationDetailAPI.as_view(),
+    ),
+    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),
