@@ -3,6 +3,7 @@ from django.db import transaction
 
 from ..models import Organization
 from ..models import Affiliation
+from ..models import database_qs
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
 
@@ -50,7 +51,7 @@ class OrganizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Organization.objects.get(pk=params['id'])
+        return database_qs(Organization.objects.filter(pk=params['id']))[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -64,15 +65,7 @@ class OrganizationDetailAPI(BaseDetailView):
         return {'message': f"Organization {params['id']} updated successfully!"}
 
     def _delete(self, params):
-        # Check for permission to delete first.
-        organization = Organization.objects.get(pk=params['id'])
-        if self.request.user != organization.creator:
-            raise PermissionDenied
-
-        # Mark media for deletion rather than actually deleting it.
-        qs = Media.objects.filter(organization=params['id'])
-        qs.update(organization=None)
-        organization.delete()
+        organization = Organization.objects.get(pk=params['id']).delete()
         return {'message': f'Organization {params["id"]} deleted successfully!'}
 
     def get_queryset(self):

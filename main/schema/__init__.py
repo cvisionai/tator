@@ -38,6 +38,8 @@ from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
 from .move_video import MoveVideoSchema
 from .notify import NotifySchema
+from .organization import OrganizationListSchema
+from .organization import OrganizationDetailSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
 from .section import SectionListSchema

@@ -13,6 +13,8 @@ from redis import Redis
 from ..models import Permission
 from ..models import Project
 from ..models import Membership
+from ..models import Organization
+from ..models import Affiliation
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
@@ -265,14 +267,14 @@ class OrganizationPermissionBase(BasePermission):
                     granted = False
         return granted
 
-class OrganizationMemberPermission(OrganizationBasePermission):
+class OrganizationMemberPermission(OrganizationPermissionBase):
     """Checks whether a user has member access to an organization. This
        is just to check whether a user is a member of an organization.
     """
     message = "Not a member of this organization."
     insufficient_permissions = []
 
-class OrganizationAdminPermission(OrganizationBasePermission):
+class OrganizationAdminPermission(OrganizationPermissionBase):
     """Checks whether a user has admin access to an organization. This
        is just to check whether a user is a member of an organization.
     """

@@ -80,6 +80,8 @@ class CustomGenerator(SchemaGenerator):
                 'Membership': membership,
                 'MoveVideoSpec': move_video_spec,
                 'NotifySpec': notify_spec,
+                'OrganizationSpec': organization_spec,
+                'Organization': organization,
                 'ProjectSpec': project_spec,
                 'Project': project,
                 'ResolutionConfig': resolution_config,
