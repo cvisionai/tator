@@ -384,7 +384,8 @@ class AnnotationMulti extends TatorElement {
       const smallTextStyle =
         {"fontSize": "16pt",
          "fontWeight": "bold",
-         "color": "white"};
+         "color": "white",
+         "background": "rgba(0,0,0,0.33)"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
       this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject);
 
