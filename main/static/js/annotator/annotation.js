@@ -698,7 +698,8 @@ class AnnotationCanvas extends TatorElement
     this.overlayTextStyle =
       {"fontSize": "24pt",
        "fontWeight": "bold",
-       "color": "white"};
+       "color": "white",
+       "background": "rgba(0,0,0,0.33)"};
     this._showTextOverlays = true;
 
     // Context menu (right-click): Tracks
