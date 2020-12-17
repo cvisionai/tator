@@ -65,6 +65,23 @@ def waitForMigrations():
             time.sleep(10)
 
 def buildSearchIndices(project_number, section, mode='index'):
+INDEX_CHUNK_SIZE = 50000
+
+def get_num_index_chunks(project_number, section, mode='media'):
+    """ Returns number of chunks for parallel indexing operation.
+    """
+    count = 1
+    if mode == 'media':
+        count = Media.objects.count()
+    elif mode == 'localizations':
+        count = Localization.objects.count()
+    elif mode == 'states':
+        count = State.objects.count()
+    elif mode == 'leaves':
+        count = Leaf.objects.count()
+    count = math.ceil(count / INDEX_CHUNK_SIZE)
+    return count
+
     """ Builds search index for a project.
         section must be one of:
         'index' - create the index for the project if it does not exist
