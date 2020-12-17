@@ -42,8 +42,9 @@ def create_test_organization():
 
 def create_test_affiliation(user, organization):
     return Affiliation.objects.create(
-        user=self.user,
-        organization=self.organization,
+        user=user,
+        organization=organization,
+        permission='Admin',
     )
 
 def create_test_project(user, organization=None):
@@ -277,6 +278,11 @@ permission_levels = [
     Permission.FULL_CONTROL
 ]
 
+affiliation_levels = [
+    'Member',
+    'Admin',
+]
+
 class DefaultCreateTestMixin:
     def _check_object(self, response, is_default):
         # Get the created objects.
@@ -475,45 +481,85 @@ class PermissionDetailMembershipTestMixin:
 
 class PermissionListAffiliationTestMixin:
     def test_list_not_a_member_permissions(self):
-        self.affiliation.delete()
-        url = f'/rest/{self.list_uri}/{self.project.pk}'
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f'/rest/{self.list_uri}/{self.organization.pk}'
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.affiliation.save()
+        affiliation.save()
 
     def test_list_is_a_member_permissions(self):
-        self.affiliation.permission = 'Member'
-        self.affiliation.save()
-        url = f'/rest/{self.list_uri}/{self.project.pk}'
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.permission = 'Member'
+        affiliation.save()
+        url = f'/rest/{self.list_uri}/{self.organization.pk}'
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.affiliation.permission = 'Admin'
-        self.affiliation.save()
+        affiliation.permission = 'Admin'
+        affiliation.save()
 
 class PermissionDetailAffiliationTestMixin:
     def test_detail_not_a_member_permissions(self):
-        self.affiliation.delete()
+        affiliation = self.get_affiliation(self.entities[0], self.user)
+        affiliation.delete()
         url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.affiliation.save()
+        affiliation.save()
 
     def test_detail_is_a_member_permissions(self):
-        self.affiliation.permission = 'Member'
-        self.affiliation.save()
+        affiliation = self.get_affiliation(self.entities[0], self.user)
+        affiliation.permission = 'Member'
+        affiliation.save()
         url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.affiliation.permission = 'Admin'
-        self.affiliation.save()
+        affiliation.permission = 'Admin'
+        affiliation.save()
+
+    def test_detail_patch_permissions(self):
+        permission_index = affiliation_levels.index(self.edit_permission)
+        for index, level in enumerate(affiliation_levels):
+            obj = Affiliation.objects.filter(organization=self.entities[0], user=self.user)[0]
+            obj.permission = level
+            obj.save()
+            del obj
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.patch(
+                f'/rest/{self.detail_uri}/{self.entities[0].pk}',
+                self.patch_json,
+                format='json')
+            self.assertEqual(response.status_code, expected_status)
+
+    def test_detail_delete_permissions(self):
+        permission_index = affiliation_levels.index(self.edit_permission)
+        for index, level in enumerate(affiliation_levels):
+            obj = Affiliation.objects.filter(organization=self.entities[0], user=self.user)[0]
+            obj.permission = level
+            obj.save()
+            del obj
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            test_val = random.random() > 0.5
+            response = self.client.delete(
+                f'/rest/{self.detail_uri}/{self.entities[0].pk}',
+                format='json')
+            self.assertEqual(response.status_code, expected_status)
+            if expected_status == status.HTTP_200_OK:
+                del self.entities[0]
 
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
@@ -1954,17 +2000,16 @@ class BookmarkTestCase(
 
 class OrganizationTestCase(
         APITestCase,
-        PermissionCreateTestMixin,
-        PermissionListAffiliationTestMixin,
-        PermissionDetailAffiliationTestMixin,
-        PermissionDetailTestMixin):
+        PermissionDetailAffiliationTestMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
-        self.organization = create_test_organization
+        self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
         self.project = create_test_project(self.user, self.organization)
         self.membership = create_test_membership(self.user, self.project)
+        self.entities = [create_test_organization() for _ in range(3)]
+        affiliations = [create_test_affiliation(self.user, entity) for entity in self.entities]
         self.list_uri = 'Organizations'
         self.detail_uri = 'Organization'
         self.create_json = {
@@ -1974,4 +2019,13 @@ class OrganizationTestCase(
             'name': 'My new org'
         }
         self.edit_permission = 'Admin'
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def test_create(self):
+        endpoint = f'/rest/{self.list_uri}'
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
 
