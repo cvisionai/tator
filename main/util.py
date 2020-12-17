@@ -5,6 +5,7 @@ import subprocess
 import json
 import datetime
 import shutil
+import math
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
@@ -64,7 +65,6 @@ def waitForMigrations():
         except:
             time.sleep(10)
 
-def buildSearchIndices(project_number, section, mode='index'):
 INDEX_CHUNK_SIZE = 50000
 
 def get_num_index_chunks(project_number, section, mode='media'):
@@ -82,6 +82,7 @@ def get_num_index_chunks(project_number, section, mode='media'):
     count = math.ceil(count / INDEX_CHUNK_SIZE)
     return count
 
+def buildSearchIndices(project_number, section, mode='index', chunk=None):
     """ Builds search index for a project.
         section must be one of:
         'index' - create the index for the project if it does not exist
@@ -145,6 +146,11 @@ def get_num_index_chunks(project_number, section, mode='media'):
         # Create treeleaf documents
         logger.info("Building tree leaf documents...")
         qs = Leaf.objects.filter(project=project_number)
+
+    # Apply limit/offset if chunk parameter given.
+    if chunk is not None:
+        offset = INDEX_CHUNK_SIZE * chunk
+        qs = qs[offset:offset+INDEX_CHUNK_SIZE]
 
     batch_size = 500
     count = 0
