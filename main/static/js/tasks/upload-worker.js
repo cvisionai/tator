@@ -184,9 +184,6 @@ class Upload {
       const percentage = (currentChunk / chunks * 10).toFixed(2);
       if (currentChunk < chunks) {
         loadNext();
-        if (currentChunk % 20 === 0) {
-          this.progress("started", "Checking...", percentage);
-        }
       } else {
         let md5 = spark.end();
 
@@ -198,7 +195,6 @@ class Upload {
     reader.onerror = error => {
       console.error("Error processing MD5");
       removeFromActive(this.upload_uid);
-      this.progress("failed", error, 0);
     };
     const loadNext = () => {
       if (this.aborted) {
