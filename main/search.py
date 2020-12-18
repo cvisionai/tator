@@ -85,7 +85,7 @@ class TatorSearch:
                 index,
                 body={
                     'settings': {
-                        'number_of_shards': 3,
+                        'number_of_shards': 1,
                         'number_of_replicas': 1,
                         'analysis': {
                             'normalizer': {
