@@ -85,7 +85,7 @@ class TatorSearch:
                 index,
                 body={
                     'settings': {
-                        'number_of_shards': 1,
+                        'number_of_shards': 3,
                         'number_of_replicas': 1,
                         'analysis': {
                             'normalizer': {
@@ -151,9 +151,9 @@ class TatorSearch:
                 elif attribute_type['dtype'] == 'float':
                     dtype='float'
                 elif attribute_type['dtype'] == 'enum':
-                    dtype='text'
+                    dtype='keyword'
                 elif attribute_type['dtype'] == 'string':
-                    dtype='text'
+                    dtype='keyword'
                 elif attribute_type['dtype'] == 'datetime':
                     dtype='date'
                 elif attribute_type['dtype'] == 'geopos':
