@@ -300,7 +300,7 @@ class TemporaryFile(Model):
     """ User who created the temporary file """
     path = FilePathField(path=settings.MEDIA_ROOT, null=True, blank=True)
     """ Path to file on storage """
-    lookup = SlugField(max_length=32)
+    lookup = SlugField(max_length=256)
     """ unique lookup (md5sum of something useful) """
     created_datetime = DateTimeField()
     """ Time that the file was created """
