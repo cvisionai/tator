@@ -67,17 +67,17 @@ def waitForMigrations():
 
 INDEX_CHUNK_SIZE = 50000
 
-def get_num_index_chunks(project_number, section, mode='media'):
+def get_num_index_chunks(project_number, section):
     """ Returns number of chunks for parallel indexing operation.
     """
     count = 1
-    if mode == 'media':
+    if section == 'media':
         count = Media.objects.count()
-    elif mode == 'localizations':
+    elif section == 'localizations':
         count = Localization.objects.count()
-    elif mode == 'states':
+    elif section == 'states':
         count = State.objects.count()
-    elif mode == 'leaves':
+    elif section == 'leaves':
         count = Leaf.objects.count()
     count = math.ceil(count / INDEX_CHUNK_SIZE)
     return count

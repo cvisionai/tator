@@ -7,4 +7,4 @@ class Command(BaseCommand):
 				parser.add_argument('section', type=str)
 
 		def handle(self, **options):
-				print(list(range(get_num_index_chunks(options['project_id'], options['section'], 'index'))))
+				print(list(range(get_num_index_chunks(options['project_id'], options['section']))))
