@@ -33,6 +33,13 @@ spec:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
       args: ["python3 manage.py getprojects > /projects.txt"]
+      resources:
+        requests:
+          cpu: 50m
+          memory: 200Mi
+        limits:
+          cpu: 1000m
+          memory: 32Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -135,6 +142,13 @@ spec:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
       args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /chunks.txt"]
+      resources:
+        requests:
+          cpu: 50m
+          memory: 200Mi
+        limits:
+          cpu: 1000m
+          memory: 32Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -203,8 +217,8 @@ spec:
       args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}"]
       resources:
         requests:
-          cpu: 250m
-          memory: 500Mi
+          cpu: 50m
+          memory: 200Mi
         limits:
           cpu: 1000m
           memory: 32Gi
