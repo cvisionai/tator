@@ -150,7 +150,7 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None):
     # Apply limit/offset if chunk parameter given.
     if chunk is not None:
         offset = INDEX_CHUNK_SIZE * chunk
-        qs = qs[offset:offset+INDEX_CHUNK_SIZE]
+        qs = qs.order_by('id')[offset:offset+INDEX_CHUNK_SIZE]
 
     batch_size = 500
     count = 0
