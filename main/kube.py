@@ -55,9 +55,12 @@ def _determine_host_and_url(url, remote):
         if main_ip == given_ip:
             replace_host = True
     # Replace host if it should be replaced.
+    headers = []
     if replace_host:
         url = urljoin(host, parsed.path)
-    return host, url
+        headers = ['--header=Authorization: Token {{workflow.parameters.token}}',
+                   '--header=Upload-Uid: {{workflow.parameters.uid}}']
+    return host, url, headers
 
 def _select_storage_class():
     """ Randomly selects a workflow storage class.
@@ -270,45 +273,6 @@ class TatorTranscode(JobManagerMixin):
             return yaml_params
 
         # Define each task in the pipeline.
-
-        # Download task exports the human readable filename a
-        # workflow global to support the onExit handler
-        self.download_task = {
-            'name': 'download',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'inputs': {'parameters' : spell_out_params(['original',
-                                                        'url'])},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'container': {
-                'image': '{{workflow.parameters.wget_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['wget',],
-                'args': ['-O', '{{inputs.parameters.original}}', 
-                         '--header=Authorization: Token {{workflow.parameters.token}}',
-                         '--header=Upload-Uid: {{workflow.parameters.uid}}',
-                         '{{inputs.parameters.url}}'],
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '512Mi',
-                        'cpu': '500m',
-                    },
-                },
-            },
-        }
 
         # Deletes the remote TUS file
         self.delete_task = {
@@ -620,6 +584,45 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+    def get_download_task(self, headers):
+        # Download task exports the human readable filename a
+        # workflow global to support the onExit handler
+        return {
+            'name': 'download',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'inputs': {'parameters' : [{'name': 'original'},
+                                       {'name': 'url'}]},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.wget_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['wget',],
+                'args': ['-O', '{{inputs.parameters.original}}'] + headers + \
+                        ['{{inputs.parameters.url}}'],
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '512Mi',
+                        'cpu': '500m',
+                    },
+                },
+            },
+        }
+
+
     def get_unpack_and_transcode_tasks(self, paths, url):
         """ Generate a task object describing the dependencies of a transcode from tar"""
 
@@ -832,7 +835,7 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host, url = _determine_host_and_url(url, self.remote)
+        host, url, headers = _determine_host_and_url(url, self.remote)
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -877,7 +880,7 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
-                    self.download_task,
+                    self.get_download_task(headers),
                     self.delete_task,
                     self.create_media_task,
                     self.determine_transcode_task,
@@ -935,7 +938,7 @@ class TatorTranscode(JobManagerMixin):
             self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host, url = _determine_host_and_url(url, self.remote)
+        host, url, headers = _determine_host_and_url(url, self.remote)
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -979,7 +982,7 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
-                    self.download_task,
+                    self.get_download_task(headers),
                     self.create_media_task,
                     self.determine_transcode_task,
                     self.transcode_task,
