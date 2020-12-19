@@ -50,9 +50,7 @@ def _determine_host_and_url(url, remote):
     if parsed.netloc == '':
         replace_host = True
     else:
-        main_ip = socket.gethostbyname(os.getenv('MAIN_HOST'))
-        given_ip = socket.gethostbyname(f'{parsed.netloc}')
-        if main_ip == given_ip:
+        if os.getenv('MAIN_HOST') == parsed.netloc:
             replace_host = True
     # Replace host if it should be replaced.
     headers = []
