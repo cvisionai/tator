@@ -143,7 +143,16 @@ class TatorSearch:
 
     def create_mapping(self, entity_type):
         if entity_type.attribute_types:
+            # Fetch existing mappings
+            index_name = self.index_name(entity_type.project.pk)
+            existing_mappings = self.es.indices.get_mapping(index=index_name)
+            mappings = existing_mappings[index_name].get('mappings',{})
+            properties = mappings.get('properties',{})
+            existing_prop_names = properties.keys()
             for attribute_type in entity_type.attribute_types:
+                # Skip over existing mappings
+                if attribute_type['name'] in existing_prop_names:
+                    continue
                 if attribute_type['dtype'] == 'bool':
                     dtype='boolean'
                 elif attribute_type['dtype'] == 'int':
