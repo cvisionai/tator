@@ -15,18 +15,6 @@ class ProjectSettings extends TatorPage {
     header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
     main.appendChild(header);
 
-    // Project Settings h1.
-    /*const h1 = document.createElement("h1");
-    h1.setAttribute("class", "h1");
-    header.appendChild(h1);
-
-    this._headerText = document.createTextNode("");
-    this._headerText.nodeValue = `Set rules and configurations.`;
-    h1.appendChild(this._headerText);*/
-
-    //const container = document.createElement("div");
-    //container.setAttribute("class", "container dflex flex-items-center");
-
     // Left navigation
     this.settingsNav =  document.createElement("settings-nav");
     main.appendChild(this.settingsNav);
@@ -49,40 +37,6 @@ class ProjectSettings extends TatorPage {
     this.settingsNav.setProjectDom( this.projectBlock.getDom() );
     this.settingsNav.setMediaDom( this.mediaTypesBlock.getDom() );
 
-
-    // Save button and reset link. @TODO move to each form section
-    this.settingsInputHelper = new SettingsInput("");
-
-    const submitDiv = document.createElement("div");
-    submitDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center py-3");
-    configForm.appendChild(submitDiv)
-
-    this.saveButton = this.settingsInputHelper.saveButton();
-    submitDiv.appendChild(this.saveButton);
-
-    this.resetLink = this.settingsInputHelper.resetLink();
-    submitDiv.appendChild(this.resetLink);
-
-    this.saveButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      console.log(
-        "Saved!"
-      );
-      if( this.projectBlock.changed() ){
-        this.projectBlock.save( this.projectId );
-      }
-
-    });
-
-    // Form reset event
-    this.resetLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      console.log(
-        "Reset!"
-      );
-      this.projectBlock.reset();
-      alert("Reset!");
-    });
 
     // Error catch all
     window.addEventListener("error", (evt) => {
@@ -138,7 +92,9 @@ class ProjectSettings extends TatorPage {
         .then( ([project, mediaTypes]) => {
           this._shadow.removeChild(this._loading);
 
-          this.projectBlock.setAttribute("_data", JSON.stringify(project))
+          // Init project edit box.
+          this.projectBlock.setAttribute("_data", JSON.stringify(project));
+
           this.mediaTypesBlock.setAttribute("_data", JSON.stringify(mediaTypes));
           this.settingsNav.setAttribute("_data", JSON.stringify(mediaTypes));
         })

@@ -19,6 +19,7 @@
   background-color: transparent;
   border: 0;
   border-top: 1px solid $color-charcoal--light;
+  z-index: 100;
 
   &:first-child {
     border-top: 0;
@@ -40,6 +41,16 @@
     width: 2px;
     pointer-events: none;
     content: "";
+  }
+
+  &[selected="true"] {
+    background-color: $color-charcoal--light70;
+    color: $color-white;
+  }
+
+  .item-label,
+  .SideNav-icon {
+    pointer-events: none;
   }
 }
 

@@ -25,25 +25,26 @@ class SettingsNav extends TatorElement {
     //item.setAttribute("class", "py-3 lh-condensed text-semibold");
 
     let item = document.createElement("a");
-    item.setAttribute("class", "SideNav-item "+(linkData == '#projectMain' ? ' selected ' : ''));
+    item.setAttribute("class", "SideNav-item ");
     item.href = linkData;
     item.title = type.replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
+    if(linkData == '#projectMain') {
+      item.setAttribute("selected", "true");
+    } else {
+      item.setAttribute("selected", "false");
+    }
 
-    if(linkData == "#projectMain") item.setAttribute("aria-selected", "true");
+    //if(linkData == "#projectMain") item.setAttribute("aria-selected", "true");
 
     item.innerHTML = this.getLinkText({"type":type, "text": name});
 
     item.addEventListener("click", (event) => {
       event.preventDefault();
 
-      this.querySelectorAll("a.SideNav-item").forEach((item, i) => {
-        item.setAttribute("class", "SideNav-item");
-      });
-
-      console.log(event.target);
-
-      event.target.setAttribute("class", "SideNav-item  selected");
-
+      if (event.target.tagName === 'A') {
+        this._shadow.querySelector('a[selected="true"]').setAttribute("selected", "false");
+        item.setAttribute("selected", "true");
+      }
 
       this.toggleItem(linkData);
     });
@@ -91,7 +92,7 @@ class SettingsNav extends TatorElement {
         break;
     }
 
-    return `${icon} <span class="">${text} ${this.getAttributeLabel(count)}</span>`;
+    return `${icon} <span class="item-label">${text} ${this.getAttributeLabel(count)}</span>`;
   }
 
   videoIconSvg(){
