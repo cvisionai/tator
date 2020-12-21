@@ -5,6 +5,14 @@ class ProjectMainEdit extends TatorElement {
     this.inputHelper = new SettingsInput("media-types-main-edit");
 
     this.projectMainDiv = document.createElement("div");
+    this.projectMainDiv.id = "projectMain";
+    this.projectMainDiv.setAttribute("class", "item-box");
+
+    // Project Settings h1.
+    const h1 = document.createElement("h1");
+    h1.setAttribute("class", "h2 pb-3");
+    h1.innerHTML = `Set project details.`;
+    this.projectMainDiv.appendChild(h1);
 
     this._shadow.appendChild(this.projectMainDiv);
   }
@@ -25,16 +33,17 @@ class ProjectMainEdit extends TatorElement {
   _init(){
    //try{
       console.log("ProjectEditName - Init");
-      //console.log(this.getAttribute("_data") );
-      this.projectData = JSON.parse( this.getAttribute("_data") );
 
-      const projectHeading = this.boxHelper.headingWrap({
+      this.projectData = JSON.parse( this.getAttribute("_data") );
+      console.log(this.projectData);
+
+      /*const projectHeading = this.boxHelper.headingWrap({
           "headingText" : "Project | " + this._getNameFromData(),
           "descriptionText" : "Change the project name or summary.",
           "level" : 1
-      });
+      });*/
       this.boxOnPage = this.boxHelper.boxWrapDefault({
-          "children" : projectHeading
+          "children" : document.createTextNode("")
         });
 
       // Input for name and summary
@@ -112,6 +121,10 @@ class ProjectMainEdit extends TatorElement {
 
   changed(){
     return this._nameChanged() || this._summaryChanged() ;
+  }
+
+  getDom(){
+    return this._shadow;
   }
 
   save(projectId){

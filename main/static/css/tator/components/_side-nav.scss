@@ -1,0 +1,114 @@
+// Side Nav
+//
+// A vertical list of navigational links, typically used on the left side of a page.
+
+.SideNav {
+  background-color: #151b28;
+  transition: background-color 500ms ease;
+  border-radius: 10px;
+}
+
+.SideNav-item {
+  position: relative;
+  display: block;
+  //width: 100%;
+  // stylelint-disable-next-line primer/spacing
+  padding: 12px $spacing-3;
+  color: $color-gray--light;
+  text-align: left;
+  background-color: transparent;
+  border: 0;
+  border-top: 1px solid $color-charcoal--light;
+
+  &:first-child {
+    border-top: 0;
+  }
+
+  &:last-child {
+    // makes sure there is a "bottom border" in case the list is not long enough
+    // stylelint-disable-next-line primer/box-shadow
+    //box-shadow: 0 1px 0 1px;
+  }
+
+  // Bar on the left
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    width: 2px;
+    pointer-events: none;
+    content: "";
+  }
+}
+
+// States
+
+.SideNav-item:hover,
+.SideNav-item:focus {
+  text-decoration: none;
+  // stylelint-disable-next-line primer/colors
+  background-color: $color-charcoal--light70;
+  color: $color-white;
+  outline: none;
+}
+
+.SideNav-item:active {
+  background-color: $color-gray--light;
+}
+
+.SideNav-item[aria-current]:not([aria-current=false]),
+.SideNav-item[aria-selected="true"] {
+  background-color: $color-charcoal--light70;
+  color: $color-white;
+
+  // Bar on the left
+  &::before {
+    // stylelint-disable-next-line primer/colors
+    background-color: $color-charcoal--red; // custom coral
+  }
+}
+
+// Icon
+//
+// Makes sure multiple icons are vertically aligned
+
+.SideNav-icon {
+  width: 16px;
+  margin-right: 15px;
+  //color: $color-charcoal--light70;
+}
+
+// Sub Nav
+//
+// A more lightweight version, suited as a sub nav
+
+.SideNav-subItem {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 15px 0;
+  color: $color-charcoal--medium;
+  text-align: left;
+  background-color: transparent;
+  border: 0;
+}
+
+.SideNav-subItem:hover,
+.SideNav-subItem:focus {
+  text-decoration: underline;
+}
+
+.SideNav-subItem:hover,
+.SideNav-subItem:focus {
+  color: $color-gray--dark;
+  text-decoration: none;
+  outline: none;
+}
+
+.SideNav-subItem[aria-current]:not([aria-current=false]),
+.SideNav-subItem[aria-selected="true"] {
+  font-weight: $weight-semibold;
+  color: $color-gray--dark;
+}

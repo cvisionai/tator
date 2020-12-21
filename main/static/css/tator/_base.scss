@@ -58,10 +58,33 @@ summary {
   }
 }
 
+
+// 544px
+.layout-sm {
+  max-width: $width-sm;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 768px
+.layout-md {
+  max-width: $container-md;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 1004px - this matches the current fixed width: 980px + padding: px-3
+.layout-lg {
+  max-width: $container-lg;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 1140px
 .layout-max {
   margin-left: auto;
   margin-right: auto;
-  max-width: 1140px;
+  max-width: $container-xl;
   width: 100%;
 }
 

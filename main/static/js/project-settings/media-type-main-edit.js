@@ -1,8 +1,8 @@
 class MediaTypeMainEdit extends TatorElement {
   constructor() {
     super();
-    this.boxHelper = new SettingsBox("media-types-main-edit");
-    this.inputHelper = new SettingsInput("media-types-main-edit");
+    this.boxHelper = new SettingsBox("media-types-main-box");
+    this.inputHelper = new SettingsInput("media-types-main-input");
 
     this.mediaTypeBoxOnPage = document.createElement("div");
 
@@ -26,8 +26,19 @@ class MediaTypeMainEdit extends TatorElement {
   //  try{
       console.log("Project Edit Media Types - Init");
       this.data = JSON.parse( this.getAttribute("_data") );
+      console.log(this.data);
 
       for(let i in this.data){
+        this.itemDiv = document.createElement("div");
+        this.itemDiv.id = "mediaId-"+this.data[i].id;
+        this.itemDiv.setAttribute("class", "item-box");
+
+        // Project Settings h1.
+        const h1 = document.createElement("h1");
+        h1.setAttribute("class", "h2 pb-3");
+        h1.innerHTML = `Set media and attribute details.`;
+        this.itemDiv.appendChild(h1);
+
         let headingName = this._getHeadingName(this.data[i].dtype);
         let mediaType = this.boxHelper.headingWrap({
             "headingText" : `${headingName} | ${this.data[i].name}`,
@@ -38,6 +49,7 @@ class MediaTypeMainEdit extends TatorElement {
         let currentMediaType = this.boxHelper.boxWrapDefault( {
             "children" : mediaType
           } );
+
         // append input for name and summary
         currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": this.data[i].name}) );
         currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": this.data[i].description} ) );
@@ -73,7 +85,7 @@ class MediaTypeMainEdit extends TatorElement {
 
         currentMediaType.appendChild(collapsableAttributeBox);
         currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
-          this.toggleAttributes(event);
+          this._toggleAttributes(event);
         });
 
         // attribute types
@@ -82,19 +94,23 @@ class MediaTypeMainEdit extends TatorElement {
           collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
         }
 
-        this.mediaTypeBoxOnPage.appendChild( currentMediaType );
+        this.itemDiv.appendChild( currentMediaType );
+        this.itemDiv.hidden = true;
+
+        this.mediaTypeBoxOnPage.appendChild( this.itemDiv );
       }
   //  } catch(e){
   //    console.error("Media Type Main Edit Error: "+e);
   //  }
   }
 
-  toggleAttributes(e){
+  getDom(){
+    return this._shadow;
+  }
+
+  _toggleAttributes(e){
     let el = e.target.parentNode.nextSibling;
     let hidden = el.hidden
-
-
-    console.log(el);
 
     return el.hidden = !hidden;
   };
@@ -162,7 +178,7 @@ class MediaTypeMainEdit extends TatorElement {
 
     boxOnPage.appendChild(collapsableAttributeBox);
     attributeCurrent.addEventListener("click", (event) => {
-      this.toggleAttributes(event);
+      this._toggleAttributes(event);
     });
 
     // append input for name and description

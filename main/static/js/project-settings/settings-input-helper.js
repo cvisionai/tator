@@ -10,8 +10,7 @@ class SettingsInput {
         value = '',
         customCol = 'col-8',
         labelText = '',
-        type = 'text',
-        disabled = 'false'
+        type = 'text'
       } = {}
     ){
       const inputTextElement = document.createElement("input");
@@ -19,12 +18,9 @@ class SettingsInput {
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
 
-      console.log("type: "+type)
-
       const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
       inputTextElement.setAttribute("name", setName);
       inputTextElement.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
-      inputTextElement.disabled = disabled;
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
@@ -39,8 +35,7 @@ class SettingsInput {
         value = '',
         customCol = 'col-8',
         labelText = '',
-        type = 'text',
-        disabled = 'false'
+        type = 'text'
       } = {}
     ){
       const textArea = document.createElement("textarea");
