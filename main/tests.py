@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def create_test_user():
     return User.objects.create(
-        username="jsnow",
+        username=random.choices(string.ascii_lowercase, k=10),
         password="jsnow",
         first_name="Jon",
         last_name="Snow",
@@ -504,7 +504,7 @@ class PermissionListAffiliationTestMixin:
 
 class PermissionDetailAffiliationTestMixin:
     def test_detail_not_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.entities[0], self.user)
+        affiliation = self.get_affiliation(self.get_organization(), self.user)
         affiliation.delete()
         url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
         if hasattr(self, 'entity_type'):
@@ -514,7 +514,7 @@ class PermissionDetailAffiliationTestMixin:
         affiliation.save()
 
     def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.entities[0], self.user)
+        affiliation = self.get_affiliation(self.get_organization(), self.user)
         affiliation.permission = 'Member'
         affiliation.save()
         url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
@@ -528,7 +528,7 @@ class PermissionDetailAffiliationTestMixin:
     def test_detail_patch_permissions(self):
         permission_index = affiliation_levels.index(self.edit_permission)
         for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.entities[0], user=self.user)[0]
+            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[0]
             obj.permission = level
             obj.save()
             del obj
@@ -545,7 +545,7 @@ class PermissionDetailAffiliationTestMixin:
     def test_detail_delete_permissions(self):
         permission_index = affiliation_levels.index(self.edit_permission)
         for index, level in enumerate(affiliation_levels):
-            obj = Affiliation.objects.filter(organization=self.entities[0], user=self.user)[0]
+            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[0]
             obj.permission = level
             obj.save()
             del obj
@@ -1968,6 +1968,9 @@ class FavoriteTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
+    def tearDown(self):
+        self.project.delete()
+
 class BookmarkTestCase(
         APITestCase,
         PermissionCreateTestMixin,
@@ -1998,6 +2001,41 @@ class BookmarkTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
+    def tearDown(self):
+        self.project.delete()
+
+class AffiliationTestCase(
+        APITestCase,
+        PermissionListAffiliationTestMixin,
+        PermissionDetailAffiliationTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entities = [create_test_affiliation(create_test_user(), self.organization) for _ in range(3)]
+        self.list_uri = 'Affiliations'
+        self.detail_uri = 'Affiliation'
+        self.patch_json = {
+            'permission': 'Member',
+        }
+        self.create_json = {
+            'user': self.user.pk,
+            'permission': 'Admin',
+        }
+        self.edit_permission = 'Admin'
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def get_organization(self):
+        return self.organization
+
+    def tearDown(self):
+        self.project.delete()
+
 class OrganizationTestCase(
         APITestCase,
         PermissionDetailAffiliationTestMixin):
@@ -2023,9 +2061,15 @@ class OrganizationTestCase(
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
+    def get_organization(self):
+        return self.entities[0]
+
     def test_create(self):
         endpoint = f'/rest/{self.list_uri}'
         response = self.client.post(endpoint, self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def tearDown(self):
+        self.project.delete()
 
 
