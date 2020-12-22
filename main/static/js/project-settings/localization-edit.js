@@ -1,44 +1,41 @@
-class ProjectMainEdit extends SettingsSection {
+class LocalizationEdit extends SettingsSection {
   constructor() {
     super();
-    // MainDiv is the project's "item" box as it relates to nav.
-    this.mainDiv.setAttribute("class", "item-box");
-
-    // New heading element.
-    this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h2 pb-3");
-    this.mainDiv.appendChild(this.h1);
-
-    // Name the Main Div.
-    this.mainDiv.id = "projectMain";
-    this.h1.innerHTML = `Set project details.`;
-
     this._shadow.appendChild(this.mainDiv);
+  }
+
+  _init(){
+    console.log(`${this.tagName} init.`);
+
+    this.data = JSON.parse( this.getAttribute("_data") );
+    console.log(this.data);
+
+    //this.projectId = this._setProjectId();
+    for(let i in this.data){
+      let itemDiv = document.createElement("div");
+      itemDiv.id = "mediaId-"+this.data[i].id;
+      itemDiv.setAttribute("class", "item-box");
+      itemDiv.hidden = true;
+
+      // Section h1.
+      const h1 = document.createElement("h1");
+      h1.setAttribute("class", "h2 pb-3");
+      h1.innerHTML = `Set localization and attribute details.`;
+      itemDiv.appendChild(h1);
+
+      itemDiv.appendChild( this._getSectionForm(this.data[i]) );
+      itemDiv.appendChild( this._getSubmitDiv() );
+
+      this.mainDiv.appendChild(itemDiv);
+    }
+
+    return this.mainDiv;
   }
 
   _getSectionForm(){
     this.boxOnPage = this.boxHelper.boxWrapDefault({
         "children" : document.createTextNode("")
       });
-
-    // Input for name and summary
-    this._editName = this._setNameInput( this._getNameFromData() );
-    this.boxOnPage.appendChild( this._editName );
-
-    this._editSummary = this._setSummaryInput( this._getSummaryFromData() );;
-    this.boxOnPage.appendChild( this._editSummary );
-
-    let formElements = [this._editName, this._editSummary]
-
-    formElements.forEach( item => {
-      item.addEventListener("change", (event) => {
-        console.log("Edited: "+item.getAttribute("name"));
-        // @TODO  Check to if it matches data still
-        //        UI show field was edited?
-        //        Prompt don't leave without saving?
-        //        ENABLE SAVE BUTTON
-      });
-    });
 
     return this.boxOnPage;
   }
@@ -77,7 +74,7 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   _fetchGetPromise({id = this.projectId} = {}){
-    return fetch("/rest/Project/" + id, {
+    return fetch("/rest/LocalizationTypes/" + id, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -89,33 +86,12 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   reset(){
-    this._setNameInputValue( this._getNameFromData() );
-    this._setSummaryInputValue( this._getSummaryFromData() );
     console.log("Reset with project data.");
   }
 
-  resetHard(){
-    this._fetchNewProjectData();
-    this.reset();
-  }
-
-  _nameChanged(){
-    if(this._getNameInputValue() === this._getNameFromData()) return false;
-    return true;
-  }
-
-  _summaryChanged(){
-    if(this._getSummaryInputValue() === this._getSummaryFromData()) return false;
-    return true;
-  }
-
-  changed(){
-    return this._nameChanged() || this._summaryChanged() ;
-  }
-
-  save(){
+  save(id){
     // Check if anything changed
-    fetch("/rest/Project/" + this.projectId, {
+    fetch("/rest/LocalizationType/{id}/" + id, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
@@ -149,4 +125,4 @@ class ProjectMainEdit extends SettingsSection {
 
 }
 
-customElements.define("project-main-edit", ProjectMainEdit);
+customElements.define("localization-edit", LocalizationEdit);

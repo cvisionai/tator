@@ -1,112 +1,98 @@
-class MediaTypeMainEdit extends TatorElement {
+class MediaTypeMainEdit extends SettingsSection {
   constructor() {
     super();
-    this.boxHelper = new SettingsBox("media-types-main-box");
-    this.inputHelper = new SettingsInput("media-types-main-input");
+    this._shadow.appendChild(this.mainDiv);
 
-    this.mediaTypeBoxOnPage = document.createElement("div");
-
-    this._shadow.appendChild(this.mediaTypeBoxOnPage);
+    this._setAttributeDTypes();
   }
-
-  /* Get personlized information when we have project-id, and fill page. */
-  static get observedAttributes() {
-    return ["_data"].concat(TatorPage.observedAttributes);
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "_data":
-        this._init();
-        break;
-    }
-  };
 
   _init(){
-  //  try{
-      console.log("Project Edit Media Types - Init");
-      this.data = JSON.parse( this.getAttribute("_data") );
-      console.log(this.data);
+    console.log(`${this.tagName} init.`);
 
-      for(let i in this.data){
-        this.itemDiv = document.createElement("div");
-        this.itemDiv.id = "mediaId-"+this.data[i].id;
-        this.itemDiv.setAttribute("class", "item-box");
+    this.data = JSON.parse( this.getAttribute("_data") );
+    console.log(this.data);
 
-        // Project Settings h1.
-        const h1 = document.createElement("h1");
-        h1.setAttribute("class", "h2 pb-3");
-        h1.innerHTML = `Set media and attribute details.`;
-        this.itemDiv.appendChild(h1);
+    //this.projectId = this._setProjectId();
+    for(let i in this.data){
+      let itemDiv = document.createElement("div");
+      itemDiv.id = "mediaId-"+this.data[i].id;
+      itemDiv.setAttribute("class", "item-box");
+      itemDiv.hidden = true;
 
-        let headingName = this._getHeadingName(this.data[i].dtype);
-        let mediaType = this.boxHelper.headingWrap({
-            "headingText" : `${headingName} | ${this.data[i].name}`,
-            "descriptionText" : "Edit media type.",
-            "level": 1,
-            "collapsed": false
-          });
-        let currentMediaType = this.boxHelper.boxWrapDefault( {
-            "children" : mediaType
-          } );
+      // Section h1.
+      const h1 = document.createElement("h1");
+      h1.setAttribute("class", "h2 pb-3");
+      h1.innerHTML = `Set media and attribute details.`;
+      itemDiv.appendChild(h1);
 
+      itemDiv.appendChild( this._getSectionForm(this.data[i]) );
+      itemDiv.appendChild( this._getSubmitDiv() );
 
-        // append input for name and summary
-        currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": this.data[i].name}) );
-        currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": this.data[i].description} ) );
+      this.mainDiv.appendChild(itemDiv);
+    }
 
-        // default volume (video, multi)
-        let showVolume = this.data[i].dtype != 'image' ? true : false;
-        if (showVolume) currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Default Volume", "value": this.data[i].default_volume, "type":"number"}) );
-
-        // visible
-        currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": this.data[i].visible, "type":"checkbox"} ) );
-
-        let seperator = document.createElement("div");
-        seperator.setAttribute("class", "col-12 py-2");
-        seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-        seperator.innerHTML = "&nbsp;"
-
-        currentMediaType.append(seperator);
-
-        let collapsableAttributeHeading = this.boxHelper.headingWrap({
-            "headingText" : `Attributes`,
-            "descriptionText" : "Edit media type.",
-            "level": 2,
-            "collapsed": "controlId"
-          });
-        currentMediaType.appendChild(collapsableAttributeHeading);
-
-        let attributeMediaId = "attribute"+this.data[i].id;
-        collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
-
-        let collapsableAttributeBox = document.createElement("div");
-        collapsableAttributeBox.id = attributeMediaId;
-        collapsableAttributeBox.hidden = true;
-
-        currentMediaType.appendChild(collapsableAttributeBox);
-        currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
-          this._toggleAttributes(event);
-        });
-
-        // attribute types
-        let attributeTypes = this.data[i].attribute_types
-        for(let a of attributeTypes){
-          collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
-        }
-
-        this.itemDiv.appendChild( currentMediaType );
-        this.itemDiv.hidden = true;
-
-        this.mediaTypeBoxOnPage.appendChild( this.itemDiv );
-      }
-  //  } catch(e){
-  //    console.error("Media Type Main Edit Error: "+e);
-  //  }
+    return this.mainDiv;
   }
 
-  getDom(){
-    return this._shadow;
+  _getSectionForm(media){
+      let headingName = this._getHeadingName(media.dtype);
+      let mediaType = this.boxHelper.headingWrap({
+          "headingText" : `${headingName} | ${media.name}`,
+          "descriptionText" : "Edit media type.",
+          "level": 1,
+          "collapsed": false
+        });
+      let currentMediaType = this.boxHelper.boxWrapDefault( {
+          "children" : mediaType
+        } );
+
+
+      // append input for name and summary
+      currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": media.name}) );
+      currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": media.description} ) );
+
+      // default volume (video, multi)
+      let showVolume = media.dtype != 'image' ? true : false;
+      if (showVolume) currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Default Volume", "value": media.default_volume, "type":"number"}) );
+
+      // visible
+      currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} ) );
+
+      let seperator = document.createElement("div");
+      seperator.setAttribute("class", "col-12 py-2");
+      seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
+      seperator.innerHTML = "&nbsp;"
+
+      currentMediaType.append(seperator);
+
+      let collapsableAttributeHeading = this.boxHelper.headingWrap({
+          "headingText" : `Attributes`,
+          "descriptionText" : "Edit media type.",
+          "level": 2,
+          "collapsed": "controlId"
+        });
+      currentMediaType.appendChild(collapsableAttributeHeading);
+
+      let attributeMediaId = "attribute"+media.id;
+      collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
+
+      currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
+        this._toggleAttributes(event);
+      });
+
+      let collapsableAttributeBox = document.createElement("div");
+      collapsableAttributeBox.id = attributeMediaId;
+      collapsableAttributeBox.hidden = true;
+
+      // attribute types
+      let attributeTypes = media.attribute_types
+      for(let a of attributeTypes){
+        collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
+      }
+
+      currentMediaType.appendChild(collapsableAttributeBox);
+
+      return currentMediaType;
   }
 
   _toggleAttributes(e){
@@ -115,41 +101,6 @@ class MediaTypeMainEdit extends TatorElement {
 
     return el.hidden = !hidden;
   };
-
-  _getHeadingName(dtype){
-    switch(dtype){
-      case "image":
-        return "Image Type";
-        break;
-      case "video":
-        return "Video Type";
-        break;
-      case "multi":
-        return "Multi Type";
-        break;
-      case "bool":
-        return "Boolean Type";
-        break;
-      case "int":
-        return "Integer Type";
-        break;
-      case "float":
-        return "Float Type";
-        break;
-      case "string":
-        return "String Type";
-        break;
-      case "datetime":
-        return "Datetime Type";
-        break;
-      case "geopos":
-        return "Geopos Type";
-        break;
-      case "enum":
-        return "Enum Type";
-        break;
-    }
-  }
 
   attributesOutput({
     attributes = []
@@ -187,8 +138,9 @@ class MediaTypeMainEdit extends TatorElement {
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText( { "labelText": "Description", "value": attributes.description} ) );
 
     // append input for dtype
-    let options = this._getDtypeOptions([ "bool", "int", "float", "enum", "string", "datetime", "geopos"]);
-    console.log(options);
+    let currentOption = attributes.dtype;
+    let options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
+
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "value": attributes.dtype,
@@ -222,8 +174,194 @@ class MediaTypeMainEdit extends TatorElement {
 
   }
 
+  _setAttributeDTypes(){
+    this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];
+    return this.attributeDTypes;
+  }
+
+  _getHeadingName(dtype){
+    switch(dtype){
+      case "image":
+        return "Image Type";
+        break;
+      case "video":
+        return "Video Type";
+        break;
+      case "multi":
+        return "Multi Type";
+        break;
+      case "bool":
+        return "Boolean Type";
+        break;
+      case "int":
+        return "Integer Type";
+        break;
+      case "float":
+        return "Float Type";
+        break;
+      case "string":
+        return "String Type";
+        break;
+      case "datetime":
+        return "Datetime Type";
+        break;
+      case "geopos":
+        return "Geopos Type";
+        break;
+      case "enum":
+        return "Enum Type";
+        break;
+    }
+  }
+
+  _getDTypeRules(){
+    return ( {
+      "bool" : {
+        "allowed": ["enum","string"],
+        "fully-reversable": [],
+        "reversable-with-warning": [],
+        "irreversible": ["enum","string"]
+      },
+      "int" : {
+        "allowed": ["float","enum","string"],
+        "fully-reversable": ["float"],
+        "reversable-with-warning": [],
+        "irreversible": ["enum","string"]
+      },
+      "float" : {
+        "allowed": ["int","enum","string"],
+        "fully-reversable": [],
+        "reversable-with-warning": ["int"],
+        "irreversible": ["enum","string"]
+      },
+      "enum" : {
+        "allowed": ["string"],
+        "fully-reversable": ["string"],
+        "reversable-with-warning": [],
+        "irreversible": []
+      },
+      "string" : {
+        "allowed": ["enum"],
+        "fully-reversable": ["enum"],
+        "reversable-with-warning": [],
+        "irreversible": []
+      },
+      "datetime" : {
+        "allowed": ["enum","string"],
+        "fully-reversable": [],
+        "reversable-with-warning": [],
+        "irreversible": ["enum","string"]
+      },
+      "geopos" : {
+        "allowed": ["enum","string"],
+        "fully-reversable": [],
+        "reversable-with-warning": [],
+        "irreversible": ["enum","string"]
+      }
+    });
+  }
+
+  _getAllowedDTypeArray(dtype){
+    return this.attributeDTypes.filter( a => {
+      let allRules = this._getDTypeRules();
+      let ruleSetForDtype = allRules[dtype];
+      return ruleSetForDtype["allowed"].includes(a);
+    });
+  }
+
+  _getLossDTypeArray(dtype){
+    return this.attributeDTypes.filter( a => {
+      let allRules = this._getDTypeRules();
+      let ruleSetForDtype = allRules[dtype];
+      return ruleSetForDtype["reversable-with-warning"].includes(a);
+    });
+  }
+
+  _getIrreverasibleDTypeArray(dtype){
+    return this.attributeDTypes.filter( a => {
+      let allRules = this._getDTypeRules();
+      let ruleSetForDtype = allRules[dtype];
+      return ruleSetForDtype["irreversible"].includes(a);
+    });
+  }
+
   _getDtypeOptions(typeArray){
-    return typeArray.map( (i) => ({ "optText":this._getHeadingName(i), "optValue":i }) );
+    return typeArray.map( (i) => {
+      let text = this._getHeadingName(i);
+      // ADD STAR TO THOSE WITH WARNING? OR JUST ON SAVE
+      return ({ "optText": text, "optValue":i });
+    });
+  }
+
+  _fetchGetPromise({id = this.projectId} = {}){
+    return fetch("/rest/MediaTypes/" + id, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
+  reset(){
+    this._setNameInputValue( this._getNameFromData() );
+    this._setSummaryInputValue( this._getSummaryFromData() );
+    console.log("Reset with project data.");
+  }
+
+  resetHard(){
+    this._fetchNewProjectData();
+    this.reset();
+  }
+
+  _nameChanged(){
+    if(this._getNameInputValue() === this._getNameFromData()) return false;
+    return true;
+  }
+
+  _summaryChanged(){
+    if(this._getSummaryInputValue() === this._getSummaryFromData()) return false;
+    return true;
+  }
+
+  changed(){
+    return this._nameChanged() || this._summaryChanged() ;
+  }
+
+  save(){
+    // Check if anything changed
+    fetch("/rest/Project/" + this.projectId, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "name": this._getNameInputValue(),
+        "summary": this._getSummaryInputValue()
+      })
+    })
+    .then(response => {
+        return response.json().then( data => {
+          console.log("Save response status: "+response.status)
+          if (response.status == "200") {
+            this._modalSuccess(data.message);
+            this._fetchNewProjectData();
+          } else {
+            this._modalError(data.message);
+          }
+        })
+      }
+    )
+    .catch(error => {
+      console.log('Error:', error.message);
+      this._modalError("Internal error: "+error.message);
+    });
   }
 
 }

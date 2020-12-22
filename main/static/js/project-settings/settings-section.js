@@ -8,12 +8,6 @@ class SettingsSection extends TatorPage {
 
     // Main Div to append content is an "item" for sideNav.
     this.mainDiv = document.createElement("div");
-    this.mainDiv.setAttribute("class", "item-box");
-
-    // Prep the heading element.
-    this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h2 pb-3");
-    this.mainDiv.appendChild(this.h1);
 
     // Prep the modal.
     this.modal = document.createElement("modal-dialog");

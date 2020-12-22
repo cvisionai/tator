@@ -33,6 +33,14 @@ class ProjectSettings extends TatorPage {
     this.mediaTypesBlock = document.createElement("media-type-main-edit");
     configForm.appendChild(this.mediaTypesBlock);
 
+    // Localizations section.
+    this.localizationBlock = document.createElement("localization-edit");
+    configForm.appendChild(this.mediaTypesBlock);
+
+    // Leaf Type section.
+    this.leafTypesBlock = document.createElement("leaf-type-edit");
+    configForm.appendChild(this.mediaTypesBlock);
+
     // Reference for toggling shadow content
     // @TODO abstract this to take an object of DOMs
     this.settingsNav.setProjectDom( this.projectBlock.getDom() );
@@ -63,32 +71,35 @@ class ProjectSettings extends TatorPage {
     this.projectId = this.getAttribute("project-id");
 
     const projectPromise = this.projectBlock._fetchGetPromise({"id": this.projectId} );
-    const mediaTypesPromise = fetch("/rest/MediaTypes/" + this.projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
+    const mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
+    const localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
+    const leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
 
-    Promise.all([
+    const promiseList = [
       projectPromise,
-      mediaTypesPromise
-    ])
-    .then( async([pa, mta]) => {
+      mediaTypesPromise,
+      localizationsPromise,
+      leafTypesPromise
+    ]
+
+    Promise.all(promiseList)
+    .then( async([pa, mta, lo, le]) => {
       const projectData = pa.json();
       const mediaTypesData = mta.json();
-      Promise.all( [projectData, mediaTypesData] )
-        .then( ([project, mediaTypes]) => {
+      const localizationData = lo.json();
+      const leafTypeData = le.json();
+      Promise.all( [projectData, mediaTypesData, localizationData, leafTypeData] )
+        .then( ([project, mediaTypes, localization, leaf]) => {
           this._shadow.querySelector('.loading').remove();
 
           // Init project edit and media type sections.
           this.projectBlock.setAttribute("_data", JSON.stringify(project));
           this.mediaTypesBlock.setAttribute("_data", JSON.stringify(mediaTypes));
           this.settingsNav.setAttribute("_data", JSON.stringify(mediaTypes));
-
+          this.localizationBlock.setAttribute("_data", JSON.stringify(localization));
+          this.settingsNav.setAttribute("_data", JSON.stringify(localization));
+          this.leafTypesBlock.setAttribute("_data", JSON.stringify(leaf));
+          this.settingsNav.setAttribute("_data", JSON.stringify(leaf));
         })
         .catch(err => {
           this._shadow.querySelector('.loading').remove();
