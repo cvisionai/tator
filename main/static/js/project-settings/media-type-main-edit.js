@@ -188,6 +188,7 @@ class MediaTypeMainEdit extends TatorElement {
 
     // append input for dtype
     let options = this._getDtypeOptions([ "bool", "int", "float", "enum", "string", "datetime", "geopos"]);
+    console.log(options);
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "value": attributes.dtype,

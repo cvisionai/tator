@@ -1,57 +1,15 @@
-class ProjectMainEdit extends TatorElement {
+class ProjectMainEdit extends SettingsSection {
   constructor() {
     super();
-    this.boxHelper = new SettingsBox("media-types-main-edit");
-    this.inputHelper = new SettingsInput("media-types-main-edit");
+    // Inherits MainDiv, h1, and modal-dialog elements.
+    // Name the Main Div.
+    this.mainDiv.id = "projectMain";
+    this.h1.innerHTML = `Set project details.`;
 
-    this.projectMainDiv = document.createElement("div");
-    this.projectMainDiv.id = "projectMain";
-    this.projectMainDiv.setAttribute("class", "item-box");
-
-    // Project Settings h1.
-    const h1 = document.createElement("h1");
-    h1.setAttribute("class", "h2 pb-3");
-    h1.innerHTML = `Set project details.`;
-    this.projectMainDiv.appendChild(h1);
-
-    this.modal = document.createElement("modal-dialog");
-    this.projectMainDiv.appendChild(this.modal);
-
-    this._shadow.appendChild(this.projectMainDiv);
+    this._shadow.appendChild(this.mainDiv);
   }
 
-  /* Get personlized information when we have project-id, and fill page. */
-  static get observedAttributes() {
-    return ["_data"].concat(TatorPage.observedAttributes);
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "_data":
-        this._init();
-        break;
-    }
-  };
-
-  _init(){
-   //try{
-      console.log("ProjectEditName - Init");
-
-      this.projectData = JSON.parse( this.getAttribute("_data") );
-      console.log(this.projectData);
-
-      this.projectId = this.projectData.id;
-
-      this.projectMainDiv.appendChild( this._getProjectForm() )
-      this.projectMainDiv.appendChild( this._getSubmitDiv() );
-
-      return this.projectMainDiv;
-    //} catch(e){
-    //  console.error("Project Main Edit Error: "+e);
-    //}
-  }
-
-  _getProjectForm(){
+  _getSectionForm(){
     this.boxOnPage = this.boxHelper.boxWrapDefault({
         "children" : document.createTextNode("")
       });
@@ -68,46 +26,17 @@ class ProjectMainEdit extends TatorElement {
     formElements.forEach( item => {
       item.addEventListener("change", (event) => {
         console.log("Edited: "+item.getAttribute("name"));
-        // ENABLE SAVE BUTTON
+        // @TODO  Check to if it matches data still
+        //        UI show field was edited?
+        //        Prompt don't leave without saving?
+        //        ENABLE SAVE BUTTON
       });
     });
 
     return this.boxOnPage;
   }
 
-  _getSubmitDiv(){
-    // Save button and reset link. @TODO move to each form section
-    const submitDiv = document.createElement("div");
-    submitDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center py-3");
-
-    this.saveButton = this.inputHelper.saveButton();
-    submitDiv.appendChild(this.saveButton);
-
-    this.resetLink = this.inputHelper.resetLink();
-    submitDiv.appendChild(this.resetLink);
-
-    this.saveButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      if( this.changed() ){
-        console.log("Saving new data...");
-        this.save( this.projectId );
-      } else {
-        console.log("Nothing new to save! :)");
-      }
-    });
-
-    // Form reset event
-    this.resetLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      console.log("Reset!");
-      this.reset();
-      alert("Reset complete.");
-    });
-
-    return submitDiv;
-  }
-
-  _getNameFromData({ data = this.projectData} = {}){
+  _getNameFromData({ data = this.data} = {}){
     return data.name;
   }
 
@@ -123,7 +52,7 @@ class ProjectMainEdit extends TatorElement {
     return this._editName.querySelector("input").value = newValue;
   }
 
-  _getSummaryFromData({ data = this.projectData} = {}){
+  _getSummaryFromData({ data = this.data} = {}){
     return data.summary;
   }
 
@@ -140,12 +69,8 @@ class ProjectMainEdit extends TatorElement {
     return this._editSummary.querySelector("input").value = newValue;
   }
 
-  _getNewValue(input){
-    return input.getAttribute("value");
-  }
-
-  _fetchNewProjectData(){
-    fetch("/rest/Project/" + this.projectId, {
+  _fetchGetPromise({id = this.projectId} = {}){
+    return fetch("/rest/Project/" + id, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -153,23 +78,13 @@ class ProjectMainEdit extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       }
-    })
-    .then( r => r.json())
-    .then( data => {
-        // Init project edit box.
-        this.projectData = data;
-        console.log("ProjectData Updated.");
-        console.log(data);
-      })
-      .catch(err => {
-        console.error("Failed to retrieve data: " + err);
-      });
+    });
   }
 
   reset(){
     this._setNameInputValue( this._getNameFromData() );
     this._setSummaryInputValue( this._getSummaryFromData() );
-    console.log("Input set with project data.");
+    console.log("Reset with project data.");
   }
 
   resetHard(){
@@ -191,13 +106,9 @@ class ProjectMainEdit extends TatorElement {
     return this._nameChanged() || this._summaryChanged() ;
   }
 
-  getDom(){
-    return this._shadow;
-  }
-
-  save(projectId){
+  save(){
     // Check if anything changed
-    fetch("/rest/Project/" + projectId, {
+    fetch("/rest/Project/" + this.projectId, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
@@ -215,38 +126,18 @@ class ProjectMainEdit extends TatorElement {
         return response.json().then( data => {
           console.log("Save response status: "+response.status)
           if (response.status == "200") {
-            this.showModalSuccess(data.message);
+            this._modalSuccess(data.message);
             this._fetchNewProjectData();
           } else {
-            this.showModalError(data.message);
+            this._modalError(data.message);
           }
         })
       }
     )
     .catch(error => {
       console.log('Error:', error.message);
-      this.showModalError("Internal error: "+error.message);
+      this._modalError("Internal error: "+error.message);
     });
-  }
-
-  showModalSuccess(message){
-    let text = document.createTextNode(" Success");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-success") );
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-  showModalError(message){
-    let text = document.createTextNode(" Error saving project details");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-warning") );
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-
-    return this.modal.setAttribute("is-open", "true")
   }
 
 }
