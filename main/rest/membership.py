@@ -83,7 +83,7 @@ class MembershipDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        membership = Membership.objects.get(pk=params['id']) 
+        membership = Membership.objects.select_for_update().get(pk=params['id']) 
         if 'permission' in params:
             membership.permission = params['permission']
         membership.save()
