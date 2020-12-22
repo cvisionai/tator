@@ -28,6 +28,9 @@ class CustomGenerator(SchemaGenerator):
         # Set up schema components.
         schema['components'] = {
             'schemas': {
+                'AffiliationSpec': affiliation_spec,
+                'AffiliationUpdate': affiliation_update,
+                'Affiliation': affiliation,
                 'AlgorithmParameter': algorithm_parameter,
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
@@ -80,7 +83,10 @@ class CustomGenerator(SchemaGenerator):
                 'Membership': membership,
                 'MoveVideoSpec': move_video_spec,
                 'NotifySpec': notify_spec,
+                'OrganizationSpec': organization_spec,
+                'Organization': organization,
                 'ProjectSpec': project_spec,
+                'ProjectUpdate': project_update,
                 'Project': project,
                 'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,

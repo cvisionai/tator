@@ -152,7 +152,6 @@ class User(AbstractUser):
     cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
-    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
@@ -163,9 +162,21 @@ class User(AbstractUser):
         else:
             return "---"
 
+class Affiliation(Model):
+    """Stores a user and their permissions in an organization.
+    """
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+    permission = CharField(max_length=16,
+                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
+                           default='Member')
+    def __str__(self):
+        return f'{self.user} | {self.organization}'
+
 class Project(Model):
     name = CharField(max_length=128)
     creator = ForeignKey(User, on_delete=PROTECT, related_name='creator')
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     created = DateTimeField(auto_now_add=True)
     size = BigIntegerField(default=0)
     """Size of all media in project in bytes.

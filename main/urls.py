@@ -60,6 +60,14 @@ urlpatterns += [
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
+        'rest/Affiliations/<int:organization>',
+        AffiliationListAPI.as_view(),
+    ),
+    path(
+        'rest/Affiliation/<int:id>',
+        AffiliationDetailAPI.as_view(),
+    ),
+    path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),
     ),
@@ -219,6 +227,14 @@ urlpatterns += [
     path(
         'rest/Notify',
         NotifyAPI.as_view(),
+    ),
+    path(
+        'rest/Organizations',
+        OrganizationListAPI.as_view(),
+    ),
+    path(
+        'rest/Organization/<int:id>',
+        OrganizationDetailAPI.as_view(),
     ),
     path(
         'rest/Projects',

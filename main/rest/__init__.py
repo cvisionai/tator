@@ -1,3 +1,5 @@
+from .affiliation import AffiliationListAPI
+from .affiliation import AffiliationDetailAPI
 from .algorithm_launch import AlgorithmLaunchAPI
 from .algorithm import AlgorithmListAPI
 from .algorithm import AlgorithmDetailAPI
@@ -37,6 +39,8 @@ from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
 from .move_video import MoveVideoAPI
 from .notify import NotifyAPI
+from .organization import OrganizationListAPI
+from .organization import OrganizationDetailAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .section import SectionListAPI
