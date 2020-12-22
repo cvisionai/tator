@@ -58,6 +58,7 @@ Installing
 
    ../tator-py/api
    ../tator-py/examples
+   workflow_examples/extractor
    ../tator-py/running-tests
 
 R API
