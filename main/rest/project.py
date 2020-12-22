@@ -1,8 +1,11 @@
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 from ..models import Project
 from ..models import Membership
+from ..models import Organization
+from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
 from ..serializers import ProjectSerializer
@@ -30,10 +33,19 @@ class ProjectListAPI(BaseListView):
         return ProjectSerializer(projects, many=True, context=self.get_renderer_context()).data
 
     def _post(self, params):
+        # If user does not have admin privileges within the organization, raise a 403.
+        affiliation = Affiliation.objects.filter(organization=params['organization'])
+        if affiliation.exists():
+            if affiliation[0].permission != 'Admin':
+                raise PermissionDenied
+        else:
+            raise PermissionDenied
+
         if Project.objects.filter(
             membership__user=self.request.user).filter(name__iexact=params['name']).exists():
             raise Exception("Project with this name already exists!")
 
+        params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         project = Project.objects.create(
             **params,
             creator=self.request.user,
