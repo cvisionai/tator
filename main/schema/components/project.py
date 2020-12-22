@@ -8,12 +8,25 @@ project_properties = {
         'type': 'string',
         'default': '',
     },
+    'organization': {
+        'description': 'Unique integer identifying an organization.',
+        'type': 'integer',
+        'minimum': 1,
+    },
 }
 
 project_spec = {
     'type': 'object',
-    'required': ['name'],
+    'required': ['name', 'organization'],
     'properties': project_properties,
+}
+
+project_update = {
+    'type': 'object',
+    'properties': {
+        'name': project_properties['name'],
+        'summary': project_properties['summary'],
+    },
 }
 
 project = {
