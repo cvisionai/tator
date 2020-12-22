@@ -86,6 +86,7 @@ class CustomGenerator(SchemaGenerator):
                 'OrganizationSpec': organization_spec,
                 'Organization': organization,
                 'ProjectSpec': project_spec,
+                'ProjectUpdate': project_update,
                 'Project': project,
                 'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,

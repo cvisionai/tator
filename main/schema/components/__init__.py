@@ -52,6 +52,7 @@ from .notify import notify_spec
 from .organization import organization_spec
 from .organization import organization
 from .project import project_spec
+from .project import project_update
 from .project import project
 from .section import section_spec
 from .section import section
