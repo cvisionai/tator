@@ -30,6 +30,7 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
+objectStorageHost: "minio-master"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -181,6 +182,14 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
+minio:
+  enabled: true
+  accessKey: "AKIAIOSFODNN7EXAMPLE"
+  secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  persistence:
+    size: "1Ti"
+    existingClaim: "main-pv-claim"
+    subPath: "objects"
 remoteTranscodes:
   # Typically for dev processing is done on the same machine.
   enabled: false
