@@ -114,31 +114,36 @@ class SettingsInput {
 
   /* Returns a select with options from array */
   inputSelectOptions({
-    value = "",
+    value = "", //current value
     labelText = "",
-    customCol = "col-8"} = {}
+    customCol = "col-8",
+    optionsList = []
+    } = {}
   ){
-    if(value === null || Array.IsArray(value) === false){
+    if(optionsList === null || Array.isArray(optionsList) === false){
       return console.error("FormsHelper Error: Array type required to init select dropdown.");
     } else {
       const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
       const inputSelect = document.createElement("select");
+      const currentValue = value;
+
       inputSelect.setAttribute("class", this.customClass + " form-select select-sm " + customCol);
 
-      for(let i of value){
-        let val = value[i] || "";
+      for(let optionValue of optionsList){
         let inputOption = document.createElement("option");
-        let optionText = document.createTextNode(val);
+        let optionText = document.createTextNode(optionValue.optValue);
 
         inputOption.appendChild(optionText);
-        inputOption.setAttribute("value", val);
+        inputOption.value = optionValue.optText;
+        if(optionValue === currentValue) inputOption.selected = true;
+
+        inputSelect.appendChild(inputOption);
       }
 
-      inputSelect.appendChild(inputOption);
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
-        "inputNode": inputRadiosElement,
+        "inputNode": inputSelect,
         "name": setName
       });
 

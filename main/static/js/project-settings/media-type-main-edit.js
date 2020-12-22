@@ -50,6 +50,7 @@ class MediaTypeMainEdit extends TatorElement {
             "children" : mediaType
           } );
 
+
         // append input for name and summary
         currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": this.data[i].name}) );
         currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": this.data[i].description} ) );
@@ -185,6 +186,14 @@ class MediaTypeMainEdit extends TatorElement {
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Name", "value": attributes.name}) );
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText( { "labelText": "Description", "value": attributes.description} ) );
 
+    // append input for dtype
+    let options = this._getDtypeOptions([ "bool", "int", "float", "enum", "string", "datetime", "geopos"]);
+    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputSelectOptions({
+      "labelText": "Data Type",
+      "value": attributes.dtype,
+      "optionsList": options
+    }));
+
     //required
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Required", "value": attributes.required, "type":"checkbox"}) );
 
@@ -209,6 +218,11 @@ class MediaTypeMainEdit extends TatorElement {
     }
 
     return boxOnPage;
+
+  }
+
+  _getDtypeOptions(typeArray){
+    return typeArray.map( (i) => ({ "optText":this._getHeadingName(i), "optValue":i }) );
   }
 
 }
