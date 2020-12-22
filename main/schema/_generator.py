@@ -28,6 +28,9 @@ class CustomGenerator(SchemaGenerator):
         # Set up schema components.
         schema['components'] = {
             'schemas': {
+                'AffiliationSpec': affiliation_spec,
+                'AffiliationUpdate': affiliation_update,
+                'Affiliation': affiliation,
                 'AlgorithmParameter': algorithm_parameter,
                 'AlgorithmLaunchSpec': algorithm_launch_spec,
                 'AlgorithmLaunch': algorithm_launch,
