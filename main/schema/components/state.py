@@ -36,6 +36,24 @@ state_get_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'created_datetime': {
+        'type': 'string',
+        'format': 'date-time',
+        'description': 'Datetime this state was created.',
+    },
+    'modified_datetime': {
+        'type': 'string',
+        'format': 'date-time',
+        'description': 'Datetime this state was last modified.',
+    },
+    'modified_by': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who last modified this state.'
+    },
+    'created_by': {
+        'type': 'integer',
+        'description': 'Unique integer identifying the user who created this state.'
+    }
 }
 
 state_spec = {
