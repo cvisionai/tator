@@ -1673,6 +1673,8 @@ class ProjectTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
         self.entities = [
             create_test_project(self.user)
             for _ in range(random.randint(6, 10))
@@ -1689,13 +1691,27 @@ class ProjectTestCase(APITestCase):
         self.create_json = {
             'name': 'asdfasd',
             'summary': 'asdfa summary',
+            'organization': self.organization.pk,
         }
         self.edit_permission = Permission.FULL_CONTROL
 
-    def test_create(self):
+    def test_create_no_affiliation(self):
         endpoint = f'/rest/{self.list_uri}'
+        self.affiliation.delete()
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.affiliation.save()
+
+    def test_create_permissions(self):
+        endpoint = f'/rest/{self.list_uri}'
+        permission_index = affiliation_levels.index('Admin')
+        for index, level in enumerate(affiliation_levels):
+            self.affiliation.permission = level
+            self.affiliation.save()
+            expected_status = status.HTTP_201_CREATED if index >= permission_index \
+                              else status.HTTP_403_FORBIDDEN
+            response = self.client.post(endpoint, self.create_json, format='json')
+            self.assertEqual(response.status_code, expected_status)
 
     def test_detail_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
