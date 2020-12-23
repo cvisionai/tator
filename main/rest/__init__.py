@@ -57,6 +57,7 @@ from .state_type import StateTypeDetailAPI
 from .temporary_file import TemporaryFileListAPI
 from .temporary_file import TemporaryFileDetailAPI
 from .transcode import TranscodeAPI
+from .upload_info import UploadInfoAPI
 from .user import UserListAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI
