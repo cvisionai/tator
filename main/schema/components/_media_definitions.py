@@ -70,8 +70,8 @@ video_definition = {
         'resolution': {
             'description': 'Resolution of the video in pixels (height, width).',
             'type': 'array',
-            'minLength': 2,
-            'maxLength': 2,
+            'minItems': 2,
+            'maxItems': 2,
             'items': {
                 'type': 'integer',
                 'minimum': 1,
