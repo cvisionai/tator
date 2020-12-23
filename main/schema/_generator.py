@@ -105,6 +105,7 @@ class CustomGenerator(SchemaGenerator):
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,
                 'Transcode': transcode,
+                'UploadInfo': upload_info,
                 'UserUpdate': user_update,
                 'User': user,
                 'VersionSpec': version_spec,
