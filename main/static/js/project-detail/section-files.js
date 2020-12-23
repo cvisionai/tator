@@ -19,6 +19,14 @@ class SectionFiles extends TatorElement {
     this._mediaParams = val;
   }
 
+  set numMedia(val) {
+    this._numMedia = val;
+  }
+
+  set startMediaIndex(val) {
+    this._startMediaIndex = val;
+  }
+
   set cardInfo(val) {
     this._makeCards(val);
   }
@@ -32,7 +40,7 @@ class SectionFiles extends TatorElement {
     this._algorithms = val;
   }
 
-  _updateCard(card, media) {
+  _updateCard(card, media, pos_text) {
     card.setAttribute("media-id", media.id);
 
     if (media.thumbnail) {
@@ -50,6 +58,7 @@ class SectionFiles extends TatorElement {
     card.style.display = "block";
     card.setAttribute("name", media.name);
     card.setAttribute("project-id", this.getAttribute("project-id"));
+    card.setAttribute("pos-text", pos_text)
   }
 
   _makeCards(cardInfo) {
@@ -79,7 +88,9 @@ class SectionFiles extends TatorElement {
         } else {
           card = children[index];
         }
-        this._updateCard(card, media);
+
+        const pos_text = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
+        this._updateCard(card, media, pos_text);
         if (newCard) {
           this._main.appendChild(card);
         }
