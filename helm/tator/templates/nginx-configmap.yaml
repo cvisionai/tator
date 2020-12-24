@@ -223,6 +223,28 @@ data:
 
           proxy_http_version 1.1;
         }
+        {{- if .Values.minio.enabled }}
+        location /objects/ {
+          {{- if .Values.requireHttps }} 
+          proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
+          {{- else }}
+          proxy_redirect http://$hostname/ http://{{ .Values.domain }}/;
+          {{- end }}
+          proxy_request_buffering off;
+          proxy_buffering off;
+          proxy_http_version 1.1;
+          proxy_set_header X-Forwarded-Host $host;
+          {{- if .Values.requireHttps }} 
+          proxy_set_header X-Forwarded-Proto https;
+          {{- end }}
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_pass_header Authorization;
+          proxy_pass_header Upload-Uid;
+          proxy_pass http://tator-minio:9000/;
+          add_header X-Upstream $upstream_addr always;
+        }
+        {{- end }}
         location /files/ {
           {{- if .Values.requireHttps }} 
           proxy_redirect https://$hostname/ https://{{ .Values.domain }}/;
