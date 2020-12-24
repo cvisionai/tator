@@ -13,8 +13,8 @@ upload_info = {
             'type': 'string',
         },
         'upload_id': {
-            'description': 'An upload ID that can be supplied to the `Transcode` or '
-                           '`Media` endpoint after the file has been uploaded. Only '
+            'description': 'An upload ID that can be supplied to the `UploadCompletion` '
+                           'endpoint after the file has been uploaded. Only '
                            'contains a value if `num_parts` > 1.',
             'type': 'string',
         },

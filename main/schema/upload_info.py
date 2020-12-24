@@ -40,6 +40,16 @@ class UploadInfoSchema(AutoSchema):
                                'maximum': 86400,
                                'default': 3600},
                 },
+                {
+                    'name': 'num_parts',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Number of upload parts. Maximum part size is 5GB',
+                    'schema': {'type': 'integer',
+                               'minimum': 1,
+                               'maximum': 10000,
+                               'default': 1},
+                },
             ]
         return params
 
@@ -50,9 +60,7 @@ class UploadInfoSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'A URL for upload via an S3-compatible object storage interface '
-                               'and an object name for use with the `Transcode` or `Media` '
-                               'endpoints.',
+                'description': 'Information required for upload via HTTP PUT.',
                 'content': {'application/json': {'schema': {
                     '$ref': '#/components/schemas/UploadInfo',
                 }}}

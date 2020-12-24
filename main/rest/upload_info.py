@@ -1,4 +1,3 @@
-from collections import defaultdict
 from uuid import uuid1
 
 import boto3
@@ -59,7 +58,4 @@ class UploadInfoAPI(BaseDetailView):
                 urls.append(url)
 
         return {'urls': urls, 'key': key, 'upload_id': upload_id}
-
-    def get_queryset(self):
-        return Media.objects.all()
 
