@@ -1,3 +1,4 @@
+import os
 from uuid import uuid1
 
 import boto3
