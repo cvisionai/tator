@@ -1,6 +1,7 @@
 import os
 import logging
 from uuid import uuid1
+from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 
@@ -36,7 +37,7 @@ class UploadInfoAPI(BaseDetailView):
         
         # Generate an object name.
         object_name = str(uuid1())
-        prefix = f"/{organization}/{project}/upload/"
+        prefix = f"{organization}/{project}/upload/"
         key = f"{prefix}{object_name}"
 
         # Generate presigned urls.
@@ -69,5 +70,11 @@ class UploadInfoAPI(BaseDetailView):
                                                 ExpiresIn=expiration)
                 urls.append(url)
 
+        # Replace host if external host is given.
+        if external_host:
+            for idx, url in enumerate(urls):
+                parsed = urlsplit(url)
+                parsed = parsed._replace(netloc=external_host)
+                urls[idx] = urlunsplit(parsed)
         return {'urls': urls, 'key': key, 'upload_id': upload_id}
 
