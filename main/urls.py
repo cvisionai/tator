@@ -305,6 +305,10 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
+        'rest/UploadCompletion/<int:project>',
+        UploadCompletionAPI.as_view(),
+    ),
+    path(
         'rest/UploadInfo/<int:project>',
         UploadInfoAPI.as_view(),
     ),
