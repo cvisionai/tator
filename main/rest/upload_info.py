@@ -1,4 +1,5 @@
 import os
+import logging
 from uuid import uuid1
 
 import boto3
@@ -8,6 +9,8 @@ from ..schema import UploadInfoSchema
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+
+logger = logging.getLogger(__name__)
 
 class UploadInfoAPI(BaseDetailView):
     """ Retrieve info needed to upload a file.
@@ -23,6 +26,10 @@ class UploadInfoAPI(BaseDetailView):
         num_parts = params['num_parts']
         project = params['project']
         bucket_name = os.getenv('BUCKET_NAME')
+        endpoint = os.getenv('OBJECT_STORAGE_HOST')
+        access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
+        secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
+        external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
 
         # Get organization.
         organization = Project.objects.get(pk=project).organization.pk
@@ -34,7 +41,11 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         urls = []
-        s3 = boto3.client('s3')
+        s3 = boto3.client('s3',
+                          endpoint_url=f'http://{endpoint}',
+                          aws_access_key_id=access_key,
+                          aws_secret_access_key=secret_key)
+        upload_id = ''
         if num_parts == 1:
             # Generate a presigned upload url.
             url = s3.generate_presigned_url(ClientMethod='put_object',
