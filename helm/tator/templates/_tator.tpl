@@ -66,6 +66,23 @@ spec:
               value: {{ .Values.dockerRegistry }}
             - name: SYSTEM_IMAGES_REGISTRY
               value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
+            - name: OBJECT_STORAGE_ENDPOINT
+              value: {{ .Values.objectStorageHost }}
+            {{- if .Values.minio.enabled }}
+            - name: BUCKET_NAME
+              value: {{ .Values.minio.defaultBucket.name }}
+            - name: OBJECT_STORAGE_ACCESS_KEY
+              value: {{ .Values.minio.accessKey }}
+            - name: OBJECT_STORAGE_SECRET_KEY
+              value: {{ .Values.minio.secretKey }}
+            {{- else }}
+            - name: BUCKET_NAME
+              value: {{ .Values.objectStorageBucketName }}
+            - name: OBJECT_STORAGE_ACCESS_KEY
+              value: {{ .Values.objectStorageAccessKey }}
+            - name: OBJECT_STORAGE_SECRET_KEY
+              value: {{ .Values.objectStorageSecretKey }}
+            {{- end }}
             - name: TATOR_DEBUG
             {{- if .Values.tatorDebug }}
               value: "true"
