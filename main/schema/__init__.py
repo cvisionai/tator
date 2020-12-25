@@ -9,6 +9,7 @@ from .analysis import AnalysisDetailSchema
 from .bookmark import BookmarkListSchema
 from .bookmark import BookmarkDetailSchema
 from .clone_media import CloneMediaListSchema
+from .download_info import DownloadInfoSchema
 from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
 from .get_frame import GetFrameSchema
