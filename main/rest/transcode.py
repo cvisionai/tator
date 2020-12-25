@@ -52,19 +52,8 @@ class TranscodeAPI(BaseListView):
             raise Exception(f"For project {project} given type {entity_type}, can not find a "
                              "destination media type")
 
-        # Get the file size of the uploaded blob
-        parsed = urllib_parse.urlsplit(url)
-        logger.info(f"{parsed.netloc} vs. {self.request.get_host()}")
-        if parsed.netloc == self.request.get_host():
-            upload_uid = TatorCache().get_upload_uid_cache(parsed.path)
-            response = requests.head(f"{urllib_parse.urljoin('http://nginx-internal-svc', parsed.path)}",
-                                     allow_redirects=True,
-                                     headers={'Authorization': f'Token {token}',
-                                              'Upload-Uid': f'{upload_uid}'})
-            upload_size = int(response.headers.get('Upload-Length', None))
-        else:
-            # TODO: get file size of remote
-            upload_size = None
+        # TODO: Get the file size of the uploaded blob (or remove pvc size computation)
+        upload_size = None
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.
