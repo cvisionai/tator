@@ -31,6 +31,10 @@ class UploadInfoAPI(BaseDetailView):
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
         secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
         external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
+        if os.getenv('REQUIRE_HTTPS') == 'TRUE':
+            PROTO = 'https'
+        else:
+            PROTO = 'http'
 
         # Get organization.
         organization = Project.objects.get(pk=project).organization.pk
@@ -74,7 +78,7 @@ class UploadInfoAPI(BaseDetailView):
         if external_host:
             for idx, url in enumerate(urls):
                 parsed = urlsplit(url)
-                parsed = parsed._replace(netloc=external_host)
+                parsed = parsed._replace(netloc=external_host, scheme=PROTO)
                 urls[idx] = urlunsplit(parsed)
 
         return {'urls': urls, 'key': key, 'upload_id': upload_id}

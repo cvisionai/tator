@@ -32,6 +32,11 @@ class DownloadInfoAPI(BaseListView):
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
         secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
         external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
+        if os.getenv('REQUIRE_HTTPS') == 'TRUE':
+            PROTO = 'https'
+        else:
+            PROTO = 'http'
+
 
         # Set up client.
         s3 = boto3.client('s3',
@@ -57,7 +62,7 @@ class DownloadInfoAPI(BaseListView):
                 # Replace host if external host is given.
                 if external_host:
                     parsed = urlsplit(url)
-                    parsed = parsed._replace(netloc=external_host)
+                    parsed = parsed._replace(netloc=external_host, scheme=PROTO)
                     url = urlunsplit(parsed)
             response_data.append({'key': key, 'url': url})
         return response_data
