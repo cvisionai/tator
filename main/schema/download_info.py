@@ -44,7 +44,14 @@ class DownloadInfoSchema(AutoSchema):
         return params
 
     def _get_request_body(self, path, method):
-        return {}
+        body = {}
+        if method == 'POST':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {'$ref': '#/components/schemas/DownloadInfoSpec'},
+            }}}
+        return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
