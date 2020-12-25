@@ -1,10 +1,15 @@
 download_info_spec = {
-    'type': 'array',
-    'items': {'type': 'string',
-              'description': 'Object key.'},
+    'type': 'object',
+    'properties': {
+        'keys': {
+            'type': 'array',
+            'description': 'Array of object keys for download info retrieval.',
+            'items': {'type': 'string'},
+        },
+    },
 }
 
-download_url = {
+download_info = {
     'type': 'object',
     'properties': {
         'key': {
@@ -18,7 +23,3 @@ download_url = {
     },
 }
 
-download_info = {
-    'type': 'array',
-    'items': {'$ref': '#/components/schemas/DownloadUrl'},
-}

@@ -59,7 +59,8 @@ class DownloadInfoSchema(AutoSchema):
             responses['200'] = {
                 'description': 'Information required for download.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/DownloadInfo',
+                    'type': 'array',
+                    'items': {'$ref': '#/components/schemas/DownloadInfo'},
                 }}}
             }
         return responses

@@ -17,7 +17,6 @@ from .bookmark import bookmark_spec
 from .bookmark import bookmark_update
 from .bookmark import bookmark
 from .clone_media import clone_media_spec
-from .download_info import download_url
 from .download_info import download_info_spec
 from .download_info import download_info
 from .favorite import favorite_spec
