@@ -24,7 +24,6 @@ class UploadCompletionAPI(BaseListView):
         endpoint = os.getenv('OBJECT_STORAGE_HOST')
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
         secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
-        
 
         # Complete the upload.
         s3 = boto3.client('s3',

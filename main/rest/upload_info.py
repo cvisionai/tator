@@ -76,5 +76,6 @@ class UploadInfoAPI(BaseDetailView):
                 parsed = urlsplit(url)
                 parsed = parsed._replace(netloc=external_host)
                 urls[idx] = urlunsplit(parsed)
+
         return {'urls': urls, 'key': key, 'upload_id': upload_id}
 
