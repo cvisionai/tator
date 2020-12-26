@@ -26,6 +26,7 @@ class UploadInfoAPI(BaseDetailView):
         expiration = params['expiration']
         num_parts = params['num_parts']
         project = params['project']
+        media_id = params.get(media_id)
         bucket_name = os.getenv('BUCKET_NAME')
         endpoint = os.getenv('OBJECT_STORAGE_HOST')
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
@@ -38,11 +39,17 @@ class UploadInfoAPI(BaseDetailView):
 
         # Get organization.
         organization = Project.objects.get(pk=project).organization.pk
-        
-        # Generate an object name.
-        object_name = str(uuid1())
-        prefix = f"{organization}/{project}/upload/"
-        key = f"{prefix}{object_name}"
+
+        # Check if media exists in this project (if media ID given).
+        if media_id is None:
+            # Generate an object name.
+            key = f"{organization}/{project}/{str(uuid1())}"
+        else:
+            qs = Media.objects.filter(project=project, pk=media_id)
+            if qs.exists():
+                key = f"{organization}/{project}/{media_id}/{str(uuid1())}"
+            else:
+                raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
 
         # Generate presigned urls.
         urls = []

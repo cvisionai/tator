@@ -44,11 +44,19 @@ class UploadInfoSchema(AutoSchema):
                     'name': 'num_parts',
                     'in': 'query',
                     'required': False,
-                    'description': 'Number of upload parts. Maximum part size is 5GB',
+                    'description': 'Number of upload parts. Maximum part size is 5GB.',
                     'schema': {'type': 'integer',
                                'minimum': 1,
                                'maximum': 10000,
                                'default': 1},
+                },
+                {
+                    'name': 'media_id',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Media ID if this is an upload for existing media.',
+                    'schema': {'type': 'integer',
+                               'minimum': 1},
                 },
             ]
         return params
