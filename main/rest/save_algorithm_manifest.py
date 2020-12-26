@@ -6,8 +6,8 @@ from django.conf import settings
 
 from ..schema import SaveAlgorithmManifestSchema
 from ..schema.components.algorithm import manifest_fields as fields
+from ..util import _download_file
 
-from ._download_file import _download_file
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 

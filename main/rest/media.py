@@ -25,8 +25,8 @@ from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..notify import Notify
+from .util import _download_file
 
-from ._download_file import _download_file
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._base_views import BaseListView
