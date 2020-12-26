@@ -43,6 +43,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .uploads import download_uploaded_file
+from .rest._download_file import _download_file
 
 from collections import UserDict
 
@@ -333,7 +334,7 @@ class TemporaryFile(Model):
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         if is_upload:
-            download_uploaded_file(path, user, destination_fp)
+            _download_file(path, destination_fp)
         else:
             shutil.copyfile(path, destination_fp)
 
