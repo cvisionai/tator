@@ -46,7 +46,7 @@ class UploadInfoAPI(BaseDetailView):
         name = str(uuid1())
         if media_id is None:
             # Generate an object name.
-            key = f"{organization}/{project}/{name}"
+            key = f"{organization}/{project}/upload/{name}"
         else:
             if filename:
                 name = filename
