@@ -38,12 +38,6 @@ audio_definition = {
             'description': 'Description other than codec.',
             'type': 'string',
         },
-        'url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the audio file. It is '
-                           'is used for the src path and to create `path` field.',
-            'type': 'string',
-        },
     },
 }
 
@@ -99,18 +93,6 @@ video_definition = {
         },
         'codec_description': {
             'description': 'Description other than codec.',
-            'type': 'string',
-        },
-        'url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the video file. It is '
-                           'is used to determine the src path.',
-            'type': 'string',
-        },
-        'segments_url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the segments file. It is '
-                           'is used to determine the src path.',
             'type': 'string',
         },
     },
