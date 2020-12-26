@@ -38,7 +38,6 @@ from .media_type import MediaTypeListAPI
 from .media_type import MediaTypeDetailAPI
 from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
-from .move_video import MoveVideoAPI
 from .notify import NotifyAPI
 from .organization import OrganizationListAPI
 from .organization import OrganizationDetailAPI

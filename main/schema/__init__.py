@@ -39,7 +39,6 @@ from .media_type import MediaTypeListSchema
 from .media_type import MediaTypeDetailSchema
 from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
-from .move_video import MoveVideoSchema
 from .notify import NotifySchema
 from .organization import OrganizationListSchema
 from .organization import OrganizationDetailSchema

@@ -224,10 +224,6 @@ urlpatterns += [
         name='Membership',
     ),
     path(
-        'rest/MoveVideo/<int:id>',
-        MoveVideoAPI.as_view(),
-    ),
-    path(
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
