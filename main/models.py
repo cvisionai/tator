@@ -42,7 +42,6 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
-from .uploads import download_uploaded_file
 from .rest._download_file import _download_file
 
 from collections import UserDict

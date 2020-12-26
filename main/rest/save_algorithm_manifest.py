@@ -6,7 +6,8 @@ from django.conf import settings
 
 from ..schema import SaveAlgorithmManifestSchema
 from ..schema.components.algorithm import manifest_fields as fields
-from ..uploads import download_uploaded_file
+
+from ._download_file import _download_file
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -59,7 +60,7 @@ class SaveAlgorithmManifestAPI(BaseListView):
         os.makedirs(project_folder, exist_ok=True)
 
         # Download the file to the final path.
-        download_uploaded_file(upload_url, self.request.user, final_path)
+        _download_file(upload_url, final_path)
 
         # Create the response back to the user
         new_url = os.path.join(project_id, new_filename)
