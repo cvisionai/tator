@@ -6,6 +6,7 @@ from urllib.parse import urlsplit, urlunsplit
 import boto3
 
 from ..models import Project
+from ..models import Media
 from ..schema import UploadInfoSchema
 
 from ._base_views import BaseDetailView
@@ -26,7 +27,8 @@ class UploadInfoAPI(BaseDetailView):
         expiration = params['expiration']
         num_parts = params['num_parts']
         project = params['project']
-        media_id = params.get(media_id)
+        media_id = params.get('media_id')
+        filename = params.get('filename')
         bucket_name = os.getenv('BUCKET_NAME')
         endpoint = os.getenv('OBJECT_STORAGE_HOST')
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
@@ -41,13 +43,16 @@ class UploadInfoAPI(BaseDetailView):
         organization = Project.objects.get(pk=project).organization.pk
 
         # Check if media exists in this project (if media ID given).
+        name = str(uuid1())
         if media_id is None:
             # Generate an object name.
-            key = f"{organization}/{project}/{str(uuid1())}"
+            key = f"{organization}/{project}/{name}"
         else:
+            if filename:
+                name = filename
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
-                key = f"{organization}/{project}/{media_id}/{str(uuid1())}"
+                key = f"{organization}/{project}/{media_id}/{name}"
             else:
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
 

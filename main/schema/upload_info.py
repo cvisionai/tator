@@ -58,6 +58,17 @@ class UploadInfoSchema(AutoSchema):
                     'schema': {'type': 'integer',
                                'minimum': 1},
                 },
+                {
+                    'name': 'filename',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'Filename to use if `media_id` is given. If a file with '
+                                   'the same name already exists under the given media ID '
+                                   'prefix, the new upload will replace it. Ignored if '
+                                   '`media_id` is not given.',
+                    'schema': {'type': 'integer',
+                               'minimum': 1},
+                },
             ]
         return params
 
