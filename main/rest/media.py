@@ -25,11 +25,10 @@ from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..notify import Notify
-from ..uploads import download_uploaded_file
-from ..uploads import get_destination_path
+
+from ._download_file import _download_file
 from ._util import computeRequiredFields
 from ._util import check_required_fields
-
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
@@ -175,7 +174,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Download the file to specified path.
             media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
-            download_uploaded_file(url, self.request.user, media_path)
+            _download_file(url, media_path)
 
             # Set media location in database.
             media_obj.file.name = os.path.relpath(media_path, settings.MEDIA_ROOT)
@@ -191,7 +190,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 image.save(thumb_path)
                 image.close()
             else:
-                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
+                _download_file(thumbnail_url, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
                 image = Image.open(media_path)
                 media_obj.width, media_obj.height = image.size
@@ -231,11 +230,11 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)
             if thumbnail_url is not None:
                 thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
+                _download_file(thumbnail_url, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
             if thumbnail_gif_url is not None:
                 thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.gif')
-                download_uploaded_file(thumbnail_gif_url, self.request.user, thumb_gif_path)
+                _download_file(thumbnail_gif_url, thumb_gif_path)
                 media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
             media_obj.save()
 
@@ -394,13 +393,13 @@ class MediaDetailAPI(BaseDetailView):
         if 'thumbnail_url' in params:
             # Save the thumbnail.
             save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
-            download_uploaded_file(params['thumbnail_url'], self.request.user, save_path)
+            _download_file(params['thumbnail_url'], save_path)
             obj.thumbnail.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         if 'thumbnail_gif_url' in params:
             # Save the thumbnail gif.
             save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
-            download_uploaded_file(params['thumbnail_gif_url'], self.request.user, save_path)
+            _download_file(params['thumbnail_gif_url'], save_path)
             obj.thumbnail_gif.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         # Media definitions may be appended but not replaced or deleted.
