@@ -66,8 +66,7 @@ class UploadInfoSchema(AutoSchema):
                                    'the same name already exists under the given media ID '
                                    'prefix, the new upload will replace it. Ignored if '
                                    '`media_id` is not given.',
-                    'schema': {'type': 'integer',
-                               'minimum': 1},
+                    'schema': {'type': 'string'},
                 },
             ]
         return params
