@@ -41,10 +41,8 @@ class MediaListSchema(AutoSchema):
             it is recommended to use the `Transcode` endpoint, which will create
             the media object itself. This method is only needed for local 
             transcodes. In that case, it will create an empty Media object;
-            thumbnails, streaming, and archival videos must be subsequently uploaded via
-            tus. Videos must be  moved to the media folder using the `MoveVideo` endpoint, 
-            which also calls the `Media` PATCH method to update the `media_files` field.
-            Thumbnails may be saved by just using the `Media` PATCH method directly.
+            thumbnails, streaming, and archival videos must be subsequently uploaded 
+            and saved via the `Media` PATCH method.
             """)
         elif method == 'PATCH':
             short_desc = "Update media list."
