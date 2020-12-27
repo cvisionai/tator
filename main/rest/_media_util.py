@@ -223,7 +223,7 @@ class MediaUtil:
             impacted_segments = self._get_impacted_segments(batch)
             lookup = {}
             if impacted_segments:
-                lookup = self.make_temporary_videos(impacted_segments)
+                lookup, _ = self.make_temporary_videos(impacted_segments)
 
             for batch_idx, frame in enumerate(batch):
                 outputs.extend(["-map", f"{batch_idx}:v","-frames:v", "1", "-q:v", "3"])
