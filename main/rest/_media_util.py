@@ -245,6 +245,8 @@ class MediaUtil:
                     inputs.extend(["-ss", self._frame_to_time_str(frame, lookup[frame][0]),
                                                                   "-i", lookup[frame][1]])
                 else:
+                    logger.warning(f"Failed to find frame {frame} in per segment mp4! Falling "
+                                    "back to whole file...")
                     # If we didn't make per segment mp4s, use the big one
                     inputs.extend(["-ss", self._frame_to_time_str(frame), "-i", self._video_file])
                 frame_idx += 1
