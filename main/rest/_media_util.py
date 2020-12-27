@@ -12,6 +12,8 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
+from ._s3_client import _s3_client
+
 logger = logging.getLogger(__name__)
 
 class MediaUtil:
@@ -34,11 +36,18 @@ class MediaUtil:
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+            self._s3 = _s3_client()
+            self._bucket_name = os.getenv('BUCKET_NAME')
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            with open(segment_file, 'r') as f_p:
-                self._segment_info = json.load(f_p)
-                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
-                                                              ['segments']) if x['name'] == 'moof']
+            if segment_file.startswith('/'):
+                with open(segment_file, 'r') as f_p:
+                    self._segment_info = json.load(f_p)
+            else:
+                f_p = io.BytesIO()
+                self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+            self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
+                                                          ['segments']) if x['name'] == 'moof']
         elif video.original:
             video_file = video.original
             self._height = video.height
