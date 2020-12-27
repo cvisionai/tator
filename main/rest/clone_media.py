@@ -95,12 +95,13 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                 if 'audio' in new_obj.media_files:
                     originals = new_obj.media_files["audio"]
 
-            # Create symlinks for audio files.
+            # Create symlinks for audio files if they are not object keys.
             for idx, orig in enumerate(originals):
-                name = os.path.basename(orig['path'])
-                new_path = os.path.join("/media", str(dest), name)
-                _make_link(orig['path'], new_path)
-                new_obj.media_files["audio"][idx]['path'] = new_path
+                if orig['path'].startswith('/'):
+                    name = os.path.basename(orig['path'])
+                    new_path = os.path.join("/media", str(dest), name)
+                    _make_link(orig['path'], new_path)
+                    new_obj.media_files["audio"][idx]['path'] = new_path
 
             # Find archival files.
             originals = []
@@ -110,12 +111,13 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             elif new_obj.original:
                 originals = [new_obj.original]
 
-            # Create symlinks for archival files.
+            # Create symlinks for archival files if they are not object keys.
             for idx, orig in enumerate(originals):
-                name = os.path.basename(orig['path'])
-                new_path = os.path.join("/data/raw", str(dest), name)
-                _make_link(orig['path'], new_path)
-                new_obj.media_files["archival"][idx]['path'] = new_path
+                if orig['path'].startswith('/'):
+                    name = os.path.basename(orig['path'])
+                    new_path = os.path.join("/data/raw", str(dest), name)
+                    _make_link(orig['path'], new_path)
+                    new_obj.media_files["archival"][idx]['path'] = new_path
 
             # Find streaming files.
             streaming = []
@@ -123,16 +125,17 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                 if 'streaming' in new_obj.media_files:
                     streaming = new_obj.media_files["streaming"]
 
-            # Create symlinks for streaming files.
+            # Create symlinks for streaming files if they are not object keys.
             for idx, stream in enumerate(streaming):
-                name = os.path.basename(stream['path'])
-                new_path = os.path.join("/media", str(dest), name)
-                _make_link(stream['path'], new_path)
-                new_obj.media_files["streaming"][idx]['path'] = new_path
-                name = os.path.basename(stream['segment_info'])
-                new_path=os.path.join("/media", str(dest), name)
-                _make_link(stream['segment_info'], new_path)
-                new_obj.media_files["streaming"][idx]['segment_info']=new_path
+                if orig['path'].startswith('/'):
+                    name = os.path.basename(stream['path'])
+                    new_path = os.path.join("/media", str(dest), name)
+                    _make_link(stream['path'], new_path)
+                    new_obj.media_files["streaming"][idx]['path'] = new_path
+                    name = os.path.basename(stream['segment_info'])
+                    new_path=os.path.join("/media", str(dest), name)
+                    _make_link(stream['segment_info'], new_path)
+                    new_obj.media_files["streaming"][idx]['segment_info']=new_path
 
             # If this media is an image or legacy video, create symlink to
             # the file.
