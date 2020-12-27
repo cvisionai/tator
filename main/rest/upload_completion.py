@@ -3,6 +3,7 @@ import boto3
 from ..models import Project
 from ..schema import UploadCompletionSchema
 
+from ._s3_client import _s3_client
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -21,15 +22,9 @@ class UploadCompletionAPI(BaseListView):
         upload_id = params['upload_id']
         project = params['project']
         bucket_name = os.getenv('BUCKET_NAME')
-        endpoint = os.getenv('OBJECT_STORAGE_HOST')
-        access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
-        secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
 
         # Complete the upload.
-        s3 = boto3.client('s3',
-                          endpoint_url='http://{endpoint}',
-                          aws_access_key_id=access_key,
-                          aws_secret_access_key=secret_key)
+        s3 = _s3_client()
         response = s3.complete_multipart_upload(Bucket=bucket_name,
                                                 Key=key,
                                                 MultipartUpload={'Parts': parts},

@@ -3,12 +3,11 @@ import logging
 from uuid import uuid1
 from urllib.parse import urlsplit, urlunsplit
 
-import boto3
-
 from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
 
+from ._s3_client import _s3_client
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
 
@@ -30,9 +29,6 @@ class UploadInfoAPI(BaseDetailView):
         media_id = params.get('media_id')
         filename = params.get('filename')
         bucket_name = os.getenv('BUCKET_NAME')
-        endpoint = os.getenv('OBJECT_STORAGE_HOST')
-        access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
-        secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
         external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
@@ -58,10 +54,7 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         urls = []
-        s3 = boto3.client('s3',
-                          endpoint_url=f'http://{endpoint}',
-                          aws_access_key_id=access_key,
-                          aws_secret_access_key=secret_key)
+        s3 = _s3_client()
         upload_id = ''
         if num_parts == 1:
             # Generate a presigned upload url.

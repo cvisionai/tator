@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from ..models import Project
 from ..schema import DownloadInfoSchema
 
+from ._s3_client import _s3_client
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -28,22 +29,12 @@ class DownloadInfoAPI(BaseListView):
         expiration = params['expiration']
         project = params['project']
         bucket_name = os.getenv('BUCKET_NAME')
-        endpoint = os.getenv('OBJECT_STORAGE_HOST')
-        access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
-        secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
         external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
         else:
             PROTO = 'http'
-
-
-        # Set up client.
-        s3 = boto3.client('s3',
-                          endpoint_url=f'http://{endpoint}',
-                          aws_access_key_id=access_key,
-                          aws_secret_access_key=secret_key)
-
+        s3 = _s3_client()
         response_data = []
         for key in keys:
             if key.startswith('/'):
