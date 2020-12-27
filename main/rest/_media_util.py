@@ -174,11 +174,21 @@ class MediaUtil:
             lookup[frame] = (segment_frame_start, temp_video)
 
             logger.info(f"Scatter gather graph = {sc_graph}")
-            with open(self._video_file, "r+b") as vid_fp:
-                m_m = mmap.mmap(vid_fp.fileno(), 0)
+            if self._video_file.startswith('/'):
+                with open(self._video_file, "r+b") as vid_fp:
+                    m_m = mmap.mmap(vid_fp.fileno(), 0)
+                    with open(temp_video, "wb") as out_fp:
+                        for scatter in sc_graph:
+                            out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
+            else:
                 with open(temp_video, "wb") as out_fp:
                     for scatter in sc_graph:
-                        out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
+                        start = scatter[0]
+                        stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
+                        response = self._s3.get_object(Bucket=self._bucket_name,
+                                                       Key=self._video_file,
+                                                       Range=f'bytes={start}-{stop}')
+                        out_fp.write(response['Body'].read())
 
         return lookup, segment_info
 
