@@ -82,6 +82,16 @@ class Upload {
     this.uploadData = uploadData;
     this.isImage = uploadData.isImage;
     this.aborted = false;
+    this.numParts = 1;
+    this.chunkSize = 10 * 1024 * 1024; // 10MB
+    this.numParts = Math.ceil(this.file.size / this.chunkSize);
+    this.parts = [];
+
+    // If number of parts is >100, increase chunk size.
+    if (this.numParts > 100) {
+      this.chunkSize = Math.ceil(this.file.size / 100);
+      this.numParts = 100;
+    }
 
     // Fingerprint function for TUS client required (also needs to return a promise).
     // It'll use the same upload UID used elsewhere by this class.
@@ -162,6 +172,127 @@ class Upload {
       }
     });
 
+  }
+
+  // Starts the upload, chaining together all promises.
+  start() {
+    // Compute number of parts.
+    this.getUploadInfo()
+    .then(info => this.numParts > 1 ? this.uploadMulti(info) : this.uploadSingle(info))
+    .then(key => this.createMedia(key))
+    .catch(error => this.handleError(error));
+  }
+
+  // Returns promise resolving to upload.
+  getUploadInfo() {
+    return fetchRetry(`/rest/UploadInfo/${this.projectId}?num_parts=${this.numParts}`, {
+      method: "GET",
+      credentials: "omit",
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+    .then(response => response.json());
+  }
+
+  // Multipart upload.
+  uploadMulti(info) {
+    let promise = new Promise();
+    for (let idx=0; idx < this.numParts; idx++) {
+      const startByte = this.chunkSize * idx;
+      const stopByte = Math.min(startByte + this.chunkSize, this.file.size);
+      promise = promise.then(fetchRetry(info.urls[idx], {
+        method: "PUT",
+        credentials: "omit",
+        body: this.file.slice(startByte, stopByte),
+      }))
+      .then(response => response.json())
+      .then(data => {
+        this.parts.push({etag: data.ETag, partnumber: idx});
+      });
+    }
+    promise = promise.then(fetchRetry(`/rest/UploadCompletion/${this.projectId}`, {
+      method: "POST",
+      credentials: "omit",
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        key: info.key,
+        upload_id: info.upload_id,
+        parts: this.parts,
+      }),
+    }))
+    .then(() => {
+      self.postMessage({command: "uploadProgress",
+                        percent: Math.floor(100 * idx / this.numParts),
+                        filename: this.file.name});
+    });
+  }
+
+  // Uploads using a single request.
+  uploadSingle(info) {
+    return fetchRetry(info.urls[0], {
+      method: "PUT",
+      credentials: "omit",
+      body: this.file.slice(0, this.file.size),
+    })
+    .then(() => {
+      self.postMessage({command: "uploadProgress",
+                        percent: 100,
+                        filename: this.file.name});
+    });
+  }
+
+  // Creates media using the uploaded file.
+  createMedia() {
+    let endpoint;
+    if (this.isImage) {
+      endpoint = "Medias";
+    } else {
+      endpoint = "Transcode";
+    }
+    fetchRetry(`/rest/${endpoint}/${this.projectId}`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: this.mediaTypeId,
+        gid: this.gid,
+        uid: this.upload_uid,
+        url: this.tus.url,
+        section: this.section,
+        name: this.tus.file.name,
+        md5: this.md5,
+      }),
+      credentials: "omit",
+    })
+    .then(() => {
+      removeFromActive(this.upload_uid);
+      self.postMessage({command: "uploadDone",
+                        filename: this.file.name});
+    })
+    .catch(err => console.error("Error attempting to initiate transcode:" + err));
+  }
+
+  handleError(error) {
+    console.log("Error during upload: " + error);
+    removeFromActive(this.upload_uid);
+    this.uploadData.retries++;
+    if (this.uploadData.retries > 2) {
+      self.postMessage({command: "uploadFailed",
+                        filename: this.uploadData.file.name});
+    } else {
+      uploadBuffer.push(this.uploadData);
+      startUpload();
+    }
   }
 
   // Calculates md5 hash.
