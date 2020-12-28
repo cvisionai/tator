@@ -104,7 +104,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/Media/" + newValue, {
+        fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
