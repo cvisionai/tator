@@ -27,6 +27,8 @@ from ..schema import parse
 from ..notify import Notify
 from ..util import _download_file
 
+from ._s3_client import _s3_client
+from ._s3_client import _get_download_url
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._base_views import BaseListView
@@ -350,7 +352,26 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        return database_qs(Media.objects.filter(pk=params['id']))[0]
+        response_data = database_qs(Media.objects.filter(pk=params['id']))[0]
+        presigned = params.get('presigned')
+        if presigned is not None:
+            s3 = _s3_client()
+            if 'media_files' in response_data:
+                if 'archival' in response_data['media_files']:
+                    for idx, media_def in enumerate(response_data['media_files']['archival']):
+                        media_def['path'] = _get_download_url(s3, media_def['path'], presigned)
+                        response_data['media_files']['archival'][idx] = media_def
+                if 'streaming' in response_data['media_files']:
+                    for idx, media_def in enumerate(response_data['media_files']['streaming']):
+                        media_def['path'] = _get_download_url(s3, media_def['path'], presigned)
+                        response_data['media_files']['streaming'][idx] = media_def
+                        media_def['segment_info'] = _get_download_url(s3, media_def['segment_info'], presigned)
+                        response_data['media_files']['streaming'][idx] = media_def
+                if 'audio' in response_data['media_files']:
+                    for idx, media_def in enumerate(response_data['media_files']['audio']):
+                        media_def['path'] = _get_download_url(s3, media_def['path'], presigned)
+                        response_data['media_files']['audio'][idx] = media_def
+        return response_data
 
     @transaction.atomic
     def _patch(self, params):

@@ -152,7 +152,21 @@ class MediaDetailSchema(AutoSchema):
         }]
 
     def _get_filter_parameters(self, path, method):
-        return []
+        params = []
+        if method == 'GET':
+            params = [{
+                'name': 'presigned',
+                'in': 'query',
+                'required': False,
+                'description': 'If given, all `path` fields in `media_files` will be '
+                               'replaced with presigned URLs that can be downloaded without '
+                               'authentication. The value is the expiration time of the URLs '
+                               'in seconds.',
+                'schema': {'type': 'integer',
+                           'minimum': 1,
+                           'maximum': 86400},
+            }]
+        return params
 
     def _get_request_body(self, path, method):
         body = {}
