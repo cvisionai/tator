@@ -26,7 +26,8 @@ class DownloadButton extends TatorElement {
       {
         // Get the size first
         let getSize = new Request(this.request.url, {headers: this.request.headers, method:"HEAD"});
-        fetch(getSize).then(sizeRes => {
+        fetch(getSize).then(sizeRes => { // HEAD fails (403) on presigned urls, but the file still downloads.
+                                         // TODO: Update DownloadInfo to return object size
           const name = this.getAttribute("name");
           const fileSize = parseInt(sizeRes.headers.get("content-length"));
           console.log(`${name} is ${fileSize} bytes`);

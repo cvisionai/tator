@@ -67,7 +67,7 @@ class Utilities
     }
   }
   // Get the download request object
-  static getDownloadRequest(media_element, session_headers)
+  static async getDownloadRequest(media_element, session_headers)
   {
     // Download original file if available.
     let url;
@@ -116,33 +116,52 @@ class Utilities
     let request;
     if (url == undefined)
     {
-      let sameOrigin = false;
-      // Default to self if hostname
-      if (hostname == undefined)
-      {
-        hostname = window.location.protocol + "//" + window.location.hostname;
-        sameOrigin = true;
-      }
-      url = hostname + path;
-
-      if (sameOrigin == true)
-      {
-        request = new Request(url,
-                              {method: "GET",
-                               credentials: "same-origin",
-                               headers: session_headers
-                              });
-      }
-      else
-      {
-        let cross_origin = new Headers();
-        cross_origin.append("Authorization", http_authorization);
-        // Don't leak CSRF or session to cross-domain resources
-        request = new Request(url,
-                              {method: "GET",
-                               credentials: "omit",
-                               headers: cross_origin
-                              });
+      if (path.startsWith('/')) {
+        let sameOrigin = false;
+        // Default to self if hostname
+        if (hostname == undefined)
+        {
+          hostname = window.location.protocol + "//" + window.location.hostname;
+          sameOrigin = true;
+        }
+        url = hostname + path;
+        if (sameOrigin == true)
+        {
+          request = new Request(url,
+                                {method: "GET",
+                                 credentials: "same-origin",
+                                 headers: session_headers
+                                });
+        }
+        else
+        {
+          let cross_origin = new Headers();
+          cross_origin.append("Authorization", http_authorization);
+          // Don't leak CSRF or session to cross-domain resources
+          request = new Request(url,
+                                {method: "GET",
+                                 credentials: "omit",
+                                 headers: cross_origin
+                                });
+        }
+      } else {
+        await fetchRetry(`/rest/DownloadInfo/${media_element.project}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({keys: [path]}),
+        })
+        .then(response => response.json())
+        .then(data => {
+          request = new Request(data[0].url,
+                                {method: "GET",
+                                 credentials: "omit",
+                                });
+        });
       }
     }
     else
