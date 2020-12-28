@@ -1157,7 +1157,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         let audio_def = videoObject.media_files['audio'][0];
         this._audioPlayer = document.createElement("AUDIO");
-        this._audioPlayer.setAttribute('src', host + audio_def.path);
+        this._audioPlayer.setAttribute('src', audio_def.path);
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
         this.addPauseListener(() => {
@@ -1175,7 +1175,6 @@ class VideoCanvas extends AnnotationCanvas {
         {
           host = streaming_files[idx].host;
         }
-        streaming_files[idx].path = `${host}/${streaming_files[idx].path}`;
       }
     }
     // Handle cases when there are no streaming files in the set
