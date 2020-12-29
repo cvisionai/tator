@@ -109,3 +109,18 @@ attribute_rename = {
         "new_attribute_type": {'$ref': '#/components/schemas/AttributeType'},
     },
 }
+
+attribute_deletion = {
+    "type": "object",
+    "description": "Deletes an existing attribute from a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "attribute_to_delete": {
+            "type": "string",
+            "description": "The attribute to delete.",
+        },
+    },
+}

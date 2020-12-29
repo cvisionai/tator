@@ -12,6 +12,7 @@ from ._attributes import (
     bulk_patch_attributes,
     bulk_rename_attributes,
     bulk_mutate_attributes,
+    bulk_delete_attributes,
 )
 from ._permissions import ProjectFullControlPermission
 
@@ -21,7 +22,7 @@ class AttributeTypeListAPI(BaseListView):
 
     schema = AttributeTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
-    http_method_names = ["patch", "post"]
+    http_method_names = ["patch", "post", "delete"]
 
     @staticmethod
     def _get_objects(params):
@@ -38,6 +39,15 @@ class AttributeTypeListAPI(BaseListView):
         model = getattr(models, entity_name)
         obj_qs = model.objects.filter(meta=parent_id)
         return entity_type, obj_qs
+
+    def _delete(self, params: Dict) -> Dict:
+        """Delete an existing attribute on a type."""
+        attribute_to_delete = params["attribute_to_delete"]
+        entity_type, obj_qs = self._get_objects(params)
+        TatorSearch().delete_alias(entity_type, attribute_to_delete).save()
+
+        if obj_qs.exists():
+            bulk_delete_attributes([attribute_to_delete], obj_qs)
 
     def _patch(self, params: Dict) -> Dict:
         """Rename an attribute on a type."""
@@ -124,7 +134,6 @@ class AttributeTypeListAPI(BaseListView):
             new_name = new_attribute_type["name"]
             new_default = new_attribute_type.get("default")
             bulk_patch_attributes({new_name: new_default}, obj_qs)
-            # TODO: add attribute to ES
 
         return {"message": f"New attribute type '{new_attribute_type['name']}' added"}
 

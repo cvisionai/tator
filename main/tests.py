@@ -2140,7 +2140,7 @@ class AttributeTestCase(APITestCase):
             "entity_type": "LocalizationType",
             "old_attribute_type_name": 'Int Test',
             "new_attribute_type": {
-                "name": "Float Test",
+                "name": "Renamed Int Test",
                 "dtype": "float",
             },
         }
@@ -2153,6 +2153,10 @@ class AttributeTestCase(APITestCase):
                 "minimum": -1,
                 "maximum": 1,
             }
+        }
+        self.delete_json = {
+            "entity_type": "LocalizationType",
+            "attribute_to_delete": 'Int Test',
         }
         TatorSearch().refresh(self.project.pk)
 
@@ -2186,6 +2190,24 @@ class AttributeTestCase(APITestCase):
             response = self.client.post(
                 f'/rest/{self.list_uri}/{self.entity_type.pk}',
                 self.post_json,
+                format='json')
+            with self.subTest(i=index):
+                self.assertEqual(response.status_code, expected_status)
+        self.membership.permission = Permission.FULL_CONTROL
+        self.membership.save()
+
+    def test_delete_permissions(self):
+        permission_index = permission_levels.index(self.edit_permission)
+        for index, level in enumerate(permission_levels):
+            self.membership.permission = level
+            self.membership.save()
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.delete(
+                f'/rest/{self.list_uri}/{self.entity_type.pk}',
+                self.delete_json,
                 format='json')
             with self.subTest(i=index):
                 self.assertEqual(response.status_code, expected_status)
