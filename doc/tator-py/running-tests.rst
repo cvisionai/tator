@@ -1,10 +1,10 @@
 Unit Tests + Verification
 #########################
 
-Pytator uses pytest as a verification toolkit. The tests require a working
+tator-py uses pytest as a verification toolkit. The tests require a working
 tator deployment where the test environment sets up and tears down a project.
 
-The pytator unit tests can be used to validate a deployment.
+The tator-py unit tests can be used to validate a deployment.
 
 
 Running the tests
