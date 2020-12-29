@@ -58,6 +58,12 @@ Further guidance:
     project. This avoids the master branch pointing to an unknown commit in
     a submodule.
 
+## API Version scheme
+
+Tator-py uses an x.y.z version scheme. While x < 1, y and z are used to indicate
+breaking or non-breaking update, respectfully. Once x >= 1, the plan would
+be to use [semantic versioning.](https://semver.org/)
+
 ## Updating REST Endpoints
 
 After changing REST code or making JS updates, you can run `make dev-push && make collect-static`:
