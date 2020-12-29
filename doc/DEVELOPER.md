@@ -2,6 +2,62 @@
 
 General information that is useful for developers that are new to the `tator` project.
 
+## Git guidance
+
+Developers should use branches for resolving issues. One or more github issues
+may be solved in a branch.
+
+Canonical workflow:
+```
+# Create a branch and do some work
+git checkout -b /dev/descriptive-branch-name
+
+# developer does work, making a series of logical commits on his or her
+# branch
+```
+
+
+If the user has push permissions to master they can elect to merge
+their own work:
+```
+# Updates local repo
+git fetch
+
+# Rebase topic branch to latest master
+git rebase origin/master
+
+# Switch to master and update local ref
+git checkout master
+git rebase origin/master
+
+# The git commit message can include additional detail here, per commit
+# guidance.
+git merge --no-ff /dev/descriptive-branch-name
+
+# Lastly, push the updated master to the repository
+git push origin master
+```
+
+Note: If a user does not have push permissions or does not desire to push
+to master they can initiate a pull request of the ``dev/`` branch.
+
+Further guidance:
+
+1.) A ``dev/`` branch is a story of how a feature came to be. It should be a
+    series of logical commits that make review and bisection possible.
+2.) ``dev/`` branches may be pushed to the repository. There is no expectation
+    a ``dev/`` branch is stable and it can be deleted or force-pushed.
+3.) Commit messages are helpful commentary for initial review and later
+    bisections.
+    a.) "Fixes #NNN" or "Closes #NNN" will automatically close the issue
+        when this commit is pushed to master. This can be on either the
+        individual commit within a dev branch or the merge commit.
+    b.) "[migrate-required]" can be added to a commit that induces a database
+        migration.
+4.) Merges, and pushes must be done in submodules prior to the top-level
+    project. This avoids the master branch pointing to an unknown commit in
+    a submodule.
+
 ## Updating REST Endpoints
 
 After changing REST code or making JS updates, you can run `make dev-push && make collect-static`:
