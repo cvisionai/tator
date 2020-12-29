@@ -5,6 +5,34 @@ class LeafTypeEdit extends SettingsSection {
     this._shadow.appendChild(this.settingsSectionDiv);
   }
 
+  _init(data){
+    console.log(`${this.tagName} init.`);
+
+    this.data = JSON.parse( data );
+    console.log(this.data);
+
+    //this.projectId = this._setProjectId();
+    for(let i in this.data){
+      let itemDiv = document.createElement("div");
+      itemDiv.id = "mediaId-"+this.data[i].id;
+      itemDiv.setAttribute("class", "item-box");
+      itemDiv.hidden = true;
+
+      // Section h1.
+      const h1 = document.createElement("h1");
+      h1.setAttribute("class", "h2 pb-3");
+      h1.innerHTML = `Set localization and attribute details.`;
+      itemDiv.appendChild(h1);
+
+      itemDiv.appendChild( this._getSectionForm(this.data[i]) );
+      itemDiv.appendChild( this._getSubmitDiv() );
+
+      this.settingsSectionDiv.appendChild(itemDiv);
+    }
+
+    return this.settingsSectionDiv;
+  }
+
   _getSectionForm(){
     this.boxOnPage = this.boxHelper.boxWrapDefault({
         "children" : document.createTextNode("")

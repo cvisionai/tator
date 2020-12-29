@@ -100,10 +100,10 @@ class ProjectSettings extends TatorPage {
           this.leafTypesBlock._init( JSON.stringify(leaf));
           this.settingsNav._init( JSON.stringify(leaf));
         })
-        .catch(err => {
+        //.catch(err => {
           //this._shadow.querySelector('.loading').remove();
-          console.error("Failed to retrieve data: " + err);
-        })
+        //  console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
+        //})
       });
   }
 

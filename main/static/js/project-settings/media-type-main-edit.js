@@ -3,7 +3,7 @@ class MediaTypeMainEdit extends SettingsSection {
     super();
     this._shadow.appendChild(this.settingsSectionDiv);
 
-    this._setAttributeDTypes();
+    //this._setAttributeDTypes();
   }
 
   _init(data){
@@ -36,7 +36,7 @@ class MediaTypeMainEdit extends SettingsSection {
   }
 
   _getSectionForm(media){
-      let headingName = this._getHeadingName(media.dtype);
+      //let headingName = this._getHeadingName(media.dtype);
       /*let mediaType = this.boxHelper.headingWrap({
           "headingText" : `${media.name}`, //`${headingName} | ${media.name}`,
           "descriptionText" : "Edit media type.",
@@ -63,43 +63,11 @@ class MediaTypeMainEdit extends SettingsSection {
       currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} ) );
 
       // attribute types
-      let attributeTypes = media.attribute_types;
-      if(attributeTypes.length > 0){
-        let seperator = document.createElement("div");
-        seperator.setAttribute("class", "col-12 py-2");
-        seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-        seperator.innerHTML = "&nbsp;"
-
-        currentMediaType.append(seperator);
-
-        let collapsableAttributeHeading = this.boxHelper.headingWrap({
-            "headingText" : `Attributes`,
-            "descriptionText" : "Edit media type.",
-            "level": 2,
-            "collapsed": "controlId"
-          });
-        currentMediaType.appendChild(collapsableAttributeHeading);
-
-        let attributeMediaId = "attribute"+media.id;
-        collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
-
-        currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
-          this._toggleAttributes(event);
-          this._toggleChevron(event);
-        });
-
-        let collapsableAttributeBox = document.createElement("div");
-        collapsableAttributeBox.id = attributeMediaId;
-        collapsableAttributeBox.hidden = true;
-
-        for(let a of attributeTypes){
-          collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
-        }
-        currentMediaType.appendChild(collapsableAttributeBox);
+      if(media.attribute_types.length > 0){
+        let attributes = document.createElement("settings-attributes");
+        attributes._init(media.attribute_types);
+        currentMediaType.appendChild(attributes);
       }
-
-
-
 
       return currentMediaType;
   }
@@ -114,200 +82,6 @@ class MediaTypeMainEdit extends SettingsSection {
   _toggleChevron(e){
     var el = e.target;
     return el.classList.toggle('chevron-trigger-90');
-  }
-
-  attributesOutput({
-    attributes = []
-  } = {}){
-    const settingsBoxHelper = new SettingsBox();
-    const mediaTypesInputHelper = new SettingsInput();
-
-    let headingName = this._getHeadingName(attributes.dtype);
-
-    let attributeCurrent = settingsBoxHelper.headingWrap({
-      "headingText" : `${attributes.name}`,//`Attribute ${headingName} | ${attributes.name}`,
-      "descriptionText" : "Edit attribute.",
-      "level":3,
-      "collapsed":true
-    });
-
-    attributeCurrent.style.borderBottom = "none";
-
-    let attributeMediaId = "attribute"+attributes.id;
-    attributeCurrent.setAttribute("class", `toggle-a-${attributeMediaId}`);
-
-    let collapsableAttributeBox = document.createElement("div");
-    collapsableAttributeBox.id = attributeMediaId;
-    collapsableAttributeBox.hidden = true;
-
-    let boxOnPage = settingsBoxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2} );
-
-    boxOnPage.appendChild(collapsableAttributeBox);
-    attributeCurrent.addEventListener("click", (event) => {
-      this._toggleAttributes(event);
-      this._toggleChevron(event)
-    });
-
-    // append input for name and description
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Name", "value": attributes.name}) );
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText( { "labelText": "Description", "value": attributes.description} ) );
-
-    // append input for dtype
-    let currentOption = attributes.dtype;
-    let options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
-
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputSelectOptions({
-      "labelText": "Data Type",
-      "value": attributes.dtype,
-      "optionsList": options
-    }));
-
-    //required
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Required", "value": attributes.required, "type":"checkbox"}) );
-
-    // default
-    let showDefault = (attributes.dtype != 'datetime' && attributes.dtype != 'geopos')? true : false;
-    if (showDefault)  collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Default", "value": attributes.default, "type":"text"}) );
-
-    // visible
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Visible", "value": attributes.visible, "type":"checkbox"}) );
-    //collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputRadioSlide({ "labelText": "Visible test", "value": attributes.visible, "type":"checkbox"}) );
-
-
-    // int, float	minimum & maximum
-    let showMinMax = (attributes.dtype == 'int' || attributes.dtype == 'float') ? true : false;
-    if (showMinMax)  {
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Minimum", "value": attributes.minimum, "type":"number"}) );
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Maximum", "value": attributes.maximum, "type":"number"}) );
-    }
-
-    let showChoiceAndLabels = attributes.dtype == 'enum' ? true : false;
-    if (showChoiceAndLabels){
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Choice", "value": attributes.choices}) );
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Labels", "value": attributes.labels}) );
-    }
-
-    return boxOnPage;
-
-  }
-
-  _setAttributeDTypes(){
-    this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];
-    return this.attributeDTypes;
-  }
-
-  _getHeadingName(dtype){
-    switch(dtype){
-      case "image":
-        return "Image Type";
-        break;
-      case "video":
-        return "Video Type";
-        break;
-      case "multi":
-        return "Multi Type";
-        break;
-      case "bool":
-        return "Boolean Type";
-        break;
-      case "int":
-        return "Integer Type";
-        break;
-      case "float":
-        return "Float Type";
-        break;
-      case "string":
-        return "String Type";
-        break;
-      case "datetime":
-        return "Datetime Type";
-        break;
-      case "geopos":
-        return "Geopos Type";
-        break;
-      case "enum":
-        return "Enum Type";
-        break;
-    }
-  }
-
-  _getDTypeRules(){
-    return ( {
-      "bool" : {
-        "allowed": ["enum","string"],
-        "fully-reversable": [],
-        "reversable-with-warning": [],
-        "irreversible": ["enum","string"]
-      },
-      "int" : {
-        "allowed": ["float","enum","string"],
-        "fully-reversable": ["float"],
-        "reversable-with-warning": [],
-        "irreversible": ["enum","string"]
-      },
-      "float" : {
-        "allowed": ["int","enum","string"],
-        "fully-reversable": [],
-        "reversable-with-warning": ["int"],
-        "irreversible": ["enum","string"]
-      },
-      "enum" : {
-        "allowed": ["string"],
-        "fully-reversable": ["string"],
-        "reversable-with-warning": [],
-        "irreversible": []
-      },
-      "string" : {
-        "allowed": ["enum"],
-        "fully-reversable": ["enum"],
-        "reversable-with-warning": [],
-        "irreversible": []
-      },
-      "datetime" : {
-        "allowed": ["enum","string"],
-        "fully-reversable": [],
-        "reversable-with-warning": [],
-        "irreversible": ["enum","string"]
-      },
-      "geopos" : {
-        "allowed": ["enum","string"],
-        "fully-reversable": [],
-        "reversable-with-warning": [],
-        "irreversible": ["enum","string"]
-      }
-    });
-  }
-
-  _getAllowedDTypeArray(dtype){
-    return this.attributeDTypes.filter( a => {
-      let allRules = this._getDTypeRules();
-      let ruleSetForDtype = allRules[dtype];
-      return ruleSetForDtype["allowed"].includes(a);
-    });
-  }
-
-  _getLossDTypeArray(dtype){
-    return this.attributeDTypes.filter( a => {
-      let allRules = this._getDTypeRules();
-      let ruleSetForDtype = allRules[dtype];
-      return ruleSetForDtype["reversable-with-warning"].includes(a);
-    });
-  }
-
-  _getIrreverasibleDTypeArray(dtype){
-    return this.attributeDTypes.filter( a => {
-      let allRules = this._getDTypeRules();
-      let ruleSetForDtype = allRules[dtype];
-      return ruleSetForDtype["irreversible"].includes(a);
-    });
-  }
-
-  _getDtypeOptions(typeArray){
-    return typeArray.map( (i) => {
-      let text = this._getHeadingName(i);
-      // ADD STAR TO THOSE WITH WARNING? OR JUST ON SAVE
-      return ({ "optText": text, "optValue":i });
-    });
   }
 
   _fetchGetPromise({id = this.projectId} = {}){

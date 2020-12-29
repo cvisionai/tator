@@ -146,18 +146,19 @@ class SettingsInput {
       const currentValue = value;
 
       inputSelect.setAttribute("class", this.customClass + " form-select select-sm " + customCol);
+      inputSelect.style.color = "#fff";
 
       for(let optionValue of optionsList){
         let inputOption = document.createElement("option");
-        let optionText = document.createTextNode(optionValue.optValue);
+        let optionText = document.createTextNode(optionValue.optText);
 
         inputOption.appendChild(optionText);
-        inputOption.value = optionValue.optText;
-        if(optionValue === currentValue) inputOption.selected = true;
+        inputOption.value = optionValue.optValue;
+
+        if(optionValue.optValue === currentValue) inputOption.selected = true;
 
         inputSelect.appendChild(inputOption);
       }
-
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
