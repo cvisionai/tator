@@ -43,6 +43,21 @@ from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
+def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'image', 'thumbnail',
+                                            'thumbnail_gif']):
+    """ Replaces specified media fields with presigned urls.
+    """
+    if media.get('media_files') is not None:
+        for field in fields:
+            if field in media['media_files']:
+                for idx, media_def in enumerate(media['media_files'][field]):
+                    media_def['path'] = get_download_url(s3, media_def['path'], expiration)
+                    if field == 'streaming':
+                        media_def['segment_info'] = get_download_url(s3, media_def['segment_info'],
+                                                                     expiration)
+                    media['media_files'][field][idx] = media_def
+    return media
+
 class MediaListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of media.
 
@@ -295,30 +310,12 @@ class MediaDetailAPI(BaseDetailView):
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = s3_client()
-            if response_data.get('media_files') is not None:
-                if 'archival' in response_data['media_files']:
-                    for idx, media_def in enumerate(response_data['media_files']['archival']):
-                        media_def['path'] = get_download_url(s3, media_def['path'], presigned)
-                        response_data['media_files']['archival'][idx] = media_def
-                if 'streaming' in response_data['media_files']:
-                    for idx, media_def in enumerate(response_data['media_files']['streaming']):
-                        media_def['path'] = get_download_url(s3, media_def['path'], presigned)
-                        response_data['media_files']['streaming'][idx] = media_def
-                        media_def['segment_info'] = get_download_url(s3, media_def['segment_info'], presigned)
-                        response_data['media_files']['streaming'][idx] = media_def
-                if 'audio' in response_data['media_files']:
-                    for idx, media_def in enumerate(response_data['media_files']['audio']):
-                        media_def['path'] = get_download_url(s3, media_def['path'], presigned)
-                        response_data['media_files']['audio'][idx] = media_def
+            response_data = _presign(s3, presigned, response_data)
         return response_data
 
     @transaction.atomic
     def _patch(self, params):
         """ Update individual media.
-
-            Updates to `media_files` (video only) may append video definitions, but 
-            cannot replace or delete them. To delete media, the DELETE method must
-            be used.
 
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
