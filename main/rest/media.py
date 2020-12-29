@@ -25,7 +25,7 @@ from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..notify import Notify
-from ..util import _download_file
+from ..download import download_file
 from ..s3 import s3_client
 from ..s3 import get_download_url
 
@@ -176,7 +176,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Download the file to specified path.
             media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
-            _download_file(url, media_path)
+            download_file(url, media_path)
 
             # Set media location in database.
             media_obj.file.name = os.path.relpath(media_path, settings.MEDIA_ROOT)
@@ -192,7 +192,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 image.save(thumb_path)
                 image.close()
             else:
-                _download_file(thumbnail_url, thumb_path)
+                download_file(thumbnail_url, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
                 image = Image.open(media_path)
                 media_obj.width, media_obj.height = image.size
@@ -232,11 +232,11 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)
             if thumbnail_url is not None:
                 thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-                _download_file(thumbnail_url, thumb_path)
+                download_file(thumbnail_url, thumb_path)
                 media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
             if thumbnail_gif_url is not None:
                 thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.gif')
-                _download_file(thumbnail_gif_url, thumb_gif_path)
+                download_file(thumbnail_gif_url, thumb_gif_path)
                 media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
             media_obj.save()
 
@@ -356,7 +356,7 @@ class MediaDetailAPI(BaseDetailView):
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = s3_client()
-            if 'media_files' in response_data:
+            if response_data.get('media_files') is not None:
                 if 'archival' in response_data['media_files']:
                     for idx, media_def in enumerate(response_data['media_files']['archival']):
                         media_def['path'] = get_download_url(s3, media_def['path'], presigned)
@@ -414,13 +414,13 @@ class MediaDetailAPI(BaseDetailView):
         if 'thumbnail_url' in params:
             # Save the thumbnail.
             save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
-            _download_file(params['thumbnail_url'], save_path)
+            download_file(params['thumbnail_url'], save_path)
             obj.thumbnail.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         if 'thumbnail_gif_url' in params:
             # Save the thumbnail gif.
             save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
-            _download_file(params['thumbnail_gif_url'], save_path)
+            download_file(params['thumbnail_gif_url'], save_path)
             obj.thumbnail_gif.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
 
         # Media definitions may be appended but not replaced or deleted.

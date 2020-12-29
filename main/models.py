@@ -42,7 +42,7 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
-from .util import _download_file
+from .download import download_file
 from .s3 import s3_client
 
 from collections import UserDict
@@ -334,7 +334,7 @@ class TemporaryFile(Model):
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         if is_upload:
-            _download_file(path, destination_fp)
+            download_file(path, destination_fp)
         else:
             shutil.copyfile(path, destination_fp)
 
