@@ -137,9 +137,6 @@ hpa:
   gunicornMinReplicas: 4
   gunicornMaxReplicas: 10
   gunicornCpuPercent: 50
-  tusdMinReplicas: 2
-  tusdMaxReplicas: 10
-  tusdCpuPercent: 50
 metallb:
   # A load balancer implementation is provided by AWS.
   enabled: false

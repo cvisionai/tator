@@ -1,10 +1,10 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
+CONTAINERS=postgis pgbouncer redis client packager gunicorn daphne nginx algorithm submitter pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
+IMAGES=python-bindings postgis-image client-image tator-lite wget-image curl-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -189,11 +189,6 @@ containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
 postgis-image:  containers/postgis/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
-
-.PHONY: tus-image
-tus-image: containers/tus/Dockerfile.gen
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION) -f $< containers || exit 255
-	docker push $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION)
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image

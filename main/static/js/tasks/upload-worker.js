@@ -1,8 +1,5 @@
 let window = self;
 
-// Import tus.
-importScripts("/static/js/tus.min.js");
-
 // Import sparkmd5.
 importScripts("/static/js/md5.min.js");
 
