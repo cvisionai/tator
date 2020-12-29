@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ._s3_client import _s3_client
+from ..s3 import s3_client
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class MediaUtil:
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
-            self._s3 = _s3_client()
+            self._s3 = s3_client()
             self._bucket_name = os.getenv('BUCKET_NAME')
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
             if segment_file.startswith('/'):

@@ -6,8 +6,8 @@ from urllib.parse import urlsplit, urlunsplit
 from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
+from ..s3 import s3_client
 
-from ._s3_client import _s3_client
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
 
@@ -54,7 +54,7 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         urls = []
-        s3 = _s3_client()
+        s3 = s3_client()
         upload_id = ''
         if num_parts == 1:
             # Generate a presigned upload url.

@@ -4,8 +4,8 @@ import boto3
 
 from ..models import Project
 from ..schema import UploadCompletionSchema
+from ..s3 import s3_client
 
-from ._s3_client import _s3_client
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -26,7 +26,7 @@ class UploadCompletionAPI(BaseListView):
         bucket_name = os.getenv('BUCKET_NAME')
 
         # Complete the upload.
-        s3 = _s3_client()
+        s3 = s3_client()
         response = s3.complete_multipart_upload(Bucket=bucket_name,
                                                 Key=key,
                                                 MultipartUpload={'Parts': parts},

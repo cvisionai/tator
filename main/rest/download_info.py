@@ -7,9 +7,9 @@ from rest_framework.exceptions import PermissionDenied
 
 from ..models import Project
 from ..schema import DownloadInfoSchema
+from ..s3 import s3_client
+from ..s3 import get_download_url
 
-from ._s3_client import _s3_client
-from ._s3_client import _get_download_url
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -28,7 +28,7 @@ class DownloadInfoAPI(BaseListView):
         keys = params['keys']
         expiration = params['expiration']
         project = params['project']
-        s3 = _s3_client()
+        s3 = s3_client()
         response_data = []
         for key in keys:
             if key.startswith('/'):
@@ -40,7 +40,7 @@ class DownloadInfoAPI(BaseListView):
                 if project != project_from_key:
                     raise PermissionDenied
                 # Generate presigned url.
-                url = _get_download_url(s3, key, expiration)
+                url = get_download_url(s3, key, expiration)
             response_data.append({'key': key, 'url': url})
         return response_data
 

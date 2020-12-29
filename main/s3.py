@@ -3,7 +3,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 
-def _s3_client():
+def s3_client():
     """ Returns an s3 client.
     """
     endpoint = os.getenv('OBJECT_STORAGE_HOST')
@@ -17,7 +17,7 @@ def _s3_client():
                       aws_secret_access_key=secret_key)
     return s3
 
-def _get_download_url(s3, path, expiration):
+def get_download_url(s3, path, expiration):
     if path.startswith('/'):
         url = path
     else:
