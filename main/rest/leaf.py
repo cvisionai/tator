@@ -136,6 +136,8 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
+        for val in required_fields.values():
+            val[0].pop('path', None) # Remove path since it is computed.
         attr_specs = [check_required_fields(required_fields[leaf['type']][0],
                                             required_fields[leaf['type']][2],
                                             leaf)
@@ -145,11 +147,20 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
         leaves = []
         create_buffer = []
         for leaf_spec, attrs in zip(leaf_specs, attr_specs):
+            parent = None
+            if 'parent' in leaf_spec:
+                if leaf_spec['parent'] is not None:
+                    parent = Leaf.objects.get(pk=leaf_spec['parent'])
+                    if parent.project.pk != params['project']:
+                        raise Exception(f"Specified parent ID is not in project {params['project']}")
             leaf = Leaf(project=project,
                         meta=metas[leaf_spec['type']],
                         attributes=attrs,
                         created_by=self.request.user,
-                        modified_by=self.request.user)
+                        modified_by=self.request.user,
+                        name=leaf_spec['name'],
+                        parent=parent)
+            leaf.path = leaf.computePath()
             create_buffer.append(leaf)
             if len(create_buffer) > 1000:
                 leaves += Leaf.objects.bulk_create(create_buffer)
@@ -186,7 +197,7 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
             qs = Leaf.objects.filter(pk__in=leaf_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
-            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully updated {len(leaf_ids)} leaves!'}
 
     def get_queryset(self):

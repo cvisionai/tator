@@ -539,6 +539,27 @@ class TextOverlay extends TatorElement {
     this._texts = [];
   }
 
+  // Toggles displaying the texts
+  display(showText)
+  {
+    for (let text of this._texts)
+    {
+      let div = text.element;
+      if (showText) {
+        div.style.display = "block";
+        for (let text of this._texts)
+        {
+          let div = text.element;
+          let x = text.x;
+          let y = text.y;
+          this._setPosition(x,y,div);
+        }
+      } else {
+        div.style.display = "none";
+      }
+    }
+  }
+
   // Resize the overlay to a given height/width
   resize(width,height)
   {
@@ -677,7 +698,9 @@ class AnnotationCanvas extends TatorElement
     this.overlayTextStyle =
       {"fontSize": "24pt",
        "fontWeight": "bold",
-       "color": "white"};
+       "color": "white",
+       "background": "rgba(0,0,0,0.33)"};
+    this._showTextOverlays = true;
 
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
@@ -1072,19 +1095,25 @@ class AnnotationCanvas extends TatorElement
     return this._domParents;
   }
 
-  setupResizeHandler(dims, numGridRows)
+  setupResizeHandler(dims, numGridRows, heightPadObject)
   {
+    if (heightPadObject == null) {
+      this.heightPadObject = {height: 175}; // Magic number here matching the header + footer
+    }
+    else {
+      this.heightPadObject = heightPadObject;
+    }
+
     const ratio=dims[0]/dims[1];
     var that = this;
     var resizeHandler = function()
     {
-      // 175 is a magic number here matching the header + footer
       var maxHeight;
       if (numGridRows) {
-         maxHeight = (window.innerHeight - 175) / numGridRows;
+         maxHeight = (window.innerHeight - that.heightPadObject.height) / numGridRows;
       }
       else {
-         maxHeight = window.innerHeight-175;
+         maxHeight = window.innerHeight - that.heightPadObject.height;
       }
       const maxWidth = maxHeight*ratio;
       that._canvas.style.maxHeight=`${maxHeight}px`;
@@ -1106,7 +1135,6 @@ class AnnotationCanvas extends TatorElement
                                    obj.style.maxWidth=`${maxWidth}px`;
                                  }
                                });
-
       that._textOverlay.resize(that.clientWidth, that.clientHeight);
     }
 
@@ -1562,7 +1590,14 @@ class AnnotationCanvas extends TatorElement
   {
     // fill is True if localization boxes should be filled.
     // False will make all box fills transparent.
-    this._fillBoxes = fill
+    this._fillBoxes = fill;
+  }
+
+  toggleTextOverlays(on)
+  {
+    // on is True if text overlays should be shown.
+    // Fill will make all text overlays disappear
+    this._textOverlay.display(on);
   }
 
   computeLocalizationColor(localization, meta)

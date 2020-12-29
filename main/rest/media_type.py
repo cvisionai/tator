@@ -9,6 +9,7 @@ from ..schema import MediaTypeDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
           'default_volume', 'visible', 'archive_config', 'streaming_config','overlay_config']
@@ -51,6 +52,9 @@ class MediaTypeListAPI(BaseListView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
+        if params['name'] in attribute_keywords:
+            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
+                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         obj = MediaType(**params)
         obj.save()
@@ -88,7 +92,6 @@ class MediaTypeDetailAPI(BaseDetailView):
         name = params.get('name', None)
         description = params.get('description', None)
         file_format = params.get('file_format', None)
-        keep_original = params.get('keep_original', None)
         archive_config = params.get('archive_config', None)
         streaming_config = params.get('streaming_config', None)
         overlay_config = params.get('overlay_config', None)
@@ -100,8 +103,6 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.description = description
         if file_format is not None:
             obj.file_format = file_format
-        if keep_original is not None:
-            obj.keep_original = keep_original
         if archive_config is not None:
             obj.archive_config = archive_config
         if streaming_config is not None:

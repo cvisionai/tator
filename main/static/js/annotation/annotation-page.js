@@ -36,6 +36,9 @@ class AnnotationPage extends TatorPage {
     this._versionDialog = document.createElement("version-dialog");
     this._main.appendChild(this._versionDialog);
 
+    this._bookmarkDialog = document.createElement("name-dialog");
+    this._main.appendChild(this._bookmarkDialog);
+
     this._sidebar = document.createElement("annotation-sidebar");
     this._main.appendChild(this._sidebar);
 
@@ -62,6 +65,11 @@ class AnnotationPage extends TatorPage {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
       Utilities.warningAlert("System error detected","#ff3e1d");
+    });
+
+    this._settings._bookmark.addEventListener("click", () => {
+      this._bookmarkDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
   }
 
@@ -92,6 +100,7 @@ class AnnotationPage extends TatorPage {
       case "project-id":
         this._settings.setAttribute("project-id", newValue);
         this._undo.setAttribute("project-id", newValue);
+        this._updateLastVisitedBookmark();
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
@@ -266,6 +275,7 @@ class AnnotationPage extends TatorPage {
         const haveVersion = searchParams.has("version");
         const haveLock = searchParams.has("lock");
         const haveFillBoxes = searchParams.has("fill_boxes");
+        const haveToggleText = searchParams.has("toggle_text");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -315,6 +325,16 @@ class AnnotationPage extends TatorPage {
           }
           canvas.toggleBoxFills(this._settings._fill_boxes.get_fill_boxes_status());
         }
+        if (haveToggleText) {
+          const toggle_text = Number(searchParams.get("toggle_text"));
+          if (toggle_text) {
+            this._settings._toggle_text.toggle = true;
+          }
+          else {
+            this._settings._toggle_text.toggle = false
+          }
+          canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
+        }
       }
     }
 
@@ -361,6 +381,11 @@ class AnnotationPage extends TatorPage {
 
     this._settings._fill_boxes.addEventListener("click", evt => {
       canvas.toggleBoxFills(this._settings._fill_boxes.get_fill_boxes_status());
+      canvas.refresh();
+    })
+
+    this._settings._toggle_text.addEventListener("click", evt => {
+      canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
       canvas.refresh();
     })
 
@@ -413,6 +438,29 @@ class AnnotationPage extends TatorPage {
     this._versionButton.addEventListener("click", () => {
       this._versionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
+    });
+
+    this._bookmarkDialog.addEventListener("close", evt => {
+      if (this._bookmarkDialog._confirm) {
+        const searchParams = new URLSearchParams(window.location.search);
+        let uri = window.location.pathname;
+        uri += "?" + this._settings._queryParams(searchParams).toString();
+        const name = this._bookmarkDialog._input.value;
+        fetch("/rest/Bookmarks/" + this.getAttribute("project-id"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: name,
+            uri: uri,
+          }),
+        });
+      }
+      this.removeAttribute("has-open-modal", "");
     });
   }
 
@@ -502,10 +550,6 @@ class AnnotationPage extends TatorPage {
 
         var dataTypes = localizationTypes.concat(stateTypes)
 
-        if (block_signals) {
-          dataTypes = localizationTypes;
-        }
-
         // Replace the data type IDs so they are guaranteed to be unique.
         for (let [idx,dataType] of dataTypes.entries()) {
           dataType.id = dataType.dtype + "_" + dataType.id;
@@ -564,7 +608,7 @@ class AnnotationPage extends TatorPage {
 
         // For states specifically, if we are using the multi-view, we will
         // create the state across all media
-        var stateMediaIds = {};
+        var stateMediaIds;
         if (this._player.mediaType.dtype == "multi") {
           stateMediaIds = this._mediaIds;
         }
@@ -1193,6 +1237,49 @@ class AnnotationPage extends TatorPage {
     this._player.permission = permission;
     this._browser.permission = permission;
     this._sidebar.permission = permission;
+  }
+
+  _updateLastVisitedBookmark() {
+    const uri = `${window.location.pathname}${window.location.search}`;
+    const name = "Last visited";
+    // Get the last visited, if it exists.
+    fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.length == 0) {
+        fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({name: name, uri: uri}),
+        });
+      } else {
+        const id = data[0].id;
+        fetch(`/rest/Bookmark/${id}`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({name: name, uri: uri}),
+        });
+      }
+    });
+      
   }
 }
 

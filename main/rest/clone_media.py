@@ -42,6 +42,9 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
     def _post(self, params):
         dest = params['dest_project']
 
+        # Make sure destination path exists.
+        os.makedirs(os.path.join('/media', str(dest)), exist_ok=True)
+
         # Retrieve media that will be cloned.
         use_es = self.validate_attribute_filter(params)
         response_data = []

@@ -99,6 +99,7 @@ nodeGroups:
   - name: ng-gpu-spot
     minSize: 0
     maxSize: 100
+    ami: ami-0336518103b040cd0
     desiredCapacity: 0
     instancesDistribution:
       instanceTypes: ["g4dn.2xlarge"] 

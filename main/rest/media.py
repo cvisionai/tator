@@ -27,6 +27,8 @@ from ..schema import parse
 from ..notify import Notify
 from ..uploads import download_uploaded_file
 from ..uploads import get_destination_path
+from ._util import computeRequiredFields
+from ._util import check_required_fields
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -94,6 +96,12 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         if gid is not None:
             gid = str(gid)
 
+        # Make sure paths exist for this project.
+        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
+        os.makedirs(project_dir, exist_ok=True)
+        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
+        os.makedirs(raw_project_dir, exist_ok=True)
+
         # If section does not exist and is not an empty string, create a section.
         tator_user_sections = ""
         if section:
@@ -127,9 +135,20 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             if media_type.project.pk != project:
                 raise Exception('Media type is not part of project')
 
-        attributes={'tator_user_sections': tator_user_sections}
-        if new_attributes:
-            attributes.update(new_attributes)
+        # Compute the required fields for posting a media object
+        # of this type
+        required_fields = computeRequiredFields(media_type)
+
+        # Apply user-supplied attributes and finally fill in
+        # defaults and validate
+        attributes = check_required_fields([], # Ignore top-level object
+                                           required_fields[2],
+                                           new_attributes if new_attributes else {})
+
+        # Set the tator_user_section special attribute, will get
+        # dropped if done prior to check_required_fields.
+        attributes.update({'tator_user_sections': tator_user_sections})
+
         if media_type.dtype == 'image':
             # Get image only parameters.
             url = params['url']
@@ -139,10 +158,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             upload_uid = url.split('/')[-1]
             media_uid = str(uuid1())
             ext = os.path.splitext(name)[1]
-            project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
-            os.makedirs(project_dir, exist_ok=True)
-            raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
-            os.makedirs(raw_project_dir, exist_ok=True)
             thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
 
             # Create the media object.
@@ -228,7 +243,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                    f"{name} on project {media_type.project.name}")
             response = {'message': msg, 'id': media_obj.id}
             logger.info(msg)
-            Notify.notify_admin_msg(msg)
 
         return response
 
@@ -306,7 +320,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             qs = Media.objects.filter(pk__in=media_ids)
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
-            TatorSearch().update(self.kwargs['project'], query, new_attrs)
+            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully patched {count} medias!'}
         
 

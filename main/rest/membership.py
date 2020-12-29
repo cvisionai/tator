@@ -33,7 +33,19 @@ class MembershipListAPI(BaseListView):
         project = params['project']
         user = params['user']
         permission = params['permission']
-        
+        if permission == 'View Only':
+            permission = 'r'
+        elif permission == 'Can Edit':
+            permission = 'w'
+        elif permission == 'Can Transfer':
+            permission = 't'
+        elif permission == 'Can Execute':
+            permission = 'x'
+        elif permission == 'Full Control':
+            permission = 'a'
+        else:
+            raise ValueError(f"Permission must have one of the following values: View Only, "
+                              "Can Edit, Can Transfer, Can Execute, Full Control.")
         project = Project.objects.get(pk=project)
         user = User.objects.get(pk=user) 
         membership = Membership.objects.create(
@@ -71,7 +83,7 @@ class MembershipDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        membership = Membership.objects.get(pk=params['id']) 
+        membership = Membership.objects.select_for_update().get(pk=params['id']) 
         if 'permission' in params:
             membership.permission = params['permission']
         membership.save()

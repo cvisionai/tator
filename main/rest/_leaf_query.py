@@ -8,10 +8,11 @@ from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-def get_leaf_queryset(query_params):
+def get_leaf_queryset(query_params, dry_run=False):
     """ TODO: add documentation for this """
 
     # Get parameters.
+    leaf_id = query_params.get('leaf_id', None)
     project = query_params['project']
     filter_type = query_params.get('type', None)
     start = query_params.get('start', None)
@@ -22,6 +23,10 @@ def get_leaf_queryset(query_params):
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
     bools = [{'match': {'_dtype': 'leaf'}}]
+
+    if leaf_id is not None:
+        ids = [f'leaf_{id_}' for id_ in leaf_id]
+        bools.append({'ids': {'values': ids}})
 
     if filter_type is not None:
         bools.append({'match': {'_meta': {'query': int(filter_type)}}})
@@ -94,6 +99,15 @@ def get_leaf_queryset(query_params):
                         else:
                             raise Exception("Invalid value for attribute_null operation, must"
                                             " be <field>::<value> where <value> is true or false.")
+    if 'name' in query_params:
+        bools.append({'match': {'tator_treeleaf_name': query_params['name']}})
+
+    if 'depth' in query_params:
+        # Depth 0 corresponds to root node, but ltree thinks root node is depth 2, so do range
+        # query for depth + 2.
+        bools.append({'range': {'_treeleaf_depth': {'lt': query_params['depth'] + 3,
+                                                    'gt': query_params['depth'] + 1}}})
+
     attr_query['filter'] += bools
 
     for key in ['must_not', 'filter']:
@@ -104,6 +118,9 @@ def get_leaf_queryset(query_params):
     if search is not None:
         search_query = {'query_string': {'query': search}}
         query['query']['bool']['filter'].append(search_query)
+
+    if dry_run:
+        return [], [], query
 
     leaf_ids, leaf_count = TatorSearch().search(project, query)
     return leaf_ids, leaf_count, query

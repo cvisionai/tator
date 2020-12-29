@@ -1093,7 +1093,7 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows)
+  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows, heightPadObject)
   {
     this.mediaInfo = videoObject;
     if (mediaType)
@@ -1237,7 +1237,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._draw.resizeViewport(dims[0], dims[1]);
     if (resizeHandler)
     {
-      this.setupResizeHandler(dims, numGridRows);
+      this.setupResizeHandler(dims, numGridRows, heightPadObject);
     }
     // On load seek to frame 0
     return promise;

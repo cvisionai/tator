@@ -60,6 +60,14 @@ urlpatterns += [
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
+        'rest/Affiliations/<int:organization>',
+        AffiliationListAPI.as_view(),
+    ),
+    path(
+        'rest/Affiliation/<int:id>',
+        AffiliationDetailAPI.as_view(),
+    ),
+    path(
         'rest/AlgorithmLaunch/<int:project>',
         AlgorithmLaunchAPI.as_view(),
     ),
@@ -83,6 +91,18 @@ urlpatterns += [
     path(
         'rest/Analysis/<int:id>',
         AnalysisDetailAPI.as_view(),
+    ),
+    path(
+        'rest/AttributeType/<int:id>',
+        AttributeTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/Bookmarks/<int:project>',
+        BookmarkListAPI.as_view(),
+    ),
+    path(
+        'rest/Bookmark/<int:id>',
+        BookmarkDetailAPI.as_view(),
     ),
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
@@ -119,6 +139,10 @@ urlpatterns += [
     path(
         'rest/Leaf/<int:id>',
         LeafDetailAPI.as_view(),
+    ),
+    path(
+        'rest/LeafCount/<int:project>',
+        LeafCountAPI.as_view(),
     ),
     path(
         'rest/LeafTypes/<int:project>',
@@ -209,6 +233,14 @@ urlpatterns += [
         NotifyAPI.as_view(),
     ),
     path(
+        'rest/Organizations',
+        OrganizationListAPI.as_view(),
+    ),
+    path(
+        'rest/Organization/<int:id>',
+        OrganizationDetailAPI.as_view(),
+    ),
+    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),
@@ -275,6 +307,10 @@ urlpatterns += [
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
+    ),
+    path(
+        'rest/Users',
+        UserListAPI.as_view(),
     ),
     path(
         'rest/User/GetCurrent',

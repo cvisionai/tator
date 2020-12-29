@@ -7,12 +7,13 @@ class AnnotationPlayer extends TatorElement {
     this._shadow.appendChild(playerDiv);
 
     this._video = document.createElement("video-canvas");
-      this._video.domParents.push({"object":this});
+    this._video.domParents.push({"object":this});
     playerDiv.appendChild(this._video);
 
     const div = document.createElement("div");
     div.setAttribute("class", "video__controls d-flex flex-items-center flex-justify-between px-4");
     playerDiv.appendChild(div);
+    this._controls = div;
 
     const playButtons = document.createElement("div");
     playButtons.setAttribute("class", "d-flex flex-items-center");
@@ -48,7 +49,13 @@ class AnnotationPlayer extends TatorElement {
     this._totalTime.textContent = "/ 0:00";
     timeDiv.appendChild(this._totalTime);
 
+    this._timelineMore = document.createElement("entity-more");
+    this._timelineMore.style.display = "none";
+    timelineDiv.appendChild(this._timelineMore);
+    this._displayTimelineLabels = false;
+
     var outerDiv = document.createElement("div");
+    outerDiv.setAttribute("class", "py-4");
     outerDiv.style.width="100%";
     var seekDiv = document.createElement("div");
     this._slider = document.createElement("seek-bar");
@@ -94,12 +101,37 @@ class AnnotationPlayer extends TatorElement {
     this._lastScrub = Date.now();
     this._rate = 1;
 
+     // Magic number matching standard header + footer
+     // #TODO This should be re-thought and more flexible initially
+    this._videoHeightPadObject = {height: 175};
+    this._headerFooterPad = 100; // Another magic number based on the header and padding below controls footer
+
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
     if (searchParams.has("quality"))
     {
       this._quality = Number(searchParams.get("quality"));
     }
+
+    this._timelineMore.addEventListener("click", () => {
+      this._displayTimelineLabels = !this._displayTimelineLabels;
+      this._timelineAttrRange.showLabels = this._displayTimelineLabels;
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    this._timelineAttrRange.addEventListener("multiCanvas", evt => {
+      if (evt.detail.active) {
+        this._timelineMore.style.display = "block";
+      }
+      else {
+        this._timelineMore.style.display = "none";
+      }
+
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
+    });
+
     this._slider.addEventListener("input", evt => {
       // Along allow a scrub display as the user is going
       // slow
@@ -248,7 +280,7 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    this._video.loadFromVideoObject(val, this.mediaType, this._quality)
+    this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject)
       .then(() => {
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
@@ -409,6 +441,10 @@ class AnnotationPlayer extends TatorElement {
 
   toggleBoxFills(fill) {
     this._video.toggleBoxFills(fill);
+  }
+
+  toggleTextOverlays(on) {
+    this._video.toggleTextOverlays(on);
   }
 
   safeMode() {

@@ -71,6 +71,7 @@ attribute_type_properties = {
                        'Create a text area string if "long_string" is combined with "string" dtype. '
                        '"start_frame" and "end_frame" used in conjunction with "attr_style_range" interpolation. '
                        '"start_frame_check and "end_frame_check" are used in conjunction with "attr_style_range" interpolation. '
+                       '"range_set and in_video_check" is used in conjunction with "attr_style_range" interpolation. '
                        'When associated with a bool, these checks will result in Tator GUI changes with the corresponding start_frame and end_frame attributes.',
         'type': 'string',
     },
@@ -81,3 +82,45 @@ attribute_type = {
     'properties': attribute_type_properties,
 }
 
+attribute_addition = {
+    "type": "object",
+    "description": "Addition of an attribute to a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "addition": {'$ref': '#/components/schemas/AttributeType'},
+    },
+}
+
+attribute_rename = {
+    "type": "object",
+    "description": "Renames an attribute of a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "old_attribute_type_name": {
+            "type": "string",
+            "description": "The attribute to rename.",
+        },
+        "new_attribute_type": {'$ref': '#/components/schemas/AttributeType'},
+    },
+}
+
+attribute_deletion = {
+    "type": "object",
+    "description": "Deletes an existing attribute from a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "attribute_to_delete": {
+            "type": "string",
+            "description": "The attribute to delete.",
+        },
+    },
+}

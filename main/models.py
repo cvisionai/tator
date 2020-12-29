@@ -152,7 +152,6 @@ class User(AbstractUser):
     cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
-    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
@@ -163,9 +162,21 @@ class User(AbstractUser):
         else:
             return "---"
 
+class Affiliation(Model):
+    """Stores a user and their permissions in an organization.
+    """
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+    permission = CharField(max_length=16,
+                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
+                           default='Member')
+    def __str__(self):
+        return f'{self.user} | {self.organization}'
+
 class Project(Model):
     name = CharField(max_length=128)
     creator = ForeignKey(User, on_delete=PROTECT, related_name='creator')
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     created = DateTimeField(auto_now_add=True)
     size = BigIntegerField(default=0)
     """Size of all media in project in bytes.
@@ -173,6 +184,10 @@ class Project(Model):
     num_files = IntegerField(default=0)
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
+    attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
+    """ Mapping between attribute type names and UUIDs. Used internally for 
+        maintaining elasticsearch field aliases.
+    """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
     def user_permission(self, user_id):
@@ -300,7 +315,7 @@ class TemporaryFile(Model):
     """ User who created the temporary file """
     path = FilePathField(path=settings.MEDIA_ROOT, null=True, blank=True)
     """ Path to file on storage """
-    lookup = SlugField(max_length=32)
+    lookup = SlugField(max_length=256)
     """ unique lookup (md5sum of something useful) """
     created_datetime = DateTimeField()
     """ Time that the file was created """
@@ -359,7 +374,6 @@ class MediaType(Model):
                             null=True,
                             blank=True,
                             default=None)
-    keep_original = BooleanField(default=True, null=True, blank=True)
     default_volume = IntegerField(default=0)
     """ Default Volume for Videos (default is muted) """
     attribute_types = JSONField(default=list, null=True, blank=True)
@@ -1010,6 +1024,14 @@ class Favorite(Model):
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
+
+class Bookmark(Model):
+    """ Stores a link saved by a user.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    name = CharField(max_length=128)
+    uri = CharField(max_length=1024)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

@@ -8,6 +8,7 @@ import functools
 import time
 from uuid import uuid1
 from math import sin, cos, sqrt, atan2, radians
+import re
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
@@ -21,12 +22,13 @@ from dateutil.parser import parse as dateutil_parse
 from .models import *
 
 from .search import TatorSearch
+from .search import ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)
 
 def create_test_user():
     return User.objects.create(
-        username="jsnow",
+        username=random.choices(string.ascii_lowercase, k=10),
         password="jsnow",
         first_name="Jon",
         last_name="Snow",
@@ -35,10 +37,23 @@ def create_test_user():
         initials="JAS",
     )
 
-def create_test_project(user):
+def create_test_organization():
+    return Organization.objects.create(
+        name="my_org",
+    )
+
+def create_test_affiliation(user, organization):
+    return Affiliation.objects.create(
+        user=user,
+        organization=organization,
+        permission='Admin',
+    )
+
+def create_test_project(user, organization=None):
     return Project.objects.create(
         name="asdf",
         creator=user,
+        organization=organization,
     )
 
 def create_test_membership(user, project):
@@ -87,6 +102,9 @@ def create_test_section(name, project):
 def create_test_favorite(name, project, user, meta):
     return Favorite.objects.create(name=name, project=project, user=user,
                                    meta=meta, values={})
+
+def create_test_bookmark(name, project, user):
+    return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
 
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
@@ -142,7 +160,13 @@ def create_test_box(user, entity_type, project, media, frame):
         width=w,
         height=h,
     )
-        
+
+def create_test_box_with_attributes(user, entity_type, project, media, frame, attributes):
+    test_box = create_test_box(user, entity_type, project, media, frame)
+    test_box.attributes.update(attributes)
+    test_box.save()
+    return test_box
+
 def create_test_line(user, entity_type, project, media, frame):
     x0 = random.uniform(0.0, float(media.width))
     y0 = random.uniform(0.0, float(media.height))
@@ -156,7 +180,7 @@ def create_test_line(user, entity_type, project, media, frame):
         frame=frame,
         x=x0, y=y0, u=(x1 - x0), v=(y1 - y0),
     )
-        
+
 def create_test_dot(user, entity_type, project, media, frame):
     x = random.uniform(0.0, float(media.width))
     y = random.uniform(0.0, float(media.height))
@@ -177,7 +201,7 @@ def create_test_leaf(name, entity_type, project):
         project=project,
         path=''.join(random.choices(string.ascii_lowercase, k=10)),
     )
-        
+
 def create_test_attribute_types():
     """Create one of each attribute type.
     """
@@ -211,6 +235,7 @@ def create_test_attribute_types():
             name='String Test',
             dtype='string',
             default='asdf_default',
+            style='long_string',
         ),
         dict(
             name='Datetime Test',
@@ -231,6 +256,9 @@ def create_test_version(name, description, number, project, media):
         number=number,
         project=project,
     )
+
+def random_string(length):
+    return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
 def random_datetime(start, end):
     """Generate a random datetime between `start` and `end`"""
@@ -260,6 +288,11 @@ permission_levels = [
     Permission.CAN_TRANSFER,
     Permission.CAN_EXECUTE,
     Permission.FULL_CONTROL
+]
+
+affiliation_levels = [
+    'Member',
+    'Admin',
 ]
 
 class DefaultCreateTestMixin:
@@ -458,6 +491,88 @@ class PermissionDetailMembershipTestMixin:
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
+class PermissionListAffiliationTestMixin:
+    def test_list_not_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f'/rest/{self.list_uri}/{self.organization.pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_list_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.permission = 'Member'
+        affiliation.save()
+        url = f'/rest/{self.list_uri}/{self.organization.pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        affiliation.permission = 'Admin'
+        affiliation.save()
+
+class PermissionDetailAffiliationTestMixin:
+    def test_detail_not_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.get_organization(), self.user)
+        affiliation.delete()
+        url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_detail_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.get_organization(), self.user)
+        affiliation.permission = 'Member'
+        affiliation.save()
+        url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
+        if hasattr(self, 'entity_type'):
+            url += f'?type={self.entity_type.pk}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        affiliation.permission = 'Admin'
+        affiliation.save()
+
+    def test_detail_patch_permissions(self):
+        permission_index = affiliation_levels.index(self.edit_permission)
+        for index, level in enumerate(affiliation_levels):
+            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[0]
+            obj.permission = level
+            obj.save()
+            del obj
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.patch(
+                f'/rest/{self.detail_uri}/{self.entities[0].pk}',
+                self.patch_json,
+                format='json')
+            self.assertEqual(response.status_code, expected_status)
+
+    def test_detail_delete_permissions(self):
+        permission_index = affiliation_levels.index(self.edit_permission)
+        for index, level in enumerate(affiliation_levels):
+            obj = Affiliation.objects.filter(organization=self.get_organization(), user=self.user)[0]
+            obj.permission = level
+            obj.save()
+            del obj
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            test_val = random.random() > 0.5
+            response = self.client.delete(
+                f'/rest/{self.detail_uri}/{self.entities[0].pk}',
+                format='json')
+            self.assertEqual(response.status_code, expected_status)
+            if expected_status == status.HTTP_200_OK:
+                del self.entities[0]
+
 class AttributeMediaTestMixin:
     def test_media_with_attr(self):
         response = self.client.get(
@@ -474,7 +589,7 @@ class AttributeTestMixin:
         self.assertEqual(len(response.data), len(self.entities))
         this_ids = [e.pk for e in self.entities]
         rest_ids = [e['id'] for e in response.data]
-        for this_id, rest_id in zip(sorted(this_ids), sorted(rest_ids)):    
+        for this_id, rest_id in zip(sorted(this_ids), sorted(rest_ids)):
             self.assertEqual(this_id, rest_id)
 
     def test_multiple_attribute(self):
@@ -587,7 +702,7 @@ class AttributeTestMixin:
             format='json'
         )
         self.assertEqual(len(response.data), 0)
-    
+
     def test_bool_attr(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
         # Test setting an invalid bool
@@ -817,7 +932,7 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK) 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         delta_dt = datetime.timedelta(days=365)
         for lbound, ubound in [
                 (start_dt, end_dt),
@@ -946,7 +1061,6 @@ class ProjectDeleteTestCase(APITestCase):
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1034,7 +1148,6 @@ class VideoTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1106,7 +1219,6 @@ class LocalizationBoxTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="boxes",
@@ -1170,7 +1282,6 @@ class LocalizationLineTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="lines",
@@ -1234,7 +1345,6 @@ class LocalizationDotTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = LocalizationType.objects.create(
             name="dots",
@@ -1297,7 +1407,6 @@ class StateTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.entity_type = StateType.objects.create(
             name="states",
@@ -1384,7 +1493,7 @@ class LeafTestCase(
             'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'Geoposition Test': [0.0, 0.0],
         }]
-        self.edit_permission = Permission.FULL_CONTROL 
+        self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
         TatorSearch().refresh(self.project.pk)
 
@@ -1431,7 +1540,6 @@ class StateTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             StateType.objects.create(
@@ -1460,7 +1568,7 @@ class StateTypeTestCase(
 
     def tearDown(self):
         self.project.delete()
-        
+
 class MediaTypeTestCase(
         APITestCase,
         PermissionCreateTestMixin,
@@ -1477,7 +1585,6 @@ class MediaTypeTestCase(
         self.entities = [
             MediaType.objects.create(
                 name="videos",
-                keep_original=True,
                 project=self.project,
                 attribute_types=create_test_attribute_types(),
             ),
@@ -1493,7 +1600,6 @@ class MediaTypeTestCase(
         }
         self.create_json = {
             'name': 'videos',
-            'keep_original': True,
             'dtype': 'video',
             'attribute_types': create_test_attribute_types(),
         }
@@ -1515,7 +1621,6 @@ class LocalizationTypeTestCase(
         self.media_type = MediaType.objects.create(
             name="video",
             project=self.project,
-            keep_original=False,
         )
         self.entities = [
             LocalizationType.objects.create(
@@ -1580,6 +1685,8 @@ class ProjectTestCase(APITestCase):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
         self.entities = [
             create_test_project(self.user)
             for _ in range(random.randint(6, 10))
@@ -1596,13 +1703,27 @@ class ProjectTestCase(APITestCase):
         self.create_json = {
             'name': 'asdfasd',
             'summary': 'asdfa summary',
+            'organization': self.organization.pk,
         }
         self.edit_permission = Permission.FULL_CONTROL
 
-    def test_create(self):
+    def test_create_no_affiliation(self):
         endpoint = f'/rest/{self.list_uri}'
+        self.affiliation.delete()
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.affiliation.save()
+
+    def test_create_permissions(self):
+        endpoint = f'/rest/{self.list_uri}'
+        permission_index = affiliation_levels.index('Admin')
+        for index, level in enumerate(affiliation_levels):
+            self.affiliation.permission = level
+            self.affiliation.save()
+            expected_status = status.HTTP_201_CREATED if index >= permission_index \
+                              else status.HTTP_403_FORBIDDEN
+            response = self.client.post(endpoint, self.create_json, format='json')
+            self.assertEqual(response.status_code, expected_status)
 
     def test_detail_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
@@ -1661,7 +1782,7 @@ class ProjectTestCase(APITestCase):
     def tearDown(self):
         for project in self.entities:
             project.delete()
-        
+
 class TranscodeTestCase(
         APITestCase,
         PermissionCreateTestMixin):
@@ -1675,7 +1796,6 @@ class TranscodeTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.create_json = {
             'type': self.entity_type.pk,
@@ -1704,7 +1824,6 @@ class AnalysisCountTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
             attribute_types=create_test_attribute_types(),
         )
         self.entities = [
@@ -1742,7 +1861,6 @@ class VersionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.entities = [
@@ -1780,7 +1898,6 @@ class SectionTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.media = create_test_video(self.user, 'asdf', self.entity_type, self.project)
         self.entities = [create_test_section(f"Section {idx}", self.project)
@@ -1828,20 +1945,20 @@ class SectionTestCase(
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[0].pk)
-        
+
     def test_media_bools(self):
         url = f'/rest/Medias/{self.project.pk}?section={self.sections[1].pk}'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[1].pk)
-        
+
     def test_annotation_bools(self):
         url = f'/rest/Medias/{self.project.pk}?section={self.sections[2].pk}'
         response = self.client.get(url)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[2].pk)
-        
+
 class FavoriteTestCase(
         APITestCase,
         PermissionCreateTestMixin,
@@ -1857,7 +1974,6 @@ class FavoriteTestCase(
             name="video",
             dtype='video',
             project=self.project,
-            keep_original=False,
         )
         self.box_type = LocalizationType.objects.create(
             name="boxes",
@@ -1880,3 +1996,326 @@ class FavoriteTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
+    def tearDown(self):
+        self.project.delete()
+
+class BookmarkTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entities = [create_test_bookmark(f"Bookmark {idx}", self.project,
+                                               self.user)
+                         for idx in range(random.randint(6, 10))]
+        self.list_uri = 'Bookmarks'
+        self.detail_uri = 'Bookmark'
+        self.create_json = {
+            'name': 'My bookmark',
+            'uri': '/projects',
+        }
+        self.patch_json = {
+            'name': 'New name',
+        }
+        self.edit_permission = Permission.CAN_EDIT
+
+    def tearDown(self):
+        self.project.delete()
+
+class AffiliationTestCase(
+        APITestCase,
+        PermissionListAffiliationTestMixin,
+        PermissionDetailAffiliationTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entities = [create_test_affiliation(create_test_user(), self.organization) for _ in range(3)]
+        self.list_uri = 'Affiliations'
+        self.detail_uri = 'Affiliation'
+        self.patch_json = {
+            'permission': 'Member',
+        }
+        self.create_json = {
+            'user': self.user.pk,
+            'permission': 'Admin',
+        }
+        self.edit_permission = 'Admin'
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def get_organization(self):
+        return self.organization
+
+    def tearDown(self):
+        self.project.delete()
+
+class OrganizationTestCase(
+        APITestCase,
+        PermissionDetailAffiliationTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entities = [create_test_organization() for _ in range(3)]
+        affiliations = [create_test_affiliation(self.user, entity) for entity in self.entities]
+        self.list_uri = 'Organizations'
+        self.detail_uri = 'Organization'
+        self.create_json = {
+            'name': 'My org'
+        }
+        self.patch_json = {
+            'name': 'My new org'
+        }
+        self.edit_permission = 'Admin'
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def get_organization(self):
+        return self.entities[0]
+
+    def test_create(self):
+        endpoint = f'/rest/{self.list_uri}'
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def tearDown(self):
+        self.project.delete()
+
+
+class AttributeTestCase(APITestCase):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = LocalizationType.objects.create(
+            name="boxes",
+            dtype='box',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        media_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entity_type.media.add(media_entity_type)
+        self.media_entities = [
+            create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
+            for idx in range(random.randint(3, 10))
+        ]
+        self.entities = [
+            create_test_box_with_attributes(
+                self.user,
+                self.entity_type,
+                self.project,
+                random.choice(self.media_entities),
+                0,
+                {"Int Test": random.randint(-100, 100)},
+            )
+            for _ in range(random.randint(6, 10))
+        ]
+        self.list_uri = 'AttributeType'
+        self.edit_permission = Permission.FULL_CONTROL
+        self.patch_json = {
+            "entity_type": "LocalizationType",
+            "old_attribute_type_name": 'Int Test',
+            "new_attribute_type": {
+                "name": "Renamed Int Test",
+                "dtype": "float",
+            },
+        }
+        self.post_json = {
+            "entity_type": "LocalizationType",
+            "addition": {
+                "name": "added integer",
+                "dtype": "int",
+                "default": 0,
+                "minimum": -1,
+                "maximum": 1,
+            }
+        }
+        self.delete_json = {
+            "entity_type": "LocalizationType",
+            "attribute_to_delete": 'Int Test',
+        }
+        TatorSearch().refresh(self.project.pk)
+
+    def test_patch_permissions(self):
+        permission_index = permission_levels.index(self.edit_permission)
+        for index, level in enumerate(permission_levels):
+            self.membership.permission = level
+            self.membership.save()
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.patch(
+                f'/rest/{self.list_uri}/{self.entity_type.pk}',
+                self.patch_json,
+                format='json')
+            with self.subTest(i=index):
+                self.assertEqual(response.status_code, expected_status)
+        self.membership.permission = Permission.FULL_CONTROL
+        self.membership.save()
+
+    def test_post_permissions(self):
+        permission_index = permission_levels.index(self.edit_permission)
+        for index, level in enumerate(permission_levels):
+            self.membership.permission = level
+            self.membership.save()
+            if index >= permission_index:
+                expected_status = status.HTTP_201_CREATED
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.post(
+                f'/rest/{self.list_uri}/{self.entity_type.pk}',
+                self.post_json,
+                format='json')
+            with self.subTest(i=index):
+                self.assertEqual(response.status_code, expected_status)
+        self.membership.permission = Permission.FULL_CONTROL
+        self.membership.save()
+
+    def test_delete_permissions(self):
+        permission_index = permission_levels.index(self.edit_permission)
+        for index, level in enumerate(permission_levels):
+            self.membership.permission = level
+            self.membership.save()
+            if index >= permission_index:
+                expected_status = status.HTTP_200_OK
+            else:
+                expected_status = status.HTTP_403_FORBIDDEN
+            response = self.client.delete(
+                f'/rest/{self.list_uri}/{self.entity_type.pk}',
+                self.delete_json,
+                format='json')
+            with self.subTest(i=index):
+                self.assertEqual(response.status_code, expected_status)
+        self.membership.permission = Permission.FULL_CONTROL
+        self.membership.save()
+
+    def tearDown(self):
+        self.project.delete()
+
+
+class MutateAliasTestCase(APITestCase):
+    """Tests alias mutation in elasticsearch.
+    """
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.search = TatorSearch()
+
+    def _setup(self):
+        project = create_test_project(self.user)
+        entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=project,
+            attribute_types=create_test_attribute_types(),
+        )
+        entity = create_test_video(self.user, 'test.mp4', entity_type, project)
+        return project, entity_type, entity
+
+    def _convert_value(self, dtype, value):
+        if dtype == 'bool':
+            converted = str(bool(value)).lower()
+        elif dtype == 'int':
+            converted = int(value)
+            if converted < 0:
+                converted = f"\\{converted}"
+            else:
+                converted = str(converted)
+        elif dtype == 'float':
+            converted = f'[{float(value) - 0.0001} TO {float(value) + 0.0001}]'
+        elif dtype == 'datetime':
+            converted = f'\"{value.isoformat()}\"'
+        else:
+            converted = str(value)
+            if isinstance(value, bool):
+                converted = converted.lower()
+            elif isinstance(value, datetime.datetime):
+                converted = f'\"{value.isoformat()}\"'
+            elif isinstance(value, int):
+                converted = re.sub("^-", "\\-", converted)
+        return converted
+
+    def _test_mutation(self, from_dtype, to_dtype, attr_name, search_name, value):
+        project, entity_type, entity = self._setup()
+        if isinstance(value, datetime.datetime):
+            entity.attributes = {attr_name: value.isoformat()}
+        else:
+            entity.attributes = {attr_name: value}
+        entity.save()
+        time.sleep(1)
+        query_string = f'{search_name}:{self._convert_value(from_dtype, value)}'
+        ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
+        assert(len(ids) == 1)
+        entity_type = self.search.mutate_alias(
+            entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}
+        )
+        entity_type.save()
+        time.sleep(1)
+        query_string = f'{search_name}:{self._convert_value(to_dtype, value)}'
+        ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
+        assert(len(ids) == 1)
+        project.delete()
+        print(f"Conversion of {from_dtype} to {to_dtype} success!")
+
+    def test_bool_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['bool']):
+            value = random.choice([True, False])
+            with self.subTest(i=index):
+                self._test_mutation('bool', new_dtype, 'Bool Test', 'Bool\ Test', value)
+
+    def test_int_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['int']):
+            value = random.randint(-100, 100)
+            with self.subTest(i=index):
+                self._test_mutation('int', new_dtype, 'Int Test', 'Int\ Test', value)
+
+    def test_float_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['float']):
+            value = random.uniform(0, 1000)
+            with self.subTest(i=index):
+                self._test_mutation('float', new_dtype, 'Float Test', 'Float\ Test', value)
+
+    def test_enum_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['enum']):
+            value = random_string(10)
+            with self.subTest(i=index):
+                self._test_mutation('enum', new_dtype, 'Enum Test', 'Enum\ Test', value)
+
+    def test_string_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['string']):
+            value = random_string(10)
+            with self.subTest(i=index):
+                self._test_mutation('string', new_dtype, 'String Test', 'String\ Test', value)
+
+    def test_datetime_mutations(self):
+        for index, new_dtype in enumerate(ALLOWED_MUTATIONS['datetime']):
+            value = datetime.datetime.now()
+            with self.subTest(i=index):
+                self._test_mutation('datetime', new_dtype, 'Datetime Test', 'Datetime\ Test', value)
+
+    #TODO: write totally different test for geopos mutations (not supported in query string queries)

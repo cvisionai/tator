@@ -22,16 +22,6 @@ logger = logging.getLogger(__name__)
 
 class TranscodeAPI(BaseListView):
     """ Start a transcode.
-
-        Videos in Tator must be transcoded to a multi-resolution streaming format before they
-        can be viewed or annotated. This endpoint launches a transcode on raw uploaded video by
-        creating an Argo workflow. The workflow will download the uploaded raw video, transcode
-        it to the proper format, upload the transcoded video, and save the video using the 
-        `SaveVideo` endpoint. Optionally, depending on the `keep_original` field of the video 
-        type specified by the `type` parameter, the originally uploaded file may also be saved.
-        Note that the raw video must be uploaded first via tus, which is a separate mechanism 
-        from the REST API. This endpoint requires a group and run UUID associated with this 
-        upload.
     """
     schema = TranscodeSchema()
     permission_classes = [ProjectTransferPermission]
@@ -120,5 +110,4 @@ class TranscodeAPI(BaseListView):
 
         # Send notification that transcode started.
         logger.info(msg)
-        Notify.notify_admin_msg(msg)
         return response_data

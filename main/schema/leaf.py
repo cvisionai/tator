@@ -5,6 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_schema
 from ._message import message_with_id_list_schema
+from ._leaf_query import leaf_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 
 boilerplate = dedent("""\
@@ -138,30 +139,7 @@ class LeafListSchema(AutoSchema):
     def _get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PATCH', 'DELETE']:
-            params = [
-                {
-                    'name': 'ancestor',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Get descendents of a leaf element (inclusive), '
-                                   'by path (i.e. ITIS.Animalia).',
-                    'schema': {'type': 'string'},
-                },
-                {
-                    'name': 'type',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Unique integer identifying a leaf type.',
-                    'schema': {'type': 'integer'},
-                },
-                {
-                    'name': 'name',
-                    'in': 'query',
-                    'required': False,
-                    'description': 'Name of the leaf element.',
-                    'schema': {'type': 'string'},
-                },
-            ] + attribute_filter_parameter_schema
+            params = leaf_filter_parameter_schema + attribute_filter_parameter_schema
             # Remove search as it is not yet supported.
             params = [p for p in params if p['name'] != 'search']
         return params

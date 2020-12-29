@@ -12,6 +12,7 @@ from ..schema import StateTypeDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default', 'delete_child_localizations']
@@ -65,6 +66,9 @@ class StateTypeListAPI(BaseListView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
+        if params['name'] in attribute_keywords:
+            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
+                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
         obj = StateType(**params)

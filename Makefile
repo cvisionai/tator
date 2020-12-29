@@ -65,17 +65,14 @@ ecr_update:
 
 # Restore database from specified backup (base filename only)
 # Example:
-#   make clean
-#   make cluster-pvc
-#   make postgis
-#   make restore SQL_FILE=backup_to_use.sql
-#   make cluster
+#   make restore SQL_FILE=backup_to_use.sql DB_NAME=backup_db_name
 restore: check_restore
-	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -C -U django -d tator_online /backup/$(SQL_FILE) --jobs 8
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- createdb -U django $(DB_NAME) 
+	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- pg_restore -U django -d $(DB_NAME) /backup/$(SQL_FILE)
 
 .PHONY: check_restore
 check_restore:
-	@echo -n "This will replace database contents. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@echo -n "This will create a backup database and restore. Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
@@ -276,6 +273,7 @@ FILES = \
     components/canvas-ctxmenu.js \
     components/success-light.js \
     components/warning-light.js \
+    components/name-dialog.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
@@ -299,7 +297,6 @@ FILES = \
     project-detail/section-search.js \
     project-detail/section-upload.js \
     project-detail/big-download-form.js \
-    project-detail/new-section-dialog.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
     project-detail/delete-button.js \
@@ -325,7 +322,9 @@ FILES = \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \
+		annotation/toggle-text-button.js \
     annotation/media-capture-button.js \
+    annotation/bookmark-button.js \
     annotation/media-link-button.js \
     annotation/media-prev-button.js \
     annotation/media-next-button.js \

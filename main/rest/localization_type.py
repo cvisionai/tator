@@ -12,6 +12,7 @@ from ..schema import LocalizationTypeDetailSchema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'colorMap', 'line_width', 'visible', 'grouping_default']
@@ -59,8 +60,13 @@ class LocalizationTypeListAPI(BaseListView):
             shape, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
+        if params['name'] in attribute_keywords:
+            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
+                              "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
+        if 'color_map' in params:
+            params['colorMap'] = params.pop('color_map')
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)

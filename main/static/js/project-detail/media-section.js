@@ -249,6 +249,8 @@ class MediaSection extends TatorElement {
         })
         .then(response => response.json())
         .then(media => {
+          this._files.numMedia = this._paginator._numFiles;
+          this._files.startMediaIndex = this._start;
           this._files.cardInfo = media;
           this._reload.ready();
         });

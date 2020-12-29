@@ -13,6 +13,8 @@ from redis import Redis
 from ..models import Permission
 from ..models import Project
 from ..models import Membership
+from ..models import Organization
+from ..models import Affiliation
 from ..models import Algorithm
 from ..kube import TatorTranscode
 from ..kube import TatorAlgorithm
@@ -167,6 +169,23 @@ class UserPermission(BasePermission):
 
         return False
 
+class UserListPermission(BasePermission):
+    """ 1.) Reject all anonymous requests
+        2.) Allow any read-only requests
+    """
+    def has_permission(self, request, view):
+        if isinstance(request.user, AnonymousUser):
+            return False
+
+        if _for_schema_view(request, view):
+            return True
+
+        if request.method == 'GET':
+            # All users have read-only permission
+            return True
+
+        return False
+
 class ClonePermission(ProjectPermissionBase):
     """ Special permission that checks for transfer permission in two
         projects.
@@ -190,3 +209,75 @@ class ClonePermission(ProjectPermissionBase):
     def has_object_permission(self, request, view, obj):
         return False
     
+class OrganizationPermissionBase(BasePermission):
+    """Base class for requiring organization permissions.
+    """
+    def has_permission(self, request, view):
+        # Get the organization from the URL parameters
+        if 'organization' in view.kwargs:
+            organization_id = view.kwargs['organization']
+            organization = get_object_or_404(Organization, pk=int(organization_id))
+        elif 'id' in view.kwargs:
+            pk = view.kwargs['id']
+            obj = get_object_or_404(view.get_queryset(), pk=pk)
+            organization = self._organization_from_object(obj)
+            if organization is None:
+                raise Http404
+        else:
+            # If this is a request from schema view, show all endpoints.
+            return _for_schema_view(request, view)
+
+        return self._validate_organization(request, organization)
+
+    def has_object_permission(self, request, view, obj):
+        # Get the organization from the object
+        organization = self._organization_from_object(obj)
+        return self._validate_organization(request, organization)
+
+    def _organization_from_object(self, obj):
+        organization=None
+        if hasattr(obj, 'organization'):
+            organization = obj.organization
+        # Object is a organization
+        elif isinstance(obj, Organization):
+            organization = obj
+        return organization
+
+    def _validate_organization(self, request, organization):
+        granted = True
+
+        if isinstance(request.user, AnonymousUser):
+            granted = False
+        else:
+            # Find affiliation for this user and organization
+            affiliation = Affiliation.objects.filter(
+                user=request.user,
+                organization=organization
+            )
+
+            # If user is not part of organization, deny access
+            if affiliation.count() == 0:
+                granted = False
+            else:
+                # If user has insufficient permission, deny access
+                permission = affiliation[0].permission
+                insufficient = permission in self.insufficient_permissions
+                is_edit = request.method not in SAFE_METHODS
+                if is_edit and insufficient:
+                    granted = False
+        return granted
+
+class OrganizationMemberPermission(OrganizationPermissionBase):
+    """Checks whether a user has member access to an organization. This
+       is just to check whether a user is a member of an organization.
+    """
+    message = "Not a member of this organization."
+    insufficient_permissions = []
+
+class OrganizationAdminPermission(OrganizationPermissionBase):
+    """Checks whether a user has admin access to an organization. This
+       is just to check whether a user is a member of an organization.
+    """
+    message = "User does not have admin access to organization."
+    insufficient_permissions = ['Member']
+

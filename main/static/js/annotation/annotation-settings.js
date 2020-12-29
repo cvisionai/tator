@@ -12,6 +12,9 @@ class AnnotationSettings extends TatorElement {
     this._capture = document.createElement("media-capture-button");
     div.appendChild(this._capture);
 
+    this._bookmark = document.createElement("bookmark-button");
+    div.appendChild(this._bookmark);
+
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 
@@ -32,6 +35,9 @@ class AnnotationSettings extends TatorElement {
 
     this._fill_boxes = document.createElement("fill-boxes-button")
     div.appendChild(this._fill_boxes)
+
+    this._toggle_text = document.createElement("toggle-text-button")
+    div.appendChild(this._toggle_text)
 
     this._link.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -185,6 +191,11 @@ class AnnotationSettings extends TatorElement {
       params.set("fill_boxes", 1);
     } else {
       params.set("fill_boxes", 0);
+    }
+    if (this._toggle_text.current_state == "on") {
+      params.set("toggle_text", 1);
+    } else {
+      params.set("toggle_text", 0);
     }
     return params;
   }

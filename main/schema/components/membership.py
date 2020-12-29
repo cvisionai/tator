@@ -31,15 +31,12 @@ membership = {
             'type': 'integer',
             'description': 'Unique integer identifying a membership.',
         },
+        'user': membership_properties['user'],
         'username': {
             'description': 'Username for the membership.',
             'type': 'string',
         },
-        'permission': {
-            'description': 'User permission level for the project.',
-            'type': 'string',
-            'enum': ['view_only', 'can_edit', 'can_transfer', 'can_execute', 'full_control'],
-        },
+        'permission': membership_properties['permission'],
     },
 }
 

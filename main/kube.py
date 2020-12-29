@@ -6,11 +6,15 @@ import copy
 import tarfile
 import json
 import datetime
+import random
+import time
+import socket
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
 from kubernetes.client import CoreV1Api
 from kubernetes.client import CustomObjectsApi
+from kubernetes.client.rest import ApiException
 from kubernetes.config import load_incluster_config
 from urllib.parse import urljoin, urlsplit
 import yaml
@@ -23,11 +27,44 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 NUM_WORK_PACKETS=20
+MAX_SUBMIT_RETRIES = 10 # Max number of retries for argo workflow create.
+SUBMIT_RETRY_BACKOFF = 1 # Number of seconds to back off if workflow create fails.
 
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     PROTO = 'https://'
 else:
     PROTO = 'http://'
+
+def _determine_host_and_url(url, remote):
+    """ Determines host and url for transcode.
+    """
+    # Host is used for setting up api.
+    if remote:
+        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
+    else:
+        host = 'http://nginx-internal-svc'
+    # Determine if host should be replaced, either because none were given
+    # or given host is same as MAIN_HOST.
+    replace_host = False
+    parsed = urlsplit(url)
+    if parsed.netloc == '':
+        replace_host = True
+    else:
+        if os.getenv('MAIN_HOST') == parsed.netloc:
+            replace_host = True
+    # Replace host if it should be replaced.
+    headers = []
+    if replace_host:
+        url = urljoin(host, parsed.path)
+        headers = ['--header=Authorization: Token {{workflow.parameters.token}}',
+                   '--header=Upload-Uid: {{workflow.parameters.uid}}']
+    return host, url, headers
+
+def _select_storage_class():
+    """ Randomly selects a workflow storage class.
+    """
+    storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
+    return random.choice(storage_classes)
 
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
@@ -219,7 +256,7 @@ class TatorTranscode(JobManagerMixin):
                 'name': 'transcode-scratch',
             },
             'spec': {
-                'storageClassName': os.getenv('WORKFLOW_STORAGE_CLASS'),
+                'storageClassName': _select_storage_class(),
                 'accessModes': [ 'ReadWriteOnce' ],
                 'resources': {
                     'requests': {
@@ -235,44 +272,6 @@ class TatorTranscode(JobManagerMixin):
 
         # Define each task in the pipeline.
 
-        # Download task exports the human readable filename a
-        # workflow global to support the onExit handler
-        self.download_task = {
-            'name': 'download',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'inputs': {'parameters' : spell_out_params(['original',
-                                                        'url'])},
-            'container': {
-                'image': '{{workflow.parameters.wget_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['wget',],
-                'args': ['-O', '{{inputs.parameters.original}}', 
-                         '--header=Authorization: Token {{workflow.parameters.token}}',
-                         '--header=Upload-Uid: {{workflow.parameters.uid}}',
-                         '{{inputs.parameters.url}}'],
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '512Mi',
-                        'cpu': '500m',
-                    },
-                },
-            },
-        }
-
         # Deletes the remote TUS file
         self.delete_task = {
             'name': 'delete',
@@ -280,6 +279,7 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'inputs': {'parameters' : spell_out_params(['url'])},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.curl_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -287,8 +287,8 @@ class TatorTranscode(JobManagerMixin):
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
                 'resources': {
                     'limits': {
-                        'memory': '128Mi',
-                        'cpu': '500m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
@@ -312,6 +312,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -323,7 +324,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
+                        'memory': '4Gi',
                         'cpu': '1000m',
                     },
                 },
@@ -333,6 +334,7 @@ class TatorTranscode(JobManagerMixin):
         self.data_import = {
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -350,7 +352,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
+                        'memory': '4Gi',
                         'cpu': '1000m',
                     },
                 },
@@ -370,6 +372,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
                 'image': '{{workflow.parameters.lite_image}}',
@@ -393,8 +396,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '128Mi',
-                        'cpu': '100m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
@@ -419,6 +422,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
@@ -437,8 +441,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
-                        'cpu': '500m',
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -488,8 +492,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '4Gi',
-                        'cpu': os.getenv("TRANSCODER_CPU_LIMIT"),
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -527,8 +531,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '4Gi',
-                        'cpu': '1000m',
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -547,6 +551,7 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -570,12 +575,51 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '500Mi',
-                        'cpu': '1000m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
         }
+
+    def get_download_task(self, headers):
+        # Download task exports the human readable filename a
+        # workflow global to support the onExit handler
+        return {
+            'name': 'download',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'inputs': {'parameters' : [{'name': 'original'},
+                                       {'name': 'url'}]},
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.wget_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['wget',],
+                'args': ['-O', '{{inputs.parameters.original}}'] + headers + \
+                        ['{{inputs.parameters.url}}'],
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '1Gi',
+                        'cpu': '250m',
+                    },
+                },
+            },
+        }
+
 
     def get_unpack_and_transcode_tasks(self, paths, url):
         """ Generate a task object describing the dependencies of a transcode from tar"""
@@ -789,11 +833,7 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        if self.remote:
-            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
-        else:
-            host = 'http://nginx-internal-svc'
-            url = urljoin(host, urlsplit(url).path)
+        host, url, headers = _determine_host_and_url(url, self.remote)
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -838,7 +878,7 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
-                    self.download_task,
+                    self.get_download_task(headers),
                     self.delete_task,
                     self.create_media_task,
                     self.determine_transcode_task,
@@ -854,13 +894,22 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Create the workflow
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
 
     def start_transcode(self, project,
                         entity_type, token, url, name,
@@ -887,12 +936,7 @@ class TatorTranscode(JobManagerMixin):
             self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        
-        if self.remote:
-            host = f'{PROTO}{os.getenv("MAIN_HOST")}'
-        else:
-            host = 'http://nginx-internal-svc'
-            url = urljoin(host, urlsplit(url).path)
+        host, url, headers = _determine_host_and_url(url, self.remote)
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -936,7 +980,7 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
-                    self.download_task,
+                    self.get_download_task(headers),
                     self.create_media_task,
                     self.determine_transcode_task,
                     self.transcode_task,
@@ -997,13 +1041,6 @@ class TatorAlgorithm(JobManagerMixin):
         if alg.manifest:
             self.manifest = yaml.safe_load(alg.manifest.open(mode='r'))
 
-            if 'volumeClaimTemplates' in self.manifest['spec']:
-                for claim in self.manifest['spec']['volumeClaimTemplates']:
-                    storage_class_name = claim['spec'].get('storageClassName',None)
-                    if storage_class_name is None:
-                        claim['storageClassName'] = os.getenv('WORKFLOW_STORAGE_CLASS')
-                        logger.warning(f"Implicitly sc to pvc of Algo:{alg.pk}")
-
         # Save off the algorithm.
         self.alg = alg
 
@@ -1014,6 +1051,13 @@ class TatorAlgorithm(JobManagerMixin):
         """
         # Make a copy of the manifest from the database.
         manifest = copy.deepcopy(self.manifest)
+
+        # Update the storage class of the spec if executing locally.
+        if self.alg.cluster is None:
+            if 'volumeClaimTemplates' in manifest['spec']:
+                for claim in manifest['spec']['volumeClaimTemplates']:
+                    claim['spec']['storageClassName'] = _select_storage_class()
+                    logger.warning(f"Implicitly sc to pvc of Algo:{self.alg.pk}")
 
         # Add in workflow parameters.
         manifest['spec']['arguments'] = {'parameters': [
@@ -1072,13 +1116,22 @@ class TatorAlgorithm(JobManagerMixin):
             'media_ids': media_ids,
         }
 
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,

@@ -109,7 +109,7 @@ class ProjectDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/ProjectSpec'},
+                'schema': {'$ref': '#/components/schemas/ProjectUpdate'},
                 'example': {
                     'name': 'New name',
                     'summary': 'New summary',

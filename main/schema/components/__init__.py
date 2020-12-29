@@ -1,3 +1,6 @@
+from .affiliation import affiliation_spec
+from .affiliation import affiliation_update
+from .affiliation import affiliation
 from .algorithm_launch import algorithm_parameter
 from .algorithm_launch import algorithm_launch_spec
 from .algorithm_launch import algorithm_launch
@@ -7,9 +10,17 @@ from .algorithm import algorithm_manifest
 from .algorithm import algorithm_manifest_spec
 from .analysis import analysis_spec
 from .analysis import analysis
-from .attribute_type import autocomplete_service
-from .attribute_type import attribute_type
+from .attribute_type import (
+    autocomplete_service,
+    attribute_type,
+    attribute_addition,
+    attribute_rename,
+    attribute_deletion,
+)
 from .attribute_value import attribute_value
+from .bookmark import bookmark_spec
+from .bookmark import bookmark_update
+from .bookmark import bookmark
 from .clone_media import clone_media_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
@@ -43,7 +54,10 @@ from .membership import membership_update
 from .membership import membership
 from .move_video import move_video_spec
 from .notify import notify_spec
+from .organization import organization_spec
+from .organization import organization
 from .project import project_spec
+from .project import project_update
 from .project import project
 from .section import section_spec
 from .section import section
