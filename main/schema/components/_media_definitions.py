@@ -1,6 +1,6 @@
 audio_definition = {
     'type': 'object',
-    'required': ['codec'],
+    'required': ['path', 'codec'],
     'properties': {
         'path': {
             'type': 'string',
@@ -43,7 +43,7 @@ audio_definition = {
 
 video_definition = {
     'type': 'object',
-    'required': ['codec', 'resolution'],
+    'required': ['path', 'codec', 'resolution'],
     'properties': {
         'path': {
             'type': 'string',
@@ -100,7 +100,7 @@ video_definition = {
 
 image_definition = {
     'type': 'object',
-    'required': ['codec', 'resolution'],
+    'required': ['path', 'resolution'],
     'properties': {
         'path': {
             'type': 'string',
