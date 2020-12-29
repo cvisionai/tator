@@ -1,3 +1,5 @@
+import os
+
 import boto3
 
 from ..models import Project
@@ -29,7 +31,5 @@ class UploadCompletionAPI(BaseListView):
                                                 Key=key,
                                                 MultipartUpload={'Parts': parts},
                                                 UploadId=upload_id)
-        if response.status_code != 200:
-            raise Exception(f"Upload completion for {key} failed!")
         return {'message': f"Upload completion for {key} successful!"}
 
