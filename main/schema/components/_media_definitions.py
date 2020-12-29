@@ -98,6 +98,45 @@ video_definition = {
     },
 }
 
+image_definition = {
+    'type': 'object',
+    'required': ['codec', 'resolution'],
+    'properties': {
+        'path': {
+            'type': 'string',
+            'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
+        'resolution': {
+            'description': 'Resolution of the video in pixels (height, width).',
+            'type': 'array',
+            'minItems': 2,
+            'maxItems': 2,
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'host': {
+            'description': 'If supplied will use this instead of currently connected '
+                           'host, e.g. https://example.com',
+            'type': 'string',
+        },
+        'http_auth': {
+            'description': 'If specified will be used for HTTP authorization in '
+                           'request for media, i.e. "bearer <token>".',
+            'type': 'string',
+        },
+        'mime': {
+            'description': 'Example mime: "image/jpg".',
+            'type': 'string',
+        },
+    },
+}
+
 media_files = {
     'description': 'Object containing upload urls for the transcoded file and '
                    'corresponding `VideoDefinition`.',
@@ -106,6 +145,9 @@ media_files = {
         'archival': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
+        'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        'thumbnail': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        'thumbnail_gif': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         # Multi-stream definitions
         'ids': {'type': 'array',
                 'description': 'If multi-stream list of ids of sub-videos',
