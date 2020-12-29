@@ -181,32 +181,3 @@ current/completed workflows. You can use an ID from `argo list` to watch an in-p
 
 You can find all extant tokens at `<host>.tator.dev/admin`. These are useful for testing and using
 `tator-py`.
-
-# tator-py
-
-Included as a submodule of `tator`, this is the python interface to tator.
-
-## Building
-
-From the `tator` directory, run `make python-bindings` to build the wheel, using the local copy of
-`tator-py` that is a submodule of `tator`. The wheel can be found in
-`tator/scripts/packages/tator-py/dist` and can be upgraded by doing the following:
-
-```
-tator$ cd scripts/packages/tator-py/dist
-dist$ pip uninstall tator
-...
-dist$ pip install tator-0.7.0-py3-none-any.whl
-...
-```
-
-## Testing
-
-Tests live in `tator-py/tests` and are `pytest`s. If using the `tator-py` that is a submodule of
-`tator`, that lives in `tator/scripts/packages`. Running tests requires a host running `tator` and
-an API token for said host. You can find the API token at `<host>.tator.dev/admin`. The command to
-run tests is:
-
-```
-pytest -s --host <host>.tator.dev --token <your-token> --keep
-```
