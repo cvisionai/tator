@@ -45,16 +45,21 @@ Further guidance:
 
 1.) A ``dev/`` branch is a story of how a feature came to be. It should be a
     series of logical commits that make review and bisection possible.
+
 2.) ``dev/`` branches may be pushed to the repository. There is no expectation
     a ``dev/`` branch is stable and it can be deleted or force-pushed.
+
 3.) Commit messages are helpful commentary for initial review and later
     bisections.
-    a.) "Fixes #NNN" or "Closes #NNN" will automatically close the issue
+
+4.) "Fixes #NNN" or "Closes #NNN" will automatically close the issue
         when this commit is pushed to master. This can be on either the
         individual commit within a dev branch or the merge commit.
-    b.) "[migrate-required]" can be added to a commit that induces a database
+
+5.) "[migrate-required]" can be added to a commit that induces a database
         migration.
-4.) Merges, and pushes must be done in submodules prior to the top-level
+
+6.) Merges, and pushes must be done in submodules prior to the top-level
     project. This avoids the master branch pointing to an unknown commit in
     a submodule.
 
@@ -180,4 +185,4 @@ current/completed workflows. You can use an ID from `argo list` to watch an in-p
 ## Tokens
 
 You can find all extant tokens at `<host>.tator.dev/admin`. These are useful for testing and using
-`tator-py`.
+[tator-py](tator-py/api.html).
