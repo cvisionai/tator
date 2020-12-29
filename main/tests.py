@@ -2271,7 +2271,9 @@ class MutateAliasTestCase(APITestCase):
         query_string = f'{search_name}:{self._convert_value(from_dtype, value)}'
         ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
         assert(len(ids) == 1)
-        entity_type = self.search.mutate_alias(entity_type, attr_name, to_dtype)
+        entity_type = self.search.mutate_alias(
+            entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}
+        )
         entity_type.save()
         time.sleep(1)
         query_string = f'{search_name}:{self._convert_value(to_dtype, value)}'
