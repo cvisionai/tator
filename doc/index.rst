@@ -34,6 +34,7 @@ Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
    Remote Transcodes/Algorithms <setup_tator/remote.rst>
    Media Management <usage/media_management.rst>
    Using HTTPS <https.rst>
+   Developer Guidance <developer.md>
 
 Python API
 ++++++++++
