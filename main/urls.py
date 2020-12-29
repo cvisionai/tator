@@ -118,6 +118,12 @@ urlpatterns += [
     path('rest/GetClip/<int:id>',
          GetClipAPI.as_view(),
     ),
+    path('rest/ImageFiles/<int:id>',
+         ImageFileListAPI.as_view(),
+    ),
+    path('rest/ImageFile/<int:id>',
+         ImageFileDetailAPI.as_view(),
+    ),
     path(
         'rest/Jobs/<int:project>',
         JobListAPI.as_view(),

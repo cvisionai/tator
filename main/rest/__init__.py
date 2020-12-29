@@ -14,6 +14,8 @@ from .favorite import FavoriteListAPI
 from .favorite import FavoriteDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
+from .image_file import ImageFileListAPI
+from .image_file import ImageFileDetailAPI
 from .job import JobListAPI
 from .job import JobDetailAPI
 from .leaf import LeafSuggestionAPI

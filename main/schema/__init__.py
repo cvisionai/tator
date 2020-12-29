@@ -14,6 +14,8 @@ from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
+from .image_file import ImageFileListSchema
+from .image_file import ImageFileDetailSchema
 from .job import JobListSchema
 from .job import JobDetailSchema
 from .jwt import JwtGatewaySchema
