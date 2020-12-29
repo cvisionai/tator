@@ -105,8 +105,8 @@ class Upload {
     this.getUploadInfo()
     .then(info => this.numParts > 1 ? this.uploadMulti(info) : this.uploadSingle(info))
     .then(key => this.getDownloadInfo(key))
-    .then(url => this.createMedia(url))
-    .catch(error => this.handleError(error));
+    .then(url => this.createMedia(url));
+    //.catch(error => this.handleError(error));
   }
 
   // Returns promise resolving to upload.
@@ -126,22 +126,28 @@ class Upload {
 
   // Multipart upload.
   uploadMulti(info) {
-    let promise = new Promise();
+    let promise = new Promise(resolve => resolve(true));
     for (let idx=0; idx < this.numParts; idx++) {
       const startByte = this.chunkSize * idx;
       const stopByte = Math.min(startByte + this.chunkSize, this.file.size);
-      promise = promise.then(fetchRetry(info.urls[idx], {
+      promise = promise.then(() => {return fetchRetry(info.urls[idx], {
         method: "PUT",
         signal: this.controller.signal,
         credentials: "omit",
         body: this.file.slice(startByte, stopByte),
-      }))
-      .then(response => response.json())
-      .then(data => {
-        this.parts.push({etag: data.ETag, partnumber: idx});
+      });})
+      .then(response => {
+        this.parts.push({ETag: response.headers.get("ETag"), PartNumber: idx + 1});
+        return this.parts;
+      })
+      .then(parts => {
+        self.postMessage({command: "uploadProgress",
+                          percent: Math.floor(100 * idx / (this.numParts - 1)),
+                          filename: this.file.name});
+        return parts;
       });
     }
-    promise = promise.then(fetchRetry(`/rest/UploadCompletion/${this.projectId}`, {
+    promise = promise.then(parts => fetchRetry(`/rest/UploadCompletion/${this.projectId}`, {
       method: "POST",
       signal: this.controller.signal,
       credentials: "omit",
@@ -153,15 +159,10 @@ class Upload {
       body: JSON.stringify({
         key: info.key,
         upload_id: info.upload_id,
-        parts: this.parts,
+        parts: parts,
       }),
     }))
-    .then(() => {
-      self.postMessage({command: "uploadProgress",
-                        percent: Math.floor(100 * idx / this.numParts),
-                        filename: this.file.name});
-      return info.key;
-    });
+    .then(() => {return info.key});
     return promise;
   }
 

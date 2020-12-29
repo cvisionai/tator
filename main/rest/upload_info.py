@@ -65,8 +65,8 @@ class UploadInfoAPI(BaseDetailView):
             urls.append(url)
         else:
             # Initiate a multipart upload.
-            response = s3.create_multipart_upload(Bucket=os.getenv('BUCKET_NAME'),
-                                                  Key=f"{prefix}{object_name}")
+            response = s3.create_multipart_upload(Bucket=bucket_name,
+                                                  Key=key)
             upload_id = response['UploadId']
 
             # Get a presigned URL for each part.
