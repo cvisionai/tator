@@ -14,7 +14,7 @@ From the ``scripts/packages/tator-py`` directory:
 
 .. code-block :: bash
 
-    pytest --host <server_url> --token <rest_token>
+    pytest --host <server_url> --token <rest_token> --keep
 
 
 Adding a test
