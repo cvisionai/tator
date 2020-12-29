@@ -34,6 +34,7 @@ Tator is developed by `CVision AI <https://www.cvisionai.com>`_.
    Remote Transcodes/Algorithms <setup_tator/remote.rst>
    Media Management <usage/media_management.rst>
    Using HTTPS <https.rst>
+   Developer Guidance <developer.md>
 
 Python API
 ++++++++++
@@ -83,21 +84,3 @@ Installing
    ../tator-r/overview
    ../tator-r/reference/api
 
-Legacy Python API
-+++++++++++++++++
-
-`pytator` was the python package predating the improvements made by `tator-py`.
-New scripts should use tator-py which is the future of python bindings for
-the tator platform.
-
-.. code-block:: bash
-
-   pip3 install pytator
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Legacy Python Bindings (PyTator):
-
-   ../pytator/api
-   ../pytator/examples
-   ../pytator/running-tests

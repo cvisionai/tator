@@ -2,6 +2,73 @@
 
 General information that is useful for developers that are new to the `tator` project.
 
+## Git guidance
+
+Developers should use branches for resolving issues. One or more github issues
+may be solved in a branch.
+
+Canonical workflow:
+```
+# Create a branch and do some work
+git checkout -b /dev/descriptive-branch-name
+
+# developer does work, making a series of logical commits on his or her
+# branch
+```
+
+
+If the user has push permissions to master they can elect to merge
+their own work:
+```
+# Updates local repo
+git fetch
+
+# Rebase topic branch to latest master
+git rebase origin/master
+
+# Switch to master and update local ref
+git checkout master
+git rebase origin/master
+
+# The git commit message can include additional detail here, per commit
+# guidance.
+git merge --no-ff /dev/descriptive-branch-name
+
+# Lastly, push the updated master to the repository
+git push origin master
+```
+
+Note: If a user does not have push permissions or does not desire to push
+to master they can initiate a pull request of the ``dev/`` branch.
+
+Further guidance:
+
+1.) A ``dev/`` branch is a story of how a feature came to be. It should be a
+    series of logical commits that make review and bisection possible.
+
+2.) ``dev/`` branches may be pushed to the repository. There is no expectation
+    a ``dev/`` branch is stable and it can be deleted or force-pushed.
+
+3.) Commit messages are helpful commentary for initial review and later
+    bisections.
+
+4.) "Fixes #NNN" or "Closes #NNN" will automatically close the issue
+        when this commit is pushed to master. This can be on either the
+        individual commit within a dev branch or the merge commit.
+
+5.) "[migrate-required]" can be added to a commit that induces a database
+        migration.
+
+6.) Merges, and pushes must be done in submodules prior to the top-level
+    project. This avoids the master branch pointing to an unknown commit in
+    a submodule.
+
+## API Version scheme
+
+Tator-py uses an x.y.z version scheme. While x < 1, y and z are used to indicate
+breaking or non-breaking update, respectfully. Once x >= 1, the plan would
+be to use [semantic versioning.](https://semver.org/)
+
 ## Updating REST Endpoints
 
 After changing REST code or making JS updates, you can run `make dev-push && make collect-static`:
@@ -118,33 +185,4 @@ current/completed workflows. You can use an ID from `argo list` to watch an in-p
 ## Tokens
 
 You can find all extant tokens at `<host>.tator.dev/admin`. These are useful for testing and using
-`tator-py`.
-
-# tator-py
-
-Included as a submodule of `tator`, this is the python interface to tator.
-
-## Building
-
-From the `tator` directory, run `make python-bindings` to build the wheel, using the local copy of
-`tator-py` that is a submodule of `tator`. The wheel can be found in
-`tator/scripts/packages/tator-py/dist` and can be upgraded by doing the following:
-
-```
-tator$ cd scripts/packages/tator-py/dist
-dist$ pip uninstall tator
-...
-dist$ pip install tator-0.7.0-py3-none-any.whl
-...
-```
-
-## Testing
-
-Tests live in `tator-py/tests` and are `pytest`s. If using the `tator-py` that is a submodule of
-`tator`, that lives in `tator/scripts/packages`. Running tests requires a host running `tator` and
-an API token for said host. You can find the API token at `<host>.tator.dev/admin`. The command to
-run tests is:
-
-```
-pytest -s --host <host>.tator.dev --token <your-token> --keep
-```
+[tator-py](tator-py/api.html).
