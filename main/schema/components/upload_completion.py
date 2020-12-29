@@ -1,12 +1,14 @@
 upload_part = {
     'type': 'object',
     'properties': {
-        'etag': {
-            'description': 'Content of ETag header returned from PUT request for an upload part.',
+        'ETag': {
+            'description': 'Content of ETag header returned from PUT request for an upload '
+                           'part. NOTE: key is case-sensitive!',
             'type': 'string',
         },
-        'partnumber': {
-            'description': 'Part number for the given ETag response header.',
+        'PartNumber': {
+            'description': 'Part number for the given ETag response header. NOTE: key is '
+                           'case-sensitive!',
             'type': 'integer',
         },
     },
