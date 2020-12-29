@@ -15,6 +15,7 @@ from .attribute_type import (
     attribute_type,
     attribute_addition,
     attribute_rename,
+    attribute_deletion,
 )
 from .attribute_value import attribute_value
 from .bookmark import bookmark_spec

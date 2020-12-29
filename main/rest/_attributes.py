@@ -1,4 +1,5 @@
 """ TODO: add documentation for this """
+from typing import List
 import logging
 
 from django.db.models.expressions import Func
@@ -60,6 +61,22 @@ class ReplaceKey(Func): #pylint: disable=abstract-method
             new_key=new_key,
             create_missing='true' if create_missing else 'false',
             **extra
+        )
+
+
+class DeleteKey(Func): #pylint: disable=abstract-method
+    """
+    Deletes the attribute field named `key` and any value it may have. See
+    https://www.postgresql.org/docs/current/functions-json.html for documentation on the function
+    template.
+    """
+    # function = 'jsonb_set'
+    template = "%(expressions)s - '%(key)s'" #pylint: disable=line-too-long
+    arity = 1
+
+    def __init__(self, expression: str, key: str, create_missing: bool = False, **extra):
+        super().__init__(
+            expression, key=key, create_missing='true' if create_missing else 'false', **extra
         )
 
 
@@ -321,6 +338,14 @@ def bulk_rename_attributes(new_attrs, q_s):
             new_key=new_attribute_type,
             create_missing=True,
         ))
+
+
+def bulk_delete_attributes(attrs_to_delete: List[str], q_s):
+    """
+    Removes attribute keys.
+    """
+    for attr in attrs_to_delete:
+        q_s.update(attributes=DeleteKey("attributes", key=attr))
 
 
 class AttributeFilterMixin:

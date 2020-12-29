@@ -43,6 +43,7 @@ class CustomGenerator(SchemaGenerator):
                 'ArchiveConfig': archive_config,
                 'AttributeAddition': attribute_addition,
                 'AttributeRename': attribute_rename,
+                'AttributeDeletion': attribute_deletion,
                 'AttributeType': attribute_type,
                 'AttributeValue': attribute_value,
                 'AudioDefinition': audio_definition,

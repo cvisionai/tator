@@ -406,6 +406,54 @@ class TatorSearch:
         entity_type.attribute_types[replace_idx] = new_attribute_type
         return entity_type
 
+    def check_deletion(self, entity_type, name):
+        """
+        Checks deletion operation and raises if it is invalid. See `delete_alias` for argument
+        description.
+        """
+        # Retrieve UUID, raise error if it doesn't exist.
+        uuid = entity_type.project.attribute_type_uuids.get(name)
+        if uuid is None:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        # Find old attribute type and create new attribute type.
+        for idx, attribute_type in enumerate(entity_type.attribute_types):
+            if attribute_type['name'] == name:
+                delete_idx = idx
+                mapping_type = _get_alias_type(attribute_type)
+                mapping_name = f'{uuid}_{mapping_type}'
+                old_dtype = attribute_type['dtype']
+                break
+        else:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        return uuid, delete_idx, mapping_name
+
+    def delete_alias(self, entity_type, name):
+        """
+        Deletes existing alias.
+
+        :param entity_type: *Type object.
+        :param name: Name of attribute type being deleted.
+        :returns: Entity type with updated attribute_types.
+        """
+        # Check deletion before performing atomically
+        uuid, delete_idx, mapping_name = self.check_deletion(entity_type, name)
+
+        # Replace values in mapping with null.
+        body = {'script': f"ctx._source['{mapping_name}']=null;"}
+        self.es.update_by_query(
+            index=self.index_name(entity_type.project.pk),
+            body=body,
+            conflicts='proceed',
+        )
+
+        # Remove attribute from entity type object.
+        del entity_type.attribute_types[delete_idx]
+        return entity_type
+
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False)
 
