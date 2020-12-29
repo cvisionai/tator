@@ -1,15 +1,15 @@
 class MediaTypeMainEdit extends SettingsSection {
   constructor() {
     super();
-    this._shadow.appendChild(this.mainDiv);
+    this._shadow.appendChild(this.settingsSectionDiv);
 
     this._setAttributeDTypes();
   }
 
-  _init(){
+  _init(data){
     console.log(`${this.tagName} init.`);
 
-    this.data = JSON.parse( this.getAttribute("_data") );
+    this.data = JSON.parse( data );
     console.log(this.data);
 
     //this.projectId = this._setProjectId();
@@ -22,30 +22,34 @@ class MediaTypeMainEdit extends SettingsSection {
       // Section h1.
       const h1 = document.createElement("h1");
       h1.setAttribute("class", "h2 pb-3");
-      h1.innerHTML = `Set media and attribute details.`;
+      //h1.innerHTML = `Set media and attribute details.`;
+      h1.innerHTML = this.data[i].name;
       itemDiv.appendChild(h1);
 
       itemDiv.appendChild( this._getSectionForm(this.data[i]) );
-      itemDiv.appendChild( this._getSubmitDiv() );
+      itemDiv.appendChild( this._getSubmitDiv({"id":itemDiv.id}) );
 
-      this.mainDiv.appendChild(itemDiv);
+      this.settingsSectionDiv.appendChild(itemDiv);
     }
 
-    return this.mainDiv;
+    return this.settingsSectionDiv;
   }
 
   _getSectionForm(media){
       let headingName = this._getHeadingName(media.dtype);
-      let mediaType = this.boxHelper.headingWrap({
-          "headingText" : `${headingName} | ${media.name}`,
+      /*let mediaType = this.boxHelper.headingWrap({
+          "headingText" : `${media.name}`, //`${headingName} | ${media.name}`,
           "descriptionText" : "Edit media type.",
           "level": 1,
           "collapsed": false
         });
       let currentMediaType = this.boxHelper.boxWrapDefault( {
           "children" : mediaType
-        } );
+        } );*/
 
+    let currentMediaType = this.boxHelper.boxWrapDefault( {
+        "children" : ""
+      } );
 
       // append input for name and summary
       currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": media.name}) );
@@ -58,39 +62,44 @@ class MediaTypeMainEdit extends SettingsSection {
       // visible
       currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} ) );
 
-      let seperator = document.createElement("div");
-      seperator.setAttribute("class", "col-12 py-2");
-      seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-      seperator.innerHTML = "&nbsp;"
-
-      currentMediaType.append(seperator);
-
-      let collapsableAttributeHeading = this.boxHelper.headingWrap({
-          "headingText" : `Attributes`,
-          "descriptionText" : "Edit media type.",
-          "level": 2,
-          "collapsed": "controlId"
-        });
-      currentMediaType.appendChild(collapsableAttributeHeading);
-
-      let attributeMediaId = "attribute"+media.id;
-      collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
-
-      currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
-        this._toggleAttributes(event);
-      });
-
-      let collapsableAttributeBox = document.createElement("div");
-      collapsableAttributeBox.id = attributeMediaId;
-      collapsableAttributeBox.hidden = true;
-
       // attribute types
-      let attributeTypes = media.attribute_types
-      for(let a of attributeTypes){
-        collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
+      let attributeTypes = media.attribute_types;
+      if(attributeTypes.length > 0){
+        let seperator = document.createElement("div");
+        seperator.setAttribute("class", "col-12 py-2");
+        seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
+        seperator.innerHTML = "&nbsp;"
+
+        currentMediaType.append(seperator);
+
+        let collapsableAttributeHeading = this.boxHelper.headingWrap({
+            "headingText" : `Attributes`,
+            "descriptionText" : "Edit media type.",
+            "level": 2,
+            "collapsed": "controlId"
+          });
+        currentMediaType.appendChild(collapsableAttributeHeading);
+
+        let attributeMediaId = "attribute"+media.id;
+        collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
+
+        currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
+          this._toggleAttributes(event);
+          this._toggleChevron(event);
+        });
+
+        let collapsableAttributeBox = document.createElement("div");
+        collapsableAttributeBox.id = attributeMediaId;
+        collapsableAttributeBox.hidden = true;
+
+        for(let a of attributeTypes){
+          collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
+        }
+        currentMediaType.appendChild(collapsableAttributeBox);
       }
 
-      currentMediaType.appendChild(collapsableAttributeBox);
+
+
 
       return currentMediaType;
   }
@@ -102,6 +111,11 @@ class MediaTypeMainEdit extends SettingsSection {
     return el.hidden = !hidden;
   };
 
+  _toggleChevron(e){
+    var el = e.target;
+    return el.classList.toggle('chevron-trigger-90');
+  }
+
   attributesOutput({
     attributes = []
   } = {}){
@@ -111,7 +125,7 @@ class MediaTypeMainEdit extends SettingsSection {
     let headingName = this._getHeadingName(attributes.dtype);
 
     let attributeCurrent = settingsBoxHelper.headingWrap({
-      "headingText" : `Attribute ${headingName} | ${attributes.name}`,
+      "headingText" : `${attributes.name}`,//`Attribute ${headingName} | ${attributes.name}`,
       "descriptionText" : "Edit attribute.",
       "level":3,
       "collapsed":true
@@ -131,6 +145,7 @@ class MediaTypeMainEdit extends SettingsSection {
     boxOnPage.appendChild(collapsableAttributeBox);
     attributeCurrent.addEventListener("click", (event) => {
       this._toggleAttributes(event);
+      this._toggleChevron(event)
     });
 
     // append input for name and description
@@ -156,6 +171,8 @@ class MediaTypeMainEdit extends SettingsSection {
 
     // visible
     collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Visible", "value": attributes.visible, "type":"checkbox"}) );
+    //collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputRadioSlide({ "labelText": "Visible test", "value": attributes.visible, "type":"checkbox"}) );
+
 
     // int, float	minimum & maximum
     let showMinMax = (attributes.dtype == 'int' || attributes.dtype == 'float') ? true : false;
@@ -305,6 +322,18 @@ class MediaTypeMainEdit extends SettingsSection {
     });
   }
 
+  _fetchPatchPromise({id = -1 } = {}){
+    return fetch("/rest/MediaType/" + id, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
   reset(){
     this._setNameInputValue( this._getNameFromData() );
     this._setSummaryInputValue( this._getSummaryFromData() );
@@ -321,48 +350,20 @@ class MediaTypeMainEdit extends SettingsSection {
     return true;
   }
 
-  _summaryChanged(){
-    if(this._getSummaryInputValue() === this._getSummaryFromData()) return false;
+  _descriptionChanged(){
+    if(this._getDescriptionInputValue() === this._getDescriptionFromData()) return false;
+    return true;
+  }
+
+  _visibleChanged(){
+    if(this._getDescriptionInputValue() === this._getDescriptionFromData()) return false;
     return true;
   }
 
   changed(){
-    return this._nameChanged() || this._summaryChanged() ;
+    return true;
   }
 
-  save(){
-    // Check if anything changed
-    fetch("/rest/Project/" + this.projectId, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "name": this._getNameInputValue(),
-        "summary": this._getSummaryInputValue()
-      })
-    })
-    .then(response => {
-        return response.json().then( data => {
-          console.log("Save response status: "+response.status)
-          if (response.status == "200") {
-            this._modalSuccess(data.message);
-            this._fetchNewProjectData();
-          } else {
-            this._modalError(data.message);
-          }
-        })
-      }
-    )
-    .catch(error => {
-      console.log('Error:', error.message);
-      this._modalError("Internal error: "+error.message);
-    });
-  }
 
 }
 

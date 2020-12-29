@@ -2,7 +2,7 @@ class LeafTypeEdit extends SettingsSection {
   constructor() {
     super();
 
-    this._shadow.appendChild(this.mainDiv);
+    this._shadow.appendChild(this.settingsSectionDiv);
   }
 
   _getSectionForm(){

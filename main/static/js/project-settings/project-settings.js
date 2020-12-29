@@ -13,7 +13,6 @@ class ProjectSettings extends TatorPage {
     header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
     main.appendChild(header);
 
-
     // Configuration form.
     const configForm = document.createElement("form");
     configForm.setAttribute("class", "col-8");
@@ -93,16 +92,16 @@ class ProjectSettings extends TatorPage {
           this._shadow.querySelector('.loading').remove();
 
           // Init project edit and media type sections.
-          this.projectBlock.setAttribute("_data", JSON.stringify(project));
-          this.mediaTypesBlock.setAttribute("_data", JSON.stringify(mediaTypes));
-          this.settingsNav.setAttribute("_data", JSON.stringify(mediaTypes));
-          this.localizationBlock.setAttribute("_data", JSON.stringify(localization));
-          this.settingsNav.setAttribute("_data", JSON.stringify(localization));
-          this.leafTypesBlock.setAttribute("_data", JSON.stringify(leaf));
-          this.settingsNav.setAttribute("_data", JSON.stringify(leaf));
+          this.projectBlock._init(JSON.stringify(project));
+          this.mediaTypesBlock._init( JSON.stringify(mediaTypes));
+          this.settingsNav._init( JSON.stringify(mediaTypes));
+          this.localizationBlock._init( JSON.stringify(localization));
+          this.settingsNav._init( JSON.stringify(localization));
+          this.leafTypesBlock._init( JSON.stringify(leaf));
+          this.settingsNav._init( JSON.stringify(leaf));
         })
         .catch(err => {
-          this._shadow.querySelector('.loading').remove();
+          //this._shadow.querySelector('.loading').remove();
           console.error("Failed to retrieve data: " + err);
         })
       });

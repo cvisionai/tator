@@ -1,4 +1,4 @@
-class SettingsSection extends TatorPage {
+class SettingsSection extends TatorElement {
   constructor() {
     super();
 
@@ -7,38 +7,25 @@ class SettingsSection extends TatorPage {
     this.inputHelper = new SettingsInput("media-types-main-edit");
 
     // Main Div to append content is an "item" for sideNav.
-    this.mainDiv = document.createElement("div");
+    this.settingsSectionDiv = document.createElement("div");
 
     // Prep the modal.
     this.modal = document.createElement("modal-dialog");
-    this.mainDiv.appendChild(this.modal);
+    this.settingsSectionDiv.appendChild(this.modal);
   }
 
-  // Run init when project-id attribute added to page.
-  static get observedAttributes() {
-    return ["_data"].concat(TatorPage.observedAttributes);
-  }
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "_data":
-        this._init();
-        break;
-    }
-  };
-
-  _init(){
+  _init(data){
     console.log(`${this.tagName} init.`);
 
-    this.data = JSON.parse( this.getAttribute("_data") );
+    this.data = JSON.parse( data );
     console.log(this.data);
 
     this.projectId = this._setProjectId();
 
-    this.mainDiv.appendChild( this._getSectionForm() )
-    this.mainDiv.appendChild( this._getSubmitDiv() );
+    this.settingsSectionDiv.appendChild( this._getSectionForm() )
+    this.settingsSectionDiv.appendChild( this._getSubmitDiv() );
 
-    return this.mainDiv;
+    return this.settingsSectionDiv;
   }
 
   _setProjectId(){
@@ -51,7 +38,7 @@ class SettingsSection extends TatorPage {
     return null;
   }
 
-  _getSubmitDiv(){
+  _getSubmitDiv({id = -1} = {}){
     // Save button and reset link.
     const submitDiv = document.createElement("div");
     submitDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center py-3");
@@ -65,17 +52,18 @@ class SettingsSection extends TatorPage {
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
       if( this.changed() ){
-        this.save();
+        this._save(id)
       } else {
         // @TODO Save button should not be clickable unless something changes in form.
         console.log("Nothing new to save! :)");
+        this._modalNeutral("Nothing new to save!");
       }
     });
 
     // Form reset event
     this.resetLink.addEventListener("click", (event) => {
       event.preventDefault();
-      this.reset();
+      this.reset(id)
       console.log("Reset complete.");
     });
 
@@ -96,7 +84,8 @@ class SettingsSection extends TatorPage {
   }
 
   _fetchPatchPromise(){
-
+    // Set in child element,
+    return null;
   }
 
   _fetchWrapper(){
@@ -116,6 +105,27 @@ class SettingsSection extends TatorPage {
       .catch(err => {
         console.error("Failed to retrieve data: " + err);
       });
+  }
+
+  _save({id = -1} = {}){
+    const patch = this._fetchPatchPromise();
+    // Check if anything changed
+    patch.then(response => {
+        return response.json().then( data => {
+          console.log("Save response status: "+response.status)
+          if (response.status == "200") {
+            this._modalSuccess(data.message);
+            this._fetchNewProjectData();
+          } else {
+            this._modalError(data.message);
+          }
+        })
+      }
+    )
+    .catch(error => {
+      console.log('Error:', error.message);
+      this._modalError("Internal error: "+error.message);
+    });
   }
 
   _modalSuccess(message){
@@ -138,8 +148,12 @@ class SettingsSection extends TatorPage {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _save(){
+  _modalNeutral(message){
+    let text = document.createTextNode("");
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
 
+    return this.modal.setAttribute("is-open", "true")
   }
 
   _reset(){

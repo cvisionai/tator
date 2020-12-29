@@ -10,3 +10,12 @@
     }
   }
 }
+
+/****/
+.chevron {
+  transition: transform 350ms ease-in-out;
+  pointer-events: none;
+}
+.chevron-trigger-90 .chevron {
+  transform: rotate(90deg);
+}

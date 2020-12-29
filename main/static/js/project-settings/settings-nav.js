@@ -154,10 +154,10 @@ class SettingsNav extends TatorElement {
     return this.projectDom = ref;
   }
 
-  _init(){
+  _init(data){
     console.log("Settings Nav - Init");
 
-    this.data = JSON.parse( this.getAttribute("_data") );
+    this.data = JSON.parse(data);
 
     for(let i in this.data){
       this.addItem({

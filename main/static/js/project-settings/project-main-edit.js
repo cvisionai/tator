@@ -2,18 +2,18 @@ class ProjectMainEdit extends SettingsSection {
   constructor() {
     super();
     // MainDiv is the project's "item" box as it relates to nav.
-    this.mainDiv.setAttribute("class", "item-box");
+    this.settingsSectionDiv.setAttribute("class", "item-box");
 
     // New heading element.
     this.h1 = document.createElement("h1");
     this.h1.setAttribute("class", "h2 pb-3");
-    this.mainDiv.appendChild(this.h1);
+    this.settingsSectionDiv.appendChild(this.h1);
 
     // Name the Main Div.
-    this.mainDiv.id = "projectMain";
+    this.settingsSectionDiv.id = "projectMain";
     this.h1.innerHTML = `Set project details.`;
 
-    this._shadow.appendChild(this.mainDiv);
+    this._shadow.appendChild(this.settingsSectionDiv);
   }
 
   _getSectionForm(){
@@ -88,6 +88,24 @@ class ProjectMainEdit extends SettingsSection {
     });
   }
 
+  _fetchPatchPromise({id = this.projectId} = {}){
+    // Set in child element,
+    return fetch("/rest/Project/" + id, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "name": this._getNameInputValue(),
+        "summary": this._getSummaryInputValue()
+      })
+    })
+  }
+
   reset(){
     this._setNameInputValue( this._getNameFromData() );
     this._setSummaryInputValue( this._getSummaryFromData() );
@@ -111,40 +129,6 @@ class ProjectMainEdit extends SettingsSection {
 
   changed(){
     return this._nameChanged() || this._summaryChanged() ;
-  }
-
-  save(){
-    // Check if anything changed
-    fetch("/rest/Project/" + this.projectId, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "name": this._getNameInputValue(),
-        "summary": this._getSummaryInputValue()
-      })
-    })
-    .then(response => {
-        return response.json().then( data => {
-          console.log("Save response status: "+response.status)
-          if (response.status == "200") {
-            this._modalSuccess(data.message);
-            this._fetchNewProjectData();
-          } else {
-            this._modalError(data.message);
-          }
-        })
-      }
-    )
-    .catch(error => {
-      console.log('Error:', error.message);
-      this._modalError("Internal error: "+error.message);
-    });
   }
 
 }

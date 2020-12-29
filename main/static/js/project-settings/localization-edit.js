@@ -1,13 +1,13 @@
 class LocalizationEdit extends SettingsSection {
   constructor() {
     super();
-    this._shadow.appendChild(this.mainDiv);
+    this._shadow.appendChild(this.settingsSectionDiv);
   }
 
-  _init(){
+  _init(data){
     console.log(`${this.tagName} init.`);
 
-    this.data = JSON.parse( this.getAttribute("_data") );
+    this.data = JSON.parse( data );
     console.log(this.data);
 
     //this.projectId = this._setProjectId();
@@ -26,18 +26,71 @@ class LocalizationEdit extends SettingsSection {
       itemDiv.appendChild( this._getSectionForm(this.data[i]) );
       itemDiv.appendChild( this._getSubmitDiv() );
 
-      this.mainDiv.appendChild(itemDiv);
+      this.settingsSectionDiv.appendChild(itemDiv);
     }
 
-    return this.mainDiv;
+    return this.settingsSectionDiv;
   }
 
-  _getSectionForm(){
-    this.boxOnPage = this.boxHelper.boxWrapDefault({
-        "children" : document.createTextNode("")
+  _getSectionForm(loc){
+      let headingName = this._getHeadingName(media.dtype);
+      let mediaType = this.boxHelper.headingWrap({
+          "headingText" : `${headingName} | ${media.name}`,
+          "descriptionText" : "Edit media type.",
+          "level": 1,
+          "collapsed": false
+        });
+      let currentMediaType = this.boxHelper.boxWrapDefault( {
+          "children" : mediaType
+        } );
+
+
+      // append input for name and summary
+      currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": media.name}) );
+      currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": media.description} ) );
+
+      // default volume (video, multi)
+      let showVolume = media.dtype != 'image' ? true : false;
+      if (showVolume) currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Default Volume", "value": media.default_volume, "type":"number"}) );
+
+      // visible
+      currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} ) );
+
+      let seperator = document.createElement("div");
+      seperator.setAttribute("class", "col-12 py-2");
+      seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
+      seperator.innerHTML = "&nbsp;"
+
+      currentMediaType.append(seperator);
+
+      let collapsableAttributeHeading = this.boxHelper.headingWrap({
+          "headingText" : `Attributes`,
+          "descriptionText" : "Edit media type.",
+          "level": 2,
+          "collapsed": "controlId"
+        });
+      currentMediaType.appendChild(collapsableAttributeHeading);
+
+      let attributeMediaId = "attribute"+media.id;
+      collapsableAttributeHeading.setAttribute("class", `toggle-${attributeMediaId} py-2`);
+
+      currentMediaType.querySelector(`.toggle-${attributeMediaId}`).addEventListener("click", (event) => {
+        this._toggleAttributes(event);
       });
 
-    return this.boxOnPage;
+      let collapsableAttributeBox = document.createElement("div");
+      collapsableAttributeBox.id = attributeMediaId;
+      collapsableAttributeBox.hidden = true;
+
+      // attribute types
+      let attributeTypes = media.attribute_types
+      for(let a of attributeTypes){
+        collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a }) );
+      }
+
+      currentMediaType.appendChild(collapsableAttributeBox);
+
+      return currentMediaType;
   }
 
   _getNameFromData({ data = this.data} = {}){

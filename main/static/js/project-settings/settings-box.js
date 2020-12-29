@@ -2,8 +2,6 @@
 class SettingsBox {
   constructor( customClass) {
     this.customClass = customClass || "";
-
-    this.chevron = this._chevron();
   }
 
   boxWrapDefault( { children = {}, level = 1 } = {} ){
@@ -53,8 +51,7 @@ class SettingsBox {
 
     if(collapsed) {
       heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex clickable");
-      let thisChevron = this._chevron();
-      heading.appendChild(thisChevron);
+      heading.appendChild(this._chevron());
     } else {
       heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex ");
 
@@ -67,8 +64,6 @@ class SettingsBox {
     /* 3. Append to parent DIV element. */
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
-
-
 
     return headingDiv;
   }
@@ -85,8 +80,9 @@ class SettingsBox {
     return panel;
   }
 
-  _chevron({direction = "right"} = {}) {
+  _chevron() {
     const chevron = document.createElementNS(svgNamespace, "svg");
+    chevron.setAttribute("class", "chevron");
     chevron.setAttribute("viewBox", "0 0 24 24");
     chevron.setAttribute("height", "1em");
     chevron.setAttribute("width", "1em");
@@ -97,11 +93,6 @@ class SettingsBox {
     chevron.appendChild(chevronPath);
 
     return chevron;
-  }
-
-  turnChevron({element = this._chevron, degrees = 90} = {}){
-    element.style.transition = "transform 2s ease-in-out";
-    return element.style.transform = `rotate(${degrees}deg)`; /* Equal to rotateZ(45deg) */
   }
 
 }

@@ -80,6 +80,24 @@ class SettingsInput {
       return inputWithLabel;
   }
 
+  // @TODO - Works but needs ovveride for label class
+  inputRadioSlide({
+    value = '',
+    customCol = '',
+    labelText = '',
+    type = 'checkbox'} = {}
+  ){
+    const slide = document.createElement("bool-input");
+    slide.setAttribute("name", labelText);
+    slide.setAttribute("on-text", "Yes");
+    slide.setAttribute("off-text", "No");
+
+    slide.setValue(value)
+
+    console.log(slide);
+    return slide;
+  }
+
   /* Returns a set of radio buttons */
   inputRadios({
     value = "",
