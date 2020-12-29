@@ -8,11 +8,14 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = 'Deletes any media files marked for deletion with null project or type.'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--min_age_days', type=int, default=30,
+                            help="Minimum age in days of media objects for deletion.")
+
     def handle(self, **options):
         BATCH_SIZE = 100
-        MIN_AGE_DAYS = 30
         num_deleted = 0
-        min_delta = datetime.timedelta(days=MIN_AGE_DAYS)
+        min_delta = datetime.timedelta(days=options['min_age_days'])
         max_datetime = datetime.datetime.now(datetime.timezone.utc) - min_delta
         while True:
             # We cannot delete with a LIMIT query, so make a separate query
