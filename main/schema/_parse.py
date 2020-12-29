@@ -26,10 +26,9 @@ def parse(request):
         **result.parameters.query,
     }
     if result.body:
-        if isinstance(result.body, list):
-            out['body'] = result.body
-        else:
-            out = {**out, **result.body}
+        out['body'] = result.body
+        if not isinstance(result.body, list):
+            out = {**result.body, **out}
     return out
 
 parse.validator = None
