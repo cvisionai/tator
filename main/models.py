@@ -43,6 +43,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .util import _download_file
+from .s3 import s3_client
 
 from collections import UserDict
 
@@ -721,17 +722,26 @@ class Resource(Model):
             os.remove(path_or_link)
         else:
             path=path_or_link
-        try:
+        if path.startswith('/'):
+            try:
+                obj = Resource.objects.get(path=path)
+                if obj.media.all().count() == 0:
+                    logger.info(f"Deleting file {path}")
+                    obj.delete()
+                    os.remove(path)
+            except Resource.DoesNotExist as dne:
+                logger.info(f"Removing legacy resource {path}")
+                os.remove(path)
+            except Exception as e:
+                logger.error(f"{e} when lowering resource count of {path}")
+        else:
+            # This is an S3 object.
             obj = Resource.objects.get(path=path)
             if obj.media.all().count() == 0:
-                logger.info(f"Deleting file {path}")
+                logger.info(f"Deleting object {path}")
                 obj.delete()
-                os.remove(path)
-        except Resource.DoesNotExist as dne:
-            logger.info(f"Removing legacy resource {path}")
-            os.remove(path)
-        except Exception as e:
-            logger.error(f"{e} when lowering resource count of {path}")
+                s3 = s3_client()
+                s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
