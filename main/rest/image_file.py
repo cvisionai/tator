@@ -15,7 +15,7 @@ class ImageFileListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        media = Media.objects.get(project=params['id'])
+        media = Media.objects.get(pk=params['id'])
         role = params['role']
         response_data = []
         if media.media_files:
@@ -25,7 +25,7 @@ class ImageFileListAPI(BaseListView):
 
     @transaction.atomic
     def _post(self, params):
-        media = Media.objects.select_for_update().get(project=params['id'])
+        media = Media.objects.select_for_update().get(pk=params['id'])
         role = params['role']
         body = params['body']
         index = params.get('index')
@@ -34,12 +34,12 @@ class ImageFileListAPI(BaseListView):
         if role not in media.media_files:
             media.media_files[role] = []
         if index is None:
-            media.media_files[role].append(image)
+            media.media_files[role].append(body)
         else:
-            if index >= len(current):
+            if index >= len(media.media_files[role]):
                 raise ValueError(f"Supplied index {index} is larger than current array size "
-                                 f"{len(current)}")
-            media.media_files[role].insert(index, image)
+                                 f"{len(media.media_files[role])}")
+            media.media_files[role].insert(index, body)
         media.save()
         return {'message': f"Media file in media object {media.id} created!"}
 
@@ -53,7 +53,7 @@ class ImageFileDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        media = Media.objects.get(project=params['id'])
+        media = Media.objects.get(pk=params['id'])
         role = params['role']
         index = params['index']
         response_data = []
@@ -67,7 +67,7 @@ class ImageFileDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        media = Media.objects.select_for_update().get(project=params['id'])
+        media = Media.objects.select_for_update().get(pk=params['id'])
         role = params['role']
         body = params['body']
         index = params['index']
@@ -77,14 +77,14 @@ class ImageFileDetailAPI(BaseDetailView):
             raise Http404
         if index >= len(media.media_files[role]):
             raise ValueError(f"Supplied index {index} is larger than current array size "
-                             f"{len(current)}")
+                             f"{len(media.media_files[role])}")
         media.media_files[role][index] = body
         media.save()
         return {'message': f"Media file in media object {media.id} successfully updated!"}
 
     @transaction.atomic
     def _delete(self, params):
-        media = Media.objects.select_for_update().get(project=params['id'])
+        media = Media.objects.select_for_update().get(pk=params['id'])
         role = params['role']
         index = params['index']
         if not media.media_files:
@@ -93,7 +93,7 @@ class ImageFileDetailAPI(BaseDetailView):
             raise Http404
         if index >= len(media.media_files[role]):
             raise ValueError(f"Supplied index {index} is larger than current array size "
-                             f"{len(current)}")
+                             f"{len(media.media_files[role])}")
         del media.media_files[role][index]
         media.save()
         return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
