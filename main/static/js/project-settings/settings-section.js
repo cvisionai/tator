@@ -51,8 +51,9 @@ class SettingsSection extends TatorElement {
 
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this.changed() ){
-        this._save(id)
+      if( this._changed() ){
+        console.log("hitting save for id: "+id);
+        this._save( {"id":id} )
       } else {
         // @TODO Save button should not be clickable unless something changes in form.
         console.log("Nothing new to save! :)");
@@ -75,7 +76,7 @@ class SettingsSection extends TatorElement {
   }
 
   _changed(){
-
+    return true;
   }
 
   _fetchGetPromise(){
@@ -108,14 +109,16 @@ class SettingsSection extends TatorElement {
   }
 
   _save({id = -1} = {}){
-    const patch = this._fetchPatchPromise();
+    console.log("Default _save method for id: "+id);
+    const patch = this._fetchPatchPromise({"id":id});
+    console.log(patch);
     // Check if anything changed
     patch.then(response => {
         return response.json().then( data => {
           console.log("Save response status: "+response.status)
           if (response.status == "200") {
             this._modalSuccess(data.message);
-            this._fetchNewProjectData();
+            //this._fetchNewProjectData();
           } else {
             this._modalError(data.message);
           }
@@ -166,6 +169,59 @@ class SettingsSection extends TatorElement {
 
   getDom(){
     return this._shadow;
+  }
+
+  // name
+  _getNameFromData({ data = this.data} = {}){
+    return data.name;
+  }
+
+  _setNameInput(name){
+    return this.inputHelper.inputText( { "labelText": "Name", "value": name } );
+  }
+
+  _getNameInputValue(){
+    return this._editName.querySelector("input").value;
+  }
+
+  _setNameInputValue(newValue){
+    return this._editName.querySelector("input").value = newValue;
+  }
+
+  // summary
+  _getSummaryFromData({ data = this.data} = {}){
+    return data.summary;
+  }
+
+  _setSummaryInput(summary){
+    //return this.inputHelper.inputTextArea( { "labelText": "Summary", "value": summary } )
+    return this.inputHelper.inputText( { "labelText": "Summary", "value": summary } )
+  }
+
+  _getSummaryInputValue(){
+    return this._editSummary.querySelector("input").value;
+  }
+
+  _setSummaryInputValue(newValue){
+    return this._editSummary.querySelector("input").value = newValue;
+  }
+
+  // description
+  _getDescriptionFromData({ data = this.data} = {}){
+    return data.description;
+  }
+
+  _setDescriptionInput(description){
+    //return this.inputHelper.inputTextArea( { "labelText": "Summary", "value": summary } )
+    return this.inputHelper.inputText( { "labelText": "Description", "value": description } )
+  }
+
+  _getDescriptionInputValue(){
+    return this._editDescription.querySelector("input").value;
+  }
+
+  _setDescriptionInputValue(newValue){
+    return this._editDescription.querySelector("input").value = newValue;
   }
 
 }

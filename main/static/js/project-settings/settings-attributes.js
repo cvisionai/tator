@@ -15,8 +15,8 @@ class SettingsAttributes extends TatorElement {
   }
 
   _init(data){
-    console.log(`${this.tagName} init.`);
-    console.log(data);
+    console.log(`__${this.tagName} init.`);
+    //console.log(data);
 
     this._getAttributesForm(data)
 
@@ -49,8 +49,8 @@ class SettingsAttributes extends TatorElement {
 
         this.attributeDiv.appendChild(collapsableAttributeBox);
 
-        for(let a of attributeTypes){
-          collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": a}) );
+        for(let a in attributeTypes){
+          collapsableAttributeBox.appendChild( this.attributesOutput( {"attributes": attributeTypes[a], "attributeId": a}) );
         }
 
         this.attributeDiv.querySelector(`.toggle-attribute`).addEventListener("click", (event) => {
@@ -76,7 +76,8 @@ class SettingsAttributes extends TatorElement {
   }
 
   attributesOutput({
-    attributes = []
+    attributes = [],
+    attributeId = undefined
   } = {}){
     const settingsBoxHelper = new SettingsBox();
     const mediaTypesInputHelper = new SettingsInput();
@@ -94,7 +95,7 @@ class SettingsAttributes extends TatorElement {
     let collapsableAttributeBox = document.createElement("div");
     collapsableAttributeBox.hidden = true;
 
-    let boxOnPage = settingsBoxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2} );
+    let boxOnPage = settingsBoxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2, "customClass": "attributeId-"+attributeId} );
 
     boxOnPage.appendChild(collapsableAttributeBox);
     attributeCurrent.addEventListener("click", (event) => {
@@ -117,31 +118,23 @@ class SettingsAttributes extends TatorElement {
     });
     collapsableAttributeBox.appendChild( selectBox );
 
-    let inlineWarning = document.createElement("div");
-    inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
-    inlineWarning.hidden = true;
-    selectBox.after(inlineWarning);
+    selectBox.after(this._inlineWarningDiv());
 
     selectBox.addEventListener("change", (e) => {
       //when changed check if we need to show a warning.
       let newType = e.target.value;
       let warningEl = e.target.parentNode.parentNode.parentNode.querySelector(".inline-warning");
+      let message = ""
 
       if(this._getIrreverasibleDTypeArray({ "currentDT": attributes.dtype, "newDT": newType})){
-        this._inlineWarning({
-            "el" : warningEl,
-            "message" : `Warning: ${attributes.dtype} to ${newType} is not reversable.`
-          });
+        message = `Warning: ${attributes.dtype} to ${newType} is not reversable.`;
       } else if(this._getLossDTypeArray({ "currentDT": attributes.dtype, "newDT": newType})){
-        this._inlineWarning({
-            "el" : warningEl,
-            "message" : `Warning: ${attributes.dtype} to ${newType} may cause data loss.`});
-      } else {
-        this._inlineWarning({
-            "el" : warningEl,
-            "message" : ``
-          });
+        message = `Warning: ${attributes.dtype} to ${newType} may cause data loss.`;
       }
+      this._inlineWarning({
+          "el" : warningEl,
+          "message" : message
+        });
 
     });
 
@@ -173,6 +166,15 @@ class SettingsAttributes extends TatorElement {
     return boxOnPage;
 
   }
+
+  _inlineWarningDiv(){
+    let inlineWarning = document.createElement("div");
+    inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
+    inlineWarning.hidden = true;
+
+    return inlineWarning;
+  }
+
 
   _setAttributeDTypes(){
     this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];

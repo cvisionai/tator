@@ -18,7 +18,7 @@ class SettingsInput {
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
 
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}}`;
       inputTextElement.setAttribute("name", setName);
       inputTextElement.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
 

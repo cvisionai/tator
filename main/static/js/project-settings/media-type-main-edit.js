@@ -27,7 +27,7 @@ class MediaTypeMainEdit extends SettingsSection {
       itemDiv.appendChild(h1);
 
       itemDiv.appendChild( this._getSectionForm(this.data[i]) );
-      itemDiv.appendChild( this._getSubmitDiv({"id":itemDiv.id}) );
+      itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
 
       this.settingsSectionDiv.appendChild(itemDiv);
     }
@@ -36,31 +36,31 @@ class MediaTypeMainEdit extends SettingsSection {
   }
 
   _getSectionForm(media){
-      //let headingName = this._getHeadingName(media.dtype);
-      /*let mediaType = this.boxHelper.headingWrap({
-          "headingText" : `${media.name}`, //`${headingName} | ${media.name}`,
-          "descriptionText" : "Edit media type.",
-          "level": 1,
-          "collapsed": false
-        });
-      let currentMediaType = this.boxHelper.boxWrapDefault( {
-          "children" : mediaType
-        } );*/
-
     let currentMediaType = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
 
-      // append input for name and summary
-      currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Name", "value": media.name}) );
-      currentMediaType.appendChild( this.inputHelper.inputText( { "labelText": "Description", "value": media.description} ) );
+      // Only editable items inside this form
+      this._form = document.createElement(form);
+      this._form.id = media.id;
+      currentMediaType.appendChild( this._form );
+
+      // name
+      this._editName = this._setNameInput(media.name);
+      this._form.appendChild( this._editName )
+
+      // description
+      this._editDescription = this._setDescriptionInput( media.description );
+      this._form.appendChild( this._editDescription );
 
       // default volume (video, multi)
       let showVolume = media.dtype != 'image' ? true : false;
-      if (showVolume) currentMediaType.appendChild( this.inputHelper.inputText({ "labelText": "Default Volume", "value": media.default_volume, "type":"number"}) );
+      this._editVolume = this.inputHelper.inputText({ "labelText": "Default Volume", "value": media.default_volume, "type":"number"})
+      if (showVolume) currentMediaType.appendChild( this._editVolume );
 
       // visible
-      currentMediaType.appendChild( this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} ) );
+      this._editVisible = this.inputHelper.inputCheckbox( { "labelText": "Visible", "value": media.visible, "type":"checkbox"} );
+      currentMediaType.appendChild( this._editVisible );
 
       // attribute types
       if(media.attribute_types.length > 0){
@@ -97,47 +97,35 @@ class MediaTypeMainEdit extends SettingsSection {
   }
 
   _fetchPatchPromise({id = -1 } = {}){
+    console.log("Patch id: "+id);
     return fetch("/rest/MediaType/" + id, {
-      method: "GET",
-      credentials: "same-origin",
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
       headers: {
         "X-CSRFToken": getCookie("csrftoken"),
         "Accept": "application/json",
         "Content-Type": "application/json"
-      }
-    });
+      },
+      body: this._getFormData(id)
+    })
   }
 
-  reset(){
-    this._setNameInputValue( this._getNameFromData() );
-    this._setSummaryInputValue( this._getSummaryFromData() );
-    console.log("Reset with project data.");
+  reset(scope){
+    console.log("Not setup yet [Reset with project data.]");
   }
 
   resetHard(){
-    this._fetchNewProjectData();
+    //this._fetchNewProjectData();
     this.reset();
   }
 
-  _nameChanged(){
-    if(this._getNameInputValue() === this._getNameFromData()) return false;
-    return true;
+  _getFormData(id){
+    let form = this.querySelector("form#"+id)
+    let formData = new FormData(form);
+    console.log(formData);
+    return formData;
   }
-
-  _descriptionChanged(){
-    if(this._getDescriptionInputValue() === this._getDescriptionFromData()) return false;
-    return true;
-  }
-
-  _visibleChanged(){
-    if(this._getDescriptionInputValue() === this._getDescriptionFromData()) return false;
-    return true;
-  }
-
-  changed(){
-    return true;
-  }
-
 
 }
 

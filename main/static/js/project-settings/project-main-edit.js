@@ -43,39 +43,6 @@ class ProjectMainEdit extends SettingsSection {
     return this.boxOnPage;
   }
 
-  _getNameFromData({ data = this.data} = {}){
-    return data.name;
-  }
-
-  _setNameInput(name){
-    return this.inputHelper.inputText( { "labelText": "Name", "value": name } );
-  }
-
-  _getNameInputValue(){
-    return this._editName.querySelector("input").value;
-  }
-
-  _setNameInputValue(newValue){
-    return this._editName.querySelector("input").value = newValue;
-  }
-
-  _getSummaryFromData({ data = this.data} = {}){
-    return data.summary;
-  }
-
-  _setSummaryInput(summary){
-    //return this.inputHelper.inputTextArea( { "labelText": "Summary", "value": summary } )
-    return this.inputHelper.inputText( { "labelText": "Summary", "value": summary } )
-  }
-
-  _getSummaryInputValue(){
-    return this._editSummary.querySelector("input").value;
-  }
-
-  _setSummaryInputValue(newValue){
-    return this._editSummary.querySelector("input").value = newValue;
-  }
-
   _fetchGetPromise({id = this.projectId} = {}){
     return fetch("/rest/Project/" + id, {
       method: "GET",
@@ -127,7 +94,7 @@ class ProjectMainEdit extends SettingsSection {
     return true;
   }
 
-  changed(){
+  _changed(){
     return this._nameChanged() || this._summaryChanged() ;
   }
 

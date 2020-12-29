@@ -4,9 +4,9 @@ class SettingsBox {
     this.customClass = customClass || "";
   }
 
-  boxWrapDefault( { children = {}, level = 1 } = {} ){
+  boxWrapDefault( { children = {}, level = 1, customClass = ""} = {} ){
     let settingsBox = document.createElement("div");
-    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${this.customClass} ${level == 1 ? ' new-project__config ' : ''}`);
+    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${customClass} ${level == 1 ? ' new-project__config ' : ''}`);
     settingsBox.append( children );
 
     return settingsBox;

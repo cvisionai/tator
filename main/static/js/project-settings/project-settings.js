@@ -13,32 +13,32 @@ class ProjectSettings extends TatorPage {
     header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
     main.appendChild(header);
 
-    // Configuration form.
-    const configForm = document.createElement("form");
-    configForm.setAttribute("class", "col-8");
-    configForm.style.float = "right";
-
-    main.appendChild(configForm);
-
     // Left navigation
     this.settingsNav =  document.createElement("settings-nav");
     main.appendChild(this.settingsNav);
 
+    // Right side - settings container
+    const configContainer = document.createElement("div");
+    configContainer.setAttribute("class", "col-8");
+    configContainer.style.float = "right";
+
+    main.appendChild(configContainer);
+
     // Project section.
     this.projectBlock = document.createElement("project-main-edit");
-    configForm.appendChild(this.projectBlock);
+    configContainer.appendChild(this.projectBlock);
 
     // Media Type section.
     this.mediaTypesBlock = document.createElement("media-type-main-edit");
-    configForm.appendChild(this.mediaTypesBlock);
+    configContainer.appendChild(this.mediaTypesBlock);
 
     // Localizations section.
     this.localizationBlock = document.createElement("localization-edit");
-    configForm.appendChild(this.mediaTypesBlock);
+    configContainer.appendChild(this.mediaTypesBlock);
 
     // Leaf Type section.
     this.leafTypesBlock = document.createElement("leaf-type-edit");
-    configForm.appendChild(this.mediaTypesBlock);
+    configContainer.appendChild(this.mediaTypesBlock);
 
     // Reference for toggling shadow content
     // @TODO abstract this to take an object of DOMs
