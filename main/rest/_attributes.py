@@ -12,8 +12,13 @@ logger = logging.getLogger(__name__)
 # Separator for key value pairs in attribute queries
 KV_SEPARATOR = '::'
 
+
 class ReplaceValue(Func): #pylint: disable=abstract-method
-    """ TODO: add documentation for this """
+    """
+    Updates the value of the attribute field named `keyname` with `new_value`. See
+    https://www.postgresql.org/docs/current/functions-json.html for documentation on the function
+    template.
+    """
     function = 'jsonb_set'
     template = "%(function)s(%(expressions)s, '{\"%(keyname)s\"}','%(new_value)s', %(create_missing)s)" #pylint: disable=line-too-long
     arity = 1
@@ -29,6 +34,62 @@ class ReplaceValue(Func): #pylint: disable=abstract-method
             create_missing='true' if create_missing else 'false',
             **extra,
         )
+
+
+class ReplaceKey(Func): #pylint: disable=abstract-method
+    """
+    Renames the attribute field named `old_key` to `new_key` and does not modify the value. See
+    https://www.postgresql.org/docs/current/functions-json.html for documentation on the function
+    template.
+    """
+    function = 'jsonb_set'
+    template = "%(function)s(%(expressions)s #- '{\"%(old_key)s\"}', '{\"%(new_key)s\"}', %(expressions)s #> '{\"%(old_key)s\"}', %(create_missing)s)" #pylint: disable=line-too-long
+    arity = 1
+
+    def __init__(
+            self,
+            expression: str,
+            old_key: str,
+            new_key: str,
+            create_missing: bool = False,
+            **extra
+    ):
+        super().__init__(
+            expression,
+            old_key=old_key,
+            new_key=new_key,
+            create_missing='true' if create_missing else 'false',
+            **extra
+        )
+
+
+def bulk_mutate_attributes(attribute_type, q_s):
+    """
+    Mutates the given attribute type in all entries of the QuerySet that have it.
+    """
+    name = attribute_type["name"]
+    dtype = attribute_type["dtype"]
+
+    if dtype == "int":
+        fn = int
+    elif dtype == "float":
+        fn = float
+    elif dtype == "enum":
+        fn = str
+    elif dtype == "string":
+        fn = str
+    else:
+        raise ValueError(f"'{dtype} not a valid mutation destination type")
+
+    entities = []
+    for entity in q_s:
+        if name in entity.attributes:
+            entity.attributes[name] = fn(entity.attributes[name])
+            entities.append(entity)
+
+    if entities:
+        type(entities[0]).objects.bulk_update(entities, ["attributes"], batch_size=1000)
+
 
 def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
     """Attempts to convert an attribute to its expected datatype. Raises an
@@ -223,22 +284,44 @@ def patch_attributes(new_attrs, obj):
                 obj.attributes[attr_name] = new_attrs[attr_name]
     return obj
 
-def bulk_patch_attributes(new_attrs, q_s):
-    """Updates attribute values.
+
+def _process_for_bulk_op(raw_value):
     """
-    for key in new_attrs:
-        if isinstance(new_attrs[key], str):
-            val = f"\"{new_attrs[key]}\""
-        elif isinstance(new_attrs[key], bool):
-            val = f"{str(new_attrs[key]).lower()}"
-        else:
-            val = new_attrs[key]
+    Converts a raw value into the accepted format for jsonb in PostgreSQL.
+    """
+    if isinstance(raw_value, str):
+        return f"\"{raw_value}\""
+    if isinstance(raw_value, bool):
+        return f"{str(raw_value).lower()}"
+
+    return raw_value
+
+
+def bulk_patch_attributes(new_attrs, q_s):
+    """
+    Updates attribute values.
+    """
+    for key, raw_val in new_attrs.items():
         q_s.update(attributes=ReplaceValue(
             'attributes',
             keyname=key,
-            new_value=val,
+            new_value=_process_for_bulk_op(raw_val),
             create_missing=True,
         ))
+
+
+def bulk_rename_attributes(new_attrs, q_s):
+    """
+    Updates attribute keys.
+    """
+    for old_key, new_attribute_type in new_attrs.items():
+        q_s.update(attributes=ReplaceKey(
+            'attributes',
+            old_key=old_key,
+            new_key=new_attribute_type,
+            create_missing=True,
+        ))
+
 
 class AttributeFilterMixin:
     """Provides functions for filtering lists by attribute.

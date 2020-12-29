@@ -82,3 +82,30 @@ attribute_type = {
     'properties': attribute_type_properties,
 }
 
+attribute_addition = {
+    "type": "object",
+    "description": "Addition of an attribute to a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "addition": {'$ref': '#/components/schemas/AttributeType'},
+    },
+}
+
+attribute_rename = {
+    "type": "object",
+    "description": "Renames an attribute of a type.",
+    "properties": {
+        "entity_type": {
+            "type": "string",
+            "description": "The entity type containing the attribute to rename.",
+        },
+        "old_attribute_type_name": {
+            "type": "string",
+            "description": "The attribute to rename.",
+        },
+        "new_attribute_type": {'$ref': '#/components/schemas/AttributeType'},
+    },
+}

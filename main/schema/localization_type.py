@@ -107,7 +107,7 @@ class LocalizationTypeDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying an localization type.',
+            'description': 'A unique integer identifying a localization type.',
             'schema': {'type': 'integer'},
         }]
 

@@ -93,6 +93,10 @@ urlpatterns += [
         AnalysisDetailAPI.as_view(),
     ),
     path(
+        'rest/AttributeType/<int:id>',
+        AttributeTypeListAPI.as_view(),
+    ),
+    path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),
     ),

@@ -6,6 +6,7 @@ from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI
 from .analysis import AnalysisListAPI
 from .analysis import AnalysisDetailAPI
+from .attribute_type import AttributeTypeListAPI
 from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
 from .clone_media import CloneMediaListAPI

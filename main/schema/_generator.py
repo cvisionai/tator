@@ -41,6 +41,8 @@ class CustomGenerator(SchemaGenerator):
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
                 'ArchiveConfig': archive_config,
+                'AttributeAddition': attribute_addition,
+                'AttributeRename': attribute_rename,
                 'AttributeType': attribute_type,
                 'AttributeValue': attribute_value,
                 'AudioDefinition': audio_definition,

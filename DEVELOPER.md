@@ -127,7 +127,16 @@ Included as a submodule of `tator`, this is the python interface to tator.
 ## Building
 
 From the `tator` directory, run `make python-bindings` to build the wheel, using the local copy of
-`tator-py` that is a submodule of `tator`.
+`tator-py` that is a submodule of `tator`. The wheel can be found in
+`tator/scripts/packages/tator-py/dist` and can be upgraded by doing the following:
+
+```
+tator$ cd scripts/packages/tator-py/dist
+dist$ pip uninstall tator
+...
+dist$ pip install tator-0.7.0-py3-none-any.whl
+...
+```
 
 ## Testing
 
