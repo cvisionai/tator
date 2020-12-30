@@ -66,23 +66,23 @@ def waitForMigrations():
             time.sleep(10)
 
 INDEX_CHUNK_SIZE = 50000
+CLASS_MAPPING = {'media': Media,
+                 'localizations': Localization,
+                 'states': State,
+                 'leaves': Leaf}
 
-def get_num_index_chunks(project_number, section):
+def get_num_index_chunks(project_number, section, max_age_days=None):
     """ Returns number of chunks for parallel indexing operation.
     """
     count = 1
-    if section == 'media':
-        count = Media.objects.filter(project=project_number, meta__isnull=False).count()
-    elif section == 'localizations':
-        count = Localization.objects.filter(project=project_number, meta__isnull=False).count()
-    elif section == 'states':
-        count = State.objects.filter(project=project_number, meta__isnull=False).count()
-    elif section == 'leaves':
-        count = Leaf.objects.filter(project=project_number, meta__isnull=False).count()
-    count = math.ceil(count / INDEX_CHUNK_SIZE)
+    qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
+    if max_age_days:
+        min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
+        qs = qs.filter(modified_datetime__gte=min_modified)
+    count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
-def buildSearchIndices(project_number, section, mode='index', chunk=None):
+def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
     """ Builds search index for a project.
         section must be one of:
         'index' - create the index for the project if it does not exist
@@ -127,25 +127,14 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None):
                 for doc in TatorSearch().build_document(entity, mode):
                     yield doc
 
-    if section == 'media':
-        # Create media documents
-        logger.info("Building media documents...")
-        qs = Media.objects.filter(project=project_number, meta__isnull=False)
+    # Get queryset based on selected section.
+    logger.info(f"Building documents for {section}...")
+    qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
 
-    if section == 'localizations':
-        # Create localization documents
-        logger.info("Building localization documents")
-        qs = Localization.objects.filter(project=project_number, meta__isnull=False)
-
-    if section == 'states':
-        # Create state documents
-        logger.info("Building state documents...")
-        qs = State.objects.filter(project=project_number, meta__isnull=False)
-
-    if section == 'treeleaves':
-        # Create treeleaf documents
-        logger.info("Building tree leaf documents...")
-        qs = Leaf.objects.filter(project=project_number, meta__isnull=False)
+    # Apply max age filter.
+    if max_age_days:
+        min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
+        qs = qs.filter(modified_datetime__gte=min_modified)
 
     # Apply limit/offset if chunk parameter given.
     if chunk is not None:

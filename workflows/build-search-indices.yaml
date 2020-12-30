@@ -144,7 +144,7 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
-      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /scratch/chunks.txt"]
+      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} {{workflow.parameters.maxAgeDays}} > /scratch/chunks.txt"]
       resources:
         limits:
           cpu: 500m
@@ -220,7 +220,7 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: ["python3"]
-      args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}"]
+      args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}", "{{workflow.parameters.maxAgeDays}}"]
       resources:
         limits:
           cpu: 500m
