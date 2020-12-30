@@ -200,7 +200,7 @@ class TatorSearch:
                 '_modified_by': {'type': 'keyword'},
                 '_created_datetime': {'type': 'date'},
                 '_created_by': {'type': 'keyword'},
-                '_indexed_datetime': {'type': 'date'}
+                '_indexed_datetime': {'type': 'date'},
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
