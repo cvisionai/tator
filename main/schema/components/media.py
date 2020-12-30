@@ -3,6 +3,7 @@ media_properties = {
         'description': 'Name of the media.',
         'type': 'string',
     },
+    'media_files': {'$ref': '#/components/schemas/MediaFiles'},
     'last_edit_start': {
         'description': 'Datetime of the start of the session when this media or its annotations '
                        'were last edited.',
@@ -37,19 +38,19 @@ media_get_properties = {
     },
     'file': {
         'type': 'string',
-        'description': 'DEPRECATED. Use media_files. URL of the media file. Relative to https://<domain>/media/.',
+        'description': 'URL of the media file. Relative to https://<domain>/media/.',
     },
     'thumbnail': {
         'type': 'string',
-        'description': 'DEPRECATED. Use media_files. URL of the thumbnail. Relative to https://<domain>/media/.',
+        'description': 'URL of the thumbnail. Relative to https://<domain>/media/.',
     },
     'thumbnail_gif': {
         'type': 'string',
-        'description': 'DEPRECATED. Use media_files. URL of the thumbnail gif for videos. Relative to https://<domain>/media/.',
+        'description': 'URL of the thumbnail gif for videos. Relative to https://<domain>/media/.',
     },
     'segment_info': {
         'type': 'string',
-        'description': 'DEPRECATED. Use media_files. Path to segment info.',
+        'description': 'Path to segment info.',
     },
     'created_datetime': {
         'type': 'string',
@@ -118,6 +119,19 @@ media_spec = {
         },
         'gid': media_get_properties['gid'],
         'uid': media_get_properties['uid'],
+        'url': {
+            'description': 'Upload URL for the image if this is an image type. If '
+                           'not an image, this field is ignored.',
+            'type': 'string',
+        },
+        'thumbnail_url': {
+            'description': 'Upload URL for the media thumbnail if already generated.',
+            'type': 'string',
+        },
+        'thumbnail_gif_url': {
+            'description': 'Upload URL for the video gif thumbnail if already generated.',
+            'type': 'string',
+        },
         'section': {
             'description': 'Media section name.',
             'type': 'string',
@@ -155,6 +169,10 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
+        'progress_name': {
+            'description': 'Replaces name in progress message.',
+            'type': 'string',
+        },
         'attributes': {
             'nullable': True,
             'description': 'Attributes for the media',
@@ -167,6 +185,14 @@ media_update = {
     'type': 'object',
     'properties': {
         **media_properties,
+        'thumbnail_url': {
+            'description': 'Upload URL for the thumbnail.',
+            'type': 'string',
+        },
+        'thumbnail_gif_url': {
+            'description': 'Upload URL for the thumbnail gif.',
+            'type': 'string',
+        },
         'num_frames': {
             'description': 'Number of frames in the video.',
             'type': 'integer',
@@ -194,7 +220,6 @@ media_update = {
 media = {
     'type': 'object',
     'properties': {
-        'media_files': {'$ref': '#/components/schemas/MediaFiles'},
         **media_properties,
         **media_get_properties,
     },

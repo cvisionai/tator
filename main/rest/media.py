@@ -165,25 +165,71 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         # dropped if done prior to check_required_fields.
         attributes.update({'tator_user_sections': tator_user_sections})
 
-        # Create the media object.
-        media_obj = Media(
-            project=Project.objects.get(pk=project),
-            meta=MediaType.objects.get(pk=entity_type),
-            name=name,
-            md5=md5,
-            attributes=attributes,
-            created_by=self.request.user,
-            modified_by=self.request.user,
-            gid=gid,
-            uid=uid,
-        )
+        if media_type.dtype == 'image':
+            # Get image only parameters.
+            url = params['url']
+            thumbnail_url = params.get('thumbnail_url', None)
 
-        if 'width' in params:
-            media_obj.width = params['width']
-        if 'height' in params:
-            media_obj.height = params['height']
+            # Determine file paths
+            upload_uid = url.split('/')[-1]
+            media_uid = str(uuid1())
+            ext = os.path.splitext(name)[1]
+            thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
 
-        if media_type.dtype == 'video':
+            # Create the media object.
+            media_obj = Media(
+                project=Project.objects.get(pk=project),
+                meta=MediaType.objects.get(pk=entity_type),
+                name=name,
+                md5=md5,
+                attributes=attributes,
+                created_by=self.request.user,
+                modified_by=self.request.user,
+                gid=gid,
+                uid=uid,
+            )
+
+            # Download the file to specified path.
+            media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
+            download_file(url, media_path)
+
+            # Set media location in database.
+            media_obj.file.name = os.path.relpath(media_path, settings.MEDIA_ROOT)
+
+            if thumbnail_url is None:
+                # Create the thumbnail.
+                thumb_size = (256, 256)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+                image = Image.open(media_path)
+                media_obj.width, media_obj.height = image.size
+                image = image.convert('RGB') # Remove alpha channel for jpeg
+                image.thumbnail(thumb_size, Image.ANTIALIAS)
+                image.save(thumb_path)
+                image.close()
+            else:
+                download_file(thumbnail_url, thumb_path)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+                image = Image.open(media_path)
+                media_obj.width, media_obj.height = image.size
+                image.close()
+            media_obj.save()
+
+            response = {'message': "Image saved successfully!", 'id': media_obj.id}
+
+        else:
+            # Create the media object.
+            media_obj = Media(
+                project=Project.objects.get(pk=project),
+                meta=MediaType.objects.get(pk=entity_type),
+                name=name,
+                md5=md5,
+                attributes=attributes,
+                created_by=self.request.user,
+                modified_by=self.request.user,
+                gid=gid,
+                uid=uid,
+            )
+
             # Add optional parameters.
             if 'fps' in params:
                 media_obj.fps = params['fps']
@@ -191,13 +237,28 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 media_obj.num_frames = params['num_frames']
             if 'codec' in params:
                 media_obj.codec = params['codec']
+            if 'width' in params:
+                media_obj.width = params['width']
+            if 'height' in params:
+                media_obj.height = params['height']
 
-        media_obj.save()
+            # Use thumbnails if they are given.
+            thumbnail_url = params.get('thumbnail_url', None)
+            thumbnail_gif_url = params.get('thumbnail_gif_url', None)
+            if thumbnail_url is not None:
+                thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
+                download_file(thumbnail_url, thumb_path)
+                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+            if thumbnail_gif_url is not None:
+                thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.gif')
+                download_file(thumbnail_gif_url, thumb_gif_path)
+                media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
+            media_obj.save()
 
-        msg = (f"Media object {media_obj.id} created for "
-               f"{name} on project {media_type.project.name}!")
-        response = {'message': msg, 'id': media_obj.id}
-        logger.info(msg)
+            msg = (f"Media object {media_obj.id} created for video "
+                   f"{name} on project {media_type.project.name}")
+            response = {'message': msg, 'id': media_obj.id}
+            logger.info(msg)
 
         return response
 
@@ -346,6 +407,22 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'last_edit_end' in params:
             obj.last_edit_end = params['last_edit_end']
+
+        if 'thumbnail_url' in params:
+            # Save the thumbnail.
+            save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
+            download_file(params['thumbnail_url'], save_path)
+            obj.thumbnail.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
+
+        if 'thumbnail_gif_url' in params:
+            # Save the thumbnail gif.
+            save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
+            download_file(params['thumbnail_gif_url'], save_path)
+            obj.thumbnail_gif.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
+
+        # Media definitions may be appended but not replaced or deleted.
+        if 'media_files' in params:
+            obj.update_media_files(params['media_files'])
 
         if 'fps' in params:
             obj.fps = params['fps']
