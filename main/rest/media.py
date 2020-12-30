@@ -466,12 +466,15 @@ class MediaDetailAPI(BaseDetailView):
                     raise ValueError(f"Cannot set a multi definition on a Media that contains "
                                       "individual media!")
             # Check values of IDs (that they exist and are part of the same project).
-            sub_media = Media.objects.filter(project=obj.project, pk__in=param['multi']['ids'])
+            sub_media = Media.objects.filter(project=obj.project, pk__in=params['multi']['ids'])
             if len(params['multi']['ids']) != sub_media.count():
                 raise ValueError(f"One or more media IDs in multi definition is not part of "
                                   "project {obj.project.pk} or does not exist!")
+            if obj.media_files is None:
+                obj.media_files = {}
             for key in ['ids', 'layout', 'quality']:
-                obj.media_files[key] = params['multi'][key]
+                if params['multi'].get(key):
+                    obj.media_files[key] = params['multi'][key]
 
         obj.save()
 
