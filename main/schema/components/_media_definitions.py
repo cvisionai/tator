@@ -137,6 +137,21 @@ image_definition = {
     },
 }
 
+multi_definition = {
+    'description': 'Object containing information needed for a multi media type.',
+    'type': 'object',
+    'properties': {
+        'ids': {'type': 'array',
+                'description': 'If multi-stream list of ids of sub-videos',
+                'items': {'type': 'integer'}},
+        'layout': {'type': 'array',
+                   'description': '2-element array to define rxc layout',
+                   'items': {'type': 'integer'}},
+        'quality': {'type': 'integer',
+                    'description': 'Resolution to fetch on each sub-video'},
+    },
+}
+
 media_files = {
     'description': 'Object containing upload urls for the transcoded file and '
                    'corresponding `VideoDefinition`.',
@@ -148,15 +163,7 @@ media_files = {
         'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'thumbnail': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'thumbnail_gif': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
-        # Multi-stream definitions
-        'ids': {'type': 'array',
-                'description': 'If multi-stream list of ids of sub-videos',
-                'items': {'type': 'integer'}},
-        'layout': {'type': 'array',
-                   'description': '2-element array to define rxc layout',
-                   'items': {'type': 'integer'}},
-        'quality': {'type': 'integer',
-                    'description': 'Resolution to fetch on each sub-video'},
+        **multi_definition['properties'],
     },
 }
 

@@ -459,6 +459,24 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'height' in params:
             obj.height = params['height']
+
+        if 'multi' in params:
+            # If this object already contains non-multi media definitions, raise an exception.
+            if obj.media_files:
+                video =  obj.media_files.get('video', [])
+                image =  obj.media_files.get('image', [])
+                has_media = (len(video) > 0) or (len(image) > 0)
+                if has_media:
+                    raise ValueError(f"Cannot set a multi definition on a Media that contains "
+                                      "individual media!")
+            # Check values of IDs (that they exist and are part of the same project).
+            sub_media = Media.objects.filter(project=obj.project, pk__in=param['multi']['ids'])
+            if len(params['multi']['ids']) != sub_media.count():
+                raise ValueError(f"One or more media IDs in multi definition is not part of "
+                                  "project {obj.project.pk} or does not exist!")
+            for key in ['ids', 'layout', 'quality']:
+                obj.media_files[key] = params['multi'][key]
+
         obj.save()
 
         return {'message': f'Media {params["id"]} successfully updated!'}

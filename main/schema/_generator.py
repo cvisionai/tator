@@ -84,6 +84,7 @@ class CustomGenerator(SchemaGenerator):
                 'MembershipSpec': membership_spec,
                 'MembershipUpdate': membership_update,
                 'Membership': membership,
+                'MultiDefinition': multi_definition,
                 'NotifySpec': notify_spec,
                 'OrganizationSpec': organization_spec,
                 'Organization': organization,

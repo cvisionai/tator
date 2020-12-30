@@ -214,6 +214,7 @@ media_update = {
             'description': 'Pixel height of the video.',
             'type': 'integer',
         },
+        'multi': {'$ref': '#/components/schemas/MultiDefinition'},
     },
 }
 

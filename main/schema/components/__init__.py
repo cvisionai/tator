@@ -87,6 +87,7 @@ from ._archive_config import archive_config
 from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import image_definition
+from ._media_definitions import multi_definition
 from ._media_definitions import media_files
 from ._streaming_config import resolution_config
 from ._color import rgb_color
