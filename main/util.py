@@ -72,13 +72,13 @@ def get_num_index_chunks(project_number, section):
     """
     count = 1
     if section == 'media':
-        count = Media.objects.filter(project=project_number).count()
+        count = Media.objects.filter(project=project_number, meta__isnull=False).count()
     elif section == 'localizations':
-        count = Localization.objects.filter(project=project_number).count()
+        count = Localization.objects.filter(project=project_number, meta__isnull=False).count()
     elif section == 'states':
-        count = State.objects.filter(project=project_number).count()
+        count = State.objects.filter(project=project_number, meta__isnull=False).count()
     elif section == 'leaves':
-        count = Leaf.objects.filter(project=project_number).count()
+        count = Leaf.objects.filter(project=project_number, meta__isnull=False).count()
     count = math.ceil(count / INDEX_CHUNK_SIZE)
     return count
 
