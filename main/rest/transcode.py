@@ -1,11 +1,7 @@
 import logging
-import os
 from uuid import uuid1
 
 from rest_framework.authtoken.models import Token
-from django.conf import settings
-from urllib import parse as urllib_parse
-import requests
 
 from ..kube import TatorTranscode
 from ..cache import TatorCache
