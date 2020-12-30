@@ -350,7 +350,7 @@ class TatorTranscode(JobManagerMixin):
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.create_media',
