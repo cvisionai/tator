@@ -1,7 +1,7 @@
 function fetchRetry(url, options) {
   return new Promise((resolve, reject) => {
     let retry = 0;
-    const delay = [50, 100, 200];
+    const delay = [50, 100, 200, 500, 1000];
     const max_retry = delay.length;
     function success(response) {
       resolve(response);
