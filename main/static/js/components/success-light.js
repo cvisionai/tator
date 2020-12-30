@@ -55,7 +55,7 @@ class SuccessLight extends TatorElement {
 
       var that = this;
       setTimeout(() => {
-        if (that.fade_stage > 0) {
+        if (that.fade_stage == 1) {
           that.fade_stage = 2;
         }
         that.fade();
@@ -63,13 +63,15 @@ class SuccessLight extends TatorElement {
     }
     else if (this.fade_stage == 2){
 
+      this._message_div.style.display = null;
+      this._svg.style.display = null;
       this.style.opacity = '100';
       this.style.transition = '0.25s';
       this.message(this.new_message, this.new_color);
 
       var that = this;
       setTimeout(() => {
-        if (that.fade_stage > 0) {
+        if (that.fade_stage == 2) {
           that.fade_stage = 3;
         }
         that.fade();
@@ -78,6 +80,13 @@ class SuccessLight extends TatorElement {
     else if (this.fade_stage == 3){
       this.style.opacity = '0';
       this.style.transition = '2.0s';
+
+      var that = this;
+      setTimeout(() => {
+        if (that.fade_stage == 3) {
+          that.hide();
+        }
+      }, 2000);
     }
   }
 
@@ -96,7 +105,7 @@ class SuccessLight extends TatorElement {
     }
     else
     {
-      this._svg.setAttribute("stroke", "#54e37a");
+      this._svg.setAttribute("stroke", "#85d81d");
     }
     this._message_span.textContent = message;
     this._message_div.style.display = null;

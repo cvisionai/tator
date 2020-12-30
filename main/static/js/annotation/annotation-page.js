@@ -59,8 +59,6 @@ class AnnotationPage extends TatorPage {
       this._progressDialog.removeAttribute("is-open", "");
     });
 
-    this._successColor = "#54e37a";
-
     window.addEventListener("error", (evt) => {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
@@ -900,7 +898,7 @@ class AnnotationPage extends TatorPage {
         if (jobSuccessful) {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          Utilities.showSuccessIcon("Track extension done.");
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
         }
       });
@@ -990,7 +988,7 @@ class AnnotationPage extends TatorPage {
         .then(() => {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          Utilities.showSuccessIcon("Track extension done.");
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
         });
       }
@@ -1039,7 +1037,7 @@ class AnnotationPage extends TatorPage {
           if (jobSuccessful) {
             this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
             this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-            Utilities.showSuccessIcon("Track extension done.", this._successColor);
+            Utilities.showSuccessIcon("Track extension done.");
             canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
           }
         });
@@ -1070,7 +1068,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Track trimming done.", this._successColor);
+        Utilities.showSuccessIcon("Track trimming done.");
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
       });
     });
@@ -1094,7 +1092,7 @@ class AnnotationPage extends TatorPage {
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Detection added to track.", this._successColor);
+        Utilities.showSuccessIcon("Detection added to track.");
         canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
       });
     });
