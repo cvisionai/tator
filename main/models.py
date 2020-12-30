@@ -657,51 +657,6 @@ class Media(Model):
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
-    def update_media_files(self, media_files):
-        """ Updates media files by merging a new key into existing JSON object.
-        """
-        # Handle null existing value.
-        if self.media_files is None:
-            self.media_files = {}
-
-        # Append to existing definitions.
-        new_streaming = media_files.get('streaming', [])
-        old_streaming = self.media_files.get('streaming', [])
-        streaming = new_streaming + old_streaming
-        new_archival = media_files.get('archival', [])
-        old_archival = self.media_files.get('archival', [])
-        archival = new_archival + old_archival
-        new_audio = media_files.get('audio', [])
-        old_audio = self.media_files.get('audio', [])
-        audio = new_audio + old_audio
-
-        for fp in new_streaming:
-            path = fp['path']
-            seg_path = fp['segment_info']
-            Resource.add_resource(path, self)
-            Resource.add_resource(seg_path, self)
-
-        for fp in new_archival:
-            Resource.add_resource(fp['path'], self)
-
-        for fp in new_audio:
-            Resource.add_resource(fp['path'], self)
-
-        # Only fill in a key if it has at least one definition.
-        self.media_files = {}
-        if streaming:
-            streaming.sort(key=lambda x: x['resolution'][0], reverse=True)
-            self.media_files['streaming'] = streaming
-        if archival:
-            self.media_files['archival'] = archival
-        if audio:
-            self.media_files['audio'] = audio
-
-        # Handle roi, layout, and quality
-        for x in ['layout','ids','quality']:
-            if x in media_files:
-                self.media_files[x] = media_files[x]
-
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
