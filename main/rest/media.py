@@ -126,6 +126,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             response_data = {'count': len(media_ids)}
         elif len(media_ids) > 0:
             response_data = database_query_ids('main_media', media_ids, 'name')
+        presigned = params.get('presigned')
+        if presigned is not None:
+            s3 = s3_client()
+            response_data = [_presign(s3, presigned, item) for item in response_data]
         return response_data
 
     def _post(self, params):
