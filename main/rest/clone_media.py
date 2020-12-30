@@ -146,12 +146,13 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
                 new_obj.file.name = os.path.relpath(new_path, settings.MEDIA_ROOT)
 
             #Handle thumbnail
-            orig_thumb = new_obj.thumbnail.name
-            name = f"{str(uuid1())}{os.path.splitext(orig_thumb)[1]}"
-            orig_thumb_path = os.path.join("/media", orig_thumb)
-            new_thumb = os.path.join("/media/", str(dest), name)
-            shutil.copyfile(orig_thumb_path, new_thumb)
-            new_obj.thumbnail = os.path.join(str(dest), name)
+            if new_obj.thumbnail:
+                orig_thumb = new_obj.thumbnail.name
+                name = f"{str(uuid1())}{os.path.splitext(orig_thumb)[1]}"
+                orig_thumb_path = os.path.join("/media", orig_thumb)
+                new_thumb = os.path.join("/media/", str(dest), name)
+                shutil.copyfile(orig_thumb_path, new_thumb)
+                new_obj.thumbnail = os.path.join(str(dest), name)
 
             if new_obj.thumbnail_gif:
                 orig_thumb = new_obj.thumbnail_gif.name
