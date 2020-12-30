@@ -1040,25 +1040,25 @@ class FileMixin:
 
         # Create media definition.
         response = self.client.post(f'{list_endpoint}?role={role}',
-                                    {'path': 'asdf', 'resolution': [1, 1]}, format='json')
+                                    self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Patch the media definition.
         response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
-                                     {'path': 'asdf', 'resolution': [2, 2]}, format='json')
+                                     self.patch_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Get media definition list.
         response = self.client.get(f'{list_endpoint}?role={role}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]['path'], 'asdf')
-        self.assertEqual(response.data[0]['resolution'][0], 2)
+        for key in self.patch_json:
+            self.assertEqual(response.data[0][key], self.patch_json[key])
 
         # Get media definition detail.
         response = self.client.get(f'{detail_endpoint}?role={role}&index=0')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['path'], 'asdf')
-        self.assertEqual(response.data['resolution'][0], 2)
+        for key in self.patch_json:
+            self.assertEqual(response.data[key], self.patch_json[key])
 
         # Delete media definition.
         response = self.client.delete(f'{detail_endpoint}?role={role}&index=0')
@@ -2142,6 +2142,12 @@ class ImageFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'ImageFiles'
         self.detail_uri = 'ImageFile'
+        self.create_json = {'path': 'asdf', 'resolution': [1, 1]}
+        self.patch_json = {'path': 'asdf', 'resolution': [2, 2]}
+
+        # Patch the media definition.
+        response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
+                                     {'path': 'asdf', 'resolution': [2, 2]}, format='json')
 
     def test_image(self):
         self._test_methods('image')
@@ -2152,3 +2158,51 @@ class ImageFileTestCase(APITestCase, FileMixin):
     def test_thumbnail_gif(self):
         self._test_methods('thumbnail_gif')
 
+class VideoFileTestCase(APITestCase, FileMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.list_uri = 'VideoFiles'
+        self.detail_uri = 'VideoFile'
+        self.create_json = {'path': 'asdf', 'resolution': [1, 1], 'codec': 'h264'}
+        self.patch_json = {'path': 'asdf', 'resolution': [2, 2], 'codec': 'h264'}
+
+    def test_streaming(self):
+        self._test_methods('streaming')
+
+    def test_archival(self):
+        self._test_methods('archival')
+
+class AudioFileTestCase(APITestCase, FileMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.list_uri = 'AudioFiles'
+        self.detail_uri = 'AudioFile'
+        self.create_json = {'path': 'asdf', 'codec': 'h264'}
+        self.patch_json = {'path': 'asdf', 'codec': 'h264'}
+
+    def test_audio(self):
+        self._test_methods('audio')
