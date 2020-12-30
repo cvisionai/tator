@@ -32,7 +32,7 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
-      args: ["python3 manage.py getprojects > /projects.txt"]
+      args: ["python3 manage.py getprojects > /scratch/projects.txt"]
       resources:
         requests:
           cpu: 50m
@@ -65,11 +65,17 @@ spec:
         value: "{{workflow.parameters.tatorDebug}}"
       - name: TATOR_USE_MIN_JS
         value: "{{workflow.parameters.useMinJs}}"
+      volumeMounts:
+      - mountPath: /scratch
+        name: scratch
+    volumes:
+    - name: scratch
+      emptyDir: {}
     outputs:
       parameters:
       - name: projects
         valueFrom:
-          path: /projects.txt
+          path: /scratch/projects.txt
 
   # Executes parallel for loop for list of projects
   - name: build-projects
@@ -141,7 +147,7 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
-      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /chunks.txt"]
+      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /scratch/chunks.txt"]
       resources:
         requests:
           cpu: 50m
@@ -174,16 +180,22 @@ spec:
         value: "{{workflow.parameters.tatorDebug}}"
       - name: TATOR_USE_MIN_JS
         value: "{{workflow.parameters.useMinJs}}"
+      volumeMounts:
+      - mountPath: /scratch
+        name: scratch
+    volumes:
+    - name: scratch
+      emptyDir: {}
     outputs:
       parameters:
       - name: chunks
         valueFrom:
-          path: /chunks.txt
+          path: /scratch/chunks.txt
 
 
   # Build chunks in parallel loop
   - name: build-chunks
-    parallelism: 10
+    parallelism: 100
     inputs:
       parameters:
       - name: project
