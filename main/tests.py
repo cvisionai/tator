@@ -1033,6 +1033,43 @@ class AttributeTestMixin:
                 for lat, lon in test_vals
             ]))
 
+class FileMixin:
+    def _test_methods(self, role):
+        list_endpoint = f'/rest/{self.list_uri}/{self.media.pk}'
+        detail_endpoint = f'/rest/{self.detail_uri}/{self.media.pk}'
+
+        # Create media definition.
+        response = self.client.post(f'{list_endpoint}?role={role}',
+                                    {'path': 'asdf', 'resolution': [1, 1]}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Patch the media definition.
+        response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
+                                     {'path': 'asdf', 'resolution': [2, 2]}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Get media definition list.
+        response = self.client.get(f'{list_endpoint}?role={role}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['path'], 'asdf')
+        self.assertEqual(response.data[0]['resolution'][0], 2)
+
+        # Get media definition detail.
+        response = self.client.get(f'{detail_endpoint}?role={role}&index=0')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['path'], 'asdf')
+        self.assertEqual(response.data['resolution'][0], 2)
+
+        # Delete media definition.
+        response = self.client.delete(f'{detail_endpoint}?role={role}&index=0')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check we have nothing.
+        response = self.client.get(f'{list_endpoint}?role={role}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
+
 class CurrentUserTestCase(APITestCase):
     def test_get(self):
         self.user = create_test_user()
@@ -2088,7 +2125,7 @@ class OrganizationTestCase(
     def tearDown(self):
         self.project.delete()
 
-class ImageFileTestCase(APITestCase):
+class ImageFileTestCase(APITestCase, FileMixin):
     def setUp(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -2105,42 +2142,6 @@ class ImageFileTestCase(APITestCase):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'ImageFiles'
         self.detail_uri = 'ImageFile'
-        logger.info(f"MEDIA ID: {self.media.pk}")
-
-    def _test_methods(self, role):
-        list_endpoint = f'/rest/{self.list_uri}/{self.media.pk}'
-        detail_endpoint = f'/rest/{self.detail_uri}/{self.media.pk}'
-
-        # Create media definition.
-        response = self.client.post(f'{list_endpoint}?role={role}',
-                                    {'path': 'asdf', 'resolution': [1, 1]}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        # Patch the media definition.
-        response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
-                                     {'path': 'asdf', 'resolution': [2, 2]}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Get media definition list.
-        response = self.client.get(f'{list_endpoint}?role={role}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]['path'], 'asdf')
-        self.assertEqual(response.data[0]['resolution'][0], 2)
-
-        # Get media definition detail.
-        response = self.client.get(f'{detail_endpoint}?role={role}&index=0')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['path'], 'asdf')
-        self.assertEqual(response.data['resolution'][0], 2)
-
-        # Delete media definition.
-        response = self.client.delete(f'{detail_endpoint}?role={role}&index=0')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Check we have nothing.
-        response = self.client.get(f'{list_endpoint}?role={role}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
 
     def test_image(self):
         self._test_methods('image')
