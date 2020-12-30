@@ -786,27 +786,16 @@ def media_post_delete(sender, instance, **kwargs):
 
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
-        files = instance.media_files.get('streaming', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
-
-            path = obj['segment_info']
-            safe_delete(path)
-        files = instance.media_files.get('archival', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
-        files = instance.media_files.get('audio', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+            files = instance.media_files.get(key, [])
+            if files is None:
+                files = []
+            for obj in files:
+                path = obj['path']
+                safe_delete(path)
+                if key == 'streaming':
+                    path = obj['segment_info']
+                    safe_delete(path)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 
