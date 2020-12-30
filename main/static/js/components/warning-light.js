@@ -39,7 +39,64 @@ class WarningLight extends TatorElement {
     line_1.setAttribute("x2", "12.01");
     line_1.setAttribute("y2", "17");
     svg.appendChild(line_1);
+
+    this._message_div = document.createElement("div");
+    this._message_div.setAttribute("class", "more d-flex f2");
+    this._shadow.appendChild(this._message_div);
+
+    this._message_span = document.createElement("span");
+    this._message_span.setAttribute("class", "px-4 py-4");
+    this._message_div.appendChild(this._message_span);
+
+    this.hide();
+    this.fade_stage = 0; // 0, 1, 2 or 3
+
     window.tator_warning_light = this;
+  }
+
+  fade () {
+    if (this.fade_stage == 0) {
+      this.fade_stage = 1;
+      this.fade();
+    }
+    else if (this.fade_stage == 1) {
+
+      this.style.opacity = '0';
+      this.style.transition = '0.25s';
+
+      var that = this;
+      setTimeout(() => {
+        if (that.fade_stage > 0) {
+          that.fade_stage = 2;
+        }
+        that.fade();
+      }, 250);
+    }
+    else if (this.fade_stage == 2){
+
+      this.style.opacity = '100';
+      this.style.transition = '0.25s';
+      this.message(this.new_message, this.new_color);
+
+      var that = this;
+      setTimeout(() => {
+        if (that.fade_stage > 0) {
+          that.fade_stage = 3;
+        }
+        that.fade();
+      }, 10000);
+    }
+    else if (this.fade_stage == 3){
+      this.style.opacity = '0';
+      this.style.transition = '2.0s';
+    }
+  }
+
+  fade_message(message, color){
+    this.new_message = message;
+    this.new_color = color;
+    this.fade_stage = 0;
+    this.fade();
   }
 
   message(message, color)
@@ -52,13 +109,17 @@ class WarningLight extends TatorElement {
     {
       this._svg.setAttribute("stroke", "#d8cd1d"); // yellow from _variables.scss
     }
+    this._message_span.textContent = message;
+    this._message_div.style.display = null;
     this._title.textContent = message;
     this._svg.style.display = null;
+
   }
 
   hide()
   {
     this._svg.style.display = "none";
+    this._message_div.style.display = "none";
   }
 }
 

@@ -19,7 +19,6 @@ class Utilities
         el.message(message, color);
       }
       else {
-
         el.fade_message(message, color);
       }
     }
@@ -39,12 +38,17 @@ class Utilities
 
   }
 
-  static warningAlert(message, color)
+  static warningAlert(message, color, noFade)
   {
     const el = window.tator_warning_light;
     if (el)
     {
-      el.message(message, color);
+      if (noFade) {
+        el.message(message, color);
+      }
+      else {
+        el.fade_message(message, color);
+      }
     }
     else
     {

@@ -64,7 +64,7 @@ class AnnotationPage extends TatorPage {
     window.addEventListener("error", (evt) => {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
-      Utilities.warningAlert("System error detected","#ff3e1d");
+      Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
 
     this._settings._bookmark.addEventListener("click", () => {
