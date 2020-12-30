@@ -6,6 +6,8 @@ from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI
 from .analysis import AnalysisListAPI
 from .analysis import AnalysisDetailAPI
+from .audio_file import AudioFileListAPI
+from .audio_file import AudioFileDetailAPI
 from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
 from .clone_media import CloneMediaListAPI
@@ -66,4 +68,6 @@ from .user import UserDetailAPI
 from .user import CurrentUserAPI
 from .version import VersionListAPI
 from .version import VersionDetailAPI
+from .video_file import VideoFileListAPI
+from .video_file import VideoFileDetailAPI
 from .jwt import JwtGatewayAPI

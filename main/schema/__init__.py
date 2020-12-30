@@ -6,6 +6,8 @@ from .algorithm import AlgorithmDetailSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
 from .analysis import AnalysisDetailSchema
+from .audio_file import AudioFileListSchema
+from .audio_file import AudioFileDetailSchema
 from .bookmark import BookmarkListSchema
 from .bookmark import BookmarkDetailSchema
 from .clone_media import CloneMediaListSchema
@@ -67,6 +69,8 @@ from .user import UserDetailSchema
 from .user import CurrentUserSchema
 from .version import VersionListSchema
 from .version import VersionDetailSchema
+from .video_file import VideoFileListSchema
+from .video_file import VideoFileDetailSchema
 from ._parse import parse
 from ._generator import NoAliasRenderer
 from ._generator import CustomGenerator

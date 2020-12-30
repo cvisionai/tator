@@ -93,6 +93,14 @@ urlpatterns += [
         AnalysisDetailAPI.as_view(),
     ),
     path(
+        'rest/AudioFiles/<int:id>',
+        AudioFileListAPI.as_view(),
+    ),
+    path(
+        'rest/AudioFile/<int:id>',
+        AudioFileDetailAPI.as_view(),
+    ),
+    path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),
     ),
@@ -338,6 +346,14 @@ urlpatterns += [
         'rest/Version/<int:id>',
         VersionDetailAPI.as_view(),
         name='Version',
+    ),
+    path(
+        'rest/VideoFiles/<int:id>',
+        VideoFileListAPI.as_view(),
+    ),
+    path(
+        'rest/VideoFile/<int:id>',
+        VideoFileDetailAPI.as_view(),
     ),
 
 
