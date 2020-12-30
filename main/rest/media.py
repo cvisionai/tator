@@ -437,14 +437,6 @@ class MediaDetailAPI(BaseDetailView):
         if 'last_edit_end' in params:
             obj.last_edit_end = params['last_edit_end']
 
-        if 'thumbnail_url' in params:
-            # Save the thumbnail.
-            media_obj = _save_image(params['thumbnail_url'], media_obj, 'thumbnail')
-
-        if 'thumbnail_gif_url' in params:
-            # Save the thumbnail gif.
-            media_obj = _save_image(params['thumbnail_gif_url'], media_obj, 'thumbnail_gif')
-
         if 'fps' in params:
             obj.fps = params['fps']
 

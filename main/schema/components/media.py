@@ -185,14 +185,6 @@ media_update = {
     'type': 'object',
     'properties': {
         **media_properties,
-        'thumbnail_url': {
-            'description': 'Upload URL for the thumbnail.',
-            'type': 'string',
-        },
-        'thumbnail_gif_url': {
-            'description': 'Upload URL for the thumbnail gif.',
-            'type': 'string',
-        },
         'num_frames': {
             'description': 'Number of frames in the video.',
             'type': 'integer',
