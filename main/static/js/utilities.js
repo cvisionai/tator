@@ -15,18 +15,12 @@ class Utilities
     const el = window.tator_success_light;
     if (el)
     {
-      el.style.transition = '0.25s';
-      el.style.opacity = '100';
-      el.style.visibility = 'visible';
-      el.message(message, color);
+      if (noFade) {
+        el.message(message, color);
+      }
+      else {
 
-      if (!noFade)
-      {
-        setTimeout(function() {
-            el.style.transition = '1.0s';
-            el.style.opacity = '0';
-            el.style.visibility = 'hidden';
-          }, 3000);
+        el.fade_message(message, color);
       }
     }
     else

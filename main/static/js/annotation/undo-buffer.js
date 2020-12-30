@@ -317,6 +317,20 @@ class UndoBuffer extends HTMLElement {
   }
 
   _emitUpdate(method, id, body, dataType) {
+
+    var msg = ""
+    if (method === "PATCH") {
+      msg = " updated!"
+    }
+    else if (method == "POST") {
+      msg = " created!"
+    }
+    else if (method == "DELETE") {
+      msg = " deleted!"
+    }
+    msg = dataType.name + msg;
+    Utilities.showSuccessIcon(msg);
+
     this.dispatchEvent(new CustomEvent("update", {
       detail: {
         method: method,
