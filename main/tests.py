@@ -2145,10 +2145,6 @@ class ImageFileTestCase(APITestCase, FileMixin):
         self.create_json = {'path': 'asdf', 'resolution': [1, 1]}
         self.patch_json = {'path': 'asdf', 'resolution': [2, 2]}
 
-        # Patch the media definition.
-        response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
-                                     {'path': 'asdf', 'resolution': [2, 2]}, format='json')
-
     def test_image(self):
         self._test_methods('image')
 

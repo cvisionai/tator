@@ -71,6 +71,7 @@ class StateTypeListAPI(BaseListView):
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
+        del params['body']
         obj = StateType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)

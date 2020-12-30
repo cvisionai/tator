@@ -56,6 +56,7 @@ class MediaTypeListAPI(BaseListView):
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
+        del params['body']
         obj = MediaType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}

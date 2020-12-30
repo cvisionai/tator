@@ -32,6 +32,7 @@ class LeafTypeListAPI(BaseListView):
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
+        del params['body']
         obj = LeafType(**params)
         obj.save()
         return {'message': 'Leaf type created successfully!', 'id': obj.id}

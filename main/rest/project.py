@@ -46,6 +46,7 @@ class ProjectListAPI(BaseListView):
             raise Exception("Project with this name already exists!")
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
+        del params['body']
         project = Project.objects.create(
             **params,
             creator=self.request.user,
