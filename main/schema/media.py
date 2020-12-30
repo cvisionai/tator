@@ -72,7 +72,7 @@ class MediaListSchema(AutoSchema):
         if method in ['GET', 'PATCH', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema
         if method == 'GET':
-            params = [{
+            params += [{
                 'name': 'presigned',
                 'in': 'query',
                 'required': False,
