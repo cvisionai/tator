@@ -756,6 +756,12 @@ def media_save(sender, instance, created, **kwargs):
             Resource.add_resource(fp['segment_info'], instance)
         for fp in instance.media_files.get('archival', []):
             Resource.add_resource(fp['path'], instance)
+        for fp in instance.media_files.get('image', []):
+            Resource.add_resource(fp['path'], instance)
+        for fp in instance.media_files.get('thumbnail', []):
+            Resource.add_resource(fp['path'], instance)
+        for fp in instance.media_files.get('thumbnail_gif', []):
+            Resource.add_resource(fp['path'], instance)
 
 def safe_delete(path):
     try:
