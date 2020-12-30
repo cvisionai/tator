@@ -2,6 +2,8 @@ from django.db import transaction
 from django.http import Http404
 
 from ..models import Media
+from ..models import Resource
+from ..models import safe_delete
 from ..schema import AudioFileListSchema
 from ..schema import AudioFileDetailSchema
 
@@ -39,6 +41,7 @@ class AudioFileListAPI(BaseListView):
                                  f"{len(media.media_files['audio'])}")
             media.media_files['audio'].insert(index, body)
         media.save()
+        Resource.add_resource(body['path'], media)
         return {'message': f"Media file in media object {media.id} created!"}
 
     def get_queryset(self):
@@ -74,8 +77,13 @@ class AudioFileDetailAPI(BaseDetailView):
         if index >= len(media.media_files['audio']):
             raise ValueError(f"Supplied index {index} is larger than current array size "
                              f"{len(media.media_files['audio'])}")
+        old_path = media.media_files['audio'][index]['path']
+        new_path = body['path']
         media.media_files['audio'][index] = body
         media.save()
+        if old_path != new_path:
+            safe_delete(old_path)
+            Resource.add_resource(new_path, media)
         return {'message': f"Media file in media object {media.id} successfully updated!"}
 
     @transaction.atomic
@@ -89,8 +97,9 @@ class AudioFileDetailAPI(BaseDetailView):
         if index >= len(media.media_files['audio']):
             raise ValueError(f"Supplied index {index} is larger than current array size "
                              f"{len(media.media_files['audio'])}")
-        del media.media_files['audio'][index]
+        deleted =  media.media_files['audio'].pop(index)
         media.save()
+        safe_delete(deleted['path'])
         return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
