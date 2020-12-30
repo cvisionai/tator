@@ -169,13 +169,12 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             if media.file:
                 Resource.add_resource(media.file.path, media.id)
             if media.media_files:
-                for f in media.media_files.get('audio', []):
-                    Resource.add_resource(f['path'], media.id)
-                for f in media.media_files.get('streaming', []):
-                    Resource.add_resource(f['path'], media.id)
-                    Resource.add_resource(f['segment_info'], media.id)
-                for f in media.media_files.get('archival', []):
-                    Resource.add_resource(f['path'], media.id)
+                for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail',
+                            'thumbnail_gif']:
+                    for f in media.media_files.get(key, []):
+                        Resource.add_resource(f['path'], media.id)
+                        if key == 'streaming':
+                            Resource.add_resource(f['segment_info'], media.id)
             if media.original:
                 Resource.add_resource(media.original, media.id)
 
