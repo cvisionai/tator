@@ -4,8 +4,9 @@ import os
 import shutil
 import mimetypes
 import datetime
+import tempfile
 from uuid import uuid1
-from urllib.parser import urlparse
+from urllib.parse import urlparse
 
 from django.db import transaction
 from django.db.models import Case, When
@@ -67,13 +68,16 @@ def _save_image(url, media_obj, role):
     image = Image.open(temp_image.name)
     image_format = image.format
 
+    # Get filename from url.
+    parsed = os.path.basename(urlparse(url).path)
+
     # Set up S3 client.
     s3 = s3_client()
     bucket_name = os.getenv('BUCKET_NAME')
 
     # Upload image.
-    image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{str(uuid1())}"
-    s3.put_object(Bucket=bucket_name, Key=image_key, temp_image)
+    image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
+    s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
                                     'resolution': [media_obj.height, media_obj.width],
@@ -199,6 +203,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 gid=gid,
                 uid=uid,
             )
+            media_obj.media_files = {}
 
             # Get image only parameters.
             url = params['url']
@@ -217,7 +222,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 thumb_size = (256, 256)
                 image = image.convert('RGB') # Remove alpha channel for jpeg
                 image.thumbnail(thumb_size, Image.ANTIALIAS)
-                image.save(temp_thumb.name, format='jpg')
+                image.save(temp_thumb.name, format='jpeg')
             else:
                 download_file(thumbnail_url, temp_thumb.name)
                 
@@ -227,16 +232,16 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Upload image.
             image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-            s3.put_object(Bucket=bucket_name, Key=image_key, temp_image)
+            s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
             media_obj.media_files['image'] = [{'path': image_key,
                                                'size': os.stat(temp_image.name).st_size,
                                                'resolution': [media_obj.height, media_obj.width],
-                                               'mime': f'image/{image_format}'}]
+                                               'mime': f'image/{image_format.lower()}'}]
 
             # Upload thumbnail.
             thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/thumb.jpg"
-            s3.put_object(Bucket=bucket_name, Key=image_key, temp_thumb)
-            media_obj.media_files['thumbnail'] = [{'path': image_key,
+            s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_thumb)
+            media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                    'size': os.stat(temp_thumb.name).st_size,
                                                    'resolution': [image.height, image.width],
                                                    'mime': 'image/jpg'}]
