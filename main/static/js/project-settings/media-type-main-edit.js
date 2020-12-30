@@ -67,7 +67,7 @@ class MediaTypeMainEdit extends SettingsSection {
       // attribute types
       if(media.attribute_types.length > 0){
         let attributes = document.createElement("settings-attributes");
-        attributes._init(media.attribute_types);
+        attributes._init("MEDIA", media.attribute_types);
         currentMediaType.appendChild(attributes);
       }
 

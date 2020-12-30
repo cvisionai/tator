@@ -34,11 +34,11 @@ class SettingsNav extends TatorElement {
     leaf = "",
     state = "",
   } = {}){
-    console.log("Settings Nav - Init");
+    console.log(`${this.tagName} init.`);
     this._getMediaNav( JSON.parse(media) );
-    //this._addHeadingWithSubItems( JSON.parse(localization) );
-    //this._addHeadingWithSubItems( JSON.parse(leaf) );
-    //this._addHeadingWithSubItems( JSON.parse(state) );
+    this._addNav("Localization", JSON.parse(localization));
+    this._addNav("Leaf", JSON.parse(leaf));
+    this._addNav("State", JSON.parse(state));
   }
 
   _getMediaNav(data){
@@ -61,26 +61,31 @@ class SettingsNav extends TatorElement {
         }
       }
 
-      console.log("video");
-      console.log(videoTypeArray);
+      //console.log("video");
+      //console.log(videoTypeArray);
 
       // Add navs with items
-      if(videoTypeArray.length > 0 ) this._addMediaNav("Video", videoTypeArray);
-      if(imageTypeArray.length > 0 ) this._addMediaNav("Image", imageTypeArray);
-      if(multiTypeArray.length > 0 ) this._addMediaNav("Multi", multiTypeArray);
+      if(videoTypeArray.length > 0 ) this._addNav("Video", videoTypeArray);
+      if(imageTypeArray.length > 0 ) this._addNav("Image", imageTypeArray);
+      if(multiTypeArray.length > 0 ) this._addNav("Multi", multiTypeArray);
 
     } else {
       return console.log("Project contains no Media Types.");
     }
   }
 
-  _addMediaNav(typeCamel, a){
-    let type = typeCamel.toLowerCase();
-    return this._addHeadingWithSubItems({
-      "name" : typeCamel + " Type",
-      "type" : type,
-      "subItems" : a
-    });
+  _addNav(typeCamel, a){
+    if(a.length > 0){
+      let type = typeCamel.toLowerCase();
+      return this._addHeadingWithSubItems({
+        "name" : typeCamel + " Type",
+        "type" : type,
+        "subItems" : a
+      });
+    } else {
+      console.log(`${typeCamel} has no navigation items.`);
+    }
+
   }
 
 
@@ -135,8 +140,6 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
     hiddenSubNav.setAttribute("class", `SideNav subitems-${type}`);
     hiddenSubNav.hidden = true;
     for(let obj of subItems){
-      console.log("subitem loop");
-      console.log(obj);
       let itemId = obj.id; // ie. video type with ID of 62
       let subNavLink = document.createElement("a");
       let subItemText = obj.name;
@@ -257,18 +260,14 @@ _getText({type = "", count = 0, text = ""} = {}){
     for(let d of typeDomArray){
       // Find our target
       targetEl = d.querySelector( itemIdSelector );
-      console.log(targetEl)
-      if(targetEl) {
-
-        break;
-      }
+      if(targetEl) targetEl.hidden = false;
     }
 
-    return targetEl.hidden = false;
+    return console.log("Unable to locate the related item for this nav click.");
   };
 
   toggleSubItemList({ elClass = ``} = {}){
-    console.log(elClass);
+    //console.log(elClass);
     let targetEl = this.nav.querySelector( elClass );
     let targetElHidden = targetEl.hidden;
 

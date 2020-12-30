@@ -8,6 +8,11 @@ class LeafTypeEdit extends SettingsSection {
 
   _init(data){
     console.log(`${this.tagName} init.`);
+    this.data = JSON.parse(data);
+    console.log(this.data);
+
+    this.settingsSectionDiv.id = "itemDivId-video-"+this.data.id;
+    this.settingsSectionDiv.setAttribute("class", "item-box");
 
     return this.settingsSectionDiv.innerHTML = "test";
   }

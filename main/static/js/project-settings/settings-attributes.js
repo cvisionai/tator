@@ -14,8 +14,8 @@ class SettingsAttributes extends TatorElement {
     this._setAttributeDTypes();
   }
 
-  _init(data){
-    console.log(`__${this.tagName} init.`);
+  _init(fromType, data){
+    console.log(fromType + `__${this.tagName} init.`);
     //console.log(data);
 
     this._getAttributesForm(data)
