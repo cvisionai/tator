@@ -8,6 +8,10 @@
   border-radius: 10px;
 
   &:first-child {
+    border-top: 0;
+  }
+
+  &:first-child .SideNav-item {
     border-radius: 10px 10px 0 0;
   }
 }
@@ -22,35 +26,36 @@
   color: $color-gray--light;
   text-align: left;
   background-color: transparent;
-  //border: 0;
-  border-top: 1px solid $color-charcoal--light;
+  border: 0;
+  //border-top: 1px solid $color-gray--light;
 
 
   &:first-child {
-    //border-top: 0;
+    border-top: 0;
+    //border-radius: 10px 10px 0 0;
   }
 
   &:last-child {
     // makes sure there is a "bottom border" in case the list is not long enough
     // stylelint-disable-next-line primer/box-shadow
-    //box-shadow: 0 1px 0 1px;
-  }
-
-  // Bar on the left
-  &::before {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1;
-    width: 2px;
-    pointer-events: none;
-    content: "";
+    box-shadow: 0 1px 0 1px;
   }
 
   &[selected="true"] {
     background-color: $color-charcoal--light70;
     color: $color-white;
+
+    &::before {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      width: 2px;
+      pointer-events: none;
+      content: "";
+      background-color: $color-gray--light; // maybe?
+    }
   }
 
   .item-label,
@@ -74,11 +79,29 @@ button.SideNav-heading {
   background-color: $color-charcoal--light70;
   color: $color-white;
   outline: none;
+
+  // Bar on the left
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    width: 2px;
+    pointer-events: none;
+    content: "";
+    background-color: $color-gray--light; // maybe?
+  }
 }
 
 .SideNav-heading:active,
 .SideNav-item:active {
   background-color: $color-gray--light;
+  // Bar on the left
+  &::before {
+    // stylelint-disable-next-line primer/colors
+    background-color: $color-charcoal--red; // custom coral
+  }
 }
 
 .SideNav-heading[aria-current]:not([aria-current=false]),
@@ -102,6 +125,7 @@ button.SideNav-heading {
 .SideNav-icon {
   width: 16px;
   margin-right: 15px;
+  color: auto;
   //color: $color-charcoal--light70;
 }
 
@@ -124,6 +148,10 @@ button.SideNav-heading {
   background-color: transparent;
   border: 0;
   @extend .f2;
+
+  &[selected="true"] {
+    color: $color-white;
+  }
 }
 
 .SideNav-subItem:hover,
@@ -131,15 +159,27 @@ button.SideNav-heading {
   text-decoration: underline;
 }
 
-.SideNav-subItem:hover,
-.SideNav-subItem:focus {
+.SideNav-subItem:hover{
   color: $color-gray--dark;
+  text-decoration: none;
+  outline: none;
+}
+.SideNav-subItem:focus {
+  color: $color-white;
   text-decoration: none;
   outline: none;
 }
 
 .SideNav-subItem[aria-current]:not([aria-current=false]),
-.SideNav-subItem[aria-selected="true"] {
+.SideNav-subItem[aria-selected=true] {
   font-weight: $weight-semibold;
-  color: $color-gray--dark;
+  color: $color-white;
+
+}
+
+.SideNav-item[selected=true]
+.SideNav-heading[selected=true]{
+  // KEEP this if they click into sub items
+  // Bar on the left
+
 }

@@ -7,15 +7,14 @@ class SettingsNav extends TatorElement {
     this.nav.setAttribute("class", "SideNav rounded-2 col-3");
     this.nav.style.float = "left";
 
-    // init DOM vars
-    this.projectDom = "";
-    this.mediaDom = "";
-    this.localizationDom = "";
-    this.leafDom = "";
-    this.stateDom = "";
+    // // init DOM vars
+    // this.projectDom = "";
+    // this.mediaDom = "";
+    // this.localizationDom = "";
+    // this.leafDom = "";
+    // this.stateDom = "";
 
-    // first Nav, static added during init
-    this._addProjectNav();
+
 
     this._shadow.appendChild(this.nav);
   }
@@ -35,6 +34,8 @@ class SettingsNav extends TatorElement {
     state = "",
   } = {}){
     console.log(`${this.tagName} init.`);
+    // first Nav, static added during init
+    this._addProjectNav();
     this._getMediaNav( JSON.parse(media) );
     this._addNav("Localization", JSON.parse(localization));
     this._addNav("Leaf", JSON.parse(leaf));
@@ -153,11 +154,12 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
 
       hiddenSubNav.appendChild(subNavLink);
 
+      // Sub Nav Links
       subNavLink.addEventListener("click", (event) => {
         event.preventDefault();
 
         this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-          el.setAttribute("selected", "false");
+          if(el.tagName === "A") el.setAttribute("selected", "false");
         })
         event.target.setAttribute("selected", "true");
 
@@ -172,8 +174,7 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
 
   this.nav.appendChild(navGroup);
 
-  console.log(this.nav.querySelector(`.toggle-subitems-${type}`));
-
+  // Heading toggle links
   return this.nav.querySelector(`.toggle-subitems-${type}`).addEventListener(
     "click", (event) => {
       event.preventDefault();
@@ -181,10 +182,10 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
       this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
         el.setAttribute("selected", "false");
       })
-      event.target.setAttribute("selected", "true");
 
 
-      this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
+      let currentHide = this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
+      event.target.setAttribute("selected", currentHide);
     }
   );
 
@@ -205,6 +206,15 @@ _getText({type = "", count = 0, text = ""} = {}){
     case "multi" :
       icon = this.multiIconSvg();
       break;
+    case "localization" :
+      icon = this.localizationIconSvg();
+      break;
+    case "leaf" :
+      icon = this.leafIconSvg();
+      break;
+    case "state" :
+      icon = this.stateIconSvg();
+      break;
     }
 
     return `${icon} <span class="item-label">${text} ${this._getLabel(count)}</span>`;
@@ -213,6 +223,10 @@ _getText({type = "", count = 0, text = ""} = {}){
   _getLabel(count){
     if(count === 0) return "";
     return `<span class="Label">${count} Attributes</span>`;
+  }
+
+  projectIconSvg(){
+    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
   }
 
   videoIconSvg(){
@@ -224,12 +238,21 @@ _getText({type = "", count = 0, text = ""} = {}){
   }
 
   multiIconSvg(){
-    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6 5h2v2H6V5zm6-.5V14c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V2c0-.55.45-1 1-1h7.5L12 4.5zM11 5L8 2H1v11l3-5 2 4 2-2 3 3V5z"/></svg>';
+    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6 5h2v2H6V5zm6-.5V14c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V2c0-.55.45-1 1-1h7.5L12 4.5zM11 5L8 2H1v11l3-5 2 4 2-2 3 3V5z"/></svg>';
   }
 
-  projectIconSvg(){
-    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
+  localizationIconSvg(){
+    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>';
   }
+
+  leafIconSvg(){
+    return '<svg class="SideNav-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512"><title></title><path d="M505.664 67.248c-55.376-41.964-140.592-67.017-227.955-67.017-108.060 0-196.113 37.728-241.58 103.51-21.354 30.895-33.165 67.479-35.104 108.737-1.727 36.737 4.442 77.363 18.342 121.073 47.437-142.192 179.91-253.551 332.633-253.551 0 0-142.913 37.616-232.762 154.096-0.056 0.069-1.247 1.545-3.307 4.349-18.040 24.139-33.769 51.581-45.539 82.664-19.935 47.415-38.392 112.474-38.392 190.891h64c0 0-9.715-61.111 7.18-131.395 27.945 3.778 52.929 5.653 75.426 5.653 58.839 0 100.685-12.73 131.694-40.062 27.784-24.489 43.099-57.393 59.312-92.228 24.762-53.204 52.827-113.505 134.327-160.076 4.665-2.666 7.681-7.496 8.028-12.858s-2.020-10.54-6.303-13.786z"></path></svg>';
+  }
+
+  stateIconSvg(){
+    return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+  }
+
 
 
 
@@ -260,7 +283,7 @@ _getText({type = "", count = 0, text = ""} = {}){
     for(let d of typeDomArray){
       // Find our target
       targetEl = d.querySelector( itemIdSelector );
-      if(targetEl) targetEl.hidden = false;
+      if(targetEl) return targetEl.hidden = false;
     }
 
     return console.log("Unable to locate the related item for this nav click.");
@@ -271,7 +294,9 @@ _getText({type = "", count = 0, text = ""} = {}){
     let targetEl = this.nav.querySelector( elClass );
     let targetElHidden = targetEl.hidden;
 
-    return targetEl.hidden = !targetElHidden;
+    targetEl.hidden = !targetElHidden
+
+    return targetElHidden;
   };
 
   setProjectDom( ref ){
