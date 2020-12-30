@@ -130,22 +130,22 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None):
     if section == 'media':
         # Create media documents
         logger.info("Building media documents...")
-        qs = Media.objects.filter(project=project_number)
+        qs = Media.objects.filter(project=project_number, meta__isnull=False)
 
     if section == 'localizations':
         # Create localization documents
         logger.info("Building localization documents")
-        qs = Localization.objects.filter(project=project_number)
+        qs = Localization.objects.filter(project=project_number, meta__isnull=False)
 
     if section == 'states':
         # Create state documents
         logger.info("Building state documents...")
-        qs = State.objects.filter(project=project_number)
+        qs = State.objects.filter(project=project_number, meta__isnull=False)
 
     if section == 'treeleaves':
         # Create treeleaf documents
         logger.info("Building tree leaf documents...")
-        qs = Leaf.objects.filter(project=project_number)
+        qs = Leaf.objects.filter(project=project_number, meta__isnull=False)
 
     # Apply limit/offset if chunk parameter given.
     if chunk is not None:
