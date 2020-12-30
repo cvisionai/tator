@@ -34,12 +34,9 @@ spec:
       command: [sh, -c]
       args: ["python3 manage.py getprojects > /scratch/projects.txt"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -149,12 +146,9 @@ spec:
       command: [sh, -c]
       args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /scratch/chunks.txt"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -228,12 +222,9 @@ spec:
       command: ["python3"]
       args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
