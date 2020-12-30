@@ -25,29 +25,38 @@ class MediaUtil:
         self._segment_info = None
 
         if video.media_files:
-            if quality is None:
-                quality_idx = 0
-            else:
-                max_delta = sys.maxsize
-                for idx, media_info in enumerate(video.media_files["streaming"]):
-                    delta = abs(quality-media_info['resolution'][0])
-                    if delta < max_delta:
-                        quality_idx = idx
-            self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
-            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
             self._s3 = s3_client()
             self._bucket_name = os.getenv('BUCKET_NAME')
-            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            if segment_file.startswith('/'):
-                with open(segment_file, 'r') as f_p:
-                    self._segment_info = json.load(f_p)
-            else:
-                f_p = io.BytesIO()
-                self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
-                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
-            self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
-                                                          ['segments']) if x['name'] == 'moof']
+            if "streaming" in video.media_files:
+                if quality is None:
+                    quality_idx = 0
+                else:
+                    max_delta = sys.maxsize
+                    for idx, media_info in enumerate(video.media_files["streaming"]):
+                        delta = abs(quality-media_info['resolution'][0])
+                        if delta < max_delta:
+                            quality_idx = idx
+                self._video_file = video.media_files["streaming"][quality_idx]["path"]
+                self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+                self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+                segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+                if segment_file.startswith('/'):
+                    with open(segment_file, 'r') as f_p:
+                        self._segment_info = json.load(f_p)
+                else:
+                    f_p = io.BytesIO()
+                    self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+                    self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
+                                                              ['segments']) if x['name'] == 'moof']
+            elif "image" in video.media_files:
+                if quality is None:
+                    quality_idx = 0
+                # Image
+                self._video_file = video.media_files["image"][quality_idx]["path"]
+                self._height = video.height
+                self._width = video.width
+
         elif video.original:
             video_file = video.original
             self._height = video.height
@@ -331,7 +340,13 @@ class MediaUtil:
         right = left + roi[0] * self._width
         lower = upper + roi[1] * self._height
 
-        img = Image.open(self._video_file)
+        if self._video_file.startswith('/'):
+            img = Image.open(self._video_file)
+        else:
+            out = io.BytesIO()
+            self._s3.download_fileobj(self._bucket_name, self._video_file, out)
+            out.seek(0)
+            img = Image.open(out)
         img = img.crop((left, upper, right, lower))
 
         if force_scale is not None:
