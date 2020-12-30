@@ -4,6 +4,8 @@ class MediaTypeMainEdit extends SettingsSection {
     this._shadow.appendChild(this.settingsSectionDiv);
 
     //this._setAttributeDTypes();
+
+
   }
 
   _init(data){
@@ -15,7 +17,7 @@ class MediaTypeMainEdit extends SettingsSection {
     //this.projectId = this._setProjectId();
     for(let i in this.data){
       let itemDiv = document.createElement("div");
-      itemDiv.id = "mediaId-"+this.data[i].id;
+      itemDiv.id = `itemDivId-${this.data[i].dtype}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
       itemDiv.setAttribute("class", "item-box");
       itemDiv.hidden = true;
 
@@ -41,7 +43,7 @@ class MediaTypeMainEdit extends SettingsSection {
       } );
 
       // Only editable items inside this form
-      this._form = document.createElement(form);
+      this._form = document.createElement("form");
       this._form.id = media.id;
       currentMediaType.appendChild( this._form );
 
@@ -113,18 +115,32 @@ class MediaTypeMainEdit extends SettingsSection {
 
   reset(scope){
     console.log("Not setup yet [Reset with project data.]");
+    //location.reload();
+    return false;
   }
 
   resetHard(){
-    //this._fetchNewProjectData();
-    this.reset();
+    this._fetchNewProjectData();
+    //this.reset();
+  }
+
+_fetchNewProjectData(){
+  //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
+}
+
+  setSideNav(dom){
+    return this._sideNavDom = dom;
   }
 
   _getFormData(id){
-    let form = this.querySelector("form#"+id)
+    let form = this._shadow.getElementById(id);
     let formData = new FormData(form);
-    console.log(formData);
-    return formData;
+    let obj = {};
+    for (var key of formData.keys()) {
+  		obj[key] = formData.get(key);
+  	}
+    console.log(obj);
+    return JSON.stringify(obj);
   }
 
 }

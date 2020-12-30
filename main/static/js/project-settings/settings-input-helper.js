@@ -10,22 +10,22 @@ class SettingsInput {
         value = '',
         customCol = 'col-8',
         labelText = '',
-        type = 'text'
+        type = 'text',
+        name = ''
       } = {}
     ){
       const inputTextElement = document.createElement("input");
-
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
+      inputTextElement.setAttribute("name", name);
 
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}}`;
-      inputTextElement.setAttribute("name", setName);
-      inputTextElement.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
+      const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
+      inputTextElement.setAttribute("class", classes);
 
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
         "inputNode": inputTextElement,
-        "name": setName
+        "name": name
       });
 
       return inputWithLabel;

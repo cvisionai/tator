@@ -6,8 +6,13 @@
   background-color: #151b28;
   transition: background-color 500ms ease;
   border-radius: 10px;
+
+  &:first-child {
+    border-radius: 10px 10px 0 0;
+  }
 }
 
+.SideNav-heading,
 .SideNav-item {
   position: relative;
   display: block;
@@ -17,11 +22,12 @@
   color: $color-gray--light;
   text-align: left;
   background-color: transparent;
-  border: 0;
+  //border: 0;
   border-top: 1px solid $color-charcoal--light;
 
+
   &:first-child {
-    border-top: 0;
+    //border-top: 0;
   }
 
   &:last-child {
@@ -53,8 +59,14 @@
   }
 }
 
-// States
+button.SideNav-heading {
+  @extend .f1;
+  width: 100%;
+}
 
+// States
+.SideNav-heading:hover,
+.SideNav-heading:focus,
 .SideNav-item:hover,
 .SideNav-item:focus {
   text-decoration: none;
@@ -64,10 +76,13 @@
   outline: none;
 }
 
+.SideNav-heading:active,
 .SideNav-item:active {
   background-color: $color-gray--light;
 }
 
+.SideNav-heading[aria-current]:not([aria-current=false]),
+.SideNav-heading[aria-selected="true"],
 .SideNav-item[aria-current]:not([aria-current=false]),
 .SideNav-item[aria-selected="true"] {
   background-color: $color-charcoal--light70;
@@ -90,19 +105,25 @@
   //color: $color-charcoal--light70;
 }
 
+.SubNav {
+  nav.SideNav[hidden] {
+    display: none;
+  }
+}
+
 // Sub Nav
 //
 // A more lightweight version, suited as a sub nav
-
 .SideNav-subItem {
   position: relative;
   display: block;
   width: 100%;
   padding: 15px 0;
-  color: $color-charcoal--medium;
+  color: $color-gray--light;
   text-align: left;
   background-color: transparent;
   border: 0;
+  @extend .f2;
 }
 
 .SideNav-subItem:hover,

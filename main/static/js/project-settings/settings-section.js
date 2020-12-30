@@ -118,7 +118,7 @@ class SettingsSection extends TatorElement {
           console.log("Save response status: "+response.status)
           if (response.status == "200") {
             this._modalSuccess(data.message);
-            //this._fetchNewProjectData();
+            this._fetchNewProjectData();
           } else {
             this._modalError(data.message);
           }
@@ -177,7 +177,8 @@ class SettingsSection extends TatorElement {
   }
 
   _setNameInput(name){
-    return this.inputHelper.inputText( { "labelText": "Name", "value": name } );
+    let key = "name"
+    return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name } );
   }
 
   _getNameInputValue(){
@@ -194,8 +195,8 @@ class SettingsSection extends TatorElement {
   }
 
   _setSummaryInput(summary){
-    //return this.inputHelper.inputTextArea( { "labelText": "Summary", "value": summary } )
-    return this.inputHelper.inputText( { "labelText": "Summary", "value": summary } )
+    let key = "summary";
+    return this.inputHelper.inputText( { "labelText": "Summary", "Name": key, "value": summary } )
   }
 
   _getSummaryInputValue(){
@@ -212,8 +213,8 @@ class SettingsSection extends TatorElement {
   }
 
   _setDescriptionInput(description){
-    //return this.inputHelper.inputTextArea( { "labelText": "Summary", "value": summary } )
-    return this.inputHelper.inputText( { "labelText": "Description", "value": description } )
+    let key = "description";
+    return this.inputHelper.inputText( { "labelText": "Description", "name": key, "value": description } )
   }
 
   _getDescriptionInputValue(){

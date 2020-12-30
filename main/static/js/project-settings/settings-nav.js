@@ -2,28 +2,92 @@ class SettingsNav extends TatorElement {
   constructor() {
     super();
 
-    //this.nav = document.createElement("div");
-    //this.nav.setAttribute("class", "project__overview col-3 px-4 rounded-2");
-
+    // main structure
     this.nav = document.createElement("nav");
     this.nav.setAttribute("class", "SideNav rounded-2 col-3");
     this.nav.style.float = "left";
 
-    this.addItem({
-      "name":"Project",
-      "type":"project",
-      "linkData":"#projectMain"
-    });
-
+    // init DOM vars
+    this.projectDom = "";
     this.mediaDom = "";
+    this.localizationDom = "";
+    this.leafDom = "";
+    this.stateDom = "";
+
+    // first Nav, static added during init
+    this._addProjectNav();
 
     this._shadow.appendChild(this.nav);
   }
 
-  addItem({name = "Default", type = "project", subItems = {}, mediaId = -1, linkData = "#"} = {} ){
+  _addProjectNav(){
+    return this._addItem({
+      "name":"Project",
+      "type":"project",
+      "linkData":"#projectMain"
+    });
+  }
+
+  _init({
+    media = "",
+    localization = "",
+    leaf = "",
+    state = "",
+  } = {}){
+    console.log("Settings Nav - Init");
+    this._getMediaNav( JSON.parse(media) );
+    //this._addHeadingWithSubItems( JSON.parse(localization) );
+    //this._addHeadingWithSubItems( JSON.parse(leaf) );
+    //this._addHeadingWithSubItems( JSON.parse(state) );
+  }
+
+  _getMediaNav(data){
+    if(data.length > 0){
+      let videoTypeArray = [];
+      let imageTypeArray = [];
+      let multiTypeArray = [];
+
+      //eval data into groups
+      for(let o of data){
+        if( o.dtype == "video" ){
+          videoTypeArray.push(o);
+        } else if( o.dtype == "image" ){
+          imageTypeArray.push(o);
+        } else if( o.dtype == "multi" ){
+          multiTypeArray.push(o);
+        }else{
+          console.log("Not a recognized media type.");
+          console.log(o);
+        }
+      }
+
+      console.log("video");
+      console.log(videoTypeArray);
+
+      // Add navs with items
+      if(videoTypeArray.length > 0 ) this._addMediaNav("Video", videoTypeArray);
+      if(imageTypeArray.length > 0 ) this._addMediaNav("Image", imageTypeArray);
+      if(multiTypeArray.length > 0 ) this._addMediaNav("Multi", multiTypeArray);
+
+    } else {
+      return console.log("Project contains no Media Types.");
+    }
+  }
+
+  _addMediaNav(typeCamel, a){
+    let type = typeCamel.toLowerCase();
+    return this._addHeadingWithSubItems({
+      "name" : typeCamel + " Type",
+      "type" : type,
+      "subItems" : a
+    });
+  }
+
+
+
+  _addItem({name = "Default", type = "project", mediaId = -1, linkData = "#"} = {} ){
     //let item = document.createElement("h3");
     //item.setAttribute("class", "py-3 lh-condensed text-semibold");
-
     let item = document.createElement("a");
     item.setAttribute("class", "SideNav-item ");
     item.href = linkData;
@@ -36,63 +100,116 @@ class SettingsNav extends TatorElement {
 
     //if(linkData == "#projectMain") item.setAttribute("aria-selected", "true");
 
-    item.innerHTML = this.getLinkText({"type":type, "text": name});
+    item.innerHTML = this._getText({"type":type, "text": name});
 
     item.addEventListener("click", (event) => {
       event.preventDefault();
 
-      if (event.target.tagName === 'A') {
-        this._shadow.querySelector('a[selected="true"]').setAttribute("selected", "false");
-        item.setAttribute("selected", "true");
-      }
+      this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+        el.setAttribute("selected", "false");
+      })
+      event.target.setAttribute("selected", "true");
 
-      this.toggleItem(linkData);
+      this.toggleItem({ "itemIdSelector":linkData});
     });
-
-
-    // SubItems
-    /*if (subItems.length > 0){
-      for(let obj of subItems){
-        let subNav = document.createElement("a");
-        item.setAttribute("class", "SideNav-item");
-        subNav.style.paddingLeft = "44px";
-
-        let subItem = this.getSubItem(obj, mediaId);
-        subNav.innerHTML = subItem;
-
-        item.appendChild(subNav);
-      }
-    }*/
 
     return this.nav.appendChild(item);
   }
 
-  getSubItem(obj,mediaId){
-    let subItem = document.createElement("a");
-    subItem.setAttribute("class", "SideNav");
-    subItem.href = "#";
-    subItem.title = "obj.name"
-    return this.getLinkText({ "text" : obj.name, "count": obj.count});
+_addHeadingWithSubItems({name = "Default", type = "project", subItems = [], itemDivId = -1, linkData = "#"} = {} ){
+  let itemHeading = document.createElement("button");
+  let hiddenSubNav = document.createElement("nav");
+  let navGroup = document.createElement("div");
+
+  navGroup.setAttribute("class", "SubNav")
+  navGroup.appendChild(itemHeading);
+  navGroup.appendChild(hiddenSubNav);
+
+  // Heading button
+  itemHeading.setAttribute("class", `h5 SideNav-heading toggle-subitems-${type}`); // ie. video,image,multi,localization,leaf,state
+  itemHeading.innerHTML = this._getText({"text": name, "type": type}); // name ie. Video Type, type video to get correct icon
+  itemHeading.setAttribute("selected", "false");
+
+  // SubItems
+  if (subItems.length > 0){
+    hiddenSubNav.setAttribute("class", `SideNav subitems-${type}`);
+    hiddenSubNav.hidden = true;
+    for(let obj of subItems){
+      console.log("subitem loop");
+      console.log(obj);
+      let itemId = obj.id; // ie. video type with ID of 62
+      let subNavLink = document.createElement("a");
+      let subItemText = obj.name;
+
+      subNavLink.setAttribute("class", "SideNav-subItem");
+      subNavLink.style.paddingLeft = "44px";
+
+      let itemIdSelector = `#itemDivId-${type}-${itemId}`
+      subNavLink.href = itemIdSelector;
+      subNavLink.innerHTML = subItemText;
+
+      hiddenSubNav.appendChild(subNavLink);
+
+      subNavLink.addEventListener("click", (event) => {
+        event.preventDefault();
+
+        this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+          el.setAttribute("selected", "false");
+        })
+        event.target.setAttribute("selected", "true");
+
+        console.log("id for toggle: "+itemIdSelector);
+        this.toggleItem({ "itemIdSelector" : itemIdSelector });
+      });
+
+    }
+  } else {
+    console.log("No subitems for heading "+name);
   }
 
-  getLinkText({type = "", count = 0, text = ""} = {}){
-    let icon = "";
-    switch(type){
-      case "project" :
-        icon = this.projectIconSvg();
-        break;
-      case "video" :
-        icon = this.videoIconSvg();
-        break;
-      case "image" :
-        icon = this.imageIconSvg();
-        break;
-      case "multi" :
-        icon = this.multiIconSvg();
-        break;
+  this.nav.appendChild(navGroup);
+
+  console.log(this.nav.querySelector(`.toggle-subitems-${type}`));
+
+  return this.nav.querySelector(`.toggle-subitems-${type}`).addEventListener(
+    "click", (event) => {
+      event.preventDefault();
+
+      this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+        el.setAttribute("selected", "false");
+      })
+      event.target.setAttribute("selected", "true");
+
+
+      this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
+    }
+  );
+
+}
+
+_getText({type = "", count = 0, text = ""} = {}){
+  let icon = "";
+  switch(type){
+    case "project" :
+      icon = this.projectIconSvg();
+      break;
+    case "video" :
+      icon = this.videoIconSvg();
+      break;
+    case "image" :
+      icon = this.imageIconSvg();
+      break;
+    case "multi" :
+      icon = this.multiIconSvg();
+      break;
     }
 
-    return `${icon} <span class="item-label">${text} ${this.getAttributeLabel(count)}</span>`;
+    return `${icon} <span class="item-label">${text} ${this._getLabel(count)}</span>`;
+  }
+
+  _getLabel(count){
+    if(count === 0) return "";
+    return `<span class="Label">${count} Attributes</span>`;
   }
 
   videoIconSvg(){
@@ -111,13 +228,10 @@ class SettingsNav extends TatorElement {
     return '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
   }
 
-  getAttributeLabel(count){
-    if(count === 0) return "";
-    return `<span class="Label">${count} Attributes</span>`;
-  }
 
-  /* Get personlized information when we have project-id, and fill page. */
-  static get observedAttributes() {
+
+  /* Check if side nav name needs to be updated.... @TODO */
+  /*static get observedAttributes() {
     return ["_data"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
@@ -127,45 +241,64 @@ class SettingsNav extends TatorElement {
         this._init();
         break;
     }
-  };
+  };*/
 
-  toggleItem(linkData){
-    let targetEl = this.mediaDom.querySelector(linkData) ||  this.projectDom.querySelector(linkData);
+  toggleItem({ itemIdSelector = ``} = {}){
+    let targetEl = null;
+    let typeDomArray = this._getDomArray();
 
-    this.mediaDom.querySelectorAll('.item-box').forEach( (el) => {
-      if ( el != targetEl ) {
+    for(let dom of typeDomArray){
+      // Hide all item boxes
+      dom.querySelectorAll('.item-box').forEach( (el) => {
         el.hidden = true;
-      }
-    } );
+      } );
+    }
 
-    this.projectDom.querySelectorAll('.item-box').forEach( (el) => {
-      if ( el != targetEl ) {
-        el.hidden = true;
+    for(let d of typeDomArray){
+      // Find our target
+      targetEl = d.querySelector( itemIdSelector );
+      console.log(targetEl)
+      if(targetEl) {
+
+        break;
       }
-    } );
+    }
 
     return targetEl.hidden = false;
   };
 
-  setMediaDom ( ref ){
-    return this.mediaDom = ref;
-  }
+  toggleSubItemList({ elClass = ``} = {}){
+    console.log(elClass);
+    let targetEl = this.nav.querySelector( elClass );
+    let targetElHidden = targetEl.hidden;
+
+    return targetEl.hidden = !targetElHidden;
+  };
+
   setProjectDom( ref ){
     return this.projectDom = ref;
   }
+  setMediaDom ( ref ){
+    return this.mediaDom = ref;
+  }
+  setLocalizationDom( ref ){
+    return this.localizationDom = ref;
+  }
+  setLeafDom( ref ){
+    return this.leafDom = ref;
+  }
+  setStateDom( ref ){
+    return this.stateDom = ref;
+  }
 
-  _init(data){
-    console.log("Settings Nav - Init");
-
-    this.data = JSON.parse(data);
-
-    for(let i in this.data){
-      this.addItem({
-        "type":this.data[i].dtype,
-        "linkData":"#mediaId-"+this.data[i].id,
-        "name": this.data[i].name
-      });
-    }
+  _getDomArray(){
+    return [
+      this.projectDom,
+      this.mediaDom,
+      this.localizationDom,
+      this.leafDom,
+      this.stateDom
+    ];
   }
 
 }

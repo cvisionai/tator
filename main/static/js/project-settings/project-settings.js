@@ -34,16 +34,23 @@ class ProjectSettings extends TatorPage {
 
     // Localizations section.
     this.localizationBlock = document.createElement("localization-edit");
-    configContainer.appendChild(this.mediaTypesBlock);
+    configContainer.appendChild(this.localizationBlock);
 
     // Leaf Type section.
     this.leafTypesBlock = document.createElement("leaf-type-edit");
-    configContainer.appendChild(this.mediaTypesBlock);
+    configContainer.appendChild(this.leafTypesBlock);
+
+    // State Type section.
+    this.stateTypesBlock = document.createElement("state-type-edit");
+    configContainer.appendChild(this.stateTypesBlock);
 
     // Reference for toggling shadow content
-    // @TODO abstract this to take an object of DOMs
+    // @TODO abstract this to take an object of DOMs? or Explicit ok
     this.settingsNav.setProjectDom( this.projectBlock.getDom() );
     this.settingsNav.setMediaDom( this.mediaTypesBlock.getDom() );
+    this.settingsNav.setLocalizationDom( this.mediaTypesBlock.getDom() );
+    this.settingsNav.setLeafDom( this.mediaTypesBlock.getDom() );
+    this.settingsNav.setStateDom( this.mediaTypesBlock.getDom() );
 
     // Error catch all
     window.addEventListener("error", (evt) => {
@@ -73,33 +80,51 @@ class ProjectSettings extends TatorPage {
     const mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
     const localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
     const leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
+    const stateTypesPromise = this.stateTypesBlock._fetchGetPromise({"id": this.projectId} );
 
     const promiseList = [
       projectPromise,
       mediaTypesPromise,
       localizationsPromise,
-      leafTypesPromise
-    ]
+      leafTypesPromise,
+      stateTypesPromise
+    ];
 
     Promise.all(promiseList)
-    .then( async([pa, mta, lo, le]) => {
+    .then( async([pa, mta, lo, le, st]) => {
       const projectData = pa.json();
       const mediaTypesData = mta.json();
       const localizationData = lo.json();
       const leafTypeData = le.json();
-      Promise.all( [projectData, mediaTypesData, localizationData, leafTypeData] )
-        .then( ([project, mediaTypes, localization, leaf]) => {
+      const stateTypeData = st.json();
+      Promise.all( [projectData, mediaTypesData, localizationData, leafTypeData, stateTypeData] )
+        .then( ([project, mediaTypes, localization, leaf, state]) => {
           this._shadow.querySelector('.loading').remove();
 
-          // Init project edit and media type sections.
-          this.projectBlock._init(JSON.stringify(project));
-          this.mediaTypesBlock._init( JSON.stringify(mediaTypes));
-          this.settingsNav._init( JSON.stringify(mediaTypes));
-          this.localizationBlock._init( JSON.stringify(localization));
-          this.settingsNav._init( JSON.stringify(localization));
-          this.leafTypesBlock._init( JSON.stringify(leaf));
-          this.settingsNav._init( JSON.stringify(leaf));
+          const projectDataStr = JSON.stringify(project);
+          const mediaDataStr = JSON.stringify(mediaTypes);
+          const localizationDataStr = JSON.stringify(localization);
+          const leafDataStr = JSON.stringify(leaf);
+          const stateDataStr = JSON.stringify(state);
+
+          // Project edit and nav (first seen on page).
+          this.projectBlock._init( projectDataStr );
+          this.settingsNav._init( {
+            //"project" : projectDataStr, // static init in settings-nav
+            "media" : mediaDataStr,
+            "localization" :  localizationDataStr,
+            "leaf" : leafDataStr,
+            "state" : stateDataStr
+          });
+
+          // Pre-load the sections data.
+          this.mediaTypesBlock._init( mediaDataStr );
+          this.localizationBlock._init( localizationDataStr );
+          this.leafTypesBlock._init( leafDataStr );
+          this.stateTypesBlock._init( stateDataStr );
+
         })
+        // TMP commented out to see the file and line number of error
         //.catch(err => {
           //this._shadow.querySelector('.loading').remove();
         //  console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
@@ -114,7 +139,6 @@ class ProjectSettings extends TatorPage {
 
     return loadingImg;
   }
-
 
 }
 
