@@ -75,11 +75,12 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
     """ Returns number of chunks for parallel indexing operation.
     """
     count = 1
-    qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
-    if max_age_days:
-        min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
-        qs = qs.filter(modified_datetime__gte=min_modified)
-    count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
+    if section in CLASS_MAPPING:
+        qs = CLASS_MAPPING[section].objects.filter(project=project_number, meta__isnull=False)
+        if max_age_days:
+            min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
+            qs = qs.filter(modified_datetime__gte=min_modified)
+        count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
