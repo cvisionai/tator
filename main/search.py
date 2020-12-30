@@ -1,5 +1,6 @@
 import logging
 import os
+import datetime
 from copy import deepcopy
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -197,6 +198,9 @@ class TatorSearch:
                 '_modified': {'type': 'boolean'},
                 '_modified_datetime': {'type': 'date'},
                 '_modified_by': {'type': 'keyword'},
+                '_created_datetime': {'type': 'date'},
+                '_created_by': {'type': 'keyword'},
+                '_indexed_datetime': {'type': 'date'}
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
@@ -479,6 +483,12 @@ class TatorSearch:
         aux['_dtype'] = entity.meta.dtype
         aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
                                         # purpose is not recommended by ES.
+        aux['_created_datetime'] = entity.created_datetime.isoformat()
+        aux['_created_by'] = str(entity.created_by)
+        aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+        aux['_modified_by'] = str(entity.modified_by)
+        tzinfo = entity.created_datetime.tzinfo
+        aux['_indexed_datetime'] = datetime.datetime.now(tzinfo).isoformat()
         duplicates = []
         if entity.meta.dtype in ['image', 'video', 'multi']:
             aux['_media_relation'] = 'media'
@@ -511,8 +521,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
             aux['_user'] = entity.user.pk
             aux['_email'] = entity.user.email
             aux['_meta'] = entity.meta.pk
@@ -561,8 +569,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
