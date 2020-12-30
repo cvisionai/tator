@@ -6,13 +6,11 @@
   background-color: #151b28;
   transition: background-color 500ms ease;
   border-radius: 10px;
-
-  &:first-child {
-    border-top: 0;
-  }
+  margin-bottom: 150px;
 
   &:first-child .SideNav-item {
     border-radius: 10px 10px 0 0;
+    overflow: hidden;
   }
 }
 
@@ -130,6 +128,9 @@ button.SideNav-heading {
 }
 
 .SubNav {
+  .SideNav {
+    margin-bottom: 0;
+  }
   nav.SideNav[hidden] {
     display: none;
   }

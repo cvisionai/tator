@@ -159,11 +159,14 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
         event.preventDefault();
 
         this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-          if(el.tagName === "A") el.setAttribute("selected", "false");
+          el.setAttribute("selected", "false");
         })
         event.target.setAttribute("selected", "true");
+        event.target.parentNode.parentNode.querySelector('button').setAttribute("selected", "true");
 
         console.log("id for toggle: "+itemIdSelector);
+
+        // @TODO could use type to find dom from array (make array assoc.)
         this.toggleItem({ "itemIdSelector" : itemIdSelector });
       });
 
@@ -272,6 +275,8 @@ _getText({type = "", count = 0, text = ""} = {}){
   toggleItem({ itemIdSelector = ``} = {}){
     let targetEl = null;
     let typeDomArray = this._getDomArray();
+
+    console.log(typeDomArray);
 
     for(let dom of typeDomArray){
       // Hide all item boxes

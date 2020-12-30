@@ -28,17 +28,7 @@ class ProjectMainEdit extends SettingsSection {
     this._editSummary = this._setSummaryInput( this._getSummaryFromData() );;
     this.boxOnPage.appendChild( this._editSummary );
 
-    let formElements = [this._editName, this._editSummary]
-
-    formElements.forEach( item => {
-      item.addEventListener("change", (event) => {
-        console.log("Edited: "+item.getAttribute("name"));
-        // @TODO  Check to if it matches data still
-        //        UI show field was edited?
-        //        Prompt don't leave without saving?
-        //        ENABLE SAVE BUTTON
-      });
-    });
+    let formElements = [this._editName, this._editSummary];
 
     return this.boxOnPage;
   }

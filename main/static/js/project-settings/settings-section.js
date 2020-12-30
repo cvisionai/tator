@@ -23,7 +23,7 @@ class SettingsSection extends TatorElement {
     this.projectId = this._setProjectId();
 
     this.settingsSectionDiv.appendChild( this._getSectionForm() )
-    this.settingsSectionDiv.appendChild( this._getSubmitDiv() );
+    this.settingsSectionDiv.appendChild( this._getSubmitDiv({ "id":this.projectId}) );
 
     return this.settingsSectionDiv;
   }

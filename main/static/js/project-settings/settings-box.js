@@ -23,6 +23,7 @@ class SettingsBox {
     let headingDiv = document.createElement("div");
     headingDiv.setAttribute("class", "dflex flex-items-center py-2 px-2 "+this.customClass);
 
+
     /* 1. Make HEADING. */
     let heading = null;
 

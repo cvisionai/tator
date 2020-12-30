@@ -1,20 +1,28 @@
-class SettingsAttributes extends TatorElement {
+class SettingsAttributes extends HTMLElement {
   constructor() {
     super();
+
+
+  }
+
+  connectedCallback(){
+
+  }
+
+  _init(fromType, data){
     // Required helpers.
     this.boxHelper = new SettingsBox("media-types-main-edit");
     this.inputHelper = new SettingsInput("media-types-main-edit");
 
     this.attributeDiv = document.createElement("div");
-    this._shadow.appendChild(this.attributeDiv);
+    this.attributeDiv.style.borderBottom = "none";
+    this.appendChild(this.attributeDiv);
 
     // Prep the modal.
     this.modal = document.createElement("modal-dialog");
 
     this._setAttributeDTypes();
-  }
 
-  _init(fromType, data){
     console.log(fromType + `__${this.tagName} init.`);
     //console.log(data);
 
@@ -41,6 +49,7 @@ class SettingsAttributes extends TatorElement {
             "collapsed": true
           });
         collapsableAttributeHeading.setAttribute("class", `py-2 toggle-attribute`);
+        collapsableAttributeHeading.style.borderBottom = "none";
         this.attributeDiv.appendChild(collapsableAttributeHeading);
 
         // content in box
@@ -79,10 +88,7 @@ class SettingsAttributes extends TatorElement {
     attributes = [],
     attributeId = undefined
   } = {}){
-    const settingsBoxHelper = new SettingsBox();
-    const mediaTypesInputHelper = new SettingsInput();
-
-    let attributeCurrent = settingsBoxHelper.headingWrap({
+    let attributeCurrent = this.boxHelper.headingWrap({
       "headingText" : `${attributes.name}`,
       "descriptionText" : "Edit attribute.",
       "level":3,
@@ -92,10 +98,13 @@ class SettingsAttributes extends TatorElement {
     attributeCurrent.style.borderBottom = "none";
     attributeCurrent.setAttribute("class", `toggle-attribute`);
 
-    let collapsableAttributeBox = document.createElement("div");
+    // Only editable items inside this form
+    let collapsableAttributeBox = document.createElement("form");
+    collapsableAttributeBox.id = attributes.name;
+    collapsableAttributeBox.setAttribute("class", "attribute-form");
     collapsableAttributeBox.hidden = true;
 
-    let boxOnPage = settingsBoxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2, "customClass": "attributeId-"+attributeId} );
+    let boxOnPage = this.boxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2, "customClass": "attributeId-"+attributeId} );
 
     boxOnPage.appendChild(collapsableAttributeBox);
     attributeCurrent.addEventListener("click", (event) => {
@@ -103,20 +112,74 @@ class SettingsAttributes extends TatorElement {
       this._toggleChevron(event)
     });
 
-    // append input for name and description
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Name", "value": attributes.name}) );
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText( { "labelText": "Description", "value": attributes.description} ) );
+    // Fields for this form
+
+    // append input for name
+    const NAME = "Name";
+    collapsableAttributeBox.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": attributes[NAME.toLowerCase()]}) );
+
+    //description
+    const DESCRIPTION = "Description";
+    collapsableAttributeBox.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": attributes[DESCRIPTION.toLowerCase()] } ) );
 
     // append input for dtype
-    let currentOption = attributes.dtype;
+    let selectBox = this._getDtypeSelectBox( attributes.dtype );
+    collapsableAttributeBox.appendChild( selectBox );
+
+    // required
+    const REQUIRED = "Required";
+    collapsableAttributeBox.appendChild( this.inputHelper.inputCheckbox({ "labelText": REQUIRED, "name": REQUIRED.toLowerCase(), "value": attributes[REQUIRED.toLowerCase()] }) );
+
+    // visible
+    const VISIBLE = "Visible";
+    collapsableAttributeBox.appendChild( this.inputHelper.inputCheckbox({ "labelText": VISIBLE, "name": VISIBLE.toLowerCase(), "value": attributes[VISIBLE.toLowerCase()] }) );
+    // @TODO - use SLIDE
+    //collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputRadioSlide({ "labelText": "Visible test", "value": attributes.visible, "type":"checkbox"}) );
+
+    // default
+    const DEFAULT = "Default";
+    let showDefault = (attributes.dtype != 'datetime' && attributes.dtype != 'geopos')? true : false;
+    if (showDefault)  collapsableAttributeBox.appendChild( this.inputHelper.inputText(
+      { "labelText": DEFAULT, "name": DEFAULT.toLowerCase(), "value": attributes[DEFAULT.toLowerCase()] }
+    ) );
+
+    // int, float	minimum & maximum
+    let showMinMax = (attributes.dtype == 'int' || attributes.dtype == 'float') ? true : false;
+    if (showMinMax)  {
+      const MIN = "Minimum";
+      collapsableAttributeBox.appendChild( this.inputHelper.inputText(
+        { "labelText": MIN, "name": MIN.toLowerCase(), "value": attributes[MIN.toLowerCase()], "type":"number"}
+      ) );
+      const MAX = "Maximum";
+      collapsableAttributeBox.appendChild( this.inputHelper.inputText(
+        { "labelText": MAX, "name": MAX.toLowerCase(), "value": attributes[MAX.toLowerCase()], "type":"number"}
+      ) );
+    }
+
+    let showChoiceAndLabels = attributes.dtype == 'enum' ? true : false;
+    if (showChoiceAndLabels){
+      const CHOICES = "Choices";
+      collapsableAttributeBox.appendChild( this.inputHelper.inputText(
+          { "labelText": CHOICES, "name": CHOICES.toLowerCase(), "value": attributes[CHOICES.toLowerCase()] }
+      ) );
+      const LABELS = "Labels";
+      collapsableAttributeBox.appendChild( this.inputHelper.inputText(
+          { "labelText": LABELS, "name": LABELS.toLowerCase(), "value": attributes[LABELS.toLowerCase()] }
+      ) );
+    }
+
+    return boxOnPage;
+  }
+
+  _getDtypeSelectBox(dtype){
+    let currentOption = dtype;
     let options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
 
-    let selectBox = mediaTypesInputHelper.inputSelectOptions({
+    let selectBox = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
-      "value": attributes.dtype,
+      "value": dtype,
       "optionsList": options
     });
-    collapsableAttributeBox.appendChild( selectBox );
 
     selectBox.after(this._inlineWarningDiv());
 
@@ -126,45 +189,18 @@ class SettingsAttributes extends TatorElement {
       let warningEl = e.target.parentNode.parentNode.parentNode.querySelector(".inline-warning");
       let message = ""
 
-      if(this._getIrreverasibleDTypeArray({ "currentDT": attributes.dtype, "newDT": newType})){
-        message = `Warning: ${attributes.dtype} to ${newType} is not reversable.`;
-      } else if(this._getLossDTypeArray({ "currentDT": attributes.dtype, "newDT": newType})){
-        message = `Warning: ${attributes.dtype} to ${newType} may cause data loss.`;
+      if(this._getIrreverasibleDTypeArray({ "currentDT": dtype, "newDT": newType})){
+        message = `Warning: ${dtype} to ${newType} is not reversable.`;
+      } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
+        message = `Warning: ${dtype} to ${newType} may cause data loss.`;
       }
       this._inlineWarning({
-          "el" : warningEl,
-          "message" : message
-        });
-
+        "el" : warningEl,
+        "message" : message
+      });
     });
 
-    //required
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Required", "value": attributes.required, "type":"checkbox"}) );
-
-    // default
-    let showDefault = (attributes.dtype != 'datetime' && attributes.dtype != 'geopos')? true : false;
-    if (showDefault)  collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Default", "value": attributes.default, "type":"text"}) );
-
-    // visible
-    collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputCheckbox({ "labelText": "Visible", "value": attributes.visible, "type":"checkbox"}) );
-    //collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputRadioSlide({ "labelText": "Visible test", "value": attributes.visible, "type":"checkbox"}) );
-
-
-    // int, float	minimum & maximum
-    let showMinMax = (attributes.dtype == 'int' || attributes.dtype == 'float') ? true : false;
-    if (showMinMax)  {
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Minimum", "value": attributes.minimum, "type":"number"}) );
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Maximum", "value": attributes.maximum, "type":"number"}) );
-    }
-
-    let showChoiceAndLabels = attributes.dtype == 'enum' ? true : false;
-    if (showChoiceAndLabels){
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Choice", "value": attributes.choices}) );
-      collapsableAttributeBox.appendChild( mediaTypesInputHelper.inputText({ "labelText": "Labels", "value": attributes.labels}) );
-    }
-
-    return boxOnPage;
-
+    return selectBox;
   }
 
   _inlineWarningDiv(){
@@ -256,6 +292,10 @@ class SettingsAttributes extends TatorElement {
       // ADD STAR TO THOSE WITH WARNING? OR JUST ON SAVE
       return ({ "optText": i, "optValue":i });
     });
+  }
+
+  getDOM(){
+    return this._shadow;
   }
 
   _inlineWarning({

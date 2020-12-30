@@ -9,10 +9,6 @@ class ProjectSettings extends TatorPage {
     main.setAttribute("class", "layout-max py-4");
     this._shadow.appendChild(main);
 
-    const header = document.createElement("div");
-    header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center py-6");
-    main.appendChild(header);
-
     // Left navigation
     this.settingsNav =  document.createElement("settings-nav");
     main.appendChild(this.settingsNav);
@@ -48,9 +44,9 @@ class ProjectSettings extends TatorPage {
     // @TODO abstract this to take an object of DOMs? or Explicit ok
     this.settingsNav.setProjectDom( this.projectBlock.getDom() );
     this.settingsNav.setMediaDom( this.mediaTypesBlock.getDom() );
-    this.settingsNav.setLocalizationDom( this.mediaTypesBlock.getDom() );
-    this.settingsNav.setLeafDom( this.mediaTypesBlock.getDom() );
-    this.settingsNav.setStateDom( this.mediaTypesBlock.getDom() );
+    this.settingsNav.setLocalizationDom( this.localizationBlock.getDom() );
+    this.settingsNav.setLeafDom( this.leafTypesBlock.getDom() );
+    this.settingsNav.setStateDom( this.stateTypesBlock.getDom() );
 
     // Error catch all
     window.addEventListener("error", (evt) => {
