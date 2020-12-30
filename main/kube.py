@@ -50,11 +50,6 @@ def get_client_image_name():
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
     return f"{registry}/tator_client:{Git.sha}"
 
-def get_lite_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/tator_lite:{Git.sha}"
-
 def get_wget_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
@@ -820,7 +815,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
                        'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
@@ -923,7 +917,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
                        'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
