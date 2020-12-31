@@ -18,6 +18,7 @@ from ..models import Section
 from ..models import Localization
 from ..models import State
 from ..models import Project
+from ..models import Resource
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -86,6 +87,7 @@ def _save_image(url, media_obj, role):
     # Cleanup and return.
     image.close()
     os.remove(temp_image.name)
+    Resource.add_resource(image_key, media_obj)
     return media_obj
 
 class MediaListAPI(BaseListView, AttributeFilterMixin):
@@ -255,6 +257,8 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             os.remove(temp_image.name)
             os.remove(temp_thumb.name)
             media_obj.save()
+            Resource.add_resource(image_key, media_obj)
+            Resource.add_resource(thumb_key, media_obj)
 
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
