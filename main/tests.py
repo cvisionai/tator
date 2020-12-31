@@ -12,14 +12,14 @@ from math import sin, cos, sqrt, atan2, radians
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
-
 from rest_framework import status
 from rest_framework.test import APITestCase
-
 from dateutil.parser import parse as dateutil_parse
+from botocore.errorfactory import ClientError
 
 from .models import *
-
+from .s3 import s3_client
+from .s3 import get_download_url
 from .search import TatorSearch
 
 logger = logging.getLogger(__name__)
@@ -2202,3 +2202,99 @@ class AudioFileTestCase(APITestCase, FileMixin):
 
     def test_audio(self):
         self._test_methods('audio')
+
+class ResourceTestCase(APITestCase):
+
+    MEDIA_ROLES = {'streaming': 'VideoFiles',
+                   'archival': 'VideoFiles',
+                   'audio': 'AudioFiles',
+                   'image': 'ImageFiles',
+                   'thumbnail': 'ImageFiles',
+                   'thumbnail_gif': 'ImageFiles'}
+
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.s3 = s3_client()
+        self.bucket_name = os.getenv('BUCKET_NAME')
+
+    def _random_s3_obj(self):
+        """ Creates an s3 file with random key. Simulates an upload.
+        """
+        key = f"test/{str(uuid1())}"
+        self.s3.put_object(Bucket=self.bucket_name,
+                           Key=key,
+                           Body=b"\x00" + os.urandom(16) + b"\x00")
+        return key
+
+    def _s3_obj_exists(self, key):
+        """ Checks whether an object in s3 exists.
+        """
+        try:
+            self.s3.head_object(Bucket=self.bucket_name, Key=key)
+            exists = True
+        except ClientError:
+            exists = False
+        return exists
+
+    def _generate_keys(self):
+        keys = {role:self._random_s3_obj() for role in ResourceTestCase.MEDIA_ROLES}
+        segment_key = self._random_s3_obj()
+        return keys, segment_key
+
+    def _get_media_def(self, role, keys, segment_key):
+        media_def = {'path': keys[role]}
+        if role == 'streaming':
+            media_def['resolution'] = [1, 1]
+            media_def['segment_info'] = segment_key
+            media_def['codec'] = 'h264'
+        elif role == 'archival':
+            media_def['resolution'] = [1, 1]
+            media_def['codec'] = 'h264'
+        elif role == 'audio':
+            media_def['codec'] = 'aac'
+        else:
+            media_def['resolution'] = [1, 1]
+        return media_def
+
+    def test_files(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role]
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Patch in a new value for each role.
+        patch_keys, patch_segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
+            media_def = self._get_media_def(role, patch_keys, patch_segment_key)
+            response = self.client.patch(f"/rest/{endpoint}/{media.id}?index=0&role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertFalse(self._s3_obj_exists(keys[role]))
+            self.assertTrue(self._s3_obj_exists(patch_keys[role]))
+        self.assertFalse(self._s3_obj_exists(segment_key))
+        self.assertTrue(self._s3_obj_exists(patch_segment_key))
+
+        # Delete the files.
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
+            response = self.client.delete(f"/rest/{endpoint}/{media.id}?index=0&role={role}", format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertFalse(self._s3_obj_exists(patch_keys[role]))
+        self.assertFalse(self._s3_obj_exists(patch_segment_key))
+
