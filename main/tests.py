@@ -2267,6 +2267,14 @@ class ResourceTestCase(APITestCase):
             media_def['resolution'] = [1, 1]
         return media_def
 
+    def _prune_media(self):
+        """ Emulates a prunemedia operation that clears out media with null project
+            IDs.
+        """
+        media = Media.objects.filter(project__isnull=True)
+        for m in media:
+            m.delete()
+
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
 
@@ -2298,3 +2306,74 @@ class ResourceTestCase(APITestCase):
             self.assertFalse(self._s3_obj_exists(patch_keys[role]))
         self.assertFalse(self._s3_obj_exists(patch_segment_key))
 
+    def test_clones(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        TatorSearch().refresh(self.project.pk)
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role]
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Clone the media.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the clone.
+        response = self.client.delete(f"/rest/Media/{clone_id}", format=json)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        # Clone the media.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf1'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the original.
+        response = self.client.delete(f"/rest/Media/{media.id}", format=json)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        TatorSearch().refresh(self.project.pk)
+        
+        # Clone the clone.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf2'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={clone_id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the first clone.
+        response = self.client.delete(f"/rest/Media/{clone_id}", format=json)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        # Delete the second clone.
+        response = self.client.delete(f"/rest/Media/{new_clone_id}", format=json)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertFalse(self._s3_obj_exists(keys[role]))
