@@ -291,9 +291,9 @@ class ProjectDetail extends TatorPage {
 
     this._mediaSection.addEventListener("newName", evt => {
       for (const child of this._allSections()) {
-        if (sectionCard._section) {
-          if (sectionCard._section.id == evt.detail.id) {
-            sectionCard.rename(evt.detail.sectionName);
+        if (child._section) {
+          if (child._section.id == evt.detail.id) {
+            child.rename(evt.detail.sectionName);
           }
         }
       }
