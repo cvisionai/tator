@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models.functions import Cast
 
 from .models import *
+from .s3 import s3_client
+from .s3 import get_download_url
 import logging
 import datetime
 import traceback
@@ -66,11 +68,15 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_thumb(self, obj):
         url = ""
-        try: # Can fail if project has no media
-            media = Media.objects.filter(project=obj)[0]
-            url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
-        except:
-            pass
+        media = Media.objects.filter(project=obj).order_by('id')[:1]
+        if media.exists():
+            media = media[0]
+            if media.file:
+                url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
+            elif media.media_files:
+                if 'thumbnail' in media.media_files:
+                    s3 = s3_client()
+                    url = get_download_url(s3, media.media_files['thumbnail'][0]['path'], 30)
         return url
 
     def get_usernames(self, obj):
