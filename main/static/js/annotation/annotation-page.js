@@ -119,7 +119,8 @@ class AnnotationPage extends TatorPage {
               (data.media_files == null ||
                (data.media_files &&
                 !('streaming' in data.media_files) &&
-                !('layout' in data.media_files))))
+                !('layout' in data.media_files) &&
+                !('image' in data.media_files))))
           {
             this._shadow.removeChild(this._loading);
             Utilities.sendNotification(`Unplayable file ${data.id}`);

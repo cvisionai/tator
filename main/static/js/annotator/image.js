@@ -23,17 +23,22 @@ class ImageCanvas extends AnnotationCanvas
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      this.loadFromURL("/media/" + val.file, this._dims).then(() =>
-                                                 {
-                                                   this._good = true;
-                                                   this.refresh()
-                                                 }
-                                                )
-        .then(() => {
-          this.dispatchEvent(new Event("canvasReady", {
-            composed: true
-          }));
-        });
+      let url = `/media/${val.file}`;
+      if (val.media_files) {
+        if (val.media_files.image) {
+          url = val.media_files.image[0].path;
+        }
+      }
+      this.loadFromURL(url, this._dims)
+      .then(() => {
+        this._good = true;
+        this.refresh()
+      })
+      .then(() => {
+        this.dispatchEvent(new Event("canvasReady", {
+          composed: true
+        }));
+      });
     });
   }
 
