@@ -81,6 +81,10 @@ class VideoFileDetailAPI(BaseDetailView):
             raise Http404
         if role not in media.media_files:
             raise Http404
+        if (role == 'streaming') and ('segment_info' not in body):
+            raise ValueError(f"Streaming files are required to include a segment_info!")
+        if (role == 'streaming') and (not body['segment_info']):
+            raise ValueError(f"Streaming files are required to include a segment_info!")
         if index >= len(media.media_files[role]):
             raise ValueError(f"Supplied index {index} is larger than current array size "
                              f"{len(media.media_files[role])}")

@@ -72,7 +72,8 @@ video_definition = {
             },
         },
         'segment_info': {
-            'description': 'Path to json file containing segment info.',
+            'description': 'Path to json file containing segment info. Required if media role is '
+                           '`streaming`.',
             'type': 'string',
         },
         'host': {
