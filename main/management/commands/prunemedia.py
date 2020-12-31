@@ -29,6 +29,8 @@ class Command(BaseCommand):
             num_media = media.count()
             if num_media == 0:
                 break
-            media.delete()
+            # Delete in a loop to avoid resource deletion errors.
+            for m in media:
+                m.delete()
             num_deleted += num_media
         logger.info(f"Deleted a total of {num_deleted} media...")

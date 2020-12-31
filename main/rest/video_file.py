@@ -44,6 +44,8 @@ class VideoFileListAPI(BaseListView):
             media.media_files[role].insert(index, body)
         media.save()
         Resource.add_resource(body['path'], media)
+        if role == 'streaming':
+            Resource.add_resource(body['segment_info'], media)
         return {'message': f"Media file in media object {media.id} created!"}
 
     def get_queryset(self):
@@ -83,11 +85,18 @@ class VideoFileDetailAPI(BaseDetailView):
                              f"{len(media.media_files[role])}")
         old_path = media.media_files[role][index]['path']
         new_path = body['path']
+        if role == 'streaming':
+            old_segments = media.media_files[role][index]['path']
+            new_segments = body['segment_info']
         media.media_files[role][index] = body
         media.save()
         if old_path != new_path:
             safe_delete(old_path)
             Resource.add_resource(new_path, media)
+        if role == 'streaming':
+            if old_segments != new_segments:
+                safe_delete(old_segments)
+                Resource.add_resource(new_segments, media)
         return {'message': f"Media file in media object {media.id} successfully updated!"}
 
     @transaction.atomic
@@ -105,6 +114,8 @@ class VideoFileDetailAPI(BaseDetailView):
         deleted = media.media_files[role].pop(index)
         media.save()
         safe_delete(deleted['path'])
+        if role == 'streaming':
+            safe_delete(deleted['segment_info'])
         return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

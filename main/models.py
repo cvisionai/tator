@@ -672,11 +672,11 @@ class Resource(Model):
 
     @transaction.atomic
     def delete_resource(path_or_link):
-        if os.path.islink(path_or_link):
-            path=os.readlink(path_or_link)
-            os.remove(path_or_link)
-        else:
-            path=path_or_link
+        path=path_or_link
+        if os.path.exists(path_or_link):
+            if os.path.islink(path_or_link):
+                path=os.readlink(path_or_link)
+                os.remove(path_or_link)
         if path.startswith('/'):
             try:
                 obj = Resource.objects.get(path=path)
@@ -704,19 +704,11 @@ def media_save(sender, instance, created, **kwargs):
     if instance.file and created:
         Resource.add_resource(instance.file.path, instance)
     if instance.media_files and created:
-        for fp in instance.media_files.get('audio', []):
-            Resource.add_resource(fp['path'], instance)
-        for fp in instance.media_files.get('streaming', []):
-            Resource.add_resource(fp['path'], instance)
-            Resource.add_resource(fp['segment_info'], instance)
-        for fp in instance.media_files.get('archival', []):
-            Resource.add_resource(fp['path'], instance)
-        for fp in instance.media_files.get('image', []):
-            Resource.add_resource(fp['path'], instance)
-        for fp in instance.media_files.get('thumbnail', []):
-            Resource.add_resource(fp['path'], instance)
-        for fp in instance.media_files.get('thumbnail_gif', []):
-            Resource.add_resource(fp['path'], instance)
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+            for fp in instance.media_files.get(key, []):
+                Resource.add_resource(fp['path'], instance)
+                if key == 'streaming':
+                    Resource.add_resource(fp['segment_info'], instance)
 
 def safe_delete(path):
     try:
