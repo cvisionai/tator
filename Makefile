@@ -423,9 +423,11 @@ cache-clear:
 cleanup-evicted:
 	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
 
+# Example:
+#   make build-search-indices MAX_AGE_DAYS=365
 .PHONY: build-search-indices
 build-search-indices:
-	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)"
 
 .PHONY: migrate-flat
 migrate-flat:

@@ -1,10 +1,23 @@
 import logging
 import os
+import datetime
 from copy import deepcopy
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
+from uuid import uuid1
 
 logger = logging.getLogger(__name__)
+
+# Indicates what types can mutate into. Maps from type -> to type.
+ALLOWED_MUTATIONS = {
+    'bool': ['bool', 'enum', 'string'],
+    'int': ['int', 'float', 'enum', 'string'],
+    'float': ['int', 'float', 'enum', 'string'],
+    'enum': ['enum', 'string'],
+    'string': ['enum', 'string'],
+    'datetime': ['enum', 'string', 'datetime'],
+    'geopos': ['enum', 'string', 'geopos'],
+}
 
 # Used for duplicate ID storage
 id_bits=448
@@ -56,6 +69,65 @@ def drop_dupes(ids):
     seen = set()
     seen_add = seen.add
     return [x for x in ids if not (x in seen or seen_add(x))]
+
+def _get_alias_type(attribute_type):
+    """
+    Maps `dtype` to ES alias type.
+    """
+    dtype = attribute_type["dtype"]
+    if dtype == "bool":
+        return "boolean"
+    if dtype == "int":
+        return "long"
+    if dtype == "float":
+        return "double"
+    if dtype == "enum":
+        return "keyword"
+    if dtype == "string":
+        return "text" if "long_string" in attribute_type.get("style", "") else "keyword"
+    if dtype == "datetime":
+        return "date"
+    if dtype == "geopos":
+        return "geo_point"
+
+def _get_mapping_values(entity_type, attributes):
+    """ For a given entity type and attribute values, determines mappings that should
+        be set.
+    """
+    mapping_values = {}
+
+    if entity_type.attribute_types is None:
+        return mapping_values
+
+    for attribute_type in entity_type.attribute_types:
+        name = attribute_type['name']
+        value = attributes.get(name)
+        if value is not None:
+            dtype = attribute_type['dtype']
+            uuid = entity_type.project.attribute_type_uuids[name]
+            mapping_type = _get_alias_type(attribute_type)
+            mapping_name = f'{uuid}_{mapping_type}'
+            if mapping_type == 'boolean':
+                mapping_values[mapping_name] = bool(value)
+            elif mapping_type == 'long':
+                mapping_values[mapping_name] = int(value)
+            elif mapping_type == 'double':
+                mapping_values[mapping_name] = float(value)
+            elif mapping_type == 'text':
+                mapping_values[mapping_name] = value
+            elif mapping_type == 'keyword':
+                mapping_values[mapping_name] = value
+            elif mapping_type == 'date':
+                mapping_values[mapping_name] = value # TODO: reformat?
+            elif mapping_type == 'geo_point':
+                if type(value) == list:
+                    # Store django lat/lon as a string
+                    # Special note: in ES, array representations are lon/lat, but
+                    # strings are lat/lon, therefore we intentionally swap order here.
+                    mapping_values[mapping_name] = f"{value[1]},{value[0]}"
+                else:
+                    mapping_values[mapping_name] = value
+    return mapping_values
 
 class TatorSearch:
     """ Interface for elasticsearch documents.
@@ -126,6 +198,9 @@ class TatorSearch:
                 '_modified': {'type': 'boolean'},
                 '_modified_datetime': {'type': 'date'},
                 '_modified_by': {'type': 'keyword'},
+                '_created_datetime': {'type': 'date'},
+                '_created_by': {'type': 'keyword'},
+                '_indexed_datetime': {'type': 'date'},
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
@@ -142,37 +217,246 @@ class TatorSearch:
             self.es.indices.delete(index)
 
     def create_mapping(self, entity_type):
-        if entity_type.attribute_types:
-            # Fetch existing mappings
-            index_name = self.index_name(entity_type.project.pk)
-            existing_mappings = self.es.indices.get_mapping(index=index_name)
-            mappings = existing_mappings[index_name].get('mappings',{})
-            properties = mappings.get('properties',{})
-            existing_prop_names = properties.keys()
-            for attribute_type in entity_type.attribute_types:
-                # Skip over existing mappings
-                if attribute_type['name'] in existing_prop_names:
-                    continue
-                if attribute_type['dtype'] == 'bool':
-                    dtype='boolean'
-                elif attribute_type['dtype'] == 'int':
-                    dtype='integer'
-                elif attribute_type['dtype'] == 'float':
-                    dtype='float'
-                elif attribute_type['dtype'] == 'enum':
-                    dtype='keyword'
-                elif attribute_type['dtype'] == 'string':
-                    dtype='keyword'
-                elif attribute_type['dtype'] == 'datetime':
-                    dtype='date'
-                elif attribute_type['dtype'] == 'geopos':
-                    dtype='geo_point'
-                self.es.indices.put_mapping(
-                    index=self.index_name(entity_type.project.pk),
-                    body={'properties': {
-                        attribute_type['name']: {'type': dtype},
-                    }},
+        if not entity_type.attribute_types:
+            return
+
+        # Fetch existing mappings
+        index_name = self.index_name(entity_type.project.pk)
+        existing_mappings = self.es.indices.get_mapping(index=index_name)
+        mappings = existing_mappings[index_name].get("mappings",{})
+        properties = mappings.get("properties",{})
+        existing_prop_names = properties.keys()
+        for attribute_type in entity_type.attribute_types:
+            # Skip over existing mappings
+            if attribute_type["name"] in existing_prop_names:
+                continue
+
+            # Get or create UUID for this attribute type.
+            name = attribute_type["name"]
+            if name in entity_type.project.attribute_type_uuids:
+                uuid = entity_type.project.attribute_type_uuids[name]
+            else:
+                uuid = str(uuid1()).replace("-", "")
+                entity_type.project.attribute_type_uuids[name] = uuid
+                entity_type.project.save()
+
+            mapping_type = _get_alias_type(attribute_type)
+            mapping_name = f"{uuid}_{mapping_type}"
+
+            # Define alias for this attribute type.
+            alias = {name: {"type": "alias",
+                            "path": mapping_name}}
+
+            # Create mappings depending on dtype.
+            mapping = {mapping_name: {"type": mapping_type}}
+
+            # Create mappings.
+            self.es.indices.put_mapping(
+                index=self.index_name(entity_type.project.pk),
+                body={"properties": {**mapping, **alias}},
+            )
+
+    def check_rename(self, entity_type, old_name, new_name):
+        """
+        Checks rename operation and raises if it is invalid. See `rename_alias` for argument
+        description.
+        """
+        # If no name change is happening, there is nothing to check
+        if old_name == new_name:
+            return None, None, None
+
+        # Retrieve UUID, raise error if it doesn't exist.
+        uuid = entity_type.project.attribute_type_uuids.get(old_name)
+        if uuid is None:
+            raise ValueError(f"Could not find attribute name {old_name} in entity type "
+                             "{type(entity_type).__name__} ID {entity_type.id}")
+
+        # Find old attribute type and create new attribute type.
+        new_attribute_type = None
+        for idx, attribute_type in enumerate(entity_type.attribute_types):
+            name = attribute_type['name']
+            if name == old_name:
+                replace_idx = idx
+                new_attribute_type = dict(attribute_type)
+                new_attribute_type['name'] = new_name
+            elif name == new_name:
+                raise ValueError(
+                    f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
+                    "with that name already exists in entity type {type(entity_type).__name__} ID "
+                    "{entity_type.id}"
                 )
+
+        if new_attribute_type is None:
+            raise ValueError(
+                f"Could not find attribute name {old_name} in entity type "
+                "{type(entity_type).__name__} ID {entity_type.id}"
+            )
+
+        return uuid, replace_idx, new_attribute_type
+
+
+    def rename_alias(self, entity_type, old_name, new_name):
+        """
+        Adds an alias corresponding to an attribute type rename. Note that the old alias will still
+        exist but can be excluded by specifying fields parameter in query_string queries. Entity
+        type should contain an attribute type definition for old_name.
+
+        :param entity_type: *Type object. Should be passed in before updating attribute_type json.
+                            Fields attribute_types and attribute_type_uuids will be updated with new
+                            name. Entity type will NOT be saved.
+        :param old_name: Name of attribute type being mutated.
+        :param new_name: New name for the attribute type.
+        :returns: Entity type with updated attribute_type_uuids.
+        """
+        # If no name change is happening, there is nothing to do
+        if old_name == new_name:
+            return entity_type
+
+        uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
+
+        # Create new alias definition.
+        alias_type = _get_alias_type(new_attribute_type)
+        alias = {new_name: {'type': 'alias',
+                            'path': f'{uuid}_{alias_type}'}}
+        self.es.indices.put_mapping(
+            index=self.index_name(entity_type.project.pk),
+            body={'properties': alias},
+        )
+
+        # Update entity type object with new values.
+        entity_type.project.attribute_type_uuids[new_name] = entity_type.project.attribute_type_uuids.pop(old_name)
+        entity_type.attribute_types[replace_idx] = new_attribute_type
+        return entity_type
+
+    def check_mutation(self, entity_type, name, new_attribute_type):
+        """
+        Checks mutation operation and raises if it is invalid. See `mutate_alias` for argument
+        description.
+        """
+        # Retrieve UUID, raise error if it doesn't exist.
+        uuid = entity_type.project.attribute_type_uuids.get(name)
+        if uuid is None:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        # Find old attribute type and create new attribute type.
+        for idx, attribute_type in enumerate(entity_type.attribute_types):
+            if attribute_type['name'] == name:
+                replace_idx = idx
+                old_mapping_type = _get_alias_type(attribute_type)
+                old_mapping_name = f'{uuid}_{old_mapping_type}'
+                old_dtype = attribute_type['dtype']
+                break
+        else:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        new_dtype = new_attribute_type["dtype"]
+        if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
+            raise RuntimeError(f"Attempted mutation of {name} from {old_dtype} to {new_dtype} is "
+                                "not allowed!")
+
+        return uuid, replace_idx, old_mapping_name
+
+    def mutate_alias(self, entity_type, name, new_attribute_type, new_style=None):
+        """
+        Sets alias to new mapping type.
+
+        :param entity_type: *Type object. Should be passed in before updating attribute_type json.
+                            Field attribute_types will be updated with new dtype and style. Entity
+                            type will not be saved.
+        :param name: Name of attribute type being mutated.
+        :param new_attribute_type: New attribute type for the attribute being mutated.
+        :param new_style: [Optional] New display style of attribute type. Used to determine if
+                          string attributes should be indexed as keyword or text.
+        :returns: Entity type with updated attribute_types.
+        """
+        # Check mutation before applying atomically
+        uuid, replace_idx, old_mapping_name = self.check_mutation(
+            entity_type, name, new_attribute_type
+        )
+
+        # Create new alias definition and mapping.
+        if new_style is not None:
+            new_attribute_type['style'] = new_style
+        mapping_type = _get_alias_type(new_attribute_type)
+        mapping_name = f'{uuid}_{mapping_type}'
+        alias = {name: {'type': 'alias',
+                        'path': mapping_name}}
+        mapping = {mapping_name: {'type': mapping_type}}
+        # Create new mapping.
+        self.es.indices.put_mapping(
+            index=self.index_name(entity_type.project.pk),
+            body={'properties': {**mapping, **alias}},
+        )
+
+        # Copy values from old mapping to new mapping.
+        body = {'script': f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];"}
+        self.es.update_by_query(
+            index=self.index_name(entity_type.project.pk),
+            body=body,
+            conflicts='proceed',
+        )
+
+        # Replace values in old mapping with null.
+        body = {'script': f"ctx._source['{old_mapping_name}']=null;"}
+        self.es.update_by_query(
+            index=self.index_name(entity_type.project.pk),
+            body=body,
+            conflicts='proceed',
+        )
+
+        # Update entity type object with new values.
+        entity_type.attribute_types[replace_idx] = new_attribute_type
+        return entity_type
+
+    def check_deletion(self, entity_type, name):
+        """
+        Checks deletion operation and raises if it is invalid. See `delete_alias` for argument
+        description.
+        """
+        # Retrieve UUID, raise error if it doesn't exist.
+        uuid = entity_type.project.attribute_type_uuids.get(name)
+        if uuid is None:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        # Find old attribute type and create new attribute type.
+        for idx, attribute_type in enumerate(entity_type.attribute_types):
+            if attribute_type['name'] == name:
+                delete_idx = idx
+                mapping_type = _get_alias_type(attribute_type)
+                mapping_name = f'{uuid}_{mapping_type}'
+                old_dtype = attribute_type['dtype']
+                break
+        else:
+            raise ValueError(f"Could not find attribute name {name} in entity type "
+                              "{type(entity_type).__name__} ID {entity_type.id}")
+
+        return uuid, delete_idx, mapping_name
+
+    def delete_alias(self, entity_type, name):
+        """
+        Deletes existing alias.
+
+        :param entity_type: *Type object.
+        :param name: Name of attribute type being deleted.
+        :returns: Entity type with updated attribute_types.
+        """
+        # Check deletion before performing atomically
+        uuid, delete_idx, mapping_name = self.check_deletion(entity_type, name)
+
+        # Replace values in mapping with null.
+        body = {'script': f"ctx._source['{mapping_name}']=null;"}
+        self.es.update_by_query(
+            index=self.index_name(entity_type.project.pk),
+            body=body,
+            conflicts='proceed',
+        )
+
+        # Remove attribute from entity type object.
+        del entity_type.attribute_types[delete_idx]
+        return entity_type
 
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False)
@@ -199,6 +483,12 @@ class TatorSearch:
         aux['_dtype'] = entity.meta.dtype
         aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
                                         # purpose is not recommended by ES.
+        aux['_created_datetime'] = entity.created_datetime.isoformat()
+        aux['_created_by'] = str(entity.created_by)
+        aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+        aux['_modified_by'] = str(entity.modified_by)
+        tzinfo = entity.created_datetime.tzinfo
+        aux['_indexed_datetime'] = datetime.datetime.now(tzinfo).isoformat()
         duplicates = []
         if entity.meta.dtype in ['image', 'video', 'multi']:
             aux['_media_relation'] = 'media'
@@ -231,8 +521,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
             aux['_user'] = entity.user.pk
             aux['_email'] = entity.user.email
             aux['_meta'] = entity.meta.pk
@@ -281,8 +569,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
@@ -292,21 +578,15 @@ class TatorSearch:
             entity.attributes = {}
             entity.save()
 
-        corrected_attributes={**entity.attributes}
-        if mode != 'single':
-            for key in corrected_attributes:
-                value=corrected_attributes[key]
-                # Store django lat/lon as a string
-                # Special note: in ES, array representations are lon/lat, but
-                # strings are lat/lon, therefore we intentionally swap order here.
-                if type(value) == list:
-                    corrected_attributes[key] = f"{value[1]},{value[0]}"
+        # Index attributes for all supported dtype mutations.
+        mapping_values = _get_mapping_values(entity.meta, entity.attributes)
+
         results=[]
         results.append({
             '_index':self.index_name(entity.project.pk),
             '_op_type': mode,
             '_source': {
-                **corrected_attributes,
+                **mapping_values,
                 **aux,
             },
             '_id': f"{aux['_dtype']}_{entity.pk}",
@@ -325,7 +605,7 @@ class TatorSearch:
             '_index':self.index_name(entity.project.pk),
             '_op_type': mode,
             '_source': {
-                **corrected_attributes,
+                **mapping_values,
                 **duplicate,
             },
             '_id': f"{aux['_dtype']}_{duplicate_id}",
@@ -408,12 +688,13 @@ class TatorSearch:
             conflicts='proceed',
         )
 
-    def update(self, project, query, attrs):
+    def update(self, project, entity_type, query, attrs):
         """Bulk update on search results.
         """
         query['script'] = ''
-        for key in attrs:
-            val = attrs[key]
+        mapping_values = _get_mapping_values(entity_type, attrs)
+        for key in mapping_values:
+            val = mapping_values[key]
             if isinstance(val, bool):
                 if val:
                     val = 'true'

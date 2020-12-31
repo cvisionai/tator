@@ -257,8 +257,8 @@ class TatorTranscode(JobManagerMixin):
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
                 'resources': {
                     'limits': {
-                        'memory': '128Mi',
-                        'cpu': '500m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
@@ -294,7 +294,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
+                        'memory': '4Gi',
                         'cpu': '1000m',
                     },
                 },
@@ -322,7 +322,7 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
+                        'memory': '4Gi',
                         'cpu': '1000m',
                     },
                 },
@@ -366,8 +366,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '128Mi',
-                        'cpu': '100m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
@@ -411,8 +411,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
-                        'cpu': '500m',
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -462,8 +462,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '4Gi',
-                        'cpu': os.getenv("TRANSCODER_CPU_LIMIT"),
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -501,8 +501,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '4Gi',
-                        'cpu': '1000m',
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
             },
@@ -545,8 +545,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '500Mi',
-                        'cpu': '1000m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },
@@ -583,8 +583,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '512Mi',
-                        'cpu': '500m',
+                        'memory': '1Gi',
+                        'cpu': '250m',
                     },
                 },
             },

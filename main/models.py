@@ -185,6 +185,10 @@ class Project(Model):
     num_files = IntegerField(default=0)
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
+    attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
+    """ Mapping between attribute type names and UUIDs. Used internally for 
+        maintaining elasticsearch field aliases.
+    """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
     def user_permission(self, user_id):
