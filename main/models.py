@@ -718,6 +718,19 @@ def safe_delete(path):
         logger.warning(f"Could not remove {path}")
         logger.warning(f"{traceback.format_exc()}")
 
+def drop_media_from_resource(path, media):
+    """ Drops the specified media from the resource. This should be called when
+        removing a resource from a Media object's media_files but the Media is 
+        not being deleted.
+    """
+    try:
+        logger.info(f"Dropping media {media} from resource {path}")
+        obj = Resource.objects.get(path=path)
+        obj.media.remove(media)
+    except:
+        logger.warning(f"Could not remove {media} from {path}")
+        logger.warning(f"{traceback.format_exc()}")
+
 @receiver(pre_delete, sender=Media)
 def media_delete(sender, instance, **kwargs):
     if instance.project:

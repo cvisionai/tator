@@ -4,6 +4,7 @@ from django.http import Http404
 from ..models import Media
 from ..models import Resource
 from ..models import safe_delete
+from ..models import drop_media_from_resource
 from ..schema import ImageFileListSchema
 from ..schema import ImageFileDetailSchema
 
@@ -86,6 +87,7 @@ class ImageFileDetailAPI(BaseDetailView):
         media.media_files[role][index] = body
         media.save()
         if old_path != new_path:
+            drop_media_from_resource(old_path, media)
             safe_delete(old_path)
             Resource.add_resource(new_path, media)
         return {'message': f"Media file in media object {media.id} successfully updated!"}
@@ -104,6 +106,7 @@ class ImageFileDetailAPI(BaseDetailView):
                              f"{len(media.media_files[role])}")
         deleted = media.media_files[role].pop(index)
         media.save()
+        drop_media_from_resource(deleted['path'], media)
         safe_delete(deleted['path'])
         return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
 
