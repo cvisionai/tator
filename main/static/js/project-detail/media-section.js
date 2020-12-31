@@ -238,7 +238,7 @@ class MediaSection extends TatorElement {
         if (afterName) {
           sectionQuery.append("after", afterName);
         }
-        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
+        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=30`, {
           method: "GET",
           credentials: "same-origin",
           headers: {

@@ -67,7 +67,7 @@ class Utilities
     }
   }
   // Get the download request object
-  static async getDownloadRequest(media_element, session_headers)
+  static getDownloadRequest(media_element, session_headers)
   {
     // Download original file if available.
     let url;
@@ -81,7 +81,13 @@ class Utilities
       {
         return null;
       }
-      if (media_files.archival)
+      if (media_files.image)
+      {
+        path = media_files.image[0].path;
+        http_authorization = media_files.image[0].http_auth;
+        hostname = media_files.image[0].host;
+      }
+      else if (media_files.archival)
       {
         path = media_files.archival[0].path;
         http_authorization = media_files.archival[0].http_auth;
@@ -144,24 +150,12 @@ class Utilities
                                  headers: cross_origin
                                 });
         }
-      } else {
-        await fetchRetry(`/rest/DownloadInfo/${media_element.project}`, {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({keys: [path]}),
-        })
-        .then(response => response.json())
-        .then(data => {
-          request = new Request(data[0].url,
-                                {method: "GET",
-                                 credentials: "omit",
-                                });
-        });
+      } else if (path.startsWith('http')) {
+        url = path;
+        request = new Request(url,
+                              {method: "GET",
+                               credentials: "omit",
+                              });
       }
     }
     else

@@ -37,12 +37,16 @@ class SectionFiles extends TatorElement {
 
     if (media.thumbnail) {
       card.setAttribute("thumb", "/media/" + media.thumbnail);
+    } else if (media.media_files.thumbnail) {
+      card.setAttribute("thumb", media.media_files.thumbnail[0].path);
     } else {
       card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
     }
     if (media.thumbnail_gif) {
       card.setAttribute("thumb-gif", "/media/" + media.thumbnail_gif);
-    }else {
+    } else if (media.media_files.thumbnail_gif) {
+      card.setAttribute("thumb-gif", media.media_files.thumbnail_gif[0].path);
+    } else {
       card.removeAttribute("thumb-gif");
     }
     card.mediaParams = this._mediaParams();
