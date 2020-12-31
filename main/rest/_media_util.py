@@ -29,7 +29,13 @@ class MediaUtil:
             self._bucket_name = os.getenv('BUCKET_NAME')
             if "streaming" in video.media_files:
                 if quality is None:
+                    # Select highest quality if not specified
+                    highest_res = -1
                     quality_idx = 0
+                    for idx, media_info in enumerate(video.media_files["streaming"]):
+                        if media_info['resolution'][0] > highest_res:
+                            highest_res = media_info['resolution'][0]
+                            quality_idx = idx
                 else:
                     max_delta = sys.maxsize
                     for idx, media_info in enumerate(video.media_files["streaming"]):
@@ -51,7 +57,13 @@ class MediaUtil:
                                                               ['segments']) if x['name'] == 'moof']
             elif "image" in video.media_files:
                 if quality is None:
+                    # Select highest quality if not specified
+                    highest_res = -1
                     quality_idx = 0
+                    for idx, media_info in enumerate(video.media_files["image"]):
+                        if media_info['resolution'][0] > highest_res:
+                            highest_res = media_info['resolution'][0]
+                            quality_idx = idx
                 # Image
                 self._video_file = video.media_files["image"][quality_idx]["path"]
                 self._height = video.height
