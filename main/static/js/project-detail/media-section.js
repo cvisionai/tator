@@ -176,7 +176,7 @@ class MediaSection extends TatorElement {
       if (this._after.has(current - 5000)) {
         after = `&after=${this._after.get(current-5000)}`;
       }
-      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}`, {
+      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -238,7 +238,7 @@ class MediaSection extends TatorElement {
         if (afterName) {
           sectionQuery.append("after", afterName);
         }
-        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=30`, {
+        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -346,7 +346,7 @@ class MediaSection extends TatorElement {
       const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
       const readableZipStream = new ZIP({
         async pull(ctrl) {
-          let url = getUrl("Medias") + "&stop=" + batchSize;
+          let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
           if (lastFilename != null) {
             url += "&after=" + lastFilename;
           }
