@@ -244,7 +244,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Upload thumbnail.
             thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/thumb.jpg"
-            s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_thumb)
+            s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
             media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                    'size': os.stat(temp_thumb.name).st_size,
                                                    'resolution': [image.height, image.width],
