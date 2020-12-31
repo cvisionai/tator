@@ -144,7 +144,22 @@ _fetchNewProjectData(){
     let formData = new FormData(form);
     let obj = {};
     for (var key of formData.keys()) {
-  		obj[key] = formData.get(key);
+      let value = formData.get(key);
+      if(key == "minimum" || key == "maximum"){
+        // Number from string....
+        value = Number(value);
+      } else if(key == "choices" || key == "labels"){ //labels too?
+        // Array from string.... @TODO this might be fixed in form now
+        if(value.indexOf(",") > 0) {
+          value = value.split(',');
+        } else {
+          value = [...value]
+        }
+
+      }
+
+      // add to JSON obj
+      obj[key] = value;
   	}
     //console.log(obj);
     return obj;
@@ -152,7 +167,9 @@ _fetchNewProjectData(){
 
   _getAttributePromises(id){
     let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    let attrPromises = [];
+    let attrPromises = {};
+    attrPromises.promises = [];
+    attrPromises.attrNames = [];
 
     console.log(attrForms.length);
 
@@ -163,9 +180,11 @@ _fetchNewProjectData(){
         "new_attribute_type": {}
       };
 
-      formData.new_attribute_type = this._getFormData(form);
+      let attrName = form.querySelector('input[name="name"]').value;
+      console.log("Attribute name? "+attrName);
+      attrPromises.attrNames.push(attrName);
 
-      console.log(formData);
+      formData.new_attribute_type = this._getFormData(form);
 
       let currentPatch = fetch("/rest/AttributeType/" + id, {
         method: "PATCH",
@@ -178,7 +197,7 @@ _fetchNewProjectData(){
         },
         body: JSON.stringify(formData)
       })
-      attrPromises.push(currentPatch);
+      attrPromises.promises.push(currentPatch);
     });
     return attrPromises;
   }
@@ -188,24 +207,39 @@ _fetchNewProjectData(){
     const patchMedia = this._fetchPatchPromise({"id":id});
     const attrPromises = this._getAttributePromises(id);
 
-    const promises = [patchMedia, ...attrPromises];
+    const promises = [patchMedia, ...attrPromises.promises];
 
     // Check if anything changed
     Promise.all(promises).then( async( respArray ) => {
       console.log(respArray);
       let responses = [];
       respArray.forEach((item, i) => {
-        console.log(item.status);
         responses.push( item.json() )
-      })
+      });
 
         Promise.all( responses )
           .then ( dataArray => {
             let message = "";
-            dataArray.forEach((data, i) => {
-              console.log("Save response status: "+data.status)
-              console.log(data.message);
-              message += data.message+"\n";
+            respArray.forEach((item, i) => {
+              console.log("Media Type save response....");
+              let bumpIndexForAttr = true;
+              let formReadable = "Media Type";
+              if (i == 0 && item.url.indexOf("Attribute") > 0) {
+                bumpIndexForAttr = false
+              }
+              if( attrPromises.attrNames.length > 0 && item.url.indexOf("Attribute") > 0){
+                let index = bumpIndexForAttr ? i-1 : i;
+                let attrNamed = attrPromises.attrNames[index];
+                console.log("Attribute Response"+attrNamed);
+                formReadable = `Attribute "${attrNamed}"`
+              }
+              console.log(item.status);
+              console.log("Save response message: "+dataArray[i].message);
+              if(item.status == 200 & dataArray[i].message != ""){
+                message += dataArray[i].message+"<br/>";
+              } else if (item.status !== 200 ){
+                message += "Information for "+formReadable+" did not save."+"<br/>";
+              }
             });
           //  if (response.status == "200") {
               this._modalSuccess(message);
