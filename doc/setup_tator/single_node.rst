@@ -198,6 +198,9 @@ Tator creates all Kubernetes persistent volumes using a single NFS share with a 
 * The **raw** directory is for storing raw media.
 * The **backup** directory is for storing database backups.
 * The **migrations** directory is for storing migrations.
+* The **elasticsearch** directory is for persistence in the optional Elasticsearch helm chart.
+* The **postgres** directory is for persistence in the optional PostgreSQL service.
+* The **objects** directory is for persistence in the optional MinIO service.
 
 A second NFS share is used for dynamic provisioning of persistent volumes. In this tutorial, we will share it separately under the subdirectory **scratch**.
 
@@ -231,6 +234,7 @@ Preparing NFS server node
    mkdir /media/kubernetes_share/scratch
    mkdir /media/kubernetes_share/elasticsearch
    mkdir /media/kubernetes_share/postgres
+   mkdir /media/kubernetes_share/objects
 
 * Set NFS permissions:
 
