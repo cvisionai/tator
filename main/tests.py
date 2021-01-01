@@ -2341,7 +2341,7 @@ class ResourceTestCase(APITestCase):
         TatorSearch().refresh(self.project.pk)
 
         # Delete the clone.
-        response = self.client.delete(f"/rest/Media/{clone_id}", format=json)
+        response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
@@ -2358,7 +2358,7 @@ class ResourceTestCase(APITestCase):
         TatorSearch().refresh(self.project.pk)
 
         # Delete the original.
-        response = self.client.delete(f"/rest/Media/{media.id}", format=json)
+        response = self.client.delete(f"/rest/Media/{media.id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
@@ -2377,18 +2377,105 @@ class ResourceTestCase(APITestCase):
         TatorSearch().refresh(self.project.pk)
 
         # Delete the first clone.
-        response = self.client.delete(f"/rest/Media/{clone_id}", format=json)
+        response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._s3_obj_exists(keys[role]))
 
         # Delete the second clone.
-        response = self.client.delete(f"/rest/Media/{new_clone_id}", format=json)
+        response = self.client.delete(f"/rest/Media/{new_clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertFalse(self._s3_obj_exists(keys[role]))
+
+    def test_thumbnails(self):
+        # Create an image in which thumbnail is autocreated.
+        image_type = MediaType.objects.create(
+            name="images",
+            dtype='image',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'type': image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        image_id = response.data['id']
+
+        # Make sure we have an image and thumbnail key.
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files['image'][0]['path']
+        thumb_key = image.media_files['thumbnail'][0]['path']
+        self.assertTrue(self._s3_obj_exists(image_key))
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{image_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(image_key))
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+
+        # Create an image with thumbnail_url included.
+        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'type': image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        image_id = response.data['id']
+
+        # Make sure we have an image and thumbnail key.
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files['image'][0]['path']
+        thumb_key = image.media_files['thumbnail'][0]['path']
+        self.assertTrue(self._s3_obj_exists(image_key))
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{image_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(image_key))
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+
+        # Create a video that has thumbnails.
+        body = {'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'thumbnail_gif_url': 'https://cvisionai.com/wp-content/uploads/2018/06/screen.png',
+                'type': self.entity_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        video_id = response.data['id']
+
+        # Make sure we have an video and thumbnail key.
+        video = Media.objects.get(pk=video_id)
+        thumb_key = video.media_files['thumbnail'][0]['path']
+        gif_key = video.media_files['thumbnail_gif'][0]['path']
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertTrue(self._s3_obj_exists(gif_key))
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=gif_key).media.all()[0].pk, video_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{video_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+        self.assertFalse(self._s3_obj_exists(gif_key))
 
 class AttributeTestCase(APITestCase):
     def setUp(self):
