@@ -169,10 +169,6 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
-        'progress_name': {
-            'description': 'Replaces name in progress message.',
-            'type': 'string',
-        },
         'attributes': {
             'nullable': True,
             'description': 'Attributes for the media',

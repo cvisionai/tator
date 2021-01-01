@@ -59,7 +59,7 @@ def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'i
                     media['media_files'][field][idx] = media_def
     return media
 
-def _save_image(url, media_obj, role):
+def _save_image(url, media_obj, project_obj, role):
     """ Downloads an image, uploads it to the appropriate S3 location, 
         and returns an updated media object.
     """
@@ -77,12 +77,14 @@ def _save_image(url, media_obj, role):
     bucket_name = os.getenv('BUCKET_NAME')
 
     # Upload image.
+    if media_obj.media_files is None:
+        media_obj.media_files = {}
     image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
     s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
-                                    'resolution': [media_obj.height, media_obj.width],
-                                    'mime': f'image/{image_format}'}]
+                                    'resolution': [image.height, image.width],
+                                    'mime': f'image/{image_format.lower()}'}]
 
     # Cleanup and return.
     image.close()
@@ -264,8 +266,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
         else:
             # Create the media object.
+            project_obj = Project.objects.get(pk=project)
             media_obj = Media.objects.create(
-                project=Project.objects.get(pk=project),
+                project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
@@ -293,10 +296,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)
 
             if thumbnail_url is not None:
-                media_obj = _save_image(thumbnail_url, media_obj, 'thumbnail')
+                media_obj = _save_image(thumbnail_url, media_obj, project_obj, 'thumbnail')
 
             if thumbnail_gif_url is not None:
-                media_obj = _save_image(thumbnail_gif_url, media_obj, 'thumbnail_gif')
+                media_obj = _save_image(thumbnail_gif_url, media_obj, project_obj, 'thumbnail_gif')
             media_obj.save()
 
             msg = (f"Media object {media_obj.id} created for video "
