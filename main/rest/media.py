@@ -242,7 +242,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 temp_thumb = tempfile.NamedTemporaryFile(delete=False)
                 download_file(thumbnail_url, temp_thumb.name)
                 thumb = Image.open(temp_thumb.name)
-                thumb_name = os.path.basename(urlparse(thumbnail).path)
+                thumb_name = os.path.basename(urlparse(thumbnail_url).path)
                 thumb_format = thumb.format
                 thumb_width = thumb.width
                 thumb_height = thumb.height
