@@ -12,7 +12,7 @@ def s3_client():
 
     # Set up client.
     s3 = boto3.client('s3',
-                      endpoint_url=f'http://{endpoint}',
+                      endpoint_url=f'{endpoint}',
                       aws_access_key_id=access_key,
                       aws_secret_access_key=secret_key)
     return s3
