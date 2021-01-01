@@ -214,54 +214,68 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             media_obj.media_files = {}
 
             # Get image only parameters.
-            url = params['url']
-            thumbnail_url = params.get('thumbnail_url', None)
+            url = params.get('url')
+            thumbnail_url = params.get('thumbnail_url')
 
-            # Download the image file and load it.
-            temp_image = tempfile.NamedTemporaryFile(delete=False)
-            download_file(url, temp_image.name)
-            image = Image.open(temp_image.name)
-            media_obj.width, media_obj.height = image.size
-            image_format = image.format
+            if url:
+                # Download the image file and load it.
+                temp_image = tempfile.NamedTemporaryFile(delete=False)
+                download_file(url, temp_image.name)
+                image = Image.open(temp_image.name)
+                media_obj.width, media_obj.height = image.size
+                image_format = image.format
 
-            # Download or create the thumbnail.
-            temp_thumb = tempfile.NamedTemporaryFile(delete=False)
-            if thumbnail_url is None:
-                thumb_size = (256, 256)
-                image = image.convert('RGB') # Remove alpha channel for jpeg
-                image.thumbnail(thumb_size, Image.ANTIALIAS)
-                image.save(temp_thumb.name, format='jpeg')
-            else:
+                # Download or create the thumbnail.
+                if thumbnail_url is None:
+                    temp_thumb = tempfile.NamedTemporaryFile(delete=False)
+                    thumb_size = (256, 256)
+                    image = image.convert('RGB') # Remove alpha channel for jpeg
+                    image.thumbnail(thumb_size, Image.ANTIALIAS)
+                    image.save(temp_thumb.name, format='jpeg')
+                    thumb_name = 'thumb.jpg'
+                    thumb_format = 'jpg'
+                    thumb_width = image.width
+                    thumb_height = image.height
+                    image.close()
+
+            if thumbnail_url:
+                temp_thumb = tempfile.NamedTemporaryFile(delete=False)
                 download_file(thumbnail_url, temp_thumb.name)
+                thumb = Image.open(temp_thumb.name)
+                thumb_name = os.path.basename(urlparse(thumbnail).path)
+                thumb_format = thumb.format
+                thumb_width = thumb.width
+                thumb_height = thumb.height
+                thumb.close()
                 
             # Set up S3 client.
             s3 = s3_client()
             bucket_name = os.getenv('BUCKET_NAME')
 
-            # Upload image.
-            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-            s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
-            media_obj.media_files['image'] = [{'path': image_key,
-                                               'size': os.stat(temp_image.name).st_size,
-                                               'resolution': [media_obj.height, media_obj.width],
-                                               'mime': f'image/{image_format.lower()}'}]
+            if url:
+                # Upload image.
+                image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
+                s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+                media_obj.media_files['image'] = [{'path': image_key,
+                                                   'size': os.stat(temp_image.name).st_size,
+                                                   'resolution': [media_obj.height, media_obj.width],
+                                                   'mime': f'image/{image_format.lower()}'}]
+                os.remove(temp_image.name)
+                Resource.add_resource(image_key, media_obj)
 
-            # Upload thumbnail.
-            thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/thumb.jpg"
-            s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
-            media_obj.media_files['thumbnail'] = [{'path': thumb_key,
-                                                   'size': os.stat(temp_thumb.name).st_size,
-                                                   'resolution': [image.height, image.width],
-                                                   'mime': 'image/jpg'}]
+            if url or thumbnail_url:
+                # Upload thumbnail.
+                thumb_format = image.format
+                thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
+                s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
+                media_obj.media_files['thumbnail'] = [{'path': thumb_key,
+                                                       'size': os.stat(temp_thumb.name).st_size,
+                                                       'resolution': [thumb_height, thumb_width],
+                                                       'mime': 'image/{thumb_format}'}]
+                os.remove(temp_thumb.name)
+                Resource.add_resource(thumb_key, media_obj)
 
-            # Cleanup and save.
-            image.close()
-            os.remove(temp_image.name)
-            os.remove(temp_thumb.name)
             media_obj.save()
-            Resource.add_resource(image_key, media_obj)
-            Resource.add_resource(thumb_key, media_obj)
-
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
         else:
