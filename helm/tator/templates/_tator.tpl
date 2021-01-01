@@ -68,7 +68,7 @@ spec:
               value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
             {{- if .Values.minio.enabled }}
             - name: OBJECT_STORAGE_HOST
-              value: tator-minio:9000
+              value: http://tator-minio:9000
             - name: OBJECT_STORAGE_EXTERNAL_HOST
               value: {{ .Values.domain }}/objects
             - name: BUCKET_NAME
