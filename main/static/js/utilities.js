@@ -102,9 +102,11 @@ class Utilities
         let fname = media_element.name;
         console.warn(`Can't find suitable download for ${fname}`);
       }
-    }
-    else if (media_element.file) {
+    } else if (media_element.file) {
       url = "/media/" + media_element.file;
+    } else {
+      let fname = media_element.name;
+      console.warn(`Can't find suitable download for ${fname}`);
     }
 
     // We either have a url set (old way) or a path and potentially host
