@@ -100,60 +100,55 @@ class Utilities
       else
       {
         let fname = media_element.name;
-        console.error(`Can't find suitable download for ${fname}`)
+        console.warn(`Can't find suitable download for ${fname}`);
       }
     }
-    else
-    {
-      // TODO: Remove this
-      // Deprecated behavior
-      if (media_element.original_url) {
-        url = media_element.original_url;
-      } else {
-        url = "/media/" + media_element.file;
-      }
+    else if (media_element.file) {
+      url = "/media/" + media_element.file;
     }
 
     // We either have a url set (old way) or a path and potentially host
     // and http_auth
 
-    let request;
+    let request = null;
     if (url == undefined)
     {
-      if (path.startsWith('/')) {
-        let sameOrigin = false;
-        // Default to self if hostname
-        if (hostname == undefined)
-        {
-          hostname = window.location.protocol + "//" + window.location.hostname;
-          sameOrigin = true;
-        }
-        url = hostname + path;
-        if (sameOrigin == true)
-        {
-          request = new Request(url,
-                                {method: "GET",
-                                 credentials: "same-origin",
-                                 headers: session_headers
-                                });
-        }
-        else
-        {
-          let cross_origin = new Headers();
-          cross_origin.append("Authorization", http_authorization);
-          // Don't leak CSRF or session to cross-domain resources
+      if (path) {
+        if (path.startsWith('/')) {
+          let sameOrigin = false;
+          // Default to self if hostname
+          if (hostname == undefined)
+          {
+            hostname = window.location.protocol + "//" + window.location.hostname;
+            sameOrigin = true;
+          }
+          url = hostname + path;
+          if (sameOrigin == true)
+          {
+            request = new Request(url,
+                                  {method: "GET",
+                                   credentials: "same-origin",
+                                   headers: session_headers
+                                  });
+          }
+          else
+          {
+            let cross_origin = new Headers();
+            cross_origin.append("Authorization", http_authorization);
+            // Don't leak CSRF or session to cross-domain resources
+            request = new Request(url,
+                                  {method: "GET",
+                                   credentials: "omit",
+                                   headers: cross_origin
+                                  });
+          }
+        } else if (path.startsWith('http')) {
+          url = path;
           request = new Request(url,
                                 {method: "GET",
                                  credentials: "omit",
-                                 headers: cross_origin
                                 });
         }
-      } else if (path.startsWith('http')) {
-        url = path;
-        request = new Request(url,
-                              {method: "GET",
-                               credentials: "omit",
-                              });
       }
     }
     else
