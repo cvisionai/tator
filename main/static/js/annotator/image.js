@@ -6,6 +6,7 @@ class ImageCanvas extends AnnotationCanvas
   {
     super();
     this._imageElement=document.createElement("img");
+    this._imageElement.crossOrigin = "anonymous";
     this._good=false;
   }
 
