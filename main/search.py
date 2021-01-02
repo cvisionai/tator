@@ -2,9 +2,12 @@ import logging
 import os
 import datetime
 from copy import deepcopy
+from uuid import uuid1
+
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from uuid import uuid1
+
+from .s3 import s3_client
 
 logger = logging.getLogger(__name__)
 
@@ -23,30 +26,46 @@ ALLOWED_MUTATIONS = {
 id_bits=448
 id_mask=(1 << id_bits) - 1
 
+def _path_size(path, s3, bucket_name):
+    """ Returns the file size of a path.
+    """
+    size = 0
+    if path.startswith('/'):
+        # This is a disk-based path.
+        if os.path.exists(path):
+            statinfo = os.stat(streaming['path'])
+            size = statinfo.st_size
+        else:
+            logger.warning(f"Could not find file {path}!")
+    else:
+        # This is an S3 object.
+        try:
+            response = s3.head_object(Bucket=bucket_name, Key=path)
+            size = response['ContentLength']
+        except:
+            logger.warning(f"Could not find object {path}!")
+    return size
+
 def mediaFileSizes(file):
     total_size = 0
     download_size = None
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
 
     if file.thumbnail:
         if os.path.exists(file.thumbnail.path):
             total_size += file.thumbnail.size
     if file.meta.dtype == 'video':
         if file.media_files:
-            if 'archival' in file.media_files:
-                for archival in file.media_files['archival']:
-                    if os.path.exists(archival['path']):
-                        statinfo = os.stat(archival['path'])
-                        total_size += statinfo.st_size
-                        if download_size is None:
-                            download_size = statinfo.st_size
-            if 'streaming' in file.media_files:
-                for streaming in file.media_files['streaming']:
-                    path = streaming['path']
-                    if os.path.exists(path):
-                        statinfo = os.stat(streaming['path'])
-                        total_size += statinfo.st_size
-                        if download_size is None:
-                            download_size = statinfo.st_size
+            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+                if key in file.media_files:
+                    for media_def in file.media_files[key]:
+                        size = _path_size(media_def['path'], s3, bucket_name)
+                        total_size += size
+                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                            download_size = size
+                        if key == 'streaming':
+                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
         if file.original:
             if os.path.exists(file.original):
                 statinfo = os.stat(file.original)

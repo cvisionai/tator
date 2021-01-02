@@ -5,6 +5,7 @@ from django.contrib.gis.db import models
 from rest_framework.authtoken.admin import TokenAdmin
 
 from .models import Organization
+from .models import Affiliation
 from .models import User
 from .models import Project
 from .models import Membership
@@ -22,6 +23,7 @@ from .models import Analysis
 from .models import Version
 
 admin.site.register(Organization)
+admin.site.register(Affiliation)
 admin.site.register(User, UserAdmin)
 admin.site.register(Project)
 admin.site.register(Membership)

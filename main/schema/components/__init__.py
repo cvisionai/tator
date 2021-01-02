@@ -22,6 +22,8 @@ from .bookmark import bookmark_spec
 from .bookmark import bookmark_update
 from .bookmark import bookmark
 from .clone_media import clone_media_spec
+from .download_info import download_info_spec
+from .download_info import download_info
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
@@ -52,7 +54,6 @@ from .media_type import media_type
 from .membership import membership_spec
 from .membership import membership_update
 from .membership import membership
-from .move_video import move_video_spec
 from .notify import notify_spec
 from .organization import organization_spec
 from .organization import organization
@@ -76,6 +77,9 @@ from .token import credentials
 from .token import token
 from .transcode import transcode_spec
 from .transcode import transcode
+from .upload_completion import upload_part
+from .upload_completion import upload_completion_spec
+from .upload_info import upload_info
 from .user import user_update
 from .user import user
 from .version import version_spec
@@ -87,6 +91,8 @@ from ._archive_config import s3_storage_config
 from ._archive_config import archive_config
 from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
+from ._media_definitions import image_definition
+from ._media_definitions import multi_definition
 from ._media_definitions import media_files
 from ._streaming_config import resolution_config
 from ._color import rgb_color

@@ -75,7 +75,7 @@ class MediaMore extends TatorElement {
 
   set media(val)
   {
-    let request = Utilities.getDownloadRequest(val);
+    const request = Utilities.getDownloadRequest(val);
     if (request == null)
     {
       this._download.style.display = "none";

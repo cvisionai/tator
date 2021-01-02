@@ -1,8 +1,5 @@
 let window = self;
 
-// Import tus.
-importScripts("/static/js/tus.min.js");
-
 // Import sparkmd5.
 importScripts("/static/js/md5.min.js");
 
@@ -82,86 +79,168 @@ class Upload {
     this.uploadData = uploadData;
     this.isImage = uploadData.isImage;
     this.aborted = false;
+    this.numParts = 1;
+    this.chunkSize = 10 * 1024 * 1024; // 10MB
+    this.numParts = Math.ceil(this.file.size / this.chunkSize);
+    this.parts = [];
+    this.controller = new AbortController();
+
+    // If number of parts is >100, increase chunk size.
+    if (this.numParts > 100) {
+      this.chunkSize = Math.ceil(this.file.size / 100);
+      this.numParts = 100;
+    }
 
     // Fingerprint function for TUS client required (also needs to return a promise).
     // It'll use the same upload UID used elsewhere by this class.
     this.upload_uid = SparkMD5.hash(this.file.name + this.file.type + uploadData.username + this.file.size)
-    this.fingerprint = function(uid) {
-      return function(file, options) {
-        return Promise.resolve(uid)
-      }
-    }(this.upload_uid)
+  }
 
-    // Create a list item with progress bar.
-    this.md5 = "";
-    this.fname = uploadData.file.name;
+  // Starts the upload, chaining together all promises.
+  start() {
+    // Compute number of parts.
+    this.getUploadInfo()
+    .then(info => this.numParts > 1 ? this.uploadMulti(info) : this.uploadSingle(info))
+    .then(key => this.getDownloadInfo(key))
+    .then(url => this.createMedia(url));
+    //.catch(error => this.handleError(error));
+  }
 
-    // Create a tus upload.
-    this.tus_ep = self.location.origin + "/files/";
-    this.tus = new tus.Upload(this.file, {
-      endpoint: this.tus_ep,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
-      fingerprint: this.fingerprint,
-      metadata: {
-        filename: this.file.name,
-        filetype: this.file.type
-      },
-      chunkSize: 5*1024*1024, // 5MB
+  // Returns promise resolving to upload.
+  getUploadInfo() {
+    return fetchRetry(`/rest/UploadInfo/${this.projectId}?num_parts=${this.numParts}`, {
+      method: "GET",
+      signal: this.controller.signal,
+      credentials: "omit",
       headers: {
         "Authorization": "Token " + this.token,
-        "Upload-Uid": this.upload_uid,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
       },
-      onProgress: (bytesSent, bytesTotal) => {
+    })
+    .then(response => response.json());
+  }
+
+  // Multipart upload.
+  uploadMulti(info) {
+    let promise = new Promise(resolve => resolve(true));
+    for (let idx=0; idx < this.numParts; idx++) {
+      const startByte = this.chunkSize * idx;
+      const stopByte = Math.min(startByte + this.chunkSize, this.file.size);
+      promise = promise.then(() => {return fetchRetry(info.urls[idx], {
+        method: "PUT",
+        signal: this.controller.signal,
+        credentials: "omit",
+        body: this.file.slice(startByte, stopByte),
+      });})
+      .then(response => {
+        this.parts.push({ETag: response.headers.get("ETag"), PartNumber: idx + 1});
+        return this.parts;
+      })
+      .then(parts => {
         self.postMessage({command: "uploadProgress",
-                          percent: Math.floor(100 * bytesSent / bytesTotal),
+                          percent: Math.floor(100 * idx / (this.numParts - 1)),
                           filename: this.file.name});
+        return parts;
+      });
+    }
+    promise = promise.then(parts => fetchRetry(`/rest/UploadCompletion/${this.projectId}`, {
+      method: "POST",
+      signal: this.controller.signal,
+      credentials: "omit",
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
       },
-      onError: error => {
-        console.log("Error during upload: " + error);
-        removeFromActive(this.upload_uid);
-        this.uploadData.retries++;
-        if (this.uploadData.retries > 2) {
-          self.postMessage({command: "uploadFailed",
-                            filename: this.uploadData.file.name});
-        } else {
-          uploadBuffer.push(this.uploadData);
-          startUpload();
-        }
-      },
-      onSuccess: () => {
-        let endpoint;
+      body: JSON.stringify({
+        key: info.key,
+        upload_id: info.upload_id,
+        parts: parts,
+      }),
+    }))
+    .then(() => {return info.key});
+    return promise;
+  }
 
-        if (this.isImage) {
-          endpoint = "Medias";
-        } else {
-          endpoint = "Transcode";
-        }
-        // REST call initiating transcode.
-        fetchRetry("/rest/" + endpoint + "/" + this.projectId, {
-          method: "POST",
-          headers: {
-            "Authorization": "Token " + this.token,
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            type: this.mediaTypeId,
-            gid: this.gid,
-            uid: this.upload_uid,
-            url: this.tus.url,
-            section: this.section,
-            name: this.tus.file.name,
-            md5: this.md5,
-          }),
-          credentials: "omit",
-        })
-        .catch(err => console.error("Error attempting to initiate transcode:" + err));
-        removeFromActive(this.upload_uid);
-        self.postMessage({command: "uploadDone",
-                          filename: this.file.name});
-      }
+  // Uploads using a single request.
+  uploadSingle(info) {
+    return fetchRetry(info.urls[0], {
+      method: "PUT",
+      signal: this.controller.signal,
+      credentials: "omit",
+      body: this.file.slice(0, this.file.size),
+    })
+    .then(() => {
+      self.postMessage({command: "uploadProgress",
+                        percent: 100,
+                        filename: this.file.name});
+      return info.key;
     });
+  }
 
+  // Create presigned url for transcode/media create.
+  getDownloadInfo(key) {
+    return fetchRetry(`/rest/DownloadInfo/${this.projectId}`, {
+      method: "POST",
+      signal: this.controller.signal,
+      credentials: "omit",
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({keys: [key]}),
+    })
+    .then(response => response.json())
+    .then(data => {return data[0].url});
+  }
+
+  // Creates media using the uploaded file.
+  createMedia(url) {
+    let endpoint;
+    if (this.isImage) {
+      endpoint = "Medias";
+    } else {
+      endpoint = "Transcode";
+    }
+    return fetchRetry(`/rest/${endpoint}/${this.projectId}`, {
+      method: "POST",
+      signal: this.controller.signal,
+      headers: {
+        "Authorization": "Token " + this.token,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: this.mediaTypeId,
+        gid: this.gid,
+        uid: this.upload_uid,
+        url: url,
+        section: this.section,
+        name: this.file.name,
+        md5: this.md5,
+      }),
+      credentials: "omit",
+    })
+    .then(() => {
+      removeFromActive(this.upload_uid);
+      self.postMessage({command: "uploadDone",
+                        filename: this.file.name});
+    });
+  }
+
+  handleError(error) {
+    console.log("Error during upload: " + error);
+    removeFromActive(this.upload_uid);
+    this.uploadData.retries++;
+    if (this.uploadData.retries > 2) {
+      self.postMessage({command: "uploadFailed",
+                        filename: this.uploadData.file.name});
+    } else {
+      uploadBuffer.push(this.uploadData);
+      startUpload();
+    }
   }
 
   // Calculates md5 hash.
@@ -169,7 +248,7 @@ class Upload {
     if (this.mediaTypeId == -1)
     {
       // if this is a tarball, short circuit and always allow the upload
-      this.tus.start();
+      this.start();
       return;
     }
     let blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
@@ -189,7 +268,7 @@ class Upload {
 
         // Salt in the file size
         this.md5 = SparkMD5.hash(md5 + this.file.size);
-        this.tus.start();
+        this.start();
       }
     };
     reader.onerror = error => {
@@ -211,9 +290,7 @@ class Upload {
   // Cancels an upload.
   cancel() {
     this.aborted = true;
-    if (this.tus._source) {
-      this.tus.abort();
-    }
+    this.controller.abort();
     removeFromActive(this.upload_uid);
   }
 }

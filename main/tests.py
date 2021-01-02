@@ -13,14 +13,14 @@ import re
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
-
 from rest_framework import status
 from rest_framework.test import APITestCase
-
 from dateutil.parser import parse as dateutil_parse
+from botocore.errorfactory import ClientError
 
 from .models import *
-
+from .s3 import s3_client
+from .s3 import get_download_url
 from .search import TatorSearch
 from .search import ALLOWED_MUTATIONS
 
@@ -1044,6 +1044,43 @@ class AttributeTestMixin:
                 latlon_distance(test_lat, test_lon, lat, lon) < dist
                 for lat, lon in test_vals
             ]))
+
+class FileMixin:
+    def _test_methods(self, role):
+        list_endpoint = f'/rest/{self.list_uri}/{self.media.pk}'
+        detail_endpoint = f'/rest/{self.detail_uri}/{self.media.pk}'
+
+        # Create media definition.
+        response = self.client.post(f'{list_endpoint}?role={role}',
+                                    self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Patch the media definition.
+        response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
+                                     self.patch_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Get media definition list.
+        response = self.client.get(f'{list_endpoint}?role={role}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for key in self.patch_json:
+            self.assertEqual(response.data[0][key], self.patch_json[key])
+
+        # Get media definition detail.
+        response = self.client.get(f'{detail_endpoint}?role={role}&index=0')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for key in self.patch_json:
+            self.assertEqual(response.data[key], self.patch_json[key])
+
+        # Delete media definition.
+        response = self.client.delete(f'{detail_endpoint}?role={role}&index=0')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check we have nothing.
+        response = self.client.get(f'{list_endpoint}?role={role}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
 
 class CurrentUserTestCase(APITestCase):
     def test_get(self):
@@ -2100,6 +2137,345 @@ class OrganizationTestCase(
     def tearDown(self):
         self.project.delete()
 
+class ImageFileTestCase(APITestCase, FileMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.list_uri = 'ImageFiles'
+        self.detail_uri = 'ImageFile'
+        self.create_json = {'path': 'asdf', 'resolution': [1, 1]}
+        self.patch_json = {'path': 'asdf', 'resolution': [2, 2]}
+
+    def test_image(self):
+        self._test_methods('image')
+
+    def test_thumbnail(self):
+        self._test_methods('thumbnail')
+
+    def test_thumbnail_gif(self):
+        self._test_methods('thumbnail_gif')
+
+class VideoFileTestCase(APITestCase, FileMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.list_uri = 'VideoFiles'
+        self.detail_uri = 'VideoFile'
+        self.create_json = {'path': 'asdf', 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.patch_json = {'path': 'asdf', 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
+
+    def test_streaming(self):
+        self._test_methods('streaming')
+
+    def test_archival(self):
+        self._test_methods('archival')
+
+class AudioFileTestCase(APITestCase, FileMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        self.list_uri = 'AudioFiles'
+        self.detail_uri = 'AudioFile'
+        self.create_json = {'path': 'asdf', 'codec': 'h264'}
+        self.patch_json = {'path': 'asdf', 'codec': 'h264'}
+
+    def test_audio(self):
+        self._test_methods('audio')
+
+class ResourceTestCase(APITestCase):
+
+    MEDIA_ROLES = {'streaming': 'VideoFiles',
+                   'archival': 'VideoFiles',
+                   'audio': 'AudioFiles',
+                   'image': 'ImageFiles',
+                   'thumbnail': 'ImageFiles',
+                   'thumbnail_gif': 'ImageFiles'}
+
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.project = create_test_project(self.user, self.organization)
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.s3 = s3_client()
+        self.bucket_name = os.getenv('BUCKET_NAME')
+
+    def _random_s3_obj(self):
+        """ Creates an s3 file with random key. Simulates an upload.
+        """
+        key = f"test/{str(uuid1())}"
+        self.s3.put_object(Bucket=self.bucket_name,
+                           Key=key,
+                           Body=b"\x00" + os.urandom(16) + b"\x00")
+        return key
+
+    def _s3_obj_exists(self, key):
+        """ Checks whether an object in s3 exists.
+        """
+        try:
+            self.s3.head_object(Bucket=self.bucket_name, Key=key)
+            exists = True
+        except ClientError:
+            exists = False
+        return exists
+
+    def _generate_keys(self):
+        keys = {role:self._random_s3_obj() for role in ResourceTestCase.MEDIA_ROLES}
+        segment_key = self._random_s3_obj()
+        return keys, segment_key
+
+    def _get_media_def(self, role, keys, segment_key):
+        media_def = {'path': keys[role]}
+        if role == 'streaming':
+            media_def['resolution'] = [1, 1]
+            media_def['segment_info'] = segment_key
+            media_def['codec'] = 'h264'
+        elif role == 'archival':
+            media_def['resolution'] = [1, 1]
+            media_def['codec'] = 'h264'
+        elif role == 'audio':
+            media_def['codec'] = 'aac'
+        else:
+            media_def['resolution'] = [1, 1]
+        return media_def
+
+    def _prune_media(self):
+        """ Emulates a prunemedia operation that clears out media with null project
+            IDs.
+        """
+        media = Media.objects.filter(project__isnull=True)
+        for m in media:
+            m.delete()
+
+    def test_files(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role]
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Patch in a new value for each role.
+        patch_keys, patch_segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
+            media_def = self._get_media_def(role, patch_keys, patch_segment_key)
+            response = self.client.patch(f"/rest/{endpoint}/{media.id}?index=0&role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertFalse(self._s3_obj_exists(keys[role]))
+            self.assertTrue(self._s3_obj_exists(patch_keys[role]))
+        self.assertFalse(self._s3_obj_exists(segment_key))
+        self.assertTrue(self._s3_obj_exists(patch_segment_key))
+
+        # Delete the files.
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
+            response = self.client.delete(f"/rest/{endpoint}/{media.id}?index=0&role={role}", format='json')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertFalse(self._s3_obj_exists(patch_keys[role]))
+        self.assertFalse(self._s3_obj_exists(patch_segment_key))
+
+    def test_clones(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        TatorSearch().refresh(self.project.pk)
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            endpoint = ResourceTestCase.MEDIA_ROLES[role]
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Clone the media.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the clone.
+        response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        # Clone the media.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf1'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the original.
+        response = self.client.delete(f"/rest/Media/{media.id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        TatorSearch().refresh(self.project.pk)
+        
+        # Clone the clone.
+        body = {'dest_project': self.project.pk,
+                'dest_type': self.entity_type.pk,
+                'dest_section': 'asdf2'}
+        response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={clone_id}",
+                                    body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_clone_id = response.data['id'][0]
+        TatorSearch().refresh(self.project.pk)
+
+        # Delete the first clone.
+        response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertTrue(self._s3_obj_exists(keys[role]))
+
+        # Delete the second clone.
+        response = self.client.delete(f"/rest/Media/{new_clone_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        for role in ResourceTestCase.MEDIA_ROLES:
+            self.assertFalse(self._s3_obj_exists(keys[role]))
+
+    def test_thumbnails(self):
+        # Create an image in which thumbnail is autocreated.
+        image_type = MediaType.objects.create(
+            name="images",
+            dtype='image',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'type': image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        image_id = response.data['id']
+
+        # Make sure we have an image and thumbnail key.
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files['image'][0]['path']
+        thumb_key = image.media_files['thumbnail'][0]['path']
+        self.assertTrue(self._s3_obj_exists(image_key))
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{image_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(image_key))
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+
+        # Create an image with thumbnail_url included.
+        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'type': image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        image_id = response.data['id']
+
+        # Make sure we have an image and thumbnail key.
+        image = Media.objects.get(pk=image_id)
+        image_key = image.media_files['image'][0]['path']
+        thumb_key = image.media_files['thumbnail'][0]['path']
+        self.assertTrue(self._s3_obj_exists(image_key))
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{image_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(image_key))
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+
+        # Create a video that has thumbnails.
+        body = {'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+                'thumbnail_gif_url': 'https://cvisionai.com/wp-content/uploads/2018/06/screen.png',
+                'type': self.entity_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf'}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        video_id = response.data['id']
+
+        # Make sure we have an video and thumbnail key.
+        video = Media.objects.get(pk=video_id)
+        thumb_key = video.media_files['thumbnail'][0]['path']
+        gif_key = video.media_files['thumbnail_gif'][0]['path']
+        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertTrue(self._s3_obj_exists(gif_key))
+        self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, video_id)
+        self.assertEqual(Resource.objects.get(path=gif_key).media.all()[0].pk, video_id)
+
+        # Delete the media and verify the files are gone.
+        response = self.client.delete(f"/rest/Media/{video_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._prune_media()
+        self.assertFalse(self._s3_obj_exists(thumb_key))
+        self.assertFalse(self._s3_obj_exists(gif_key))
 
 class AttributeTestCase(APITestCase):
     def setUp(self):
@@ -2319,3 +2695,4 @@ class MutateAliasTestCase(APITestCase):
                 self._test_mutation('datetime', new_dtype, 'Datetime Test', 'Datetime\ Test', value)
 
     #TODO: write totally different test for geopos mutations (not supported in query string queries)
+

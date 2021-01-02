@@ -97,6 +97,14 @@ urlpatterns += [
         AttributeTypeListAPI.as_view(),
     ),
     path(
+        'rest/AudioFiles/<int:id>',
+        AudioFileListAPI.as_view(),
+    ),
+    path(
+        'rest/AudioFile/<int:id>',
+        AudioFileDetailAPI.as_view(),
+    ),
+    path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),
     ),
@@ -106,6 +114,9 @@ urlpatterns += [
     ),
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
+    ),
+    path('rest/DownloadInfo/<int:project>',
+         DownloadInfoAPI.as_view(),
     ),
     path('rest/Favorites/<int:project>',
          FavoriteListAPI.as_view(),
@@ -118,6 +129,12 @@ urlpatterns += [
     ),
     path('rest/GetClip/<int:id>',
          GetClipAPI.as_view(),
+    ),
+    path('rest/ImageFiles/<int:id>',
+         ImageFileListAPI.as_view(),
+    ),
+    path('rest/ImageFile/<int:id>',
+         ImageFileDetailAPI.as_view(),
     ),
     path(
         'rest/Jobs/<int:project>',
@@ -225,10 +242,6 @@ urlpatterns += [
         name='Membership',
     ),
     path(
-        'rest/MoveVideo/<int:id>',
-        MoveVideoAPI.as_view(),
-    ),
-    path(
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
@@ -309,6 +322,14 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
+        'rest/UploadCompletion/<int:project>',
+        UploadCompletionAPI.as_view(),
+    ),
+    path(
+        'rest/UploadInfo/<int:project>',
+        UploadInfoAPI.as_view(),
+    ),
+    path(
         'rest/Users',
         UserListAPI.as_view(),
     ),
@@ -329,6 +350,14 @@ urlpatterns += [
         'rest/Version/<int:id>',
         VersionDetailAPI.as_view(),
         name='Version',
+    ),
+    path(
+        'rest/VideoFiles/<int:id>',
+        VideoFileListAPI.as_view(),
+    ),
+    path(
+        'rest/VideoFile/<int:id>',
+        VideoFileDetailAPI.as_view(),
     ),
 
 

@@ -1,6 +1,6 @@
 audio_definition = {
     'type': 'object',
-    'required': ['codec'],
+    'required': ['path', 'codec'],
     'properties': {
         'path': {
             'type': 'string',
@@ -38,18 +38,12 @@ audio_definition = {
             'description': 'Description other than codec.',
             'type': 'string',
         },
-        'url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the audio file. It is '
-                           'is used for the src path and to create `path` field.',
-            'type': 'string',
-        },
     },
 }
 
 video_definition = {
     'type': 'object',
-    'required': ['codec', 'resolution'],
+    'required': ['path', 'codec', 'resolution'],
     'properties': {
         'path': {
             'type': 'string',
@@ -70,15 +64,16 @@ video_definition = {
         'resolution': {
             'description': 'Resolution of the video in pixels (height, width).',
             'type': 'array',
-            'minLength': 2,
-            'maxLength': 2,
+            'minItems': 2,
+            'maxItems': 2,
             'items': {
                 'type': 'integer',
                 'minimum': 1,
             },
         },
         'segment_info': {
-            'description': 'Path to json file containing segment info.',
+            'description': 'Path to json file containing segment info. Required if media role is '
+                           '`streaming`.',
             'type': 'string',
         },
         'host': {
@@ -101,18 +96,60 @@ video_definition = {
             'description': 'Description other than codec.',
             'type': 'string',
         },
-        'url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the video file. It is '
-                           'is used to determine the src path.',
+    },
+}
+
+image_definition = {
+    'type': 'object',
+    'required': ['path', 'resolution'],
+    'properties': {
+        'path': {
+            'type': 'string',
+            'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
+        'resolution': {
+            'description': 'Resolution of the video in pixels (height, width).',
+            'type': 'array',
+            'minItems': 2,
+            'maxItems': 2,
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'host': {
+            'description': 'If supplied will use this instead of currently connected '
+                           'host, e.g. https://example.com',
             'type': 'string',
         },
-        'segments_url': {
-            'description': 'Required when this object is used with the MoveVideo endpoint, '
-                           'this field is the upload URL of the segments file. It is '
-                           'is used to determine the src path.',
+        'http_auth': {
+            'description': 'If specified will be used for HTTP authorization in '
+                           'request for media, i.e. "bearer <token>".',
             'type': 'string',
         },
+        'mime': {
+            'description': 'Example mime: "image/jpg".',
+            'type': 'string',
+        },
+    },
+}
+
+multi_definition = {
+    'description': 'Object containing information needed for a multi media type.',
+    'type': 'object',
+    'properties': {
+        'ids': {'type': 'array',
+                'description': 'If multi-stream list of ids of sub-videos',
+                'items': {'type': 'integer'}},
+        'layout': {'type': 'array',
+                   'description': '2-element array to define rxc layout',
+                   'items': {'type': 'integer'}},
+        'quality': {'type': 'integer',
+                    'description': 'Resolution to fetch on each sub-video'},
     },
 }
 
@@ -124,15 +161,10 @@ media_files = {
         'archival': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
-        # Multi-stream definitions
-        'ids': {'type': 'array',
-                'description': 'If multi-stream list of ids of sub-videos',
-                'items': {'type': 'integer'}},
-        'layout': {'type': 'array',
-                   'description': '2-element array to define rxc layout',
-                   'items': {'type': 'integer'}},
-        'quality': {'type': 'integer',
-                    'description': 'Resolution to fetch on each sub-video'},
+        'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        'thumbnail': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        'thumbnail_gif': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        **multi_definition['properties'],
     },
 }
 

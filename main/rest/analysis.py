@@ -32,6 +32,7 @@ class AnalysisListAPI(BaseListView):
         params['project'] = Project.objects.get(pk=params['project'])
 
         # Create the object.
+        del params['body']
         obj = Analysis(**params)
         obj.save()
         return {'message': 'Analysis created successfully!', 'id': obj.id}

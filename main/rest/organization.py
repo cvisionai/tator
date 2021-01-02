@@ -26,6 +26,7 @@ class OrganizationListAPI(BaseListView):
             affiliation__user=self.request.user).filter(name__iexact=params['name']).exists():
             raise Exception("Organization with this name already exists!")
 
+        del params['body']
         organization = Organization.objects.create(
             **params,
         )

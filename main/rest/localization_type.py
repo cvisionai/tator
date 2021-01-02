@@ -51,7 +51,7 @@ class LocalizationTypeListAPI(BaseListView):
         # Copy many to many fields into response data.
         for loc in response_data:
             loc['media'] = media.get(loc['id'], [])
-        return response_data
+        return list(response_data)
 
     def _post(self, params):
         """ Create localization types.
@@ -67,6 +67,7 @@ class LocalizationTypeListAPI(BaseListView):
         media_types = params.pop('media_types')
         if 'color_map' in params:
             params['colorMap'] = params.pop('color_map')
+        del params['body']
         obj = LocalizationType(**params)
         obj.save()
         media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)

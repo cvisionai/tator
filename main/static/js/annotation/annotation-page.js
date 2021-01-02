@@ -102,7 +102,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/Media/" + newValue, {
+        fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -117,12 +117,15 @@ class AnnotationPage extends TatorPage {
               (data.media_files == null ||
                (data.media_files &&
                 !('streaming' in data.media_files) &&
-                !('layout' in data.media_files))))
+                !('layout' in data.media_files) &&
+                !('image' in data.media_files))))
           {
             this._shadow.removeChild(this._loading);
             Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
+          } else if (data.media_files && 'streaming' in data.media_files) {
+            data.media_files.streaming.sort((a, b) => {return b.resolution[0] - a.resolution[0];});
           }
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;

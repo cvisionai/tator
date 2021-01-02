@@ -66,6 +66,31 @@ spec:
               value: {{ .Values.dockerRegistry }}
             - name: SYSTEM_IMAGES_REGISTRY
               value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
+            {{- if .Values.minio.enabled }}
+            - name: OBJECT_STORAGE_HOST
+              value: http://tator-minio:9000
+            - name: OBJECT_STORAGE_EXTERNAL_HOST
+              value: {{ .Values.domain }}/objects
+            - name: OBJECT_STORAGE_REGION_NAME
+              value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
+            - name: BUCKET_NAME
+              value: {{ .Values.minio.defaultBucket.name }}
+            - name: OBJECT_STORAGE_ACCESS_KEY
+              value: {{ .Values.minio.accessKey }}
+            - name: OBJECT_STORAGE_SECRET_KEY
+              value: {{ .Values.minio.secretKey }}
+            {{- else }}
+            - name: OBJECT_STORAGE_HOST
+              value: {{ .Values.objectStorageHost }}
+            - name: OBJECT_STORAGE_REGION_NAME
+              value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
+            - name: BUCKET_NAME
+              value: {{ .Values.objectStorageBucketName }}
+            - name: OBJECT_STORAGE_ACCESS_KEY
+              value: {{ .Values.objectStorageAccessKey }}
+            - name: OBJECT_STORAGE_SECRET_KEY
+              value: {{ .Values.objectStorageSecretKey }}
+            {{- end }}
             - name: TATOR_DEBUG
             {{- if .Values.tatorDebug }}
               value: "true"

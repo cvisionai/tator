@@ -11,8 +11,10 @@ from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
 
 from main.models import *
+from main.models import Resource
 from main.search import TatorSearch
 from main.search import mediaFileSizes
+from main.s3 import s3_client
 
 from django.conf import settings
 from django.db.models import F
@@ -274,6 +276,39 @@ def cleanup_uploads(max_age_days=1):
                     num_removed += 1
         logger.info(f"Deleted {num_removed} files from {path} that were > {max_age_days} days old...")
     logger.info("Cleanup finished!")
+
+def cleanup_object_uploads(max_age_days=1):
+    """ Removes s3 uploads that are greater than a day old.
+    """
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for project in Project.objects.all().iterator():
+        logger.info(f"Searching project {project.id} | {project.name} for stale uploads...")
+        if project.organization is None:
+            logger.info(f"Skipping because this project has no organization!")
+            continue
+        prefix = f"{project.organization.pk}/{project.pk}/upload/"
+        after = None
+        num_deleted = 0
+        while True:
+            kwargs = {'Bucket': bucket_name,
+                      'Prefix': prefix}
+            if after:
+                kwargs['StartAfter'] = after
+            response = s3.list_objects_v2(**kwargs)
+            if response['KeyCount'] == 0:
+                break
+            keys = [item['Key'] for item in response['Contents']]
+            ages = [now - item['LastModified'] for item in response['Contents']]
+            after = keys[-1]
+            for key, age in zip(keys, ages):
+                not_resource = Resource.objects.filter(path=key).count() == 0
+                if (age > datetime.timedelta(days=max_age_days)) and not_resource:
+                    s3.delete_object(Bucket=bucket_name, Key=key)
+                    num_deleted += 1
+        logger.info(f"Deleted {num_deleted} objects in project {project.id}!")
+    logger.info("Object cleanup finished!")
 
 def make_sections():
     for project in Project.objects.all().iterator():

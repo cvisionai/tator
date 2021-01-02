@@ -32,8 +32,7 @@ class VideoDownloader
     let init_promises = [];
     for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
     {
-      let url=this._media_files[buf_idx].path;
-      let info_url=url.substring(0, url.indexOf('.mp4'))+"_segments.json";
+      let info_url = this._media_files[buf_idx].segment_info;
       const info = new Request(info_url, {headers:this._headers});
       init_promises.push(fetch(info));
     }

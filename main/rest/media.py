@@ -4,13 +4,13 @@ import os
 import shutil
 import mimetypes
 import datetime
+import tempfile
 from uuid import uuid1
+from urllib.parse import urlparse
 
 from django.db import transaction
 from django.db.models import Case, When
-from django.conf import settings
 from PIL import Image
-import requests
 
 from ..models import Media
 from ..models import MediaType
@@ -18,6 +18,7 @@ from ..models import Section
 from ..models import Localization
 from ..models import State
 from ..models import Project
+from ..models import Resource
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -25,11 +26,12 @@ from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..notify import Notify
-from ..uploads import download_uploaded_file
-from ..uploads import get_destination_path
+from ..download import download_file
+from ..s3 import s3_client
+from ..s3 import get_download_url
+
 from ._util import computeRequiredFields
 from ._util import check_required_fields
-
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
@@ -41,6 +43,54 @@ from ._permissions import ProjectEditPermission
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
+
+def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'image', 'thumbnail',
+                                            'thumbnail_gif']):
+    """ Replaces specified media fields with presigned urls.
+    """
+    if media.get('media_files') is not None:
+        for field in fields:
+            if field in media['media_files']:
+                for idx, media_def in enumerate(media['media_files'][field]):
+                    media_def['path'] = get_download_url(s3, media_def['path'], expiration)
+                    if field == 'streaming':
+                        media_def['segment_info'] = get_download_url(s3, media_def['segment_info'],
+                                                                     expiration)
+                    media['media_files'][field][idx] = media_def
+    return media
+
+def _save_image(url, media_obj, project_obj, role):
+    """ Downloads an image, uploads it to the appropriate S3 location, 
+        and returns an updated media object.
+    """
+    # Download the image file and load it.
+    temp_image = tempfile.NamedTemporaryFile(delete=False)
+    download_file(url, temp_image.name)
+    image = Image.open(temp_image.name)
+    image_format = image.format
+
+    # Get filename from url.
+    parsed = os.path.basename(urlparse(url).path)
+
+    # Set up S3 client.
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+
+    # Upload image.
+    if media_obj.media_files is None:
+        media_obj.media_files = {}
+    image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
+    s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+    media_obj.media_files[role] = [{'path': image_key,
+                                    'size': os.stat(temp_image.name).st_size,
+                                    'resolution': [image.height, image.width],
+                                    'mime': f'image/{image_format.lower()}'}]
+
+    # Cleanup and return.
+    image.close()
+    os.remove(temp_image.name)
+    Resource.add_resource(image_key, media_obj)
+    return media_obj
 
 class MediaListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of media.
@@ -80,6 +130,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             response_data = {'count': len(media_ids)}
         elif len(media_ids) > 0:
             response_data = database_query_ids('main_media', media_ids, 'name')
+        presigned = params.get('presigned')
+        if presigned is not None:
+            s3 = s3_client()
+            response_data = [_presign(s3, presigned, item) for item in response_data]
         return response_data
 
     def _post(self, params):
@@ -95,12 +149,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         new_attributes = params.get('attributes', None)
         if gid is not None:
             gid = str(gid)
-
-        # Make sure paths exist for this project.
-        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
-        os.makedirs(project_dir, exist_ok=True)
-        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
-        os.makedirs(raw_project_dir, exist_ok=True)
 
         # If section does not exist and is not an empty string, create a section.
         tator_user_sections = ""
@@ -150,19 +198,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         attributes.update({'tator_user_sections': tator_user_sections})
 
         if media_type.dtype == 'image':
-            # Get image only parameters.
-            url = params['url']
-            thumbnail_url = params.get('thumbnail_url', None)
-
-            # Determine file paths
-            upload_uid = url.split('/')[-1]
-            media_uid = str(uuid1())
-            ext = os.path.splitext(name)[1]
-            thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-
             # Create the media object.
-            media_obj = Media(
-                project=Project.objects.get(pk=project),
+            project_obj = Project.objects.get(pk=project)
+            media_obj = Media.objects.create(
+                project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
@@ -172,38 +211,78 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 gid=gid,
                 uid=uid,
             )
+            media_obj.media_files = {}
 
-            # Download the file to specified path.
-            media_path = os.path.join(settings.MEDIA_ROOT, f"{project}", media_uid + ext)
-            download_uploaded_file(url, self.request.user, media_path)
+            # Get image only parameters.
+            url = params.get('url')
+            thumbnail_url = params.get('thumbnail_url')
 
-            # Set media location in database.
-            media_obj.file.name = os.path.relpath(media_path, settings.MEDIA_ROOT)
-
-            if thumbnail_url is None:
-                # Create the thumbnail.
-                thumb_size = (256, 256)
-                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-                image = Image.open(media_path)
+            if url:
+                # Download the image file and load it.
+                temp_image = tempfile.NamedTemporaryFile(delete=False)
+                download_file(url, temp_image.name)
+                image = Image.open(temp_image.name)
                 media_obj.width, media_obj.height = image.size
-                image = image.convert('RGB') # Remove alpha channel for jpeg
-                image.thumbnail(thumb_size, Image.ANTIALIAS)
-                image.save(thumb_path)
-                image.close()
-            else:
-                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
-                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-                image = Image.open(media_path)
-                media_obj.width, media_obj.height = image.size
-                image.close()
+                image_format = image.format
+
+                # Download or create the thumbnail.
+                if thumbnail_url is None:
+                    temp_thumb = tempfile.NamedTemporaryFile(delete=False)
+                    thumb_size = (256, 256)
+                    image = image.convert('RGB') # Remove alpha channel for jpeg
+                    image.thumbnail(thumb_size, Image.ANTIALIAS)
+                    image.save(temp_thumb.name, format='jpeg')
+                    thumb_name = 'thumb.jpg'
+                    thumb_format = 'jpg'
+                    thumb_width = image.width
+                    thumb_height = image.height
+                    image.close()
+
+            if thumbnail_url:
+                temp_thumb = tempfile.NamedTemporaryFile(delete=False)
+                download_file(thumbnail_url, temp_thumb.name)
+                thumb = Image.open(temp_thumb.name)
+                thumb_name = os.path.basename(urlparse(thumbnail_url).path)
+                thumb_format = thumb.format
+                thumb_width = thumb.width
+                thumb_height = thumb.height
+                thumb.close()
+                
+            # Set up S3 client.
+            s3 = s3_client()
+            bucket_name = os.getenv('BUCKET_NAME')
+
+            if url:
+                # Upload image.
+                image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
+                s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+                media_obj.media_files['image'] = [{'path': image_key,
+                                                   'size': os.stat(temp_image.name).st_size,
+                                                   'resolution': [media_obj.height, media_obj.width],
+                                                   'mime': f'image/{image_format.lower()}'}]
+                os.remove(temp_image.name)
+                Resource.add_resource(image_key, media_obj)
+
+            if url or thumbnail_url:
+                # Upload thumbnail.
+                thumb_format = image.format
+                thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
+                s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
+                media_obj.media_files['thumbnail'] = [{'path': thumb_key,
+                                                       'size': os.stat(temp_thumb.name).st_size,
+                                                       'resolution': [thumb_height, thumb_width],
+                                                       'mime': 'image/{thumb_format}'}]
+                os.remove(temp_thumb.name)
+                Resource.add_resource(thumb_key, media_obj)
+
             media_obj.save()
-
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
         else:
             # Create the media object.
-            media_obj = Media(
-                project=Project.objects.get(pk=project),
+            project_obj = Project.objects.get(pk=project)
+            media_obj = Media.objects.create(
+                project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
                 name=name,
                 md5=md5,
@@ -229,14 +308,12 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             # Use thumbnails if they are given.
             thumbnail_url = params.get('thumbnail_url', None)
             thumbnail_gif_url = params.get('thumbnail_gif_url', None)
+
             if thumbnail_url is not None:
-                thumb_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.jpg')
-                download_uploaded_file(thumbnail_url, self.request.user, thumb_path)
-                media_obj.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+                media_obj = _save_image(thumbnail_url, media_obj, project_obj, 'thumbnail')
+
             if thumbnail_gif_url is not None:
-                thumb_gif_path = os.path.join(settings.MEDIA_ROOT, f"{project}", str(uuid1()) + '.gif')
-                download_uploaded_file(thumbnail_gif_url, self.request.user, thumb_gif_path)
-                media_obj.thumbnail_gif.name = os.path.relpath(thumb_gif_path, settings.MEDIA_ROOT)
+                media_obj = _save_image(thumbnail_gif_url, media_obj, project_obj, 'thumbnail_gif')
             media_obj.save()
 
             msg = (f"Media object {media_obj.id} created for video "
@@ -351,27 +428,21 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        return database_qs(Media.objects.filter(pk=params['id']))[0]
+        response_data = database_qs(Media.objects.filter(pk=params['id']))[0]
+        presigned = params.get('presigned')
+        if presigned is not None:
+            s3 = s3_client()
+            response_data = _presign(s3, presigned, response_data)
+        return response_data
 
     @transaction.atomic
     def _patch(self, params):
         """ Update individual media.
 
-            Updates to `media_files` (video only) may append video definitions, but 
-            cannot replace or delete them. To delete media, the DELETE method must
-            be used.
-
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
         obj = Media.objects.select_for_update().get(pk=params['id'])
-
-        # Make sure project directories exist
-        project = obj.project.pk
-        project_dir = os.path.join(settings.MEDIA_ROOT, f"{project}")
-        os.makedirs(project_dir, exist_ok=True)
-        raw_project_dir = os.path.join(settings.RAW_ROOT, f"{project}")
-        os.makedirs(raw_project_dir, exist_ok=True)
 
         if 'attributes' in params:
             new_attrs = validate_attributes(params, obj)
@@ -391,22 +462,6 @@ class MediaDetailAPI(BaseDetailView):
         if 'last_edit_end' in params:
             obj.last_edit_end = params['last_edit_end']
 
-        if 'thumbnail_url' in params:
-            # Save the thumbnail.
-            save_path = os.path.join(project_dir, str(uuid1()) + '.jpg')
-            download_uploaded_file(params['thumbnail_url'], self.request.user, save_path)
-            obj.thumbnail.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
-
-        if 'thumbnail_gif_url' in params:
-            # Save the thumbnail gif.
-            save_path = os.path.join(project_dir, str(uuid1()) + '.gif')
-            download_uploaded_file(params['thumbnail_gif_url'], self.request.user, save_path)
-            obj.thumbnail_gif.name = os.path.relpath(save_path, settings.MEDIA_ROOT)
-
-        # Media definitions may be appended but not replaced or deleted.
-        if 'media_files' in params:
-            obj.update_media_files(params['media_files'])
-
         if 'fps' in params:
             obj.fps = params['fps']
 
@@ -421,6 +476,27 @@ class MediaDetailAPI(BaseDetailView):
 
         if 'height' in params:
             obj.height = params['height']
+
+        if 'multi' in params:
+            # If this object already contains non-multi media definitions, raise an exception.
+            if obj.media_files:
+                video =  obj.media_files.get('video', [])
+                image =  obj.media_files.get('image', [])
+                has_media = (len(video) > 0) or (len(image) > 0)
+                if has_media:
+                    raise ValueError(f"Cannot set a multi definition on a Media that contains "
+                                      "individual media!")
+            # Check values of IDs (that they exist and are part of the same project).
+            sub_media = Media.objects.filter(project=obj.project, pk__in=params['multi']['ids'])
+            if len(params['multi']['ids']) != sub_media.count():
+                raise ValueError(f"One or more media IDs in multi definition is not part of "
+                                  "project {obj.project.pk} or does not exist!")
+            if obj.media_files is None:
+                obj.media_files = {}
+            for key in ['ids', 'layout', 'quality']:
+                if params['multi'].get(key):
+                    obj.media_files[key] = params['multi'][key]
+
         obj.save()
 
         return {'message': f'Media {params["id"]} successfully updated!'}
