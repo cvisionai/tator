@@ -57,7 +57,7 @@ class StateTypeListAPI(BaseListView):
         # Copy many to many fields into response data.
         for state in response_data:
             state['media'] = media.get(state['id'], [])
-        return response_data
+        return list(response_data)
 
     def _post(self, params):
         """ Create state type.

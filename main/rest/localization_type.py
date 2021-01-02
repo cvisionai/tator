@@ -51,7 +51,7 @@ class LocalizationTypeListAPI(BaseListView):
         # Copy many to many fields into response data.
         for loc in response_data:
             loc['media'] = media.get(loc['id'], [])
-        return response_data
+        return list(response_data)
 
     def _post(self, params):
         """ Create localization types.
