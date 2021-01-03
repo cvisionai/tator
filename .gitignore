@@ -4,6 +4,7 @@ main/migrations/*
 */build/*
 *~
 .sass-cache/*
+doc/tator-r/*
 main/static/css/tator/.sass-cache/*
 main/static/css/tator/tator.min.css
 main/static/css/tator/tator.min.css.map
