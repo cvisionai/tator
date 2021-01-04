@@ -2,19 +2,12 @@ class SettingsNav extends TatorElement {
   constructor() {
     super();
 
+    //@TODO - this could be abstract component
+
     // main structure
     this.nav = document.createElement("nav");
     this.nav.setAttribute("class", "SideNav rounded-2 col-3");
     this.nav.style.float = "left";
-
-    // // init DOM vars
-    // this.projectDom = "";
-    // this.mediaDom = "";
-    // this.localizationDom = "";
-    // this.leafDom = "";
-    // this.stateDom = "";
-
-
 
     this._shadow.appendChild(this.nav);
   }
@@ -36,13 +29,14 @@ class SettingsNav extends TatorElement {
     console.log(`${this.tagName} init.`);
     // first Nav, static added during init
     this._addProjectNav();
-    this._getMediaNav( JSON.parse(media) );
+    //this._getMediaNav( JSON.parse(media) );
+    this._addNav("Media", JSON.parse(media));
     this._addNav("Localization", JSON.parse(localization));
     this._addNav("Leaf", JSON.parse(leaf));
     this._addNav("State", JSON.parse(state));
   }
 
-  _getMediaNav(data){
+  /*_getMediaNav(data){
     if(data.length > 0){
       let videoTypeArray = [];
       let imageTypeArray = [];
@@ -73,7 +67,7 @@ class SettingsNav extends TatorElement {
     } else {
       return console.log("Project contains no Media Types.");
     }
-  }
+  }*/
 
   _addNav(typeCamel, a){
     if(a.length > 0){
@@ -200,13 +194,7 @@ _getText({type = "", count = 0, text = ""} = {}){
     case "project" :
       icon = this.projectIconSvg();
       break;
-    case "video" :
-      icon = this.videoIconSvg();
-      break;
-    case "image" :
-      icon = this.imageIconSvg();
-      break;
-    case "multi" :
+    case "media" :
       icon = this.multiIconSvg();
       break;
     case "localization" :

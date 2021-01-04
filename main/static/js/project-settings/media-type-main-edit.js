@@ -48,6 +48,20 @@ class MediaTypeMainEdit extends SettingsSection {
         { "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]
       }) );
 
+      // append input for dtype
+      const DTYPE = "Dtype";
+      const dTypeOptions = [
+        { "optText": "Video", "optValue": "video" },
+        { "optText": "Image", "optValue": "line" },
+        { "optText": "Multiview", "optValue": "multi" }
+      ]
+      current.appendChild( this.inputHelper.inputSelectOptions({
+        "labelText": DTYPE,
+        "name": DTYPE.toLowerCase(),
+        "value": data[DTYPE.toLowerCase()],
+        "optionsList" : dTypeOptions
+      }) );
+
       //description
       const DESCRIPTION = "Description";
       this._form.appendChild( this.inputHelper.inputText(
@@ -75,18 +89,6 @@ class MediaTypeMainEdit extends SettingsSection {
       }
 
       return current;
-  }
-
-  _toggleAttributes(e){
-    let el = e.target.parentNode.nextSibling;
-    let hidden = el.hidden
-
-    return el.hidden = !hidden;
-  };
-
-  _toggleChevron(e){
-    var el = e.target;
-    return el.classList.toggle('chevron-trigger-90');
   }
 
   _fetchGetPromise({id = this.projectId} = {}){
@@ -136,76 +138,15 @@ _fetchNewProjectData(){
   //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
 }
 
-  setSideNav(dom){
-    return this._sideNavDom = dom;
-  }
 
-  _getFormData(form){
-    let formData = new FormData(form);
-    let obj = {};
-    for (var key of formData.keys()) {
-      let value = formData.get(key);
-      if(key == "minimum" || key == "maximum"){
-        // Number from string....
-        value = Number(value);
-      } else if(key == "choices" || key == "labels"){ //labels too?
-        // Array from string.... @TODO this might be fixed in form now
-        if(value.indexOf(",") > 0) {
-          value = value.split(',');
-        } else {
-          value = [...value]
-        }
-
-      }
-
-      // add to JSON obj
-      obj[key] = value;
-  	}
-    //console.log(obj);
-    return obj;
-  }
-
-  _getAttributePromises(id){
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    let attrPromises = {};
-    attrPromises.promises = [];
-    attrPromises.attrNames = [];
-
-    console.log(attrForms.length);
-
-    attrForms.forEach((form, i) => {
-      let formData = {
-        "entity_type": "MediaType",
-        "old_attribute_type_name": form.id,
-        "new_attribute_type": {}
-      };
-
-      let attrName = form.querySelector('input[name="name"]').value;
-      console.log("Attribute name? "+attrName);
-      attrPromises.attrNames.push(attrName);
-
-      formData.new_attribute_type = this._getFormData(form);
-
-      let currentPatch = fetch("/rest/AttributeType/" + id, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      })
-      attrPromises.promises.push(currentPatch);
-    });
-    return attrPromises;
-  }
 
   _save({id = -1} = {}){
     console.log("Media Type _save method for id: "+id);
     const patchMedia = this._fetchPatchPromise({"id":id});
-    const attrPromises = this._getAttributePromises(id);
+    const attrPromises = this._getAttributePromises({
+      "id" : id,
+      "entityType" : "MediaType"
+    });
 
     const promises = [patchMedia, ...attrPromises.promises];
 

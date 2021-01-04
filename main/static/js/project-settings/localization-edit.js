@@ -50,11 +50,19 @@ class LocalizationEdit extends SettingsSection {
       const DESCRIPTION = "Description";
       this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
 
-      // append input for name
+      // append input for dtype
       const DTYPE = "Dtype";
-      current.appendChild( this.inputHelper.inputSelectOptions(
-        { "labelText": DTYPE, "name": DTYPE.toLowerCase(), "value": data[DTYPE.toLowerCase()], "optionsList" : ["box", "line", "dot"]}
-      ) );
+      const dTypeOptions = [
+        { "optText": "Box", "optValue": "box" },
+        { "optText": "Line", "optValue": "line" },
+        { "optText": "Dot", "optValue": "dot" }
+      ]
+      current.appendChild( this.inputHelper.inputSelectOptions({
+        "labelText": DTYPE,
+        "name": DTYPE.toLowerCase(),
+        "value": data[DTYPE.toLowerCase()],
+        "optionsList" : dTypeOptions
+      }) );
 
       // attribute types
       if(data.attribute_types.length > 0){
@@ -64,18 +72,6 @@ class LocalizationEdit extends SettingsSection {
       }
 
       return current;
-  }
-
-  _toggleAttributes(e){
-    let el = e.target.parentNode.nextSibling;
-    let hidden = el.hidden
-
-    return el.hidden = !hidden;
-  };
-
-  _toggleChevron(e){
-    var el = e.target;
-    return el.classList.toggle('chevron-trigger-90');
   }
 
   reset(scope){
@@ -107,6 +103,9 @@ class LocalizationEdit extends SettingsSection {
 
   _fetchPatchPromise({id = -1 } = {}){
     console.log("Patch id: "+id);
+    let form = this._shadow.getElementById(id);
+    let formData = this._getFormData(form);
+
     return fetch("/rest/LocalizationType/" + id, {
       method: "PATCH",
       mode: "cors",
@@ -116,61 +115,17 @@ class LocalizationEdit extends SettingsSection {
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-      body: this._getFormData(id)
+      body: JSON.stringify(formData)
     })
-  }
-
-  setSideNav(dom){
-    return this._sideNavDom = dom;
-  }
-
-  _getFormData(form){
-    let formData = new FormData(form);
-    let obj = {};
-    for (var key of formData.keys()) {
-      obj[key] = formData.get(key);
-    }
-    console.log(obj);
-    return obj;
-  }
-
-  _getAttributePromises(id){
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    let attrPromises = [];
-
-    console.log(attrForms.length);
-
-    attrForms.forEach((form, i) => {
-      let formData = {
-        "entity_type": "LocalizationType",
-        "old_attribute_type_name": form.id,
-        "new_attribute_type": {}
-      };
-
-      formData.new_attribute_type = this._getFormData(form);
-
-      console.log(formData);
-
-      let currentPatch = fetch("/rest/AttributeType/" + id, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      })
-      attrPromises.push(currentPatch);
-    });
-    return attrPromises;
   }
 
   _save({id = -1} = {}){
     console.log("Localization Type _save method for id: "+id);
     const patch = this._fetchPatchPromise({"id":id});
-    const attrPromises = this._getAttributePromises(id);
+    const attrPromises = this._getAttributePromises({
+      "id" : id,
+      "entityType" : "LocalizationType"
+    });
 
     const promises = [patch, ...attrPromises];
 
