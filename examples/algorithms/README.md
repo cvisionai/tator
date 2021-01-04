@@ -18,9 +18,9 @@ When a workflow is submitted via the REST API (specifically the `AlgorithmLaunch
 * `sections`: A comma-separated list of media sections.
 * `gid`: A group ID for making progress updates.
 * `uid`: A run ID for making progress updates.
+* `host`: Host of the REST API used to launch this algorithm.
 * `rest_url`: URL for the REST API used to launch this algorithm.
 * `rest_token`: User token that must be included in headers of requests made to REST API.
-* `tus_url`: URL for TUS uploads.
 * `project_id`: The project ID for the algorithm.
 
 ## Exit handler

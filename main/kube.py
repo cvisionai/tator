@@ -1045,6 +1045,9 @@ class TatorAlgorithm(JobManagerMixin):
                 'name': 'uid',
                 'value': uid,
             }, {
+                'name': 'host',
+                'value': f'{PROTO}{os.getenv("MAIN_HOST")}',
+            }, {
                 'name': 'rest_url',
                 'value': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',
             }, {
