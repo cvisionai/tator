@@ -288,7 +288,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(old_name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {old_name} in entity type "
-                             "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         new_attribute_type = None
