@@ -169,25 +169,5 @@ class CustomGenerator(SchemaGenerator):
                 {'TokenAuth': []},
             ]
 
-            # Remove deprecated paths.
-            deprecated = [
-                '/rest/EntityTypeMedias/{project}',
-                '/rest/EntityTypeMedia/{id}',
-                '/rest/EntityMedia/{id}',
-                '/rest/EntityMedias/{project}',
-                '/rest/EntityState/{id}',
-                '/rest/EntityStates/{project}',
-                '/rest/EntityStateTypes/{project}',
-                '/rest/EntityStateType/{id}',
-                '/rest/TreeLeafTypes/{project}',
-                '/rest/TreeLeafType/{id}',
-                '/rest/TreeLeaves/{project}',
-                '/rest/TreeLeaf/{id}',
-                '/rest/TreeLeaves/Suggestion/{ancestor}/{project}',
-            ]
-            for d in deprecated:
-                if d in schema['paths']:
-                    del schema['paths'][d]
-
         return schema
 

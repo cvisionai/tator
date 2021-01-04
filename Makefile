@@ -1,6 +1,6 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis client packager gunicorn daphne nginx algorithm submitter pruner sizer
+CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
@@ -171,12 +171,6 @@ curl-image: containers/curl/Dockerfile
 	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 	docker push $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
-
-PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
-.PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
-containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
-	make -C scripts/packages/pytator wheel
-	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
 
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
@@ -500,7 +494,7 @@ HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml
 .PHONY: pytest
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
-	#cd scripts/packages/pytator/test && pytest --url $(HOST)/rest --token $(TOKEN)
+
 .PHONY: pylint
 pylint:
 	docker run -it --rm -v $(shell pwd):/pwd localhost:5000/tator_online:$(GIT_VERSION) pylint --rcfile /pwd/pylint.ini --load-plugins pylint_django /pwd/main

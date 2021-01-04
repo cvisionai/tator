@@ -549,4 +549,3 @@ Use the admin console to configure your user account, projects, media types, ann
 
 `Administer the deployment <../administration/admin.html>`_
 
-`Verify the deployment <../pytator/running-tests.html>`_
