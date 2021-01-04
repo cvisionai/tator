@@ -30,8 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 % endif
 
 # Install pip packages
-RUN pip3 --no-cache-dir install wheel
-RUN pip3 --no-cache-dir install pyyaml==5.3.1
+RUN pip3 --no-cache-dir --timeout=1000 install wheel
+RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 RUN pip3 --no-cache-dir --timeout=1000 install \
         django==2.2.7 django-enumfields==1.0.0 \
         psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
