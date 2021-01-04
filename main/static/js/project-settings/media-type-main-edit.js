@@ -12,7 +12,7 @@ class MediaTypeMainEdit extends SettingsSection {
 
     for(let i in this.data){
       let itemDiv = document.createElement("div");
-      itemDiv.id = `itemDivId-${this.data[i].dtype}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+      itemDiv.id = `itemDivId-media-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
       itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
       itemDiv.hidden = true;
 
