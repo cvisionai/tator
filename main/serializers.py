@@ -71,7 +71,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         media = Media.objects.filter(project=obj).order_by('id')[:1]
         if media.exists():
             media = media[0]
-            if media.file:
+            if media.thumbnail:
                 url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
             elif media.media_files:
                 if 'thumbnail' in media.media_files:
