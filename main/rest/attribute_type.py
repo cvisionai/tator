@@ -49,6 +49,8 @@ class AttributeTypeListAPI(BaseListView):
         if obj_qs.exists():
             bulk_delete_attributes([attribute_to_delete], obj_qs)
 
+        return {"message": f"Attribute '{attribute_to_delete}' deleted"}
+
     def _patch(self, params: Dict) -> Dict:
         """Rename an attribute on a type."""
         ts = TatorSearch()

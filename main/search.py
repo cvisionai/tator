@@ -301,14 +301,14 @@ class TatorSearch:
             elif name == new_name:
                 raise ValueError(
                     f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
-                    "with that name already exists in entity type {type(entity_type).__name__} ID "
-                    "{entity_type.id}"
+                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
+                    f"{entity_type.id}"
                 )
 
         if new_attribute_type is None:
             raise ValueError(
                 f"Could not find attribute name {old_name} in entity type "
-                "{type(entity_type).__name__} ID {entity_type.id}"
+                f"{type(entity_type).__name__} ID {entity_type.id}"
             )
 
         return uuid, replace_idx, new_attribute_type
@@ -356,7 +356,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -368,7 +368,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         new_dtype = new_attribute_type["dtype"]
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
@@ -438,7 +438,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -450,7 +450,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         return uuid, delete_idx, mapping_name
 
