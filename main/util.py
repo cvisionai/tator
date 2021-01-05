@@ -9,6 +9,7 @@ import math
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
+from boto3.s3.transfer import S3Transfer
 
 from main.models import *
 from main.models import Resource
@@ -400,3 +401,50 @@ def make_resources():
         logger.info(f"Created {num_relations} media relations...")
     logger.info("Media relation creation complete!")
 
+@transaction.atomic
+def migrate_resource(resource):
+
+    # Find symlinks that point to this resource.
+    s3_key = None
+    changes = []
+    for media in resource.media.select_for_update().iterator():
+        for role in ['streaming', 'archival', 'audio']:
+            if role in media.media_files:
+                for idx, media_def in enumerate(media.media_files[role]):
+                    subkeys = ['path']
+                    if role == 'streaming':
+                        subkeys = ['path', 'segment_info']
+                    for subkey in subkeys:
+                        path = media_def[subkey]
+                        if os.path.islink(path):
+                            target = os.readlink(path)
+                        else:
+                            target = path
+                        if target == resource.path:
+                            if s3_key is None:
+                                fname = os.path.basename(path)
+                                project = media.project
+                                org = project.organization
+                                s3_key = f"{org.pk}/{project.pk}/{media.pk}/{fname}"
+                            changes.append((media, role, idx, subkey, s3_key))
+
+    # Copy the file to S3.
+    if len(changes) != resource.media.count():
+        raise ValueError(f"Could not find path to resource {resource.path} in one or more associated "
+                         f"media (IDs {[media.id for media in resource.media.iterator()]})!")
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    transfer = S3Transfer(s3)
+    transfer.upload_file(resource.path, bucket_name, s3_key)
+
+    # Save the media.
+    for media, role, idx, subkey, s3_key in changes:
+        media.media_files[role][idx][subkey] = s3_key
+        media.save()
+
+def migrate_resources(project):
+    media = Media.objects.filter(project=project)
+    resources = Resource.objects.filter(path__startswith='/', media__in=media)
+    for resource in resources.iterator():
+        migrate_resource(resource)
+            
