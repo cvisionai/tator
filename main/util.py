@@ -9,6 +9,8 @@ import math
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
+from boto3.s3.transfer import S3Transfer
+from PIL import Image
 
 from main.models import *
 from main.models import Resource
@@ -400,3 +402,209 @@ def make_resources():
         logger.info(f"Created {num_relations} media relations...")
     logger.info("Media relation creation complete!")
 
+@transaction.atomic
+def migrate_media_file_resource(resource_id):
+
+    # Find symlinks that point to this resource.
+    s3_key = None
+    changes = []
+    resource = Resource.objects.select_for_update().get(pk=resource_id)
+    for media in resource.media.select_for_update().iterator():
+        for role in ['streaming', 'archival', 'audio']:
+            if role in media.media_files:
+                for idx, media_def in enumerate(media.media_files[role]):
+                    subkeys = ['path']
+                    if role == 'streaming':
+                        subkeys = ['path', 'segment_info']
+                    for subkey in subkeys:
+                        path = media_def[subkey]
+                        if os.path.islink(path):
+                            target = os.readlink(path)
+                        else:
+                            target = path
+                        if target == resource.path:
+                            if s3_key is None:
+                                fname = os.path.basename(path)
+                                project = media.project
+                                org = project.organization
+                                s3_key = f"{org.pk}/{project.pk}/{media.pk}/{fname}"
+                            changes.append((media, role, idx, subkey, s3_key))
+
+    # Copy the file to S3.
+    if len(changes) != resource.media.count():
+        raise ValueError(f"Could not find path to resource {resource.path} in one or more associated "
+                         f"media (IDs {[media.id for media in resource.media.iterator()]})!")
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    transfer = S3Transfer(s3)
+    transfer.upload_file(resource.path, bucket_name, s3_key)
+
+    # Save the media.
+    for media, role, idx, subkey, s3_key in changes:
+        media.media_files[role][idx][subkey] = s3_key
+        media.save()
+
+    # Save the resource.
+    resource.path = s3_key
+    resource.save()
+
+def migrate_media_file_resources(project):
+    media = Media.objects.filter(project=project, media_files__isnull=False)
+    resources = Resource.objects.filter(path__startswith='/', media__in=media)
+    for resource in resources.iterator():
+        migrate_media_file_resource(resource.id)
+
+def migrate_image(media, path):
+
+    # Figure out s3 key.
+    fname = os.path.basename(path)
+    s3_key = f'{media.project.organization.pk}/{media.project.pk}/{media.pk}/{fname}'
+
+    # Get image definition.
+    image = Image.open(path)
+    image_def = {'path': s3_key,
+                 'resolution': [image.height, image.width],
+                 'size': os.stat(path).st_size,
+                 'mime': f'image/{image.format.lower()}'}
+
+    # Copy the file to S3.
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    transfer = S3Transfer(s3)
+    transfer.upload_file(path, bucket_name, s3_key)
+    
+    resource_exists = Resource.objects.filter(path=path).count() > 0
+    if resource_exists:
+        resource = Resource.objects.select_for_update().get(path=path)
+        resource.path = s3_key
+        resource.save()
+    else:
+        resource = Resource.objects.create(path=s3_key)
+        resource.media.add(media)
+
+    return image_def
+
+@transaction.atomic
+def migrate_images(media_id):
+    IMAGE_FIELDS = {'file': 'image',
+                    'thumbnail': 'thumbnail',
+                    'thumbnail_gif': 'thumbnail_gif'}
+    media = Media.objects.select_for_update().get(pk=media_id)
+    if media.media_files is None:
+        media.media_files = {}
+    for field in IMAGE_FIELDS.keys():
+        if getattr(media, field):
+            media_def = migrate_image(media, f"/media/{getattr(media, field)}")
+            if IMAGE_FIELDS[field] not in media.media_files:
+                media.media_files[IMAGE_FIELDS[field]] = []
+            media.media_files[IMAGE_FIELDS[field]].append(media_def)
+            setattr(media, field, None)
+    media.save()
+
+def migrate_video(media, path):
+
+    # Figure out s3 key.
+    fname = os.path.basename(path)
+    s3_key = f'{media.project.organization.pk}/{media.project.pk}/{media.pk}/{fname}'
+
+    # Get video definition.
+    cmd = [
+        "ffprobe",
+        "-v","error",
+        "-show_entries", "stream",
+        "-print_format", "json",
+        "-select_streams", "v",
+        disk_file,
+    ]
+    output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
+    video_info = json.loads(output)
+    stream_idx=0
+    for idx, stream in enumerate(video_info["streams"]):
+        if stream["codec_type"] == "video":
+            stream_idx=idx
+            break
+    stream = video_info["streams"][stream_idx]
+    video_def = {"resolution": (stream["height"], stream["width"]),
+                 "codec": stream["codec_name"],
+                 "codec_description": stream["codec_long_name"],
+                 "size": os.stat(disk_file).st_size,
+                 "bit_rate": int(stream.get("bit_rate",-1))}
+
+    # Copy the file to S3.
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    transfer = S3Transfer(s3)
+    transfer.upload_file(path, bucket_name, s3_key)
+    
+    resource_exists = Resource.objects.filter(path=path).count() > 0
+    if resource_exists:
+        resource = Resource.objects.select_for_update().get(path=path)
+        resource.path = s3_key
+        resource.save()
+    else:
+        resource = Resource.objects.create(path=s3_key)
+        resource.media.add(media)
+
+    return video_def
+
+@transaction.atomic
+def migrate_original(media_id):
+    media = Media.objects.select_for_update().get(pk=media_id)
+    if media.media_files is None:
+        media.media_files = {}
+    if media.original:
+        media_def = migrate_video(media, media.original)
+        if 'archival' not in media.media_files:
+            media.media_files['archival'] = []
+        media.media_files['archival'].append(media_def)
+        media.original = None
+    media.save()
+
+def migrate_media(project):
+    medias = Media.objects.filter(project=project)
+    for media in medias.iterator():
+        migrate_images(media.id)
+        migrate_original(media.id)
+
+def verify_migration(project):
+    medias = Media.objects.filter(project=project)
+    num_verified = 0
+    s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
+    for media in medias.iterator():
+        assert(not media.thumbnail)
+        assert(not media.thumbnail_gif)
+        assert(not media.file)
+        assert(not media.original)
+        if media.media_files:
+            for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+                if key in media.media_files:
+                    for media_def in media.media_files[key]:
+                        assert(Resource.objects.filter(path=media_def['path']).exists())
+                        s3.head_object(Bucket=bucket_name, Key=media_def['path'])
+                        if key == 'streaming':
+                            assert(Resource.objects.filter(path=media_def['segment_info']).exists())
+                            s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
+        num_verified += 1
+    print(f"Verified {num_verified} media in project {project}!")
+
+def delete_disk_media(project):
+    mounts = ['media']
+    if os.getenv('MEDIA_SHARDS'):
+        mounts += os.getenv('MEDIA_SHARDS').split(',')
+    if os.getenv('UPLOAD_SHARDS'):
+        mounts += os.getenv('UPLOAD_SHARDS').split(',')
+    temporary_files = TemporaryFile.objects.filter(project=project)
+    algorithms = Algorithm.objects.filter(project=project)
+    keep = [tf.path for tf in temporary_files]
+    keep += [f"/media/{alg.manifest}" for alg in algorithms]
+    num_deleted = 0
+    for mount in mounts:
+        for root, dirs, files in os.walk(f'/{mount}'):
+            for file_ in files:
+                full_path = os.path.join(root, file_)
+                if not full_path in keep:
+                    print(f"Deleting {full_path}...")
+                    os.remove(full_path)
+                    num_deleted += 1
+    print(f"Deleted {num_deleted} files!")
