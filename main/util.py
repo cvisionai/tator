@@ -543,7 +543,7 @@ def migrate_video(media, path):
         resource.save()
     else:
         resource = Resource.objects.create(path=s3_key)
-        resource.media.add(media)
+    resource.media.add(media)
 
     return video_def
 
@@ -580,10 +580,12 @@ def verify_migration(project):
             for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
                 if key in media.media_files:
                     for media_def in media.media_files[key]:
-                        assert(Resource.objects.filter(path=media_def['path']).exists())
+                        assert(Resource.objects.filter(path=media_def['path'],
+                                                       media__in=[media]).exists())
                         s3.head_object(Bucket=bucket_name, Key=media_def['path'])
                         if key == 'streaming':
-                            assert(Resource.objects.filter(path=media_def['segment_info']).exists())
+                            assert(Resource.objects.filter(path=media_def['segment_info'],
+                                                           media__in=[media]).exists())
                             s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
