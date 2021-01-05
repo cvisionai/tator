@@ -566,3 +566,24 @@ def migrate_media(project):
         migrate_images(media.id)
         migrate_original(media.id)
 
+def verify_migration(project):
+    medias = Media.objects.filter(project=project)
+    num_verified = 0
+    s3 = s3_client()
+    for media in medias.iterator():
+        assert(not media.thumbnail)
+        assert(not media.thumbnail_gif)
+        assert(not media.file)
+        assert(not media.original)
+        if media.media_files:
+            for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+                if key in media.media_files:
+                    for media_def in media.media_files[key]:
+                        assert(Resource.objects.filter(path=media_def['path']).exists())
+                        s3.head_object(media_def['path'])
+                        if key == 'streaming':
+                            assert(Resource.objects.filter(path=media_def['segment_info']).exists())
+                            s3.head_object(media_def['segment_info'])
+        num_verified += 1
+    print(f"Verified {num_verified} media in project {project}!")
+                
