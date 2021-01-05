@@ -288,7 +288,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(old_name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {old_name} in entity type "
-                             "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         new_attribute_type = None
@@ -301,20 +301,20 @@ class TatorSearch:
             elif name == new_name:
                 raise ValueError(
                     f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
-                    "with that name already exists in entity type {type(entity_type).__name__} ID "
-                    "{entity_type.id}"
+                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
+                    f"{entity_type.id}"
                 )
 
         if new_attribute_type is None:
             raise ValueError(
                 f"Could not find attribute name {old_name} in entity type "
-                "{type(entity_type).__name__} ID {entity_type.id}"
+                f"{type(entity_type).__name__} ID {entity_type.id}"
             )
 
         return uuid, replace_idx, new_attribute_type
 
 
-    def rename_alias(self, entity_type, old_name, new_name):
+    def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
         Adds an alias corresponding to an attribute type rename. Note that the old alias will still
         exist but can be excluded by specifying fields parameter in query_string queries. Entity
@@ -323,6 +323,8 @@ class TatorSearch:
         :param entity_type: *Type object. Should be passed in before updating attribute_type json.
                             Fields attribute_types and attribute_type_uuids will be updated with new
                             name. Entity type will NOT be saved.
+        :param related_objects: The list of pairs of entity types and querysets that also have an
+                                attribute to be renamed.
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
         :returns: Entity type with updated attribute_type_uuids.
@@ -335,16 +337,22 @@ class TatorSearch:
 
         # Create new alias definition.
         alias_type = _get_alias_type(new_attribute_type)
-        alias = {new_name: {'type': 'alias',
-                            'path': f'{uuid}_{alias_type}'}}
+        alias = {new_name: {"type": "alias", "path": f"{uuid}_{alias_type}"}}
         self.es.indices.put_mapping(
             index=self.index_name(entity_type.project.pk),
-            body={'properties': alias},
+            body={"properties": alias},
         )
 
         # Update entity type object with new values.
-        entity_type.project.attribute_type_uuids[new_name] = entity_type.project.attribute_type_uuids.pop(old_name)
+        entity_type.project.attribute_type_uuids[
+            new_name
+        ] = entity_type.project.attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
+
+        # Update related objects with new values.
+        for instance, _ in related_objects:
+            _, replace_idx, _ = self.check_rename(instance, old_name, new_name)
+            instance.attribute_types[replace_idx] = new_attribute_type
         return entity_type
 
     def check_mutation(self, entity_type, name, new_attribute_type):
@@ -356,7 +364,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -368,7 +376,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         new_dtype = new_attribute_type["dtype"]
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
@@ -438,7 +446,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -450,7 +458,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         return uuid, delete_idx, mapping_name
 

@@ -13,9 +13,9 @@ from .analysis import analysis
 from .attribute_type import (
     autocomplete_service,
     attribute_type,
-    attribute_addition,
-    attribute_rename,
-    attribute_deletion,
+    attribute_type_spec,
+    attribute_type_update,
+    attribute_type_delete,
 )
 from .attribute_value import attribute_value
 from .bookmark import bookmark_spec

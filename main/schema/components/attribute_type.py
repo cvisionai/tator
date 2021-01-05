@@ -82,7 +82,7 @@ attribute_type = {
     'properties': attribute_type_properties,
 }
 
-attribute_addition = {
+attribute_type_spec = {
     "type": "object",
     "description": "Addition of an attribute to a type.",
     "properties": {
@@ -94,7 +94,7 @@ attribute_addition = {
     },
 }
 
-attribute_rename = {
+attribute_type_update = {
     "type": "object",
     "description": "Renames an attribute of a type.",
     "properties": {
@@ -110,7 +110,7 @@ attribute_rename = {
     },
 }
 
-attribute_deletion = {
+attribute_type_delete = {
     "type": "object",
     "description": "Deletes an existing attribute from a type.",
     "properties": {
