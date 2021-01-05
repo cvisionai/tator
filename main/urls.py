@@ -16,6 +16,7 @@ from .views import APIBrowserView
 from .views import MainRedirect
 from .views import ProjectsView
 from .views import CustomView
+from .views import AccountProfileView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
 from .views import AnnotationView
@@ -40,6 +41,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/account-profile/', AccountProfileView.as_view(), name='account-profile'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),

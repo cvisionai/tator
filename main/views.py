@@ -42,6 +42,9 @@ class ProjectsView(LoginRequiredMixin, TemplateView):
 class CustomView(LoginRequiredMixin, TemplateView):
     template_name = 'new-project/custom.html'
 
+class AccountProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'account-profile/account-profile.html'
+
 class ProjectBase(LoginRequiredMixin):
 
     def get_context_data(self, **kwargs):
@@ -75,7 +78,6 @@ class AnnotationView(ProjectBase, TemplateView):
         media = get_object_or_404(Media, pk=self.kwargs['id'])
         context['media'] = media
         return context
-
 
 def validate_project(user, project):
     # We only cache 'True' effectively with this logic
