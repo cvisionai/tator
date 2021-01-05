@@ -402,11 +402,12 @@ def make_resources():
     logger.info("Media relation creation complete!")
 
 @transaction.atomic
-def migrate_resource(resource):
+def migrate_media_file_resource(resource_id):
 
     # Find symlinks that point to this resource.
     s3_key = None
     changes = []
+    resource = Resource.objects.select_for_update().get(pk=resource_id)
     for media in resource.media.select_for_update().iterator():
         for role in ['streaming', 'archival', 'audio']:
             if role in media.media_files:
@@ -442,9 +443,12 @@ def migrate_resource(resource):
         media.media_files[role][idx][subkey] = s3_key
         media.save()
 
-def migrate_resources(project):
-    media = Media.objects.filter(project=project)
+    # Save the resource.
+    resource.path = s3_key
+    resource.save()
+
+def migrate_media_file_resources(project):
+    media = Media.objects.filter(project=project, media_files__isnull=False)
     resources = Resource.objects.filter(path__startswith='/', media__in=media)
     for resource in resources.iterator():
-        migrate_resource(resource)
-            
+        migrate_media_file_resource(resource.id)
