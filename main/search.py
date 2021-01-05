@@ -33,7 +33,7 @@ def _path_size(path, s3, bucket_name):
     if path.startswith('/'):
         # This is a disk-based path.
         if os.path.exists(path):
-            statinfo = os.stat(streaming['path'])
+            statinfo = os.stat(path)
             size = statinfo.st_size
         else:
             logger.warning(f"Could not find file {path}!")
