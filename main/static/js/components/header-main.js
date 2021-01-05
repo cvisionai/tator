@@ -18,13 +18,16 @@ class HeaderMain extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["username"];
+    return ["username", "email"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "username":
         this._user.setAttribute("username", newValue);
+        break;
+      case "email":
+        this._user.setAttribute("email", newValue);
         break;
     }
   }

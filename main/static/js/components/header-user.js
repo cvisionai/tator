@@ -12,9 +12,18 @@ class HeaderUser extends TatorElement {
     this._warning = document.createElement("warning-light");
     div.appendChild(this._warning);
 
-    this._text = document.createElement("span");
-    this._text.setAttribute("class", "text-gray px-2");
-    div.appendChild(this._text);
+    const innerDiv = document.createElement("div");
+    div.appendChild(innerDiv);
+
+    this._username = document.createElement("span");
+    this._username.setAttribute("class", "text-gray px-2");
+    this._username.style.display = "block";
+    innerDiv.appendChild(this._username);
+
+    this._email = document.createElement("span");
+    this._email.setAttribute("class", "text-gray px-2");
+    this._email.style.display = "block";
+    innerDiv.appendChild(this._email);
 
     this._avatar = document.createElement("span");
     this._avatar.setAttribute("class", "avatar circle d-flex flex-items-center flex-justify-center");
@@ -22,16 +31,19 @@ class HeaderUser extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["username"];
+    return ["username", "email"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "username":
-        this._text.textContent = newValue;
+        this._username.textContent = newValue;
         let initials = newValue.match(/\b\w/g) || [];
         initials = ((initials.shift() || '') + (initials.pop() || '')).toUpperCase();
         this._avatar.textContent = initials;
+        break;
+      case "email":
+        this._email.textContent = newValue;
         break;
     }
   }

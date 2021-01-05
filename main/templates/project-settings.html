@@ -9,6 +9,7 @@
 {% block body %}
 <project-settings
   username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}"
   project-id="{{ project.id }}">
 </project-settings>
 {% endblock body %}
