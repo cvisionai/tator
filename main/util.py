@@ -570,6 +570,7 @@ def verify_migration(project):
     medias = Media.objects.filter(project=project)
     num_verified = 0
     s3 = s3_client()
+    bucket_name = os.getenv('BUCKET_NAME')
     for media in medias.iterator():
         assert(not media.thumbnail)
         assert(not media.thumbnail_gif)
@@ -580,10 +581,30 @@ def verify_migration(project):
                 if key in media.media_files:
                     for media_def in media.media_files[key]:
                         assert(Resource.objects.filter(path=media_def['path']).exists())
-                        s3.head_object(media_def['path'])
+                        s3.head_object(Bucket=bucket_name, Key=media_def['path'])
                         if key == 'streaming':
                             assert(Resource.objects.filter(path=media_def['segment_info']).exists())
-                            s3.head_object(media_def['segment_info'])
+                            s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
-                
+
+def delete_disk_media(project):
+    mounts = ['media']
+    if os.getenv('MEDIA_SHARDS'):
+        mounts += os.getenv('MEDIA_SHARDS').split(',')
+    if os.getenv('UPLOAD_SHARDS'):
+        mounts += os.getenv('UPLOAD_SHARDS').split(',')
+    temporary_files = TemporaryFile.objects.filter(project=project)
+    algorithms = Algorithm.objects.filter(project=project)
+    keep = [tf.path for tf in temporary_files]
+    keep += [f"/media/{alg.manifest}" for alg in algorithms]
+    num_deleted = 0
+    for mount in mounts:
+        for root, dirs, files in os.walk(f'/{mount}'):
+            for file_ in files:
+                full_path = os.path.join(root, file_)
+                if not full_path in keep:
+                    print(f"Deleting {full_path}...")
+                    os.remove(full_path)
+                    num_deleted += 1
+    print(f"Deleted {num_deleted} files!")
