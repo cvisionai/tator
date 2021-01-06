@@ -65,17 +65,18 @@ class ProjectSerializer(serializers.ModelSerializer):
     thumb = serializers.SerializerMethodField()
     usernames = serializers.SerializerMethodField()
     permission = serializers.SerializerMethodField()
-    s3 = s3_client()
 
     def get_thumb(self, obj):
         url = ""
-        media = Media.objects.filter(project=obj).order_by('id').first()
-        if media:
+        media = Media.objects.filter(project=obj).order_by('id')[:1]
+        if media.exists():
+            media = media[0]
             if media.thumbnail:
                 url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
             elif media.media_files:
                 if 'thumbnail' in media.media_files:
-                    url = get_download_url(ProjectSerializer.s3, media.media_files['thumbnail'][0]['path'], 30)
+                    s3 = s3_client()
+                    url = get_download_url(s3, media.media_files['thumbnail'][0]['path'], 30)
         return url
 
     def get_usernames(self, obj):
