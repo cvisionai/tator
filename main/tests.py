@@ -2514,6 +2514,7 @@ class AttributeTestCase(APITestCase):
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             "entity_type": "LocalizationType",
+            "global": "true",
             "old_attribute_type_name": 'Int Test',
             "new_attribute_type": {
                 "name": "Renamed Int Test",

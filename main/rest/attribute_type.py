@@ -42,6 +42,19 @@ class AttributeTypeListAPI(BaseListView):
     http_method_names = ["patch", "post", "delete"]
 
     @staticmethod
+    def _check_attribute_type(attribute_type):
+        """
+        Checks that all required fields exist in an attribute type definition.
+        """
+
+        if "name" not in attribute_type:
+            raise ValueError("Attribute type definition missing 'name' field")
+        if "dtype" not in attribute_type:
+            raise ValueError("Attribute type definition missing 'dtype' field")
+        if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:
+            raise ValueError("enum attribute type definition missing 'choices' field")
+
+    @staticmethod
     def _get_models(type_name):
         models = ENTITY_TYPES.get(type_name)
         if not models:
@@ -148,6 +161,7 @@ class AttributeTypeListAPI(BaseListView):
             for instance, _ in related_objects:
                 ts.check_rename(instance, old_name, new_name)
         if attribute_mutated:
+            self._check_attribute_type(new_attribute_type)
             ts.check_mutation(entity_type, old_name, new_attribute_type)
             for instance, _ in related_objects:
                 ts.check_mutation(instance, old_name, new_attribute_type)
@@ -158,8 +172,8 @@ class AttributeTypeListAPI(BaseListView):
         # Renames the attribute alias for the entity type in PSQL and ES
         if attribute_renamed:
             # Update entity type alias
-            ts.rename_alias(entity_type, related_objects, old_name, new_name).save()
-            for instance, _ in related_objects:
+            updated_types = ts.rename_alias(entity_type, related_objects, old_name, new_name)
+            for instance in updated_types:
                 instance.save()
             entity_type.project.save()
 
@@ -174,7 +188,6 @@ class AttributeTypeListAPI(BaseListView):
 
             # refresh entity_type and queryset after a rename
             entity_type, obj_qs = self._get_objects(params)
-            # raise RuntimeError(f"ALL UUIDS\n{entity_type.project.attribute_type_uuids}")
             related_objects = self._get_related_objects(entity_type, new_name)
 
         if attribute_mutated:
@@ -194,6 +207,7 @@ class AttributeTypeListAPI(BaseListView):
 
                 # Mutate the entity attribute values
                 bulk_mutate_attributes(new_attribute, obj_qs)
+
             for _, qs in related_objects:
                 if qs.exists():
                     # Get the new attribute type to convert the existing value
@@ -214,17 +228,24 @@ class AttributeTypeListAPI(BaseListView):
 
     def _post(self, params: Dict) -> Dict:
         """Adds an attribute to a type."""
+        ts = TatorSearch()
         entity_type, obj_qs = self._get_objects(params)
-
         new_attribute_type = params["addition"]
         new_name = new_attribute_type["name"]
+
+        # Check that the attribute type is valid and it is valid to add it to the desired entity
+        # type
+        self._check_attribute_type(new_attribute_type)
+        ts.check_addition(entity_type, new_attribute_type)
+
+        # Add the attribute to the desired entity type
         entity_type.attribute_types.append(new_attribute_type)
         entity_type.save()
 
         # Create attribute alias mappings
-        TatorSearch().create_mapping(entity_type)
+        ts.create_mapping(entity_type)
 
-        # Add new field to all existing attributes
+        # Add new field to all existing attributes if there is a default value
         if obj_qs.exists():
             new_default = new_attribute_type.get("default")
 

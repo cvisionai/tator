@@ -235,6 +235,47 @@ class TatorSearch:
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
 
+    def check_addition(self, entity_type, new_attribute_type):
+        """
+        Checks that the new attribute type does not collide with existing attributes on the target
+        entity type or other entity types.
+        """
+        new_name = new_attribute_type["name"]
+
+        # There should be no existing attribute types on the target entity type with the same name
+        for attribute_type in entity_type.attribute_types:
+            if new_name == attribute_type["name"]:
+                raise ValueError(
+                    f"Attempted to add attribute '{new_name}' to {type(entity_type).__name__} "
+                    f"{entity_type.name} ID {entity_type.id}, but one with that name already exists"
+                )
+
+        # If no uuid exists, then no other entity types have an attribute type with the same name
+        uuid = entity_type.project.attribute_type_uuids.get(new_name)
+        if uuid is None:
+            return
+
+        # Fetch existing mappings
+        index_name = self.index_name(entity_type.project.pk)
+        existing_mappings = self.es.indices.get_mapping(index=index_name)
+        mappings = existing_mappings[index_name].get("mappings",{})
+        properties = mappings.get("properties",{})
+
+        # This should not happen if the uuid exists, but if it does, then no mapping exists and it
+        # is valid to create one
+        if new_name not in properties:
+            return
+
+        # Check that the existing mapping has the same mapping name, i.e. the same dtype
+        mapping_type = _get_alias_type(new_attribute_type)
+        mapping_name = f"{uuid}_{mapping_type}"
+        if mapping_name != properties[new_name]["path"]:
+            raise ValueError(
+                f"Attempted to add attribute '{new_name}' with dtype {new_attribute_type['dtype']} "
+                f"to {type(entity_type).__name__} {entity_type.name} ID {entity_type.id}, but "
+                f"another entity type has already defined this attribute name with a different dtype"
+            )
+
     def create_mapping(self, entity_type):
         if not entity_type.attribute_types:
             return
@@ -327,13 +368,14 @@ class TatorSearch:
                                 attribute to be renamed.
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
-        :returns: Entity type with updated attribute_type_uuids.
+        :returns: Entity types with updated attribute_type_uuids.
         """
         # If no name change is happening, there is nothing to do
         if old_name == new_name:
-            return entity_type
+            return [entity_type]
 
         uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
+        updated_types = []
 
         # Create new alias definition.
         alias_type = _get_alias_type(new_attribute_type)
@@ -348,12 +390,14 @@ class TatorSearch:
             new_name
         ] = entity_type.project.attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
+        updated_types.append(entity_type)
 
         # Update related objects with new values.
         for instance, _ in related_objects:
             _, replace_idx, _ = self.check_rename(instance, old_name, new_name)
             instance.attribute_types[replace_idx] = new_attribute_type
-        return entity_type
+            updated_types.append(instance)
+        return updated_types
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """
