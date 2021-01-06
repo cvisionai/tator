@@ -74,7 +74,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             elif media.media_files:
                 if 'thumbnail' in media.media_files:
                     s3 = TatorS3()
-                    url = s3.get_download_url(media.media_files['thumbnail'][0]['path'], 30)
+                    url = s3.get_download_url(media.media_files['thumbnail'][0]['path'], 28800)
         return url
 
     def get_usernames(self, obj):
