@@ -127,7 +127,7 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
 
             # Create symlinks for streaming files if they are not object keys.
             for idx, stream in enumerate(streaming):
-                if orig['path'].startswith('/'):
+                if stream['path'].startswith('/'):
                     name = os.path.basename(stream['path'])
                     new_path = os.path.join("/media", str(dest), name)
                     _make_link(stream['path'], new_path)
