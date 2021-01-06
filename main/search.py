@@ -7,7 +7,7 @@ from uuid import uuid1
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
-from .s3 import s3_client
+from .s3 import TatorS3
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def _path_size(path, s3, bucket_name):
 def mediaFileSizes(file):
     total_size = 0
     download_size = None
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
 
     if file.thumbnail:

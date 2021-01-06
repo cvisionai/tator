@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ..s3 import s3_client
+from ..s3 import TatorS3
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class MediaUtil:
         self._segment_info = None
 
         if video.media_files:
-            self._s3 = s3_client()
+            self._s3 = TatorS3().s3
             self._bucket_name = os.getenv('BUCKET_NAME')
             if "streaming" in video.media_files:
                 if quality is None:

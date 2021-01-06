@@ -19,8 +19,7 @@ from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
 from .models import *
-from .s3 import s3_client
-from .s3 import get_download_url
+from .s3 import TatorS3
 from .search import TatorSearch
 from .search import ALLOWED_MUTATIONS
 
@@ -2237,7 +2236,7 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.s3 = s3_client()
+        self.s3 = TatorS3().s3
         self.bucket_name = os.getenv('BUCKET_NAME')
 
     def _random_s3_obj(self):

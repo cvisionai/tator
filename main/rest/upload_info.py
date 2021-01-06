@@ -6,7 +6,7 @@ from urllib.parse import urlsplit, urlunsplit
 from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
-from ..s3 import s3_client
+from ..s3 import TatorS3
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
@@ -54,7 +54,7 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         urls = []
-        s3 = s3_client()
+        s3 = TatorS3().s3
         upload_id = ''
         if num_parts == 1:
             # Generate a presigned upload url.

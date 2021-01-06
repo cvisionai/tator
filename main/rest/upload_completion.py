@@ -4,7 +4,7 @@ import boto3
 
 from ..models import Project
 from ..schema import UploadCompletionSchema
-from ..s3 import s3_client
+from ..s3 import TatorS3
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -26,7 +26,7 @@ class UploadCompletionAPI(BaseListView):
         bucket_name = os.getenv('BUCKET_NAME')
 
         # Complete the upload.
-        s3 = s3_client()
+        s3 = TatorS3().s3
         response = s3.complete_multipart_upload(Bucket=bucket_name,
                                                 Key=key,
                                                 MultipartUpload={'Parts': parts},

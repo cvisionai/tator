@@ -27,8 +27,7 @@ from ..schema import MediaDetailSchema
 from ..schema import parse
 from ..notify import Notify
 from ..download import download_file
-from ..s3 import s3_client
-from ..s3 import get_download_url
+from ..s3 import TatorS3
 
 from ._util import computeRequiredFields
 from ._util import check_required_fields
@@ -52,10 +51,10 @@ def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'i
         for field in fields:
             if field in media['media_files']:
                 for idx, media_def in enumerate(media['media_files'][field]):
-                    media_def['path'] = get_download_url(s3, media_def['path'], expiration)
+                    media_def['path'] = s3.get_download_url(media_def['path'], expiration)
                     if field == 'streaming':
-                        media_def['segment_info'] = get_download_url(s3, media_def['segment_info'],
-                                                                     expiration)
+                        media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
+                                                                        expiration)
                     media['media_files'][field][idx] = media_def
     return media
 
@@ -73,14 +72,14 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    s3 = s3_client()
+    s3 = TatorS3()
     bucket_name = os.getenv('BUCKET_NAME')
 
     # Upload image.
     if media_obj.media_files is None:
         media_obj.media_files = {}
     image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
-    s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+    s3.s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
                                     'resolution': [image.height, image.width],
@@ -132,7 +131,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             response_data = database_query_ids('main_media', media_ids, 'name')
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = s3_client()
+            s3 = TatorS3()
             response_data = [_presign(s3, presigned, item) for item in response_data]
         return response_data
 
@@ -249,7 +248,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 thumb.close()
                 
             # Set up S3 client.
-            s3 = s3_client()
+            s3 = TatorS3().s3
             bucket_name = os.getenv('BUCKET_NAME')
 
             if url:
@@ -431,7 +430,7 @@ class MediaDetailAPI(BaseDetailView):
         response_data = database_qs(Media.objects.filter(pk=params['id']))[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = s3_client()
+            s3 = TatorS3()
             response_data = _presign(s3, presigned, response_data)
         return response_data
 

@@ -7,8 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from ..models import Project
 from ..schema import DownloadInfoSchema
-from ..s3 import s3_client
-from ..s3 import get_download_url
+from ..s3 import TatorS3
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -28,7 +27,7 @@ class DownloadInfoAPI(BaseListView):
         keys = params['keys']
         expiration = params['expiration']
         project = params['project']
-        s3 = s3_client()
+        s3 = TatorS3()
         response_data = []
         for key in keys:
             if key.startswith('/'):
@@ -40,7 +39,7 @@ class DownloadInfoAPI(BaseListView):
                 if project != project_from_key:
                     raise PermissionDenied
                 # Generate presigned url.
-                url = get_download_url(s3, key, expiration)
+                url = s3.get_download_url(key, expiration)
             response_data.append({'key': key, 'url': url})
         return response_data
 

@@ -16,7 +16,7 @@ from main.models import *
 from main.models import Resource
 from main.search import TatorSearch
 from main.search import mediaFileSizes
-from main.s3 import s3_client
+from main.s3 import TatorS3
 
 from django.conf import settings
 from django.db.models import F
@@ -282,7 +282,7 @@ def cleanup_uploads(max_age_days=1):
 def cleanup_object_uploads(max_age_days=1):
     """ Removes s3 uploads that are greater than a day old.
     """
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     now = datetime.datetime.now(datetime.timezone.utc)
     for project in Project.objects.all().iterator():
