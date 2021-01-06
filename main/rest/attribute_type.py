@@ -228,16 +228,18 @@ class AttributeTypeListAPI(BaseListView):
 
     def _post(self, params: Dict) -> Dict:
         """Adds an attribute to a type."""
+        ts = TatorSearch()
         entity_type, obj_qs = self._get_objects(params)
 
         new_attribute_type = params["addition"]
         self._check_attribute_type(new_attribute_type)
+        ts.check_addition(entity_type, new_attribute_type)
         new_name = new_attribute_type["name"]
         entity_type.attribute_types.append(new_attribute_type)
         entity_type.save()
 
         # Create attribute alias mappings
-        TatorSearch().create_mapping(entity_type)
+        ts.create_mapping(entity_type)
 
         # Add new field to all existing attributes
         if obj_qs.exists():
