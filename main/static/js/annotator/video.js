@@ -1165,9 +1165,23 @@ class VideoCanvas extends AnnotationCanvas {
         });
       }
 
+      // The streaming files may not be in order, so find the one with the largest height and
+      // use that as the "worst" index
+      var worst_idx = 0;
+      var largest_height = 0;
+      for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        if (height > largest_height)
+        {
+          largest_height = height;
+          worst_idx = idx;
+        }
+      }
+
       // Use worst-case dims
-      dims = [streaming_files[0].resolution[1],
-              streaming_files[0].resolution[0]];
+      dims = [streaming_files[worst_idx].resolution[1],
+              streaming_files[worst_idx].resolution[0]];
 
       for (var idx = 0; idx < streaming_files.length; idx++)
       {
