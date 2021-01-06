@@ -590,7 +590,7 @@ def verify_migration(project):
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
 
-def delete_disk_media(project):
+def delete_disk_media(project, dry_run=True):
     mounts = ['media']
     if os.getenv('MEDIA_SHARDS'):
         mounts += os.getenv('MEDIA_SHARDS').split(',')
@@ -602,11 +602,17 @@ def delete_disk_media(project):
     keep += [f"/media/{alg.manifest}" for alg in algorithms]
     num_deleted = 0
     for mount in mounts:
-        for root, dirs, files in os.walk(f'/{mount}'):
+        for root, dirs, files in os.walk(f'/{mount}/{project}'):
             for file_ in files:
                 full_path = os.path.join(root, file_)
                 if not full_path in keep:
-                    print(f"Deleting {full_path}...")
-                    os.remove(full_path)
+                    if dry_run:
+                        print(f"Would delete {full_path}...")
+                    else:
+                        print(f"Deleting {full_path}...")
+                        os.remove(full_path)
                     num_deleted += 1
-    print(f"Deleted {num_deleted} files!")
+    if dry_run:
+        print(f"Would have deleted {num_deleted} files!")
+    else:
+        print(f"Deleted {num_deleted} files!")
