@@ -327,13 +327,14 @@ class TatorSearch:
                                 attribute to be renamed.
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
-        :returns: Entity type with updated attribute_type_uuids.
+        :returns: Entity types with updated attribute_type_uuids.
         """
         # If no name change is happening, there is nothing to do
         if old_name == new_name:
-            return entity_type
+            return [entity_type]
 
         uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
+        updated_types = []
 
         # Create new alias definition.
         alias_type = _get_alias_type(new_attribute_type)
@@ -348,12 +349,14 @@ class TatorSearch:
             new_name
         ] = entity_type.project.attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
+        updated_types.append(entity_type)
 
         # Update related objects with new values.
         for instance, _ in related_objects:
             _, replace_idx, _ = self.check_rename(instance, old_name, new_name)
             instance.attribute_types[replace_idx] = new_attribute_type
-        return entity_type
+            updated_types.append(instance)
+        return updated_types
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """

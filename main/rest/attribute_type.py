@@ -42,6 +42,19 @@ class AttributeTypeListAPI(BaseListView):
     http_method_names = ["patch", "post", "delete"]
 
     @staticmethod
+    def _check_attribute_type(attribute_type):
+        """
+        Checks that all required fields exist in an attribute type definition.
+        """
+
+        if "name" not in attribute_type:
+            raise ValueError("Attribute type definition missing 'name' field")
+        if "dtype" not in attribute_type:
+            raise ValueError("Attribute type definition missing 'dtype' field")
+        if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:
+            raise ValueError("enum attribute type definition missing 'choices' field")
+
+    @staticmethod
     def _get_models(type_name):
         models = ENTITY_TYPES.get(type_name)
         if not models:
@@ -148,6 +161,7 @@ class AttributeTypeListAPI(BaseListView):
             for instance, _ in related_objects:
                 ts.check_rename(instance, old_name, new_name)
         if attribute_mutated:
+            self._check_attribute_type(new_attribute_type)
             ts.check_mutation(entity_type, old_name, new_attribute_type)
             for instance, _ in related_objects:
                 ts.check_mutation(instance, old_name, new_attribute_type)
@@ -158,8 +172,8 @@ class AttributeTypeListAPI(BaseListView):
         # Renames the attribute alias for the entity type in PSQL and ES
         if attribute_renamed:
             # Update entity type alias
-            ts.rename_alias(entity_type, related_objects, old_name, new_name).save()
-            for instance, _ in related_objects:
+            updated_types = ts.rename_alias(entity_type, related_objects, old_name, new_name)
+            for instance in updated_types:
                 instance.save()
             entity_type.project.save()
 
@@ -217,6 +231,7 @@ class AttributeTypeListAPI(BaseListView):
         entity_type, obj_qs = self._get_objects(params)
 
         new_attribute_type = params["addition"]
+        self._check_attribute_type(new_attribute_type)
         new_name = new_attribute_type["name"]
         entity_type.attribute_types.append(new_attribute_type)
         entity_type.save()

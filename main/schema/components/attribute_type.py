@@ -47,7 +47,7 @@ attribute_type_properties = {
         'type': 'number',
     },
     'choices': {
-        'description': 'Array of possible values for enum dtype.',
+        'description': 'Array of possible values; required for enum dtype.',
         'type': 'array',
         'items': {'type': 'string'},
     },
