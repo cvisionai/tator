@@ -12,13 +12,17 @@ class TatorS3:
         region = os.getenv('OBJECT_STORAGE_REGION_NAME')
         access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
         secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
-        cls.s3 = boto3.client('s3',
-                      endpoint_url=f'{endpoint}',
-                      region_name=region,
-                      aws_access_key_id=access_key,
-                      aws_secret_access_key=secret_key)
+        if endpoint:
+            cls.s3 = boto3.client('s3',
+                          endpoint_url=f'{endpoint}',
+                          region_name=region,
+                          aws_access_key_id=access_key,
+                          aws_secret_access_key=secret_key)
+        else:
+            # Client generator will not have env variables defined
+            cls.s3 = boto3.client('s3')
 
-    def get_download_url(path, expiration):
+    def get_download_url(self, path, expiration):
         if path.startswith('/'):
             url = path
         else:
