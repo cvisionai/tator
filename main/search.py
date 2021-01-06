@@ -252,8 +252,8 @@ class TatorSearch:
 
         # If no uuid exists, then no other entity types have an attribute type with the same name
         uuid = entity_type.project.attribute_type_uuids.get(new_name)
-        # if uuid is None:
-        #     return
+        if uuid is None:
+            return
 
         # Fetch existing mappings
         index_name = self.index_name(entity_type.project.pk)
@@ -261,7 +261,8 @@ class TatorSearch:
         mappings = existing_mappings[index_name].get("mappings",{})
         properties = mappings.get("properties",{})
 
-        # This should not happen if the uuid exists
+        # This should not happen if the uuid exists, but if it does, then no mapping exists and it
+        # is valid to create one
         if new_name not in properties:
             return
 
