@@ -50,14 +50,16 @@ def updateProjectTotals(force=False):
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
             project.size = 0
+            project.duration = 0
             for file in temp_files.iterator():
                 if file.path:
                     if os.path.exists(file.path):
                         project.size += os.path.getsize(file.path)
             for file in files.iterator():
                 project.size += mediaFileSizes(file)[0]
+                project.duration += file.num_frames / file.fps if file.fps and file.num_frames else 0
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
-        if not project.thumbnail:
+        if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if not media:
                 media = Media.objects.filter(project=project, thumbnail__isnull=False).first()
@@ -69,7 +71,7 @@ def updateProjectTotals(force=False):
                     fname = os.path.basename(media.thumbnail.url)
                     s3_key = f"{project.organization.pk}/{project.pk}/{fname}"
                     transfer.upload_file(media.thumbnail.url, bucket_name, s3_key)
-                    project.thumbnail = s3_key
+                    project.thumb = s3_key
                 elif media.media_files:
                     if 'thumbnail' in media.media_files:
                         if len(media.media_files['thumbnail']) > 0:
@@ -79,7 +81,7 @@ def updateProjectTotals(force=False):
                             s3.copy_object(Bucket=bucket_name, Key=dest_key,
                                            CopySource={'Bucket': bucket_name,
                                                        'Key': src_key})
-                            project.thumbnail = dest_key
+                            project.thumb = dest_key
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
         usernames = [str(user) for user in users]

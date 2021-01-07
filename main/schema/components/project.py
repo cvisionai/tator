@@ -50,6 +50,10 @@ project = {
             'type': 'integer',
             'description': 'Size of the project in bytes.',
         },
+        'duration': {
+            'type': 'integer',
+            'description': 'Total duration of all video in the project.',
+        },
         'usernames': {
             'type': 'array',
             'description': 'List of usernames of project members.',

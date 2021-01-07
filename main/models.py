@@ -183,6 +183,9 @@ class Project(Model):
     """Size of all media in project in bytes.
     """
     num_files = IntegerField(default=0)
+    duration = BigIntegerField(default=0)
+    """ Duration of all videos in this project.
+    """
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
     attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
@@ -248,6 +251,13 @@ def project_save(sender, instance, created, **kwargs):
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
+    if instance.thumb:
+        Resource.add_resource(instance.thumb)
+
+@receiver(post_delete, sender=Project)
+def project_save(sender, instance, created, **kwargs):
+    if instance.thumb:
+        safe_delete(instance.thumb)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
