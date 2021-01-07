@@ -186,6 +186,8 @@ class Project(Model):
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
     attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
+    enable_downloads = BooleanField(default=True)
+    thumbnail = CharField(max_length=1024, null=True, blank=True)
     """ Mapping between attribute type names and UUIDs. Used internally for 
         maintaining elasticsearch field aliases.
     """
