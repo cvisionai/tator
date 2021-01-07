@@ -125,6 +125,8 @@ class ProjectDetailAPI(BaseDetailView):
             if project.thumb:
                 safe_delete(project.thumb)
             project.thumb = params['thumb']
+        if 'enable_downloads' in params:
+            project.enable_downloads = params['enable_downloads']
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
 

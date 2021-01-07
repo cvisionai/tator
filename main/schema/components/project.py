@@ -13,6 +13,11 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'enable_downloads': {
+        'description': 'Whether the UI should allow downloads for this project.',
+        'type': 'boolean',
+        'default': True,
+    },
 }
 
 project_spec = {
@@ -30,6 +35,7 @@ project_update = {
             'type': 'string',
             'description': 'S3 key of thumbnail used to represent the project.',
         },
+        'enable_downloads': project_properties['enable_downloads'],
     },
 }
 
@@ -49,10 +55,6 @@ project = {
         'created': {
             'type': 'string',
             'description': 'Datetime when this project was created.',
-        },
-        'enable_downloads': {
-            'type': 'boolean',
-            'description': 'Whether the UI should allow downloads for this project.',
         },
         'num_files': {
             'type': 'integer',
