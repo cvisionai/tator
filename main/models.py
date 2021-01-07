@@ -252,7 +252,7 @@ def project_save(sender, instance, created, **kwargs):
     if created:
         make_default_version(instance)
     if instance.thumb:
-        Resource.add_resource(instance.thumb)
+        Resource.add_resource(instance.thumb, None)
 
 @receiver(post_delete, sender=Project)
 def project_delete(sender, instance, created, **kwargs):
@@ -685,7 +685,8 @@ class Resource(Model):
         else:
             path = path_or_link
         obj, created = Resource.objects.get_or_create(path=path)
-        obj.media.add(media)
+        if media is not None:
+            obj.media.add(media)
 
     @transaction.atomic
     def delete_resource(path_or_link):
