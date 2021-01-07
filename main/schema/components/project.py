@@ -13,10 +13,6 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
-    'thumb': {
-        'type': 'string',
-        'description': 'S3 key of thumbnail used to represent the project.',
-    },
 }
 
 project_spec = {
@@ -30,7 +26,10 @@ project_update = {
     'properties': {
         'name': project_properties['name'],
         'summary': project_properties['summary'],
-        'thumb': project_properties['thumb'],
+        'thumb': {
+            'type': 'string',
+            'description': 'S3 key of thumbnail used to represent the project.',
+        },
     },
 }
 
@@ -43,6 +42,10 @@ project = {
             'description': 'Unique integer identifying the project.',
         },
         **project_properties,
+        'thumb': {
+            'type': 'string',
+            'description': 'S3 key of thumbnail used to represent the project.',
+        },
         'created': {
             'type': 'string',
             'description': 'Datetime when this project was created.',

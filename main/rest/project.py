@@ -9,6 +9,8 @@ from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
 from ..models import database_qs
+from ..models import safe_delete
+from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
 from ..s3 import TatorS3
@@ -111,6 +113,15 @@ class ProjectDetailAPI(BaseDetailView):
             project.name = params['name']
         if 'summary' in params:
             project.summary = params['summary']
+        if 'thumb' in params:
+            s3 = TatorS3().s3
+            s3.head_object(params['thumb'])
+            project_from_key = int(params['thumb'].split('/')[1])
+            if project.pk != project_from_key:
+                raise Exception("Invalid thumbnail path for this project!")
+            if project.thumb:
+                safe_delete(project.thumb)
+            project.thumb = params['thumb']
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
 
