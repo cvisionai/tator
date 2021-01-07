@@ -1145,7 +1145,6 @@ class VideoCanvas extends AnnotationCanvas {
       play_idx = find_closest(videoObject, quality);
       // Todo parameterize this to maximize flexibility
       scrub_idx = find_closest(videoObject, 320);
-      hq_idx = 0;
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
       let host = `${window.location.protocol}//${window.location.host}`;
@@ -1178,6 +1177,7 @@ class VideoCanvas extends AnnotationCanvas {
           worst_idx = idx;
         }
       }
+      hq_idx = worst_idx;
 
       // Use worst-case dims
       dims = [streaming_files[worst_idx].resolution[1],
