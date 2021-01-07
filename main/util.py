@@ -57,7 +57,6 @@ def updateProjectTotals(force=False):
             for file in files.iterator():
                 project.size += mediaFileSizes(file)[0]
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
-            project.save()
         if not project.thumbnail:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if not media:
@@ -81,7 +80,15 @@ def updateProjectTotals(force=False):
                                            CopySource={'Bucket': bucket_name,
                                                        'Key': src_key})
                             project.thumbnail = dest_key
-                project.save()
+        users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
+                            .values_list('user')).order_by('last_name')
+        usernames = [str(user) for user in users]
+        creator = str(project.creator)
+        if creator in usernames:
+            usernames.remove(creator)
+            usernames.insert(0, creator)
+        project.usernames = usernames
+        project.save()
 
 def waitForMigrations():
     """Sleeps until database objects can be accessed.
