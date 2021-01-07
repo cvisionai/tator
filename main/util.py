@@ -60,18 +60,27 @@ def updateProjectTotals(force=False):
             project.save()
         if not project.thumbnail:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
+            if not media:
+                media = Media.objects.filter(project=project, thumbnail__isnull=False).first()
             if media:
                 s3 = TatorS3().s3
                 bucket_name = os.getenv('BUCKET_NAME')
                 if media.thumbnail:
                     transfer = S3Transfer(s3)
-                    s3_key = f"{project.organization.pk}/{project.pk}/thumbnail.jpg"
-                    transfer.upload_file(f'/media/{media.thumbnail.url}', bucket_name, s3_key)
+                    fname = os.path.basename(media.thumbnail.url)
+                    s3_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                    transfer.upload_file(media.thumbnail.url, bucket_name, s3_key)
                     project.thumbnail = s3_key
                 elif media.media_files:
                     if 'thumbnail' in media.media_files:
                         if len(media.media_files['thumbnail']) > 0:
-                            project.thumbnail = media.media_files['thumbnail'][0]['path']
+                            src_key = media.media_files['thumbnail'][0]['path']
+                            fname = os.path.basename(src_key)
+                            dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': src_key})
+                            project.thumbnail = dest_key
                 project.save()
 
 def waitForMigrations():
