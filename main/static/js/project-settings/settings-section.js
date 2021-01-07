@@ -12,6 +12,26 @@ class SettingsSection extends TatorElement {
     // Prep the modal.
     this.modal = document.createElement("modal-dialog");
     this.settingsSectionDiv.appendChild(this.modal);
+
+    const myDom = this.getDom();
+
+    // Unsaved changes warning
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();
+      let changes = myDom.querySelectorAll(".changed");
+      console.log("changes?");
+      console.log(myDom);
+      if(changes.length > 0){
+        console.log("Changes could be lost...");
+        var confirmationMessage = 'You have unsaved changes in [specify here]'
+                                + 'If you leave before saving, your changes will be lost.';
+
+        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+        return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+      } else {
+        console.log("No changes...");
+      }
+    });
   }
 
   _init(data){
@@ -161,8 +181,16 @@ class SettingsSection extends TatorElement {
     return obj;
   }
 
+  _formChanged(_form){
+    console.log("Change in "+_form.id);
+    let changedFormEl = this._shadow.querySelector(`[id="${_form.id}"] `);
+    let changedFormElClasses = changedFormEl.classes;
+    return changedFormEl.setAttribute("class", changedFormElClasses+"changed");
+  }
+
+
   _getAttributePromises({id = -1, entityType = null} = {}){
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
+    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form.changed`);
     let attrPromises = {};
     attrPromises.promises = [];
     attrPromises.attrNames = [];
@@ -198,6 +226,11 @@ class SettingsSection extends TatorElement {
     return attrPromises;
   }
 
+  _toggleChevron(e){
+    var el = e.target;
+    return el.classList.toggle('chevron-trigger-90');
+  }
+
   _modalSuccess(message){
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
@@ -208,12 +241,8 @@ class SettingsSection extends TatorElement {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _toggleChevron(e){
-    var el = e.target;
-    return el.classList.toggle('chevron-trigger-90');
-  }
-
   _modalError(message){
+    this._modalClear();
     let text = document.createTextNode(" Error saving project details");
     this.modal._titleDiv.innerHTML = "";
     this.modal._titleDiv.append( document.createElement("modal-warning") );
@@ -224,11 +253,44 @@ class SettingsSection extends TatorElement {
   }
 
   _modalNeutral(message){
+    this._modalClear();
     let text = document.createTextNode("");
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
 
     return this.modal.setAttribute("is-open", "true")
+  }
+
+  _modalConfirm({
+    titleText = "",
+    mainText = "",
+    buttonText = "",
+    callback = null //required
+  } = {}){
+    this._modalClear();
+    this.modal._titleDiv.innerHTML = titleText;
+    this.modal._main.innerHTML = mainText;
+
+
+    let button = document.createElement("button")
+    button.setAttribute("class", "btn btn-clear f2 text-semibold");
+    button.innerHTML = buttonText;
+
+    primaryButton.addEventListener("click", (event) => {
+      if(callback == null){
+        return this.modal._closeCallback;
+      }else{
+        return callback();
+      }
+    });
+
+    return this.modal.setAttribute("is-open", "true")
+  }
+
+  _modalClear(){
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._main.innerHTML = "";
+    this.modal._footer.innerHTML = "";
   }
 
   _toggleAttributes(e){

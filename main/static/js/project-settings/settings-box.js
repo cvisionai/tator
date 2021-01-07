@@ -8,6 +8,7 @@ class SettingsBox {
     let settingsBox = document.createElement("div");
     settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${customClass} ${level == 1 ? ' new-project__config ' : ''}`);
     settingsBox.append( children );
+    settingsBox.style.borderBottom = "none"
 
     return settingsBox;
   }
@@ -22,7 +23,6 @@ class SettingsBox {
     /* Div to apppend the a HEADING and DESCRIPTION to. */
     let headingDiv = document.createElement("div");
     headingDiv.setAttribute("class", "dflex flex-items-center py-2 px-2 "+this.customClass);
-
 
     /* 1. Make HEADING. */
     let heading = null;
@@ -51,10 +51,10 @@ class SettingsBox {
     let description = document.createElement("div");
 
     if(collapsed) {
-      heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex clickable");
+      heading.setAttribute("class", "py-1 col-12 d-inline-flex clickable");
       heading.appendChild(this._chevron());
     } else {
-      heading.setAttribute("class", "py-1 col-12 text-semibold d-inline-flex ");
+      heading.setAttribute("class", "py-1 col-12 d-inline-flex ");
 
       //let _descriptionText = document.createTextNode("");
       //_descriptionText.nodeValue = descriptionText;

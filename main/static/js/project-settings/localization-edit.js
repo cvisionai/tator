@@ -33,45 +33,50 @@ class LocalizationEdit extends SettingsSection {
   }
 
   _getSectionForm(data){
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    const current = this.boxHelper.boxWrapDefault( {
+      "children" : ""
+    } );
 
-      // Only editable items inside this form
-      this._form = document.createElement("form");
-      this._form.id = data.id;
-      current.appendChild( this._form );
+    //
+    const _form = document.createElement("form");
+    _form.id = data.id;
+    current.appendChild( _form );
 
-      // append input for name
-      const NAME = "Name";
-      this._form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
+    _form.addEventListener("change", (event) => {
+      this._formChanged(_form);
+    });
 
-      //description
-      const DESCRIPTION = "Description";
-      this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    // append input for name
+    const NAME = "Name";
+    _form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
 
-      // append input for dtype
-      const DTYPE = "Dtype";
-      const dTypeOptions = [
-        { "optText": "Box", "optValue": "box" },
-        { "optText": "Line", "optValue": "line" },
-        { "optText": "Dot", "optValue": "dot" }
-      ]
-      current.appendChild( this.inputHelper.inputSelectOptions({
-        "labelText": DTYPE,
-        "name": DTYPE.toLowerCase(),
-        "value": data[DTYPE.toLowerCase()],
-        "optionsList" : dTypeOptions
-      }) );
+    //description
+    const DESCRIPTION = "Description";
+    _form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
 
-      // attribute types
-      if(data.attribute_types.length > 0){
-        this.attributeSection = document.createElement("settings-attributes");
-        this.attributeSection._init("LOCALIZATION", data.attribute_types);
-        current.appendChild(this.attributeSection);
-      }
+    // append input for dtype
+    const DTYPE = "Dtype";
+    const dTypeOptions = [
+      { "optText": "Box", "optValue": "box" },
+      { "optText": "Line", "optValue": "line" },
+      { "optText": "Dot", "optValue": "dot" }
+    ]
+    current.appendChild( this.inputHelper.inputSelectOptions({
+      "labelText": DTYPE,
+      "name": DTYPE.toLowerCase(),
+      "value": data[DTYPE.toLowerCase()],
+      "optionsList" : dTypeOptions,
+      "disabledInput" : true
+    }) );
 
-      return current;
+    // attribute types
+    if(data.attribute_types.length > 0){
+      this.attributeSection = document.createElement("settings-attributes");
+      this.attributeSection._init("LOCALIZATION", data.attribute_types);
+      current.appendChild(this.attributeSection);
+    }
+
+    return current;
   }
 
   reset(scope){

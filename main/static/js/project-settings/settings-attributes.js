@@ -49,7 +49,6 @@ class SettingsAttributes extends HTMLElement {
             "collapsed": true
           });
         collapsableAttributeHeading.setAttribute("class", `py-2 toggle-attribute`);
-        collapsableAttributeHeading.style.borderBottom = "none";
         this.attributeDiv.appendChild(collapsableAttributeHeading);
 
         // content in box
@@ -104,7 +103,15 @@ class SettingsAttributes extends HTMLElement {
     collapsableAttributeBox.setAttribute("class", "attribute-form");
     collapsableAttributeBox.hidden = true;
 
-    let boxOnPage = this.boxHelper.boxWrapDefault( {"children" : attributeCurrent, "level":2, "customClass": "attributeId-"+attributeId} );
+    collapsableAttributeBox.addEventListener("change", (event) => {
+      this._formChanged(collapsableAttributeBox);
+    });
+
+    let boxOnPage = this.boxHelper.boxWrapDefault( {
+      "children" : attributeCurrent,
+      "level":2,
+      "customClass": "attributeId-"+attributeId
+    } );
 
     boxOnPage.appendChild(collapsableAttributeBox);
     attributeCurrent.addEventListener("click", (event) => {
@@ -169,6 +176,15 @@ class SettingsAttributes extends HTMLElement {
     }
 
     return boxOnPage;
+  }
+
+  _formChanged(_form){
+    console.log("Change in "+_form.id);
+    let changedFormEl = document.querySelector(`[id="${_form.id}"] `);
+    let changedFormElClasses = changedFormEl.classes;
+    console.log( changedFormElClasses );
+
+    return changedFormEl.setAttribute("class", changedFormElClasses+"changed");
   }
 
   _getDtypeSelectBox(dtype){

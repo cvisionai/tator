@@ -51,7 +51,7 @@
   }
   &:disabled,
   [disabled] {
-    background-color: $color-charcoal--red; 
+    background-color: $color-charcoal--red;
     color: $color-gray--dark;
   }
 }
@@ -67,7 +67,7 @@
 .btn-outline {
   background-color: transparent;
   border: 1px solid $color-gray--dark50;
-  color: $color-gray--dark; 
+  color: $color-gray--dark;
   &:hover,
   &:focus {
     border-color: transparent;
@@ -83,13 +83,13 @@
   [disabled] {
     background-color: transparent;
     border: 1px solid $color-gray--dark50;
-    color: $color-gray--dark; 
+    color: $color-gray--dark;
   }
 }
 
 .btn-border {
   border: 1px solid $color-gray--dark50;
-  color: $color-gray--dark; 
+  color: $color-gray--dark;
 }
 
 .btn-small {
@@ -103,4 +103,11 @@
 
 .btn-fit-content {
   width: fit-content;
+}
+
+.btn-edit-overlay {
+  position: absolute;
+  top: 74px;
+  left: 33.3333333333%;
+  width: 84px;
 }

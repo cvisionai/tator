@@ -9,6 +9,10 @@ class SettingsNav extends TatorElement {
     this.nav.setAttribute("class", "SideNav rounded-2 col-3");
     this.nav.style.float = "left";
 
+    // Prep the modal.
+    this.modal = document.createElement("modal-dialog");
+    this.nav.appendChild(this.modal);
+
     this._shadow.appendChild(this.nav);
   }
 
@@ -34,6 +38,8 @@ class SettingsNav extends TatorElement {
     this._addNav("Localization", JSON.parse(localization));
     this._addNav("Leaf", JSON.parse(leaf));
     this._addNav("State", JSON.parse(state));
+
+
   }
 
   /*_getMediaNav(data){
@@ -264,23 +270,37 @@ _getText({type = "", count = 0, text = ""} = {}){
     let targetEl = null;
     let typeDomArray = this._getDomArray();
 
-    console.log(typeDomArray);
-
     for(let dom of typeDomArray){
-      // Hide all item boxes
+      // Hide all other item boxes
       dom.querySelectorAll('.item-box').forEach( (el) => {
-        el.hidden = true;
+        if(!dom.querySelector(".changed")){
+          el.hidden = true;
+          // Find and show our target
+          targetEl = dom.querySelector( itemIdSelector );
+          if(targetEl) targetEl.hidden = false;
+        } else {
+          this._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
+        }
+
       } );
+
+
     }
 
-    for(let d of typeDomArray){
-      // Find our target
-      targetEl = d.querySelector( itemIdSelector );
-      if(targetEl) return targetEl.hidden = false;
-    }
+
 
     return console.log("Unable to locate the related item for this nav click.");
   };
+
+  _modalError(text, message){
+    let textNode = document.createTextNode(" "+text);
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append( document.createElement("modal-warning") );
+    this.modal._titleDiv.append(textNode);
+    this.modal._main.innerHTML = message;
+
+    return this.modal.setAttribute("is-open", "true")
+  }
 
   toggleSubItemList({ elClass = ``} = {}){
     //console.log(elClass);

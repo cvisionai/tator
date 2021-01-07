@@ -135,7 +135,8 @@ class SettingsInput {
     value = "", //current value
     labelText = "",
     customCol = "col-8",
-    optionsList = []
+    optionsList = [],
+    disabledInput = false
     } = {}
   ){
     if(optionsList === null || Array.isArray(optionsList) === false){
@@ -147,6 +148,7 @@ class SettingsInput {
 
       inputSelect.setAttribute("class", this.customClass + " form-select select-sm " + customCol);
       inputSelect.style.color = "#fff";
+      if(disabledInput) inputSelect.disabled = true;
 
       for(let optionValue of optionsList){
         let inputOption = document.createElement("option");
@@ -170,8 +172,41 @@ class SettingsInput {
     }
   }
 
+  editImageUpload({
+    value = "", // img path
+    labelText = "",
+    customCol = "col-8",
+    disabledInput = false,
+    callBack = null // required
+    } = {}){
+      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+      // provide an image object
+      // provide label text
+      // callback for button overlay
+      let image = document.createElement("img");
+      image.src = value;
+      image.title = labelText;
+      image.setAttribute("class", "projects__image");
+
+      const inputWithLabel = this.labelWrap({
+        "labelText": labelText,
+        "inputNode": image,
+        "name": setName
+      });
+
+      let editButton = document.createElement("button");
+      editButton.setAttribute("class", "btn-edit-overlay");
+      editButton.innerHTML = "Edit";
+
+      inputWithLabel.appendChild(editButton);
+      inputWithLabel.style.position = "relative";
+
+      return inputWithLabel;
+    }
+
+
     /* Wraps any node in a label */
-    labelWrap({
+  labelWrap({
       labelText = '',
       inputNode } = {}
     ){

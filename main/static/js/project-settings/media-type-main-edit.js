@@ -37,14 +37,18 @@ class MediaTypeMainEdit extends SettingsSection {
         "children" : ""
       } );
 
-      // Only editable items inside this form
-      this._form = document.createElement("form");
-      this._form.id = data.id;
-      current.appendChild( this._form );
+      //
+      let _form = document.createElement("form");
+      _form.id = data.id;
+      current.appendChild( _form );
+
+      _form.addEventListener("change", (event) => {
+        this._formChanged(_form);
+      });
 
       // append input for name
       const NAME = "Name";
-      this._form.appendChild( this.inputHelper.inputText(
+      _form.appendChild( this.inputHelper.inputText(
         { "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]
       }) );
 
@@ -59,12 +63,13 @@ class MediaTypeMainEdit extends SettingsSection {
         "labelText": DTYPE,
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
-        "optionsList" : dTypeOptions
+        "optionsList" : dTypeOptions,
+        "disabledInput" : true
       }) );
 
       //description
       const DESCRIPTION = "Description";
-      this._form.appendChild( this.inputHelper.inputText(
+      _form.appendChild( this.inputHelper.inputText(
         { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] }
        ) );
 
@@ -138,17 +143,22 @@ _fetchNewProjectData(){
   //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
 }
 
+_getAllChangedAsPromiseArray({id = -1} = {}){
+  const patchMedia = this._fetchPatchPromise({"id":id});
+  const attrPromises = this._getAttributePromises({
+    "id" : id,
+    "entityType" : "MediaType"
+  });
+
+  const promises = [patchMedia, ...attrPromises.promises];
+}
+
 
 
   _save({id = -1} = {}){
     console.log("Media Type _save method for id: "+id);
-    const patchMedia = this._fetchPatchPromise({"id":id});
-    const attrPromises = this._getAttributePromises({
-      "id" : id,
-      "entityType" : "MediaType"
-    });
 
-    const promises = [patchMedia, ...attrPromises.promises];
+    const promises = _getAllChangedAsPromiseArray({"id":id});
 
     // Check if anything changed
     Promise.all(promises).then( async( respArray ) => {

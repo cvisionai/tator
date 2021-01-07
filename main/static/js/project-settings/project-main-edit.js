@@ -21,12 +21,21 @@ class ProjectMainEdit extends SettingsSection {
         "children" : document.createTextNode("")
       });
 
-    // Input for name and summary
+    // Image upload
+    this._thumbEdit = this._getThumbnailEdit();
+    this.boxOnPage.appendChild( this._thumbEdit );
+
+    // Input for name
     this._editName = this._setNameInput( this._getNameFromData() );
     this.boxOnPage.appendChild( this._editName );
 
-    this._editSummary = this._setSummaryInput( this._getSummaryFromData() );;
+    // Input for name
+    this._editSummary = this._setSummaryInput( this._getSummaryFromData() );
     this.boxOnPage.appendChild( this._editSummary );
+
+    // Enable downloads at project level,
+    this._downloadEnable = this._setDownloadInput( );
+    this.boxOnPage.appendChild( this._downloadEnable );
 
     let formElements = [this._editName, this._editSummary];
 
@@ -61,6 +70,43 @@ class ProjectMainEdit extends SettingsSection {
         "summary": this._getSummaryInputValue()
       })
     })
+  }
+
+  _setDownloadInput({data = this.data} = {}){
+    return this.inputHelper.inputCheckbox({
+      "value" : data.enable_downloads, // img path
+      "labelText" : "Enable Download"
+    });
+  }
+
+  _getThumbnailEdit({data = this.data} = {}){
+
+    // returns label, and image with edit overlay
+    // button opens a modal
+    return this.inputHelper.editImageUpload({
+      "value" : data.thumb, // img path
+      "labelText" : "Thumbnail",
+      "callBack" : this._editThumb // required
+    });
+  }
+
+  _editThumb(){
+    console.log("Callback to pop edit thumb form modal...");
+    //pops a new form inside a modal
+    let uploadInput = `<input type="file" name="thumb" id="newThumbnail">`
+
+    this._modalConfirm({
+      "titleText" : "Thumnail Uploader",
+      "mainText" : uploadInput,
+      "buttonText" : "Upload",
+      "callback" :  this._fetchUploadThumbnail
+    });
+  }
+
+  _fetchUploadThumbnail({ event = null}){
+    // check that there is a file there and hit upload endpoint
+    console.log("Placeholder to upload new thumbnail to project....");
+    console.log(event);
   }
 
   reset(){
