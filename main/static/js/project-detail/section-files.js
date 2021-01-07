@@ -11,8 +11,8 @@ class SectionFiles extends TatorElement {
     return ["project-id", "username", "token", "section"];
   }
 
-  set permission(val) {
-    this._permission = val;
+  set project(val) {
+    this._project = val;
   }
 
   set mediaParams(val) {
@@ -77,7 +77,7 @@ class SectionFiles extends TatorElement {
         let card;
         if (newCard) {
           card = document.createElement("media-card");
-          card.permission = this._permission;
+          card.project = this._project;
           card.algorithms = this._algorithms;
           card.addEventListener("mouseenter", () => {
             if (card.hasAttribute("media-id")) {

@@ -97,30 +97,30 @@ class MediaMore extends TatorElement {
           this._annotations.style.display = "block";
           this._rename.style.display = "block";
           this._del.style.display = "block";
-          this.permission = this._permission;
+          this.project = this._project;
         } else {
           this._algorithmMenu.style.display = "none";
           this._download.style.display = "none";
           this._annotations.style.display = "none";
           this._rename.style.display = "none";
           this._del.style.display = "none";
-          this.permission = this._permission;
+          this.project = this._project;
         }
         break;
     }
   }
 
-  set permission(val) {
-    this._permission = val;
-    if (!hasPermission(val, "Can Execute")) {
+  set project(val) {
+    this._project = val;
+    if (!hasPermission(val.permission, "Can Execute")) {
       this._algorithmMenu.style.display = "none";
     }
-    if (!hasPermission(val, "Can Transfer")) {
+    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
       this._del.style.display = "none";
     }
-    if (!hasPermission(val, "Can Edit")) {
+    if (!hasPermission(val.permission, "Can Edit")) {
       this._rename.style.display = "none";
     }
   }

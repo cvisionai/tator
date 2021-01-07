@@ -90,17 +90,17 @@ class SectionMore extends TatorElement {
     }
   }
 
-  set permission(val) {
-    if (!hasPermission(val, "Can Execute")) {
+  set project(val) {
+    if (!hasPermission(val.permission, "Can Execute")) {
       this._algorithmMenu.style.display = "none";
     }
-    if (!hasPermission(val, "Can Transfer")) {
+    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
       this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     }
-    if (!hasPermission(val, "Can Edit")) {
+    if (!hasPermission(val.permission, "Can Edit")) {
       this._rename.style.display = "none";
     }
   }

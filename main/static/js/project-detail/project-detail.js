@@ -478,14 +478,10 @@ class ProjectDetail extends TatorPage {
           return !hiddenAlgos.includes(alg.name);
         });
         this._algorithms = parsedAlgos;
-        this._permission = project.permission;
-        this._mediaSection.permission = this._permission;
+        this._mediaSection.project = project;
         this._mediaSection.algorithms = this._algorithms;
         if (!hasPermission(project.permission, "Can Execute")) {
           this._algorithmButton.style.display = "none";
-        }
-        if (!hasPermission(project.permission, "Can Transfer")) {
-          //this._uploadButton.style.display = "none";
         }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
