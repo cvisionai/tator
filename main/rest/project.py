@@ -1,3 +1,5 @@
+import os
+
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -115,7 +117,8 @@ class ProjectDetailAPI(BaseDetailView):
             project.summary = params['summary']
         if 'thumb' in params:
             s3 = TatorS3().s3
-            s3.head_object(params['thumb'])
+            bucket_name = os.getenv('BUCKET_NAME')
+            s3.head_object(Bucket=bucket_name, Key=params['thumb'])
             project_from_key = int(params['thumb'].split('/')[1])
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")
