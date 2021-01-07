@@ -176,8 +176,8 @@ class Affiliation(Model):
 
 class Project(Model):
     name = CharField(max_length=128)
-    creator = ForeignKey(User, on_delete=PROTECT, related_name='creator')
-    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    creator = ForeignKey(User, on_delete=PROTECT, related_name='creator', db_column='creator')
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True, db_column='organization')
     created = DateTimeField(auto_now_add=True)
     size = BigIntegerField(default=0)
     """Size of all media in project in bytes.
@@ -187,7 +187,8 @@ class Project(Model):
     filter_autocomplete = JSONField(null=True, blank=True)
     attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
     enable_downloads = BooleanField(default=True)
-    thumbnail = CharField(max_length=1024, null=True, blank=True)
+    thumb = CharField(max_length=1024, null=True, blank=True)
+    usernames = ArrayField(CharField(max_length=256), default=list)
     """ Mapping between attribute type names and UUIDs. Used internally for 
         maintaining elasticsearch field aliases.
     """
