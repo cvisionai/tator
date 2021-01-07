@@ -255,7 +255,7 @@ def project_save(sender, instance, created, **kwargs):
         Resource.add_resource(instance.thumb)
 
 @receiver(post_delete, sender=Project)
-def project_save(sender, instance, created, **kwargs):
+def project_delete(sender, instance, created, **kwargs):
     if instance.thumb:
         safe_delete(instance.thumb)
 
