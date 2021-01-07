@@ -13,6 +13,10 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'thumb': {
+        'type': 'string',
+        'description': 'S3 key of thumbnail used to represent the project.',
+    },
 }
 
 project_spec = {
@@ -26,6 +30,7 @@ project_update = {
     'properties': {
         'name': project_properties['name'],
         'summary': project_properties['summary'],
+        'thumb': project_properties['thumb'],
     },
 }
 
@@ -38,9 +43,13 @@ project = {
             'description': 'Unique integer identifying the project.',
         },
         **project_properties,
-        'thumb': {
+        'created': {
             'type': 'string',
-            'description': 'URL of thumbnail used to represent the project.',
+            'description': 'Datetime when this project was created.',
+        },
+        'enable_downloads': {
+            'type': 'boolean',
+            'description': 'Whether the UI should allow downloads for this project.',
         },
         'num_files': {
             'type': 'integer',
