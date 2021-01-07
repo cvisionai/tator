@@ -60,47 +60,6 @@ class UserSerializerBasic(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
-class ProjectSerializer(serializers.ModelSerializer):
-    thumb = serializers.SerializerMethodField()
-    usernames = serializers.SerializerMethodField()
-    permission = serializers.SerializerMethodField()
-
-    def get_thumb(self, obj):
-        url = ""
-        media = Media.objects.filter(project=obj).order_by('id').first()
-        if media:
-            if media.thumbnail:
-                url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
-            elif media.media_files:
-                if 'thumbnail' in media.media_files:
-                    s3 = TatorS3()
-                    url = s3.get_download_url(media.media_files['thumbnail'][0]['path'], 28800)
-        return url
-
-    def get_usernames(self, obj):
-        users = User.objects.filter(pk__in=Membership.objects.filter(project=obj).values_list('user')).order_by('last_name')
-        usernames = [str(user) for user in users]
-        creator = str(obj.creator)
-        if creator in usernames:
-            usernames.remove(creator)
-            usernames.insert(0, creator)
-        return usernames
-
-    def get_permission(self, obj):
-        user_id = self.context['request'].user.pk
-        if user_id == obj.creator.pk:
-            permission = "Creator"
-        else:
-            permission = str(obj.user_permission(user_id))
-        return permission
-
-    class Meta:
-        model = Project
-        fields = [
-            'id', 'name', 'summary', 'thumb', 'num_files', 'size',
-            'usernames', 'filter_autocomplete', 'permission'
-        ]
-
 class MembershipSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
     permission = serializers.SerializerMethodField('get_permission_str')

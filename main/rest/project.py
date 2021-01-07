@@ -1,3 +1,5 @@
+import os
+
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -8,13 +10,29 @@ from ..models import Organization
 from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
-from ..serializers import ProjectSerializer
+from ..models import database_qs
+from ..models import safe_delete
+from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
+from ..s3 import TatorS3
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+
+def _serialize_projects(projects, user_id):
+    project_data = database_qs(projects)
+    s3 = TatorS3()
+    for idx, project in enumerate(projects):
+        if project.creator.pk == user_id:
+            project_data[idx]['permission'] = 'Creator'
+        else:
+            project_data[idx]['permission'] = str(project.user_permission(user_id))
+        del project_data[idx]['attribute_type_uuids']
+        if project_data[idx]['thumb']:
+            project_data[idx]['thumb'] = s3.get_download_url(project_data[idx]['thumb'], 28800)
+    return project_data
 
 class ProjectListAPI(BaseListView):
     """ Interact with a list of projects.
@@ -30,7 +48,7 @@ class ProjectListAPI(BaseListView):
 
     def _get(self, params):
         projects = self.get_queryset()
-        return ProjectSerializer(projects, many=True, context=self.get_renderer_context()).data
+        return _serialize_projects(projects, self.request.user.pk)
 
     def _post(self, params):
         # If user does not have admin privileges within the organization, raise a 403.
@@ -84,8 +102,8 @@ class ProjectDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return ProjectSerializer(Project.objects.get(pk=params['id']),
-                                 context=self.get_renderer_context()).data
+        projects = Project.objects.filter(pk=params['id'])
+        return _serialize_projects(projects, self.request.user.pk)[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -97,6 +115,18 @@ class ProjectDetailAPI(BaseDetailView):
             project.name = params['name']
         if 'summary' in params:
             project.summary = params['summary']
+        if 'thumb' in params:
+            s3 = TatorS3().s3
+            bucket_name = os.getenv('BUCKET_NAME')
+            s3.head_object(Bucket=bucket_name, Key=params['thumb'])
+            project_from_key = int(params['thumb'].split('/')[1])
+            if project.pk != project_from_key:
+                raise Exception("Invalid thumbnail path for this project!")
+            if project.thumb:
+                safe_delete(project.thumb)
+            project.thumb = params['thumb']
+        if 'enable_downloads' in params:
+            project.enable_downloads = params['enable_downloads']
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
 

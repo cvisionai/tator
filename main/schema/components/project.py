@@ -13,6 +13,11 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'enable_downloads': {
+        'description': 'Whether the UI should allow downloads for this project.',
+        'type': 'boolean',
+        'default': True,
+    },
 }
 
 project_spec = {
@@ -26,6 +31,11 @@ project_update = {
     'properties': {
         'name': project_properties['name'],
         'summary': project_properties['summary'],
+        'thumb': {
+            'type': 'string',
+            'description': 'S3 key of thumbnail used to represent the project.',
+        },
+        'enable_downloads': project_properties['enable_downloads'],
     },
 }
 
@@ -40,7 +50,11 @@ project = {
         **project_properties,
         'thumb': {
             'type': 'string',
-            'description': 'URL of thumbnail used to represent the project.',
+            'description': 'S3 key of thumbnail used to represent the project.',
+        },
+        'created': {
+            'type': 'string',
+            'description': 'Datetime when this project was created.',
         },
         'num_files': {
             'type': 'integer',
@@ -49,6 +63,10 @@ project = {
         'size': {
             'type': 'integer',
             'description': 'Size of the project in bytes.',
+        },
+        'duration': {
+            'type': 'integer',
+            'description': 'Total duration of all video in the project.',
         },
         'usernames': {
             'type': 'array',

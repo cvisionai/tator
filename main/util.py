@@ -50,14 +50,47 @@ def updateProjectTotals(force=False):
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
             project.size = 0
+            project.duration = 0
             for file in temp_files.iterator():
                 if file.path:
                     if os.path.exists(file.path):
                         project.size += os.path.getsize(file.path)
             for file in files.iterator():
                 project.size += mediaFileSizes(file)[0]
+                project.duration += file.num_frames / file.fps if file.fps and file.num_frames else 0
             logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
-            project.save()
+        if not project.thumb:
+            media = Media.objects.filter(project=project, media_files__isnull=False).first()
+            if not media:
+                media = Media.objects.filter(project=project, thumbnail__isnull=False).first()
+            if media:
+                s3 = TatorS3().s3
+                bucket_name = os.getenv('BUCKET_NAME')
+                if media.thumbnail:
+                    transfer = S3Transfer(s3)
+                    fname = os.path.basename(media.thumbnail.url)
+                    s3_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                    transfer.upload_file(media.thumbnail.url, bucket_name, s3_key)
+                    project.thumb = s3_key
+                elif media.media_files:
+                    if 'thumbnail' in media.media_files:
+                        if len(media.media_files['thumbnail']) > 0:
+                            src_key = media.media_files['thumbnail'][0]['path']
+                            fname = os.path.basename(src_key)
+                            dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': src_key})
+                            project.thumb = dest_key
+        users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
+                            .values_list('user')).order_by('last_name')
+        usernames = [str(user) for user in users]
+        creator = str(project.creator)
+        if creator in usernames:
+            usernames.remove(creator)
+            usernames.insert(0, creator)
+        project.usernames = usernames
+        project.save()
 
 def waitForMigrations():
     """Sleeps until database objects can be accessed.
@@ -434,7 +467,7 @@ def migrate_media_file_resource(resource_id):
     if len(changes) != resource.media.count():
         raise ValueError(f"Could not find path to resource {resource.path} in one or more associated "
                          f"media (IDs {[media.id for media in resource.media.iterator()]})!")
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     transfer = S3Transfer(s3)
     transfer.upload_file(resource.path, bucket_name, s3_key)
@@ -468,7 +501,7 @@ def migrate_image(media, path):
                  'mime': f'image/{image.format.lower()}'}
 
     # Copy the file to S3.
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     transfer = S3Transfer(s3)
     transfer.upload_file(path, bucket_name, s3_key)
@@ -531,7 +564,7 @@ def migrate_video(media, path):
                  "bit_rate": int(stream.get("bit_rate",-1))}
 
     # Copy the file to S3.
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     transfer = S3Transfer(s3)
     transfer.upload_file(path, bucket_name, s3_key)
@@ -569,7 +602,7 @@ def migrate_media(project):
 def verify_migration(project):
     medias = Media.objects.filter(project=project)
     num_verified = 0
-    s3 = s3_client()
+    s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     for media in medias.iterator():
         assert(not media.thumbnail)

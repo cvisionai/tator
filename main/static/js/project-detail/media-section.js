@@ -80,16 +80,16 @@ class MediaSection extends TatorElement {
     this.reload();
   }
 
-  set permission(val) {
-    this._files.permission = val;
-    if (!hasPermission(val, "Can Edit")) {
+  set project(val) {
+    this._files.project = val;
+    if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
     }
-    if (!hasPermission(val, "Can Transfer")) {
+    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._upload.style.display = "none";
     }
-    this._more.permission = val;
-    this._permission = val;
+    this._more.project = val;
+    this._project = val;
   }
 
   set numMedia(val) {
