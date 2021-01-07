@@ -41,9 +41,9 @@ class CustomGenerator(SchemaGenerator):
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
                 'ArchiveConfig': archive_config,
-                'AttributeAddition': attribute_addition,
-                'AttributeRename': attribute_rename,
-                'AttributeDeletion': attribute_deletion,
+                'AttributeTypeSpec': attribute_type_spec,
+                'AttributeTypeUpdate': attribute_type_update,
+                'AttributeTypeDelete': attribute_type_delete,
                 'AttributeType': attribute_type,
                 'AttributeValue': attribute_value,
                 'AudioDefinition': audio_definition,
@@ -52,10 +52,13 @@ class CustomGenerator(SchemaGenerator):
                 'BookmarkUpdate': bookmark_update,
                 'Bookmark': bookmark,
                 'CloneMediaSpec': clone_media_spec,
+                'DownloadInfoSpec': download_info_spec,
+                'DownloadInfo': download_info,
                 'EncodeConfig': encode_config,
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
+                'ImageDefinition': image_definition,
                 'JobNode': job_node,
                 'Job': job,
                 'LeafTypeSpec': leaf_type_spec,
@@ -84,7 +87,7 @@ class CustomGenerator(SchemaGenerator):
                 'MembershipSpec': membership_spec,
                 'MembershipUpdate': membership_update,
                 'Membership': membership,
-                'MoveVideoSpec': move_video_spec,
+                'MultiDefinition': multi_definition,
                 'NotifySpec': notify_spec,
                 'OrganizationSpec': organization_spec,
                 'Organization': organization,
@@ -108,6 +111,9 @@ class CustomGenerator(SchemaGenerator):
                 'TemporaryFile': temporary_file,
                 'TranscodeSpec': transcode_spec,
                 'Transcode': transcode,
+                'UploadCompletionSpec': upload_completion_spec,
+                'UploadInfo': upload_info,
+                'UploadPart': upload_part,
                 'UserUpdate': user_update,
                 'User': user,
                 'VersionSpec': version_spec,
@@ -162,26 +168,6 @@ class CustomGenerator(SchemaGenerator):
             schema['security'] = [
                 {'TokenAuth': []},
             ]
-
-            # Remove deprecated paths.
-            deprecated = [
-                '/rest/EntityTypeMedias/{project}',
-                '/rest/EntityTypeMedia/{id}',
-                '/rest/EntityMedia/{id}',
-                '/rest/EntityMedias/{project}',
-                '/rest/EntityState/{id}',
-                '/rest/EntityStates/{project}',
-                '/rest/EntityStateTypes/{project}',
-                '/rest/EntityStateType/{id}',
-                '/rest/TreeLeafTypes/{project}',
-                '/rest/TreeLeafType/{id}',
-                '/rest/TreeLeaves/{project}',
-                '/rest/TreeLeaf/{id}',
-                '/rest/TreeLeaves/Suggestion/{ancestor}/{project}',
-            ]
-            for d in deprecated:
-                if d in schema['paths']:
-                    del schema['paths'][d]
 
         return schema
 

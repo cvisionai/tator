@@ -1,0 +1,14 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Account Profile</title>
+{% endblock head %}
+
+{% block body %}
+<account-profile
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}">
+</account-profile>
+{% endblock body %}

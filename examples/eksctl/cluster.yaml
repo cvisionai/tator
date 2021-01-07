@@ -41,18 +41,3 @@ nodeGroups:
       k8s.io/cluster-autoscaler/node-template/label/gpuWorker: "yes"
       k8s.io/cluster-autoscaler/node-template/label/webServer: "no"
       k8s.io/cluster-autoscaler/node-template/label/dbServer: "no"
-fargateProfiles:
-  - name: fargate
-    selectors:
-      - namespace: default
-        labels:
-          app: gunicorn
-      - namespace: default
-        labels:
-          app: tusd
-      - namespace: default
-        labels:
-          app: nginx
-      - namespace: default
-        labels:
-          role: uploader

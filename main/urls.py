@@ -16,6 +16,7 @@ from .views import APIBrowserView
 from .views import MainRedirect
 from .views import ProjectsView
 from .views import CustomView
+from .views import AccountProfileView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
 from .views import AnnotationView
@@ -40,6 +41,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/account-profile/', AccountProfileView.as_view(), name='account-profile'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
@@ -97,6 +99,14 @@ urlpatterns += [
         AttributeTypeListAPI.as_view(),
     ),
     path(
+        'rest/AudioFiles/<int:id>',
+        AudioFileListAPI.as_view(),
+    ),
+    path(
+        'rest/AudioFile/<int:id>',
+        AudioFileDetailAPI.as_view(),
+    ),
+    path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),
     ),
@@ -106,6 +116,9 @@ urlpatterns += [
     ),
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
+    ),
+    path('rest/DownloadInfo/<int:project>',
+         DownloadInfoAPI.as_view(),
     ),
     path('rest/Favorites/<int:project>',
          FavoriteListAPI.as_view(),
@@ -118,6 +131,12 @@ urlpatterns += [
     ),
     path('rest/GetClip/<int:id>',
          GetClipAPI.as_view(),
+    ),
+    path('rest/ImageFiles/<int:id>',
+         ImageFileListAPI.as_view(),
+    ),
+    path('rest/ImageFile/<int:id>',
+         ImageFileDetailAPI.as_view(),
     ),
     path(
         'rest/Jobs/<int:project>',
@@ -225,10 +244,6 @@ urlpatterns += [
         name='Membership',
     ),
     path(
-        'rest/MoveVideo/<int:id>',
-        MoveVideoAPI.as_view(),
-    ),
-    path(
         'rest/Notify',
         NotifyAPI.as_view(),
     ),
@@ -309,6 +324,14 @@ urlpatterns += [
         TranscodeAPI.as_view(),
     ),
     path(
+        'rest/UploadCompletion/<int:project>',
+        UploadCompletionAPI.as_view(),
+    ),
+    path(
+        'rest/UploadInfo/<int:project>',
+        UploadInfoAPI.as_view(),
+    ),
+    path(
         'rest/Users',
         UserListAPI.as_view(),
     ),
@@ -330,63 +353,12 @@ urlpatterns += [
         VersionDetailAPI.as_view(),
         name='Version',
     ),
-
-
-    # To be deprecated
     path(
-        'rest/EntityTypeMedias/<int:project>',
-        MediaTypeListAPI.as_view(),
+        'rest/VideoFiles/<int:id>',
+        VideoFileListAPI.as_view(),
     ),
     path(
-        'rest/EntityTypeMedia/<int:id>',
-        MediaTypeDetailAPI.as_view(),
-    ),
-    path(
-        'rest/EntityMedia/<int:id>',
-        MediaDetailAPI.as_view(),
-        name='EntityMedia'
-    ),
-    path(
-        'rest/EntityMedias/<int:project>',
-        MediaListAPI.as_view(),
-        name='EntityMedias'
-    ),
-    path(
-        'rest/EntityStates/<int:project>',
-        StateListAPI.as_view(),
-        name='EntityStates'
-    ),
-    path(
-        'rest/EntityState/<int:id>',
-        StateDetailAPI.as_view(),
-    ),
-    path(
-        'rest/EntityStateTypes/<int:project>',
-        StateTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/EntityStateType/<int:id>',
-        StateTypeDetailAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafTypes/<int:project>',
-        LeafTypeListAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeafType/<int:id>',
-        LeafTypeDetailAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeaves/Suggestion/<str:ancestor>/<int:project>',
-        LeafSuggestionAPI.as_view(),
-    ),
-    path(
-        'rest/TreeLeaves/<int:project>',
-        LeafListAPI.as_view(),
-        name='TreeLeaves',
-    ),
-    path(
-        'rest/TreeLeaf/<int:id>',
-        LeafDetailAPI.as_view(),
+        'rest/VideoFile/<int:id>',
+        VideoFileDetailAPI.as_view(),
     ),
 ]

@@ -136,7 +136,11 @@ class UndoBuffer extends HTMLElement {
         this._backwardOps.push([["PATCH", detailUri, id, original]]);
         this._dataTypes.push(dataType);
         return this.redo();
-      });
+      }).catch(() => {
+        const msg = dataType.name + " was not updated";
+        Utilities.warningAlert(msg, "#ff3e1d", false);
+        console.error("Error during patch!");
+      })
     } else {
       return null;
     }
@@ -185,10 +189,14 @@ class UndoBuffer extends HTMLElement {
         const listUri = UndoBuffer.detailToList[detailUri];
         this._resetFromNow();
         this._forwardOps.push([["DELETE", detailUri, id, null]]);
-        this._backwardOps.push([["POST", listUri, projectId, body]]); 
+        this._backwardOps.push([["POST", listUri, projectId, body]]);
         this._dataTypes.push(dataType);
         return this.redo();
-      });
+      }).catch(() => {
+        const msg = dataType.name + " was not deleted";
+        Utilities.warningAlert(msg, "#ff3e1d", false);
+        console.error("Error during delete!");
+      })
     } else {
       return null;
     }
@@ -263,7 +271,7 @@ class UndoBuffer extends HTMLElement {
       // Resolve only after all the fetches have been completed
       Promise.all(promises).then(() => { resolve(); });
     });
-  
+
     return p;
   }
 
@@ -303,20 +311,52 @@ class UndoBuffer extends HTMLElement {
     this.dispatchEvent(new CustomEvent("temporarilyMaskEdits",
                                        {composed: true,
                                         detail: {enabled: true}}));
+
+    function errorMsg() {
+      var msg = ""
+      if (method == "PATCH") {
+        msg = " was not updated";
+      }
+      else if (method == "POST") {
+        msg = " was not created";
+      }
+      else if (method == "DELETE") {
+        msg = " was not deleted";
+      }
+      msg = dataType.name + msg;
+      Utilities.warningAlert(msg, "#ff3e1d", false);
+      console.error("Error during fetch!");
+    }
+
     return fetchRetry(url, obj)
     .then(response => {
       if (response.ok) {
         console.log("Fetch successful!");
         return response;
       } else {
-        console.error("Error during fetch!");
-        response.json()
-        .then(data => console.error("Error during fetch: " + JSON.stringify(data)));
+        errorMsg();
+        response.json().then(data => console.error("Error during fetch: " + JSON.stringify(data)));
       }
+    }).catch(() => {
+      errorMsg();
     });
   }
 
   _emitUpdate(method, id, body, dataType) {
+
+    var msg = ""
+    if (method == "PATCH") {
+      msg = " updated!"
+    }
+    else if (method == "POST") {
+      msg = " created!"
+    }
+    else if (method == "DELETE") {
+      msg = " deleted!"
+    }
+    msg = dataType.name + msg;
+    Utilities.showSuccessIcon(msg);
+
     this.dispatchEvent(new CustomEvent("update", {
       detail: {
         method: method,

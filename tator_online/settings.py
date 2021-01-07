@@ -37,15 +37,9 @@ if os.getenv("TATOR_USE_MIN_JS").lower() == "true":
 else:
     USE_MIN_JS = False
 
-try:
-    ALLOWED_HOSTS = [
-        os.getenv('MAIN_HOST'),
-        'nginx-internal-svc', # Allows internal cluster access
-    ]
-except: # Support standalone `docker run`
-    ALLOWED_HOSTS = [
-        os.getenv('MAIN_HOST'),
-    ]
+ALLOWED_HOSTS = [
+    os.getenv('MAIN_HOST'),
+]
 
 # Application definition
 

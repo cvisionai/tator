@@ -80,16 +80,16 @@ class MediaSection extends TatorElement {
     this.reload();
   }
 
-  set permission(val) {
-    this._files.permission = val;
-    if (!hasPermission(val, "Can Edit")) {
+  set project(val) {
+    this._files.project = val;
+    if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
     }
-    if (!hasPermission(val, "Can Transfer")) {
+    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._upload.style.display = "none";
     }
-    this._more.permission = val;
-    this._permission = val;
+    this._more.project = val;
+    this._project = val;
   }
 
   set numMedia(val) {
@@ -176,7 +176,7 @@ class MediaSection extends TatorElement {
       if (this._after.has(current - 5000)) {
         after = `&after=${this._after.get(current-5000)}`;
       }
-      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}`, {
+      return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -238,7 +238,7 @@ class MediaSection extends TatorElement {
         if (afterName) {
           sectionQuery.append("after", afterName);
         }
-        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}`, {
+        return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -348,7 +348,7 @@ class MediaSection extends TatorElement {
       const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
       const readableZipStream = new ZIP({
         async pull(ctrl) {
-          let url = getUrl("Medias") + "&stop=" + batchSize;
+          let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
           if (lastFilename != null) {
             url += "&after=" + lastFilename;
           }
@@ -374,8 +374,7 @@ class MediaSection extends TatorElement {
               }
               filenames.add(basename);
 
-              let request = Utilities.getDownloadRequest(media, headers);
-
+              const request = Utilities.getDownloadRequest(media, headers);
               // Download media file.
               console.log("Downloading " + media.name + " from " + request.url + "...");
               await fetchRetry(request)

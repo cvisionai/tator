@@ -11,8 +11,8 @@ class SectionFiles extends TatorElement {
     return ["project-id", "username", "token", "section"];
   }
 
-  set permission(val) {
-    this._permission = val;
+  set project(val) {
+    this._project = val;
   }
 
   set mediaParams(val) {
@@ -43,15 +43,21 @@ class SectionFiles extends TatorElement {
   _updateCard(card, media, pos_text) {
     card.setAttribute("media-id", media.id);
 
+    card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
     if (media.thumbnail) {
       card.setAttribute("thumb", "/media/" + media.thumbnail);
-    } else {
-      card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+    } else if (media.media_files) {
+      if (media.media_files.thumbnail) {
+        card.setAttribute("thumb", media.media_files.thumbnail[0].path);
+      }
     }
+    card.removeAttribute("thumb-gif");
     if (media.thumbnail_gif) {
       card.setAttribute("thumb-gif", "/media/" + media.thumbnail_gif);
-    }else {
-      card.removeAttribute("thumb-gif");
+    } else if (media.media_files) {
+      if (media.media_files.thumbnail_gif) {
+        card.setAttribute("thumb-gif", media.media_files.thumbnail_gif[0].path);
+      }
     }
     card.mediaParams = this._mediaParams();
     card.media = media;
@@ -71,7 +77,7 @@ class SectionFiles extends TatorElement {
         let card;
         if (newCard) {
           card = document.createElement("media-card");
-          card.permission = this._permission;
+          card.project = this._project;
           card.algorithms = this._algorithms;
           card.addEventListener("mouseenter", () => {
             if (card.hasAttribute("media-id")) {

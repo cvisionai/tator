@@ -9,6 +9,7 @@
 {% block body %}
 <annotation-page
   username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}"
   project-name="{{ project.name }}"
   project-id={{ project.id }}
   media-id={{ media.id }}>

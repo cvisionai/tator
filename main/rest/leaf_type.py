@@ -25,13 +25,14 @@ class LeafTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        return LeafType.objects.filter(project=params['project']).values(*fields)
+        return list(LeafType.objects.filter(project=params['project']).values(*fields))
 
     def _post(self, params):
         if params['name'] in attribute_keywords:
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
                               "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
+        del params['body']
         obj = LeafType(**params)
         obj.save()
         return {'message': 'Leaf type created successfully!', 'id': obj.id}

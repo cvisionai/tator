@@ -331,11 +331,11 @@ def bulk_rename_attributes(new_attrs, q_s):
     """
     Updates attribute keys.
     """
-    for old_key, new_attribute_type in new_attrs.items():
+    for old_key, new_key in new_attrs.items():
         q_s.update(attributes=ReplaceKey(
             'attributes',
             old_key=old_key,
-            new_key=new_attribute_type,
+            new_key=new_key,
             create_missing=True,
         ))
 

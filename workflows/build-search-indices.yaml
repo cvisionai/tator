@@ -32,14 +32,11 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
-      args: ["python3 manage.py getprojects > /projects.txt"]
+      args: ["python3 manage.py getprojects > /scratch/projects.txt"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -65,11 +62,17 @@ spec:
         value: "{{workflow.parameters.tatorDebug}}"
       - name: TATOR_USE_MIN_JS
         value: "{{workflow.parameters.useMinJs}}"
+      volumeMounts:
+      - mountPath: /scratch
+        name: scratch
+    volumes:
+    - name: scratch
+      emptyDir: {}
     outputs:
       parameters:
       - name: projects
         valueFrom:
-          path: /projects.txt
+          path: /scratch/projects.txt
 
   # Executes parallel for loop for list of projects
   - name: build-projects
@@ -141,14 +144,11 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: [sh, -c]
-      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} > /chunks.txt"]
+      args: ["python3 manage.py getindexchunks {{inputs.parameters.project}} {{inputs.parameters.section}} {{workflow.parameters.maxAgeDays}} > /scratch/chunks.txt"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:
@@ -174,16 +174,22 @@ spec:
         value: "{{workflow.parameters.tatorDebug}}"
       - name: TATOR_USE_MIN_JS
         value: "{{workflow.parameters.useMinJs}}"
+      volumeMounts:
+      - mountPath: /scratch
+        name: scratch
+    volumes:
+    - name: scratch
+      emptyDir: {}
     outputs:
       parameters:
       - name: chunks
         valueFrom:
-          path: /chunks.txt
+          path: /scratch/chunks.txt
 
 
   # Build chunks in parallel loop
   - name: build-chunks
-    parallelism: 10
+    parallelism: 100
     inputs:
       parameters:
       - name: project
@@ -214,14 +220,11 @@ spec:
     container:
       image: "{{workflow.parameters.dockerRegistry}}/tator_online:{{workflow.parameters.version}}"
       command: ["python3"]
-      args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}"]
+      args: ["manage.py", "buildsearchindices", "{{inputs.parameters.project}}", "{{inputs.parameters.section}}", "{{inputs.parameters.chunk}}", "{{workflow.parameters.maxAgeDays}}"]
       resources:
-        requests:
-          cpu: 50m
-          memory: 200Mi
         limits:
-          cpu: 1000m
-          memory: 32Gi
+          cpu: 500m
+          memory: 1Gi
       env:
       - name: DJANGO_SECRET_KEY
         valueFrom:

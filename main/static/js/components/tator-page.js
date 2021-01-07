@@ -33,13 +33,16 @@ class TatorPage extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["username", "has-open-modal"];
+    return ["username", "email", "has-open-modal"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "username":
         this._header.setAttribute("username", newValue);
+        break;
+      case "email":
+        this._header.setAttribute("email", newValue);
         break;
       case "has-open-modal":
         if (newValue === null) {

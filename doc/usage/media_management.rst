@@ -43,25 +43,37 @@ type and required fields.
 Example Localization Format
 ***************************
 
-Given a typeid, one should visit the `/rest/EntityTypeSchema/<typeid>` URL to
+Given a typeid, one should visit the `/rest/LocalizationType/<typeid>` URL to
 verify the required fields for input. An example return is:
 
 .. code-block:: json
    :caption: Example type schema from server (JSON)
    :linenos:
-   :emphasize-lines: 5-9
+   :emphasize-lines: 9
 
-        {
-        "name": "Box",
+      {
+        "id": 39,
+        "project": 1,
+        "name": "Detection",
         "description": "",
-        "required_fields": {
-            "x": "Floating point number",
-            "y": "Floating point number",
-            "width": "Floating point number",
-            "height": "Floating point number",
-            "Name": "Name of the object"
-            }
-        }
+        "dtype": "box",
+        "attribute_types": [
+          {
+            "name": "Name",
+            "dtype": "string",
+            "order": 0,
+            "default": null,
+            "description": "",
+          }
+        ],
+        "colorMap": {},
+        "line_width": 3,
+        "visible": true,
+        "grouping_default": true,
+        "media": [
+          29
+        ]
+      } 
 
 .. note::
 
@@ -82,21 +94,38 @@ verify the required fields for input. An example return is:
 Example State Format
 ***************************
 
-Given a typeid, one should visit the `/rest/EntityTypeSchema/<typeid>` URL to
+Given a typeid, one should visit the `/rest/StateType/<typeid>` URL to
 verify the required fields for input. An example return is:
 
 .. code-block:: json
    :caption: Example type schema from server (JSON)
    :linenos:
-   :emphasize-lines: 5
+   :emphasize-lines: 9
 
-        {
+      {
+        "id": 12,
+        "project": 1,
         "name": "StateName",
         "description": "",
-        "required_fields": {
-            "Name": "Name of the object"
-            }
-        }
+        "dtype": "state",
+        "attribute_types": [
+          {
+            "name": "Name",
+            "dtype": "string",
+            "order": 0,
+            "default": null,
+            "description": ""
+          },
+        ],
+        "interpolation": "none",
+        "association": "Localization",
+        "visible": true,
+        "grouping_default": true,
+        "delete_child_localizations": false,
+        "media": [
+          29
+        ]
+      }
 
 .. note::
 
@@ -117,44 +146,41 @@ verify the required fields for input. An example return is:
       Name
       Street Sign
 
-Uploading an archive
-^^^^^^^^^^^^^^^^^^^^
 
-An archive of media can be uploaded via the web interface project-detail dashboard.
-Instead of selecting a video, one can drag in zip or tarballs containing media.
+Uploading via tator-py
+**********************
 
-.. note::
+Local files can be uploaded to tator using either individual media uploads or along with metadata using archive uploads.
 
-   It is important that the zip or tarball matches the format above.
-
-
-Uploading via pytator
-*********************
-
-A special media type of `-1` is used to indicate archive on upload. This can
-be used as the `typeId` parameter of :meth:`pytator.api.Media.uploadFile`
+To upload individual media files:
 
 .. code-block:: python
    :linenos:
 
-      tator.Media.uploadFile(-1, "/path/to/archive.tar")
+      api = tator.get_api(host, token)
+      for progress, response in tator.util.upload_media(api, type_id, path):
+          print(f"Upload progress: {progress}%")
+      print(response.message)
 
-Bulk Video Import
------------------
+To upload an archive that may also contain metadata:
 
-Using the `cvisionai/tator_client` container, one can initiate an upload
-of locally stored archival video to the **Tator** platform.
+.. code-block:: python
+   :linenos:
+      
+      api = tator.get_api(host, token)
+      for progress, response in tator.util.upload_media_archive(api, project, "/path/to/archive.tar"):
+          print(f"Upload progress: {progress}")
+      print(response.message)
 
-.. code-block:: bash
+Importing via tator-py
+**********************
 
-   $host> docker run --rm -ti -v <path_to_videos>:/source -v <path_to_scratch>:/work cvisionai/tator_client:latest bash
-   # Bash shell is now in the container itself
-   $container> python3 /scripts/upload_raw_videos.py --url https://www.tatorapp.com/rest --project <proj_id> --token <token> --work-dir /work --batch-size <num> /source
+Hosted media can be imported to tator without downloading the media locally using the `import_media` utility. This can be used for individual images or videos:
 
+.. code-block:: python
+   :linenos:
 
-The ``<source>`` folder can contain arbitrary nested mp4 files to upload. The
-script converts to archival quality h265 (hvc1) files while creating the
-multi-resolution streaming files, using all local resources. When complete
-all video files are uploaded to the cloud platform.
+      api = tator.get_api(host, token)
+      response = tator.util.import_media(api, type_id, url)
+      print(response.message)
 
-Section names are inferred from the filename. ``Section_File_Name_Components.mp4``

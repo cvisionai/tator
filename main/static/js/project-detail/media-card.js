@@ -167,11 +167,11 @@ class MediaCard extends TatorElement {
     }
   }
 
-  set permission(val) {
-    if (!hasPermission(val, "Can Edit")) {
+  set project(val) {
+    if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
     }
-    this._more.permission = val;
+    this._more.project = val;
   }
 
   set algorithms(val) {
@@ -193,7 +193,8 @@ class MediaCard extends TatorElement {
     else if (this._media.media_files)
     {
       if ('streaming' in this._media.media_files ||
-          'layout' in this._media.media_files)
+          'layout' in this._media.media_files ||
+          'image' in this._media.media_files)
       {
         valid = true;
       }

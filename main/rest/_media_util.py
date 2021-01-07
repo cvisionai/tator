@@ -12,6 +12,8 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
+from ..s3 import TatorS3
+
 logger = logging.getLogger(__name__)
 
 class MediaUtil:
@@ -23,22 +25,50 @@ class MediaUtil:
         self._segment_info = None
 
         if video.media_files:
-            if quality is None:
-                quality_idx = 0
-            else:
-                max_delta = sys.maxsize
-                for idx, media_info in enumerate(video.media_files["streaming"]):
-                    delta = abs(quality-media_info['resolution'][0])
-                    if delta < max_delta:
-                        quality_idx = idx
-            self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
-            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
-            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            with open(segment_file, 'r') as f_p:
-                self._segment_info = json.load(f_p)
+            self._s3 = TatorS3().s3
+            self._bucket_name = os.getenv('BUCKET_NAME')
+            if "streaming" in video.media_files:
+                if quality is None:
+                    # Select highest quality if not specified
+                    highest_res = -1
+                    quality_idx = 0
+                    for idx, media_info in enumerate(video.media_files["streaming"]):
+                        if media_info['resolution'][0] > highest_res:
+                            highest_res = media_info['resolution'][0]
+                            quality_idx = idx
+                else:
+                    max_delta = sys.maxsize
+                    for idx, media_info in enumerate(video.media_files["streaming"]):
+                        delta = abs(quality-media_info['resolution'][0])
+                        if delta < max_delta:
+                            quality_idx = idx
+                self._video_file = video.media_files["streaming"][quality_idx]["path"]
+                self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+                self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+                segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+                if segment_file.startswith('/'):
+                    with open(segment_file, 'r') as f_p:
+                        self._segment_info = json.load(f_p)
+                else:
+                    f_p = io.BytesIO()
+                    self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+                    self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
                 self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
                                                               ['segments']) if x['name'] == 'moof']
+            elif "image" in video.media_files:
+                if quality is None:
+                    # Select highest quality if not specified
+                    highest_res = -1
+                    quality_idx = 0
+                    for idx, media_info in enumerate(video.media_files["image"]):
+                        if media_info['resolution'][0] > highest_res:
+                            highest_res = media_info['resolution'][0]
+                            quality_idx = idx
+                # Image
+                self._video_file = video.media_files["image"][quality_idx]["path"]
+                self._height = video.height
+                self._width = video.width
+
         elif video.original:
             video_file = video.original
             self._height = video.height
@@ -165,11 +195,21 @@ class MediaUtil:
             lookup[frame] = (segment_frame_start, temp_video)
 
             logger.info(f"Scatter gather graph = {sc_graph}")
-            with open(self._video_file, "r+b") as vid_fp:
-                m_m = mmap.mmap(vid_fp.fileno(), 0)
+            if self._video_file.startswith('/'):
+                with open(self._video_file, "r+b") as vid_fp:
+                    m_m = mmap.mmap(vid_fp.fileno(), 0)
+                    with open(temp_video, "wb") as out_fp:
+                        for scatter in sc_graph:
+                            out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
+            else:
                 with open(temp_video, "wb") as out_fp:
                     for scatter in sc_graph:
-                        out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
+                        start = scatter[0]
+                        stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
+                        response = self._s3.get_object(Bucket=self._bucket_name,
+                                                       Key=self._video_file,
+                                                       Range=f'bytes={start}-{stop}')
+                        out_fp.write(response['Body'].read())
 
         return lookup, segment_info
 
@@ -214,7 +254,7 @@ class MediaUtil:
             impacted_segments = self._get_impacted_segments(batch)
             lookup = {}
             if impacted_segments:
-                lookup = self.make_temporary_videos(impacted_segments)
+                lookup, _ = self.make_temporary_videos(impacted_segments)
 
             for batch_idx, frame in enumerate(batch):
                 outputs.extend(["-map", f"{batch_idx}:v","-frames:v", "1", "-q:v", "3"])
@@ -226,8 +266,7 @@ class MediaUtil:
                     inputs.extend(["-ss", self._frame_to_time_str(frame, lookup[frame][0]),
                                                                   "-i", lookup[frame][1]])
                 else:
-                    # If we didn't make per segment mp4s, use the big one
-                    inputs.extend(["-ss", self._frame_to_time_str(frame), "-i", self._video_file])
+                    raise ValueError("Failed to find frame {frame} in segmented mp4!")
                 frame_idx += 1
 
             # Now add all the cmds in
@@ -313,7 +352,13 @@ class MediaUtil:
         right = left + roi[0] * self._width
         lower = upper + roi[1] * self._height
 
-        img = Image.open(self._video_file)
+        if self._video_file.startswith('/'):
+            img = Image.open(self._video_file)
+        else:
+            out = io.BytesIO()
+            self._s3.download_fileobj(self._bucket_name, self._video_file, out)
+            out.seek(0)
+            img = Image.open(out)
         img = img.crop((left, upper, right, lower))
 
         if force_scale is not None:

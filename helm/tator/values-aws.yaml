@@ -20,6 +20,11 @@ postgresUsername: "<Your postgres username>"
 postgresPassword: "<Your postgres password>"
 redisHost: "<Your ElastiCache endpoint>"
 elasticsearchHost: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
+objectStorageHost: "https://<Your S3 bucket endpoint>"
+objectStorageBucketName: "<Your S3 bucket name>"
+objectStorageRegionName: "<Your S3 bucket region>"
+objectStorageAccessKey: "<Your S3 bucket access key>"
+objectStorageSecretKey: "<Your S3 bucket secret key>"
 dockerUsername: "<Your ECR username>"
 dockerPassword: "<Your ECR password>"
 dockerRegistry: "<Your aws account ID>.dkr.ecr.<Your aws region>.amazonaws.com"
@@ -133,9 +138,6 @@ hpa:
   gunicornMinReplicas: 4
   gunicornMaxReplicas: 10
   gunicornCpuPercent: 50
-  tusdMinReplicas: 2
-  tusdMaxReplicas: 10
-  tusdCpuPercent: 50
 metallb:
   # A load balancer implementation is provided by AWS.
   enabled: false
@@ -185,6 +187,8 @@ kibana:
       server:
         basePath: /logs
   elasticsearchHosts: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
+minio:
+  enabled: false
 remoteTranscodes:
   # Enable this if you would like to do transcodes with a different
   # Kubernetes cluster, such as an on-premises cluster. Follow instructions

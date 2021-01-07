@@ -48,8 +48,7 @@ class ProjectSummary extends TatorElement {
     }
     const url = window.location.origin + "/" + val.id + "/project-detail";
     this._link.setAttribute("href", url);
-    this._description.setAttribute("num-files", val.num_files);
-    this._description.setAttribute("size", val.size);
+    this._description.init(val);
     if (!hasPermission(val.permission, "Full Control")) {
       this._nav.style.display = "none";
     }

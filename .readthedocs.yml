@@ -22,6 +22,4 @@ python:
   install:
   - requirements: scripts/packages/tator-py/requirements.txt
   - method: pip
-    path: scripts/packages/pytator
-  - method: pip
     path: scripts/packages/tator-py

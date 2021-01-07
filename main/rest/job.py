@@ -53,10 +53,7 @@ class JobListAPI(BaseListView):
             except:
                 raise Http404
         else:
-            try:
-                cache = TatorCache().get_jobs_by_project(project, first_only=True)
-            except:
-                raise Http404
+            cache = TatorCache().get_jobs_by_project(project)
         cancelled = cancel_jobs(selector, cache)
         return {'message': f"Deleted {cancelled} jobs for project {project}!"}
 

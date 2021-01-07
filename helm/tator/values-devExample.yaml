@@ -30,6 +30,7 @@ postgresUsername: "django"
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
 elasticsearchHost: "elasticsearch-master"
+objectStorageHost: "minio-master"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
@@ -108,9 +109,6 @@ hpa:
   gunicornMinReplicas: 1
   gunicornMaxReplicas: 10
   gunicornCpuPercent: 50
-  tusdMinReplicas: 1
-  tusdMaxReplicas: 10
-  tusdCpuPercent: 50
 metallb:
   # Enable this to provide a load balancer implementation on bare metal.
   enabled: true
@@ -181,6 +179,17 @@ kibana:
     kibana.yml: |
       server:
         basePath: /logs
+minio:
+  enabled: true
+  accessKey: "AKIAIOSFODNN7EXAMPLE"
+  secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  persistence:
+    size: "1Ti"
+    existingClaim: "main-pv-claim"
+    subPath: "objects"
+  defaultBucket:
+    enabled: true
+    name: tator
 # Limits on resources for transcode workflows.
 transcoderCpuLimit: "1000m"
 transcoderMemoryLimit: "4Gi"

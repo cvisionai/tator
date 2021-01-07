@@ -1145,7 +1145,6 @@ class VideoCanvas extends AnnotationCanvas {
       play_idx = find_closest(videoObject, quality);
       // Todo parameterize this to maximize flexibility
       scrub_idx = find_closest(videoObject, 320);
-      hq_idx = 0;
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
       let host = `${window.location.protocol}//${window.location.host}`;
@@ -1157,7 +1156,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         let audio_def = videoObject.media_files['audio'][0];
         this._audioPlayer = document.createElement("AUDIO");
-        this._audioPlayer.setAttribute('src', host + audio_def.path);
+        this._audioPlayer.setAttribute('src', audio_def.path);
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
         this.addPauseListener(() => {
@@ -1165,9 +1164,24 @@ class VideoCanvas extends AnnotationCanvas {
         });
       }
 
+      // The streaming files may not be in order, so find the one with the largest height and
+      // use that as the "worst" index
+      var worst_idx = 0;
+      var largest_height = 0;
+      for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        if (height > largest_height)
+        {
+          largest_height = height;
+          worst_idx = idx;
+        }
+      }
+      hq_idx = worst_idx;
+
       // Use worst-case dims
-      dims = [streaming_files[0].resolution[1],
-              streaming_files[0].resolution[0]];
+      dims = [streaming_files[worst_idx].resolution[1],
+              streaming_files[worst_idx].resolution[0]];
 
       for (var idx = 0; idx < streaming_files.length; idx++)
       {
@@ -1175,7 +1189,6 @@ class VideoCanvas extends AnnotationCanvas {
         {
           host = streaming_files[idx].host;
         }
-        streaming_files[idx].path = `${host}/${streaming_files[idx].path}`;
       }
     }
     // Handle cases when there are no streaming files in the set

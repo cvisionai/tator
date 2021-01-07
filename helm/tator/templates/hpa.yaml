@@ -23,16 +23,3 @@ spec:
     kind: Deployment
     name: gunicorn-deployment
   targetCPUUtilizationPercentage: {{ .Values.hpa.gunicornCpuPercent }}
----
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: tusd-hpa
-spec:
-  minReplicas: {{ .Values.hpa.tusdMinReplicas }}
-  maxReplicas: {{ .Values.hpa.tusdMaxReplicas }}
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: tusd-deployment
-  targetCPUUtilizationPercentage: {{ .Values.hpa.tusdCpuPercent }}

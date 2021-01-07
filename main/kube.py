@@ -35,31 +35,6 @@ if os.getenv('REQUIRE_HTTPS') == 'TRUE':
 else:
     PROTO = 'http://'
 
-def _determine_host_and_url(url, remote):
-    """ Determines host and url for transcode.
-    """
-    # Host is used for setting up api.
-    if remote:
-        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
-    else:
-        host = 'http://nginx-internal-svc'
-    # Determine if host should be replaced, either because none were given
-    # or given host is same as MAIN_HOST.
-    replace_host = False
-    parsed = urlsplit(url)
-    if parsed.netloc == '':
-        replace_host = True
-    else:
-        if os.getenv('MAIN_HOST') == parsed.netloc:
-            replace_host = True
-    # Replace host if it should be replaced.
-    headers = []
-    if replace_host:
-        url = urljoin(host, parsed.path)
-        headers = ['--header=Authorization: Token {{workflow.parameters.token}}',
-                   '--header=Upload-Uid: {{workflow.parameters.uid}}']
-    return host, url, headers
-
 def _select_storage_class():
     """ Randomly selects a workflow storage class.
     """
@@ -74,11 +49,6 @@ def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
     return f"{registry}/tator_client:{Git.sha}"
-
-def get_lite_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/tator_lite:{Git.sha}"
 
 def get_wget_image_name():
     """ Returns the location and version of the client image to use """
@@ -375,7 +345,7 @@ class TatorTranscode(JobManagerMixin):
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
             'container': {
-                'image': '{{workflow.parameters.lite_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.create_media',
@@ -582,7 +552,7 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-    def get_download_task(self, headers):
+    def get_download_task(self, headers=[]):
         # Download task exports the human readable filename a
         # workflow global to support the onExit handler
         return {
@@ -833,7 +803,7 @@ class TatorTranscode(JobManagerMixin):
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host, url, headers = _determine_host_and_url(url, self.remote)
+        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -845,7 +815,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
                        'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
@@ -878,7 +847,7 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
-                    self.get_download_task(headers),
+                    self.get_download_task(),
                     self.delete_task,
                     self.create_media_task,
                     self.determine_transcode_task,
@@ -936,7 +905,7 @@ class TatorTranscode(JobManagerMixin):
             self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-        host, url, headers = _determine_host_and_url(url, self.remote)
+        host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
                        'host': host,
                        'rest_url': f'{host}/rest',
@@ -948,7 +917,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'lite_image' : get_lite_image_name(),
                        'wget_image' : get_wget_image_name(),
                        'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
@@ -980,7 +948,7 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
-                    self.get_download_task(headers),
+                    self.get_download_task(),
                     self.create_media_task,
                     self.determine_transcode_task,
                     self.transcode_task,
@@ -1076,6 +1044,9 @@ class TatorAlgorithm(JobManagerMixin):
             }, {
                 'name': 'uid',
                 'value': uid,
+            }, {
+                'name': 'host',
+                'value': f'{PROTO}{os.getenv("MAIN_HOST")}',
             }, {
                 'name': 'rest_url',
                 'value': f'{PROTO}{os.getenv("MAIN_HOST")}/rest',

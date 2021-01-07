@@ -1,10 +1,10 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis client packager tusd gunicorn daphne nginx algorithm submitter pruner sizer
+CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings tus-image postgis-image client-image tator-lite wget-image curl-image
+IMAGES=python-bindings postgis-image client-image wget-image curl-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -148,13 +148,6 @@ externals/build_tools/%.py:
 	echo $@ $<
 	./externals/build_tools/makocc.py -o $@ $<
 
-.PHONY: tator-lite
-tator-lite: containers/tator_lite/Dockerfile
-	docker build -t $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_lite:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_lite:latest
-
 .PHONY: tator-image
 tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css r-docs docs
@@ -179,21 +172,10 @@ curl-image: containers/curl/Dockerfile
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 	docker push $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 
-PYTATOR_VERSION=$(shell python3 scripts/packages/pytator/pytator/version.py)
-.PHONY: containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl
-containers/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl:
-	make -C scripts/packages/pytator wheel
-	cp scripts/packages/pytator/dist/PyTator-$(PYTATOR_VERSION)-py3-none-any.whl containers
-
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
 	docker build  $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
-
-.PHONY: tus-image
-tus-image: containers/tus/Dockerfile.gen
-	docker build  $(shell ./externals/build_tools/multiArch.py  --buildArgs) -t $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION) -f $< containers || exit 255
-	docker push $(DOCKERHUB_USER)/tator_tusd:$(GIT_VERSION)
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
@@ -283,6 +265,7 @@ FILES = \
     projects/new-project.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
+		account-profile/account-profile.js \
     new-project/new-project-close.js \
     new-project/custom/custom-form.js \
     new-project/custom/custom.js \
@@ -435,9 +418,11 @@ cache-clear:
 cleanup-evicted:
 	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
 
+# Example:
+#   make build-search-indices MAX_AGE_DAYS=365
 .PHONY: build-search-indices
 build-search-indices:
-	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)"
 
 .PHONY: migrate-flat
 migrate-flat:
@@ -510,7 +495,7 @@ HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml
 .PHONY: pytest
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
-	#cd scripts/packages/pytator/test && pytest --url $(HOST)/rest --token $(TOKEN)
+
 .PHONY: pylint
 pylint:
 	docker run -it --rm -v $(shell pwd):/pwd localhost:5000/tator_online:$(GIT_VERSION) pylint --rcfile /pwd/pylint.ini --load-plugins pylint_django /pwd/main

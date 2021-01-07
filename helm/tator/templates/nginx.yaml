@@ -30,6 +30,9 @@ spec:
           ports:
             - containerPort: 80
             - containerPort: 443
+            {{- if .Values.minio.enabled }}
+            - containerPort: 9000
+            {{- end }}
           volumeMounts:
             - mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
@@ -119,6 +122,12 @@ spec:
     port: 443
     protocol: TCP
     targetPort: 443
+  {{- if .Values.minio.enabled }}
+  - name: minio
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  {{- end }}
   selector:
     app: nginx
   type: LoadBalancer

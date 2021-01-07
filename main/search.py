@@ -1,9 +1,13 @@
 import logging
 import os
+import datetime
 from copy import deepcopy
+from uuid import uuid1
+
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from uuid import uuid1
+
+from .s3 import TatorS3
 
 logger = logging.getLogger(__name__)
 
@@ -22,30 +26,46 @@ ALLOWED_MUTATIONS = {
 id_bits=448
 id_mask=(1 << id_bits) - 1
 
+def _path_size(path, s3, bucket_name):
+    """ Returns the file size of a path.
+    """
+    size = 0
+    if path.startswith('/'):
+        # This is a disk-based path.
+        if os.path.exists(path):
+            statinfo = os.stat(path)
+            size = statinfo.st_size
+        else:
+            logger.warning(f"Could not find file {path}!")
+    else:
+        # This is an S3 object.
+        try:
+            response = s3.head_object(Bucket=bucket_name, Key=path)
+            size = response['ContentLength']
+        except:
+            logger.warning(f"Could not find object {path}!")
+    return size
+
 def mediaFileSizes(file):
     total_size = 0
     download_size = None
+    s3 = TatorS3().s3
+    bucket_name = os.getenv('BUCKET_NAME')
 
     if file.thumbnail:
         if os.path.exists(file.thumbnail.path):
             total_size += file.thumbnail.size
     if file.meta.dtype == 'video':
         if file.media_files:
-            if 'archival' in file.media_files:
-                for archival in file.media_files['archival']:
-                    if os.path.exists(archival['path']):
-                        statinfo = os.stat(archival['path'])
-                        total_size += statinfo.st_size
-                        if download_size is None:
-                            download_size = statinfo.st_size
-            if 'streaming' in file.media_files:
-                for streaming in file.media_files['streaming']:
-                    path = streaming['path']
-                    if os.path.exists(path):
-                        statinfo = os.stat(streaming['path'])
-                        total_size += statinfo.st_size
-                        if download_size is None:
-                            download_size = statinfo.st_size
+            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+                if key in file.media_files:
+                    for media_def in file.media_files[key]:
+                        size = _path_size(media_def['path'], s3, bucket_name)
+                        total_size += size
+                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                            download_size = size
+                        if key == 'streaming':
+                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
         if file.original:
             if os.path.exists(file.original):
                 statinfo = os.stat(file.original)
@@ -197,6 +217,9 @@ class TatorSearch:
                 '_modified': {'type': 'boolean'},
                 '_modified_datetime': {'type': 'date'},
                 '_modified_by': {'type': 'keyword'},
+                '_created_datetime': {'type': 'date'},
+                '_created_by': {'type': 'keyword'},
+                '_indexed_datetime': {'type': 'date'},
                 '_postgres_id': {'type': 'long'},
                 '_download_size': {'type': 'long'},
                 '_total_size': {'type': 'long'},
@@ -211,6 +234,47 @@ class TatorSearch:
         index = self.index_name(project)
         if self.es.indices.exists(index):
             self.es.indices.delete(index)
+
+    def check_addition(self, entity_type, new_attribute_type):
+        """
+        Checks that the new attribute type does not collide with existing attributes on the target
+        entity type or other entity types.
+        """
+        new_name = new_attribute_type["name"]
+
+        # There should be no existing attribute types on the target entity type with the same name
+        for attribute_type in entity_type.attribute_types:
+            if new_name == attribute_type["name"]:
+                raise ValueError(
+                    f"Attempted to add attribute '{new_name}' to {type(entity_type).__name__} "
+                    f"{entity_type.name} ID {entity_type.id}, but one with that name already exists"
+                )
+
+        # If no uuid exists, then no other entity types have an attribute type with the same name
+        uuid = entity_type.project.attribute_type_uuids.get(new_name)
+        if uuid is None:
+            return
+
+        # Fetch existing mappings
+        index_name = self.index_name(entity_type.project.pk)
+        existing_mappings = self.es.indices.get_mapping(index=index_name)
+        mappings = existing_mappings[index_name].get("mappings",{})
+        properties = mappings.get("properties",{})
+
+        # This should not happen if the uuid exists, but if it does, then no mapping exists and it
+        # is valid to create one
+        if new_name not in properties:
+            return
+
+        # Check that the existing mapping has the same mapping name, i.e. the same dtype
+        mapping_type = _get_alias_type(new_attribute_type)
+        mapping_name = f"{uuid}_{mapping_type}"
+        if mapping_name != properties[new_name]["path"]:
+            raise ValueError(
+                f"Attempted to add attribute '{new_name}' with dtype {new_attribute_type['dtype']} "
+                f"to {type(entity_type).__name__} {entity_type.name} ID {entity_type.id}, but "
+                f"another entity type has already defined this attribute name with a different dtype"
+            )
 
     def create_mapping(self, entity_type):
         if not entity_type.attribute_types:
@@ -265,7 +329,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(old_name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {old_name} in entity type "
-                             "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         new_attribute_type = None
@@ -278,20 +342,20 @@ class TatorSearch:
             elif name == new_name:
                 raise ValueError(
                     f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
-                    "with that name already exists in entity type {type(entity_type).__name__} ID "
-                    "{entity_type.id}"
+                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
+                    f"{entity_type.id}"
                 )
 
         if new_attribute_type is None:
             raise ValueError(
                 f"Could not find attribute name {old_name} in entity type "
-                "{type(entity_type).__name__} ID {entity_type.id}"
+                f"{type(entity_type).__name__} ID {entity_type.id}"
             )
 
         return uuid, replace_idx, new_attribute_type
 
 
-    def rename_alias(self, entity_type, old_name, new_name):
+    def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
         Adds an alias corresponding to an attribute type rename. Note that the old alias will still
         exist but can be excluded by specifying fields parameter in query_string queries. Entity
@@ -300,29 +364,40 @@ class TatorSearch:
         :param entity_type: *Type object. Should be passed in before updating attribute_type json.
                             Fields attribute_types and attribute_type_uuids will be updated with new
                             name. Entity type will NOT be saved.
+        :param related_objects: The list of pairs of entity types and querysets that also have an
+                                attribute to be renamed.
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
-        :returns: Entity type with updated attribute_type_uuids.
+        :returns: Entity types with updated attribute_type_uuids.
         """
         # If no name change is happening, there is nothing to do
         if old_name == new_name:
-            return entity_type
+            return [entity_type]
 
         uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
+        updated_types = []
 
         # Create new alias definition.
         alias_type = _get_alias_type(new_attribute_type)
-        alias = {new_name: {'type': 'alias',
-                            'path': f'{uuid}_{alias_type}'}}
+        alias = {new_name: {"type": "alias", "path": f"{uuid}_{alias_type}"}}
         self.es.indices.put_mapping(
             index=self.index_name(entity_type.project.pk),
-            body={'properties': alias},
+            body={"properties": alias},
         )
 
         # Update entity type object with new values.
-        entity_type.project.attribute_type_uuids[new_name] = entity_type.project.attribute_type_uuids.pop(old_name)
+        entity_type.project.attribute_type_uuids[
+            new_name
+        ] = entity_type.project.attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
-        return entity_type
+        updated_types.append(entity_type)
+
+        # Update related objects with new values.
+        for instance, _ in related_objects:
+            _, replace_idx, _ = self.check_rename(instance, old_name, new_name)
+            instance.attribute_types[replace_idx] = new_attribute_type
+            updated_types.append(instance)
+        return updated_types
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """
@@ -333,7 +408,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -345,7 +420,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         new_dtype = new_attribute_type["dtype"]
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
@@ -415,7 +490,7 @@ class TatorSearch:
         uuid = entity_type.project.attribute_type_uuids.get(name)
         if uuid is None:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
@@ -427,7 +502,7 @@ class TatorSearch:
                 break
         else:
             raise ValueError(f"Could not find attribute name {name} in entity type "
-                              "{type(entity_type).__name__} ID {entity_type.id}")
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
 
         return uuid, delete_idx, mapping_name
 
@@ -479,6 +554,12 @@ class TatorSearch:
         aux['_dtype'] = entity.meta.dtype
         aux['_postgres_id'] = entity.pk # Same as ID but indexed/sortable. Use of _id for this
                                         # purpose is not recommended by ES.
+        aux['_created_datetime'] = entity.created_datetime.isoformat()
+        aux['_created_by'] = str(entity.created_by)
+        aux['_modified_datetime'] = entity.modified_datetime.isoformat()
+        aux['_modified_by'] = str(entity.modified_by)
+        tzinfo = entity.created_datetime.tzinfo
+        aux['_indexed_datetime'] = datetime.datetime.now(tzinfo).isoformat()
         duplicates = []
         if entity.meta.dtype in ['image', 'video', 'multi']:
             aux['_media_relation'] = 'media'
@@ -511,8 +592,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
             aux['_user'] = entity.user.pk
             aux['_email'] = entity.user.email
             aux['_meta'] = entity.meta.pk
@@ -561,8 +640,6 @@ class TatorSearch:
             if entity.version:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
-            aux['_modified_datetime'] = entity.modified_datetime.isoformat()
-            aux['_modified_by'] = str(entity.modified_by)
         elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name

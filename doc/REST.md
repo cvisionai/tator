@@ -36,15 +36,15 @@ or a URL:
 URL names should be human readable to maximimize there effectiveness. 
 
 #### 2.3.1 Lists + New Items
-`/rest/EntityMedias` is an intuitive REST API name. It is intuitive to imagine
-a GET request to that URL would return a list of all EntityMedia elements in 
+`/rest/Medias` is an intuitive REST API name. It is intuitive to imagine
+a GET request to that URL would return a list of all Media elements in 
 the system.
 
 *query* arguments are those that provide minimization to a given list. An 
 example might be:
 
-`/rest/EntityMedias?name=MVI_0308.mp4` which returns a list of all 
-EntityMedia elements that have a name of `MVI_0308.mp4`.
+`/rest/Medias?name=MVI_0308.mp4` which returns a list of all 
+Media elements that have a name of `MVI_0308.mp4`.
 
 Usually List endpoints can either be read-only (supporting only `GET`) or
 read-write (supporting both `GET` and `POST`). A `POST` request would be

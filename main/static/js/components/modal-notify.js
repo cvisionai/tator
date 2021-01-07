@@ -9,7 +9,7 @@ class ModalNotify extends ModalDialog {
     this._header.insertBefore(this._successIcon, this._titleDiv);
 
     this._message = document.createElement("p");
-    this._message.setAttribute("class", "text-semibold py-3");
+    this._message.setAttribute("class", "text-semibold py-3 text-center");
     this._main.appendChild(this._message);
 
     this._accept = document.createElement("button");

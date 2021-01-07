@@ -169,10 +169,6 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
-        'progress_name': {
-            'description': 'Replaces name in progress message.',
-            'type': 'string',
-        },
         'attributes': {
             'nullable': True,
             'description': 'Attributes for the media',
@@ -185,14 +181,6 @@ media_update = {
     'type': 'object',
     'properties': {
         **media_properties,
-        'thumbnail_url': {
-            'description': 'Upload URL for the thumbnail.',
-            'type': 'string',
-        },
-        'thumbnail_gif_url': {
-            'description': 'Upload URL for the thumbnail gif.',
-            'type': 'string',
-        },
         'num_frames': {
             'description': 'Number of frames in the video.',
             'type': 'integer',
@@ -214,6 +202,7 @@ media_update = {
             'description': 'Pixel height of the video.',
             'type': 'integer',
         },
+        'multi': {'$ref': '#/components/schemas/MultiDefinition'},
     },
 }
 

@@ -430,7 +430,7 @@ class AnnotationMulti extends TatorElement {
 
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
-      video_resp.push(fetch(`/rest/Media/${vid_id}`));
+      video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
 
       idx += 1;
     }

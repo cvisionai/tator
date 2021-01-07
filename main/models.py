@@ -42,7 +42,8 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
-from .uploads import download_uploaded_file
+from .download import download_file
+from .s3 import TatorS3
 
 from collections import UserDict
 
@@ -175,16 +176,22 @@ class Affiliation(Model):
 
 class Project(Model):
     name = CharField(max_length=128)
-    creator = ForeignKey(User, on_delete=PROTECT, related_name='creator')
-    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    creator = ForeignKey(User, on_delete=PROTECT, related_name='creator', db_column='creator')
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True, db_column='organization')
     created = DateTimeField(auto_now_add=True)
     size = BigIntegerField(default=0)
     """Size of all media in project in bytes.
     """
     num_files = IntegerField(default=0)
+    duration = BigIntegerField(default=0)
+    """ Duration of all videos in this project.
+    """
     summary = CharField(max_length=1024)
     filter_autocomplete = JSONField(null=True, blank=True)
     attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
+    enable_downloads = BooleanField(default=True)
+    thumb = CharField(max_length=1024, null=True, blank=True)
+    usernames = ArrayField(CharField(max_length=256), default=list)
     """ Mapping between attribute type names and UUIDs. Used internally for 
         maintaining elasticsearch field aliases.
     """
@@ -244,6 +251,13 @@ def project_save(sender, instance, created, **kwargs):
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
+    if instance.thumb:
+        Resource.add_resource(instance.thumb, None)
+
+@receiver(post_delete, sender=Project)
+def project_delete(sender, instance, **kwargs):
+    if instance.thumb:
+        safe_delete(instance.thumb)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
@@ -337,7 +351,7 @@ class TemporaryFile(Model):
         destination_fp=os.path.join(settings.MEDIA_ROOT, f"{project.id}", f"{uuid.uuid1()}{extension}")
         os.makedirs(os.path.dirname(destination_fp), exist_ok=True)
         if is_upload:
-            download_uploaded_file(path, user, destination_fp)
+            download_file(path, destination_fp)
         else:
             shutil.copyfile(path, destination_fp)
 
@@ -660,51 +674,6 @@ class Media(Model):
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
-    def update_media_files(self, media_files):
-        """ Updates media files by merging a new key into existing JSON object.
-        """
-        # Handle null existing value.
-        if self.media_files is None:
-            self.media_files = {}
-
-        # Append to existing definitions.
-        new_streaming = media_files.get('streaming', [])
-        old_streaming = self.media_files.get('streaming', [])
-        streaming = new_streaming + old_streaming
-        new_archival = media_files.get('archival', [])
-        old_archival = self.media_files.get('archival', [])
-        archival = new_archival + old_archival
-        new_audio = media_files.get('audio', [])
-        old_audio = self.media_files.get('audio', [])
-        audio = new_audio + old_audio
-
-        for fp in new_streaming:
-            path = fp['path']
-            seg_path = fp['segment_info']
-            Resource.add_resource(path, self)
-            Resource.add_resource(seg_path, self)
-
-        for fp in new_archival:
-            Resource.add_resource(fp['path'], self)
-
-        for fp in new_audio:
-            Resource.add_resource(fp['path'], self)
-
-        # Only fill in a key if it has at least one definition.
-        self.media_files = {}
-        if streaming:
-            streaming.sort(key=lambda x: x['resolution'][0], reverse=True)
-            self.media_files['streaming'] = streaming
-        if archival:
-            self.media_files['archival'] = archival
-        if audio:
-            self.media_files['audio'] = audio
-
-        # Handle roi, layout, and quality
-        for x in ['layout','ids','quality']:
-            if x in media_files:
-                self.media_files[x] = media_files[x]
-
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
@@ -716,26 +685,36 @@ class Resource(Model):
         else:
             path = path_or_link
         obj, created = Resource.objects.get_or_create(path=path)
-        obj.media.add(media)
+        if media is not None:
+            obj.media.add(media)
 
     @transaction.atomic
     def delete_resource(path_or_link):
-        if os.path.islink(path_or_link):
-            path=os.readlink(path_or_link)
-            os.remove(path_or_link)
+        path=path_or_link
+        if os.path.exists(path_or_link):
+            if os.path.islink(path_or_link):
+                path=os.readlink(path_or_link)
+                os.remove(path_or_link)
+        if path.startswith('/'):
+            try:
+                obj = Resource.objects.get(path=path)
+                if obj.media.all().count() == 0:
+                    logger.info(f"Deleting file {path}")
+                    obj.delete()
+                    os.remove(path)
+            except Resource.DoesNotExist as dne:
+                logger.info(f"Removing legacy resource {path}")
+                os.remove(path)
+            except Exception as e:
+                logger.error(f"{e} when lowering resource count of {path}")
         else:
-            path=path_or_link
-        try:
+            # This is an S3 object.
             obj = Resource.objects.get(path=path)
             if obj.media.all().count() == 0:
-                logger.info(f"Deleting file {path}")
+                logger.info(f"Deleting object {path}")
                 obj.delete()
-                os.remove(path)
-        except Resource.DoesNotExist as dne:
-            logger.info(f"Removing legacy resource {path}")
-            os.remove(path)
-        except Exception as e:
-            logger.error(f"{e} when lowering resource count of {path}")
+                s3 = TatorS3().s3
+                s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
@@ -743,13 +722,11 @@ def media_save(sender, instance, created, **kwargs):
     if instance.file and created:
         Resource.add_resource(instance.file.path, instance)
     if instance.media_files and created:
-        for fp in instance.media_files.get('audio', []):
-            Resource.add_resource(fp['path'], instance)
-        for fp in instance.media_files.get('streaming', []):
-            Resource.add_resource(fp['path'], instance)
-            Resource.add_resource(fp['segment_info'], instance)
-        for fp in instance.media_files.get('archival', []):
-            Resource.add_resource(fp['path'], instance)
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+            for fp in instance.media_files.get(key, []):
+                Resource.add_resource(fp['path'], instance)
+                if key == 'streaming':
+                    Resource.add_resource(fp['segment_info'], instance)
 
 def safe_delete(path):
     try:
@@ -757,6 +734,19 @@ def safe_delete(path):
         Resource.delete_resource(path)
     except:
         logger.warning(f"Could not remove {path}")
+        logger.warning(f"{traceback.format_exc()}")
+
+def drop_media_from_resource(path, media):
+    """ Drops the specified media from the resource. This should be called when
+        removing a resource from a Media object's media_files but the Media is 
+        not being deleted.
+    """
+    try:
+        logger.info(f"Dropping media {media} from resource {path}")
+        obj = Resource.objects.get(path=path)
+        obj.media.remove(media)
+    except:
+        logger.warning(f"Could not remove {media} from {path}")
         logger.warning(f"{traceback.format_exc()}")
 
 @receiver(pre_delete, sender=Media)
@@ -774,27 +764,16 @@ def media_post_delete(sender, instance, **kwargs):
 
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
-        files = instance.media_files.get('streaming', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
-
-            path = obj['segment_info']
-            safe_delete(path)
-        files = instance.media_files.get('archival', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
-        files = instance.media_files.get('audio', [])
-        if files is None:
-            files = []
-        for obj in files:
-            path = obj['path']
-            safe_delete(path)
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+            files = instance.media_files.get(key, [])
+            if files is None:
+                files = []
+            for obj in files:
+                path = obj['path']
+                safe_delete(path)
+                if key == 'streaming':
+                    path = obj['segment_info']
+                    safe_delete(path)
     instance.thumbnail.delete(False)
     instance.thumbnail_gif.delete(False)
 

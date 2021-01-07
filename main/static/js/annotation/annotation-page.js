@@ -59,12 +59,10 @@ class AnnotationPage extends TatorPage {
       this._progressDialog.removeAttribute("is-open", "");
     });
 
-    this._successColor = "#54e37a";
-
     window.addEventListener("error", (evt) => {
       this._shadow.removeChild(this._loading);
       window.alert("System error detected");
-      Utilities.warningAlert("System error detected","#ff3e1d");
+      Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
 
     this._settings._bookmark.addEventListener("click", () => {
@@ -104,7 +102,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
-        fetch("/rest/Media/" + newValue, {
+        fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -119,12 +117,15 @@ class AnnotationPage extends TatorPage {
               (data.media_files == null ||
                (data.media_files &&
                 !('streaming' in data.media_files) &&
-                !('layout' in data.media_files))))
+                !('layout' in data.media_files) &&
+                !('image' in data.media_files))))
           {
             this._shadow.removeChild(this._loading);
             Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
+          } else if (data.media_files && 'streaming' in data.media_files) {
+            data.media_files.streaming.sort((a, b) => {return b.resolution[0] - a.resolution[0];});
           }
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
@@ -900,7 +901,7 @@ class AnnotationPage extends TatorPage {
         if (jobSuccessful) {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          Utilities.showSuccessIcon("Track extension done.");
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
         }
       });
@@ -990,7 +991,7 @@ class AnnotationPage extends TatorPage {
         .then(() => {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.", this._successColor);
+          Utilities.showSuccessIcon("Track extension done.");
           canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
         });
       }
@@ -1039,7 +1040,7 @@ class AnnotationPage extends TatorPage {
           if (jobSuccessful) {
             this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
             this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-            Utilities.showSuccessIcon("Track extension done.", this._successColor);
+            Utilities.showSuccessIcon("Track extension done.");
             canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
           }
         });
@@ -1070,7 +1071,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Track trimming done.", this._successColor);
+        Utilities.showSuccessIcon("Track trimming done.");
         canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
       });
     });
@@ -1094,7 +1095,7 @@ class AnnotationPage extends TatorPage {
       .then(response => response.json())
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Detection added to track.", this._successColor);
+        Utilities.showSuccessIcon("Detection added to track.");
         canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
       });
     });

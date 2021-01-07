@@ -15,18 +15,11 @@ class Utilities
     const el = window.tator_success_light;
     if (el)
     {
-      el.style.transition = '0.25s';
-      el.style.opacity = '100';
-      el.style.visibility = 'visible';
-      el.message(message, color);
-
-      if (!noFade)
-      {
-        setTimeout(function() {
-            el.style.transition = '1.0s';
-            el.style.opacity = '0';
-            el.style.visibility = 'hidden';
-          }, 3000);
+      if (noFade) {
+        el.message(message, color);
+      }
+      else {
+        el.fade_message(message, color);
       }
     }
     else
@@ -45,12 +38,17 @@ class Utilities
 
   }
 
-  static warningAlert(message, color)
+  static warningAlert(message, color, noFade)
   {
     const el = window.tator_warning_light;
     if (el)
     {
-      el.message(message, color);
+      if (noFade) {
+        el.message(message, color);
+      }
+      else {
+        el.fade_message(message, color);
+      }
     }
     else
     {
@@ -81,7 +79,13 @@ class Utilities
       {
         return null;
       }
-      if (media_files.archival)
+      if (media_files.image)
+      {
+        path = media_files.image[0].path;
+        http_authorization = media_files.image[0].http_auth;
+        hostname = media_files.image[0].host;
+      }
+      else if (media_files.archival)
       {
         path = media_files.archival[0].path;
         http_authorization = media_files.archival[0].http_auth;
@@ -96,53 +100,57 @@ class Utilities
       else
       {
         let fname = media_element.name;
-        console.error(`Can't find suitable download for ${fname}`)
+        console.warn(`Can't find suitable download for ${fname}`);
       }
-    }
-    else
-    {
-      // TODO: Remove this
-      // Deprecated behavior
-      if (media_element.original_url) {
-        url = media_element.original_url;
-      } else {
-        url = "/media/" + media_element.file;
-      }
+    } else if (media_element.file) {
+      url = "/media/" + media_element.file;
+    } else {
+      let fname = media_element.name;
+      console.warn(`Can't find suitable download for ${fname}`);
     }
 
     // We either have a url set (old way) or a path and potentially host
     // and http_auth
 
-    let request;
+    let request = null;
     if (url == undefined)
     {
-      let sameOrigin = false;
-      // Default to self if hostname
-      if (hostname == undefined)
-      {
-        hostname = window.location.protocol + "//" + window.location.hostname;
-        sameOrigin = true;
-      }
-      url = hostname + path;
-
-      if (sameOrigin == true)
-      {
-        request = new Request(url,
-                              {method: "GET",
-                               credentials: "same-origin",
-                               headers: session_headers
-                              });
-      }
-      else
-      {
-        let cross_origin = new Headers();
-        cross_origin.append("Authorization", http_authorization);
-        // Don't leak CSRF or session to cross-domain resources
-        request = new Request(url,
-                              {method: "GET",
-                               credentials: "omit",
-                               headers: cross_origin
-                              });
+      if (path) {
+        if (path.startsWith('/')) {
+          let sameOrigin = false;
+          // Default to self if hostname
+          if (hostname == undefined)
+          {
+            hostname = window.location.protocol + "//" + window.location.hostname;
+            sameOrigin = true;
+          }
+          url = hostname + path;
+          if (sameOrigin == true)
+          {
+            request = new Request(url,
+                                  {method: "GET",
+                                   credentials: "same-origin",
+                                   headers: session_headers
+                                  });
+          }
+          else
+          {
+            let cross_origin = new Headers();
+            cross_origin.append("Authorization", http_authorization);
+            // Don't leak CSRF or session to cross-domain resources
+            request = new Request(url,
+                                  {method: "GET",
+                                   credentials: "omit",
+                                   headers: cross_origin
+                                  });
+          }
+        } else if (path.startsWith('http')) {
+          url = path;
+          request = new Request(url,
+                                {method: "GET",
+                                 credentials: "omit",
+                                });
+        }
       }
     }
     else

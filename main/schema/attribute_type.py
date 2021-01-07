@@ -57,7 +57,7 @@ class AttributeTypeListSchema(AutoSchema):
                 "required": True,
                 "content": {
                     "application/json": {
-                        "schema": {"$ref": "#/components/schemas/AttributeAddition"},
+                        "schema": {"$ref": "#/components/schemas/AttributeTypeSpec"},
                         "example": {
                             "entity_type": "LocalizationType",
                             "addition": attribute_type_example[1],
@@ -70,7 +70,7 @@ class AttributeTypeListSchema(AutoSchema):
                 "required": True,
                 "content": {
                     "application/json": {
-                        "schema": {"$ref": "#/components/schemas/AttributeRename"},
+                        "schema": {"$ref": "#/components/schemas/AttributeTypeUpdate"},
                         "example": {
                             "entity_type": "LocalizationType",
                             "old_attribute_type_name": "My Old Attribute",
@@ -84,7 +84,7 @@ class AttributeTypeListSchema(AutoSchema):
                 "required": True,
                 "content": {
                     "application/json": {
-                        "schema": {"$ref": "#/components/schemas/AttributeDeletion"},
+                        "schema": {"$ref": "#/components/schemas/AttributeTypeDelete"},
                         "example": {
                             "entity_type": "LocalizationType",
                             "attribute_to_delete": "My Old Attribute",

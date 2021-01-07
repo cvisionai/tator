@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models.functions import Cast
 
 from .models import *
+from .s3 import TatorS3
 import logging
 import datetime
 import traceback
@@ -58,44 +59,6 @@ class UserSerializerBasic(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
-
-class ProjectSerializer(serializers.ModelSerializer):
-    thumb = serializers.SerializerMethodField()
-    usernames = serializers.SerializerMethodField()
-    permission = serializers.SerializerMethodField()
-
-    def get_thumb(self, obj):
-        url = ""
-        try: # Can fail if project has no media
-            media = Media.objects.filter(project=obj)[0]
-            url = self.context['view'].request.build_absolute_uri(media.thumbnail.url)
-        except:
-            pass
-        return url
-
-    def get_usernames(self, obj):
-        users = User.objects.filter(pk__in=Membership.objects.filter(project=obj).values_list('user')).order_by('last_name')
-        usernames = [str(user) for user in users]
-        creator = str(obj.creator)
-        if creator in usernames:
-            usernames.remove(creator)
-            usernames.insert(0, creator)
-        return usernames
-
-    def get_permission(self, obj):
-        user_id = self.context['request'].user.pk
-        if user_id == obj.creator.pk:
-            permission = "Creator"
-        else:
-            permission = str(obj.user_permission(user_id))
-        return permission
-
-    class Meta:
-        model = Project
-        fields = [
-            'id', 'name', 'summary', 'thumb', 'num_files', 'size',
-            'usernames', 'filter_autocomplete', 'permission'
-        ]
 
 class MembershipSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()

@@ -17,6 +17,14 @@ class ProjectDescription extends TatorElement {
     this._size = document.createTextNode("");
     div.appendChild(this._size);
 
+    const span1 = document.createElement("span");
+    span1.setAttribute("class", "px-2");
+    span1.textContent = "·";
+    div.appendChild(span1);
+
+    this._hours = document.createTextNode("");
+    div.appendChild(this._hours);
+
     const progDiv = document.createElement("div");
     progDiv.setAttribute("class", "px-6 d-flex flex-items-center");
     div.appendChild(progDiv);
@@ -38,59 +46,38 @@ class ProjectDescription extends TatorElement {
     this._numProcesses = null;
   }
 
-  static get observedAttributes() {
-    return ["num-files", "size", "progress", "num-processes"];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "num-files":
-        let fileLabel = " files";
-        if (newValue == 1) {
-          fileLabel = " file";
-        }
-        this._numFiles.nodeValue = newValue + fileLabel;
-        break;
-      case "size":
-        let num = newValue;
-        let label = "B";
-        if (newValue > 1e12) {
-          num = num / 1e12;
-          label = "TB";
-        } else if (num > 1e9) {
-          num = num / 1e9;
-          label = "GB";
-        } else if (num > 1e6) {
-          num = num / 1e6;
-          label = "MB";
-        } else if (num > 1e3) {
-          num = num / 1e3;
-          label = "KB";
-        }
-        this._size.nodeValue = Number(num).toFixed(1) + label;
-        break;
-      case "progress":
-        if (newValue === null) {
-          this._progress.style.visibility = "hidden";
-          this._label.style.visibility = "hidden";
-        } else {
-          this._progress.style.visibility = "show";
-          this._progress.setAttribute("value", newValue);
-          this._progress.textContent = newValue + "%";
-
-          this._label.style.visibility = "show";
-          if (this._numProcesses !== null) {
-            let label = this._numProcesses + " processesâ€¦ " + newValue + "%";
-            this._label.textContent = label;
-          } else {
-            this._label.textContent = newValue + "%";
-          }
-        }
-        break;
-      case "num-processes":
-        this._numProcesses = newValue;
-        break;
+  init(project) {
+    let fileLabel = " files";
+    if (project.num_files == 1) {
+      fileLabel = " file";
     }
+    this._numFiles.nodeValue = project.num_files + fileLabel;
+    let num = project.size;
+    let label = "B";
+    if (project.size > 1e12) {
+      num = num / 1e12;
+      label = "TB";
+    } else if (num > 1e9) {
+      num = num / 1e9;
+      label = "GB";
+    } else if (num > 1e6) {
+      num = num / 1e6;
+      label = "MB";
+    } else if (num > 1e3) {
+      num = num / 1e3;
+      label = "KB";
+    }
+    this._size.nodeValue = Number(num).toFixed(1) + label;
+    let duration = project.duration;
+    let label1 = "seconds";
+    if (duration > 3600) {
+      duration = duration / 3600;
+      label1 = "hours";
+    } else if (duration > 60) {
+      duration = duration / 60;
+      label1 = "minutes";
+    }
+    this._hours.nodeValue = Number(duration).toFixed(1) + " " + label1;
   }
 }
 

@@ -6,6 +6,8 @@ class Command(BaseCommand):
         parser.add_argument('project_id', type=int)
         parser.add_argument('section', type=str)
         parser.add_argument('chunk', type=int)
+        parser.add_argument('max_age_days', type=int)
 
     def handle(self, **options):
-        buildSearchIndices(options['project_id'], options['section'], 'index', options['chunk'])
+        buildSearchIndices(options['project_id'], options['section'], 'index', options['chunk'],
+                           options['max_age_days'])
