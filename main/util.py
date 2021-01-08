@@ -49,16 +49,11 @@ def updateProjectTotals(force=False):
         files = Media.objects.filter(project=project)
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
-            project.size = 0
-            project.duration = 0
-            for file in temp_files.iterator():
-                if file.path:
-                    if os.path.exists(file.path):
-                        project.size += os.path.getsize(file.path)
-            for file in files.iterator():
-                project.size += mediaFileSizes(file)[0]
-                project.duration += file.num_frames / file.fps if file.fps and file.num_frames else 0
-            logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
+            duration_info = files.values('num_frames', 'fps')
+            project.duration = sum([info['num_frames'] / info['fps'] for info in duration_info
+                                    if info['num_frames'] and info['fps']])
+            logger.info(f"Updating {project.name}: Num files = {project.num_files}, "
+                        f"Duration = {project.duration}")
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if not media:
