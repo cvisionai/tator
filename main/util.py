@@ -370,13 +370,14 @@ def make_resources():
         if media.file:
             paths.append(media.file.path)
         if media.media_files:
-            if 'audio' in media.media_files:
-                paths += [f['path'] for f in media.media_files['audio']]
-            if 'streaming' in media.media_files:
-                paths += [f['path'] for f in media.media_files['streaming']]
-                paths += [f['segment_info'] for f in media.media_files['streaming']]
-            if 'archival' in media.media_files:
-                paths += [f['path'] for f in media.media_files['archival']]
+            for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+                if key in media.media_files:
+                    paths += [f['path'] for f in media.media_files[key]]
+                    if key == 'streaming':
+                        try:
+                            paths += [f['segment_info'] for f in media.media_files[key]]
+                        except:
+                            logger.info(f"Media {media.id} does not have a segment file!")
         if media.original:
             paths.append(media.original)
         return paths
@@ -508,7 +509,7 @@ def migrate_image(media, path):
         resource.save()
     else:
         resource = Resource.objects.create(path=s3_key)
-        resource.media.add(media)
+    resource.media.add(media)
 
     return image_def
 
@@ -523,7 +524,7 @@ def migrate_images(media_id):
     for field in IMAGE_FIELDS.keys():
         if getattr(media, field):
             url = getattr(media, field).url
-            if media.meta.dtype == 'image':
+            if media.meta.dtype == 'image' or (field in ['thumbnail', 'thumbnail_gif']):
                 media_def = migrate_image(media, url)
                 if IMAGE_FIELDS[field] not in media.media_files:
                     media.media_files[IMAGE_FIELDS[field]] = []
@@ -635,21 +636,28 @@ def verify_migration(project):
     s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     for media in medias.iterator():
+        logger.info(f"Verifying media {media.id}")
         assert(not media.thumbnail)
         assert(not media.thumbnail_gif)
         assert(not media.file)
         assert(not media.original)
+        assert(not media.segment_info)
         if media.media_files:
             for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
                 if key in media.media_files:
                     for media_def in media.media_files[key]:
+                        logger.info(f"  Verifying path {media_def['path']}")
                         assert(Resource.objects.filter(path=media_def['path'],
                                                        media__in=[media]).exists())
                         s3.head_object(Bucket=bucket_name, Key=media_def['path'])
                         if key == 'streaming':
-                            assert(Resource.objects.filter(path=media_def['segment_info'],
-                                                           media__in=[media]).exists())
-                            s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
+                            logger.info(f"  Verifying path {media_def['segment_info']}")
+                            try: 
+                                assert(Resource.objects.filter(path=media_def['segment_info'],
+                                                               media__in=[media]).exists())
+                                s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
+                            except:
+                                logger.info(f"Media {media.id} does not have a segment file!")
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
 
