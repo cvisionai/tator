@@ -11,7 +11,7 @@ class ProjectMainEdit extends SettingsSection {
 
     // Name the Main Div.
     this.settingsSectionDiv.id = "projectMain";
-    this.h1.innerHTML = `Set project details.`;
+    this.h1.innerHTML = `Project details.`;
 
     this._shadow.appendChild(this.settingsSectionDiv);
   }
@@ -22,8 +22,7 @@ class ProjectMainEdit extends SettingsSection {
       });
 
     // Image upload
-    this._thumbEdit = this._getThumbnailEdit();
-    this.boxOnPage.appendChild( this._thumbEdit );
+    this.boxOnPage.appendChild( this._getThumbnailEdit() );
 
     // Input for name
     this._editName = this._setNameInput( this._getNameFromData() );
@@ -86,7 +85,7 @@ class ProjectMainEdit extends SettingsSection {
     return this.inputHelper.editImageUpload({
       "value" : data.thumb, // img path
       "labelText" : "Thumbnail",
-      "callBack" : this._editThumb // required
+      "callBack" : () => this._editThumb() // required
     });
   }
 
@@ -99,11 +98,11 @@ class ProjectMainEdit extends SettingsSection {
       "titleText" : "Thumnail Uploader",
       "mainText" : uploadInput,
       "buttonText" : "Upload",
-      "callback" :  this._fetchUploadThumbnail
+      "callback" :  this._fetchUploadThumbnail()
     });
   }
 
-  _fetchUploadThumbnail({ event = null}){
+  _fetchUploadThumbnail({ event = null} = {}){
     // check that there is a file there and hit upload endpoint
     console.log("Placeholder to upload new thumbnail to project....");
     console.log(event);

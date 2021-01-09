@@ -281,15 +281,8 @@ _getText({type = "", count = 0, text = ""} = {}){
         } else {
           this._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
         }
-
       } );
-
-
     }
-
-
-
-    return console.log("Unable to locate the related item for this nav click.");
   };
 
   _modalError(text, message){

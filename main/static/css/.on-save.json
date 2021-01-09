@@ -1,0 +1,8 @@
+[
+  {
+    "files": "**/**.scss",
+    "command": "osascript \"/Users/ebutler/Documents/osaScripts/css/refreshScript.scpt\"",
+    "showOutput": true,
+    "showError":true
+  }
+]

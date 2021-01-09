@@ -17,7 +17,6 @@ class ProjectSettings extends TatorPage {
     const configContainer = document.createElement("div");
     configContainer.setAttribute("class", "col-8");
     configContainer.style.float = "right";
-
     main.appendChild(configContainer);
 
     // Project section.

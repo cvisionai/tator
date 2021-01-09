@@ -10,7 +10,7 @@ class SettingsInput {
         value = '',
         customCol = 'col-8',
         labelText = '',
-        type = 'text',
+        type = 'text', // can also be HIDDEN
         name = ''
       } = {}
     ){
@@ -22,13 +22,63 @@ class SettingsInput {
       const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
       inputTextElement.setAttribute("class", classes);
 
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": inputTextElement,
-        "name": name
-      });
+      if(labelText == ""){
+        return inputTextElement;
+      } else {
+        const inputWithLabel = this.labelWrap({
+          "labelText": labelText,
+          "inputNode": inputTextElement,
+          "name": name
+        });
 
-      return inputWithLabel;
+        return inputWithLabel;
+      }
+  }
+
+  arrayInputText({
+    value = '',
+    customCol = 'col-8',
+    labelText = '',
+    type = 'text', // can also be HIDDEN
+    name = ''
+  } = {}){
+    const arrayInputDiv = document.createElement("div");
+    // unique shared name for this set
+    const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+
+    // VALUE will be an array -- Loop the array and create TEXT INPUTS
+    if(value.length > 0 ){
+      for(let item of value){
+        // output smaller inputs into 3 cols
+        let arrayInput = this.inputText({
+            "value" : item,
+            "name" : setName,
+            "customCol" : 'col-2',
+        });
+        arrayInputDiv.appendChild(arrayInput);
+      }
+    }
+
+    // Add new
+    let addNew = this.inputText({
+        "value" : "",
+        "labelText" : "+ New",
+        "name" : setName
+    });
+    arrayInputDiv.appendChild(addNew);
+
+    let addBtn = `<button>Add</button>`
+    addNew.appendChild(addBtn);
+
+    addBtn.addEventListener("click", (event) => {
+      // Add another "+Add with input to the page"
+      let addNew = this.inputText({
+          "value" : "",
+          "labelText" : "+ New",
+          "name" : setName
+      });
+      e.target.before(addNew);
+    });
   }
 
   inputTextArea({
@@ -183,25 +233,43 @@ class SettingsInput {
       // provide an image object
       // provide label text
       // callback for button overlay
-      let image = document.createElement("img");
-      image.src = value;
-      image.title = labelText;
-      image.setAttribute("class", "projects__image");
 
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": image,
-        "name": setName
-      });
+      if(value != null){
+        let image = document.createElement("img");
+        image.src = value;
+        image.title = labelText;
+        image.setAttribute("class", "projects__image");
 
-      let editButton = document.createElement("button");
-      editButton.setAttribute("class", "btn-edit-overlay");
-      editButton.innerHTML = "Edit";
+        const inputWithLabel = this.labelWrap({
+          "labelText": labelText,
+          "inputNode": image,
+          "name": setName
+        });
 
-      inputWithLabel.appendChild(editButton);
-      inputWithLabel.style.position = "relative";
+        let editButton = document.createElement("button");
+        editButton.setAttribute("class", "btn-edit-overlay");
+        editButton.innerHTML = "Edit";
 
-      return inputWithLabel;
+        inputWithLabel.appendChild(editButton);
+        inputWithLabel.style.position = "relative";
+
+        return inputWithLabel;
+      } else {
+        const inputWithLabel = this.labelWrap({
+          "labelText": labelText,
+          "inputNode": "",
+          "name": setName
+        });
+
+        let editButton = document.createElement("button");
+        editButton.setAttribute("class", "btn-edit-overlay add-new-thumbnail");
+        editButton.innerHTML = "Add";
+
+        inputWithLabel.appendChild(editButton);
+        inputWithLabel.style.position = "relative";
+
+        return inputWithLabel;
+      }
     }
 
 

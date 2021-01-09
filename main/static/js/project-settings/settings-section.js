@@ -276,7 +276,7 @@ class SettingsSection extends TatorElement {
     button.setAttribute("class", "btn btn-clear f2 text-semibold");
     button.innerHTML = buttonText;
 
-    primaryButton.addEventListener("click", (event) => {
+    button.addEventListener("click", (event) => {
       if(callback == null){
         return this.modal._closeCallback;
       }else{

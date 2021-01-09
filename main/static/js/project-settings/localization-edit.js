@@ -20,7 +20,8 @@ class LocalizationEdit extends SettingsSection {
       const h1 = document.createElement("h1");
       h1.setAttribute("class", "h2 pb-3");
       //h1.innerHTML = `Set media and attribute details.`;
-      h1.innerHTML = this.data[i].name;
+      //h1.innerHTML = this.data[i].name;
+      h1.innerHTML = `Localization settings.`; 
       itemDiv.appendChild(h1);
 
       itemDiv.appendChild( this._getSectionForm( this.data[i]) );
