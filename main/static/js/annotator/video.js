@@ -1033,7 +1033,8 @@ class VideoCanvas extends AnnotationCanvas {
                                 "play_idx": this._play_idx,
                                 "hq_idx": this._hq_idx,
                                 "scrub_idx": this._scrub_idx,
-                                "offsite_config": offsite_config});
+                                "offsite_config": offsite_config,
+                                "origin": window.location.origin});
   }
 
   setQuality(quality)
