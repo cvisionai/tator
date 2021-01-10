@@ -53,8 +53,12 @@ def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'i
                 for idx, media_def in enumerate(media['media_files'][field]):
                     media_def['path'] = s3.get_download_url(media_def['path'], expiration)
                     if field == 'streaming':
-                        media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
-                                                                        expiration)
+                        if 'segment_info' in media_def:
+                            media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
+                                                                            expiration)
+                        else:
+                            logger.warning(f"No segment file in media {media['id']} for file "
+                                           f"{media_def['path']}!")
                     media['media_files'][field][idx] = media_def
     return media
 
