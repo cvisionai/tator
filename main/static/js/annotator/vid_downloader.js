@@ -2,12 +2,12 @@ importScripts("/static/js/util/fetch-retry.js");
 
 class VideoDownloader
 {
-  constructor(media_files, blockSize, offsite_config, origin)
+  constructor(media_files, blockSize, offsite_config)
   {
     this._media_files = media_files;
     this._blockSize = blockSize;
     this._offsite_config = offsite_config;
-    this._headers = {Origin: origin};
+    this._headers = {};
     if (this._offsite_config && this._offsite_config.method)
     {
       const auth_str = `${this._offsite_config.method} ${this._offsite_config.value}`;
@@ -272,8 +272,7 @@ onmessage = function(e)
     {
       ref = new VideoDownloader(msg.media_files,
                                 5*1024*1024,
-                                msg.offsite_config,
-                                origin);
+                                msg.offsite_config);
     }
   }
   else if (type == 'download')
