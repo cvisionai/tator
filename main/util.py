@@ -630,7 +630,7 @@ def s3_migrate(project):
     for resource in resources.iterator():
         migrate_media_file_resource(resource.id)
 
-def verify_migration(project):
+def s3_verify(project):
     medias = Media.objects.filter(project=project)
     num_verified = 0
     s3 = TatorS3().s3

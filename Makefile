@@ -428,6 +428,10 @@ build-search-indices:
 s3-migrate:
 	argo submit workflows/s3-migrate.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
 
+.PHONY: s3-verify
+s3-verify:
+	argo submit workflows/s3-verify.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+
 .PHONY: clean_js
 clean_js:
 	rm -rf .min_js
