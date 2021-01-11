@@ -58,6 +58,7 @@ class CustomGenerator(SchemaGenerator):
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
+                'IdList': id_list,
                 'ImageDefinition': image_definition,
                 'JobNode': job_node,
                 'Job': job,

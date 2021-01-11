@@ -105,7 +105,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         Both are accomplished using the same query parameters used for a GET request.
     """
     schema = MediaListSchema()
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = MediaType # Needed by attribute filter mixin
 
     def get_permissions(self):
@@ -274,7 +274,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
                 media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                        'size': os.stat(temp_thumb.name).st_size,
                                                        'resolution': [thumb_height, thumb_width],
-                                                       'mime': 'image/{thumb_format}'}]
+                                                       'mime': f'image/{thumb_format}'}]
                 os.remove(temp_thumb.name)
                 Resource.add_resource(thumb_key, media_obj)
 
@@ -402,7 +402,19 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully patched {count} medias!'}
-        
+
+    def _put(self, params):
+        """ Retrieve list of media by ID.
+        """
+        response_data = []
+        media_ids = params['ids']
+        if len(media_ids) > 0:
+            response_data = database_query_ids('main_media', media_ids, 'name')
+        presigned = params.get('presigned')
+        if presigned is not None:
+            s3 = TatorS3()
+            response_data = [_presign(s3, presigned, item) for item in response_data]
+        return response_data
 
     def get_queryset(self):
         params = parse(self.request)

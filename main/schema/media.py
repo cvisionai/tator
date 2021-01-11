@@ -24,6 +24,8 @@ class MediaListSchema(AutoSchema):
             operation['operationId'] = 'UpdateMediaList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteMediaList'
+        elif method == 'PUT':
+            operation['operationId'] = 'GetMediaListById'
         operation['tags'] = ['Tator']
         return operation
 
@@ -56,6 +58,8 @@ class MediaListSchema(AutoSchema):
             This method performs a bulk delete on all media matching a query. It is 
             recommended to use a GET request first to check what is being deleted.
             """)
+        elif method == 'PUT':
+            short_desc = "Get media list by ID."
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
@@ -71,7 +75,7 @@ class MediaListSchema(AutoSchema):
         params = []
         if method in ['GET', 'PATCH', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema
-        if method == 'GET':
+        if method in ['GET', 'PUT']:
             params += [{
                 'name': 'presigned',
                 'in': 'query',
@@ -112,13 +116,21 @@ class MediaListSchema(AutoSchema):
                     },
                 }
             }}}
+        elif method == 'PUT':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/IdList',
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
             responses['201'] = message_with_id_schema('media')
-        elif method == 'GET':
+        elif method in ['GET', 'PUT']:
             responses['200'] = {
                 'description': 'Successful retrieval of media list.',
                 'content': {'application/json': {'schema': {

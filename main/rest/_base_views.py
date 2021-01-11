@@ -77,10 +77,17 @@ class DeleteMixin:
         resp = Response(response_data, status=status.HTTP_200_OK)
         return resp
 
-class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin):
+class PutMixin:
+    def put(self, request, format=None, **kwargs):
+        params = parse(request)
+        response_data = self._put(params)
+        resp = Response(response_data, status=status.HTTP_200_OK)
+        return resp
+
+class BaseListView(APIView, GetMixin, PostMixin, PatchMixin, DeleteMixin, PutMixin):
     """ Base class for list views.
     """
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
 
     def handle_exception(self, exc):
         return process_exception(exc)
