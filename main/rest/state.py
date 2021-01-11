@@ -53,7 +53,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
     """
     schema=StateListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = StateType # Needed by attribute filter mixin
 
     def _get(self, params):
@@ -282,6 +282,15 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             qs.update(modified_by=self.request.user)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully updated {len(annotation_ids)} states!'}
+
+    def _put(self, params):
+        """ Retrieve list of states by ID.
+        """
+        response_data = []
+        ids = params['ids']
+        if len(ids) > 0:
+            response_data = database_query_ids('main_state', ids, 'id')
+        return response_data
 
     def get_queryset(self):
         params = parse(self.request)
