@@ -451,7 +451,7 @@ def migrate_media_file_resource(resource_id):
                             target = os.readlink(path)
                         else:
                             target = path
-                        if target == resource.path:
+                        if (target == resource.path) and target.startswith('/'):
                             if s3_key is None:
                                 fname = os.path.basename(path)
                                 project = media.project
