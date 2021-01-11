@@ -407,7 +407,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
         """ Retrieve list of media by ID.
         """
         response_data = []
-        media_ids = params['ids']
+        media_ids = params['body']
         if len(media_ids) > 0:
             response_data = database_query_ids('main_media', media_ids, 'name')
         presigned = params.get('presigned')

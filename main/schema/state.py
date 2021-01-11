@@ -136,7 +136,12 @@ class StateListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/IdList',
+                    'description': 'List of unique integers identifying State objects.',
+                    'type': 'array',
+                    'items': {
+                        'type': 'integer',
+                        'minimum': 1,
+                    },
                 },
             }}}
         return body

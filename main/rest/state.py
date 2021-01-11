@@ -287,7 +287,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         """ Retrieve list of states by ID.
         """
         response_data = []
-        ids = params['ids']
+        ids = params['body']
         if len(ids) > 0:
             response_data = database_query_ids('main_state', ids, 'id')
         return response_data

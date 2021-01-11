@@ -204,7 +204,7 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
         """ Retrieve list of leaves by ID.
         """
         response_data = []
-        ids = params['ids']
+        ids = params['body']
         if len(ids) > 0:
             response_data = database_query_ids('main_leaf', ids, 'id')
         return response_data
