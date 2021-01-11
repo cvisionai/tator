@@ -477,12 +477,6 @@ def migrate_media_file_resource(resource_id):
     resource.path = s3_key
     resource.save()
 
-def migrate_media_file_resources(project):
-    media = Media.objects.filter(project=project, media_files__isnull=False)
-    resources = Resource.objects.filter(path__startswith='/', media__in=media)
-    for resource in resources.iterator():
-        migrate_media_file_resource(resource.id)
-
 def migrate_image(media, path):
 
     # Figure out s3 key.
@@ -597,7 +591,7 @@ def migrate_video(media, path, segment_path=None):
     return video_def
 
 @transaction.atomic
-def migrate_original(media_id):
+def migrate_videos(media_id):
     VIDEO_FIELDS = {'file': 'streaming',
                     'original': 'archival'}
     media = Media.objects.select_for_update().get(pk=media_id)
@@ -623,12 +617,18 @@ def migrate_original(media_id):
                 setattr(media, field, None)
     media.save()
 
-def migrate_media(project):
+def s3_migrate(project):
+    # Migrate legacy fields to new format.
     medias = Media.objects.filter(project=project)
     for media in medias.iterator():
         logger.info(f"Migrating media {media.id}...")
         migrate_images(media.id)
-        migrate_original(media.id)
+        migrate_videos(media.id)
+    # Migrate existing resources to s3.
+    media = Media.objects.filter(project=project, media_files__isnull=False)
+    resources = Resource.objects.filter(path__startswith='/', media__in=media)
+    for resource in resources.iterator():
+        migrate_media_file_resource(resource.id)
 
 def verify_migration(project):
     medias = Media.objects.filter(project=project)
