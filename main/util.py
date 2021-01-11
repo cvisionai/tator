@@ -651,8 +651,8 @@ def verify_migration(project):
                                                        media__in=[media]).exists())
                         s3.head_object(Bucket=bucket_name, Key=media_def['path'])
                         if key == 'streaming':
-                            logger.info(f"  Verifying path {media_def['segment_info']}")
                             try: 
+                                logger.info(f"  Verifying path {media_def['segment_info']}")
                                 assert(Resource.objects.filter(path=media_def['segment_info'],
                                                                media__in=[media]).exists())
                                 s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
