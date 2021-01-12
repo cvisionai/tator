@@ -91,7 +91,7 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
     """
     schema = LeafListSchema()
     permission_classes = [ProjectFullControlPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = LeafType # Needed by attribute filter mixin
 
     def _get(self, params):
@@ -199,6 +199,15 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully updated {len(leaf_ids)} leaves!'}
+
+    def _put(self, params):
+        """ Retrieve list of leaves by ID.
+        """
+        response_data = []
+        ids = params['body']
+        if len(ids) > 0:
+            response_data = database_query_ids('main_leaf', ids, 'id')
+        return response_data
 
     def get_queryset(self):
         params = parse(self.request)

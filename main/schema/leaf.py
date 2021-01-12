@@ -100,6 +100,8 @@ class LeafListSchema(AutoSchema):
             operation['operationId'] = 'UpdateLeafList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLeafList'
+        elif method == 'PUT':
+            operation['operationId'] = 'GetLeafListById'
         operation['tags'] = ['Tator']
         return operation
 
@@ -125,6 +127,8 @@ class LeafListSchema(AutoSchema):
             This method performs a bulk delete on all leaves matching a query. It is 
             recommended to use a GET request first to check what is being deleted.
             """)
+        elif method == 'PUT':
+            short_desc = 'Get leaf list by ID.'
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
@@ -164,11 +168,24 @@ class LeafListSchema(AutoSchema):
                     '$ref': '#/components/schemas/AttributeBulkUpdate',
                 },
             }}}
+        if method == 'PUT':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {
+                    'description': 'List of unique integers identifying Leaf objects.',
+                    'type': 'array',
+                    'items': {
+                        'type': 'integer',
+                        'minimum': 1,
+                    },
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
-        if method == 'GET':
+        if method in ['GET', 'PUT']:
             responses['200'] = {
                 'description': 'Successful retrieval of leaf list.',
                 'content': {'application/json': {'schema': {

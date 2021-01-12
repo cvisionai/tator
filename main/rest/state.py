@@ -35,6 +35,25 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
+def _fill_m2m(response_data):
+    # Get many to many fields.
+    state_ids = [state['id'] for state in response_data]
+    localizations = {obj['state_id']:obj['localizations'] for obj in
+        State.localizations.through.objects\
+        .filter(state__in=state_ids)\
+        .values('state_id').order_by('state_id')\
+        .annotate(localizations=ArrayAgg('localization_id')).iterator()}
+    media = {obj['state_id']:obj['media'] for obj in
+        State.media.through.objects\
+        .filter(state__in=state_ids)\
+        .values('state_id').order_by('state_id')\
+        .annotate(media=ArrayAgg('media_id')).iterator()}
+    # Copy many to many fields into response data.
+    for state in response_data:
+        state['localizations'] = localizations.get(state['id'], [])
+        state['media'] = media.get(state['id'], [])
+    return response_data
+
 class StateListAPI(BaseListView, AttributeFilterMixin):
     """ Interact with list of states.
 
@@ -53,7 +72,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
     """
     schema=StateListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = StateType # Needed by attribute filter mixin
 
     def _get(self, params):
@@ -91,22 +110,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 response_data = database_qs(qs.order_by('id'))
         t1 = datetime.datetime.now()
         if self.operation != 'count':
-            # Get many to many fields.
-            state_ids = [state['id'] for state in response_data]
-            localizations = {obj['state_id']:obj['localizations'] for obj in
-                State.localizations.through.objects\
-                .filter(state__in=state_ids)\
-                .values('state_id').order_by('state_id')\
-                .annotate(localizations=ArrayAgg('localization_id')).iterator()}
-            media = {obj['state_id']:obj['media'] for obj in
-                State.media.through.objects\
-                .filter(state__in=state_ids)\
-                .values('state_id').order_by('state_id')\
-                .annotate(media=ArrayAgg('media_id')).iterator()}
-            # Copy many to many fields into response data.
-            for state in response_data:
-                state['localizations'] = localizations.get(state['id'], [])
-                state['media'] = media.get(state['id'], [])
+            response_data = _fill_m2m(response_data)
         if (self.request.accepted_renderer.format == 'csv'
             and self.operation != 'count'
             and 'type' in params):
@@ -282,6 +286,16 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
             qs.update(modified_by=self.request.user)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully updated {len(annotation_ids)} states!'}
+
+    def _put(self, params):
+        """ Retrieve list of states by ID.
+        """
+        response_data = []
+        ids = params['body']
+        if len(ids) > 0:
+            response_data = database_query_ids('main_state', ids, 'id')
+        response_data = _fill_m2m(response_data)
+        return response_data
 
     def get_queryset(self):
         params = parse(self.request)
