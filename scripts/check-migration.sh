@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Usage: ./check-migration.sh <path_to_repo>
+# If <path_to_repo> is not supplied PWD is assumed.
+#
+# Set TATOR_ALWAYS_UPGRADE to 1 to bypass the check.
+#
+# Returns 0 if upgrade is deemed non-migratory or authorized, else 255
+
 root=${1:-$(pwd)}
 
 if [ ${TATOR_ALWAYS_MIGRATE:-0} -eq 1 ]; then
