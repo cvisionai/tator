@@ -110,6 +110,10 @@ status:
 
 .ONESHELL:
 
+.PHONY: check-migration
+check-migration:
+	scripts/check-migration.sh $(pwd)
+
 cluster: main/version.py
 	$(MAKE) images cluster-deps cluster-install
 
