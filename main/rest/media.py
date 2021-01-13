@@ -129,9 +129,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             self.kwargs['project'],
             params,
         )
-        if self.operation == 'count':
-            response_data = {'count': len(media_ids)}
-        elif len(media_ids) > 0:
             response_data = database_query_ids('main_media', media_ids, 'name')
         presigned = params.get('presigned')
         if presigned is not None:

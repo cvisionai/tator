@@ -104,16 +104,6 @@ attribute_filter_parameter_schema = [
         'schema': {'type': 'string'},
     },
     {
-        'name': 'operation',
-        'in': 'query',
-        'required': False,
-        'description': 'Set to "count" to return a count of objects instead of the objects.',
-        'schema': {
-            'type': 'string',
-            'enum': ['count'],
-        },
-    },
-    {
         'name': 'start',
         'in': 'query',
         'required': False,
