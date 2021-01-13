@@ -102,8 +102,8 @@ class Upload {
     this.getUploadInfo()
     .then(info => this.numParts > 1 ? this.uploadMulti(info) : this.uploadSingle(info))
     .then(key => this.getDownloadInfo(key))
-    .then(url => this.createMedia(url));
-    //.catch(error => this.handleError(error));
+    .then(url => this.createMedia(url))
+    .catch(error => this.handleError(error));
   }
 
   // Returns promise resolving to upload.
@@ -159,6 +159,7 @@ class Upload {
         parts: parts,
       }),
     }))
+    .then(response => response.json())
     .then(() => {return info.key});
     return promise;
   }
@@ -223,6 +224,7 @@ class Upload {
       }),
       credentials: "omit",
     })
+    .then(response => response.json())
     .then(() => {
       removeFromActive(this.upload_uid);
       self.postMessage({command: "uploadDone",

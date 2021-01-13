@@ -95,6 +95,10 @@
   width: 100%;
 }
 
+.modal__errors {
+  margin-top: $spacing-2;
+}
+
 .loading {
   position: fixed;
   top: 150px;

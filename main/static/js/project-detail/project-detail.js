@@ -285,7 +285,6 @@ class ProjectDetail extends TatorPage {
         uploadDialog.addError(`Failed to upload ${msg.filename}`);
       } else if (msg.command == "allUploadsDone") {
         this._leaveConfirmOk = false;
-        uploadDialog.finish();
       }
     });
 
