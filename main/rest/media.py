@@ -124,12 +124,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             meaning they can be described by user defined attributes.
         """
         use_es = self.validate_attribute_filter(params)
-        response_data = []
-        media_ids, media_count, _ = get_media_queryset(
-            self.kwargs['project'],
-            params,
-        )
-            response_data = database_query_ids('main_media', media_ids, 'name')
+        response_data = get_media_queryset(self.kwargs['project'], params).values()
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = TatorS3()
@@ -333,21 +328,17 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             recommended to use a GET request first to check what is being deleted.
         """
         self.validate_attribute_filter(params)
-        media_ids, media_count, query = get_media_queryset(
-            params['project'],
-            params,
-        )
-        count = len(media_ids)
-        if count > 0:
+        qs = get_media_queryset(params['project'], params)
+        if qs.count() > 0:
             # Delete any state many-to-many relations to this media.
-            state_media_qs = State.media.through.objects.filter(media__in=media_ids)
+            state_media_qs = State.media.through.objects.filter(media__in=qs)
             state_media_qs._raw_delete(state_media_qs.db)
 
             # Delete any states that now have null media many-to-many.
             state_qs = State.objects.filter(project=params['project'], media__isnull=True)
 
             # Delete any localizations associated to this media
-            loc_qs = Localization.objects.filter(media__in=media_ids)
+            loc_qs = Localization.objects.filter(media__in=qs)
 
             # Delete any state many to many relations to these localizations.
             state_loc_qs = State.localizations.through.objects.filter(localization__in=loc_qs)
@@ -360,7 +351,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             loc_qs._raw_delete(loc_qs.db)
 
             # Mark media for deletion by setting project to null.
-            qs = Media.objects.filter(pk__in=media_ids)
             qs.update(project=None,
                       recycled_from=Project.objects.get(pk=params['project']),
                       modified_datetime=datetime.datetime.now(datetime.timezone.utc))
@@ -388,13 +378,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             Only attributes are eligible for bulk patch operations.
         """
         self.validate_attribute_filter(params)
-        media_ids, media_count, query = get_media_queryset(
-            params['project'],
-            params,
-        )
-        count = len(media_ids)
-        if count > 0:
-            qs = Media.objects.filter(pk__in=media_ids)
+        query = get_media_es_query(params['project'], params)
+        qs = get_media_queryset(params['project'], params)
+        if qs.count() > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
@@ -415,13 +401,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
 
     def get_queryset(self):
         params = parse(self.request)
-        media_ids, media_count, _ = get_media_queryset(
-            params['project'],
-            params,
-        )
-        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(media_ids)])
-        queryset = Media.objects.filter(pk__in=media_ids).order_by(preserved)
-        return queryset
+        return Media.objects.filter(project=params['project'])
 
 class MediaDetailAPI(BaseDetailView):
     """ Interact with individual media.

@@ -48,13 +48,10 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
         # Retrieve media that will be cloned.
         use_es = self.validate_attribute_filter(params)
         response_data = []
-        media_ids, media_count, _ = get_media_queryset(
-            self.kwargs['project'],
-            params,
-        )
+        original_medias = get_media_queryset(self.kwargs['project'], params)
 
         # If there are too many Media to create at once, raise an exception.
-        if len(media_ids) > self.MAX_NUM_MEDIA:
+        if original_medias.count() > self.MAX_NUM_MEDIA:
             raise Exception('Maximum number of media that can be cloned in one request is '
                            f'{self.MAX_NUM_MEDIA}. Try paginating request with start, stop, '
                             'or after parameters.')
@@ -79,7 +76,6 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
             else:
                 section = sections[0]
 
-        original_medias = Media.objects.filter(pk__in=media_ids)
         new_objs = []
         for media in original_medias.iterator():
             new_obj = media
