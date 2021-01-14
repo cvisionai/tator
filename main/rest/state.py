@@ -77,7 +77,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'operation']
+        postgres_params = ['project', 'media_id', 'type', 'version']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the state list.
@@ -89,9 +89,7 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 params,
                 'state',
             )
-            if self.operation == 'count':
-                response_data = {'count': len(annotation_ids)}
-            elif len(annotation_ids) > 0:
+            if len(annotation_ids) > 0:
                 response_data = database_query_ids('main_state', annotation_ids, 'id')
 
         else:
@@ -104,15 +102,10 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(version__in=params['version'])
             # TODO: Remove modified parameter
             qs = qs.exclude(modified=False)
-            if self.operation == 'count':
-                response_data = {'count': qs.count()}
-            else:
-                response_data = database_qs(qs.order_by('id'))
+            response_data = database_qs(qs.order_by('id'))
         t1 = datetime.datetime.now()
-        if self.operation != 'count':
-            response_data = _fill_m2m(response_data)
+        response_data = _fill_m2m(response_data)
         if (self.request.accepted_renderer.format == 'csv'
-            and self.operation != 'count'
             and 'type' in params):
             type_object=StateType.objects.get(pk=params['type'])
             if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:

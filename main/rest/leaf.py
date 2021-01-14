@@ -96,25 +96,20 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
 
     def _get(self, params):
         self.validate_attribute_filter(params)
-        postgres_params = ['project', 'type', 'operation']
+        postgres_params = ['project', 'type']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the leaf list.
         if use_es:
             response_data = []
             leaf_ids, leaf_count, _ = get_leaf_queryset(params)
-            if self.operation == 'count':
-                response_data = {'count': len(leaf_ids)}
-            elif len(leaf_ids) > 0:
+            if len(leaf_ids) > 0:
                 response_data = database_query_ids('main_leaf', leaf_ids, 'id')
         else:
             qs = Leaf.objects.filter(project=params['project'])
             if 'type' in params:
                 qs = qs.filter(meta=params['type'])
-            if self.operation == 'count':
-                response_data = {'count': qs.count()}
-            else:
-                response_data = database_qs(qs.order_by('id'))
+            response_data = database_qs(qs.order_by('id'))
         return response_data
 
     def _post(self, params):

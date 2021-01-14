@@ -20,7 +20,6 @@ from ..schema import parse
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -30,7 +29,7 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class LocalizationListAPI(BaseListView, AttributeFilterMixin):
+class LocalizationListAPI(BaseListView):
     """ Interact with list of localizations.
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -46,8 +45,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
     entity_type = LocalizationType # Needed by attribute filter mixin
 
     def _get(self, params):
-        self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'operation', 'format', 'excludeParents','frame']
+        postgres_params = ['project', 'media_id', 'type', 'version', 'format', 'excludeParents','frame']
         use_es = any([key not in postgres_params for key in params])
 
         # Get the localization list.
@@ -58,9 +56,7 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 params,
                 'localization',
             )
-            if self.operation == 'count':
-                response_data = {'count': len(annotation_ids)}
-            elif len(annotation_ids) > 0:
+            if len(annotation_ids) > 0:
                 if params['excludeParents']:
                     qs = Localization.objects.filter(pk__in=annotation_ids)
                     parent_set = Localization.objects.filter(pk__in=Subquery(
@@ -83,18 +79,15 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
                 qs = qs.filter(frame=params['frame'])
             # TODO: Remove modified parameter
             qs = qs.exclude(modified=False)
-            if self.operation == 'count':
-                response_data = {'count': qs.count()}
+            if params['excludeParents']:
+                parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
+                result_set = qs.difference(parent_set).order_by('id')
             else:
-                if params['excludeParents']:
-                    parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
-                    result_set = qs.difference(parent_set).order_by('id')
-                else:
-                    result_set = qs.order_by('id')
-                response_data = database_qs(result_set)
+                result_set = qs.order_by('id')
+            response_data = database_qs(result_set)
 
         # Adjust fields for csv output.
-        if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
+        if self.request.accepted_renderer.format == 'csv':
             # CSV creation requires a bit more
             user_ids = set([d['user'] for d in response_data])
             users = list(User.objects.filter(id__in=user_ids).values('id','email'))
