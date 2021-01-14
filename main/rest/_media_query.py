@@ -1,15 +1,15 @@
 """ TODO: add documentation for this """
 from collections import defaultdict
 import logging
-
 from urllib import parse as urllib_parse
+
+from dateutil.parser import parse as dateutil_parse
 
 from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
 
 from ._attribute_query import get_attribute_query
-from ._attributes import AttributeFilterMixin
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,54 @@ def get_media_es_query(project, params):
                                 annotation_bools=annotation_bools)
     return query
 
-def _get_media_psql_queryset(project, section_uuid, params):
+ALLOWED_TYPES = {
+    'attribute': ('boolean', 'long', 'double', 'date', 'keyword', 'text'),
+    'attribute_lt': ('long', 'double', 'date'),
+    'attribute_lte': ('long', 'double', 'date'),
+    'attribute_gt': ('long', 'double', 'date'),
+    'attribute_gte': ('long', 'double', 'date'),
+    'attribute_contains': ('keyword', 'text'),
+}
+
+OPERATOR_SUFFIXES = {
+    'attribute': '',
+    'attribute_lt': '__lt',
+    'attribute_lte': '__lte',
+    'attribute_gt': '__gt',
+    'attribute_gte': '__gte',
+    'attribute_contains': '__icontains',
+}
+
+def _convert_boolean(value):
+    if value.lower() == 'false':
+        value = False
+    elif value.lower() == 'true':
+        value = True
+    else:
+        value = bool(value)
+    return value
+
+def _convert_attribute_filter_value(pair, mappings, operation):
+    kv = pair.split(KV_SEPARATOR)
+    if len(kv) != 2:
+        raise ValueError(f"Invalid filter operation '{pair}', must be of form key::value!")
+    key, value = kv
+    if key not in mappings:
+        raise ValueError(f"Attribute '{key}' could not be found in project!")
+    dtype = mappings[key]['path'].split('_', 1)[1]
+    if dtype not in ALLOWED_TYPES[operation]:
+        raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
+    if dtype == 'boolean':
+        value = _convert_boolean(value)
+    if dtype == 'double':
+        value = float(value)
+    elif dtype == 'long':
+        value = int(value)
+    elif dtype == 'date':
+        value = dateutil_parse(value)
+    return key, value, dtype
+
+def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """ Constructs a psql queryset.
     """
     # Get query parameters.
@@ -122,12 +169,6 @@ def _get_media_psql_queryset(project, section_uuid, params):
     md5 = params.get('md5')
     gid = params.get('gid')
     uid = params.get('uid')
-    attribute_eq = params.get('attribute')
-    attribute_lt = params.get('attribute_lt')
-    attribute_lte = params.get('attribute_lte')
-    attribute_gt = params.get('attribute_gt')
-    attribute_gte = params.get('attribute_gte')
-    attribute_contains = params.get('attribute_contains')
     attribute_null = params.get('attribute_null')
     start = params.get('start')
     stop = params.get('stop')
@@ -157,31 +198,12 @@ def _get_media_psql_queryset(project, section_uuid, params):
     if uid is not None:
         qs = qs.filter(uid=uid)
 
-    if attribute_eq is not None:
-        key, value = attribute_eq.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}": value})
-
-    if attribute_lt is not None:
-        key, value = attribute_lt.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}__lt": float(value)})
-
-    if attribute_lte is not None:
-        key, value = attribute_lte.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}__lte": float(value)})
-
-    if attribute_gt is not None:
-        key, value = attribute_gt.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}__gt": float(value)})
-
-    if attribute_gte is not None:
-        key, value = attribute_gte.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}__gte": float(value)})
-
-    if attribute_contains is not None:
-        key, value = attribute_contains.split(KV_SEPARATOR)
-        qs = qs.filter(**{f"attributes__{key}__icontains": value})
+    for key, value, op in filter_ops:
+        qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
 
     if attribute_null is not None:
+        key, value = attribute_null.split(KV_SEPARATOR)
+        value = _convert_boolean(value)
         qs = qs.filter(**{f"attributes__{key}__isnull": value})
 
     qs = qs.order_by('name')
@@ -194,7 +216,7 @@ def _get_media_psql_queryset(project, section_uuid, params):
 
     return qs
 
-def _use_es(params):
+def _use_es(project, params):
     ES_ONLY_PARAMS = ['search', 'attribute_distance', 'after']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
@@ -211,11 +233,29 @@ def _use_es(params):
                and (section.annotation_bools is None)):
             use_es = True
         section_uuid = section.tator_user_sections
-    return use_es, section_uuid
+
+    # Look up attribute dtypes if necessary.
+    filter_ops = []
+    if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
+        search = TatorSearch()
+        index_name = search.index_name(project)
+        mappings = TatorSearch().es.indices.get_mapping(index=index_name)
+        mappings = mappings[index_name]['mappings']['properties']
+
+        for op in ALLOWED_TYPES.keys():
+            if op in params:
+                key, value, dtype = _convert_attribute_filter_value(params[op], mappings, op)
+                # Don't deal with type conversions required for date and geo_point filtering
+                # in PSQL
+                if dtype in ['date', 'geo_point']:
+                    use_es = True
+                filter_ops.append((key, value, op))
+
+    return use_es, section_uuid, filter_ops
         
 def get_media_queryset(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid = _use_es(params)
+    use_es, section_uuid, filter_ops = _use_es(project, params)
 
     if use_es:
         # If using ES, do the search and construct the queryset.
@@ -224,7 +264,7 @@ def get_media_queryset(project, params):
         qs = Media.objects.filter(pk__in=media_ids)
     else:
         # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, params)
+        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
     return qs
 
 def get_media_count(project, params):
@@ -245,7 +285,5 @@ def get_media_count(project, params):
 def query_string_to_media_ids(project_id, url):
     """ TODO: add documentation for this """
     params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
-    attribute_filter = AttributeFilterMixin()
-    attribute_filter.validate_attribute_filter(params)
     media_ids, _, _ = get_media_queryset(project_id, params)
     return media_ids
