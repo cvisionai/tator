@@ -34,7 +34,7 @@ from ._util import check_required_fields
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import get_media_queryset
-from ._attributes import AttributeFilterMixin
+from ._media_query import get_media_es_query
 from ._attributes import bulk_patch_attributes
 from ._attributes import patch_attributes
 from ._attributes import validate_attributes
@@ -95,7 +95,7 @@ def _save_image(url, media_obj, project_obj, role):
     Resource.add_resource(image_key, media_obj)
     return media_obj
 
-class MediaListAPI(BaseListView, AttributeFilterMixin):
+class MediaListAPI(BaseListView):
     """ Interact with list of media.
 
         A media may be an image or a video. Media are a type of entity in Tator,
@@ -123,7 +123,6 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        use_es = self.validate_attribute_filter(params)
         response_data = get_media_queryset(self.kwargs['project'], params).values()
         presigned = params.get('presigned')
         if presigned is not None:
@@ -327,9 +326,9 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             This method performs a bulk delete on all media matching a query. It is 
             recommended to use a GET request first to check what is being deleted.
         """
-        self.validate_attribute_filter(params)
         qs = get_media_queryset(params['project'], params)
-        if qs.count() > 0:
+        count = qs.count()
+        if count > 0:
             # Delete any state many-to-many relations to this media.
             state_media_qs = State.media.through.objects.filter(media__in=qs)
             state_media_qs._raw_delete(state_media_qs.db)
@@ -358,6 +357,7 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
             # not accept queries with size, and has_parent also does not accept ids queries.
+            query = get_media_es_query(self.kwargs['project'], params)
             TatorSearch().delete(self.kwargs['project'], query)
             loc_ids = [f'box_{id_}' for id_ in loc_qs.iterator()] \
                     + [f'line_{id_}' for id_ in loc_qs.iterator()] \
@@ -377,10 +377,10 @@ class MediaListAPI(BaseListView, AttributeFilterMixin):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
-        self.validate_attribute_filter(params)
         query = get_media_es_query(params['project'], params)
         qs = get_media_queryset(params['project'], params)
-        if qs.count() > 0:
+        count = qs.count()
+        if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)

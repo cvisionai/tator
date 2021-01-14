@@ -203,7 +203,6 @@ class LocalizationListAPI(BaseListView):
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
 
     def _delete(self, params):
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, query = get_annotation_queryset(
             params['project'],
             params,
@@ -221,7 +220,6 @@ class LocalizationListAPI(BaseListView):
         return {'message': f'Successfully deleted {len(annotation_ids)} localizations!'}
 
     def _patch(self, params):
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, query = get_annotation_queryset(
             params['project'],
             params,
@@ -246,7 +244,6 @@ class LocalizationListAPI(BaseListView):
 
     def get_queryset(self):
         params = parse(self.request)
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, _ = get_annotation_queryset(
             params['project'],
             params,

@@ -25,7 +25,6 @@ from ..schema import parse
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -54,7 +53,7 @@ def _fill_m2m(response_data):
         state['media'] = media.get(state['id'], [])
     return response_data
 
-class StateListAPI(BaseListView, AttributeFilterMixin):
+class StateListAPI(BaseListView):
     """ Interact with list of states.
 
         A state is a description of a collection of other objects. The objects a state describes
@@ -76,7 +75,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
     entity_type = StateType # Needed by attribute filter mixin
 
     def _get(self, params):
-        self.validate_attribute_filter(params)
         postgres_params = ['project', 'media_id', 'type', 'version']
         use_es = any([key not in postgres_params for key in params])
 
@@ -244,7 +242,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
 
     def _delete(self, params):
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, query = get_annotation_queryset(
             params['project'],
             params,
@@ -266,7 +263,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully deleted {len(annotation_ids)} states!'}
 
     def _patch(self, params):
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, query = get_annotation_queryset(
             params['project'],
             params,
@@ -292,7 +288,6 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
 
     def get_queryset(self):
         params = parse(self.request)
-        self.validate_attribute_filter(params)
         annotation_ids, annotation_count, _ = get_annotation_queryset(
             params['project'],
             params,

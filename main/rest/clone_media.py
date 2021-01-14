@@ -15,7 +15,6 @@ from ..search import TatorSearch
 
 from ._media_query import get_media_queryset
 from ._base_views import BaseListView
-from ._attributes import AttributeFilterMixin
 from ._permissions import ClonePermission
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ def _make_link(path_or_link, new_path):
     except:
         logger.info(f"Symlink already exists at {new_path}, pointing to {path}")
 
-class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
+class CloneMediaListAPI(BaseListView):
     """ Clone a list of media without copying underlying files.
     """
     schema = CloneMediaListSchema()
@@ -46,7 +45,6 @@ class CloneMediaListAPI(BaseListView, AttributeFilterMixin):
         os.makedirs(os.path.join('/media', str(dest)), exist_ok=True)
 
         # Retrieve media that will be cloned.
-        use_es = self.validate_attribute_filter(params)
         response_data = []
         original_medias = get_media_queryset(self.kwargs['project'], params)
 

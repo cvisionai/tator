@@ -17,7 +17,6 @@ from ..schema import parse
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._leaf_query import get_leaf_queryset
-from ._attributes import AttributeFilterMixin
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -83,7 +82,7 @@ class LeafSuggestionAPI(BaseDetailView):
         suggestions.sort(key=functor)
         return suggestions
 
-class LeafListAPI(BaseListView, AttributeFilterMixin):
+class LeafListAPI(BaseListView):
     """ Interact with a list of leaves.
 
         Tree leaves are used to define label hierarchies that can be used for autocompletion
@@ -95,7 +94,6 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
     entity_type = LeafType # Needed by attribute filter mixin
 
     def _get(self, params):
-        self.validate_attribute_filter(params)
         postgres_params = ['project', 'type']
         use_es = any([key not in postgres_params for key in params])
 
@@ -177,7 +175,6 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
 
     def _delete(self, params):
-        self.validate_attribute_filter(params)
         leaf_ids, leaf_count, query = get_leaf_queryset(params)
         if len(leaf_ids) > 0:
             qs = Leaf.objects.filter(pk__in=leaf_ids)
@@ -186,7 +183,6 @@ class LeafListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully deleted {len(leaf_ids)} leaves!'}
 
     def _patch(self, params):
-        self.validate_attribute_filter(params)
         leaf_ids, leaf_count, query = get_leaf_queryset(params)
         if len(leaf_ids) > 0:
             qs = Leaf.objects.filter(pk__in=leaf_ids)
