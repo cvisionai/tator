@@ -3,13 +3,13 @@ from collections import defaultdict
 import logging
 from urllib import parse as urllib_parse
 
-from dateutil.parser import parse as dateutil_parse
-
 from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
 
 from ._attribute_query import get_attribute_query
+from ._attribute_query import get_attribute_filter_ops
+from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
@@ -111,53 +111,6 @@ def get_media_es_query(project, params):
                                 annotation_bools=annotation_bools)
     return query
 
-ALLOWED_TYPES = {
-    'attribute': ('boolean', 'long', 'double', 'date', 'keyword', 'text'),
-    'attribute_lt': ('long', 'double', 'date'),
-    'attribute_lte': ('long', 'double', 'date'),
-    'attribute_gt': ('long', 'double', 'date'),
-    'attribute_gte': ('long', 'double', 'date'),
-    'attribute_contains': ('keyword', 'text'),
-}
-
-OPERATOR_SUFFIXES = {
-    'attribute': '',
-    'attribute_lt': '__lt',
-    'attribute_lte': '__lte',
-    'attribute_gt': '__gt',
-    'attribute_gte': '__gte',
-    'attribute_contains': '__icontains',
-}
-
-def _convert_boolean(value):
-    if value.lower() == 'false':
-        value = False
-    elif value.lower() == 'true':
-        value = True
-    else:
-        value = bool(value)
-    return value
-
-def _convert_attribute_filter_value(pair, mappings, operation):
-    kv = pair.split(KV_SEPARATOR)
-    if len(kv) != 2:
-        raise ValueError(f"Invalid filter operation '{pair}', must be of form key::value!")
-    key, value = kv
-    if key not in mappings:
-        raise ValueError(f"Attribute '{key}' could not be found in project!")
-    dtype = mappings[key]['path'].split('_', 1)[1]
-    if dtype not in ALLOWED_TYPES[operation]:
-        raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
-    if dtype == 'boolean':
-        value = _convert_boolean(value)
-    if dtype == 'double':
-        value = float(value)
-    elif dtype == 'long':
-        value = int(value)
-    elif dtype == 'date':
-        value = dateutil_parse(value)
-    return key, value, dtype
-
 def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """ Constructs a psql queryset.
     """
@@ -169,7 +122,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     md5 = params.get('md5')
     gid = params.get('gid')
     uid = params.get('uid')
-    attribute_null = params.get('attribute_null')
     start = params.get('start')
     stop = params.get('stop')
 
@@ -198,13 +150,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if uid is not None:
         qs = qs.filter(uid=uid)
 
-    for key, value, op in filter_ops:
-        qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
-
-    if attribute_null is not None:
-        key, value = attribute_null.split(KV_SEPARATOR)
-        value = _convert_boolean(value)
-        qs = qs.filter(**{f"attributes__{key}__isnull": value})
+    qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('name')
     if start is not None and stop is not None:
@@ -217,14 +163,12 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'attribute_distance', 'after']
+    ES_ONLY_PARAMS = ['search', 'after']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
             use_es = True
             break
-    if params.get('force_es'):
-        use_es = True
     section_uuid = None
     if 'section' in params:
         section = Section.objects.get(pk=params['section'])
@@ -235,21 +179,8 @@ def _use_es(project, params):
         section_uuid = section.tator_user_sections
 
     # Look up attribute dtypes if necessary.
-    filter_ops = []
-    if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
-        search = TatorSearch()
-        index_name = search.index_name(project)
-        mappings = TatorSearch().es.indices.get_mapping(index=index_name)
-        mappings = mappings[index_name]['mappings']['properties']
-
-        for op in ALLOWED_TYPES.keys():
-            if op in params:
-                key, value, dtype = _convert_attribute_filter_value(params[op], mappings, op)
-                # Don't deal with type conversions required for date and geo_point filtering
-                # in PSQL
-                if dtype in ['date', 'geo_point']:
-                    use_es = True
-                filter_ops.append((key, value, op))
+    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
+    use_es = use_es or use_es_for_attributes
 
     return use_es, section_uuid, filter_ops
         
