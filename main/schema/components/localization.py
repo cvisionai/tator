@@ -96,10 +96,6 @@ localization_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying a version.',
     },
-    'email': {
-        'type': 'string',
-        'description': 'Email of last user who modified/created this localization.',
-    },
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',

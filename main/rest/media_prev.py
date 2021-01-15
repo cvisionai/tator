@@ -5,7 +5,7 @@ from ..search import TatorSearch
 from ..schema import MediaPrevSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
+from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 class MediaPrevAPI(BaseDetailView):
@@ -27,7 +27,7 @@ class MediaPrevAPI(BaseDetailView):
         media = Media.objects.get(pk=media_id)
 
         # Get query associated with media filters.
-        _, _, query = get_media_queryset(media.project.pk, params, True)
+        query = get_media_es_query(media.project.pk, params)
 
         # Modify the query to only retrieve previous media.
         query['sort']['_exact_name'] = 'desc'

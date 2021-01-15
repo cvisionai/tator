@@ -1,11 +1,10 @@
 from collections import defaultdict
 
 from ..models import Media
-from ..search import TatorSearch
 from ..schema import MediaCountSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
+from ._media_query import get_media_count
 from ._permissions import ProjectViewOnlyPermission
 
 class MediaCountAPI(BaseDetailView):
@@ -21,7 +20,5 @@ class MediaCountAPI(BaseDetailView):
     def _get(self, params):
         """ Retrieve number of media in list of media.
         """
-        response_data = []
-        _, _, query = get_media_queryset(params['project'], params, dry_run=True)
-        return TatorSearch().count(params['project'], query)
+        return get_media_count(params['project'], params)
 
