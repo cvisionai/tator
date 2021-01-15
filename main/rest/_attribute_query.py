@@ -211,7 +211,10 @@ def _convert_attribute_filter_value(pair, mappings, operation):
     key, value = kv
     if key not in mappings:
         raise ValueError(f"Attribute '{key}' could not be found in project!")
-    dtype = mappings[key]['path'].split('_', 1)[1]
+    if 'path' in mappings[key]:
+        dtype = mappings[key]['path'].split('_', 1)[1]
+    else:
+        dtype = mappings[key]['type']
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
     if dtype == 'boolean':
