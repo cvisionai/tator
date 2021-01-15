@@ -10,28 +10,33 @@ class LeafTypeEdit extends SettingsSection {
     console.log(`${this.tagName} init.`);
 
     this.data = JSON.parse( data );
-    console.log(this.data);
+    if(this.data.length > 0){
+      console.log(this.data);
 
-    for(let i in this.data){
-      let itemDiv = document.createElement("div");
-      itemDiv.id = `itemDivId-leaf-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-      itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-      itemDiv.hidden = true;
+      for(let i in this.data){
+        let itemDiv = document.createElement("div");
+        itemDiv.id = `itemDivId-leaf-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
+        itemDiv.hidden = true;
 
-      // Section h1.
-      const h1 = document.createElement("h1");
-      h1.setAttribute("class", "h2 pb-3");
-      //h1.innerHTML = `Set media and attribute details.`;
-      h1.innerHTML = this.data[i].name;
-      itemDiv.appendChild(h1);
+        // Section h1.
+        const h1 = document.createElement("h1");
+        h1.setAttribute("class", "h2 pb-3");
+        //h1.innerHTML = `Set media and attribute details.`;
+        h1.innerHTML = this.data[i].name;
+        itemDiv.appendChild(h1);
 
-      itemDiv.appendChild( this._getSectionForm( this.data[i]) );
-      itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
+        itemDiv.appendChild( this._getSectionForm( this.data[i]) );
+        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
 
-      this.settingsSectionDiv.appendChild(itemDiv);
+        this.settingsSectionDiv.appendChild(itemDiv);
+      }
+
+      console.log("Init complete : Data length "+this.data.length);
+      return this.settingsSectionDiv;
+    } else {
+      console.log("Init complete : No data.");
     }
-
-    return this.settingsSectionDiv;
   }
 
   _getSectionForm(data){
@@ -46,17 +51,29 @@ class LeafTypeEdit extends SettingsSection {
 
       // append input for name
       const NAME = "Name";
-      this._form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
+      this._form.appendChild( this.inputHelper.inputText( {
+        "labelText": NAME,
+        "name": NAME.toLowerCase(),
+        "value": data[NAME.toLowerCase()]
+      } ) );
 
       //description
       const DESCRIPTION = "Description";
-      current.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+      this._form.appendChild( this.inputHelper.inputText( {
+        "labelText": DESCRIPTION,
+        "name": DESCRIPTION.toLowerCase(),
+        "value": data[DESCRIPTION.toLowerCase()]
+      } ) );
 
-      // append input for name
+      // dtype
       const DTYPE = "Dtype";
-      current.appendChild( this.inputHelper.inputSelectOptions(
-        { "labelText": DTYPE, "name": DTYPE.toLowerCase(), "value": data[DTYPE.toLowerCase()], "optionsList" : ["box", "line", "dot"]}
-      ) );
+      this._form.appendChild( this.inputHelper.inputSelectOptions( {
+        "labelText": "Data Type",
+        "name": DTYPE.toLowerCase(),
+        "value": data[DTYPE.toLowerCase()],
+        "optionsList" : ["leaf"],
+        "disabledInput" : true
+      } ) );
 
       // attribute types
       if(data.attribute_types.length > 0){

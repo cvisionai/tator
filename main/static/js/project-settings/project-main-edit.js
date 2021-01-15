@@ -22,7 +22,9 @@ class ProjectMainEdit extends SettingsSection {
       });
 
     // Image upload
+    this._thumbInput = this._getHiddenThumbInput( this.data.thumb );
     this.boxOnPage.appendChild( this._getThumbnailEdit() );
+    this.boxOnPage.appendChild( this._thumbInput );
 
     // Input for name
     this._editName = this._setNameInput( this._getNameFromData() );
@@ -66,7 +68,9 @@ class ProjectMainEdit extends SettingsSection {
       },
       body: JSON.stringify({
         "name": this._getNameInputValue(),
-        "summary": this._getSummaryInputValue()
+        "summary": this._getSummaryInputValue(),
+        "thumb": this._getThumbInputValue(),
+        "enable_downloads": this._getDownloadEnableValue()
       })
     })
   }
@@ -87,6 +91,25 @@ class ProjectMainEdit extends SettingsSection {
       "labelText" : "Thumbnail",
       "callBack" : () => this._editThumb() // required
     });
+  }
+
+  _getHiddenThumbInput(thumb){
+    let key = "thumb"
+    return this.inputHelper.inputText( { "labelText": null, "name": key, "value": name, "type": "hidden" } );
+  }
+
+  _getThumbInputValue(){
+    if(this._thumbInput == null) return ""
+    return this._thumbInput.value;
+  }
+
+  _getDownloadEnableValue(){
+    console.log("this._downloadEnable");
+    let radioSet = this._downloadEnable.querySelectorAll("input")
+    for(let s of radioSet){
+      if(s.id == "on" && s.checked == true) return true
+      if(s.id == "off" && s.checked == true) return false
+    }
   }
 
   _editThumb(){
@@ -130,7 +153,7 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   _changed(){
-    return this._nameChanged() || this._summaryChanged() ;
+    return  true;
   }
 
 }

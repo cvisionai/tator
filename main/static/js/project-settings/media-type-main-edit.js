@@ -8,29 +8,53 @@ class MediaTypeMainEdit extends SettingsSection {
     console.log(`${this.tagName} init.`);
 
     this.data = JSON.parse( data );
-    console.log(this.data);
+    if(this.data.length > 0){
+      console.log(this.data);
 
-    for(let i in this.data){
-      let itemDiv = document.createElement("div");
-      itemDiv.id = `itemDivId-media-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-      itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-      itemDiv.hidden = true;
+      const mediaList = [];
 
-      // Section h1.
-      const h1 = document.createElement("h1");
-      h1.setAttribute("class", "h2 pb-3");
-      //h1.innerHTML = `Set media and attribute details.`;
-      //h1.innerHTML = this.data[i].name;
-      h1.innerHTML = `Media settings.`;
-      itemDiv.appendChild(h1);
+      for(let i in this.data){
+        let itemDiv = document.createElement("div");
+        itemDiv.id = `itemDivId-media-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
+        itemDiv.hidden = true;
 
-      itemDiv.appendChild( this._getSectionForm(this.data[i]) );
-      itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
+        // create reference list for later
+        mediaList.push({
+          "id" : this.data[i].id,
+          "name" : this.data[i].name
+        });
 
-      this.settingsSectionDiv.appendChild(itemDiv);
+        // Section h1.
+        const h1 = document.createElement("h1");
+        h1.setAttribute("class", "h2 pb-3");
+        //h1.innerHTML = `Set media and attribute details.`;
+        //h1.innerHTML = this.data[i].name;
+        h1.innerHTML = `Media settings.`;
+        itemDiv.appendChild(h1);
+
+        itemDiv.appendChild( this._getSectionForm(this.data[i]) );
+        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
+
+        this.settingsSectionDiv.appendChild(itemDiv);
+      }
+
+
+      this._storeMediaTypesList(this.data[0].project, mediaList);
+
+      console.log("Init complete : Data length "+this.data.length);
+
+      return this.settingsSectionDiv;
+    } else {
+      console.log("Init complete : No data.");
     }
+  }
 
-    return this.settingsSectionDiv;
+  _storeMediaTypesList(projectId, mediaList){
+    let key = 'MediaTypes_Project_'+projectId
+    let value = JSON.stringify(mediaList)
+
+    localStorage.setItem(key, value);
   }
 
   _getSectionForm(data){
@@ -49,19 +73,21 @@ class MediaTypeMainEdit extends SettingsSection {
 
       // append input for name
       const NAME = "Name";
-      _form.appendChild( this.inputHelper.inputText(
-        { "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]
+      _form.appendChild( this.inputHelper.inputText( {
+        "labelText": NAME,
+        "name": NAME.toLowerCase(),
+        "value": data[NAME.toLowerCase()]
       }) );
 
-      // append input for dtype
+      // dtype
       const DTYPE = "Dtype";
       const dTypeOptions = [
         { "optText": "Video", "optValue": "video" },
-        { "optText": "Image", "optValue": "line" },
+        { "optText": "Image", "optValue": "image" },
         { "optText": "Multiview", "optValue": "multi" }
       ]
-      current.appendChild( this.inputHelper.inputSelectOptions({
-        "labelText": DTYPE,
+      _form.appendChild( this.inputHelper.inputSelectOptions({
+        "labelText": "Data Type",
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
         "optionsList" : dTypeOptions,
@@ -70,22 +96,29 @@ class MediaTypeMainEdit extends SettingsSection {
 
       //description
       const DESCRIPTION = "Description";
-      _form.appendChild( this.inputHelper.inputText(
-        { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] }
-       ) );
+      _form.appendChild( this.inputHelper.inputText({
+        "labelText": DESCRIPTION,
+        "name": DESCRIPTION.toLowerCase(),
+        "value": data[DESCRIPTION.toLowerCase()]
+      } ) );
 
       // default volume (video, multi)
-      const VOLUME = "Volume";
+      const VOLUME = "default_volume";
       let showVolume = data.dtype != 'image' ? true : false;
-      if (showVolume) current.appendChild( this.inputHelper.inputText(
-        { "labelText": VOLUME, "name": VOLUME.toLowerCase(), "value": data[VOLUME.toLowerCase()], "type":"number"}
-      ) );
+      if (showVolume) _form.appendChild( this.inputHelper.inputText( {
+        "labelText": "Default Volume",
+        "name": VOLUME.toLowerCase(),
+        "value": data[VOLUME.toLowerCase()],
+        "type":"number"
+      } ) );
 
       // visible
       const VISIBLE = "Visible";
-      current.appendChild( this.inputHelper.inputCheckbox(
-        { "labelText": VISIBLE, "name": VISIBLE.toLowerCase(), "value": data[VISIBLE.toLowerCase()] }
-      ) );
+      _form.appendChild( this.inputHelper.inputCheckbox({
+        "labelText": VISIBLE,
+        "name": VISIBLE.toLowerCase(),
+        "value": data[VISIBLE.toLowerCase()]
+      } ) );
 
       // attribute types
       if(data.attribute_types.length > 0){

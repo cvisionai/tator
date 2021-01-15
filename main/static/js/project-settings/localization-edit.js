@@ -6,31 +6,38 @@ class LocalizationEdit extends SettingsSection {
 
   _init(data){
     console.log(`${this.tagName} init.`);
-
     this.data = JSON.parse( data );
-    console.log(this.data);
 
-    for(let i in this.data){
-      let itemDiv = document.createElement("div");
-      itemDiv.id = `itemDivId-localization-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-      itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-      itemDiv.hidden = true;
+    if(this.data.length > 0){
+      console.log(this.data);
 
-      // Section h1.
-      const h1 = document.createElement("h1");
-      h1.setAttribute("class", "h2 pb-3");
-      //h1.innerHTML = `Set media and attribute details.`;
-      //h1.innerHTML = this.data[i].name;
-      h1.innerHTML = `Localization settings.`; 
-      itemDiv.appendChild(h1);
+      this.mediaTypeList = localStorage.getItem('MediaTypes_Project_'+this.data[0].project);
 
-      itemDiv.appendChild( this._getSectionForm( this.data[i]) );
-      itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
+      for(let i in this.data){
+        let itemDiv = document.createElement("div");
+        itemDiv.id = `itemDivId-localization-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
+        itemDiv.hidden = true;
 
-      this.settingsSectionDiv.appendChild(itemDiv);
+        // Section h1.
+        const h1 = document.createElement("h1");
+        h1.setAttribute("class", "h2 pb-3");
+        //h1.innerHTML = `Set media and attribute details.`;
+        //h1.innerHTML = this.data[i].name;
+        h1.innerHTML = `Localization settings.`;
+        itemDiv.appendChild(h1);
+
+        itemDiv.appendChild( this._getSectionForm( this.data[i]) );
+        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
+
+        this.settingsSectionDiv.appendChild(itemDiv);
+      }
+
+      console.log("Init complete : Data length "+this.data.length);
+      return this.settingsSectionDiv;
+    } else {
+      console.log("Init complete : No data.");
     }
-
-    return this.settingsSectionDiv;
   }
 
   _getSectionForm(data){
@@ -55,20 +62,46 @@ class LocalizationEdit extends SettingsSection {
     const DESCRIPTION = "Description";
     _form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
 
-    // append input for dtype
+    // dtype
     const DTYPE = "Dtype";
     const dTypeOptions = [
       { "optText": "Box", "optValue": "box" },
       { "optText": "Line", "optValue": "line" },
       { "optText": "Dot", "optValue": "dot" }
     ]
-    current.appendChild( this.inputHelper.inputSelectOptions({
-      "labelText": DTYPE,
+    _form.appendChild( this.inputHelper.inputSelectOptions({
+      "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
       "disabledInput" : true
     }) );
+
+    // visible
+    const VISIBLE = "Visible";
+    _form.appendChild( this.inputHelper.inputCheckbox({
+      "labelText": VISIBLE,
+      "name": VISIBLE.toLowerCase(),
+      "value": data[VISIBLE.toLowerCase()]
+    } ) );
+
+    // grouping default
+    const GROUPING = "grouping_default";
+    _form.appendChild( this.inputHelper.inputCheckbox({
+      "labelText": "Grouping Default",
+      "name": GROUPING.toLowerCase(),
+      "value": data[GROUPING.toLowerCase()]
+    } ) );
+
+    const MEDIA = "Media";
+    //const mediaList = this.mediaTypeList;
+    let mediaListWithChecked = this._getCompiledMediaList( data[MEDIA.toLowerCase()], JSON.parse(this.mediaTypeList));
+
+    _form.appendChild( this.inputHelper.multipleCheckboxes({
+        "labelText" : MEDIA,
+        "name": MEDIA.toLowerCase(),
+        "checkboxList": mediaListWithChecked
+    } ) );
 
     // attribute types
     if(data.attribute_types.length > 0){
@@ -78,6 +111,32 @@ class LocalizationEdit extends SettingsSection {
     }
 
     return current;
+  }
+
+  _getCompiledMediaList( mediaIds, projectMediaList ){
+    let newList = [];
+
+    // pop off any that match into a new list with the checked true info
+    // then just loop the remaining list into new list with checked false
+
+    projectMediaList.forEach((media, i) => {
+      for(let id of mediaIds ){
+        if (media.id == id ) {
+          return newList.push({
+            "id" : media.id,
+            "name" : media.name,
+            "checked" : true
+          });
+        }
+      }
+      return newList.push({
+        "id" : media.id,
+        "name" : media.name,
+        "checked" : false
+      });
+    });
+
+    return newList;
   }
 
   reset(scope){

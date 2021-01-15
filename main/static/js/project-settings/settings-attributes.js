@@ -23,7 +23,7 @@ class SettingsAttributes extends HTMLElement {
     this.modal = document.createElement("modal-dialog");
     this.attributeDiv.appendChild(this.modal);
 
-    console.log(fromType + `__${this.tagName} init.`);
+    console.log(fromType.toLowerCase() + `__${this.tagName} init.`);
     //console.log(data);
 
     this._getAttributesForm(data)

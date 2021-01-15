@@ -22,7 +22,7 @@ class SettingsInput {
       const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
       inputTextElement.setAttribute("class", classes);
 
-      if(labelText == ""){
+      if(labelText == null){
         return inputTextElement;
       } else {
         const inputWithLabel = this.labelWrap({
@@ -52,57 +52,43 @@ class SettingsInput {
         // output smaller inputs into 3 cols
         let arrayInput = this.inputText({
             "value" : item,
+            "labelText" : labelText,
             "name" : setName,
-            "customCol" : 'col-2',
+            "customCol" : 'col-2'
         });
         arrayInputDiv.appendChild(arrayInput);
       }
+    } else {
+      let arrayInput = this.inputText({
+          "value" : "",
+          "labelText" : labelText,
+          "name" : setName,
+          "customCol" : 'col-2'
+      });
+      arrayInputDiv.appendChild(arrayInput);
     }
 
     // Add new
-    let addNew = this.inputText({
-        "value" : "",
+    let addNewButton = this.addNewRow({
         "labelText" : "+ New",
-        "name" : setName
+        "callback" : ""
     });
-    arrayInputDiv.appendChild(addNew);
 
-    let addBtn = `<button>Add</button>`
-    addNew.appendChild(addBtn);
+    arrayInputDiv.appendChild(addNewButton);
 
-    addBtn.addEventListener("click", (event) => {
+    addNewButton.addEventListener("click", (event) => {
+      event.preventDefault();
       // Add another "+Add with input to the page"
-      let addNew = this.inputText({
-          "value" : "",
-          "labelText" : "+ New",
-          "name" : setName
-      });
-      e.target.before(addNew);
+      event.target.before(this.inputText({
+           "value" : "",
+           "labelText" : labelText,
+           "name" : setName,
+           "customCol" : 'col-2'
+       }));
     });
+
+    return arrayInputDiv;
   }
-
-  inputTextArea({
-        value = '',
-        customCol = 'col-8',
-        labelText = '',
-        type = 'text'
-      } = {}
-    ){
-      const textArea = document.createElement("textarea");
-      textArea.value = value;
-
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
-      textArea.setAttribute("name", setName);
-      textArea.setAttribute("class", `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`);
-
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": textArea,
-        "name": setName
-      });
-
-      return inputWithLabel;
-    }
 
   /* Returns an input of type text with an initial value */
   inputCheckbox({
@@ -111,7 +97,7 @@ class SettingsInput {
       labelText = '',
       type = 'checkbox'} = {}
     ){
-      const inputTextElement = document.createElement("input");
+     /*  const inputTextElement = document.createElement("input");
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
       if (value) inputTextElement.checked = true;
@@ -121,13 +107,23 @@ class SettingsInput {
       inputTextElement.setAttribute("name", setName);
       inputTextElement.setAttribute("class", `${this.customClass} ${customCol}`);
 
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": inputTextElement,
-        "name": setName
-      });
+      let inputWithLabel = inputTextElement; //default
 
-      return inputWithLabel;
+      if(labelText != null){
+        inputWithLabel = this.labelWrap({
+          "labelText": labelText,
+          "inputNode": inputTextElement,
+          "name": setName
+        });
+      }
+
+      return inputWithLabel ;*/
+      return this.inputRadioSlide({
+        "value" : value,
+        "customCol" : customCol,
+        "labelText" : labelText,
+        "type" : type
+      });
   }
 
   // @TODO - Works but needs ovveride for label class
@@ -137,48 +133,58 @@ class SettingsInput {
     labelText = '',
     type = 'checkbox'} = {}
   ){
-    const slide = document.createElement("bool-input");
-    slide.setAttribute("name", labelText);
-    slide.setAttribute("on-text", "Yes");
-    slide.setAttribute("off-text", "No");
-
+    let setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+    const slide = document.createElement("settings-bool-input");
+    const fieldset = slide.getFieldSet( setName );
+    slide.setLegendText(labelText);
+    slide.setOnLabel("Yes");
+    slide.setOffLabel("No");
     slide.setValue(value)
 
-    console.log(slide);
-    return slide;
+    return fieldset;
   }
 
-  /* Returns a set of radio buttons */
-  inputRadios({
-    value = "",
-    labelText = "",
-    customCol = "col-8"} = {}
-  ){
-    if(value === null || Array.IsArray(value) === false){
-      return console.error("FormsHelper Error: Array type required to init radio buttons.");
-    } else {
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
-      const inputRadiosSpan = document.createElement("span");
-      inputRadiosSpan.setAttribute("class", this.customClass + " " + customCol);
+  multipleCheckboxes({
+    value = '',
+    labelText = '',
+    name = '',
+    checkboxList = ''
+  } = {}){
+    const checkboxes = document.createElement("div");
+    checkboxes.setAttribute("class", `col-8`);
+    let setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
 
-      for(let i of value){
-        let val = value[i] || "";
-        let inputRadiosElement = document.createElement("input");
-        inputRadiosElement.setAttribute("type", "radio");
-        inputRadiosElement.setAttribute("name", setName);
-        inputRadiosElement.setAttribute("value", val);
-        inputRadiosElement.setAttribute("class", `form-control`);
-      }
+    for(let data of checkboxList){
+      let checkboxLabel = document.createElement("label");
+      let checkbox = document.createElement("input");
 
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": inputRadiosElement,
-        "name": setName
-      });
+      checkbox.setAttribute("type", "checkbox");
+      checkbox.setAttribute("value", data.id);
+      if (data.checked) checkbox.checked = true;
+      checkbox.style.transform = "scale(1.5)";
 
-      return inputWithLabel;
+
+      checkbox.setAttribute("name", setName);
+      checkbox.setAttribute("class", `col-2`);
+
+      checkboxLabel.appendChild(checkbox);
+
+      let labelText = document.createTextNode(data.name);
+      checkboxLabel.appendChild(labelText);
+
+      checkboxes.appendChild(checkboxLabel);
     }
+
+    const checkboxesWithLabel = this.labelWrap({
+      "labelText": labelText,
+      "inputNode": checkboxes,
+      "labelAsDiv" : true
+    });
+
+    return checkboxesWithLabel;
   }
+
+
 
   /* Returns a select with options from array */
   inputSelectOptions({
@@ -196,18 +202,31 @@ class SettingsInput {
       const inputSelect = document.createElement("select");
       const currentValue = value;
 
-      inputSelect.setAttribute("class", this.customClass + " form-select select-sm " + customCol);
-      inputSelect.style.color = "#fff";
-      if(disabledInput) inputSelect.disabled = true;
-
+      inputSelect.setAttribute("class", this.customClass + " form-select select-md " + customCol);
+      if(!disabledInput) inputSelect.style.color = "#fff";
+      //
       for(let optionValue of optionsList){
         let inputOption = document.createElement("option");
         let optionText = document.createTextNode(optionValue.optText);
+        let indexValue = optionValue.optValue;
 
+        // Select Text
         inputOption.appendChild(optionText);
-        inputOption.value = optionValue.optValue;
 
-        if(optionValue.optValue === currentValue) inputOption.selected = true;
+        // Select Value
+        if(typeof indexValue == "undefined" && typeof currentValue == "undefined"){
+          inputOption.value = ""; // ie. Nothing is selected...
+        } else {
+          inputOption.value = indexValue;
+
+          if(indexValue == currentValue) {
+            inputOption.setAttribute("selected", true);
+            inputOption.checked = true;
+            inputOption.selected = true;
+          }
+        }
+
+        if(disabledInput) inputSelect.disabled = true;
 
         inputSelect.appendChild(inputOption);
       }
@@ -215,7 +234,7 @@ class SettingsInput {
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
         "inputNode": inputSelect,
-        "name": setName
+        "disabled" : disabledInput
       });
 
       return inputWithLabel;
@@ -276,16 +295,24 @@ class SettingsInput {
     /* Wraps any node in a label */
   labelWrap({
       labelText = '',
+      disabled = false,
+      labelAsDiv = false,
       inputNode } = {}
     ){
-      const labelWrap = document.createElement("label");
+      let labelWrap = "";
+      if(labelAsDiv){
+        labelWrap = document.createElement("div");
+      }else{
+        labelWrap = document.createElement("label");
+      }
+
       labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
 
       const spanTextNode = document.createElement("span");
       const spanText = document.createTextNode("");
       const labelDiv = document.createElement("div");
 
-      spanTextNode.setAttribute("class", "col-4 text-gray");
+      spanTextNode.setAttribute("class", `col-4 ${(disabled) ? "text-gray" : ""}`);
       spanText.nodeValue = labelText;
       spanTextNode.appendChild(spanText);
 
@@ -298,6 +325,30 @@ class SettingsInput {
 
       return labelDiv;
     }
+
+    addNewRow({
+        labelText = '',
+        callback = null
+      } = {}){
+        const labelWrap = document.createElement("label");
+        labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
+
+        const spanTextNode = document.createElement("span");
+        const spanText = document.createTextNode("");
+        const labelDiv = document.createElement("div");
+
+        spanTextNode.setAttribute("class", "col-4 text-gray clickable");
+        spanText.nodeValue = labelText;
+        spanTextNode.appendChild(spanText);
+
+        labelWrap.append(spanTextNode);
+
+        labelDiv.setAttribute("class", "py-2 px-2 f2");
+        labelDiv.style.borderBottom = "none";
+        labelDiv.appendChild(labelWrap);
+
+        return labelDiv;
+      }
 
     /* Returns an number input with an initial value */
     saveButton({ text = "Save"} = {}){
