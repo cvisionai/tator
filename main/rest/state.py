@@ -20,7 +20,7 @@ from ..schema import StateListSchema
 from ..schema import StateDetailSchema
 from ..schema import MergeStatesSchema
 from ..schema import TrimStateEndSchema
-from ..schema import parse
+from ..schema.components import state as state_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -34,6 +34,8 @@ from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
+
+STATE_PROPERTIES = list(state_schema['properties'].keys())
 
 def _fill_m2m(response_data):
     # Get many to many fields.
@@ -77,7 +79,8 @@ class StateListAPI(BaseListView):
 
     def _get(self, params):
         t0 = datetime.datetime.now()
-        response_data = get_annotation_queryset(self.kwargs['project'], params, 'state').values()
+        qs = get_annotation_queryset(self.kwargs['project'], params, 'state')
+        response_data = qs.values(*STATE_PROPERTIES)
 
         t1 = datetime.datetime.now()
         response_data = _fill_m2m(response_data)

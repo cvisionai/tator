@@ -16,6 +16,7 @@ from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
 from ..schema import parse
+from ..schema.components import localization as localization_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -29,6 +30,8 @@ from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
+
+LOCALIZATION_PROPERTIES = list(localization_schema['properties'].keys())
 
 class LocalizationListAPI(BaseListView):
     """ Interact with list of localizations.
@@ -46,7 +49,8 @@ class LocalizationListAPI(BaseListView):
     entity_type = LocalizationType # Needed by attribute filter mixin
 
     def _get(self, params):
-        response_data = get_annotation_queryset(self.kwargs['project'], params, 'localization').values()
+        qs = get_annotation_queryset(self.kwargs['project'], params, 'localization')
+        response_data = qs.values(*LOCALIZATION_PROPERTIES)
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == 'csv':

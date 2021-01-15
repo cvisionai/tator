@@ -25,6 +25,7 @@ from ..search import TatorSearch
 from ..schema import MediaListSchema
 from ..schema import MediaDetailSchema
 from ..schema import parse
+from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
 from ..s3 import TatorS3
@@ -42,6 +43,8 @@ from ._permissions import ProjectEditPermission
 from ._permissions import ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
+
+MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
 def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'image', 'thumbnail',
                                             'thumbnail_gif']):
@@ -123,7 +126,8 @@ class MediaListAPI(BaseListView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        response_data = get_media_queryset(self.kwargs['project'], params).values()
+        qs = get_media_queryset(self.kwargs['project'], params)
+        response_data = qs.values(*MEDIA_PROPERTIES)
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = TatorS3()

@@ -12,7 +12,7 @@ from ..search import TatorSearch
 from ..schema import LeafSuggestionSchema
 from ..schema import LeafListSchema
 from ..schema import LeafDetailSchema
-from ..schema import parse
+from ..schema.components import leaf as leaf_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -27,6 +27,8 @@ from ._permissions import ProjectViewOnlyPermission
 from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
+
+LEAF_PROPERTIES = list(leaf_schema['properties'].keys())
 
 class LeafSuggestionAPI(BaseDetailView):
     """ Rest Endpoint compatible with devbridge suggestion format.
@@ -95,7 +97,8 @@ class LeafListAPI(BaseListView):
     entity_type = LeafType # Needed by attribute filter mixin
 
     def _get(self, params):
-        return get_leaf_queryset(params['project'], params).values()
+        qs = get_leaf_queryset(params['project'], params)
+        return qs.values(*LEAF_PROPERTIES)
 
     def _post(self, params):
         # Check that we are getting a leaf list.
