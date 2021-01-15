@@ -2,7 +2,7 @@
 # are accessing the site from another machine's browser or you
 # are installing Tator in a VM. Using localhost only works in 
 # a browser running on the same machine running Tator.
-domain: localhost
+domain: &domain localhost
 # Requests for these domains will be redirected to the actual domain.
 #redirects:
 #  - domain: mysite.duckdns.org
@@ -190,6 +190,19 @@ minio:
   defaultBucket:
     enabled: true
     name: tator
+kube-prometheus-stack:
+  enabled: true
+  prometheus:
+    server:
+      extraArgs:
+        web.external-url: /prometheus/
+        web.route-prefix: "/"
+  grafana:
+    grafana.ini:
+      server:
+        domain: *domain
+        root_url: "%(protocol)s://%(domain)s/grafana/"
+        serve_from_sub_path: true
 # Limits on resources for transcode workflows.
 transcoderCpuLimit: "1000m"
 transcoderMemoryLimit: "4Gi"
