@@ -1,10 +1,9 @@
 from collections import defaultdict
 
-from ..search import TatorSearch
 from ..schema import LeafCountSchema
 
 from ._base_views import BaseDetailView
-from ._leaf_query import get_leaf_queryset
+from ._leaf_query import get_leaf_count
 from ._permissions import ProjectViewOnlyPermission
 
 class LeafCountAPI(BaseDetailView):
@@ -20,7 +19,5 @@ class LeafCountAPI(BaseDetailView):
     def _get(self, params):
         """ Retrieve number of leaves in list of leaves.
         """
-        response_data = []
-        _, _, query = get_leaf_queryset(params, dry_run=True)
-        return TatorSearch().count(params['project'], query)
+        return get_leaf_count(params['project'], params)
 

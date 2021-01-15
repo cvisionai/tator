@@ -17,6 +17,7 @@ from ..schema import parse
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._leaf_query import get_leaf_queryset
+from ._leaf_query import get_leaf_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -94,21 +95,7 @@ class LeafListAPI(BaseListView):
     entity_type = LeafType # Needed by attribute filter mixin
 
     def _get(self, params):
-        postgres_params = ['project', 'type']
-        use_es = any([key not in postgres_params for key in params])
-
-        # Get the leaf list.
-        if use_es:
-            response_data = []
-            leaf_ids, leaf_count, _ = get_leaf_queryset(params)
-            if len(leaf_ids) > 0:
-                response_data = database_query_ids('main_leaf', leaf_ids, 'id')
-        else:
-            qs = Leaf.objects.filter(project=params['project'])
-            if 'type' in params:
-                qs = qs.filter(meta=params['type'])
-            response_data = database_qs(qs.order_by('id'))
-        return response_data
+        return get_leaf_queryset(params['project'], params).values()
 
     def _post(self, params):
         # Check that we are getting a leaf list.
@@ -175,21 +162,23 @@ class LeafListAPI(BaseListView):
         return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
 
     def _delete(self, params):
-        leaf_ids, leaf_count, query = get_leaf_queryset(params)
-        if len(leaf_ids) > 0:
-            qs = Leaf.objects.filter(pk__in=leaf_ids)
+        qs = get_leaf_queryset(params['project'], params)
+        count = qs.count()
+        if count > 0:
             qs._raw_delete(qs.db)
+            query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {len(leaf_ids)} leaves!'}
+        return {'message': f'Successfully deleted {count} leaves!'}
 
     def _patch(self, params):
-        leaf_ids, leaf_count, query = get_leaf_queryset(params)
-        if len(leaf_ids) > 0:
-            qs = Leaf.objects.filter(pk__in=leaf_ids)
+        qs = get_leaf_queryset(params['project'], params)
+        count = qs.count()
+        if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
+            query = get_leaf_es_query(params)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-        return {'message': f'Successfully updated {len(leaf_ids)} leaves!'}
+        return {'message': f'Successfully updated {count} leaves!'}
 
     def _put(self, params):
         """ Retrieve list of leaves by ID.
@@ -199,13 +188,6 @@ class LeafListAPI(BaseListView):
         if len(ids) > 0:
             response_data = database_query_ids('main_leaf', ids, 'id')
         return response_data
-
-    def get_queryset(self):
-        params = parse(self.request)
-        self.validate_attribute_filter(params)
-        leaf_ids, leaf_count, _ = get_leaf_queryset(params)
-        queryset = Leaf.objects.filter(pk__in=leaf_ids)
-        return queryset
 
 class LeafDetailAPI(BaseDetailView):
     """ Interact with individual leaf.
