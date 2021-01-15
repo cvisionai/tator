@@ -203,6 +203,9 @@ kube-prometheus-stack:
         domain: *domain
         root_url: "%(protocol)s://%(domain)s/grafana/"
         serve_from_sub_path: true
+      auth.anonymous:
+        enabled: true
+        org_role: Admin
 # Limits on resources for transcode workflows.
 transcoderCpuLimit: "1000m"
 transcoderMemoryLimit: "4Gi"
