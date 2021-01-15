@@ -258,17 +258,6 @@ class StateListAPI(BaseListView):
         response_data = _fill_m2m(response_data)
         return response_data
 
-    def get_queryset(self):
-        params = parse(self.request)
-        annotation_ids, annotation_count, _ = get_annotation_queryset(
-            params['project'],
-            params,
-            'state',
-        )
-        queryset = State.objects.filter(pk__in=annotation_ids)
-        return queryset
-
-
 class StateDetailAPI(BaseDetailView):
     """ Interact with an individual state.
 

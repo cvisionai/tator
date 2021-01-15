@@ -399,10 +399,6 @@ class MediaListAPI(BaseListView):
             response_data = [_presign(s3, presigned, item) for item in response_data]
         return response_data
 
-    def get_queryset(self):
-        params = parse(self.request)
-        return Media.objects.filter(project=params['project'])
-
 class MediaDetailAPI(BaseDetailView):
     """ Interact with individual media.
 

@@ -198,10 +198,6 @@ class LocalizationListAPI(BaseListView):
             response_data = database_query_ids('main_localization', ids, 'id')
         return response_data
 
-    def get_queryset(self):
-        params = parse(self.request)
-        return Localization.objects.filter(project=params['project'])
-
 class LocalizationDetailAPI(BaseDetailView):
     """ Interact with single localization.
 
