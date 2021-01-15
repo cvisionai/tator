@@ -288,12 +288,14 @@ data:
           gzip_min_length 1024;
         }
 
+        {{- if index .Values "kube-prometheus-stack" "enabled" }}
         location /status {
-          auth_request /auth-admin;
-          stub_status on;
+          stub_status;
+          access_log off;
+          allow 127.0.0.1;
+          deny all;
         }
 
-        {{- if index .Values "kube-prometheus-stack" "enabled" }}
         location /grafana/ {
           auth_request /auth-admin;
           proxy_pass http://tator-grafana/;
