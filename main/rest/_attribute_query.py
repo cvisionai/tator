@@ -13,8 +13,8 @@ from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-def get_attribute_query(query_params, query, bools, project,
-                        is_media=True, annotation_bools=None, modified=None):
+def get_attribute_es_query(query_params, query, bools, project,
+                           is_media=True, annotation_bools=None, modified=None):
     """ TODO: add documentation for this """
     if annotation_bools is None:
         annotation_bools = []

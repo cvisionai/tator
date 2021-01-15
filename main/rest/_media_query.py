@@ -7,7 +7,7 @@ from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
 
-from ._attribute_query import get_attribute_query
+from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
@@ -107,8 +107,8 @@ def get_media_es_query(project, params):
     if after is not None:
         bools.append({'range': {'_exact_name': {'gt': after}}})
 
-    query = get_attribute_query(params, query, bools, project, is_media=True,
-                                annotation_bools=annotation_bools)
+    query = get_attribute_es_query(params, query, bools, project, is_media=True,
+                                   annotation_bools=annotation_bools)
     return query
 
 def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
@@ -200,7 +200,7 @@ def get_media_queryset(project, params):
 
 def get_media_count(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid = _use_es(params)
+    use_es, section_uuid, filter_ops = _use_es(params)
 
     if use_es:
         # If using ES, do the search and get the count.
@@ -209,7 +209,7 @@ def get_media_count(project, params):
         count = len(media_ids)
     else:
         # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, params)
+        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
         count = qs.count()
     return count
 

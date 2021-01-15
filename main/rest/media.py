@@ -377,12 +377,12 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
-        query = get_media_es_query(params['project'], params)
         qs = get_media_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
+            query = get_media_es_query(params['project'], params)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
         return {'message': f'Successfully patched {count} medias!'}
 
