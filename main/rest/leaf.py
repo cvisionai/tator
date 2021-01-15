@@ -98,7 +98,8 @@ class LeafListAPI(BaseListView):
 
     def _get(self, params):
         qs = get_leaf_queryset(params['project'], params)
-        return qs.values(*LEAF_PROPERTIES)
+        response_data = list(qs.values(*LEAF_PROPERTIES))
+        return response_data
 
     def _post(self, params):
         # Check that we are getting a leaf list.
@@ -186,11 +187,8 @@ class LeafListAPI(BaseListView):
     def _put(self, params):
         """ Retrieve list of leaves by ID.
         """
-        response_data = []
-        ids = params['body']
-        if len(ids) > 0:
-            response_data = database_query_ids('main_leaf', ids, 'id')
-        return response_data
+        qs = Leaf.objects.filter(pk__in=params['body'])
+        return list(qs.values(*LEAF_PROPERTIES))
 
 class LeafDetailAPI(BaseDetailView):
     """ Interact with individual leaf.

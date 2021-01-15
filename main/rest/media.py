@@ -127,7 +127,7 @@ class MediaListAPI(BaseListView):
             meaning they can be described by user defined attributes.
         """
         qs = get_media_queryset(self.kwargs['project'], params)
-        response_data = qs.values(*MEDIA_PROPERTIES)
+        response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = TatorS3()

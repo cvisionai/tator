@@ -50,7 +50,7 @@ class LocalizationListAPI(BaseListView):
 
     def _get(self, params):
         qs = get_annotation_queryset(self.kwargs['project'], params, 'localization')
-        response_data = qs.values(*LOCALIZATION_PROPERTIES)
+        response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
         # Adjust fields for csv output.
         if self.request.accepted_renderer.format == 'csv':

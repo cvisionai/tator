@@ -80,7 +80,7 @@ class StateListAPI(BaseListView):
     def _get(self, params):
         t0 = datetime.datetime.now()
         qs = get_annotation_queryset(self.kwargs['project'], params, 'state')
-        response_data = qs.values(*STATE_PROPERTIES)
+        response_data = list(qs.values(*STATE_PROPERTIES))
 
         t1 = datetime.datetime.now()
         response_data = _fill_m2m(response_data)
