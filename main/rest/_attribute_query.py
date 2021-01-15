@@ -257,8 +257,9 @@ def get_attribute_psql_queryset(qs, params, filter_ops):
         qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
 
     if attribute_null is not None:
-        key, value = attribute_null.split(KV_SEPARATOR)
-        value = _convert_boolean(value)
-        qs = qs.filter(**{f"attributes__{key}__isnull": value})
+        for kv in attribute_null:
+            key, value = kv.split(KV_SEPARATOR)
+            value = _convert_boolean(value)
+            qs = qs.filter(**{f"attributes__{key}__isnull": value})
     return qs
 
