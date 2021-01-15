@@ -16,7 +16,6 @@ from ..search import TatorSearch
 from ..schema import AttributeTypeListSchema, parse
 
 from ._base_views import BaseListView
-from ._annotation_query import get_annotation_queryset
 from ._attributes import (
     bulk_patch_attributes,
     bulk_rename_attributes,
