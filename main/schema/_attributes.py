@@ -119,4 +119,13 @@ attribute_filter_parameter_schema = [
                        'larger list to return.',
         'schema': {'type': 'integer'},
     },
+    {
+        'name': 'force_es',
+        'in': 'query',
+        'required': False,
+        'description': 'Set to 1 to require an Elasticsearch based query. This can be used '
+                       'as a consistency check or for performance comparison.',
+        'schema': {'type': 'integer',
+                   'enum': [0, 1]},
+    },
 ]

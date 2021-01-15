@@ -244,6 +244,9 @@ def get_attribute_filter_ops(project, params):
                 if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
                     use_es = True
                 filter_ops.append((key, value, op))
+    force_es = params.get('force_es')
+    if force_es:
+        use_es = True
     return use_es, filter_ops
 
 def get_attribute_psql_queryset(qs, params, filter_ops):
