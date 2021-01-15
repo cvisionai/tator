@@ -200,7 +200,7 @@ def get_media_queryset(project, params):
 
 def get_media_count(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid, filter_ops = _use_es(params)
+    use_es, section_uuid, filter_ops = _use_es(project, params)
 
     if use_es:
         # If using ES, do the search and get the count.
@@ -216,5 +216,5 @@ def get_media_count(project, params):
 def query_string_to_media_ids(project_id, url):
     """ TODO: add documentation for this """
     params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
-    media_ids, _, _ = get_media_queryset(project_id, params)
+    media_ids = get_media_queryset(project_id, params).values_list('id', flat=True)
     return media_ids

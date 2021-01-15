@@ -1,13 +1,5 @@
 leaf_filter_parameter_schema = [
     {
-        'name': 'ancestor',
-        'in': 'query',
-        'required': False,
-        'description': 'Get descendents of a leaf element (inclusive), '
-                       'by path (i.e. ITIS.Animalia).',
-        'schema': {'type': 'string'},
-    },
-    {
         'name': 'type',
         'in': 'query',
         'required': False,
