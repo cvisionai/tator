@@ -182,7 +182,7 @@ class Upload {
 
   // Create presigned url for transcode/media create.
   getDownloadInfo(key) {
-    return fetchRetry(`/rest/DownloadInfo/${this.projectId}`, {
+    return fetchRetry(`/rest/DownloadInfo/${this.projectId}?expiration=86400`, {
       method: "POST",
       signal: this.controller.signal,
       credentials: "omit",
