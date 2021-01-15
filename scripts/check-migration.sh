@@ -36,7 +36,7 @@ function confirm_continue()
     
     
 }
-gunicorn_pod=`kubectl get pods | grep gunicorn-deployment | grep Running | awk '{print $1}'`
+gunicorn_pod=`kubectl get pods | grep gunicorn-deployment | grep Running | head -n1 | awk '{print $1}'`
 
 if [ ${gunicorn_pod} == "" ]; then
     echo "Cluster is not deemed to be running."
