@@ -44,7 +44,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute equality filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_lt',
@@ -52,7 +54,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute less than filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_lte',
@@ -60,7 +64,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute less than or equal filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_gt',
@@ -68,7 +74,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute greater than filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_gte',
@@ -76,7 +84,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute greater than or equal filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_contains',
@@ -84,7 +94,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute contains filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_distance',
@@ -93,7 +105,9 @@ attribute_filter_parameter_schema = [
         'description': 'Range filter for geoposition attributes. Format is '
                        'attribute1::distance_km2::lat2::lon2,'
                        '[attribute2::distancekm2::lat2::lon2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_null',
@@ -101,7 +115,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute null filter. Returns elements for which '
                        'a given attribute is not defined.',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'start',

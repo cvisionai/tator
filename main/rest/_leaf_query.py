@@ -70,7 +70,7 @@ def get_leaf_es_query(params):
     }
     for op in attr_filter_params:
         if attr_filter_params[op] is not None:
-            for kv_pair in attr_filter_params[op].split(','):
+            for kv_pair in attr_filter_params[op]:
                 if op == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
                     attr_query['filter'].append({

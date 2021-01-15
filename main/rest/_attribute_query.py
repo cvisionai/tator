@@ -48,7 +48,7 @@ def get_attribute_es_query(query_params, query, bools, project,
     }
     for o_p in attr_filter_params: #pylint: disable=too-many-nested-blocks
         if attr_filter_params[o_p] is not None:
-            for kv_pair in attr_filter_params[o_p].split(','):
+            for kv_pair in attr_filter_params[o_p]:
                 if o_p == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
                     relation = 'annotation' if key in child_attrs else 'media'
@@ -238,12 +238,13 @@ def get_attribute_filter_ops(project, params):
 
         for op in ALLOWED_TYPES.keys():
             if op in params:
-                key, value, dtype = _convert_attribute_filter_value(params[op], mappings, op)
-                # Don't deal with type conversions required for date and geo_point filtering
-                # in PSQL
-                if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
-                    use_es = True
-                filter_ops.append((key, value, op))
+                for kv in params[op]:
+                    key, value, dtype = _convert_attribute_filter_value(kv, mappings, op)
+                    # Don't deal with type conversions required for date and geo_point filtering
+                    # in PSQL
+                    if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
+                        use_es = True
+                    filter_ops.append((key, value, op))
     force_es = params.get('force_es')
     if force_es:
         use_es = True
