@@ -6,9 +6,8 @@ class SettingsBox {
 
   boxWrapDefault( { children = {}, level = 1, customClass = ""} = {} ){
     let settingsBox = document.createElement("div");
-    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${customClass} ${level == 1 ? ' new-project__config ' : ''}`);
+    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${customClass} ${level == 1 ? ' edit-project__config ' : ''}`);
     settingsBox.append( children );
-    settingsBox.style.borderBottom = "none"
 
     return settingsBox;
   }

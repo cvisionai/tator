@@ -44,7 +44,7 @@ class SettingsInput {
   } = {}){
     const arrayInputDiv = document.createElement("div");
     // unique shared name for this set
-    const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+    const setName =this._getUniqueIdentifier(labelText);
 
     // VALUE will be an array -- Loop the array and create TEXT INPUTS
     if(value.length > 0 ){
@@ -54,7 +54,8 @@ class SettingsInput {
             "value" : item,
             "labelText" : labelText,
             "name" : setName,
-            "customCol" : 'col-2'
+            "customCol" : 'col-2',
+            "id" : setName
         });
         arrayInputDiv.appendChild(arrayInput);
       }
@@ -90,42 +91,6 @@ class SettingsInput {
     return arrayInputDiv;
   }
 
-  /* Returns an input of type text with an initial value */
-  inputCheckbox({
-      value = '',
-      customCol = '',
-      labelText = '',
-      type = 'checkbox'} = {}
-    ){
-     /*  const inputTextElement = document.createElement("input");
-      inputTextElement.setAttribute("type", type);
-      inputTextElement.setAttribute("value", value);
-      if (value) inputTextElement.checked = true;
-      inputTextElement.style.transform = "scale(1.5)";
-
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
-      inputTextElement.setAttribute("name", setName);
-      inputTextElement.setAttribute("class", `${this.customClass} ${customCol}`);
-
-      let inputWithLabel = inputTextElement; //default
-
-      if(labelText != null){
-        inputWithLabel = this.labelWrap({
-          "labelText": labelText,
-          "inputNode": inputTextElement,
-          "name": setName
-        });
-      }
-
-      return inputWithLabel ;*/
-      return this.inputRadioSlide({
-        "value" : value,
-        "customCol" : customCol,
-        "labelText" : labelText,
-        "type" : type
-      });
-  }
-
   // @TODO - Works but needs ovveride for label class
   inputRadioSlide({
     value = '',
@@ -133,13 +98,13 @@ class SettingsInput {
     labelText = '',
     type = 'checkbox'} = {}
   ){
-    let setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+    const setName =this._getUniqueIdentifier(labelText);
     const slide = document.createElement("settings-bool-input");
     const fieldset = slide.getFieldSet( setName );
     slide.setLegendText(labelText);
     slide.setOnLabel("Yes");
     slide.setOffLabel("No");
-    slide.setValue(value)
+    slide.setValue(value);
 
     return fieldset;
   }
@@ -150,38 +115,51 @@ class SettingsInput {
     name = '',
     checkboxList = ''
   } = {}){
+    const setName = this._getUniqueIdentifier(labelText);
     const checkboxes = document.createElement("div");
     checkboxes.setAttribute("class", `col-8`);
-    let setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+
+    const checkboxInner = document.createElement("div");
+    checkboxInner.setAttribute("class", `d-flex flex-row flex-wrap flex-justify-between`);
 
     for(let data of checkboxList){
-      let checkboxLabel = document.createElement("label");
-      let checkbox = document.createElement("input");
-
-      checkbox.setAttribute("type", "checkbox");
-      checkbox.setAttribute("value", data.id);
-      if (data.checked) checkbox.checked = true;
-      checkbox.style.transform = "scale(1.5)";
-
-
-      checkbox.setAttribute("name", setName);
-      checkbox.setAttribute("class", `col-2`);
-
-      checkboxLabel.appendChild(checkbox);
-
-      let labelText = document.createTextNode(data.name);
-      checkboxLabel.appendChild(labelText);
-
-      checkboxes.appendChild(checkboxLabel);
+      checkboxInner.appendChild( this._miniCheckboxSet(data, setName) );
     }
+
+    checkboxes.appendChild(checkboxInner);
 
     const checkboxesWithLabel = this.labelWrap({
       "labelText": labelText,
       "inputNode": checkboxes,
-      "labelAsDiv" : true
+      "labelElement" : "fieldset"
     });
 
     return checkboxesWithLabel;
+  }
+
+  _miniCheckboxSet(data, setName){
+    // Outputs inputs in rows of three
+    let miniCheckboxSet = document.createElement("label");
+    miniCheckboxSet.setAttribute("class", "col-6 py-2");
+
+    let checkbox = document.createElement("input");
+    checkbox.setAttribute("type", "checkbox");
+    checkbox.setAttribute("value", data.id);
+    checkbox.setAttribute("name", setName);
+    checkbox.setAttribute("class", "checkbox");
+
+    if (data.checked) checkbox.checked = true;
+
+    miniCheckboxSet.appendChild(checkbox);
+
+    let textSpan = document.createElement("span");
+    textSpan.setAttribute("class", "px-2 v-align-top");
+
+    let labelText = document.createTextNode(data.name);
+    textSpan.appendChild(labelText);
+    miniCheckboxSet.appendChild(textSpan)
+
+    return miniCheckboxSet;
   }
 
 
@@ -198,7 +176,7 @@ class SettingsInput {
     if(optionsList === null || Array.isArray(optionsList) === false){
       return console.error("FormsHelper Error: Array type required to init select dropdown.");
     } else {
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
+      const setName =this._getUniqueIdentifier(labelText);
       const inputSelect = document.createElement("select");
       const currentValue = value;
 
@@ -243,85 +221,67 @@ class SettingsInput {
 
   editImageUpload({
     value = "", // img path
+    imgEl = document.createElement("img"),
     labelText = "",
     customCol = "col-8",
-    disabledInput = false,
-    callBack = null // required
+    disabledInput = false
     } = {}){
-      const setName = `${labelText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 10)}`;
-      // provide an image object
-      // provide label text
-      // callback for button overlay
+      const setName = this._getUniqueIdentifier(labelText);
+      let editButton = this.editButton({"customClass" : "btn-edit-overlay btn-small", "name" : "thumb"});
+
+      imgEl.style.height = "84px";
+      imgEl.style.width = "84px";
+      imgEl.title = labelText;
+      imgEl.setAttribute("class", "projects__image py-4");
 
       if(value != null){
-        let image = document.createElement("img");
-        image.src = value;
-        image.title = labelText;
-        image.setAttribute("class", "projects__image");
-
-        const inputWithLabel = this.labelWrap({
-          "labelText": labelText,
-          "inputNode": image,
-          "name": setName
-        });
-
-        let editButton = document.createElement("button");
-        editButton.setAttribute("class", "btn-edit-overlay");
-        editButton.innerHTML = "Edit";
-
-        inputWithLabel.appendChild(editButton);
-        inputWithLabel.style.position = "relative";
-
-        return inputWithLabel;
+        imgEl.src = value;
       } else {
-        const inputWithLabel = this.labelWrap({
-          "labelText": labelText,
-          "inputNode": "",
-          "name": setName
-        });
-
-        let editButton = document.createElement("button");
-        editButton.setAttribute("class", "btn-edit-overlay add-new-thumbnail");
-        editButton.innerHTML = "Add";
-
-        inputWithLabel.appendChild(editButton);
-        inputWithLabel.style.position = "relative";
-
-        return inputWithLabel;
+        imgEl.src = "/static/images/cvision-logo-svg.svg";
       }
+
+      const inputWithLabel = this.labelWrap({
+        "labelText": labelText,
+        "inputNode": imgEl,
+        "name": setName,
+        "labelElement": "div"
+      });
+
+      inputWithLabel.appendChild(editButton);
+      inputWithLabel.style.position = "relative";
+
+      return inputWithLabel;
     }
 
 
-    /* Wraps any node in a label */
+  /* Wraps any node in a label */
   labelWrap({
       labelText = '',
       disabled = false,
-      labelAsDiv = false,
-      inputNode } = {}
+      labelElement = "label",
+      name = "",
+      labelType = "label",
+      inputNode //required
+    } = {}
     ){
       let labelWrap = "";
-      if(labelAsDiv){
-        labelWrap = document.createElement("div");
-      }else{
-        labelWrap = document.createElement("label");
-      }
-
+      labelWrap = document.createElement(labelType);
+      labelWrap.setAttribute("for", name);
       labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
 
       const spanTextNode = document.createElement("span");
-      const spanText = document.createTextNode("");
-      const labelDiv = document.createElement("div");
-
       spanTextNode.setAttribute("class", `col-4 ${(disabled) ? "text-gray" : ""}`);
+      labelWrap.append(spanTextNode);
+
+      const spanText = document.createTextNode("");
       spanText.nodeValue = labelText;
       spanTextNode.appendChild(spanText);
 
-      labelWrap.append(spanTextNode);
-      labelWrap.append(inputNode);
-
+      const labelDiv = document.createElement("div");
       labelDiv.setAttribute("class", "py-2 px-2 f2");
-      labelDiv.style.borderBottom = "none";
       labelDiv.appendChild(labelWrap);
+
+      labelWrap.append(inputNode);
 
       return labelDiv;
     }
@@ -344,11 +304,21 @@ class SettingsInput {
         labelWrap.append(spanTextNode);
 
         labelDiv.setAttribute("class", "py-2 px-2 f2");
-        labelDiv.style.borderBottom = "none";
         labelDiv.appendChild(labelWrap);
 
         return labelDiv;
       }
+
+    /* Edit button */
+    editButton({ text = "Edit", customClass = "", name = ""} = {}){
+    //<input type="submit" value="Save" class="btn btn-charcoal btn-clear text-semibold">
+      const button = document.createElement("label");
+      button.setAttribute("for", name);
+      button.append(text);
+      button.setAttribute("class", `btn btn-clear btn-charcoal text-semibold ${customClass} position-relative`);
+
+      return button;
+    }
 
     /* Returns an number input with an initial value */
     saveButton({ text = "Save"} = {}){
@@ -370,6 +340,10 @@ class SettingsInput {
       resetLink.appendChild( resetLinkText );
 
       return resetLink;
+    }
+
+   _getUniqueIdentifier(someText){
+      return `${someText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 100)}`;
     }
 
 }

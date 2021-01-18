@@ -79,7 +79,7 @@ class LocalizationEdit extends SettingsSection {
 
     // visible
     const VISIBLE = "Visible";
-    _form.appendChild( this.inputHelper.inputCheckbox({
+    _form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": VISIBLE,
       "name": VISIBLE.toLowerCase(),
       "value": data[VISIBLE.toLowerCase()]
@@ -87,7 +87,7 @@ class LocalizationEdit extends SettingsSection {
 
     // grouping default
     const GROUPING = "grouping_default";
-    _form.appendChild( this.inputHelper.inputCheckbox({
+    _form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": "Grouping Default",
       "name": GROUPING.toLowerCase(),
       "value": data[GROUPING.toLowerCase()]

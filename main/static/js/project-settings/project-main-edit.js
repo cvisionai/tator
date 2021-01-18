@@ -19,24 +19,30 @@ class ProjectMainEdit extends SettingsSection {
   _getSectionForm(){
     this.boxOnPage = this.boxHelper.boxWrapDefault({
         "children" : document.createTextNode("")
-      });
+    });
+
+    //
+    let _form = document.createElement("form");
+    _form.id = "project-"+this.data.id;
+    this.boxOnPage.appendChild( _form );
 
     // Image upload
     this._thumbInput = this._getHiddenThumbInput( this.data.thumb );
-    this.boxOnPage.appendChild( this._getThumbnailEdit() );
-    this.boxOnPage.appendChild( this._thumbInput );
+    _form.appendChild( this._thumbInput );
+    this._thumbEdit = this._getThumbnailEdit()
+    _form.appendChild( this._thumbEdit );
 
     // Input for name
     this._editName = this._setNameInput( this._getNameFromData() );
-    this.boxOnPage.appendChild( this._editName );
+    _form.appendChild( this._editName );
 
     // Input for name
     this._editSummary = this._setSummaryInput( this._getSummaryFromData() );
-    this.boxOnPage.appendChild( this._editSummary );
+    _form.appendChild( this._editSummary );
 
     // Enable downloads at project level,
     this._downloadEnable = this._setDownloadInput( );
-    this.boxOnPage.appendChild( this._downloadEnable );
+    _form.appendChild( this._downloadEnable );
 
     let formElements = [this._editName, this._editSummary];
 
@@ -56,90 +62,101 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   _fetchPatchPromise({id = this.projectId} = {}){
-    // Set in child element,
-    return fetch("/rest/Project/" + id, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "name": this._getNameInputValue(),
-        "summary": this._getSummaryInputValue(),
-        "thumb": this._getThumbInputValue(),
-        "enable_downloads": this._getDownloadEnableValue()
-      })
-    })
+    let data = this._getFormData();
+
+    if(Object.entries(data).length === 0){
+      return false;
+    } else {
+      // Set in child element,
+      return fetch("/rest/Project/" + id, {
+        method: "PATCH",
+        mode: "cors",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+    }
+
   }
 
   _setDownloadInput({data = this.data} = {}){
-    return this.inputHelper.inputCheckbox({
-      "value" : data.enable_downloads, // img path
+    return this.inputHelper.inputRadioSlide({
+      "value" : data.enable_downloads,
       "labelText" : "Enable Download"
     });
   }
 
   _getThumbnailEdit({data = this.data} = {}){
-
-    // returns label, and image with edit overlay
-    // button opens a modal
     return this.inputHelper.editImageUpload({
       "value" : data.thumb, // img path
-      "labelText" : "Thumbnail",
-      "callBack" : () => this._editThumb() // required
+      "labelText" : "Thumbnail"
     });
   }
 
   _getHiddenThumbInput(thumb){
-    let key = "thumb"
-    return this.inputHelper.inputText( { "labelText": null, "name": key, "value": name, "type": "hidden" } );
+    let key = "thumb";
+    let styleHidden = "position: absolute; left: -99999rem";
+    let input = this.inputHelper.inputText( {
+      "labelText": null,
+      "name": key,
+      "value": name,
+      "type": "file"
+    } );
+
+    input.style = styleHidden;
+    input.id = "thumb";
+
+    input.addEventListener("change", (event) => {
+      let imagePreview = this._thumbnailPreview(event);
+    });
+
+    return input;
   }
 
   _getThumbInputValue(){
-    if(this._thumbInput == null) return ""
     return this._thumbInput.value;
   }
 
+  _getThumbValueData({ data = this.data} = {}){
+    return data.thumb;
+  }
+
   _getDownloadEnableValue(){
-    console.log("this._downloadEnable");
-    let radioSet = this._downloadEnable.querySelectorAll("input")
+    let radioSet = this._shadow.querySelectorAll(".radio-slide-wrap input");
+
     for(let s of radioSet){
-      if(s.id == "on" && s.checked == true) return true
-      if(s.id == "off" && s.checked == true) return false
+      if(s.id.indexOf("on") > -1 && s.checked == true) return true
+      if(s.id.indexOf("off") > -1 && s.checked == true) return false
     }
   }
 
-  _editThumb(){
-    console.log("Callback to pop edit thumb form modal...");
-    //pops a new form inside a modal
-    let uploadInput = `<input type="file" name="thumb" id="newThumbnail">`
-
-    this._modalConfirm({
-      "titleText" : "Thumnail Uploader",
-      "mainText" : uploadInput,
-      "buttonText" : "Upload",
-      "callback" :  this._fetchUploadThumbnail()
-    });
+  _getDownloadEnableValueData({ data = this.data} = {}){
+    return data.enable_downloads;
   }
 
-  _fetchUploadThumbnail({ event = null} = {}){
-    // check that there is a file there and hit upload endpoint
-    console.log("Placeholder to upload new thumbnail to project....");
-    console.log(event);
+  _thumbnailPreview( event ){
+    let outputElement = this._thumbEdit.querySelector(".projects__image");
+    outputElement.src = URL.createObjectURL(event.target.files[0]);
+    // outputElement.onload = function() {
+    //   URL.revokeObjectURL(outputElement.src) // free memory
+    // }
+    return outputElement;
   }
 
   reset(){
     this._setNameInputValue( this._getNameFromData() );
     this._setSummaryInputValue( this._getSummaryFromData() );
-    console.log("Reset with project data.");
+    console.log("[Reset with previously fetched project data.]");
   }
 
   resetHard(){
     this._fetchNewProjectData();
     this.reset();
+    console.log("[Reset with newly fetched project data.]");
   }
 
   _nameChanged(){
@@ -150,6 +167,29 @@ class ProjectMainEdit extends SettingsSection {
   _summaryChanged(){
     if(this._getSummaryInputValue() === this._getSummaryFromData()) return false;
     return true;
+  }
+  _downloadEnabledChanged(){
+    if(this._getDownloadEnableValue() == this._getDownloadEnableValueData()) return false;
+    return true;
+  }
+
+  _thumbInputChanged(){
+    if(this._getThumbInputValue() === this._getThumbValueData()) return false;
+     return true;
+  }
+
+  _getFormData(){
+    let formDataJSON = {};
+
+    if(this._nameChanged()) formDataJSON.name = this._getNameInputValue();
+    if(this._summaryChanged()) formDataJSON.summary = this._getSummaryInputValue();
+    if(this._downloadEnabledChanged()) formDataJSON.enable_downloads = this._getDownloadEnableValue();
+    if(this._thumbInputChanged()) {
+      let thumbVal = this._getThumbInputValue();
+      if(thumbVal != "" && thumbVal != null)formDataJSON.thumb = thumbVal;
+    }
+
+    return formDataJSON;
   }
 
   _changed(){

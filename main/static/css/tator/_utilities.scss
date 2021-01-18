@@ -6,8 +6,16 @@
   display: inline-flex;
 }
 
+.flex-row {
+  flex-direction: row;
+}
+
 .flex-column {
   flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .flex-grow {
@@ -32,6 +40,10 @@
 
 .position-relative {
   position: relative;
+}
+
+.v-align-top {
+  vertical-align: top;
 }
 
 .clearfix:after {

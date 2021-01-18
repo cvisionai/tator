@@ -114,7 +114,7 @@ class MediaTypeMainEdit extends SettingsSection {
 
       // visible
       const VISIBLE = "Visible";
-      _form.appendChild( this.inputHelper.inputCheckbox({
+      _form.appendChild( this.inputHelper.inputRadioSlide({
         "labelText": VISIBLE,
         "name": VISIBLE.toLowerCase(),
         "value": data[VISIBLE.toLowerCase()]
@@ -177,63 +177,57 @@ _fetchNewProjectData(){
   //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
 }
 
-_getAllChangedAsPromiseArray({id = -1} = {}){
-  const patchMedia = this._fetchPatchPromise({"id":id});
-  const attrPromises = this._getAttributePromises({
-    "id" : id,
-    "entityType" : "MediaType"
-  });
-
-  const promises = [patchMedia, ...attrPromises.promises];
-}
-
-
-
-  _save({id = -1} = {}){
+_save({id = -1, globalAttribute = false} = {}){
+    let promises = []
     console.log("Media Type _save method for id: "+id);
 
-    const promises = _getAllChangedAsPromiseArray({"id":id});
+    let mediaForm = this._shadow.getElementById(id);
+    let mediaChanged = false;
+    if(mediaForm.classList.contains("changed")) {
+      mediaChanged = true;
+      promises.push( this._fetchPatchPromise({id}) );
+    }
 
-    // Check if anything changed
-    Promise.all(promises).then( async( respArray ) => {
-      console.log(respArray);
-      let responses = [];
-      respArray.forEach((item, i) => {
-        responses.push( item.json() )
-      });
-
-        Promise.all( responses )
-          .then ( dataArray => {
-            let message = "";
-            respArray.forEach((item, i) => {
-              console.log("Media Type save response....");
-              let bumpIndexForAttr = true;
-              let formReadable = "Media Type";
-              if (i == 0 && item.url.indexOf("Attribute") > 0) {
-                bumpIndexForAttr = false
-              }
-              if( attrPromises.attrNames.length > 0 && item.url.indexOf("Attribute") > 0){
-                let index = bumpIndexForAttr ? i-1 : i;
-                let attrNamed = attrPromises.attrNames[index];
-                console.log("Attribute Response"+attrNamed);
-                formReadable = `Attribute "${attrNamed}"`
-              }
-              console.log(item.status);
-              console.log("Save response message: "+dataArray[i].message);
-              if(item.status == 200 & dataArray[i].message != ""){
-                message += dataArray[i].message+"<br/>";
-              } else if (item.status !== 200 ){
-                message += "Information for "+formReadable+" did not save."+"<br/>";
-              }
-            });
-          //  if (response.status == "200") {
-              this._modalSuccess(message);
-          //    this._fetchNewProjectData();
-          //  } else {
-          //    this._modalError(message);
-          //  }
-        });
+    const attrPromises = this._getAttributePromises({
+      "id" : id,
+      "entityType" : "MediaType",
+      "globalAttribute" : globalAttribute
     });
+
+    console.log("attrNames"+attrPromises.attrNames);
+    console.log("attrNamesNew"+attrPromises.attrNamesNew);
+
+    let hasAttributeChanges = attrPromises != false;
+
+    if(hasAttributeChanges){
+      promises = [...promises, ...attrPromises.promises];
+    }
+
+    if(promises.length > 0){
+      // Check if anything changed
+      Promise.all(promises).then( async( respArray ) => {
+        console.log(respArray);
+        let responses = [];
+        respArray.forEach((item, i) => {
+          responses.push( item.json() )
+        });
+
+          Promise.all( responses )
+            .then ( dataArray => {
+              this._handleResponseWithAttributes({
+                id,
+                dataArray,
+                hasAttributeChanges,
+                attrPromises,
+                respArray
+              });
+          });
+      });
+    } else {
+      this._modalSuccess("Nothing new to save!");
+    }
+
+
   }
 
 }
