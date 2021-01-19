@@ -10,6 +10,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 
 from rest_framework.authentication import TokenAuthentication
+import yaml
+
 from .models import Project
 from .models import Media
 from .models import Membership
@@ -32,9 +34,18 @@ class APIBrowserView(LoginRequiredMixin, TemplateView):
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect('projects')
+            out = redirect('projects')
         else:
-            return redirect('accounts/login')
+            if os.path.exists('/cognito/cognito.yaml'):
+                with open('/cognito/cognito.yaml', 'r') as f:
+                    config = yaml.safe_load(f)
+                out = redirect(f"https://{config['domain']}/login"
+                               f"?client_id={config['client-id']}"
+                                "&response_type=code&scope=openid"
+                               f"&redirect_uri=https://{os.getenv('MAIN_HOST')}/jwt-gateway")
+            else:
+                out = redirect('accounts/login')
+        return out
 
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
