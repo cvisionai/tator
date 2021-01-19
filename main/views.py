@@ -36,7 +36,7 @@ class MainRedirect(View):
         if request.user.is_authenticated:
             out = redirect('projects')
         else:
-            if os.path.exists('/cognito/cognito.yaml'):
+            if os.getenv('COGNITO_ENABLED') == 'TRUE':
                 with open('/cognito/cognito.yaml', 'r') as f:
                     config = yaml.safe_load(f)
                 out = redirect(f"https://{config['domain']}/login"
