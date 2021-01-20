@@ -16,7 +16,7 @@ class SettingsSection extends TatorElement {
     const myDom = this.getDom();
 
     // Unsaved changes warning
-    window.addEventListener("beforeunload", function (e) {
+    /*window.addEventListener("beforeunload", function (e) {
       e.preventDefault();
       let changes = myDom.querySelectorAll(".changed");
       console.log("changes?");
@@ -31,7 +31,7 @@ class SettingsSection extends TatorElement {
       } else {
         console.log("No changes...");
       }
-    });
+    });*/
   }
 
   _init(data){
@@ -215,6 +215,7 @@ class SettingsSection extends TatorElement {
       attrFormsChanged.forEach((form, i) => {
         let formData = {
           "entity_type": entityType,
+          //"global" : globalAttribute,
           "old_attribute_type_name": form.id,
           "new_attribute_type": {}
         };
@@ -225,7 +226,8 @@ class SettingsSection extends TatorElement {
         let attrNameOld = form.id;
         attrPromises.attrNames.push(attrNameOld);
 
-        formData.new_attribute_type = this._getFormData(form, globalAttribute);
+        let af = document.createElement("attributes-form");
+        formData.new_attribute_type = af._getAttributeFormData(form, globalAttribute);
 
         let currentPatch = this._fetchAttributePatchPromise(id, formData);
         attrPromises.promises.push(currentPatch);
@@ -258,54 +260,60 @@ class SettingsSection extends TatorElement {
     attrPromises = [],
     respArray = []}
    = {}){
-    let message = "<ul>";
-    let bumpIndexForAttr = true;
-    let formReadable = "";
-    let formReadable2 = "";
 
-    console.log("flagging global check... which id? "+id);
 
-    if (hasAttributeChanges && respArray[0].url.indexOf("Attribute") > 0) {
-      let bumpIndexForAttr = false;
-    }
+
+
+    console.log("hasAttributeChanges");
+    console.log(hasAttributeChanges);
 
     respArray.forEach((item, i) => {
-      let index = bumpIndexForAttr ? i-1 : i;
-      formReadable = `"${attrPromises.attrNames[index]}"`
-      formReadable2 = `"${attrPromises.attrNamesNew[index]}"`
 
-      console.log("still have this data?");
-      console.log(attrPromises.attrNames);
+      if(item.status == 200 && !hasAttributeChanges){
+        console.log("No attr changes - simple response.");
+        return this._modalSuccess(dataArray[i].message);
+      } else if(item.status != 200 && !hasAttributeChanges){
+        console.log("No attr changes - error response.");
+        return this._modalError(dataArray[i].message);
+      } else if (hasAttributeChanges){
+        let message = "<ul>";
+        let bumpIndexForAttr = true;
+        if (respArray[0].url.indexOf("Attribute") > 0) {
+          bumpIndexForAttr = false;
+        }
+        let index = bumpIndexForAttr ? i-1 : i;
 
-      message += "<li>"
-      if(item.status == 200){
-        let succussIcon = document.createElement("modal-success").innerHTML;
+        let formReadable = `"${attrPromises.attrNames[index]}"`
+        let formReadable2 = `"${attrPromises.attrNamesNew[index]}"`
 
-        message += dataArray[i].message != ""
-          ? succussIcon + dataArray[i].message+"<br/>"
-          : "Successfully updated "+formReadable;
-      } else if(item.status == 400 && dataArray[i].message.indexOf("global") > 0) {
-        message += "<h2>More info required for attribute change</h2>";
-        message += "<p>Confirm global change to the attribute with name "+formReadable+" to "+formReadable2+"?"
-        message += `<input type="checkbox" name="global" data-attribute-name="${formReadable.replace(/[^\w]|_/g, "-").toLowerCase()}" id="formReadable" /></p>`;
-      } else {
-        message += "Information for "+formReadable+" did not save."+"<br/>";
+        console.log("still have this data?");
+        console.log(attrPromises.attrNames);
+
+        message += "<li>"
+        if(item.status == 200){
+          let succussIcon = document.createElement("modal-success").innerHTML;
+          message += dataArray[i].message != ""
+            ? succussIcon + dataArray[i].message+"<br/>"
+            : "Successfully updated "+formReadable;
+        } else if(item.status == 400 && dataArray[i].message.indexOf("global") > 0) {
+          let input = `<input type="checkbox" name="global" data-attribute-name="${formReadable.replace(/[^\w]|_/g, "-").toLowerCase()}" id="formReadable" class="checkbox"/>`;
+          message += `<p>${input} Globally change attribute ${formReadable} to ${formReadable2}?</p>`
+        } else {
+          message += "Information for "+formReadable+" did not save."+"<br/>";
+        }
+        message += "</li>";
+        message += "</ul>";
+        let buttonSave = this._getAttrGlobalTrigger(id);
+        this._modalConfirm({
+          "titleText" : "Confirmation Required",
+          "mainText" : message,
+          buttonSave
+        });
       }
-      message += "</li>"
-    });
-      message += "</ul>";
-  //  if (response.status == "200") {
 
-      let buttonSave = this._getAttrGlobalTrigger(id);
-      this._modalConfirm({
-        "titleText" : "Confirmation Required",
-        "mainText" : message,
-        buttonSave
-      });
-  //    this._fetchNewProjectData();
-  //  } else {
-  //    this._modalError(message);
-  //  }
+    });
+
+
   }
 
   _getAttrGlobalTrigger(id){
@@ -344,6 +352,7 @@ class SettingsSection extends TatorElement {
     this.modal._titleDiv.append( document.createElement("modal-success") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
+    this.modal._main.classList.add("fixed-heigh-scroll");
 
     return this.modal.setAttribute("is-open", "true")
   }
@@ -409,11 +418,12 @@ class SettingsSection extends TatorElement {
   };
 
   _reset(){
-
+    // use this.data to populate form
   }
 
   _hardReset(){
-
+    // get, & refresh this.data
+    // use this.data to populate form
   }
 
   getDom(){

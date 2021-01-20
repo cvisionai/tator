@@ -86,7 +86,8 @@ class ProjectMainEdit extends SettingsSection {
   _setDownloadInput({data = this.data} = {}){
     return this.inputHelper.inputRadioSlide({
       "value" : data.enable_downloads,
-      "labelText" : "Enable Download"
+      "labelText" : "Enable Download",
+      "name" : "enable_downloads"
     });
   }
 

@@ -14,10 +14,12 @@ class SettingsInput {
         name = ''
       } = {}
     ){
+      const forId = this._getUniqueIdentifier(name);
       const inputTextElement = document.createElement("input");
       inputTextElement.setAttribute("type", type);
       inputTextElement.setAttribute("value", value);
       inputTextElement.setAttribute("name", name);
+      inputTextElement.setAttribute("id", forId);
 
       const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
       inputTextElement.setAttribute("class", classes);
@@ -28,7 +30,7 @@ class SettingsInput {
         const inputWithLabel = this.labelWrap({
           "labelText": labelText,
           "inputNode": inputTextElement,
-          "name": name
+          "forId": forId
         });
 
         return inputWithLabel;
@@ -44,18 +46,18 @@ class SettingsInput {
   } = {}){
     const arrayInputDiv = document.createElement("div");
     // unique shared name for this set
-    const setName =this._getUniqueIdentifier(labelText);
+    const forId = this._getUniqueIdentifier(name);
 
     // VALUE will be an array -- Loop the array and create TEXT INPUTS
     if(value.length > 0 ){
-      for(let item of value){
+      for(let key in value){
+        let showLabel = key == 0 ? labelText : "";
         // output smaller inputs into 3 cols
         let arrayInput = this.inputText({
-            "value" : item,
-            "labelText" : labelText,
-            "name" : setName,
-            "customCol" : 'col-2',
-            "id" : setName
+            "value" : value[key],
+            "labelText" : showLabel,
+            "name" : name,
+            "customCol" : 'col-2'
         });
         arrayInputDiv.appendChild(arrayInput);
       }
@@ -63,11 +65,16 @@ class SettingsInput {
       let arrayInput = this.inputText({
           "value" : "",
           "labelText" : labelText,
-          "name" : setName,
+          "name" : name,
           "customCol" : 'col-2'
       });
       arrayInputDiv.appendChild(arrayInput);
     }
+
+    // placeholder
+    let placeholderNew = document.createElement("div");
+    placeholderNew.setAttribute("class", "placeholderNew");
+    arrayInputDiv.appendChild(placeholderNew);
 
     // Add new
     let addNewButton = this.addNewRow({
@@ -79,13 +86,16 @@ class SettingsInput {
 
     addNewButton.addEventListener("click", (event) => {
       event.preventDefault();
+      let parentNode = event.target.parentNode.parentNode.parentNode;
       // Add another "+Add with input to the page"
-      event.target.before(this.inputText({
+      parentNode.querySelector(".placeholderNew").appendChild(
+        this.inputText({
            "value" : "",
-           "labelText" : labelText,
-           "name" : setName,
+           "labelText" : "",
+           "name" : name,
            "customCol" : 'col-2'
-       }));
+         })
+       );
     });
 
     return arrayInputDiv;
@@ -96,11 +106,12 @@ class SettingsInput {
     value = '',
     customCol = '',
     labelText = '',
-    type = 'checkbox'} = {}
-  ){
-    const setName =this._getUniqueIdentifier(labelText);
+    type = 'checkbox',
+    name = ""
+  } = {} ){
+    const forId = this._getUniqueIdentifier(name);
     const slide = document.createElement("settings-bool-input");
-    const fieldset = slide.getFieldSet( setName );
+    const fieldset = slide.getFieldSet( name, forId );
     slide.setLegendText(labelText);
     slide.setOnLabel("Yes");
     slide.setOffLabel("No");
@@ -115,7 +126,7 @@ class SettingsInput {
     name = '',
     checkboxList = ''
   } = {}){
-    const setName = this._getUniqueIdentifier(labelText);
+    const setName = this._getUniqueIdentifier(name);
     const checkboxes = document.createElement("div");
     checkboxes.setAttribute("class", `col-8`);
 
@@ -170,17 +181,20 @@ class SettingsInput {
     labelText = "",
     customCol = "col-8",
     optionsList = [],
-    disabledInput = false
+    disabledInput = false,
+    name = ""
     } = {}
   ){
     if(optionsList === null || Array.isArray(optionsList) === false){
       return console.error("FormsHelper Error: Array type required to init select dropdown.");
     } else {
-      const setName =this._getUniqueIdentifier(labelText);
+      const setName =this._getUniqueIdentifier(name);
       const inputSelect = document.createElement("select");
       const currentValue = value;
 
       inputSelect.setAttribute("class", this.customClass + " form-select select-md " + customCol);
+      inputSelect.setAttribute("name", name);
+
       if(!disabledInput) inputSelect.style.color = "#fff";
       //
       for(let optionValue of optionsList){
@@ -226,7 +240,7 @@ class SettingsInput {
     customCol = "col-8",
     disabledInput = false
     } = {}){
-      const setName = this._getUniqueIdentifier(labelText);
+      const setName = this._getUniqueIdentifier(name);
       let editButton = this.editButton({"customClass" : "btn-edit-overlay btn-small", "name" : "thumb"});
 
       imgEl.style.height = "84px";
@@ -259,14 +273,14 @@ class SettingsInput {
       labelText = '',
       disabled = false,
       labelElement = "label",
-      name = "",
+      forId = "",
       labelType = "label",
       inputNode //required
     } = {}
     ){
       let labelWrap = "";
       labelWrap = document.createElement(labelType);
-      labelWrap.setAttribute("for", name);
+      labelWrap.setAttribute("for", forId);
       labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
 
       const spanTextNode = document.createElement("span");
@@ -310,10 +324,14 @@ class SettingsInput {
       }
 
     /* Edit button */
-    editButton({ text = "Edit", customClass = "", name = ""} = {}){
+    editButton({
+      text = "Edit",
+      customClass = "",
+      forId = ""
+    } = {}){
     //<input type="submit" value="Save" class="btn btn-charcoal btn-clear text-semibold">
       const button = document.createElement("label");
-      button.setAttribute("for", name);
+      button.setAttribute("for", forId);
       button.append(text);
       button.setAttribute("class", `btn btn-clear btn-charcoal text-semibold ${customClass} position-relative`);
 
@@ -343,7 +361,7 @@ class SettingsInput {
     }
 
    _getUniqueIdentifier(someText){
-      return `${someText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 100)}`;
+      return `${someText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 1000)}`;
     }
 
 }

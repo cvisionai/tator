@@ -121,11 +121,11 @@ class MediaTypeMainEdit extends SettingsSection {
       } ) );
 
       // attribute types
-      if(data.attribute_types.length > 0){
-        this.attributeSection = document.createElement("settings-attributes");
-        this.attributeSection._init("MEDIA", data.attribute_types);
-        current.appendChild(this.attributeSection);
-      }
+      //if(data.attribute_types.length > 0){
+      this.attributeSection = document.createElement("settings-attributes");
+      this.attributeSection._init("MediaType", data.id, data.attribute_types);
+      current.appendChild(this.attributeSection);
+      //}
 
       return current;
   }

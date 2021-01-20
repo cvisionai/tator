@@ -10,8 +10,8 @@ class SettingsNav extends TatorElement {
     this.nav.style.float = "left";
 
     // Prep the modal.
-    this.modal = document.createElement("modal-dialog");
-    this.nav.appendChild(this.modal);
+    //this.modal = document.createElement("modal-dialog");
+    //this.nav.appendChild(this.modal);
 
     this._shadow.appendChild(this.nav);
   }
@@ -273,27 +273,27 @@ _getText({type = "", count = 0, text = ""} = {}){
     for(let dom of typeDomArray){
       // Hide all other item boxes
       dom.querySelectorAll('.item-box').forEach( (el) => {
-        if(!dom.querySelector(".changed")){
+        //if(!dom.querySelector(".changed")){
           el.hidden = true;
           // Find and show our target
           targetEl = dom.querySelector( itemIdSelector );
           if(targetEl) targetEl.hidden = false;
-        } else {
-          this._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
-        }
+        //} else {
+        //  this._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
+        //}
       } );
     }
   };
 
-  _modalError(text, message){
-    let textNode = document.createTextNode(" "+text);
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-warning") );
-    this.modal._titleDiv.append(textNode);
-    this.modal._main.innerHTML = message;
-
-    return this.modal.setAttribute("is-open", "true")
-  }
+  // _modalError(text, message){
+  //   let textNode = document.createTextNode(" "+text);
+  //   this.modal._titleDiv.innerHTML = "";
+  //   this.modal._titleDiv.append( document.createElement("modal-warning") );
+  //   this.modal._titleDiv.append(textNode);
+  //   this.modal._main.innerHTML = message;
+  //
+  //   return this.modal.setAttribute("is-open", "true")
+  // }
 
   toggleSubItemList({ elClass = ``} = {}){
     //console.log(elClass);
