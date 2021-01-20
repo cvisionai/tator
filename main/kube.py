@@ -573,8 +573,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '1Gi',
-                        'cpu': '250m',
+                        'memory': '4Gi',
+                        'cpu': '1000m',
                     },
                 },
             },
