@@ -50,16 +50,6 @@ def get_client_image_name():
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
     return f"{registry}/tator_client:{Git.sha}"
 
-def get_wget_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/wget:{Git.sha}"
-
-def get_curl_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/curl:{Git.sha}"
-
 def _get_api(cluster):
     """ Get custom objects api associated with a cluster specifier.
     """
@@ -251,7 +241,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['url'])},
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
-                'image': '{{workflow.parameters.curl_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
@@ -572,7 +562,7 @@ class TatorTranscode(JobManagerMixin):
                                        {'name': 'url'}]},
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
-                'image': '{{workflow.parameters.wget_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
                 'args': ['-O', '{{inputs.parameters.original}}'] + headers + \
@@ -815,8 +805,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
@@ -917,8 +905,6 @@ class TatorTranscode(JobManagerMixin):
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name(),
                        'attributes' : json.dumps(attributes)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 

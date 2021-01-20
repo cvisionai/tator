@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings postgis-image client-image wget-image curl-image
+IMAGES=python-bindings postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -157,24 +157,6 @@ tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css r-docs docs
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
-
-.PHONY: wget-image
-wget-image: containers/wget/Dockerfile
-	docker build -t $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:latest
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
-	docker push $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
-
-.PHONY: curl-image
-curl-image: containers/curl/Dockerfile
-	docker build -t $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
-	docker push $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
