@@ -41,10 +41,6 @@ def _select_storage_class():
     storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
     return random.choice(storage_classes)
 
-def bytes_to_mi_str(num_bytes):
-    num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
-    return f"{num_megabytes}Mi"
-
 def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
@@ -209,23 +205,6 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
         """
-        # Setup common pipeline steps
-        # Define persistent volume claim.
-        self.pvc = {
-            'metadata': {
-                'name': 'transcode-scratch',
-            },
-            'spec': {
-                'storageClassName': _select_storage_class(),
-                'accessModes': [ 'ReadWriteOnce' ],
-                'resources': {
-                    'requests': {
-                        'storage': os.getenv("TRANSCODER_PVC_SIZE"),
-                    }
-                }
-            }
-        }
-
         def spell_out_params(params):
             yaml_params = [{"name": x} for x in params]
             return yaml_params
@@ -333,7 +312,6 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
             'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -344,13 +322,12 @@ class TatorTranscode(JobManagerMixin):
                          '--host', '{{workflow.parameters.host}}',
                          '--token', '{{workflow.parameters.token}}',
                          '--project', '{{workflow.parameters.project}}',
-                         '--type', '{{inputs.parameters.entity_type}}',
+                         '--type', '{{workflow.parameters.type}}',
                          '--section', '{{workflow.parameters.section}}',
-                         '--name', '{{inputs.parameters.name}}',
-                         '--md5', '{{inputs.parameters.md5}}',
                          '--gid', '{{workflow.parameters.gid}}',
                          '--uid', '{{workflow.parameters.uid}}',
                          '--attributes', '{{workflow.parameters.attributes}}',
+                         '--media_id', '{{workflow.parameters.media_id}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -620,7 +597,6 @@ class TatorTranscode(JobManagerMixin):
                 'tasks': [{
                     'name': 'prepare-task',
                     'template': 'prepare',
-                    'arguments': passthrough_parameters,
                 }, {
                     'name': 'transcode-task',
                     'template': 'transcode',
@@ -648,14 +624,6 @@ class TatorTranscode(JobManagerMixin):
                 }],
             },
         }
-        if media_id is None:
-            pipeline_task['dag']['tasks'].insert(0, {
-                'name': 'create-media-task',
-                'template': 'create-media',
-                'arguments': passthrough_parameters,
-            })
-            pipeline_task['dag']['tasks'][1]['dependencies'] = ['create-media-task']
-
         return pipeline_task
     def get_transcode_task(self, item, url):
         """ Generate a task object describing the dependencies of a transcode """
@@ -670,13 +638,9 @@ class TatorTranscode(JobManagerMixin):
             'dag': {
                 # First download, unpack and delete archive. Then Iterate over each video and upload
                 # Lastly iterate over all localization and state files.
-                'tasks' : [{'name': 'download-task',
-                            'template': 'download',
-                            'arguments': parameters},
-                            {'name': 'transcode-task',
+                'tasks' : [{'name': 'transcode-task',
                             'template': 'transcode-pipeline',
-                            'arguments' : parameters,
-                            'dependencies' : ['download-task']}]
+                            'arguments' : parameters}]
                 }
             }
 
@@ -704,26 +668,25 @@ class TatorTranscode(JobManagerMixin):
         if entity_type != -1:
             raise Exception("entity type is not -1!")
 
-        if upload_size:
-            rounded_size = upload_size * 4
-            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
-
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
+                       'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
                        'tus_url' : f'{host}/files/',
                        'project' : str(project),
+                       'type': '-1',
                        'token' : str(token),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'attributes' : json.dumps(attributes)}
+                       'attributes' : json.dumps(attributes),
+                       'media_id': '-1'}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -750,7 +713,6 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
                     self.prepare_task,
@@ -804,24 +766,23 @@ class TatorTranscode(JobManagerMixin):
             'name': name
         }
 
-        if upload_size:
-            rounded_size = upload_size * 4
-            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
-
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
+                       'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
                        'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
+                       'type': str(entity_type),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'attributes' : json.dumps(attributes)}
+                       'attributes' : json.dumps(attributes),
+                       'media_id': '-1' if media_id is None else media_id}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
@@ -848,7 +809,6 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [self.pvc],
                 'templates': [
                     self.prepare_task,
                     self.transcode_task,
