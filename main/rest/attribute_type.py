@@ -112,7 +112,7 @@ class AttributeTypeListAPI(BaseListView):
     def _patch(self, params: Dict) -> Dict:
         """Rename an attribute on a type."""
         ts = TatorSearch()
-        global_operation = params["global"]
+        global_operation = params.get("global", "false").lower()
         old_name = params["old_attribute_type_name"]
         old_dtype = None
         old_attribute_type = None
@@ -125,8 +125,8 @@ class AttributeTypeListAPI(BaseListView):
         related_objects = self._get_related_objects(entity_type, old_name)
         if related_objects and global_operation == "false":
             raise ValueError(
-                f"Attempted to mutate attribute '{old_name}' without global flag, but it "
-                f"exists on other types."
+                f"Attempted to mutate attribute '{old_name}' without the global flag set to 'true',"
+                " but it exists on other types."
             )
 
         for attribute_type in entity_type.attribute_types:
