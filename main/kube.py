@@ -319,8 +319,8 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        self.create_media_task = {
-            'name': 'create-media',
+        self.prepare_task = {
+            'name': 'prepare',
             'metadata': {
                 'labels': {'app': 'transcoder'},
             },
@@ -333,70 +333,28 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
             'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
+            'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
-                'args': ['-m', 'tator.transcode.create_media',
+                'args': ['-m', 'tator.transcode.prepare',
+                         '--url', '{{workflow.parameters.url}}',
+                         '--work_dir', '/work',
                          '--host', '{{workflow.parameters.host}}',
                          '--token', '{{workflow.parameters.token}}',
                          '--project', '{{workflow.parameters.project}}',
-                         '--media_type', '{{inputs.parameters.entity_type}}',
+                         '--type', '{{inputs.parameters.entity_type}}',
                          '--section', '{{workflow.parameters.section}}',
                          '--name', '{{inputs.parameters.name}}',
                          '--md5', '{{inputs.parameters.md5}}',
                          '--gid', '{{workflow.parameters.gid}}',
                          '--uid', '{{workflow.parameters.uid}}',
                          '--attributes', '{{workflow.parameters.attributes}}',
-                         '--output', '/work/media_id.txt'],
+                ],
+                'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '1Gi',
-                        'cpu': '250m',
-                    },
-                },
-            },
-            'outputs': {
-                'parameters': [{
-                    'name': 'media_id',
-                    'valueFrom': {'path': '/work/media_id.txt'},
-                }],
-            },
-        }
-
-        self.determine_transcode_task = {
-            'name': 'determine-transcode',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.determine_transcode',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--project', '{{workflow.parameters.project}}',
-                         '--media_type', '{{inputs.parameters.entity_type}}',
-                         '--output', '/work/workloads.json',
-                         '{{inputs.parameters.original}}'],
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
+                    'name': 'scratch',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -406,10 +364,19 @@ class TatorTranscode(JobManagerMixin):
                     },
                 },
             },
+            'volumes': [{
+                'name': 'scratch',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }],
             'outputs': {
                 'parameters': [{
                     'name': 'workloads',
                     'valueFrom': {'path': '/work/workloads.json'},
+                }, {
+                    'name': 'media_id',
+                    'valueFrom': {'path': '/work/media_id.txt'},
                 }],
             },
         }
@@ -445,45 +412,6 @@ class TatorTranscode(JobManagerMixin):
                          '--configs', '{{inputs.parameters.configs}}',
                          '--output', '{{inputs.parameters.transcoded}}',
                          '--input', '{{inputs.parameters.original}}'],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
-                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
-                    },
-                },
-            },
-        }
-        self.thumbnail_task = {
-            'name': 'thumbnail',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.make_thumbnails',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--media', '{{inputs.parameters.media}}',
-                         '--output', '{{inputs.parameters.thumbnail}}',
-                         '--gif', '{{inputs.parameters.thumbnail_gif}}',
-                         '{{inputs.parameters.original}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
@@ -690,18 +618,8 @@ class TatorTranscode(JobManagerMixin):
             'inputs': passthrough_parameters,
             'dag': {
                 'tasks': [{
-                    'name': 'thumbnail-task',
-                    'template': 'thumbnail',
-                    'arguments': {
-                        'parameters': passthrough_parameters['parameters'] + [{
-                            'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
-                                     if media_id is None else str(media_id),
-                        }],
-                    },
-                }, {
-                    'name': 'determine-transcode-task',
-                    'template': 'determine-transcode',
+                    'name': 'prepare-task',
+                    'template': 'prepare',
                     'arguments': passthrough_parameters,
                 }, {
                     'name': 'transcode-task',
@@ -721,12 +639,12 @@ class TatorTranscode(JobManagerMixin):
                             'value': '{{item.configs}}',
                         }, {
                             'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
+                            'value': '{{tasks.prepare-task.outputs.parameters.media_id}}' \
                                      if media_id is None else str(media_id),
                         }],
                     },
-                    'dependencies': ['thumbnail-task', 'determine-transcode-task'],
-                    'withParam': '{{tasks.determine-transcode-task.outputs.parameters.workloads}}',
+                    'dependencies': ['prepare-task'],
+                    'withParam': '{{tasks.prepare-task.outputs.parameters.workloads}}',
                 }],
             },
         }
@@ -835,12 +753,10 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
+                    self.prepare_task,
                     self.get_download_task(),
                     self.delete_task,
-                    self.create_media_task,
-                    self.determine_transcode_task,
                     self.transcode_task,
-                    self.thumbnail_task,
                     self.image_upload_task,
                     self.unpack_task,
                     self.get_transcode_dag(),
@@ -934,11 +850,8 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterFailure': 86400},
                 'volumeClaimTemplates': [self.pvc],
                 'templates': [
-                    self.get_download_task(),
-                    self.create_media_task,
-                    self.determine_transcode_task,
+                    self.prepare_task,
                     self.transcode_task,
-                    self.thumbnail_task,
                     self.image_upload_task,
                     self.get_transcode_dag(media_id),
                     pipeline_task,
