@@ -740,6 +740,7 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
+                'volumeClaimTemplates': [self.pvc],
                 'parallelism': 4,
                 'templates': [
                     self.prepare_task,
@@ -809,7 +810,7 @@ class TatorTranscode(JobManagerMixin):
                        'user': str(user),
                        'client_image' : get_client_image_name(),
                        'attributes' : json.dumps(attributes),
-                       'media_id': '-1' if media_id is None else media_id}
+                       'media_id': '-1' if media_id is None else str(media_id)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
