@@ -114,7 +114,7 @@ spec:
             - name: TRANSCODER_CPU_LIMIT
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             - name: TRANSCODER_MEMORY_LIMIT
-              value: {{ .Values.transcoderMemoryLimit | default "16Gi" | quote }}
+              value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
             - name: WORKFLOW_STORAGE_CLASSES
               {{- if hasKey .Values "workflowStorageClasses" }}
               {{- $storage_classes := "" }}
