@@ -41,6 +41,10 @@ def _select_storage_class():
     storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
     return random.choice(storage_classes)
 
+def bytes_to_mi_str(num_bytes):
+    num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
+    return f"{num_megabytes}Mi"
+
 def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
@@ -205,6 +209,22 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
         """
+        # Set up PVC that can be used for archive uploads.
+        self.pvc = {
+            'metadata': {
+                'name': 'transcode-scratch',
+            },
+            'spec': {
+                'storageClassName': _select_storage_class(),
+                'accessModes': [ 'ReadWriteOnce' ],
+                'resources': {
+                    'requests': {
+                        'storage': os.getenv('TRANSCODER_PVC_SIZE'),
+                    }
+                }
+            }
+        }
+
         def spell_out_params(params):
             yaml_params = [{"name": x} for x in params]
             return yaml_params
@@ -323,6 +343,7 @@ class TatorTranscode(JobManagerMixin):
                          '--token', '{{workflow.parameters.token}}',
                          '--project', '{{workflow.parameters.project}}',
                          '--type', '{{workflow.parameters.type}}',
+                         '--name', '{{workflow.parameters.upload_name}}',
                          '--section', '{{workflow.parameters.section}}',
                          '--gid', '{{workflow.parameters.gid}}',
                          '--uid', '{{workflow.parameters.uid}}',
@@ -380,18 +401,18 @@ class TatorTranscode(JobManagerMixin):
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['python3',],
                 'args': ['-m', 'tator.transcode.transcode',
+                         '--url', '{{workflow.parameters.url}}',
+                         '--work_dir', '/work',
                          '--host', '{{workflow.parameters.host}}',
                          '--token', '{{workflow.parameters.token}}',
                          '--media', '{{inputs.parameters.media}}',
                          '--category', '{{inputs.parameters.category}}',
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
-                         '--configs', '{{inputs.parameters.configs}}',
-                         '--output', '{{inputs.parameters.transcoded}}',
-                         '--input', '{{inputs.parameters.original}}'],
+                         '--configs', '{{inputs.parameters.configs}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'transcode-scratch',
+                    'name': 'scratch',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -401,6 +422,12 @@ class TatorTranscode(JobManagerMixin):
                     },
                 },
             },
+            'volumes': [{
+                'name': 'scratch',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }],
         }
 
         self.image_upload_task = {
