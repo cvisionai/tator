@@ -52,6 +52,29 @@ class SectionCard extends TatorElement {
       const path = document.createElementNS(svgNamespace, "path");
       path.setAttribute("d", "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z");
       svg.appendChild(path);
+
+      const context = document.createElement("div");
+      context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+      context.style.display = "none";
+      this._shadow.appendChild(context);
+
+      const toggle = document.createElement("toggle-button");
+      if (section.visible) {
+        toggle.setAttribute("text", "Archive folder");
+      } else {
+        toggle.setAttribute("text", "Restore folder");
+      }
+      context.appendChild(toggle);
+
+      this.addEventListener("contextmenu", evt => {
+        evt.preventDefault();
+        console.log(evt, this);
+        context.style.display = "block";
+      });
+
+      window.addEventListener("click", evt => {
+        context.style.display = "none";
+      });
     } else if (sectionType == "savedSearch") {
       const circle = document.createElementNS(svgNamespace, "circle");
       circle.setAttribute("cx", "11");
