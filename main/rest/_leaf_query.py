@@ -179,7 +179,7 @@ def get_leaf_queryset(project, params):
         # If using ES, do the search and construct the queryset.
         query = get_leaf_es_query(params)
         leaf_ids, _  = TatorSearch().search(project, query)
-        qs = Leaf.objects.filter(pk__in=leaf_ids)
+        qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_leaf_psql_queryset(project, filter_ops, params)

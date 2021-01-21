@@ -162,7 +162,7 @@ def get_annotation_queryset(project, params, annotation_type):
         # If using ES, do the search and construct the queryset.
         query = get_annotation_es_query(project, params, annotation_type)
         annotation_ids, _  = TatorSearch().search(project, query)
-        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
+        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids).order_by('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
