@@ -37,6 +37,20 @@ class ProjectDetail extends TatorPage {
     this._folders.setAttribute("class", "sections");
     section.appendChild(this._folders);
 
+    const archivedFoldersButton = document.createElement("button");
+    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white");
+    section.appendChild(archivedFoldersButton);
+
+    const archivedFolderText = document.createElement("h2");
+    archivedFolderText.setAttribute("class", "h3 text-semibold");
+    archivedFolderText.textContent = "Archived Folders";
+    archivedFoldersButton.appendChild(archivedFolderText);
+
+    this._archivedFolders = document.createElement("ul");
+    this._archivedFolders.setAttribute("class", "content sections");
+    this._archivedFolders.style.display = "none";
+    section.appendChild(this._archivedFolders);
+
     const savedSearchHeader = document.createElement("div");
     savedSearchHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
     section.appendChild(savedSearchHeader);
@@ -162,6 +176,16 @@ class ProjectDetail extends TatorPage {
       this.setAttribute("has-open-modal", "");
     });
 
+    archivedFoldersButton.addEventListener("click", evt => {
+      this.classList.toggle("active");
+      const content = this._archivedFolders
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+
     this._addSavedSearchButton.addEventListener("click", evt => {
       if (this._addSavedSearchButton.style.cursor == "pointer") {
         newSectionDialog.init("Save current search", "savedSearch");
@@ -175,9 +199,10 @@ class ProjectDetail extends TatorPage {
         let spec;
         if (newSectionDialog._sectionType == "folder") {
           spec = {name: newSectionDialog._input.value,
-                  tator_user_sections: uuidv1()};
+                  tator_user_sections: uuidv1(),
+                  visible: true};
         } else if (newSectionDialog._sectionType == "savedSearch") {
-          spec = {};
+          spec = {visible: true};
 
           // Check if an existing section is selected.
           const params = new URLSearchParams(document.location.search.substring(1));
@@ -213,6 +238,9 @@ class ProjectDetail extends TatorPage {
           if (spec.tator_user_sections === null) {
             delete spec.tator_user_sections;
           }
+          if (spec.visible === null) {
+            delete spec.visible;
+          }
         } else if (newSectionDialog._sectionType == "playlist") {
           //TODO: Handle adding playlist
         }
@@ -235,7 +263,11 @@ class ProjectDetail extends TatorPage {
                               ...spec};
           if (newSectionDialog._sectionType == "folder") {
             card.init(sectionObj, "folder");
-            this._folders.appendChild(card);
+            if (sectionObj.visible) {
+              this._folders.appendChild(card);
+            } else {
+              this._archivedFolders.appendChild(card);
+            }
             card.addEventListener("click", () => {
               this._selectSection(sectionObj, projectId);
               for (const child of this._allSections()) {
@@ -330,6 +362,7 @@ class ProjectDetail extends TatorPage {
           if (child._section.id == evt.detail.id) {
             child.parentNode.removeChild(child);
             this._folders.children[0].click();
+            this._archivedFolders.children[0].click();
           }
         }
       }
@@ -407,8 +440,9 @@ class ProjectDetail extends TatorPage {
 
   _allSections() {
     const folders = Array.from(this._folders.children);
+    const hiddenFolders = Array.from(this._archivedFolders.children);
     const savedSearches = Array.from(this._savedSearches.children);
-    return folders.concat(savedSearches);
+    return folders.concat(savedSearches).concat(hiddenFolders);
   }
 
   _notify(title, message, error_or_ok) {
@@ -512,7 +546,11 @@ class ProjectDetail extends TatorPage {
           const card = document.createElement("section-card");
           card.init(section, sectionType);
           if (sectionType == "folder") {
-            this._folders.appendChild(card);
+            if (section.visible) {
+              this._folders.appendChild(card);
+            } else {
+              this._archivedFolders.appendChild(card);
+            }
           } else {
             this._savedSearches.appendChild(card);
           }

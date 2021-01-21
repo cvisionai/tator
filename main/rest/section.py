@@ -39,11 +39,12 @@ class SectionListAPI(BaseListView):
         media_bools = params.get('media_bools', None)
         annotation_bools = params.get('annotation_bools', None)
         tator_user_sections = params.get('tator_user_sections', None)
+        visible = params.get("visible", True)
 
         if Section.objects.filter(
             project=project, name__iexact=params['name']).exists():
             raise Exception("Section with this name already exists!")
-        
+
         project = Project.objects.get(pk=project)
         section = Section.objects.create(
             project=project,
@@ -52,6 +53,7 @@ class SectionListAPI(BaseListView):
             media_bools=media_bools,
             annotation_bools=annotation_bools,
             tator_user_sections=tator_user_sections,
+            visible=visible,
         )
         return {'message': f"Section {name} created!",
                 'id': section.id}
