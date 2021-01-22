@@ -847,7 +847,7 @@ class TatorTranscode(JobManagerMixin):
                             }
                         }
                     }
-                } for workload in ['prepare'] + list(range(MAX_WORKLOADS)),
+                } for workload in ['prepare'] + list(range(MAX_WORKLOADS))],
                 'templates': [
                     self.prepare_task,
                     self.transcode_task,
