@@ -30,10 +30,10 @@ spec:
           resources:
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: 16Gi
             requests:
               cpu: 1000m
-              memory: 2Gi
+              memory: 4Gi
           env:
             - name: DJANGO_SECRET_KEY
               valueFrom:
@@ -127,6 +127,8 @@ spec:
               {{- else }}
               value: nfs-client
               {{- end }}
+            - name: SCRATCH_STORAGE_CLASS
+              value: {{ .Values.scratchStorageClass | default "nfs-client" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:

@@ -209,22 +209,6 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
         """
-        # Set up PVC that can be used for archive uploads.
-        self.pvc = {
-            'metadata': {
-                'name': 'transcode-scratch',
-            },
-            'spec': {
-                'storageClassName': _select_storage_class(),
-                'accessModes': [ 'ReadWriteOnce' ],
-                'resources': {
-                    'requests': {
-                        'storage': os.getenv('TRANSCODER_PVC_SIZE'),
-                    }
-                }
-            }
-        }
-
         def spell_out_params(params):
             yaml_params = [{"name": x} for x in params]
             return yaml_params
@@ -352,7 +336,7 @@ class TatorTranscode(JobManagerMixin):
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'scratch',
+                    'name': 'scratch-prepare',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -362,12 +346,6 @@ class TatorTranscode(JobManagerMixin):
                     },
                 },
             },
-            'volumes': [{
-                'name': 'scratch',
-                'emptyDir': {
-                    'medium': 'Memory',
-                },
-            }],
             'outputs': {
                 'parameters': [{
                     'name': 'workloads',
@@ -395,7 +373,7 @@ class TatorTranscode(JobManagerMixin):
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
                                                         'category', 'raw_width', 'raw_height',
-                                                        'configs'])},
+                                                        'configs', 'id'])},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -412,7 +390,7 @@ class TatorTranscode(JobManagerMixin):
                          '--configs', '{{inputs.parameters.configs}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'scratch',
+                    'name': 'scratch-{{inputs.parameters.id}}',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -422,12 +400,6 @@ class TatorTranscode(JobManagerMixin):
                     },
                 },
             },
-            'volumes': [{
-                'name': 'scratch',
-                'emptyDir': {
-                    'medium': 'Memory',
-                },
-            }],
         }
 
         self.image_upload_task = {
@@ -641,6 +613,9 @@ class TatorTranscode(JobManagerMixin):
                             'name': 'configs',
                             'value': '{{item.configs}}',
                         }, {
+                            'name': 'id',
+                            'value': '{{item.id}}',
+                        }, {
                             'name': 'media',
                             'value': '{{tasks.prepare-task.outputs.parameters.media_id}}' \
                                      if media_id is None else str(media_id),
@@ -695,6 +670,10 @@ class TatorTranscode(JobManagerMixin):
         if entity_type != -1:
             raise Exception("entity type is not -1!")
 
+        pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
+        if upload_size:
+            pvc_size = bytes_to_mi_str(upload_size * 4)
+
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
@@ -740,7 +719,20 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [self.pvc],
+                'volumeClaimTemplates': [{
+                    'metadata': {
+                        'name': 'transcode-scratch',
+                    },
+                    'spec': {
+                        'storageClassName': _select_storage_class(),
+                        'accessModes': [ 'ReadWriteOnce' ],
+                        'resources': {
+                            'requests': {
+                                'storage': pvc_size,
+                            }
+                        }
+                    }
+                }],
                 'parallelism': 4,
                 'templates': [
                     self.prepare_task,
@@ -779,6 +771,7 @@ class TatorTranscode(JobManagerMixin):
                         section, md5, gid, uid,
                         user, upload_size,
                         attributes, media_id):
+        MAX_WORKLOADS = 7 # 5 resolutions + audio + archival
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -793,6 +786,10 @@ class TatorTranscode(JobManagerMixin):
             'md5' : md5,
             'name': name
         }
+
+        pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
+        if upload_size:
+            pvc_size = bytes_to_mi_str(upload_size * 4)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
@@ -837,6 +834,20 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
+                'volumeClaimTemplates': [{
+                    'metadata': {
+                        'name': f'scratch-{workload}',
+                    },
+                    'spec': {
+                        'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
+                        'accessModes': [ 'ReadWriteOnce' ],
+                        'resources': {
+                            'requests': {
+                                'storage': pvc_size,
+                            }
+                        }
+                    }
+                } for workload in ['prepare'] + list(range(MAX_WORKLOADS)),
                 'templates': [
                     self.prepare_task,
                     self.transcode_task,
