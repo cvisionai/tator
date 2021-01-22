@@ -97,6 +97,7 @@ class CustomGenerator(SchemaGenerator):
                 'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,
                 'SectionSpec': section_spec,
+                'SectionUpdate': section_update,
                 'Section': section,
                 'SectionAnalysis': section_analysis,
                 'StateSpec': state_spec,

@@ -37,6 +37,13 @@ section_spec = {
     },
 }
 
+section_update = {
+    'type': 'object',
+    'properties': {
+        **section_post_properties,
+    },
+}
+
 section = {
     'type': 'object',
     'properties': {
@@ -49,6 +56,6 @@ section = {
             'description': 'Unique integer identifying the project associated with the section.',
         },
         **section_post_properties,
-    }, 
+    },
 }
 

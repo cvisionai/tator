@@ -94,6 +94,8 @@ class SectionDetailAPI(BaseDetailView):
             section.annotation_bools = params['annotation_bools']
         if 'tator_user_sections' in params:
             section.tator_user_sections = params['tator_user_sections']
+        if "visible" in params:
+            section.visible = params["visible"]
         section.save()
         return {'message': f"Section {section.name} updated successfully!"}
 
