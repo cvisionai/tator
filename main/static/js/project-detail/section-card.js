@@ -58,9 +58,8 @@ class SectionCard extends TatorElement {
       context.style.display = "none";
       this._shadow.appendChild(context);
 
-      this.visible = this._section.visible;
       const toggle = document.createElement("toggle-button");
-      if (section.visible) {
+      if (this._section.visible) {
         toggle.setAttribute("text", "Archive folder");
       } else {
         toggle.setAttribute("text", "Restore folder");
@@ -82,16 +81,14 @@ class SectionCard extends TatorElement {
             "visible": this._section.visible,
           })
         })
-        .then(response => response.json())
         .then(response => {
-          this.visible = this._section.visible;
-          if (section.visible) {
+          if (this._section.visible) {
             toggle.setAttribute("text", "Archive folder");
           } else {
             toggle.setAttribute("text", "Restore folder");
           }
-          this.dispatchEvent(new CustomEvent("visibilityToggle", {
-            detail: {id: this._section.id}
+          this.dispatchEvent(new CustomEvent("visibilityChange", {
+            detail: {section: this._section}
           }));
         });
       });

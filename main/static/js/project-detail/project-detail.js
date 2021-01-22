@@ -272,21 +272,8 @@ class ProjectDetail extends TatorPage {
               }
               card.active = true;
             });
-            card.addEventListener("visibilityToggle", evt => {
-              for (const child of this._allSections()) {
-                if (child._section) {
-                  if (child._section.id == evt.detail.id) {
-                    child.parentNode.removeChild(child);
-                  }
-                }
-              }
-              if (card.visible) {
-                this._folders.appendChild(card);
-                this._folders.children[0].click();
-              } else {
-                this._archivedFolders.appendChild(card);
-                this._archivedFolders.children[0].click();
-              }
+            card.addEventListener("visibilityChange", evt => {
+              this._sectionVisibilityEL(evt)
             });
           } else if (newSectionDialog._sectionType == "savedSearch") {
             card.init(sectionObj, "savedSearch");
@@ -450,6 +437,41 @@ class ProjectDetail extends TatorPage {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
   }
 
+  _sectionVisibilityEL(evt) {
+    const section = evt.detail.section;
+    const id = section.id;
+    const visible = section.visible;
+
+    // Remove section from current list
+    for (const child of this._allSections()) {
+      if (child._section) {
+        if (child._section.id == id) {
+          child.parentNode.removeChild(child);
+          break;
+        }
+      }
+    }
+
+    // Create new section card and add to new list
+    const card = document.createElement("section-card");
+    card.init(section, "folder");
+    if (visible) {
+      this._folders.appendChild(card);
+    } else {
+      this._archivedFolders.appendChild(card);
+    }
+    card.addEventListener("visibilityChange", evt => {
+      this._sectionVisibilityEL(evt)
+    });
+    card.addEventListener("click", () => {
+      this._selectSection(section, section.project);
+      for (const child of this._allSections()) {
+        child.active = false;
+      }
+      card.active = true;
+    });
+  }
+
   _allSections() {
     const folders = Array.from(this._folders.children);
     const hiddenFolders = Array.from(this._archivedFolders.children);
@@ -563,21 +585,8 @@ class ProjectDetail extends TatorPage {
             } else {
               this._archivedFolders.appendChild(card);
             }
-            card.addEventListener("visibilityToggle", evt => {
-              for (const child of this._allSections()) {
-                if (child._section) {
-                  if (child._section.id == evt.detail.id) {
-                    child.parentNode.removeChild(child);
-                  }
-                }
-              }
-              if (card.visible) {
-                this._folders.appendChild(card);
-                this._folders.children[0].click();
-              } else {
-                this._archivedFolders.appendChild(card);
-                this._archivedFolders.children[0].click();
-              }
+            card.addEventListener("visibilityChange", evt => {
+              this._sectionVisibilityEL(evt)
             });
           } else {
             this._savedSearches.appendChild(card);
