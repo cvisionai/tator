@@ -32,8 +32,9 @@ def get_annotation_es_query(project, params, annotation_type):
     stop = params.get('stop')
     after = params.get('after')
 
-    if exclude_parents:
-        raise Exception(f"Elasticsearch based queries are incompatible with 'excludeParents'!")
+    if exclude_parents and (start or stop):
+        raise Exception("Elasticsearch based queries with pagination are incompatible with "
+                        "'excludeParents'!")
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
@@ -162,7 +163,15 @@ def get_annotation_queryset(project, params, annotation_type):
         # If using ES, do the search and construct the queryset.
         query = get_annotation_es_query(project, params, annotation_type)
         annotation_ids, _  = TatorSearch().search(project, query)
-        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids).order_by('id')
+        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
+
+        # Apply excludeParents if no pagination.
+        exclude_parents = params.get('excludeParents')
+        if exclude_parents:
+            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
+            qs = qs.difference(parent_set)
+
+        qs = qs.order_by('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
@@ -176,7 +185,16 @@ def get_annotation_count(project, params, annotation_type):
         # If using ES, do the search and get the count.
         query = get_annotation_es_query(project, params, annotation_type)
         annotation_ids, _  = TatorSearch().search(project, query)
-        count = len(annotation_ids)
+
+        # Apply excludeParents if no pagination.
+        exclude_parents = params.get('excludeParents')
+        if exclude_parents:
+            qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
+            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
+            qs = qs.difference(parent_set)
+            count = qs.count()
+        else:
+            count = len(annotation_ids)
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
