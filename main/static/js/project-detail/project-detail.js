@@ -238,9 +238,6 @@ class ProjectDetail extends TatorPage {
           if (spec.tator_user_sections === null) {
             delete spec.tator_user_sections;
           }
-          if (spec.visible === null) {
-            delete spec.visible;
-          }
         } else if (newSectionDialog._sectionType == "playlist") {
           //TODO: Handle adding playlist
         }
@@ -274,6 +271,22 @@ class ProjectDetail extends TatorPage {
                 child.active = false;
               }
               card.active = true;
+            });
+            card.addEventListener("visibilityToggle", evt => {
+              for (const child of this._allSections()) {
+                if (child._section) {
+                  if (child._section.id == evt.detail.id) {
+                    child.parentNode.removeChild(child);
+                  }
+                }
+              }
+              if (card.visible) {
+                this._folders.appendChild(card);
+                this._folders.children[0].click();
+              } else {
+                this._archivedFolders.appendChild(card);
+                this._archivedFolders.children[0].click();
+              }
             });
           } else if (newSectionDialog._sectionType == "savedSearch") {
             card.init(sectionObj, "savedSearch");
@@ -362,7 +375,6 @@ class ProjectDetail extends TatorPage {
           if (child._section.id == evt.detail.id) {
             child.parentNode.removeChild(child);
             this._folders.children[0].click();
-            this._archivedFolders.children[0].click();
           }
         }
       }
@@ -551,6 +563,22 @@ class ProjectDetail extends TatorPage {
             } else {
               this._archivedFolders.appendChild(card);
             }
+            card.addEventListener("visibilityToggle", evt => {
+              for (const child of this._allSections()) {
+                if (child._section) {
+                  if (child._section.id == evt.detail.id) {
+                    child.parentNode.removeChild(child);
+                  }
+                }
+              }
+              if (card.visible) {
+                this._folders.appendChild(card);
+                this._folders.children[0].click();
+              } else {
+                this._archivedFolders.appendChild(card);
+                this._archivedFolders.children[0].click();
+              }
+            });
           } else {
             this._savedSearches.appendChild(card);
           }

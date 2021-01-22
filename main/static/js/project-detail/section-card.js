@@ -58,6 +58,7 @@ class SectionCard extends TatorElement {
       context.style.display = "none";
       this._shadow.appendChild(context);
 
+      this.visible = this._section.visible;
       const toggle = document.createElement("toggle-button");
       if (section.visible) {
         toggle.setAttribute("text", "Archive folder");
@@ -66,9 +67,37 @@ class SectionCard extends TatorElement {
       }
       context.appendChild(toggle);
 
+      toggle.addEventListener("click", evt => {
+        this._section.visible = !this._section.visible;
+        const sectionId = Number();
+        fetch(`/rest/Section/${this._section.id}`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "visible": this._section.visible,
+          })
+        })
+        .then(response => response.json())
+        .then(response => {
+          this.visible = this._section.visible;
+          if (section.visible) {
+            toggle.setAttribute("text", "Archive folder");
+          } else {
+            toggle.setAttribute("text", "Restore folder");
+          }
+          this.dispatchEvent(new CustomEvent("visibilityToggle", {
+            detail: {id: this._section.id}
+          }));
+        });
+      });
+
       this.addEventListener("contextmenu", evt => {
         evt.preventDefault();
-        console.log(evt, this);
         context.style.display = "block";
       });
 
