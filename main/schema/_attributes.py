@@ -4,8 +4,14 @@ attribute_filter_parameter_schema = [
         'in': 'query',
         'required': False,
         'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See `reference <https://lucene.apache.org/core/2_9_4/'
-                       'queryparsersyntax.html>`_.',
+                       'See `reference <https://www.elastic.co/guide/en/elasticsearch/'
+                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax>`_. '
+                       'If this parameter is applied to localizations or states, it will include '
+                       'search results for parent media. Likewise, if this parameter is applied '
+                       'media, it will include results for child localizations and states. For '
+                       'example, if the search is for "foo" on media, results will include all '
+                       'media with attributes or name "foo", as well as media containing states '
+                       'and/or localizations with attributes equal to "foo".',
         'schema': {'type': 'string'},
         'examples': {
             'no_search': {
