@@ -85,7 +85,7 @@ class SectionDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteSection'
         operation['tags'] = ['Tator']
         return operation
-    
+
     def get_description(self, path, method) -> str:
         if method == 'GET':
             short_desc = "Get section."
@@ -115,7 +115,7 @@ class SectionDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/SectionSpec'},
+                'schema': {'$ref': '#/components/schemas/SectionUpdate'},
                 'example': {
                     'name': 'New unique name',
                     'lucene_string': 'Field:value*'

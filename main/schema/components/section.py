@@ -23,11 +23,22 @@ section_post_properties = {
         'type': 'string',
         'description': 'Attribute that is applied to media to identify membership to a section.',
     },
+    "visible": {
+        "type": "boolean",
+        "description": "Determines the visibility in the UI.",
+    },
 }
 
 section_spec = {
     'type': 'object',
     'required': ['name'],
+    'properties': {
+        **section_post_properties,
+    },
+}
+
+section_update = {
+    'type': 'object',
     'properties': {
         **section_post_properties,
     },
@@ -45,6 +56,6 @@ section = {
             'description': 'Unique integer identifying the project associated with the section.',
         },
         **section_post_properties,
-    }, 
+    },
 }
 

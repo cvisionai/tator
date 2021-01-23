@@ -268,6 +268,7 @@ FILES = \
     project-detail/big-download-form.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
+    project-detail/toggle-button.js \
     project-detail/delete-button.js \
     project-detail/section-more.js \
     project-detail/section-card.js \
