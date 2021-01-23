@@ -287,26 +287,6 @@ def clearOldFilebeatIndices():
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
 
-def cleanup_uploads(max_age_days=1):
-    """ Removes uploads that are greater than a day old.
-    """
-    upload_paths = [settings.UPLOAD_ROOT]
-    upload_shards = os.getenv('UPLOAD_SHARDS')
-    if upload_shards is not None:
-        upload_paths += [f'/{shard}' for shard in upload_shards.split(',')]
-    now = time.time()
-    for path in upload_paths:
-        num_removed = 0
-        for root, dirs, files in os.walk(path):
-            for f in files:
-                file_path = os.path.join(root, f)
-                not_resource = Resource.objects.filter(path=file_path).count() == 0
-                if (os.stat(file_path).st_mtime < now - 86400 * max_age_days) and not_resource:
-                    os.remove(file_path)
-                    num_removed += 1
-        logger.info(f"Deleted {num_removed} files from {path} that were > {max_age_days} days old...")
-    logger.info("Cleanup finished!")
-
 def cleanup_object_uploads(max_age_days=1):
     """ Removes s3 uploads that are greater than a day old.
     """
