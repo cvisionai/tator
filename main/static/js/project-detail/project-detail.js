@@ -38,7 +38,7 @@ class ProjectDetail extends TatorPage {
     section.appendChild(this._folders);
 
     const archivedFoldersButton = document.createElement("button");
-    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white");
+    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4");
     section.appendChild(archivedFoldersButton);
 
     const archivedFolderText = document.createElement("h2");
