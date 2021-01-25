@@ -189,6 +189,8 @@ kibana:
   elasticsearchHosts: "https://<Your Amazon Elasticsearch Service VPC endpoint>"
 minio:
   enabled: false
+kube-prometheus-stack:
+  enabled: false
 remoteTranscodes:
   # Enable this if you would like to do transcodes with a different
   # Kubernetes cluster, such as an on-premises cluster. Follow instructions
@@ -211,4 +213,9 @@ remoteTranscodes:
     -----BEGIN CERTIFICATE-----
     <Insert certificate here>
     -----END CERTIFICATE-----
-
+email:
+  enabled: false
+  sender: "<fill in>"
+  aws_region: "<fill in>"
+  aws_access_key_id: "<fill in>"
+  aws_secret_access_key: "<fill in>"

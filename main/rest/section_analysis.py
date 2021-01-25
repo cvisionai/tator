@@ -7,7 +7,7 @@ from ..search import TatorSearch
 from ..schema import SectionAnalysisSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_attribute_query
+from ._media_query import get_attribute_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class SectionAnalysisAPI(BaseDetailView):
         for analysis in analyses:
             media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
             media_query['query']['bool']['filter'] = []
-            media_query = get_attribute_query(params, media_query, [], self.kwargs['project'])
+            media_query = get_attribute_es_query(params, media_query, [], self.kwargs['project'])
             query_str = f'{analysis.data_query}'
             if mediaId is not None:
                 if not media_query['query']['bool']['filter']:

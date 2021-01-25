@@ -993,6 +993,9 @@ class Section(Model):
         tator_user_sections attribute. If not set, this search is not scoped
         to a "folder".
     """
+    visible = BooleanField(default=True)
+    """ Whether this section should be displayed in the UI.
+    """
 
 class Favorite(Model):
     """ Stores an annotation saved by a user.

@@ -114,7 +114,7 @@ spec:
             - name: TRANSCODER_CPU_LIMIT
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             - name: TRANSCODER_MEMORY_LIMIT
-              value: {{ .Values.transcoderMemoryLimit | default "16Gi" | quote }}
+              value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
             - name: WORKFLOW_STORAGE_CLASSES
               {{- if hasKey .Values "workflowStorageClasses" }}
               {{- $storage_classes := "" }}
@@ -127,6 +127,8 @@ spec:
               {{- else }}
               value: nfs-client
               {{- end }}
+            - name: SCRATCH_STORAGE_CLASS
+              value: {{ .Values.scratchStorageClass | default "nfs-client" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
@@ -138,6 +140,21 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: slackChannel
+            {{- end }}
+            {{- if .Values.email.enabled }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "true"
+            - name: TATOR_EMAIL_SENDER
+              value: {{ .Values.email.sender }}
+            - name: TATOR_EMAIL_AWS_REGION
+              value: {{ .Values.email.aws_region }}
+            - name: TATOR_EMAIL_AWS_ACCESS_KEY_ID
+              value: {{ .Values.email.aws_access_key_id }}
+            - name: TATOR_EMAIL_AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.email.aws_secret_access_key }}
+            {{- else }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "false"
             {{- end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - name: REMOTE_TRANSCODE_HOST

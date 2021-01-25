@@ -13,6 +13,7 @@ from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
 from .clone_media import CloneMediaListAPI
 from .download_info import DownloadInfoAPI
+from .email import EmailAPI
 from .favorite import FavoriteListAPI
 from .favorite import FavoriteDetailAPI
 from .get_clip import GetClipAPI

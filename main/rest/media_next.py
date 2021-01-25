@@ -5,7 +5,7 @@ from ..search import TatorSearch
 from ..schema import MediaNextSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
+from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 class MediaNextAPI(BaseDetailView):
@@ -26,7 +26,7 @@ class MediaNextAPI(BaseDetailView):
         media = Media.objects.get(pk=media_id)
 
         # Get query associated with media filters.
-        _, _, query = get_media_queryset(media.project.pk, params, True)
+        query = get_media_es_query(media.project.pk, params)
 
         # Modify the query to only retrieve next media.
         range_filter = [{'range': {'_exact_name': {'gt': media.name}}}]

@@ -26,7 +26,7 @@ class UploadDialog extends ModalDialog {
     this._main.appendChild(this._uploadProgress);
 
     this._errors = document.createElement("ul");
-    this._errors.setAttribute("class", "d-flex flex-column");
+    this._errors.setAttribute("class", "modal__errors d-flex flex-column");
     this._main.appendChild(this._errors);
 
     this._cancel = document.createElement("button");
@@ -54,6 +54,7 @@ class UploadDialog extends ModalDialog {
     });
 
     this._doneFiles = 0;
+    this._failFiles = 0;
   }
 
   static get observedAttributes() {
@@ -77,8 +78,7 @@ class UploadDialog extends ModalDialog {
 
   uploadFinished() {
     this._doneFiles++;
-    this._fileProgress.setAttribute("value", this._doneFiles);
-    this._fileText.textContent = `Uploaded ${this._doneFiles}/${this._totalFiles} Files`;
+    this.fileComplete();
   }
 
   setProgress(percent, message) {
@@ -86,12 +86,13 @@ class UploadDialog extends ModalDialog {
     this._uploadText.textContent = message;
   }
 
-  addError(messaage) {
+  addError(message) {
+    this._failFiles++;
     const li = document.createElement("li");
     this._errors.appendChild(li);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center py-2");
+    div.setAttribute("class", "d-flex flex-items-center py-4 text-semibold");
     li.appendChild(div);
 
     const icon = document.createElement("modal-warning");
@@ -99,16 +100,33 @@ class UploadDialog extends ModalDialog {
     div.appendChild(icon);
 
     const text = document.createTextNode(message);
-    text.setAttribute("class", "text-semibold");
     div.appendChild(text);
+
+    this.fileComplete();
+  }
+
+  fileComplete() {
+    this._fileProgress.setAttribute("value", this._doneFiles + this._failFiles);
+    this._fileText.textContent = `Uploaded ${this._doneFiles}/${this._totalFiles} Files`;
+    if (this._failFiles > 0) {
+      this._fileText.textContent += ` (${this._failFiles} Failed)`
+    }
+    if (this._doneFiles + this._failFiles == this._totalFiles) {
+      this.finish();
+    }
   }
 
   finish() {
     if (!this._cancelled) {
       this._cancel.style.display = "none";
       this._close.style.display = "flex";
-      this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
-      this._title.nodeValue = "Upload Complete!";
+      if (this._failFiles == 0) {
+        this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
+        this._title.nodeValue = "Upload Complete!";
+      } else {
+        this._uploadText.textContent = "Upload failure! See errors below.";
+        this._title.nodeValue = "Upload Failure!";
+      }
     }
   }
 

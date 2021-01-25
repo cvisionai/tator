@@ -288,6 +288,33 @@ data:
           gzip_min_length 1024;
         }
 
+        {{- if index .Values "kube-prometheus-stack" "enabled" }}
+        location /status {
+          stub_status;
+          access_log off;
+          allow 127.0.0.1;
+          deny all;
+        }
+
+        location /grafana/ {
+          auth_request /auth-admin;
+          proxy_pass http://tator-grafana/;
+          proxy_set_header Host $host;
+        }
+
+        location /prometheus/ {
+          auth_request /auth-admin;
+          proxy_pass http://tator-kube-prometheus-stac-prometheus:9090/;
+          proxy_set_header Host $host;
+          sub_filter_types text/html;
+          sub_filter_once off;
+          sub_filter '="/' '="/prometheus/';
+          sub_filter 'var PATH_PREFIX = "";' 'var PATH_PREFIX = "/prometheus";';
+          rewrite ^/prometheus/?$ /prometheus/graph redirect;
+          rewrite ^/prometheus/(.*)$ /$1 break;
+        }
+        {{- end }}
+
         error_page 503 /static/maintenance.html;
         # Allow POST on static pages
         error_page 405 =200 $uri;

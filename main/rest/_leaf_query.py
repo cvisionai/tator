@@ -3,21 +3,24 @@ from collections import defaultdict
 import logging
 
 from ..search import TatorSearch
+from ..models import Leaf
 
+from ._attribute_query import get_attribute_filter_ops
+from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-def get_leaf_queryset(query_params, dry_run=False):
+def get_leaf_es_query(params):
     """ TODO: add documentation for this """
 
     # Get parameters.
-    leaf_id = query_params.get('leaf_id', None)
-    project = query_params['project']
-    filter_type = query_params.get('type', None)
-    start = query_params.get('start', None)
-    stop = query_params.get('stop', None)
-    after = query_params.get('after', None)
+    leaf_id = params.get('leaf_id', None)
+    project = params['project']
+    filter_type = params.get('type', None)
+    start = params.get('start', None)
+    stop = params.get('stop', None)
+    after = params.get('after', None)
 
     # Set up initial query.
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
@@ -52,14 +55,14 @@ def get_leaf_queryset(query_params, dry_run=False):
 
     # Get attribute filter parameters.
     attr_filter_params = {
-        'attribute_eq': query_params.get('attribute', None),
-        'attribute_lt': query_params.get('attribute_lt', None),
-        'attribute_lte': query_params.get('attribute_lte', None),
-        'attribute_gt': query_params.get('attribute_gt', None),
-        'attribute_gte': query_params.get('attribute_gte', None),
-        'attribute_contains': query_params.get('attribute_contains', None),
-        'attribute_distance': query_params.get('attribute_distance', None),
-        'attribute_null': query_params.get('attribute_null', None),
+        'attribute_eq': params.get('attribute', None),
+        'attribute_lt': params.get('attribute_lt', None),
+        'attribute_lte': params.get('attribute_lte', None),
+        'attribute_gt': params.get('attribute_gt', None),
+        'attribute_gte': params.get('attribute_gte', None),
+        'attribute_contains': params.get('attribute_contains', None),
+        'attribute_distance': params.get('attribute_distance', None),
+        'attribute_null': params.get('attribute_null', None),
     }
     attr_query = {
         'must_not': [],
@@ -67,7 +70,7 @@ def get_leaf_queryset(query_params, dry_run=False):
     }
     for op in attr_filter_params:
         if attr_filter_params[op] is not None:
-            for kv_pair in attr_filter_params[op].split(','):
+            for kv_pair in attr_filter_params[op]:
                 if op == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
                     attr_query['filter'].append({
@@ -99,14 +102,14 @@ def get_leaf_queryset(query_params, dry_run=False):
                         else:
                             raise Exception("Invalid value for attribute_null operation, must"
                                             " be <field>::<value> where <value> is true or false.")
-    if 'name' in query_params:
-        bools.append({'match': {'tator_treeleaf_name': query_params['name']}})
+    if 'name' in params:
+        bools.append({'match': {'tator_treeleaf_name': params['name']}})
 
-    if 'depth' in query_params:
+    if 'depth' in params:
         # Depth 0 corresponds to root node, but ltree thinks root node is depth 2, so do range
         # query for depth + 2.
-        bools.append({'range': {'_treeleaf_depth': {'lt': query_params['depth'] + 3,
-                                                    'gt': query_params['depth'] + 1}}})
+        bools.append({'range': {'_treeleaf_depth': {'lt': params['depth'] + 3,
+                                                    'gt': params['depth'] + 1}}})
 
     attr_query['filter'] += bools
 
@@ -114,13 +117,86 @@ def get_leaf_queryset(query_params, dry_run=False):
         if len(attr_query[key]) > 0:
             query['query']['bool'][key] = attr_query[key]
 
-    search = query_params.get('search', None)
+    search = params.get('search', None)
     if search is not None:
         search_query = {'query_string': {'query': search}}
         query['query']['bool']['filter'].append(search_query)
 
-    if dry_run:
-        return [], [], query
+    return query
 
-    leaf_ids, leaf_count = TatorSearch().search(project, query)
-    return leaf_ids, leaf_count, query
+def _get_leaf_psql_queryset(project, filter_ops, params):
+    """ Constructs a psql queryset.
+    """
+    # Get query parameters.
+    leaf_id = params.get('leaf_id')
+    project = params['project']
+    filter_type = params.get('type')
+    name = params.get('name')
+    start = params.get('start')
+    stop = params.get('stop')
+
+    qs = Leaf.objects.filter(project=project)
+    if leaf_id is not None:
+        qs = qs.filter(pk__in=leaf_id)
+
+    if filter_type is not None:
+        qs = qs.filter(meta=filter_type)
+
+    if name is not None:
+        qs = qs.filter(name=name)
+
+    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+
+    qs = qs.order_by('id')
+    if start is not None and stop is not None:
+        qs = qs[start:stop]
+    elif start is not None:
+        qs = qs[start:]
+    elif stop is not None:
+        qs = qs[:stop]
+
+    return qs
+
+def _use_es(project, params):
+    ES_ONLY_PARAMS = ['search', 'depth', 'after']
+    use_es = False
+    for es_param in ES_ONLY_PARAMS:
+        if es_param in params:
+            use_es = True
+            break
+
+    # Look up attribute dtypes if necessary.
+    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
+    use_es = use_es or use_es_for_attributes
+
+    return use_es, filter_ops
+        
+def get_leaf_queryset(project, params):
+    # Determine whether to use ES or not.
+    use_es, filter_ops = _use_es(project, params)
+
+    if use_es:
+        # If using ES, do the search and construct the queryset.
+        query = get_leaf_es_query(params)
+        leaf_ids, _  = TatorSearch().search(project, query)
+        qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
+    else:
+        # If using PSQL, construct the queryset.
+        qs = _get_leaf_psql_queryset(project, filter_ops, params)
+    return qs
+
+def get_leaf_count(project, params):
+    # Determine whether to use ES or not.
+    use_es, filter_ops = _use_es(params)
+
+    if use_es:
+        # If using ES, do the search and get the count.
+        query = get_leaf_es_query(params)
+        leaf_ids, _  = TatorSearch().search(project, query)
+        count = len(leaf_ids)
+    else:
+        # If using PSQL, construct the queryset.
+        qs = _get_leaf_psql_queryset(project, filter_ops, params)
+        count = qs.count()
+    return count
+

@@ -14,14 +14,6 @@ class ProjectDescription extends TatorElement {
     span.textContent = "·";
     div.appendChild(span);
 
-    this._size = document.createTextNode("");
-    div.appendChild(this._size);
-
-    const span1 = document.createElement("span");
-    span1.setAttribute("class", "px-2");
-    span1.textContent = "·";
-    div.appendChild(span1);
-
     this._hours = document.createTextNode("");
     div.appendChild(this._hours);
 
@@ -52,22 +44,6 @@ class ProjectDescription extends TatorElement {
       fileLabel = " file";
     }
     this._numFiles.nodeValue = project.num_files + fileLabel;
-    let num = project.size;
-    let label = "B";
-    if (project.size > 1e12) {
-      num = num / 1e12;
-      label = "TB";
-    } else if (num > 1e9) {
-      num = num / 1e9;
-      label = "GB";
-    } else if (num > 1e6) {
-      num = num / 1e6;
-      label = "MB";
-    } else if (num > 1e3) {
-      num = num / 1e3;
-      label = "KB";
-    }
-    this._size.nodeValue = Number(num).toFixed(1) + label;
     let duration = project.duration;
     let label1 = "seconds";
     if (duration > 3600) {

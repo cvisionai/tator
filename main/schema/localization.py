@@ -13,7 +13,9 @@ localization_filter_schema = [
         'name': 'excludeParents',
         'in': 'query',
         'required': False,
-        'description': 'If a clone is present, do not send parent. (0 or 1)',
+        'description': 'If a clone is present, do not send parent. This parameter will cause an '
+                       'exception if an Elasticsearch query is triggered and pagination parameters '
+                       '(start or stop) are included.',
         'schema': {'type': 'integer',
                    'minimum': 0,
                    'maximum': 1,
@@ -53,6 +55,8 @@ class LocalizationListSchema(AutoSchema):
             operation['operationId'] = 'UpdateLocalizationList'
         elif method == 'DELETE':
             operation['operationId'] = 'DeleteLocalizationList'
+        elif method == 'PUT':
+            operation['operationId'] = 'GetLocalizationListById'
         operation['tags'] = ['Tator']
         return operation
 
@@ -78,6 +82,8 @@ class LocalizationListSchema(AutoSchema):
             This method performs a bulk delete on all localizations matching a query. It is 
             recommended to use a GET request first to check what is being deleted.
             """)
+        elif method == 'PUT':
+            short_desc = 'Get localization list by ID.'
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def _get_path_parameters(self, path, method):
@@ -240,11 +246,24 @@ class LocalizationListSchema(AutoSchema):
                     },
                 }
             }}}
+        if method == 'PUT':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {
+                    'description': 'List of unique integers identifying Localization objects.',
+                    'type': 'array',
+                    'items': {
+                        'type': 'integer',
+                        'minimum': 1,
+                    },
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
-        if method == 'GET':
+        if method in ['GET', 'PUT']:
             responses['200'] = {
                 'description': 'Successful retrieval of localization list.',
                 'content': {'application/json': {'schema': {

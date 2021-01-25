@@ -85,6 +85,7 @@ class VideoBufferDemux
 
     // Video, source, and buffer for seek track
     this._seekVideo = document.createElement("VIDEO");
+    this._seekVideo.setAttribute("crossorigin", "anonymous");
     this._seekBuffer = null;
     this._seekSource = new MediaSource();
     this._seekReady = false;
@@ -106,6 +107,7 @@ class VideoBufferDemux
     for (var idx = 0; idx < this._numBuffers; idx++)
     {
       this._vidBuffers.push(document.createElement("VIDEO"));
+      this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
       this._inUse.push(0);
       this._sourceBuffers.push(null);
       this._full.push(false);

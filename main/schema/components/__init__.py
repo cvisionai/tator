@@ -24,6 +24,8 @@ from .bookmark import bookmark
 from .clone_media import clone_media_spec
 from .download_info import download_info_spec
 from .download_info import download_info
+from .email import email_spec
+from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
@@ -61,6 +63,7 @@ from .project import project_spec
 from .project import project_update
 from .project import project
 from .section import section_spec
+from .section import section_update
 from .section import section
 from .section_analysis import section_analysis
 from .state import state_spec

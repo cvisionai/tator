@@ -4,8 +4,14 @@ attribute_filter_parameter_schema = [
         'in': 'query',
         'required': False,
         'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See `reference <https://lucene.apache.org/core/2_9_4/'
-                       'queryparsersyntax.html>`_.',
+                       'See <a href=https://www.elastic.co/guide/en/elasticsearch/'
+                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax>reference</a>. '
+                       'If this parameter is applied to localizations or states, it will include '
+                       'search results for parent media. Likewise, if this parameter is applied '
+                       'media, it will include results for child localizations and states. For '
+                       'example, if the search is for "foo" on media, results will include all '
+                       'media with attributes or name "foo", as well as media containing states '
+                       'and/or localizations with attributes equal to "foo".',
         'schema': {'type': 'string'},
         'examples': {
             'no_search': {
@@ -44,7 +50,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute equality filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_lt',
@@ -52,7 +60,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute less than filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_lte',
@@ -60,7 +70,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute less than or equal filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_gt',
@@ -68,7 +80,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute greater than filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_gte',
@@ -76,7 +90,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute greater than or equal filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_contains',
@@ -84,7 +100,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute contains filter. Format is '
                        'attribute1::value1,[attribute2::value2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_distance',
@@ -93,7 +111,9 @@ attribute_filter_parameter_schema = [
         'description': 'Range filter for geoposition attributes. Format is '
                        'attribute1::distance_km2::lat2::lon2,'
                        '[attribute2::distancekm2::lat2::lon2].',
-        'schema': {'type': 'string'},
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'attribute_null',
@@ -101,17 +121,9 @@ attribute_filter_parameter_schema = [
         'required': False,
         'description': 'Attribute null filter. Returns elements for which '
                        'a given attribute is not defined.',
-        'schema': {'type': 'string'},
-    },
-    {
-        'name': 'operation',
-        'in': 'query',
-        'required': False,
-        'description': 'Set to "count" to return a count of objects instead of the objects.',
-        'schema': {
-            'type': 'string',
-            'enum': ['count'],
-        },
+        'schema': {'type': 'array',
+                   'items': {'type': 'string'}},
+        'explode': False,
     },
     {
         'name': 'start',
@@ -128,5 +140,14 @@ attribute_filter_parameter_schema = [
         'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
                        'larger list to return.',
         'schema': {'type': 'integer'},
+    },
+    {
+        'name': 'force_es',
+        'in': 'query',
+        'required': False,
+        'description': 'Set to 1 to require an Elasticsearch based query. This can be used '
+                       'as a consistency check or for performance comparison.',
+        'schema': {'type': 'integer',
+                   'enum': [0, 1]},
     },
 ]

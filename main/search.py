@@ -65,7 +65,11 @@ def mediaFileSizes(file):
                         if (key in ['archival', 'streaming', 'image']) and (download_size is None):
                             download_size = size
                         if key == 'streaming':
-                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                            try:
+                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                            except:
+                                logger.warning(f"Media {file.id} does not have a segment file "
+                                               f"definition {media_def['path']}!")
         if file.original:
             if os.path.exists(file.original):
                 statinfo = os.stat(file.original)

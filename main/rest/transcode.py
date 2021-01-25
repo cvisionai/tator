@@ -1,9 +1,13 @@
+import os
 import logging
 from uuid import uuid1
+from urllib.parse import urlparse
 
 from rest_framework.authtoken.models import Token
+import requests
 
 from ..kube import TatorTranscode
+from ..s3 import TatorS3
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
@@ -48,8 +52,21 @@ class TranscodeAPI(BaseListView):
             raise Exception(f"For project {project} given type {entity_type}, can not find a "
                              "destination media type")
 
-        # TODO: Get the file size of the uploaded blob (or remove pvc size computation)
-        upload_size = None
+        # Attempt to determine upload size.
+        parsed = urlparse(url)
+        same_object_host = f"{parsed.scheme}://{parsed.netloc}" == os.getenv('OBJECT_STORAGE_HOST')
+        same_main_host = parsed.netloc == os.getenv('MAIN_HOST')
+        if same_object_host or same_main_host:
+            # This is a presigned url for S3. Presigned urls do not allow HEAD requests, so parse
+            # out the object key and get object size via S3 api.
+            key = '/'.join(parsed.path.split('/')[-4:])
+            s3 = TatorS3().s3
+            response = s3.head_object(Bucket=os.getenv('BUCKET_NAME'), Key=key)
+            upload_size = response['ContentLength']
+        else:
+            # This is a normal url. Use HEAD request to obtain content length.
+            response = requests.head(url)
+            upload_size = int(response.headers['Content-Length'])
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.

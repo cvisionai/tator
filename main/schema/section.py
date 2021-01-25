@@ -8,11 +8,8 @@ from ._errors import error_responses
 
 boilerplate = dedent("""\
 Sections represent groups of media using saved queries. The queries can be in the form
-of a lucene query syntax search string or a list of boolean filter queries applied to
+of a <a href=https://www.elastic.co/guide/en/elasticsearch/reference/7.10/query-dsl-query-string-query.html#query-string-syntax>lucene search string</a> or a list of <a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html>boolean filter queries</a> applied to
 either media or child annotations of media.
-
-<https://lucene.apache.org/core/2_9_4/queryparsersyntax.html>\n
-<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html>
 """)
 
 class SectionListSchema(AutoSchema):
@@ -88,7 +85,7 @@ class SectionDetailSchema(AutoSchema):
             operation['operationId'] = 'DeleteSection'
         operation['tags'] = ['Tator']
         return operation
-    
+
     def get_description(self, path, method) -> str:
         if method == 'GET':
             short_desc = "Get section."
@@ -118,7 +115,7 @@ class SectionDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/SectionSpec'},
+                'schema': {'$ref': '#/components/schemas/SectionUpdate'},
                 'example': {
                     'name': 'New unique name',
                     'lucene_string': 'Field:value*'

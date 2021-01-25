@@ -31,6 +31,16 @@ state_get_properties = {
         'type': 'array',
         'items': {'type': 'integer'},
     },
+    'segments': {
+        'description': 'List of contiguous frame ranges where a localization associated '
+                       'state has localization data.',
+        'type': 'array',
+        'items': {'type': 'array',
+                  'items': {'type': 'integer',
+                            'minimum': 0},
+                  'minItems': 2,
+                  'maxItems': 2},
+    },
     'attributes': {
         'description': 'Object containing attribute values.',
         'type': 'object',

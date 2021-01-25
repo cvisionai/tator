@@ -49,16 +49,11 @@ def updateProjectTotals(force=False):
         files = Media.objects.filter(project=project)
         if (files.count() + temp_files.count() != project.num_files) or force:
             project.num_files = files.count() + temp_files.count()
-            project.size = 0
-            project.duration = 0
-            for file in temp_files.iterator():
-                if file.path:
-                    if os.path.exists(file.path):
-                        project.size += os.path.getsize(file.path)
-            for file in files.iterator():
-                project.size += mediaFileSizes(file)[0]
-                project.duration += file.num_frames / file.fps if file.fps and file.num_frames else 0
-            logger.info(f"Updating {project.name}: Num files = {project.num_files}, Size = {project.size}")
+            duration_info = files.values('num_frames', 'fps')
+            project.duration = sum([info['num_frames'] / info['fps'] for info in duration_info
+                                    if info['num_frames'] and info['fps']])
+            logger.info(f"Updating {project.name}: Num files = {project.num_files}, "
+                        f"Duration = {project.duration}")
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if not media:
@@ -292,26 +287,6 @@ def clearOldFilebeatIndices():
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
 
-def cleanup_uploads(max_age_days=1):
-    """ Removes uploads that are greater than a day old.
-    """
-    upload_paths = [settings.UPLOAD_ROOT]
-    upload_shards = os.getenv('UPLOAD_SHARDS')
-    if upload_shards is not None:
-        upload_paths += [f'/{shard}' for shard in upload_shards.split(',')]
-    now = time.time()
-    for path in upload_paths:
-        num_removed = 0
-        for root, dirs, files in os.walk(path):
-            for f in files:
-                file_path = os.path.join(root, f)
-                not_resource = Resource.objects.filter(path=file_path).count() == 0
-                if (os.stat(file_path).st_mtime < now - 86400 * max_age_days) and not_resource:
-                    os.remove(file_path)
-                    num_removed += 1
-        logger.info(f"Deleted {num_removed} files from {path} that were > {max_age_days} days old...")
-    logger.info("Cleanup finished!")
-
 def cleanup_object_uploads(max_age_days=1):
     """ Removes s3 uploads that are greater than a day old.
     """
@@ -375,13 +350,14 @@ def make_resources():
         if media.file:
             paths.append(media.file.path)
         if media.media_files:
-            if 'audio' in media.media_files:
-                paths += [f['path'] for f in media.media_files['audio']]
-            if 'streaming' in media.media_files:
-                paths += [f['path'] for f in media.media_files['streaming']]
-                paths += [f['segment_info'] for f in media.media_files['streaming']]
-            if 'archival' in media.media_files:
-                paths += [f['path'] for f in media.media_files['archival']]
+            for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+                if key in media.media_files:
+                    paths += [f['path'] for f in media.media_files[key]]
+                    if key == 'streaming':
+                        try:
+                            paths += [f['segment_info'] for f in media.media_files[key]]
+                        except:
+                            logger.info(f"Media {media.id} does not have a segment file!")
         if media.original:
             paths.append(media.original)
         return paths
@@ -455,7 +431,7 @@ def migrate_media_file_resource(resource_id):
                             target = os.readlink(path)
                         else:
                             target = path
-                        if target == resource.path:
+                        if (target == resource.path) and target.startswith('/'):
                             if s3_key is None:
                                 fname = os.path.basename(path)
                                 project = media.project
@@ -480,12 +456,6 @@ def migrate_media_file_resource(resource_id):
     # Save the resource.
     resource.path = s3_key
     resource.save()
-
-def migrate_media_file_resources(project):
-    media = Media.objects.filter(project=project, media_files__isnull=False)
-    resources = Resource.objects.filter(path__startswith='/', media__in=media)
-    for resource in resources.iterator():
-        migrate_media_file_resource(resource.id)
 
 def migrate_image(media, path):
 
@@ -513,7 +483,7 @@ def migrate_image(media, path):
         resource.save()
     else:
         resource = Resource.objects.create(path=s3_key)
-        resource.media.add(media)
+    resource.media.add(media)
 
     return image_def
 
@@ -527,18 +497,23 @@ def migrate_images(media_id):
         media.media_files = {}
     for field in IMAGE_FIELDS.keys():
         if getattr(media, field):
-            media_def = migrate_image(media, f"/media/{getattr(media, field)}")
-            if IMAGE_FIELDS[field] not in media.media_files:
-                media.media_files[IMAGE_FIELDS[field]] = []
-            media.media_files[IMAGE_FIELDS[field]].append(media_def)
-            setattr(media, field, None)
+            url = getattr(media, field).url
+            if media.meta.dtype == 'image' or (field in ['thumbnail', 'thumbnail_gif']):
+                media_def = migrate_image(media, url)
+                if IMAGE_FIELDS[field] not in media.media_files:
+                    media.media_files[IMAGE_FIELDS[field]] = []
+                media.media_files[IMAGE_FIELDS[field]].append(media_def)
+                setattr(media, field, None)
     media.save()
 
-def migrate_video(media, path):
+def migrate_video(media, path, segment_path=None):
 
     # Figure out s3 key.
     fname = os.path.basename(path)
     s3_key = f'{media.project.organization.pk}/{media.project.pk}/{media.pk}/{fname}'
+    if segment_path:
+        segment_name = os.path.basename(segment_path)
+        segment_key = f'{media.project.organization.pk}/{media.project.pk}/{media.pk}/{segment_name}'
 
     # Get video definition.
     cmd = [
@@ -547,7 +522,7 @@ def migrate_video(media, path):
         "-show_entries", "stream",
         "-print_format", "json",
         "-select_streams", "v",
-        disk_file,
+        path,
     ]
     output = subprocess.run(cmd, stdout=subprocess.PIPE, check=True).stdout
     video_info = json.loads(output)
@@ -560,14 +535,19 @@ def migrate_video(media, path):
     video_def = {"resolution": (stream["height"], stream["width"]),
                  "codec": stream["codec_name"],
                  "codec_description": stream["codec_long_name"],
-                 "size": os.stat(disk_file).st_size,
-                 "bit_rate": int(stream.get("bit_rate",-1))}
+                 "size": os.stat(path).st_size,
+                 "bit_rate": int(stream.get("bit_rate",-1)),
+                 "path": s3_key}
+    if segment_path:
+        video_def['segment_info'] = segment_key
 
     # Copy the file to S3.
     s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     transfer = S3Transfer(s3)
     transfer.upload_file(path, bucket_name, s3_key)
+    if segment_path:
+        transfer.upload_file(segment_path, bucket_name, segment_key)
     
     resource_exists = Resource.objects.filter(path=path).count() > 0
     if resource_exists:
@@ -578,48 +558,86 @@ def migrate_video(media, path):
         resource = Resource.objects.create(path=s3_key)
     resource.media.add(media)
 
+    if segment_path:
+        segment_exists = Resource.objects.filter(path=segment_path).count() > 0
+        if segment_exists:
+            resource = Resource.objects.select_for_update().get(path=segment_path)
+            resource.path = segment_key
+            resource.save()
+        else:
+            resource = Resource.objects.create(path=segment_key)
+        resource.media.add(media)
+
     return video_def
 
 @transaction.atomic
-def migrate_original(media_id):
+def migrate_videos(media_id):
+    VIDEO_FIELDS = {'file': 'streaming',
+                    'original': 'archival'}
     media = Media.objects.select_for_update().get(pk=media_id)
     if media.media_files is None:
         media.media_files = {}
-    if media.original:
-        media_def = migrate_video(media, media.original)
-        if 'archival' not in media.media_files:
-            media.media_files['archival'] = []
-        media.media_files['archival'].append(media_def)
-        media.original = None
+    for field in VIDEO_FIELDS.keys():
+        if getattr(media, field):
+            segment_url = None
+            if field == 'file':
+                url = media.file.url
+                segment_url = media.segment_info
+                if segment_url:
+                    if segment_url.startswith('/data'):
+                        segment_url = segment_url[5:]
+                    media.segment_info = None
+            elif field == 'original':
+                url = media.original
+            if media.meta.dtype == 'video':
+                media_def = migrate_video(media, url, segment_url)
+                if VIDEO_FIELDS[field] not in media.media_files:
+                    media.media_files[VIDEO_FIELDS[field]] = []
+                media.media_files[VIDEO_FIELDS[field]].append(media_def)
+                setattr(media, field, None)
     media.save()
 
-def migrate_media(project):
+def s3_migrate(project):
+    # Migrate legacy fields to new format.
     medias = Media.objects.filter(project=project)
     for media in medias.iterator():
+        logger.info(f"Migrating media {media.id}...")
         migrate_images(media.id)
-        migrate_original(media.id)
+        migrate_videos(media.id)
+    # Migrate existing resources to s3.
+    media = Media.objects.filter(project=project, media_files__isnull=False)
+    resources = Resource.objects.filter(path__startswith='/', media__in=media)
+    for resource in resources.iterator():
+        migrate_media_file_resource(resource.id)
 
-def verify_migration(project):
+def s3_verify(project):
     medias = Media.objects.filter(project=project)
     num_verified = 0
     s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
     for media in medias.iterator():
+        logger.info(f"Verifying media {media.id}")
         assert(not media.thumbnail)
         assert(not media.thumbnail_gif)
         assert(not media.file)
         assert(not media.original)
+        assert(not media.segment_info)
         if media.media_files:
             for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
                 if key in media.media_files:
                     for media_def in media.media_files[key]:
+                        logger.info(f"  Verifying path {media_def['path']}")
                         assert(Resource.objects.filter(path=media_def['path'],
                                                        media__in=[media]).exists())
                         s3.head_object(Bucket=bucket_name, Key=media_def['path'])
                         if key == 'streaming':
-                            assert(Resource.objects.filter(path=media_def['segment_info'],
-                                                           media__in=[media]).exists())
-                            s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
+                            try: 
+                                logger.info(f"  Verifying path {media_def['segment_info']}")
+                                assert(Resource.objects.filter(path=media_def['segment_info'],
+                                                               media__in=[media]).exists())
+                                s3.head_object(Bucket=bucket_name, Key=media_def['segment_info'])
+                            except:
+                                logger.info(f"Media {media.id} does not have a segment file!")
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
 
