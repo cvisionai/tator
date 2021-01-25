@@ -36,6 +36,8 @@ from ._permissions import ProjectEditPermission
 logger = logging.getLogger(__name__)
 
 STATE_PROPERTIES = list(state_schema['properties'].keys())
+STATE_PROPERTIES.pop(STATE_PROPERTIES.index('media'))
+STATE_PROPERTIES.pop(STATE_PROPERTIES.index('localizations'))
 
 def _fill_m2m(response_data):
     # Get many to many fields.
