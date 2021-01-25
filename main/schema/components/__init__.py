@@ -25,6 +25,7 @@ from .clone_media import clone_media_spec
 from .download_info import download_info_spec
 from .download_info import download_info
 from .email import email_spec
+from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite

@@ -55,6 +55,7 @@ class CustomGenerator(SchemaGenerator):
                 'DownloadInfoSpec': download_info_spec,
                 'DownloadInfo': download_info,
                 'EmailSpec': email_spec,
+                'EmailAttachmentSpec': email_attachment_spec,
                 'EncodeConfig': encode_config,
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
