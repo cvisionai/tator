@@ -141,6 +141,21 @@ spec:
                   name: tator-secrets
                   key: slackChannel
             {{- end }}
+            {{- if .Values.email.enabled }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "true"
+            - name: TATOR_EMAIL_SENDER
+              value: {{ .Values.email.sender }}
+            - name: TATOR_EMAIL_AWS_REGION
+              value: {{ .Values.email.aws_region }}
+            - name: TATOR_EMAIL_AWS_ACCESS_KEY_ID
+              value: {{ .Values.email.aws_access_key_id }}
+            - name: TATOR_EMAIL_AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.email.aws_secret_access_key }}
+            {{- else }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "false"
+            {{- end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - name: REMOTE_TRANSCODE_HOST
               value: {{ .Values.remoteTranscodes.host }}

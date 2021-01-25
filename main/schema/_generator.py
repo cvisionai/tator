@@ -54,6 +54,7 @@ class CustomGenerator(SchemaGenerator):
                 'CloneMediaSpec': clone_media_spec,
                 'DownloadInfoSpec': download_info_spec,
                 'DownloadInfo': download_info,
+                'EmailSpec': email_spec,
                 'EncodeConfig': encode_config,
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,

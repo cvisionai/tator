@@ -120,6 +120,10 @@ urlpatterns += [
     path('rest/DownloadInfo/<int:project>',
          DownloadInfoAPI.as_view(),
     ),
+    path(
+        'rest/Email/<int:project>',
+        EmailAPI.as_view(),
+    ),
     path('rest/Favorites/<int:project>',
          FavoriteListAPI.as_view(),
     ),
