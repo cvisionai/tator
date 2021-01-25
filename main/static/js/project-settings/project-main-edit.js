@@ -92,9 +92,13 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   _getThumbnailEdit({data = this.data} = {}){
+    let key = "thumb";
     return this.inputHelper.editImageUpload({
       "value" : data.thumb, // img path
-      "labelText" : "Thumbnail"
+      "labelText" : "Thumbnail",
+      "name" : key,
+      "forId" : key
+
     });
   }
 
@@ -104,12 +108,13 @@ class ProjectMainEdit extends SettingsSection {
     let input = this.inputHelper.inputText( {
       "labelText": null,
       "name": key,
-      "value": name,
-      "type": "file"
+      "value": thumb,
+      "type": "file",
+      "forId" : key
     } );
 
     input.style = styleHidden;
-    input.id = "thumb";
+    input.id = key;
 
     input.addEventListener("change", (event) => {
       let imagePreview = this._thumbnailPreview(event);
@@ -195,6 +200,34 @@ class ProjectMainEdit extends SettingsSection {
 
   _changed(){
     return  true;
+  }
+
+  _save({id = -1} = {}){
+    console.log("Default _save method for id: "+id);
+    const patch = this._fetchPatchPromise({"id":id});
+
+    // Check if anything changed
+    if(patch != false){
+      patch.then(response => {
+          return response.json().then( data => {
+            console.log("Save response status: "+response.status)
+            if (response.status == "200") {
+              this._modalSuccess(data.message);
+              this._fetchNewProjectData();
+            } else {
+              this._modalError(data.message);
+            }
+          })
+        }
+      )
+      .catch(error => {
+        console.log('Error:', error.message);
+        this._modalError("Internal error: "+error.message);
+      });
+    } else {
+      this._modalSuccess("Nothing new to save!")
+    }
+
   }
 
 }

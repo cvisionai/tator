@@ -1,8 +1,7 @@
 class LeafTypeEdit extends SettingsSection {
   constructor() {
-
     super();
-
+    this.fromType = "LeafType";
     this._shadow.appendChild(this.settingsSectionDiv);
   }
 
@@ -45,13 +44,17 @@ class LeafTypeEdit extends SettingsSection {
       } );
 
       // Only editable items inside this form
-      this._form = document.createElement("form");
-      this._form.id = data.id;
-      current.appendChild( this._form );
+      const _form = document.createElement("form");
+      _form.id = data.id;
+      current.appendChild( _form );
+
+      _form.addEventListener("change", (event) => {
+        this._formChanged(_form);
+      });
 
       // append input for name
       const NAME = "Name";
-      this._form.appendChild( this.inputHelper.inputText( {
+      _form.appendChild( this.inputHelper.inputText( {
         "labelText": NAME,
         "name": NAME.toLowerCase(),
         "value": data[NAME.toLowerCase()]
@@ -59,7 +62,7 @@ class LeafTypeEdit extends SettingsSection {
 
       //description
       const DESCRIPTION = "Description";
-      this._form.appendChild( this.inputHelper.inputText( {
+      _form.appendChild( this.inputHelper.inputText( {
         "labelText": DESCRIPTION,
         "name": DESCRIPTION.toLowerCase(),
         "value": data[DESCRIPTION.toLowerCase()]
@@ -67,7 +70,7 @@ class LeafTypeEdit extends SettingsSection {
 
       // dtype
       const DTYPE = "Dtype";
-      this._form.appendChild( this.inputHelper.inputSelectOptions( {
+      _form.appendChild( this.inputHelper.inputSelectOptions( {
         "labelText": "Data Type",
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
@@ -75,149 +78,60 @@ class LeafTypeEdit extends SettingsSection {
         "disabledInput" : true
       } ) );
 
+      // visible
+      const VISIBLE = "Visible";
+      _form.appendChild( this.inputHelper.inputRadioSlide({
+        "labelText": VISIBLE,
+        "name": VISIBLE.toLowerCase(),
+        "value": data[VISIBLE.toLowerCase()]
+      } ) );
+
       // attribute types
       if(data.attribute_types.length > 0){
         this.attributeSection = document.createElement("settings-attributes");
-        this.attributeSection._init("LEAF", data.attribute_types);
+        //this.attributeSection._init("LEAF", data.attribute_types);
+        this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
         current.appendChild(this.attributeSection);
       }
 
       return current;
   }
 
-  _toggleAttributes(e){
-    let el = e.target.parentNode.nextSibling;
-    let hidden = el.hidden
+  _getFormData(id){
+    let form = this._shadow.getElementById(id);
+    // do not send dtype
+    // name only if changed || can not be ""
+    let name = form.querySelector('[name="name"]').value;
 
-    return el.hidden = !hidden;
-  };
+    // description only if changed
+    let description = form.querySelector('[name="description"]').value;
 
-  _toggleChevron(e){
-    var el = e.target;
-    return el.classList.toggle('chevron-trigger-90');
+    // Visible is a radio slide
+    let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
+    let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+
+    let formData = {
+      name,
+      description,
+      visible
+    };
+
+    return formData;
   }
 
   reset(scope){
     console.log("Not setup yet [Reset with project data.]");
-    //location.reload();
+    //
     return false;
   }
 
   resetHard(){
     this._fetchNewProjectData();
-    //this.reset();
+    this.reset();
   }
 
   _fetchNewProjectData(){
-  //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
-  }
-
-  setSideNav(dom){
-    return this._sideNavDom = dom;
-  }
-
-  _getFormData(form){
-    let formData = new FormData(form);
-    let obj = {};
-    for (var key of formData.keys()) {
-      obj[key] = formData.get(key);
-    }
-    console.log(obj);
-    return obj;
-  }
-
-  _getAttributePromises(id){
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    let attrPromises = [];
-
-    console.log(attrForms.length);
-
-    attrForms.forEach((form, i) => {
-      let formData = {
-        "entity_type": "LeafType",
-        "old_attribute_type_name": form.id,
-        "new_attribute_type": {}
-      };
-
-      formData.new_attribute_type = this._getFormData(form);
-
-      console.log(formData);
-
-      let currentPatch = fetch("/rest/AttributeType/" + id, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      })
-      attrPromises.push(currentPatch);
-    });
-    return attrPromises;
-  }
-
-  _save({id = -1} = {}){
-    console.log("Leaf Type _save method for id: "+id);
-    const patch = this._fetchPatchPromise({"id":id});
-    const attrPromises = this._getAttributePromises(id);
-
-    const promises = [patch, ...attrPromises];
-
-    // Check if anything changed
-    Promise.all(promises).then( async( respArray ) => {
-      console.log(respArray);
-      let responses = [];
-      respArray.forEach((item, i) => {
-        console.log(item.status);
-        responses.push( item.json() )
-      })
-
-        Promise.all( responses )
-          .then ( dataArray => {
-            let message = "";
-            dataArray.forEach((data, i) => {
-              console.log("Save response status: "+data.status)
-              console.log(data.message);
-              message += data.message+"\n";
-            });
-          //  if (response.status == "200") {
-              this._modalSuccess(message);
-          //    this._fetchNewProjectData();
-          //  } else {
-          //    this._modalError(message);
-          //  }
-        });
-    });
-  }
-
-  _fetchGetPromise({id = this.projectId} = {}){
-    return fetch("/rest/LeafTypes/" + id, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-  }
-
-  _fetchPatchPromise({id = -1 } = {}){
-    console.log("Patch id: "+id);
-    return fetch("/rest/LeafType/" + id, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: this._getFormData(id)
-    })
+    return false;
   }
 
 }

@@ -5,6 +5,7 @@ class SettingsSection extends TatorElement {
     // Required helpers.
     this.boxHelper = new SettingsBox("media-types-main-edit");
     this.inputHelper = new SettingsInput("media-types-main-edit");
+    this.attributeFormHelper = new AttributesForm();
 
     // Main Div to append content is an "item" for sideNav.
     this.settingsSectionDiv = document.createElement("div");
@@ -104,18 +105,36 @@ class SettingsSection extends TatorElement {
     return true;
   }
 
-  _fetchGetPromise(){
-    // Set in child element,
-    return null;
+  _fetchGetPromise({id = this.projectId} = {}){
+    return fetch(`/rest/${this.fromType}s/${id}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
   }
 
-  _fetchPatchPromise(){
-    // Set in child element,
-    return null;
-  }
+  //shared by types
+  _fetchPatchPromise({id = -1 } = {}){
+    console.log("Patch id: "+id);
+    let formData = this._getFormData(id);
+    console.log(formData);
 
-  _fetchWrapper(){
-
+    //return fetch("/rest/StateType/" + id, {
+    return fetch(`/rest/${this.fromType}/${id}`, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    })
   }
 
   _fetchNewProjectData(){
@@ -133,64 +152,61 @@ class SettingsSection extends TatorElement {
       });
   }
 
-  _save({id = -1} = {}){
-    console.log("Default _save method for id: "+id);
-    const patch = this._fetchPatchPromise({"id":id});
+  _save({id = -1, globalAttribute = "false"} = {}){
+      let promises = []
+      console.log("Settings _save method for id: "+id);
 
-    // Check if anything changed
-    if(patch != false){
-      patch.then(response => {
-          return response.json().then( data => {
-            console.log("Save response status: "+response.status)
-            if (response.status == "200") {
-              this._modalSuccess(data.message);
-              this._fetchNewProjectData();
-            } else {
-              this._modalError(data.message);
-            }
-          })
-        }
-      )
-      .catch(error => {
-        console.log('Error:', error.message);
-        this._modalError("Internal error: "+error.message);
-      });
-    } else {
-      this._modalSuccess("Nothing new to save!")
-    }
+      let mainForm = this._shadow.getElementById(id);
+      let mainFormChanged = false;
+      if(mainForm.classList.contains("changed")) {
+        mainFormChanged = true;
+        promises.push( this._fetchPatchPromise({id}) );
+      }
+      let hasAttributeChanges =false;
+      let attrPromises = null;
+      let attrForms = this._shadow. querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
+      let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form.changed`);
 
-  }
-
-  _getFormData(form, globalAttribute = false){
-    let formData = new FormData(form);
-    let obj = {};
-
-    for (var key of formData.keys()) {
-      let value = formData.get(key);
-      if(key == "minimum" || key == "maximum"){
-        // Number from string....
-        value = Number(value);
-      } else if(key == "choices" || key == "labels"){ //labels too?
-        // Array from string.... @TODO this might be fixed in form now
-        if(value.indexOf(",") > 0) {
-          value = value.split(',');
-        } else {
-          value = [...value]
-        }
-
+      if(attrFormsChanged.length > 0 ){
+        hasAttributeChanges = true;
+        attrPromises = this.attributeFormHelper._getAttributePromises({
+          id,
+          "entityType" : this.fromType,
+          globalAttribute,
+          attrForms,
+          attrFormsChanged
+        });
+        promises = [...promises, ...attrPromises.promises];
       }
 
-      // add to JSON obj
-      obj[key] = value;
+      if(promises.length > 0){
+        // Check if anything changed
+        Promise.all(promises).then( async( respArray ) => {
+          console.log(respArray);
+          let responses = [];
+          respArray.forEach((item, i) => {
+            responses.push( item.json() )
+          });
+
+            Promise.all( responses )
+              .then ( dataArray => {
+                this._handleResponseWithAttributes({
+                  id,
+                  dataArray,
+                  hasAttributeChanges,
+                  attrPromises,
+                  respArray
+                });
+            });
+        });
+      } else {
+        this._modalSuccess("Nothing new to save!");
+      }
     }
 
-    if(globalAttribute) obj["global"] = true;
-
-    //remove changed flag when we have the data
-    form.classList.remove("changed");
-
-    //console.log(obj);
-    return obj;
+  _getFormData(form){
+    // defined inside form web components
+    return null;
   }
 
   _formChanged(_form){
@@ -201,57 +217,6 @@ class SettingsSection extends TatorElement {
   }
 
 
-  _getAttributePromises({id = -1, entityType = null, globalAttribute = false} = {}){
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form.changed`);
-    let attrPromises = {};
-    attrPromises.promises = [];
-    attrPromises.attrNamesNew = [];
-    attrPromises.attrNames = [];
-
-    console.log(`${attrFormsChanged.length} out of ${attrForms.length} attributes changed`);
-
-    if(attrFormsChanged.length){
-      attrFormsChanged.forEach((form, i) => {
-        let formData = {
-          "entity_type": entityType,
-          //"global" : globalAttribute,
-          "old_attribute_type_name": form.id,
-          "new_attribute_type": {}
-        };
-
-        let attrNameNew = form.querySelector('input[name="name"]').value;
-        attrPromises.attrNamesNew.push(attrNameNew);
-
-        let attrNameOld = form.id;
-        attrPromises.attrNames.push(attrNameOld);
-
-        let af = document.createElement("attributes-form");
-        formData.new_attribute_type = af._getAttributeFormData(form, globalAttribute);
-
-        let currentPatch = this._fetchAttributePatchPromise(id, formData);
-        attrPromises.promises.push(currentPatch);
-      });
-      return attrPromises;
-    } else {
-      console.log(`No [attribute] promise array created.`);
-      return false;
-    }
-  }
-
-  _fetchAttributePatchPromise(parentTypeId, formData){
-    return fetch("/rest/AttributeType/" + parentTypeId, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-    });
-  }
 
   _handleResponseWithAttributes({
     id = -1,
@@ -259,21 +224,16 @@ class SettingsSection extends TatorElement {
     hasAttributeChanges = false,
     attrPromises = [],
     respArray = []}
-   = {}){
+    = {}){
 
-
-
-
-    console.log("hasAttributeChanges");
-    console.log(hasAttributeChanges);
+    console.log("hasAttributeChanges: "+hasAttributeChanges);
 
     respArray.forEach((item, i) => {
-
       if(item.status == 200 && !hasAttributeChanges){
-        console.log("No attr changes - simple response.");
+        console.log("No attr changes - 200 response.");
         return this._modalSuccess(dataArray[i].message);
       } else if(item.status != 200 && !hasAttributeChanges){
-        console.log("No attr changes - error response.");
+        console.log("No attr changes - !200 response.");
         return this._modalError(dataArray[i].message);
       } else if (hasAttributeChanges){
         let message = "<ul>";
@@ -335,7 +295,7 @@ class SettingsSection extends TatorElement {
         }
       }
       //run the _save method again with global true
-      this._save({"id" : id, "globalAttribute" : true})
+      this._save({"id" : id, "globalAttribute" : "true"})
     });
 
     return buttonSave
@@ -345,6 +305,13 @@ class SettingsSection extends TatorElement {
     var el = e.target;
     return el.classList.toggle('chevron-trigger-90');
   }
+
+  _toggleAttributes(e){
+    let el = e.target.parentNode.nextSibling;
+    let hidden = el.hidden
+
+    return el.hidden = !hidden;
+  };
 
   _modalSuccess(message){
     let text = document.createTextNode(" Success");
@@ -410,22 +377,6 @@ class SettingsSection extends TatorElement {
     this.modal._footer.innerHTML = "";
   }
 
-  _toggleAttributes(e){
-    let el = e.target.parentNode.nextSibling;
-    let hidden = el.hidden
-
-    return el.hidden = !hidden;
-  };
-
-  _reset(){
-    // use this.data to populate form
-  }
-
-  _hardReset(){
-    // get, & refresh this.data
-    // use this.data to populate form
-  }
-
   getDom(){
     return this._shadow;
   }
@@ -482,6 +433,32 @@ class SettingsSection extends TatorElement {
 
   _setDescriptionInputValue(newValue){
     return this._editDescription.querySelector("input").value = newValue;
+  }
+
+  _getCompiledMediaList( mediaIds, projectMediaList ){
+    let newList = [];
+
+    // pop off any that match into a new list with the checked true info
+    // then just loop the remaining list into new list with checked false
+
+    projectMediaList.forEach((media, i) => {
+      for(let id of mediaIds ){
+        if (media.id == id ) {
+          return newList.push({
+            "id" : media.id,
+            "name" : media.name,
+            "checked" : true
+          });
+        }
+      }
+      return newList.push({
+        "id" : media.id,
+        "name" : media.name,
+        "checked" : false
+      });
+    });
+
+    return newList;
   }
 
 }

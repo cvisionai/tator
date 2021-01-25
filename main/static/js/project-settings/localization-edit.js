@@ -1,6 +1,7 @@
 class LocalizationEdit extends SettingsSection {
   constructor() {
     super();
+    this.fromType = "LocalizationType";
     this._shadow.appendChild(this.settingsSectionDiv);
   }
 
@@ -22,8 +23,6 @@ class LocalizationEdit extends SettingsSection {
         // Section h1.
         const h1 = document.createElement("h1");
         h1.setAttribute("class", "h2 pb-3");
-        //h1.innerHTML = `Set media and attribute details.`;
-        //h1.innerHTML = this.data[i].name;
         h1.innerHTML = `Localization settings.`;
         itemDiv.appendChild(h1);
 
@@ -106,119 +105,58 @@ class LocalizationEdit extends SettingsSection {
     // attribute types
     if(data.attribute_types.length > 0){
       this.attributeSection = document.createElement("settings-attributes");
-      this.attributeSection._init("LOCALIZATION", data.attribute_types);
+      //this.attributeSection._init("LOCALIZATION", data.attribute_types);
+      this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
       current.appendChild(this.attributeSection);
     }
 
     return current;
   }
 
-  _getCompiledMediaList( mediaIds, projectMediaList ){
-    let newList = [];
+  _getFormData(id){
+    let form = this._shadow.getElementById(id);
+    // do not send dtype
+    // name only if changed || can not be ""
+    let name = form.querySelector('[name="name"]').value;
 
-    // pop off any that match into a new list with the checked true info
-    // then just loop the remaining list into new list with checked false
+    // description only if changed
+    let description = form.querySelector('[name="description"]').value;
 
-    projectMediaList.forEach((media, i) => {
-      for(let id of mediaIds ){
-        if (media.id == id ) {
-          return newList.push({
-            "id" : media.id,
-            "name" : media.name,
-            "checked" : true
-          });
-        }
-      }
-      return newList.push({
-        "id" : media.id,
-        "name" : media.name,
-        "checked" : false
-      });
-    });
+    // Visible is a radio slide
+    let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
+    let visible = this.inputHelper._getSliderSetValue(visibleInputs);
 
-    return newList;
+    // grouping_default is a radio slide
+    let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
+    let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
+
+    let mediaInputs =  form.querySelectorAll('input[name="media"]');
+    let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
+
+    let formData = {
+      name,
+      description,
+      visible,
+      grouping_default,
+      media
+    };
+
+    return formData;
   }
 
   reset(scope){
     console.log("Not setup yet [Reset with project data.]");
-    //location.reload();
+    //
     return false;
   }
 
   resetHard(){
     this._fetchNewProjectData();
-    //this.reset();
+    this.reset();
   }
 
   _fetchNewProjectData(){
-  //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
-  }
-
-  _fetchGetPromise({id = this.projectId} = {}){
-    return fetch("/rest/LocalizationTypes/" + id, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-  }
-
-  _fetchPatchPromise({id = -1 } = {}){
-    console.log("Patch id: "+id);
-    let form = this._shadow.getElementById(id);
-    let formData = this._getFormData(form);
-
-    return fetch("/rest/LocalizationType/" + id, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-    })
-  }
-
-  _save({id = -1} = {}){
-    console.log("Localization Type _save method for id: "+id);
-    const patch = this._fetchPatchPromise({"id":id});
-    const attrPromises = this._getAttributePromises({
-      "id" : id,
-      "entityType" : "LocalizationType"
-    });
-
-    const promises = [patch, ...attrPromises];
-
-    // Check if anything changed
-    Promise.all(promises).then( async( respArray ) => {
-      console.log(respArray);
-      let responses = [];
-      respArray.forEach((item, i) => {
-        console.log(item.status);
-        responses.push( item.json() )
-      })
-
-        Promise.all( responses )
-          .then ( dataArray => {
-            let message = "";
-            dataArray.forEach((data, i) => {
-              console.log("Save response status: "+data.status)
-              console.log(data.message);
-              message += data.message+"\n";
-            });
-          //  if (response.status == "200") {
-              this._modalSuccess(message);
-          //    this._fetchNewProjectData();
-          //  } else {
-          //    this._modalError(message);
-          //  }
-        });
-    });
+    return false;
   }
 
 }

@@ -158,6 +158,9 @@ class SettingsInput {
     checkbox.setAttribute("value", data.id);
     checkbox.setAttribute("name", setName);
     checkbox.setAttribute("class", "checkbox");
+    if(data.data){
+      checkbox.setAttribute("data-data", data.data);
+    }
 
     if (data.checked) checkbox.checked = true;
 
@@ -182,7 +185,8 @@ class SettingsInput {
     customCol = "col-8",
     optionsList = [],
     disabledInput = false,
-    name = ""
+    name = "",
+    forId = ""
     } = {}
   ){
     if(optionsList === null || Array.isArray(optionsList) === false){
@@ -223,10 +227,13 @@ class SettingsInput {
         inputSelect.appendChild(inputOption);
       }
 
+      if(forId == "") forId = setName
+
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
         "inputNode": inputSelect,
-        "disabled" : disabledInput
+        "disabled" : disabledInput,
+        "forId" : name
       });
 
       return inputWithLabel;
@@ -238,10 +245,12 @@ class SettingsInput {
     imgEl = document.createElement("img"),
     labelText = "",
     customCol = "col-8",
-    disabledInput = false
+    disabledInput = false,
+    name = "",
+    forId = ""
     } = {}){
       const setName = this._getUniqueIdentifier(name);
-      let editButton = this.editButton({"customClass" : "btn-edit-overlay btn-small", "name" : "thumb"});
+      let editButton = this.editButton({"customClass" : "btn-edit-overlay btn-small", "name" : name, "forId" : forId});
 
       imgEl.style.height = "84px";
       imgEl.style.width = "84px";
@@ -364,4 +373,32 @@ class SettingsInput {
       return `${someText.replace(/[^\w]|_/g, "").toLowerCase()}-${Math.floor(Math.random() * 1000)}`;
     }
 
+    _getSliderSetValue(radioSet){
+      for(let s of radioSet){
+        if(s.id.indexOf("on") > -1 && s.checked == true) return true
+        if(s.id.indexOf("off") > -1 && s.checked == true) return false
+      }
+    }
+
+    _getArrayInputValue(inputs, type = "input"){
+      let array = [];
+
+      console.log(inputs);
+
+      for(let el of inputs){
+        if(type == "input"){
+          array.push(el.value);
+        } else if (type == "checkboxes"){
+          if(el.checked == true) array.push(el.value);
+        }
+      }
+
+      return array;
+    }
+
+    _getOptions(array){
+      return array.map( (i) => {
+        return ({ "optText": i, "optValue": i });
+      });
+    }
 }

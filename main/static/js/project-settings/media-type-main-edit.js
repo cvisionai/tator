@@ -1,6 +1,7 @@
 class MediaTypeMainEdit extends SettingsSection {
   constructor() {
     super();
+    this.fromType = "MediaType";
     this._shadow.appendChild(this.settingsSectionDiv);
   }
 
@@ -28,8 +29,6 @@ class MediaTypeMainEdit extends SettingsSection {
         // Section h1.
         const h1 = document.createElement("h1");
         h1.setAttribute("class", "h2 pb-3");
-        //h1.innerHTML = `Set media and attribute details.`;
-        //h1.innerHTML = this.data[i].name;
         h1.innerHTML = `Media settings.`;
         itemDiv.appendChild(h1);
 
@@ -123,111 +122,50 @@ class MediaTypeMainEdit extends SettingsSection {
       // attribute types
       //if(data.attribute_types.length > 0){
       this.attributeSection = document.createElement("settings-attributes");
-      this.attributeSection._init("MediaType", data.id, data.attribute_types);
+      this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
       current.appendChild(this.attributeSection);
       //}
 
       return current;
   }
 
-  _fetchGetPromise({id = this.projectId} = {}){
-    return fetch("/rest/MediaTypes/" + id, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-  }
+  _getFormData(id){
+      let form = this._shadow.getElementById(id);
+      // name only if changed || can not be ""
+      let name = form.querySelector('[name="name"]').value;
 
-  _fetchPatchPromise({id = -1 } = {}){
-    console.log("Patch id: "+id);
-    let mediaForm = this._shadow.getElementById(id);
-    let formData = this._getFormData(mediaForm);
+      // description only if changed
+      let description = form.querySelector('[name="description"]').value;
 
-    console.log(mediaForm);
+      // default only if changed || volume to Number
+      let default_volume = Number(form.querySelector('[name="default_volume"]').value);
 
-    return fetch("/rest/MediaType/" + id, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-    })
+      // Visible is a radio slide
+      let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
+      let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+
+      let formData = {
+        name,
+        description,
+        default_volume,
+        visible
+      };
+
+    return formData;
   }
 
   reset(scope){
     console.log("Not setup yet [Reset with project data.]");
-    //location.reload();
     return false;
   }
 
   resetHard(){
     this._fetchNewProjectData();
-    //this.reset();
+    this.reset();
   }
 
-_fetchNewProjectData(){
-  //this._sideNavDom.querySelector(`a[href="#mediaId-65"]`);
-}
-
-_save({id = -1, globalAttribute = false} = {}){
-    let promises = []
-    console.log("Media Type _save method for id: "+id);
-
-    let mediaForm = this._shadow.getElementById(id);
-    let mediaChanged = false;
-    if(mediaForm.classList.contains("changed")) {
-      mediaChanged = true;
-      promises.push( this._fetchPatchPromise({id}) );
-    }
-
-    const attrPromises = this._getAttributePromises({
-      "id" : id,
-      "entityType" : "MediaType",
-      "globalAttribute" : globalAttribute
-    });
-
-    console.log("attrNames"+attrPromises.attrNames);
-    console.log("attrNamesNew"+attrPromises.attrNamesNew);
-
-    let hasAttributeChanges = attrPromises != false;
-
-    if(hasAttributeChanges){
-      promises = [...promises, ...attrPromises.promises];
-    }
-
-    if(promises.length > 0){
-      // Check if anything changed
-      Promise.all(promises).then( async( respArray ) => {
-        console.log(respArray);
-        let responses = [];
-        respArray.forEach((item, i) => {
-          responses.push( item.json() )
-        });
-
-          Promise.all( responses )
-            .then ( dataArray => {
-              this._handleResponseWithAttributes({
-                id,
-                dataArray,
-                hasAttributeChanges,
-                attrPromises,
-                respArray
-              });
-          });
-      });
-    } else {
-      this._modalSuccess("Nothing new to save!");
-    }
-
-
+  _fetchNewProjectData(){
+    //
   }
 
 }
