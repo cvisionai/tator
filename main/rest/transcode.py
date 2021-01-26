@@ -66,7 +66,10 @@ class TranscodeAPI(BaseListView):
         else:
             # This is a normal url. Use HEAD request to obtain content length.
             response = requests.head(url)
-            upload_size = int(response.headers['Content-Length'])
+            if 'Content-Length' in response.headers:
+                upload_size = int(response.headers['Content-Length'])
+            else:
+                upload_size = 25000000000 # 25GB if size cannot be determined.
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.
