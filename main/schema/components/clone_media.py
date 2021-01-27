@@ -16,6 +16,7 @@ clone_media_spec = {
         'dest_section': {
             'description': 'Destination media section name.',
             'type': 'string',
+            'nullable': True,
         },
     },
 }
