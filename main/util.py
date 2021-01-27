@@ -73,9 +73,16 @@ def updateProjectTotals(force=False):
                             src_key = media.media_files['thumbnail'][0]['path']
                             fname = os.path.basename(src_key)
                             dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                           CopySource={'Bucket': bucket_name,
-                                                       'Key': src_key})
+                            try:
+                                # S3 requires source key to include bucket name.
+                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                               CopySource={'Bucket': bucket_name,
+                                                           'Key': f"{bucket_name}/{src_key}"})
+                            except:
+                                # Minio requires source key to not include bucket name.
+                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                               CopySource={'Bucket': bucket_name,
+                                                           'Key': src_key})
                             project.thumb = dest_key
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
