@@ -606,16 +606,19 @@ def migrate_videos(media_id):
 
 def s3_migrate(project):
     # Migrate legacy fields to new format.
+    """
     medias = Media.objects.filter(project=project)
     for media in medias.iterator():
         logger.info(f"Migrating media {media.id}...")
         migrate_images(media.id)
         migrate_videos(media.id)
+    """
     # Migrate existing resources to s3.
     media = Media.objects.filter(project=project, media_files__isnull=False)
-    resources = Resource.objects.filter(path__startswith='/', media__in=media)
-    for resource in resources.iterator():
-        migrate_media_file_resource(resource.id)
+    resources = Resource.objects.filter(path__startswith='/', media__in=media).distinct()
+    resource_ids = resources.values_list('id', flat=True)
+    for resource_id in resource_ids:
+        migrate_media_file_resource(resource_id)
 
 def s3_verify(project):
     medias = Media.objects.filter(project=project)
