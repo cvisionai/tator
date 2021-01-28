@@ -991,7 +991,7 @@ class ChangeLog(Model):
     """ Stores individual changesets for entities """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    modified_datetime = DateTimeField(auto_now_add=True)
+    modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     content_type = ForeignKey(ContentType, on_delete=CASCADE)
     object_id = PositiveIntegerField()
     tracked_object = GenericForeignKey('content_type', 'object_id')
@@ -1018,6 +1018,34 @@ class ChangeLog(Model):
       }]
     }
     """
+
+class ChangeDescription:
+    """ An object that contains a representation of the ChangeLog.description_of_change field """
+
+    def __init__(self):
+        self._old = []
+        self._new = []
+
+    def bulk_add_if_changed(self, old_attributes, new_attributes):
+        for name, new_value in new_attributes.items():
+            self.add_if_changed(name, old_attributes.get(name), new)
+
+    def add_if_changed(self, name, old_value, new_value):
+        if old_value == new_value:
+            return
+
+        self._old.append((name, old_value))
+        self._new.append((name, new_value))
+
+    def to_dict(self):
+        return {
+            "old": self._format_list(self._old),
+            "new": self._format_list(self._new),
+        }
+
+    @staticmethod
+    def _format_list(lst):
+        return [{"name": name, "value": value} for name, value in lst]
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
