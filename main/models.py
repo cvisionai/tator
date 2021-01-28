@@ -1,6 +1,8 @@
 import os
 import traceback
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
 from django.contrib.gis.db.models import ManyToManyField
@@ -984,6 +986,38 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+
+class ChangeLog(Model):
+    """ Stores individual changesets for entities """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    modified_datetime = DateTimeField(auto_now_add=True)
+    content_type = ForeignKey(ContentType, on_delete=CASCADE)
+    object_id = PositiveIntegerField()
+    tracked_object = GenericForeignKey('content_type', 'object_id')
+    description_of_change = JSONField()
+    """
+    The description of the change applied. A single object with the keys `old` and `new`, each
+    containing a list of objects with the keys `name` and `value`. Each object in the `old` list
+    should have a pair in the `new` list (i.e. the same value in the `name` field) with different
+    values in the `value` field. For example:
+    {
+      old: [{
+	name: "Species",
+	value: "Lobster"
+      }, {
+	name: "Length",
+	value: 31
+      }],
+      new: [{
+	name: "Species",
+	value: "Cod"
+      }, {
+	name: "Length",
+	value: 52
+      }]
+    }
+    """
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
