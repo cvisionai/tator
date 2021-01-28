@@ -716,6 +716,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'unpack-pipeline',
+                'podGC': {'strategy': 'OnPodCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
@@ -831,6 +832,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'single-file-pipeline',
+                'podGC': {'strategy': 'OnPodCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
