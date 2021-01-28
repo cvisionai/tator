@@ -1023,10 +1023,19 @@ class ChangeDescription:
     """ An object that contains a representation of the ChangeLog.description_of_change field """
 
     def __init__(self):
-        self._old = []
-        self._new = []
+        self._changes = []
+        """ List of tuples (name, old_value, new_value) """
 
     def bulk_add_if_changed(self, old_attributes, new_attributes):
+        # If there are no new attributes, then nothing has changed
+        if not new_attributes:
+            return
+
+        # If there are no old attributes, create an empty dict as a proxy
+        if not isinstance(old_attributes, dict):
+            old_attributes = {}
+
+        # Check each new value against old values, if they exist
         for name, new_value in new_attributes.items():
             self.add_if_changed(name, old_attributes.get(name), new)
 
@@ -1034,18 +1043,17 @@ class ChangeDescription:
         if old_value == new_value:
             return
 
-        self._old.append((name, old_value))
-        self._new.append((name, new_value))
+        self._changes.append((name, old_value, new_value))
 
     def to_dict(self):
-        return {
-            "old": self._format_list(self._old),
-            "new": self._format_list(self._new),
-        }
+        change_dict = {"old": [], "new": []}
 
-    @staticmethod
-    def _format_list(lst):
-        return [{"name": name, "value": value} for name, value in lst]
+        for change in self._changes:
+            name = change[0]
+            change_dict["old"].append({"name": name, "value": change[1]})
+            change_dict["new"].append({"name": name, "value": change[2]})
+
+        return change_dict
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

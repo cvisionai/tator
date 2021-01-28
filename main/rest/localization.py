@@ -299,6 +299,7 @@ class LocalizationDetailAPI(BaseDetailView):
             tracked_object=obj,
             description_of_change=cd.to_dict(),
         ).save()
+
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
