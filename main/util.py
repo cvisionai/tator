@@ -651,6 +651,86 @@ def s3_verify(project):
         num_verified += 1
     print(f"Verified {num_verified} media in project {project}!")
 
+def delete_dead_resources(project, dry_run=True):
+    medias = Media.objects.filter(project=project, media_files__isnull=True)
+    resources = Resource.objects.filter(path__startswith='/', media__in=medias)
+    num_deleted = 0
+    for res in list(resources):
+        found = False
+        for media in list(res.media.all()):
+            for role in ['streaming', 'archival', 'audio']:
+                if role in media.media_files:
+                    for idx, media_def in enumerate(media.media_files[role]):
+                        subkeys = ['path']
+                        if role == 'streaming':
+                            subkeys = ['path', 'segment_info']
+                        for subkey in subkeys:
+                            path = media_def[subkey]
+                            if os.path.islink(path):
+                                target = os.readlink(path)
+                            else:
+                                target = path
+                            if (target == resource.path) and target.startswith('/'):
+                                found = True
+        if not found:
+            if dry_run:
+                print(f"Would delete resource for {res.path}...")
+            else:
+                print(f"Deleting resource for {res.path}...")
+                res.delete()
+            num_deleted += 1
+    if dry_run:
+        print(f"Would have deleted {num_deleted} resources!")
+    else:
+        print(f"Deleted {num_deleted} resources!")
+
+def delete_missing_resources(project, dry_run=True):
+    medias = Media.objects.filter(project=project, media_files__isnull=True)
+    resources = Resource.objects.filter(path__startswith='/', media__in=medias)
+    num_deleted = 0
+    num_media = 0
+    for res in list(resources):
+        if not os.path.exists(res.path):
+            for media in list(res.media.all()):
+                found = False
+                pop_idx = []
+                pop_role = []
+                for role in ['streaming', 'archival', 'audio']:
+                    if role in media.media_files:
+                        for idx, media_def in enumerate(media.media_files[role]):
+                            subkeys = ['path']
+                            if role == 'streaming':
+                                subkeys = ['path', 'segment_info']
+                            for subkey in subkeys:
+                                path = media_def[subkey]
+                                if os.path.islink(path):
+                                    target = os.readlink(path)
+                                else:
+                                    target = path
+                                if (target == resource.path) and target.startswith('/'):
+                                    found = True
+                                    pop_idx.append(idx)
+                                    pop_role.append(role)
+                if found:
+                    for pidx, prole in zip(pop_idx, pop_role):
+                        if dry_run:
+                            print(f"Would remove index {pidx} from Media ID {media.id} {prole}...")
+                        else:
+                            print(f"Removing index {pidx} from Media ID {media.id} {prole}...")
+                            media.media_files[pop_role].pop(pop_idx)
+                            media.save()
+                    num_media += 1
+            if dry_run:
+                print(f"Would delete resource for {res.path}...")
+            else:
+                print(f"Deleting resource for {res.path}...")
+                res.delete()
+            num_deleted += 1
+    if dry_run:
+        print(f"Would have deleted {num_deleted} resources and updated {num_media} media files!")
+    else:
+        print(f"Deleted {num_deleted} resources and updated {num_media} media files!")
+
 def delete_disk_media(project, dry_run=True):
     mounts = ['media']
     if os.getenv('MEDIA_SHARDS'):
