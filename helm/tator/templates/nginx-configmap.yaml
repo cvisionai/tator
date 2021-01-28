@@ -16,6 +16,18 @@ data:
       proxy_ignore_client_abort on;
       client_max_body_size 0;
 
+      {{- if index .Values "kube-prometheus-stack" "enabled" }}
+      server {
+        listen 127.0.0.1:80;
+        location /status {
+          stub_status;
+          access_log off;
+          allow 127.0.0.1;
+          deny all;
+        }
+      }
+      {{- end }}
+
       {{- if hasKey .Values "redirects" }}
       {{- range .Values.redirects }}
 
@@ -289,13 +301,6 @@ data:
         }
 
         {{- if index .Values "kube-prometheus-stack" "enabled" }}
-        location /status {
-          stub_status;
-          access_log off;
-          allow 127.0.0.1;
-          deny all;
-        }
-
         location /grafana/ {
           auth_request /auth-admin;
           proxy_pass http://tator-grafana/;
