@@ -158,6 +158,7 @@ spec:
             - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/tator-spot
             - --balance-similar-node-groups
             - --skip-nodes-with-system-pods=false
+            - --scan-interval=30s
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ssl/certs/ca-certificates.crt
