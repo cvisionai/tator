@@ -399,6 +399,12 @@ class SettingsSection extends TatorElement {
     return this._editName.querySelector("input").value = newValue;
   }
 
+  _nameChanged() {
+    console.log(this.data.name);
+    if (this._getNameInputValue() === this._getNameFromData()) return false;
+    return true;
+  }
+
   // summary
   _getSummaryFromData({ data = this.data} = {}){
     return data.summary;

@@ -115,7 +115,7 @@ class SettingsInput {
     slide.setLegendText(labelText);
     slide.setOnLabel("Yes");
     slide.setOffLabel("No");
-    slide.setValue(value);
+    slide.setValue(value); 
 
     return fieldset;
   }
@@ -228,7 +228,6 @@ class SettingsInput {
       }
 
       if(forId == "") forId = setName
-
       const inputWithLabel = this.labelWrap({
         "labelText": labelText,
         "inputNode": inputSelect,
@@ -383,13 +382,13 @@ class SettingsInput {
     _getArrayInputValue(inputs, type = "input"){
       let array = [];
 
-      console.log(inputs);
-
       for(let el of inputs){
-        if(type == "input"){
-          array.push(el.value);
-        } else if (type == "checkboxes"){
-          if(el.checked == true) array.push(el.value);
+        if(el.value != "" && el.value != null){
+          if(type == "input"){
+            array.push(el.value);
+          } else if (type == "checkboxes"){
+            if(el.checked == true) array.push(el.value);
+          }
         }
       }
 

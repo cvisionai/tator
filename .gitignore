@@ -10,7 +10,7 @@ main/static/css/tator/tator.min.css
 main/static/css/tator/tator.min.css.map
 main/static/js/tator/*
 main/static/js/.on-save.json
-main/static/js/project-settings/*
+#main/static/js/project-settings/*
 node_modules/*
 package-lock.json
 containers/nginx/nginx.conf
