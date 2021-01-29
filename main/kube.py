@@ -388,7 +388,8 @@ class TatorTranscode(JobManagerMixin):
                          '--category', '{{inputs.parameters.category}}',
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
-                         '--configs', '{{inputs.parameters.configs}}'],
+                         '--configs', '{{inputs.parameters.configs}}',
+                         '--size', '{{workflow.parameters.size}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
                     'name': 'scratch-{{inputs.parameters.id}}',
