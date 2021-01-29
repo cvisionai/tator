@@ -21,14 +21,18 @@ class ProjectMainEdit extends SettingsSection {
       "children": document.createTextNode("")
     }); 
 
-    //
+  
     let _form = document.createElement("form");
     _form.id = "project-" + this.data.id;
     this.boxOnPage.appendChild(_form); 
 
+    _form.addEventListener("change", e => this._formChanged(_form, e))
+
     // Image upload
-    this._thumbInput = this._getHiddenThumbInput(this.data.thumb);
+    this._thumbInput = this._getThumbInput(this.data.thumb);
     _form.appendChild(this._thumbInput);
+    this._hiddenThumbInput = this._getHiddenThumbInput();
+    _form.appendChild(this._hiddenThumbInput);
     this._thumbEdit = this._getThumbnailEdit()
     _form.appendChild(this._thumbEdit);
 
@@ -63,6 +67,7 @@ class ProjectMainEdit extends SettingsSection {
 
   _fetchPatchPromise({ id = this.projectId } = {}) {
     let data = this._getFormData();
+    console.log(data);
 
     if (Object.entries(data).length === 0) {
       return false;
@@ -92,20 +97,31 @@ class ProjectMainEdit extends SettingsSection {
   }
 
   _getThumbnailEdit({ data = this.data } = {}) {
-    let key = "thumb";
+    let key = "thumb_upload";
     return this.inputHelper.editImageUpload({
       "value": data.thumb, // img path
       "labelText": "Thumbnail",
       "name": key,
       "forId": key
-
     });
   }
 
-  _getHiddenThumbInput(thumb) {
+  _getHiddenThumbInput(){
     let key = "thumb";
+    let hiddenInput = this.inputHelper.inputText({
+      "labelText": null,
+      "name": key,
+      "value": "",
+      "type": "hidden",
+      "forId": key
+    });
+    return hiddenInput;
+  }
+
+  _getThumbInput(thumb) {
+    let key = "thumb_upload";
     let styleHidden = "position: absolute; left: -99999rem";
-    let input = this.inputHelper.inputText({
+    let uploadInput = this.inputHelper.inputText({
       "labelText": null,
       "name": key,
       "value": thumb,
@@ -113,18 +129,42 @@ class ProjectMainEdit extends SettingsSection {
       "forId": key
     });
 
-    input.style = styleHidden;
-    input.id = key;
+    uploadInput.style = styleHidden;
+    uploadInput.id = key;
 
-    input.addEventListener("change", (event) => {
-      let imagePreview = this._thumbnailPreview(event);
+    uploadInput.addEventListener("change", (event) => {
+      let file = event.target.files[0];
+      let token = getCookie("csrftoken");
+      let gid =  "";
+      let section = "";
+      let mediaTypeId = null;
+      let username = "";
+      let isImage = true;
+
+      let uploadData = {
+        file,
+        "projectId" : this.projectId,
+        gid,
+        section,
+        mediaTypeId,
+        username,
+        token,
+        isImage
+      }
+
+      let uploader = new SingleUpload( uploadData );
+
+      uploader.start().then(key => {
+        this._hiddenThumbInput.value = key;
+        this._thumbnailPreview(file);
+        //this.hiddenInput;
+      });      
     });
-
-    return input;
+    return uploadInput;
   }
 
   _getThumbInputValue() {
-    return this._thumbInput.value;
+    return this._hiddenThumbInput.value;
   }
 
   _getThumbValueData({ data = this.data } = {}) {
@@ -144,12 +184,9 @@ class ProjectMainEdit extends SettingsSection {
     return data.enable_downloads;
   }
 
-  _thumbnailPreview(event) {
+  _thumbnailPreview(file) {
     let outputElement = this._thumbEdit.querySelector(".projects__image");
-    outputElement.src = URL.createObjectURL(event.target.files[0]);
-    // outputElement.onload = function() {
-    //   URL.revokeObjectURL(outputElement.src) // free memory
-    // }
+    outputElement.src = URL.createObjectURL( file );
     return outputElement;
   }
 
@@ -192,6 +229,8 @@ class ProjectMainEdit extends SettingsSection {
       let thumbVal = this._getThumbInputValue();
       if (thumbVal != "" && thumbVal != null) formDataJSON.thumb = thumbVal;
     }
+
+    console.log(formDataJSON);
 
     return formDataJSON;
   }
