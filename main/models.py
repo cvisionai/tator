@@ -87,20 +87,6 @@ class ModelDiffMixin(object):
         diffs.extend((name, a1[name], v) for name, v in a2.items() if v != a1.get(name))
         return diffs
 
-    @property
-    def has_changed(self):
-        return bool(self.diff)
-
-    @property
-    def changed_fields(self):
-        return self.diff.keys()
-
-    def get_field_diff(self, field_name):
-        """
-        Returns a diff for field if it's changed and None otherwise.
-        """
-        return self.diff.get(field_name, None)
-
     def save(self, *args, **kwargs):
         """
         Saves model and set initial state.
@@ -1060,7 +1046,7 @@ class ChangeLog(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=SET_NULL, db_column='user')
     modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    content_type = ForeignKey(ContentType, on_delete=CASCADE)
+    content_type = ForeignKey(ContentType)
     object_id = PositiveIntegerField()
     tracked_object = GenericForeignKey('content_type', 'object_id')
     description_of_change = JSONField()
