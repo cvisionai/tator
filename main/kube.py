@@ -672,7 +672,7 @@ class TatorTranscode(JobManagerMixin):
 
         pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
         if upload_size:
-            pvc_size = bytes_to_mi_str(upload_size * 4)
+            pvc_size = bytes_to_mi_str(upload_size * 1.5)
 
         args = {'original': '/work/' + name,
                 'name': name}
@@ -791,7 +791,7 @@ class TatorTranscode(JobManagerMixin):
 
         pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
         if upload_size:
-            pvc_size = bytes_to_mi_str(upload_size * 4)
+            pvc_size = bytes_to_mi_str(upload_size * 1.5)
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
