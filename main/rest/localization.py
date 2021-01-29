@@ -2,7 +2,6 @@ import logging
 from django.db.models import Subquery
 from django.db import transaction
 
-from ..models import ChangeDescription
 from ..models import ChangeLog
 from ..models import Localization
 from ..models import LocalizationType
@@ -228,20 +227,16 @@ class LocalizationDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'])
-        cd = ChangeDescription()
 
         # Patch common attributes.
         frame = params.get("frame", None)
         x = params.get("x", None)
         y = params.get("y", None)
         if frame is not None:
-            cd.add_if_changed("_frame", obj.frame, frame)
             obj.frame = frame
         if x is not None:
-            cd.add_if_changed("_x", obj.x, x)
             obj.x = x
         if y is not None:
-            cd.add_if_changed("_y", obj.y, y)
             obj.y = y
 
         if obj.meta.dtype == 'box':
@@ -249,10 +244,8 @@ class LocalizationDetailAPI(BaseDetailView):
             width = params.get("width", None)
             thumbnail_image = params.get("thumbnail_image", None)
             if height:
-                cd.add_if_changed("_height", obj.height, height)
                 obj.height = height
             if width:
-                cd.add_if_changed("_width", obj.width, width)
                 obj.width = width
 
             # If the localization moved; the thumbnail is expired
@@ -269,10 +262,8 @@ class LocalizationDetailAPI(BaseDetailView):
             u = params.get("u", None)
             v = params.get("v", None)
             if u:
-                cd.add_if_changed("_u", obj.u, u)
                 obj.u = u
             if v:
-                cd.add_if_changed("_v", obj.v, v)
                 obj.v = v
         elif obj.meta.dtype == 'dot':
             pass
@@ -281,7 +272,6 @@ class LocalizationDetailAPI(BaseDetailView):
             pass
 
         new_attrs = validate_attributes(params, obj)
-        cd.bulk_add_if_changed(obj.attributes, new_attrs)
         obj = patch_attributes(new_attrs, obj)
 
         # Update modified_by to be the last user
@@ -297,7 +287,7 @@ class LocalizationDetailAPI(BaseDetailView):
             project=obj.project,
             user=self.request.user,
             tracked_object=obj,
-            description_of_change=cd.to_dict(),
+            description_of_change=obj.to_change_dict(),
         ).save()
 
         return {'message': f'Localization {params["id"]} successfully updated!'}

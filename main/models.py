@@ -37,6 +37,7 @@ from django.db.models.signals import post_delete
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.conf import settings
+from django.forms.models import model_to_dict
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
@@ -57,6 +58,73 @@ import uuid
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+
+class ModelDiffMixin(object):
+    """
+    A model mixin that tracks model fields' values and provide some useful api
+    to know what fields have been changed.
+
+    Based on the code in https://stackoverflow.com/a/13842223.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ModelDiffMixin, self).__init__(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def diff(self):
+        d1 = self.__initial
+        d2 = self._dict
+        diffs = [
+            (f"_{name}", v, d2[name])
+            for name, v in d1.items()
+            if name != "attributes" and v != d2[name]
+        ]
+
+        a1 = d1.get("attributes", {})
+        a2 = d2.get("attributes", {})
+        diffs.extend((name, a1[name], v) for name, v in a2.items() if v != a1.get(name))
+        return diffs
+
+    @property
+    def has_changed(self):
+        return bool(self.diff)
+
+    @property
+    def changed_fields(self):
+        return self.diff.keys()
+
+    def get_field_diff(self, field_name):
+        """
+        Returns a diff for field if it's changed and None otherwise.
+        """
+        return self.diff.get(field_name, None)
+
+    def save(self, *args, **kwargs):
+        """
+        Saves model and set initial state.
+        """
+        super(ModelDiffMixin, self).save(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def _dict(self):
+        d = model_to_dict(self, fields=[field.name for field in self._meta.fields])
+        if "attributes" in d:
+            d["attributes"] = dict(d["attributes"])
+        return d
+
+    def to_change_dict(self):
+        change_dict = {"old": [], "new": []}
+
+        for change in self.diff:
+            name = change[0]
+            change_dict["old"].append({"name": name, "value": change[1]})
+            change_dict["new"].append({"name": name, "value": change[2]})
+
+        return change_dict
+
 
 class Depth(Transform):
     lookup_name = "depth"
@@ -749,7 +817,7 @@ def media_post_delete(sender, instance, **kwargs):
                     path = obj['segment_info']
                     safe_delete(path)
 
-class Localization(Model):
+class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
@@ -990,7 +1058,7 @@ class Bookmark(Model):
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    user = ForeignKey(User, on_delete=SET_NULL, db_column='user')
     modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     content_type = ForeignKey(ContentType, on_delete=CASCADE)
     object_id = PositiveIntegerField()
@@ -1003,57 +1071,21 @@ class ChangeLog(Model):
     values in the `value` field. For example:
     {
       old: [{
-	name: "Species",
-	value: "Lobster"
+        name: "Species",
+        value: "Lobster"
       }, {
-	name: "Length",
-	value: 31
+        name: "Length",
+        value: 31
       }],
       new: [{
-	name: "Species",
-	value: "Cod"
+        name: "Species",
+        value: "Cod"
       }, {
-	name: "Length",
-	value: 52
+        name: "Length",
+        value: 52
       }]
     }
     """
-
-class ChangeDescription:
-    """ An object that contains a representation of the ChangeLog.description_of_change field """
-
-    def __init__(self):
-        self._changes = []
-        """ List of tuples (name, old_value, new_value) """
-
-    def bulk_add_if_changed(self, old_attributes, new_attributes):
-        # If there are no new attributes, then nothing has changed
-        if not new_attributes:
-            return
-
-        # If there are no old attributes, create an empty dict as a proxy
-        if not isinstance(old_attributes, dict):
-            old_attributes = {}
-
-        # Check each new value against old values, if they exist
-        for name, new_value in new_attributes.items():
-            self.add_if_changed(name, old_attributes.get(name), new)
-
-    def add_if_changed(self, name, old_value, new_value):
-        if old_value == new_value:
-            return
-
-        self._changes.append((name, old_value, new_value))
-
-    def to_dict(self):
-        change_dict = {"old": [], "new": []}
-
-        for change in self._changes:
-            name = change[0]
-            change_dict["old"].append({"name": name, "value": change[1]})
-            change_dict["new"].append({"name": name, "value": change[2]})
-
-        return change_dict
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
