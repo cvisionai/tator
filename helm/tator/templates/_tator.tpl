@@ -115,6 +115,8 @@ spec:
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             - name: TRANSCODER_MEMORY_LIMIT
               value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
+            - name: POD_GC_STRATEGY
+              value: {{ .Values.podGCStrategy | default "OnPodCompletion" | quote }}
             - name: WORKFLOW_STORAGE_CLASSES
               {{- if hasKey .Values "workflowStorageClasses" }}
               {{- $storage_classes := "" }}
