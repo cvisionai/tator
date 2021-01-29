@@ -121,7 +121,7 @@ class AttributesClone {
           console.log("Clone status "+ status);
           
           if(status == 201){
-            iconWrap.appendChild(warningIcon);
+            iconWrap.appendChild(succussIcon);
             this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
           }
 
