@@ -32,6 +32,7 @@ class TranscodeAPI(BaseListView):
         gid = str(params['gid'])
         uid = params['uid']
         url = params['url']
+        upload_size = params.get('size')
         section = params['section']
         name = params['name']
         md5 = params['md5']
@@ -52,7 +53,7 @@ class TranscodeAPI(BaseListView):
             raise Exception(f"For project {project} given type {entity_type}, can not find a "
                              "destination media type")
 
-        # Attempt to determine upload size.
+        # Attempt to determine upload size. Only use size parameter if size cannot be determined.
         parsed = urlparse(url)
         same_object_host = f"{parsed.scheme}://{parsed.netloc}" == os.getenv('OBJECT_STORAGE_HOST')
         same_main_host = parsed.netloc == os.getenv('MAIN_HOST')
@@ -68,8 +69,9 @@ class TranscodeAPI(BaseListView):
             response = requests.head(url)
             if 'Content-Length' in response.headers:
                 upload_size = int(response.headers['Content-Length'])
-            else:
-                upload_size = 25000000000 # 25GB if size cannot be determined.
+            elif upload_size is None:
+                raise Exception("HEAD request failed. Supply `size` parameter to Transcode "
+                                "endpoint!")
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.
