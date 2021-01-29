@@ -333,6 +333,7 @@ class TatorTranscode(JobManagerMixin):
                          '--uid', '{{workflow.parameters.uid}}',
                          '--attributes', '{{workflow.parameters.attributes}}',
                          '--media_id', '{{workflow.parameters.media_id}}',
+                         '--size', '{{workflow.parameters.size}}',
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
@@ -387,7 +388,8 @@ class TatorTranscode(JobManagerMixin):
                          '--category', '{{inputs.parameters.category}}',
                          '--raw_width', '{{inputs.parameters.raw_width}}',
                          '--raw_height', '{{inputs.parameters.raw_height}}',
-                         '--configs', '{{inputs.parameters.configs}}'],
+                         '--configs', '{{inputs.parameters.configs}}',
+                         '--size', '{{workflow.parameters.size}}'],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
                     'name': 'scratch-{{inputs.parameters.id}}',
@@ -809,7 +811,8 @@ class TatorTranscode(JobManagerMixin):
                        'user': str(user),
                        'client_image' : get_client_image_name(),
                        'attributes' : json.dumps(attributes),
-                       'media_id': '-1' if media_id is None else str(media_id)}
+                       'media_id': '-1' if media_id is None else str(media_id),
+                       'size': upload_size}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_transcode_task(args, url)
