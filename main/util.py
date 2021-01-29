@@ -652,7 +652,7 @@ def s3_verify(project):
     print(f"Verified {num_verified} media in project {project}!")
 
 def delete_dead_resources(project, dry_run=True):
-    medias = Media.objects.filter(project=project, media_files__isnull=True)
+    medias = Media.objects.filter(project=project, media_files__isnull=False)
     resources = Resource.objects.filter(path__startswith='/', media__in=medias)
     num_deleted = 0
     for res in list(resources):
@@ -685,7 +685,7 @@ def delete_dead_resources(project, dry_run=True):
         print(f"Deleted {num_deleted} resources!")
 
 def delete_missing_resources(project, dry_run=True):
-    medias = Media.objects.filter(project=project, media_files__isnull=True)
+    medias = Media.objects.filter(project=project, media_files__isnull=False)
     resources = Resource.objects.filter(path__startswith='/', media__in=medias)
     num_deleted = 0
     num_media = 0
