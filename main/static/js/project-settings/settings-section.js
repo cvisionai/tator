@@ -77,13 +77,15 @@ class SettingsSection extends TatorElement {
 
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this._changed() ){
+
+      if( this._shadow.querySelectorAll(".changed").length > 0 ){
         console.log("hitting save for id: "+id);
         this._save( {"id":id} )
       } else {
-        // @TODO Save button should not be clickable unless something changes in form.
-        console.log("Nothing new to save! :)");
-        this._modalNeutral("Nothing new to save!");
+        // @TODO-Improvement Save button should not be clickable unless something changes in form.
+        let happyMsg = "Nothing new to save!";
+        console.log(happyMsg);
+        this._modalSuccess( happyMsg );
       }
     });
 
@@ -101,10 +103,6 @@ class SettingsSection extends TatorElement {
     return input.getAttribute("value");
   }
 
-  _changed(){
-    return true;
-  }
-
   _fetchGetPromise({id = this.projectId} = {}){
     return fetch(`/rest/${this.fromType}s/${id}`, {
       method: "GET",
@@ -120,7 +118,7 @@ class SettingsSection extends TatorElement {
   //shared by types
   _fetchPatchPromise({id = -1 } = {}){
     console.log("Patch id: "+id);
-    let formData = this._getFormData(id);
+    let formData = this._getFormTypeData(id);
     console.log(formData);
 
     //return fetch("/rest/StateType/" + id, {
@@ -179,6 +177,7 @@ class SettingsSection extends TatorElement {
         promises = [...promises, ...attrPromises.promises];
       }
 
+      let messageObj = {};
       if(promises.length > 0){
         // Check if anything changed
         Promise.all(promises).then( async( respArray ) => {
@@ -190,28 +189,52 @@ class SettingsSection extends TatorElement {
 
             Promise.all( responses )
               .then ( dataArray => {
-                this._handleResponseWithAttributes({
+                messageObj = this._handleResponseWithAttributes({
                   id,
                   dataArray,
                   hasAttributeChanges,
                   attrPromises,
                   respArray
                 });
+
+                if(messageObj.requiresConfirmation) {
+                  console.log(messageObj);
+                  let buttonSave = this._getAttrGlobalTrigger(id);
+                  let heading = `<div class="py-4 pt-4 h2">Are these changes global?</div>`
+                  let subText = `<div class="f3 py-4">* Selecting checkbox changes attributes with this name across all types.</div>`
+                  let mainText = `${messageObj.message}${heading}${messageObj.messageConfirm}${subText}`
+
+                  this._modalConfirm({
+                    "titleText" : "Confirm Changes",
+                    mainText,
+                    buttonSave
+                  });
+                } else {
+                  this._modalNeutral({
+                    "titleText" : "Edit complete!",
+                    "mainText" : messageObj.message 
+                  });
+                }            
             });
-        });
+
+          });
       } else {
         this._modalSuccess("Nothing new to save!");
       }
+
+
     }
 
-  _getFormData(form){
-    // defined inside form web components
-    return null;
+  _getFormTypeData(id){
+    this._shadow.getElementById(id).classList.remove("changed");
+    return this._getFormData(id);
   }
 
-  _formChanged(_form){
+  _formChanged(_form, event = "") {
     console.log("Change in "+_form.id);
     let changedFormEl = this._shadow.querySelector(`[id="${_form.id}"] `);
+
+    if(event != "") console.log("Change value... "+event.target.value);
 
     return changedFormEl.classList.add("changed");
   }
@@ -226,72 +249,67 @@ class SettingsSection extends TatorElement {
     respArray = []}
     = {}){
 
-    console.log("hasAttributeChanges: "+hasAttributeChanges);
+    let message = "";
+    let messageConfirm = "";
+    let requiresConfirmation = false;
 
     respArray.forEach((item, i) => {
-      if(item.status == 200 && !hasAttributeChanges){
-        console.log("No attr changes - 200 response.");
-        return this._modalSuccess(dataArray[i].message);
-      } else if(item.status != 200 && !hasAttributeChanges){
-        console.log("No attr changes - !200 response.");
-        return this._modalError(dataArray[i].message);
-      } else if (hasAttributeChanges){
-        let message = "<ul>";
-        let bumpIndexForAttr = true;
-        if (respArray[0].url.indexOf("Attribute") > 0) {
-          bumpIndexForAttr = false;
-        }
-        let index = bumpIndexForAttr ? i-1 : i;
+      let currentMessage = dataArray[i].message;
+      let succussIcon = document.createElement("modal-success");
+      let iconWrap = document.createElement("span");
+      let warningIcon = document.createElement("modal-warning");
+      let index = (hasAttributeChanges && respArray[0].url.indexOf("Attribute") > 0) ? i : i-1;
+      let formReadable = hasAttributeChanges ? attrPromises.attrNames[index] : "";
+      let formReadable2 = hasAttributeChanges ? attrPromises.attrNamesNew[index] : "";
 
-        let formReadable = `"${attrPromises.attrNames[index]}"`
-        let formReadable2 = `"${attrPromises.attrNamesNew[index]}"`
-
-        console.log("still have this data?");
-        console.log(attrPromises.attrNames);
-
-        message += "<li>"
-        if(item.status == 200){
-          let succussIcon = document.createElement("modal-success").innerHTML;
-          message += dataArray[i].message != ""
-            ? succussIcon + dataArray[i].message+"<br/>"
-            : "Successfully updated "+formReadable;
-        } else if(item.status == 400 && dataArray[i].message.indexOf("global") > 0) {
-          let input = `<input type="checkbox" name="global" data-attribute-name="${formReadable.replace(/[^\w]|_/g, "-").toLowerCase()}" id="formReadable" class="checkbox"/>`;
-          message += `<p>${input} Globally change attribute ${formReadable} to ${formReadable2}?</p>`
+      if( item.status == 200){
+        console.log("Return Message - It's a 200 response.");
+        iconWrap.appendChild(succussIcon);
+        message += `<div class="py-2">${iconWrap.innerHTML} ${currentMessage}</div>`;
+      } else if(item.status != 200){
+        if (!hasAttributeChanges ){
+          iconWrap.appendChild(warningIcon);
+          console.log("Return Message - It's a 400 response for main form.");
+          message += `<div class="py-2">${iconWrap.innerHTML} ${currentMessage}</div>`;
+        } else if(hasAttributeChanges && currentMessage.indexOf("global") > 0) {
+          console.log("Return Message - It's a 400 response for attr form.");
+          let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
+          let newName = formReadable == formReadable2 ? "" : ` new name ${formReadable2}`
+          messageConfirm += `<div class="py-2">${input} Attribute ${formReadable}${newName}</div>`
+          requiresConfirmation = true;            
         } else {
-          message += "Information for "+formReadable+" did not save."+"<br/>";
+          iconWrap.appendChild(warningIcon);
+          message += `<div class="py-4">${iconWrap.innerHTML} Changes editing ${formReadable} not saved.</div>`
+          message += `<div class="f3">Error: ${currentMessage}</div>`
         }
-        message += "</li>";
-        message += "</ul>";
-        let buttonSave = this._getAttrGlobalTrigger(id);
-        this._modalConfirm({
-          "titleText" : "Confirmation Required",
-          "mainText" : message,
-          buttonSave
-        });
       }
-
     });
 
-
+    return {requiresConfirmation, message, messageConfirm};
   }
 
   _getAttrGlobalTrigger(id){
     let buttonSave = document.createElement("button")
     buttonSave.setAttribute("class", "btn btn-clear f2 text-semibold");
-    buttonSave.innerHTML = "Confirm";
+    buttonSave.innerHTML = "Yes";
 
     buttonSave.addEventListener("click", (e) => {
       e.preventDefault();
-      let confirmCheckboxes = this._shadow.querySelectorAll("input[name='global']");
+      let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
+
       console.log(confirmCheckboxes);
       for(let check of confirmCheckboxes){
         console.log("Checkbox....");
-        if(check.value == true){
+        if(check.checked == true){
           //add and changed flag back to this one
-          console.log("User checked: "+check.attributeName);
-          let name = check.attributeName;
-          this._shadow.querySelector(`#${name}`)
+          console.log(check);
+          let name = check.dataset.oldName;
+          let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
+
+          console.log("User checked: "+name);
+          console.log(this._shadow.querySelector(`#${formId}`));
+          this._shadow.querySelector(`#${formId}`).classList.add("changed");
+          this._shadow.querySelector(`#${formId}`).classList.add("resent-as-global");
         }
       }
       //run the _save method again with global true
@@ -314,6 +332,7 @@ class SettingsSection extends TatorElement {
   };
 
   _modalSuccess(message){
+    this._modalClear();
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
     this.modal._titleDiv.append( document.createElement("modal-success") );
@@ -335,11 +354,14 @@ class SettingsSection extends TatorElement {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _modalNeutral(message){
+  _modalNeutral({
+    titleText = "",
+    mainText = "",
+  } = {}){
     this._modalClear();
     let text = document.createTextNode("");
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
+    this.modal._titleDiv.append(titleText);
+    this.modal._main.innerHTML = mainText;
 
     return this.modal.setAttribute("is-open", "true")
   }
@@ -353,11 +375,7 @@ class SettingsSection extends TatorElement {
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
     this.modal._main.innerHTML = mainText;
-
-
-    /*let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear f2 text-semibold");
-    buttonSave.innerHTML = "Confirm";*/
+    this.modal._main.classList.add("fixed-heigh-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear f2 text-semibold");
@@ -375,6 +393,7 @@ class SettingsSection extends TatorElement {
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
+    return this.modal;
   }
 
   getDom(){

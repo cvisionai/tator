@@ -60,6 +60,7 @@ class SettingsAttributes extends HTMLElement {
 
       // Attribute List toggle
       heading.addEventListener("click", (event) => {
+        event.preventDefault();
         this._toggleAttributes(hiddenContent);
         this._toggleChevron(event);
       });
@@ -88,9 +89,11 @@ class SettingsAttributes extends HTMLElement {
 
     newAttributeTrigger.addEventListener("click", (event) => {
       event.preventDefault();
+      let afObj = this._getAddForm();
       this._modalConfirm({
         "titleText" : "New Attribute",
-        "mainText" : this._getAddForm(),
+        "mainText" : afObj.addAttributeForm,
+        "saveButton" : afObj.submitAttribute,
         "buttonText" : "Save",
         "scroll" : true
       });
@@ -109,7 +112,7 @@ class SettingsAttributes extends HTMLElement {
       this._saveAttribute( addAttributeForm );
     });
 
-    return addAttributeForm;
+    return {addAttributeForm, submitAttribute};
   }
 
   _saveAttribute(form){
@@ -119,14 +122,26 @@ class SettingsAttributes extends HTMLElement {
     };
 
     console.log(formJSON);
+    let status = 0;
+    this._fetchPostPromise({"formData" : formJSON})
+    .then(response => {
+      status = response.status;
+      return response.json()
+    })
+    .then(data => {
+      console.log(data);
+      let currentMessage = data.message;
+      let succussIcon = document.createElement("modal-success");
+      let warningIcon = document.createElement("modal-warning");
+      let iconWrap = document.createElement("span");
 
-    this._fetchPostPromise({"formData" : formJSON}).then(response => response.json())
-      .then(data => {
-        console.log(data)
-        this.modal._closeCallback();
-        this._modalSuccess(data.message);
-      });
-      console.log("attribute saved! [[placeholder]]");
+      if(status == 201) iconWrap.appendChild(succussIcon);
+      if(status == 400) iconWrap.appendChild(warningIcon);
+
+      this.modal._closeCallback();
+      this._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+    });
+
   }
 
   _getCopyAttributesTrigger(){
@@ -139,16 +154,17 @@ class SettingsAttributes extends HTMLElement {
       });
     newCopyTrigger.setAttribute("class", "clickable py-3");
 
-    let cloneAttribute = new AttributesClone( this.projectId, this.fromType, this.fromId, this.modal);
+    let cloneSave = this.inputHelper.saveButton();
+    let cloneAttribute = new AttributesClone( this.projectId, this.fromType, this.fromId, this.modal, this.modal._footer, cloneSave);
 
     newCopyTrigger.addEventListener("click", (event) => {
       event.preventDefault();
       let form = cloneAttribute._init();
-      //console.log(form);
 
       this._modalConfirm({
         "titleText" : "Clone Attribute(s)",
         "mainText" : form,
+        "saveButton" : cloneSave,
         "buttonText" : "Save",
         "scroll" : true
       });
@@ -183,19 +199,20 @@ class SettingsAttributes extends HTMLElement {
 
      // Avoid special name default in var later on
     attributes._default = attributes.default;
-    let formId = attributes.name;
+    let formId = attributes.name.replace(/[^\w]|_/g, "").toLowerCase();
 
     // Fields for this form
     const newForm = document.createElement("attributes-form");
     const formContents = newForm._getFormWithValues(attributes);
     formContents.setAttribute("class", "attribute-form px-4");
-    formContents.id = formId;
+    formContents.id = `${formId}_${this.fromId}`;
     formContents.data = attributes;
     formContents.setAttribute("data-old-name", attributes.name);
     formContents.hidden = true;
 
     // add listener
     attributeCurrent.addEventListener("click", (event) => {
+      event.preventDefault();
       this._toggleAttributes(formContents);
       this._toggleChevron(event)
     });
@@ -229,16 +246,30 @@ class SettingsAttributes extends HTMLElement {
   _modalConfirm({
     titleText = "",
     mainText = "",
+    saveButton = document.createElement(""),
     buttonText = "",
     scroll = false
   } = {}){
     this._modalClear();
-    let modal = this.querySelector('modal-dialog');
+    let modal = this.modal;
     modal._titleDiv.innerHTML = titleText;
     modal._main.appendChild(mainText);
+    modal._footer.appendChild(saveButton);
     modal._main.classList.add("fixed-heigh-scroll");
+    modal.setAttribute("is-open", "true")
 
-    return modal.setAttribute("is-open", "true")
+    return modal;
+  }
+
+  _modalComplete(message){
+    let text = document.createTextNode("Complete");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    this.modal._footer.innerHTML = "";
+    this.modal._main.classList.remove("fixed-heigh-scroll");
+
+    return this.modal.setAttribute("is-open", "true")
   }
 
   _modalClear(){

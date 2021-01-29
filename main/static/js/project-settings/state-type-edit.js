@@ -53,7 +53,7 @@ class StateTypeEdit extends SettingsSection {
       current.appendChild( _form );
 
       _form.addEventListener("change", (event) => {
-        this._formChanged(_form);
+        this._formChanged(_form, event);
       });
 
       // append input for name

@@ -11,10 +11,13 @@ class AttributesForm extends HTMLElement {
     const form = document.createElement("form");
     this.form = form;
 
+    //this.form.addEventListener("change", this._formChanged);
     this.form.addEventListener("change", (event) => {
       console.log("attribute form changed");
-      this.form.classList.add("changed");
-    });
+      console.log("Event target... "+event.target.value);
+      return this.form.classList.add("changed");
+    });   
+
 
     // Fields for this form
     // append input for name
@@ -89,6 +92,12 @@ class AttributesForm extends HTMLElement {
 
     return this.form;
   }
+
+  // _formChanged(event){
+  //   console.log("attribute form changed");
+  //   console.log("Event target... "+event.target.value);
+  //   return this.form.classList.add("changed");
+  // }
 
   _getFormWithValues({
     name = "",
@@ -504,17 +513,21 @@ class AttributesForm extends HTMLElement {
         let formData = {
           "entity_type": entityType,
           "global" : globalAttribute,
-          "old_attribute_type_name": form.id,
+          "old_attribute_type_name": form.dataset.oldName,
           "new_attribute_type": {}
         };
+
+        console.log("Old name: "+form.dataset.oldName);
 
         let attrNameNew = form.querySelector('input[name="name"]').value;
         attrPromises.attrNamesNew.push(attrNameNew);
 
-        let attrNameOld = form.id;
+        let attrNameOld = form.dataset.oldName;
         attrPromises.attrNames.push(attrNameOld);
 
         formData.new_attribute_type = this._getAttributeFormData(form);
+
+        form.classList.remove("changed");
 
         let currentPatch = this._fetchAttributePatchPromise(id, formData);
         attrPromises.promises.push(currentPatch);

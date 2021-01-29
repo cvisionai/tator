@@ -1,6 +1,6 @@
 /* Class with methods return input types with preset values for editing.*/
 class AttributesClone {
-  constructor(projectId, fromType, fromId, modal) {
+  constructor(projectId, fromType, fromId, modal, modal_footer, cloneSave) {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.projectId = projectId;
     this.fromType = fromType;
@@ -8,13 +8,13 @@ class AttributesClone {
     this.attributeFormHelper = new AttributesForm();
     this.inputHelper = new SettingsInput("media-types-main-edit");
     this.modal = modal;
+    this.modal_footer = modal_footer;
+    this.key = "project-types-atrr-list_"+this.projectId;
+    this.cloneSave = cloneSave;
   }
 
-  // Checks for stored attributes obj in localstorage
-  // If there isn't one - it creates it for this project
   _init(){
     this._getProjectAttrList(this.projectId );
-
     return this._getDuplicateAttributesForm();
   }
 
@@ -22,43 +22,39 @@ class AttributesClone {
     const form = document.createElement("form");
     this.form = form;
 
-    this.form.addEventListener("change", (event) => {
-      console.log("Clone attribute form changed");
-      this.form.classList.add("changed");
-    });
+    //this.form.addEventListener("change", this._formChanged);
 
     const typeOptions = this._getTypesList();
 
     // Fields for this form
     const TYPE = "Type";
-    this.selectBox = this.inputHelper.inputSelectOptions({
+    this.typeOptionsSelect = this.inputHelper.inputSelectOptions({
       "labelText": TYPE,
       "value": "Select",
       "optionsList": typeOptions,
       "name" : TYPE.toLowerCase()
     });
-    this.form.appendChild(this.selectBox);
+    this.form.appendChild(this.typeOptionsSelect);
 
-    this.selectBox.addEventListener("change", (event) => {
+    this.submitForm  = null;
+
+    this.typeOptionsSelect.addEventListener("change",  (event) => {
       let value = "";
-
+  
       for(let i of event.target.options){
         console.log(i);
         if(i.selected == true) {
           value = i.value;
-          console.log("i.value: "+i.value);
-          console.log(i.innerHTML);
         }
       }
-
+  
       let entitySelect = this._getEntitiesForType( value );
       this.placeholderEntities.innerHTML = ""; //empty any current value
       this.placeholderAttributes.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
-      console.log(entitySelect);
       this.placeholderEntities.appendChild(entitySelect);
-
-      entitySelect.addEventListener("change", (event) => {
+  
+      return entitySelect.addEventListener("change", (event) => {
         let checkboxHTML = this._getAttributeCheckboxes(event);
         this.placeholderAttributes.innerHTML = ""; //empty any current value
         this.placeholderAttributes.appendChild(checkboxHTML);
@@ -73,10 +69,10 @@ class AttributesClone {
     this.placeholderAttributes.setAttribute("class", "placeholderAttributes");
     this.form.appendChild(this.placeholderAttributes);
 
-    this.submitForm = this.inputHelper.saveButton();
-    this.form.appendChild(this.submitForm);
+    //this.submitForm = this.inputHelper.saveButton();
+    this.modal_footer.appendChild(this.cloneSave);
 
-    this.submitForm.addEventListener("click", (event) => {
+    this.cloneSave.addEventListener("click", (event) => {
       event.preventDefault();
       this.createClones();
     });
@@ -88,7 +84,8 @@ class AttributesClone {
     //create form data & post promise array for the attribute forms, and submit
     let checkboxes = this.placeholderAttributes.getElementsByTagName("input");
     let attrDataArray = [];
-    this.messages = "";
+    this.successMessages = "";
+    this.failedMessages = "";
     this.modal._closeCallback();
 
     for(let c of checkboxes){
@@ -103,25 +100,40 @@ class AttributesClone {
           "entity_type": this.fromType,
           "addition": this.attributeFormHelper._getAttributeFormData(clonedForm)
         };
+        let status = "";
 
         console.log(formJSON);
 
         this._fetchPostPromise({
           "formData" : formJSON
         })
-        .then(response => response.json())
+        .then(response => {
+          status = response.status;
+          return response.json()
+        })
         .then(data => {
-            console.log(data);
-            this.messages += data.message+"<br/><br/>";
-            console.log("attribute saved! [[placeholder]]");
+          console.log(data);
+          let currentMessage = data.message;
+          let succussIcon = document.createElement("modal-success");
+          let warningIcon = document.createElement("modal-warning");
+          let iconWrap = document.createElement("span");
 
-            this._modalComplete(this.messages);
+          console.log("Clone status "+ status);
+          
+          if(status == 201){
+            iconWrap.appendChild(warningIcon);
+            this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+          }
 
-          });
+          if(status == 400){
+            iconWrap.appendChild(warningIcon);
+            this.failedMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+          }     
 
-
+          this._modalComplete(this.successMessages+this.failedMessages);      
+        
+        });
       }
-
     }
   }
 
@@ -187,31 +199,14 @@ class AttributesClone {
   }
 
   _getProjectAttrList(projectId = this.projectId){
-    console.log("getting all types / entity / attr associations from local storage");
-    let key = "project-types-atrr-list_"+projectId;
-    //this.projectAttrList = window.localStorage.getItem(key);
-
-    //console.log("what's the current local storage value?");
-    //console.log(this.projectAttrList);
-
-    //if(this.projectAttrList != null && this.projectAttrList.length > 0){
-    //  this.projectAttrList = JSON.parse(this.projectAttrList);
-    //} else {
-      this.projectAttrList = this._setProjectAttrList(projectId, key);
-
-    //}
-
-    console.log("at the end of GET list....");
-    console.log(this.projectAttrList);
-
-    return this.projectAttrList;
+    console.log("getting all types / entity / attr associations");
+    return this._setProjectAttrList(projectId);;
   }
 
-  _setProjectAttrList(projectId = this.projectId, key){
-    console.log("settting all types / entity / attr associations from local storage");
+  _setProjectAttrList(projectId = this.projectId){
+    console.log("Attr associations from get");
     // Promise all.... then bundle them up
     let promises = this._getAllTypePromises(projectId);
-
     this.projectAttrList = {};
 
     Promise.all(promises)
@@ -240,17 +235,15 @@ class AttributesClone {
               this.projectAttrList.state[entity.name] = entity.attribute_types;
           }
 
-          window.localStorage.setItem(key, JSON.stringify(this.projectAttrList));
-
+          return this.projectAttrList;
         })
-        // TMP commented out to see the file and line number of error
-        //.catch(err => {
-          //this._shadow.querySelector('.loading').remove();
-        //  console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
-        //})
+        .catch(err => {
+          // this._shadow.querySelector('.loading').remove();
+         console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
+        })
       });
 
-    return this.projectAttrList;
+    
   }
 
   _getEntitiesForType(type){
@@ -269,14 +262,14 @@ class AttributesClone {
       entityOptions.push(option)
     }
 
-    let selectBox = this.inputHelper.inputSelectOptions({
+    let entitySelectBox = this.inputHelper.inputSelectOptions({
       "labelText": "Entity",
       "value": "",
       "optionsList": entityOptions,
       "name" : "entity"
     });
 
-    return selectBox;
+    return entitySelectBox;
   }
 
   _getAllTypePromises(projectId = this.projectId){
@@ -299,12 +292,14 @@ class AttributesClone {
     ];
   }
 
+
   _modalComplete(message){
     let text = document.createTextNode("Complete");
     this.modal._titleDiv.innerHTML = "";
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._main.classList.remove("fixed-heigh-scroll");
+    this.modal_footer.innerHTML = "";
 
     return this.modal.setAttribute("is-open", "true")
   }
