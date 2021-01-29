@@ -67,9 +67,13 @@ class TranscodeAPI(BaseListView):
         else:
             # This is a normal url. Use HEAD request to obtain content length.
             response = requests.head(url)
+            head_succeeded = False
             if 'Content-Length' in response.headers:
-                upload_size = int(response.headers['Content-Length'])
-            elif upload_size is None:
+                head_size = int(response.headers['Content-Length'])
+                if head_size > 0:
+                    head_succeeded = True
+                    upload_size = head_size
+            if (upload_size is None) and (head_succeeded == False):
                 raise Exception("HEAD request failed. Supply `size` parameter to Transcode "
                                 "endpoint!")
 
