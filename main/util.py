@@ -670,7 +670,7 @@ def delete_dead_resources(project, dry_run=True):
                                 target = os.readlink(path)
                             else:
                                 target = path
-                            if (target == resource.path) and target.startswith('/'):
+                            if (target == res.path) and target.startswith('/'):
                                 found = True
         if not found:
             if dry_run:
@@ -707,7 +707,7 @@ def delete_missing_resources(project, dry_run=True):
                                     target = os.readlink(path)
                                 else:
                                     target = path
-                                if (target == resource.path) and target.startswith('/'):
+                                if (target == res.path) and target.startswith('/'):
                                     found = True
                                     pop_idx.append(idx)
                                     pop_role.append(role)
