@@ -516,7 +516,6 @@ spec:
         - argoproj/argoexec:v2.12.6
         - --workflow-workers=64
         - --workflow-ttl-workers=4
-        - --pod-cleanup-workers=8
         - --burst=512
         - --qps=256
         command:
