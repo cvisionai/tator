@@ -755,10 +755,10 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'parallelism': 4,
                 'templates': [
-                    self.prepare_task,
+                    self.get_prepare_task(False),
                     self.get_download_task(),
                     self.delete_task,
-                    self.transcode_task,
+                    self.get_transcode_task(False),
                     self.image_upload_task,
                     self.unpack_task,
                     self.get_transcode_dag(),
