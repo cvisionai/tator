@@ -45,6 +45,10 @@ def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return f"{num_megabytes}Mi"
 
+def spell_out_params(params):
+    yaml_params = [{"name": x} for x in params]
+    return yaml_params
+
 def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
@@ -209,10 +213,6 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
         """
-        def spell_out_params(params):
-            yaml_params = [{"name": x} for x in params]
-            return yaml_params
-
         # Define each task in the pipeline.
 
         # Deletes the remote TUS file
@@ -302,7 +302,52 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        self.prepare_task = {
+        self.image_upload_task = {
+            'name': 'image-upload',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': [
+                    'imageLoop.py',
+                    '--host', '{{workflow.parameters.host}}',
+                    '--token', '{{workflow.parameters.token}}',
+                    '--project', '{{workflow.parameters.project}}',
+                    '--gid', '{{workflow.parameters.gid}}',
+                    '--uid', '{{workflow.parameters.uid}}',
+                    # TODO: If we made section a DAG argument, we could
+                    # conceviably import a tar across multiple sections
+                    '--section', '{{workflow.parameters.section}}',
+                    '--progressName', '{{workflow.parameters.upload_name}}',
+                ],
+                'workingDir': '/scripts',
+                'volumeMounts': [{
+                    'name': 'transcode-scratch',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': '1Gi',
+                        'cpu': '250m',
+                    },
+                },
+            },
+        }
+
+    def get_prepare_task(self, use_ram_disk):
+        prepare_task = {
             'name': 'prepare',
             'metadata': {
                 'labels': {'app': 'transcoder'},
@@ -357,8 +402,17 @@ class TatorTranscode(JobManagerMixin):
                 }],
             },
         }
+        if use_ram_disk:
+            prepare_task['volumes'] = [{
+                'name': 'scratch-prepare',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }]
+        return prepare_task
 
-        self.transcode_task = {
+    def get_transcode_task(self, use_ram_disk):
+        transcode_task = {
             'name': 'transcode',
             'metadata': {
                 'labels': {'app': 'transcoder'},
@@ -403,50 +457,14 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
         }
-
-        self.image_upload_task = {
-            'name': 'image-upload',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
+        if use_ram_disk:
+            transcode_task['volumes'] = [{
+                'name': 'scratch-{{inputs.parameters.id}}',
+                'emptyDir': {
+                    'medium': 'Memory',
                 },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': [
-                    'imageLoop.py',
-                    '--host', '{{workflow.parameters.host}}',
-                    '--token', '{{workflow.parameters.token}}',
-                    '--project', '{{workflow.parameters.project}}',
-                    '--gid', '{{workflow.parameters.gid}}',
-                    '--uid', '{{workflow.parameters.uid}}',
-                    # TODO: If we made section a DAG argument, we could
-                    # conceviably import a tar across multiple sections
-                    '--section', '{{workflow.parameters.section}}',
-                    '--progressName', '{{workflow.parameters.upload_name}}',
-                ],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '1Gi',
-                        'cpu': '250m',
-                    },
-                },
-            },
-        }
+            }]
+        return transcode_task
 
     def get_download_task(self, headers=[]):
         # Download task exports the human readable filename a
@@ -629,7 +647,7 @@ class TatorTranscode(JobManagerMixin):
             },
         }
         return pipeline_task
-    def get_transcode_task(self, item, url):
+    def get_single_file_pipeline(self, item, url):
         """ Generate a task object describing the dependencies of a transcode """
         # Generate an args structure for the DAG
         args = [{'name': 'url', 'value': url}]
@@ -672,9 +690,7 @@ class TatorTranscode(JobManagerMixin):
         if entity_type != -1:
             raise Exception("entity type is not -1!")
 
-        pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
-        if upload_size:
-            pvc_size = bytes_to_mi_str(upload_size * 1.5)
+        pvc_size = bytes_to_mi_str(upload_size * 2.5)
 
         args = {'original': '/work/' + name,
                 'name': name}
@@ -791,9 +807,19 @@ class TatorTranscode(JobManagerMixin):
             'name': name
         }
 
-        pvc_size = os.getenv('TRANSCODER_PVC_SIZE')
-        if upload_size:
-            pvc_size = bytes_to_mi_str(upload_size * 1.5)
+        # Determine whether to use RAM disks (smaller files) or PVCs (larger files)
+        pvc_bytes = upload_size * 2.5
+        pvc_size = bytes_to_mi_str(pvc_bytes)
+        max_ram_disk_size = os.getenv('TRANSCODER_MAX_RAM_DISK_SIZE')
+        unit = max_ram_disk_size[-2:]
+        ram_disk_bytes = int(max_ram_disk_size[:-2])
+        if unit == 'Mi':
+            ram_disk_bytes *= 1024 * 1024
+        elif unit == 'Gi':
+            ram_disk_bytes *= 1024 * 1024 * 1024
+        else:
+            raise ValueError('Max RAM disk size units must be Mi or Gi!')
+        use_ram_disk = pvc_bytes < ram_disk_bytes
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
@@ -815,7 +841,7 @@ class TatorTranscode(JobManagerMixin):
                        'size': str(upload_size)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
-        pipeline_task = self.get_transcode_task(args, url)
+        pipeline_task = self.get_single_file_pipeline(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -841,29 +867,30 @@ class TatorTranscode(JobManagerMixin):
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
                                 'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [{
-                    'metadata': {
-                        'name': f'scratch-{workload}',
-                    },
-                    'spec': {
-                        'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
-                        'accessModes': [ 'ReadWriteOnce' ],
-                        'resources': {
-                            'requests': {
-                                'storage': pvc_size,
-                            }
-                        }
-                    }
-                } for workload in ['prepare'] + list(range(MAX_WORKLOADS))],
                 'templates': [
-                    self.prepare_task,
-                    self.transcode_task,
-                    self.image_upload_task,
+                    self.get_prepare_task(use_ram_disk),
+                    self.get_transcode_task(use_ram_disk),
                     self.get_transcode_dag(media_id),
                     pipeline_task,
                 ],
             },
         }
+
+        if not use_ram_disk:
+            manifest['spec']['volumeClaimTemplates'] = [{
+                'metadata': {
+                    'name': f'scratch-{workload}',
+                },
+                'spec': {
+                    'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
+                    'accessModes': [ 'ReadWriteOnce' ],
+                    'resources': {
+                        'requests': {
+                            'storage': pvc_size,
+                        }
+                    }
+                }
+            } for workload in ['prepare'] + list(range(MAX_WORKLOADS))]
 
         # Create the workflow
         response = self.custom.create_namespaced_custom_object(
