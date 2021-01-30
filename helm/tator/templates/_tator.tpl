@@ -109,8 +109,8 @@ spec:
               {{- else }}
               value: "FALSE"
               {{- end }}
-            - name: TRANSCODER_PVC_SIZE
-              value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
+            - name: TRANSCODER_MAX_RAM_DISK_SIZE
+              value: {{ .Values.transcoderMaxRamDiskSize | default "8Gi" | quote }}
             - name: TRANSCODER_CPU_LIMIT
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             - name: TRANSCODER_MEMORY_LIMIT
