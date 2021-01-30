@@ -498,7 +498,7 @@ class AttributesForm extends HTMLElement {
 
     return _default;
   }
-  _getAttributePromises({id = -1, entityType = null, globalAttribute = "false", attrForms = [], attrFormsChanged = []} = {}){
+  _getAttributePromises({id = -1, entityType = null, attrForms = [], attrFormsChanged = []} = {}){
     //let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
     // let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form.changed`);
     let attrPromises = {};
@@ -510,9 +510,10 @@ class AttributesForm extends HTMLElement {
 
     if(attrFormsChanged.length){
       attrFormsChanged.forEach((form, i) => {
+        let global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
         let formData = {
           "entity_type": entityType,
-          "global" : globalAttribute,
+          "global" : global,
           "old_attribute_type_name": form.dataset.oldName,
           "new_attribute_type": {}
         };

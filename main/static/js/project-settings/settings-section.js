@@ -200,8 +200,8 @@ class SettingsSection extends TatorElement {
                 if(messageObj.requiresConfirmation) {
                   console.log(messageObj);
                   let buttonSave = this._getAttrGlobalTrigger(id);
-                  let heading = `<div class="py-4 pt-4 h2">Confirm global changes</div>`
-                  let subText = `<div class="f2 py-4">Selecting a checkbox vonfirms update to this attribute across all types.</div>`
+                  let heading = `<div class=" pt-4 h2">Select attributes are global </div>`
+                  let subText = `<div class="f3 py-2">Confirm to update across all types. Uncheck to discard change.</div>`
                   let mainText = `${messageObj.message}${heading}${subText}${messageObj.messageConfirm}`
 
                   this._modalConfirm({
