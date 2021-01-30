@@ -46,13 +46,9 @@ class MediaUtil:
                 self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
                 self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
                 segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-                if segment_file.startswith('/'):
-                    with open(segment_file, 'r') as f_p:
-                        self._segment_info = json.load(f_p)
-                else:
-                    f_p = io.BytesIO()
-                    self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
-                    self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+                f_p = io.BytesIO()
+                self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
                 self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
                                                               ['segments']) if x['name'] == 'moof']
             elif "image" in video.media_files:
@@ -195,21 +191,14 @@ class MediaUtil:
             lookup[frame] = (segment_frame_start, temp_video)
 
             logger.info(f"Scatter gather graph = {sc_graph}")
-            if self._video_file.startswith('/'):
-                with open(self._video_file, "r+b") as vid_fp:
-                    m_m = mmap.mmap(vid_fp.fileno(), 0)
-                    with open(temp_video, "wb") as out_fp:
-                        for scatter in sc_graph:
-                            out_fp.write(m_m[scatter[0]:scatter[0]+scatter[1]])
-            else:
-                with open(temp_video, "wb") as out_fp:
-                    for scatter in sc_graph:
-                        start = scatter[0]
-                        stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
-                        response = self._s3.get_object(Bucket=self._bucket_name,
-                                                       Key=self._video_file,
-                                                       Range=f'bytes={start}-{stop}')
-                        out_fp.write(response['Body'].read())
+            with open(temp_video, "wb") as out_fp:
+                for scatter in sc_graph:
+                    start = scatter[0]
+                    stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
+                    response = self._s3.get_object(Bucket=self._bucket_name,
+                                                   Key=self._video_file,
+                                                   Range=f'bytes={start}-{stop}')
+                    out_fp.write(response['Body'].read())
 
         return lookup, segment_info
 
@@ -352,13 +341,10 @@ class MediaUtil:
         right = left + roi[0] * self._width
         lower = upper + roi[1] * self._height
 
-        if self._video_file.startswith('/'):
-            img = Image.open(self._video_file)
-        else:
-            out = io.BytesIO()
-            self._s3.download_fileobj(self._bucket_name, self._video_file, out)
-            out.seek(0)
-            img = Image.open(out)
+        out = io.BytesIO()
+        self._s3.download_fileobj(self._bucket_name, self._video_file, out)
+        out.seek(0)
+        img = Image.open(out)
         img = img.crop((left, upper, right, lower))
 
         if force_scale is not None:

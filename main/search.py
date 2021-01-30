@@ -30,20 +30,11 @@ def _path_size(path, s3, bucket_name):
     """ Returns the file size of a path.
     """
     size = 0
-    if path.startswith('/'):
-        # This is a disk-based path.
-        if os.path.exists(path):
-            statinfo = os.stat(path)
-            size = statinfo.st_size
-        else:
-            logger.warning(f"Could not find file {path}!")
-    else:
-        # This is an S3 object.
-        try:
-            response = s3.head_object(Bucket=bucket_name, Key=path)
-            size = response['ContentLength']
-        except:
-            logger.warning(f"Could not find object {path}!")
+    try:
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        size = response['ContentLength']
+    except:
+        logger.warning(f"Could not find object {path}!")
     return size
 
 def mediaFileSizes(file):
