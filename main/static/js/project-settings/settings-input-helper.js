@@ -111,11 +111,11 @@ class SettingsInput {
   } = {} ){
     const forId = this._getUniqueIdentifier(name);
     const slide = document.createElement("settings-bool-input");
-    const fieldset = slide.getFieldSet( name, forId );
+    let fieldset = slide.getFieldSet( name, forId );
     slide.setLegendText(labelText);
     slide.setOnLabel("Yes");
     slide.setOffLabel("No");
-    slide.setValue(value); 
+    slide.setValue(value);
 
     return fieldset;
   }
@@ -376,6 +376,13 @@ class SettingsInput {
       for(let s of radioSet){
         if(s.id.indexOf("on") > -1 && s.checked == true) return true
         if(s.id.indexOf("off") > -1 && s.checked == true) return false
+      }
+    }
+
+    _setSliderSetValue(radioSet, span, val){
+      for(let s of radioSet){
+        if(s.id.indexOf("on") > -1 && s.checked == true && !val) span.click();
+        if(s.id.indexOf("off") > -1 && s.checked == true && val) span.click();
       }
     }
 

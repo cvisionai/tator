@@ -29,7 +29,7 @@ class ProjectMainEdit extends SettingsSection {
     _form.addEventListener("change", e => this._formChanged(_form, e))
 
     // Image upload
-    this._thumbInput = this._getThumbInput(this.data.thumb);
+    this._thumbInput = this._getThumbInput(this._getThumbValueData());
     _form.appendChild(this._thumbInput);
     this._hiddenThumbInput = this._getHiddenThumbInput();
     _form.appendChild(this._hiddenThumbInput);
@@ -45,7 +45,7 @@ class ProjectMainEdit extends SettingsSection {
     _form.appendChild(this._editSummary);
 
     // Enable downloads at project level,
-    this._downloadEnable = this._setDownloadInput();
+    this._downloadEnable = this._setDownloadInputFromData();
     _form.appendChild(this._downloadEnable);
 
     let formElements = [this._editName, this._editSummary];
@@ -88,14 +88,8 @@ class ProjectMainEdit extends SettingsSection {
 
   }
 
-  _setDownloadInput({ data = this.data } = {}) {
-    return this.inputHelper.inputRadioSlide({
-      "value": data.enable_downloads,
-      "labelText": "Enable Download",
-      "name": "enable_downloads"
-    });
-  }
 
+  // thumbnail
   _getThumbnailEdit({ data = this.data } = {}) {
     let key = "thumb_upload";
     return this.inputHelper.editImageUpload({
@@ -137,33 +131,37 @@ class ProjectMainEdit extends SettingsSection {
       let token = getCookie("csrftoken");
       let gid =  "";
       let section = "";
+      let projectId = this.projectId;
       let mediaTypeId = null;
       let username = "";
-      let isImage = true;
-
+      let isImage = true;    
       let uploadData = {
         file,
-        "projectId" : this.projectId,
+        projectId,
         gid,
         section,
         mediaTypeId,
         username,
         token,
         isImage
-      }
+      };
 
+      // set preview
+      this._thumbnailPreview(file);
+
+      // upload file and set input
       let uploader = new SingleUpload( uploadData );
-
-      uploader.start().then(key => {
-        this._hiddenThumbInput.value = key;
-        this._thumbnailPreview(file);
-        //this.hiddenInput;
-      });      
+      return uploader.start().then(key => {
+        this._setHiddenThumbInputValue(key);
+        console.log("Uploader complete.");
+      });
     });
+
     return uploadInput;
   }
 
   _getThumbInputValue() {
+    //returns the current value, or user input value
     return this._hiddenThumbInput.value;
   }
 
@@ -171,29 +169,65 @@ class ProjectMainEdit extends SettingsSection {
     return data.thumb;
   }
 
-  _getDownloadEnableValue() {
-    let radioSet = this._shadow.querySelectorAll(".radio-slide-wrap input");
-
-    for (let s of radioSet) {
-      if (s.id.indexOf("on") > -1 && s.checked == true) return true
-      if (s.id.indexOf("off") > -1 && s.checked == true) return false
-    }
+  _setHiddenThumbInputValue(val, isFile = false) {
+    return this._hiddenThumbInput.value = val;
   }
 
+  _thumbInputChanged() {
+    if (this._getThumbInputValue() === this._getThumbValueData()) return false;
+    return true;
+  }
+
+  _thumbnailPreview(img, isFile = true) {
+    let outputElement = this._thumbEdit.querySelector(".projects__image");
+    console.log(img);
+    if(isFile) {
+      outputElement.src = URL.createObjectURL( img );
+    } else {
+      outputElement.src = img;
+    }
+    
+    return outputElement;
+  }
+
+  // enable download
   _getDownloadEnableValueData({ data = this.data } = {}) {
     return data.enable_downloads;
   }
 
-  _thumbnailPreview(file) {
-    let outputElement = this._thumbEdit.querySelector(".projects__image");
-    outputElement.src = URL.createObjectURL( file );
-    return outputElement;
+  _getDownloadEnableInputValue() {
+    let radioSet = this._shadow.querySelectorAll(".radio-slide-wrap input");
+    return this.inputHelper._getSliderSetValue(radioSet);
+  }
+  
+  _setDownloadEnableInputValue(val){
+    let radioSet = this._shadow.querySelectorAll(".radio-slide-wrap input");
+    let span = this._shadow.querySelector(".radio-slide-wrap span");
+    return this.inputHelper._setSliderSetValue(radioSet, span, val);
   }
 
+  _setDownloadInputFromData({ data = this.data } = {}) {
+    return this.inputHelper.inputRadioSlide({
+      "value": data.enable_downloads,
+      "labelText": "Enable Download",
+      "name": "enable_downloads"
+    });
+  }
+
+  _downloadEnabledChanged() {
+    if (this._getDownloadEnableInputValue() == this._getDownloadEnableValueData()) return false;
+    return true;
+  }
+
+
+  // reset
   reset() {
+    let thumb = this._getThumbValueData();
+    this._setHiddenThumbInputValue(thumb);
+    this._thumbnailPreview(thumb, false)
     this._setNameInputValue(this._getNameFromData());
     this._setSummaryInputValue(this._getSummaryFromData());
-    console.log("[Reset with previously fetched project data.]");
+    this._setDownloadEnableInputValue(this._getDownloadEnableValueData());
   }
 
   resetHard() {
@@ -204,19 +238,10 @@ class ProjectMainEdit extends SettingsSection {
 
 
   // input methods for unique 
-  _summaryChanged() {
-    if (this._getSummaryInputValue() === this._getSummaryFromData()) return false;
-    return true;
-  }
-  _downloadEnabledChanged() {
-    if (this._getDownloadEnableValue() == this._getDownloadEnableValueData()) return false;
-    return true;
-  }
 
-  _thumbInputChanged() {
-    if (this._getThumbInputValue() === this._getThumbValueData()) return false;
-    return true;
-  }
+
+
+
 
   // save and formdata
   _getFormData() {
@@ -224,7 +249,7 @@ class ProjectMainEdit extends SettingsSection {
 
     if (this._nameChanged()) formDataJSON.name = this._getNameInputValue();
     if (this._summaryChanged()) formDataJSON.summary = this._getSummaryInputValue();
-    if (this._downloadEnabledChanged()) formDataJSON.enable_downloads = this._getDownloadEnableValue();
+    if (this._downloadEnabledChanged()) formDataJSON.enable_downloads = this._getDownloadEnableInputValue();
     if (this._thumbInputChanged()) {
       let thumbVal = this._getThumbInputValue();
       if (thumbVal != "" && thumbVal != null) formDataJSON.thumb = thumbVal;

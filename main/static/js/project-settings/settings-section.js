@@ -150,7 +150,7 @@ class SettingsSection extends TatorElement {
       });
   }
 
-  _save({id = -1, globalAttribute = "false"} = {}){
+  _save({id = -1, globalAttribute = false} = {}){
       let promises = []
       console.log("Settings _save method for id: "+id);
 
@@ -200,9 +200,9 @@ class SettingsSection extends TatorElement {
                 if(messageObj.requiresConfirmation) {
                   console.log(messageObj);
                   let buttonSave = this._getAttrGlobalTrigger(id);
-                  let heading = `<div class="py-4 pt-4 h2">Are these changes global?</div>`
-                  let subText = `<div class="f3 py-4">* Selecting checkbox changes attributes with this name across all types.</div>`
-                  let mainText = `${messageObj.message}${heading}${messageObj.messageConfirm}${subText}`
+                  let heading = `<div class="py-4 pt-4 h2">Confirm global changes</div>`
+                  let subText = `<div class="f2 py-4">Selecting a checkbox vonfirms update to this attribute across all types.</div>`
+                  let mainText = `${messageObj.message}${heading}${subText}${messageObj.messageConfirm}`
 
                   this._modalConfirm({
                     "titleText" : "Confirm Changes",
@@ -230,7 +230,7 @@ class SettingsSection extends TatorElement {
     return this._getFormData(id);
   }
 
-  _formChanged(_form, event = "") {
+  _formChanged( _form, event = "") {
     console.log("Change in "+_form.id);
     let changedFormEl = this._shadow.querySelector(`[id="${_form.id}"] `);
 
@@ -274,8 +274,8 @@ class SettingsSection extends TatorElement {
         } else if(hasAttributeChanges && currentMessage.indexOf("global") > 0) {
           console.log("Return Message - It's a 400 response for attr form.");
           let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
-          let newName = formReadable == formReadable2 ? "" : ` new name ${formReadable2}`
-          messageConfirm += `<div class="py-2">${input} Attribute ${formReadable}${newName}</div>`
+          let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
+          messageConfirm += `<div class="py-2">${input} Attribute "${formReadable}" ${newName}</div>`
           requiresConfirmation = true;            
         } else {
           iconWrap.appendChild(warningIcon);
@@ -291,7 +291,7 @@ class SettingsSection extends TatorElement {
   _getAttrGlobalTrigger(id){
     let buttonSave = document.createElement("button")
     buttonSave.setAttribute("class", "btn btn-clear f2 text-semibold");
-    buttonSave.innerHTML = "Yes";
+    buttonSave.innerHTML = "Confirm";
 
     buttonSave.addEventListener("click", (e) => {
       e.preventDefault();
@@ -299,21 +299,25 @@ class SettingsSection extends TatorElement {
 
       console.log(confirmCheckboxes);
       for(let check of confirmCheckboxes){
-        console.log("Checkbox....");
-        if(check.checked == true){
-          //add and changed flag back to this one
-          console.log(check);
-          let name = check.dataset.oldName;
-          let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
+        //add and changed flag back to this one
+        console.log(check);
+        let name = check.dataset.oldName;
+        let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
-          console.log("User checked: "+name);
-          console.log(this._shadow.querySelector(`#${formId}`));
-          this._shadow.querySelector(`#${formId}`).classList.add("changed");
-          this._shadow.querySelector(`#${formId}`).classList.add("resent-as-global");
+        //add back changed flag
+        this._shadow.querySelector(`#${formId}`).classList.add("changed");
+
+        if(check.checked == true){
+          console.log("User marked as global: "+name);
+          this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "true";
+        } else {
+          console.log("User marked NOT global, do not resend: "+name);
+
+          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "false";
         }
       }
       //run the _save method again with global true
-      this._save({"id" : id, "globalAttribute" : "true"})
+      this._save({"id" : id, "globalAttribute" : true})
     });
 
     return buttonSave
@@ -440,6 +444,11 @@ class SettingsSection extends TatorElement {
 
   _setSummaryInputValue(newValue){
     return this._editSummary.querySelector("input").value = newValue;
+  }
+
+  _summaryChanged() {
+    if (this._getSummaryInputValue() === this._getSummaryFromData()) return false;
+    return true;
   }
 
   // description
