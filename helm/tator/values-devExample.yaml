@@ -215,6 +215,7 @@ kube-prometheus-stack:
         enabled: true
         org_role: Admin
 # Limits on resources for transcode workflows.
+transcoderMaxRamDiskSize: "2Gi"
 transcoderCpuLimit: "1000m"
 transcoderMemoryLimit: "4Gi"
 remoteTranscodes:
