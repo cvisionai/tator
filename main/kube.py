@@ -820,6 +820,7 @@ class TatorTranscode(JobManagerMixin):
         else:
             raise ValueError('Max RAM disk size units must be Mi or Gi!')
         use_ram_disk = pvc_bytes < ram_disk_bytes
+        logger.info(f"Scratch space requirements for {name}: {pvc_size}, using RAM disk: {use_ram_disk}")
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
