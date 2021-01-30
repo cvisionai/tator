@@ -18,18 +18,6 @@ spec:
   nfs:
     server: {{ .Values.pv.nfsServer }}
     path: {{ .Values.pv.path }}
-{{- if hasKey .Values.pv "mediaShards" }}
-{{- range .Values.pv.mediaShards }}
-{{- $settings := dict "Values" $.Values "shard" . }}
-{{ include "shard.pv" $settings }}
-{{- end }}
-{{- end }}
-{{- if hasKey .Values.pv "uploadShards" }}
-{{- range .Values.pv.uploadShards }}
-{{- $settings := dict "Values" $.Values "shard" . }}
-{{ include "shard.pv" $settings }}
-{{- end }}
-{{- end }}
 ---
 {{ if .Values.elasticsearch.enabled }}
 {{ if .Values.elasticsearch.persistence.enabled }}
