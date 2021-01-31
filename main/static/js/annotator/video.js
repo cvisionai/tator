@@ -935,8 +935,9 @@ class VideoCanvas extends AnnotationCanvas {
           Utilities.sendNotification(seek_msg);
         }
       }
-      else if (type =="buffer")
+      else if (type == "buffer")
       {
+        //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
         var error = video_buffer.error();
         if (error)
@@ -947,8 +948,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         // recursive lamdba function to update source buffer
         var idx = 0;
-        var offsets=e.data["offsets"];
-
+        var offsets = e.data["offsets"];
         var data = e.data["buffer"];
         var appendBuffer=function(callback)
         {
@@ -957,6 +957,7 @@ class VideoCanvas extends AnnotationCanvas {
           {
             if (offsets[idx][2] == 'ftyp')
             {
+              console.log(`Video init of: ${e.data["buf_idx"]}`);
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
               video_buffer.appendAllBuffers(data.slice(begin, end), callback);
@@ -982,15 +983,18 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx)
+          if (idx == offsets.length)
           {
-            that.dispatchEvent(new CustomEvent("bufferLoaded",
-                                               {composed: true,
-                                                detail: {"percent_complete":e.data["percent_complete"]}
-                                               }));
+            if (e.data["buf_idx"] == that._play_idx)
+            {
+              that.dispatchEvent(new CustomEvent("bufferLoaded",
+                                                {composed: true,
+                                                  detail: {"percent_complete":e.data["percent_complete"]}
+                                                }));
 
-            that._dlWorker.postMessage({"type": "download",
-                                        "buf_idx": e.data["buf_idx"]});
+              that._dlWorker.postMessage({"type": "download",
+                                          "buf_idx": e.data["buf_idx"]});
+            }
           }
           else
           {
@@ -1009,11 +1013,9 @@ class VideoCanvas extends AnnotationCanvas {
       {
         if (e.data["buf_idx"] == that._play_idx)
         {
-          that._dlWorker.postMessage({"type": "download",
-                                      "buf_idx": e.data["buf_idx"]});
           that._startBias = e.data["startBias"];
           that._videoVersion = e.data["version"];
-          console.info(`Video has start bias of ${that._startBias}`);
+          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._play_idx}`);
           console.info("Setting hi performance mode");
           guiFPS = 60;
         }
