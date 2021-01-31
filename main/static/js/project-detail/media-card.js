@@ -186,11 +186,7 @@ class MediaCard extends TatorElement {
     this._media = val;
     this._more.media = val;
     let valid = false;
-    if (this._media.file != '')
-    {
-      valid = true;
-    }
-    else if (this._media.media_files)
+    if (this._media.media_files)
     {
       if ('streaming' in this._media.media_files ||
           'layout' in this._media.media_files ||

@@ -30,16 +30,12 @@ class DownloadInfoAPI(BaseListView):
         s3 = TatorS3()
         response_data = []
         for key in keys:
-            if key.startswith('/'):
-                # Not an s3 key, just return the key as url.
-                url = key
-            else:
-                # Make sure the key corresponds to the correct project.
-                project_from_key = int(key.split('/')[1])
-                if project != project_from_key:
-                    raise PermissionDenied
-                # Generate presigned url.
-                url = s3.get_download_url(key, expiration)
+            # Make sure the key corresponds to the correct project.
+            project_from_key = int(key.split('/')[1])
+            if project != project_from_key:
+                raise PermissionDenied
+            # Generate presigned url.
+            url = s3.get_download_url(key, expiration)
             response_data.append({'key': key, 'url': url})
         return response_data
 

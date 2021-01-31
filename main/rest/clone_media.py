@@ -19,16 +19,6 @@ from ._permissions import ClonePermission
 
 logger = logging.getLogger(__name__)
 
-def _make_link(path_or_link, new_path):
-    if os.path.islink(path_or_link):
-        path = os.readlink(path_or_link)
-    else:
-        path = path_or_link
-    try:
-        os.symlink(path, new_path)
-    except:
-        logger.info(f"Symlink already exists at {new_path}, pointing to {path}")
-
 class CloneMediaListAPI(BaseListView):
     """ Clone a list of media without copying underlying files.
     """
@@ -82,79 +72,6 @@ class CloneMediaListAPI(BaseListView):
             new_obj.meta = MediaType.objects.get(pk=params['dest_type'])
             if section:
                 new_obj.attributes['tator_user_sections'] = section.tator_user_sections
-
-            # Find audio files.
-            originals = []
-            if new_obj.media_files:
-                if 'audio' in new_obj.media_files:
-                    originals = new_obj.media_files["audio"]
-
-            # Create symlinks for audio files if they are not object keys.
-            for idx, orig in enumerate(originals):
-                if orig['path'].startswith('/'):
-                    name = os.path.basename(orig['path'])
-                    new_path = os.path.join("/media", str(dest), name)
-                    _make_link(orig['path'], new_path)
-                    new_obj.media_files["audio"][idx]['path'] = new_path
-
-            # Find archival files.
-            originals = []
-            if new_obj.media_files:
-                if 'archival' in new_obj.media_files:
-                    originals = new_obj.media_files["archival"]
-            elif new_obj.original:
-                originals = [new_obj.original]
-
-            # Create symlinks for archival files if they are not object keys.
-            for idx, orig in enumerate(originals):
-                if orig['path'].startswith('/'):
-                    name = os.path.basename(orig['path'])
-                    new_path = os.path.join("/data/raw", str(dest), name)
-                    _make_link(orig['path'], new_path)
-                    new_obj.media_files["archival"][idx]['path'] = new_path
-
-            # Find streaming files.
-            streaming = []
-            if new_obj.media_files:
-                if 'streaming' in new_obj.media_files:
-                    streaming = new_obj.media_files["streaming"]
-
-            # Create symlinks for streaming files if they are not object keys.
-            for idx, stream in enumerate(streaming):
-                if stream['path'].startswith('/'):
-                    name = os.path.basename(stream['path'])
-                    new_path = os.path.join("/media", str(dest), name)
-                    _make_link(stream['path'], new_path)
-                    new_obj.media_files["streaming"][idx]['path'] = new_path
-                    name = os.path.basename(stream['segment_info'])
-                    new_path=os.path.join("/media", str(dest), name)
-                    _make_link(stream['segment_info'], new_path)
-                    new_obj.media_files["streaming"][idx]['segment_info']=new_path
-
-            # If this media is an image or legacy video, create symlink to
-            # the file.
-            if new_obj.file:
-                name = os.path.basename(new_obj.file.path)
-                new_path = os.path.join("/media", str(dest), name)
-                _make_link(new_obj.file.path, new_path)
-                new_obj.file.name = os.path.relpath(new_path, settings.MEDIA_ROOT)
-
-            #Handle thumbnail
-            if new_obj.thumbnail:
-                orig_thumb = new_obj.thumbnail.name
-                name = f"{str(uuid1())}{os.path.splitext(orig_thumb)[1]}"
-                orig_thumb_path = os.path.join("/media", orig_thumb)
-                new_thumb = os.path.join("/media/", str(dest), name)
-                shutil.copyfile(orig_thumb_path, new_thumb)
-                new_obj.thumbnail = os.path.join(str(dest), name)
-
-            if new_obj.thumbnail_gif:
-                orig_thumb = new_obj.thumbnail_gif.name
-                name = f"{str(uuid1())}{os.path.splitext(orig_thumb)[1]}"
-                orig_thumb_path = os.path.join("/media", orig_thumb)
-                new_thumb = os.path.join("/media/", str(dest), name)
-                shutil.copyfile(orig_thumb_path, new_thumb)
-                new_obj.thumbnail_gif = os.path.join(str(dest),name)
 
             new_objs.append(new_obj)
         medias = Media.objects.bulk_create(new_objs)

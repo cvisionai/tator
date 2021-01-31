@@ -160,52 +160,9 @@ data:
           }
           auth_request /auth-project;
         }
-        {{- if hasKey .Values.pv "mediaShards" }}
-        {{- range .Values.pv.mediaShards }}
-        location /{{ .name }} {
-          alias /{{ .name }}/;
-          autoindex off;
-          add_header Cache-Control "max-age=3600, must-revalidate";
-          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
-          add_header 'Access-Control-Allow-Headers' 'Authorization' always;
-
-          # Send CORS response from nginx
-          if ($request_method = OPTIONS)
-          {
-            add_header Content-Length 0;
-            add_header Content-Type text/plain;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
-            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
-            add_header Access-Control-Allow-Credentials true;
-            return 200;
-          }
-          auth_request /auth-project;
-        }
-        {{- end }}
-        {{- end }}
         location /media/working
         {
           return 403;
-        }
-        location /data/raw {
-          alias /data/raw;
-          autoindex off;
-          add_header Cache-Control "max-age=3600, must-revalidate";
-          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
-          add_header 'Access-Control-Allow-Headers' 'Authorization' always;
-          # Send CORS response from nginx
-          if ($request_method = OPTIONS)
-          {
-            add_header Content-Length 0;
-            add_header Content-Type text/plain;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
-            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
-            add_header Access-Control-Allow-Credentials true;
-            return 200;
-          }
-          auth_request /auth-project;
         }
         location /auth-project {
           internal;
