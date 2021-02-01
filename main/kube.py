@@ -759,7 +759,8 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
-                                'secondsAfterFailure': 86400},
+                                'secondsAfterFailure': 86400,
+                                'secondsAfterCompletion': 86400},
                 'volumeClaimTemplates': [{
                     'metadata': {
                         'name': 'transcode-scratch',
@@ -873,7 +874,8 @@ class TatorTranscode(JobManagerMixin):
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
-                                'secondsAfterFailure': 86400},
+                                'secondsAfterFailure': 86400,
+                                'secondsAfterCompletion': 86400},
                 'templates': [
                     self.get_prepare_task(use_ram_disk),
                     self.get_transcode_task(use_ram_disk),
