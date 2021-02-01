@@ -180,6 +180,27 @@ class JobManagerMixin:
             project = int(response['items'][0]['metadata']['labels']['project'])
         return project
 
+    def create_workflow(self, manifest):
+        # Create the workflow
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        return response
+
+
 class TatorTranscode(JobManagerMixin):
     """ Interface to kubernetes REST API for starting transcodes.
     """
@@ -769,22 +790,7 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Create the workflow
-        for num_retries in range(MAX_SUBMIT_RETRIES):
-            try:
-                response = self.custom.create_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    body=manifest,
-                )
-                break
-            except ApiException:
-                logger.info(f"Failed to submit workflow:")
-                logger.info(f"{manifest}")
-                time.sleep(SUBMIT_RETRY_BACKOFF)
-        if num_retries == (MAX_SUBMIT_RETRIES - 1):
-            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        response = self.create_workflow(manifest)
 
     def start_transcode(self, project,
                         entity_type, token, url, name,
@@ -894,13 +900,7 @@ class TatorTranscode(JobManagerMixin):
             } for workload in ['prepare'] + list(range(MAX_WORKLOADS))]
 
         # Create the workflow
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        response = self.create_workflow(manifest)
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
@@ -1020,22 +1020,7 @@ class TatorAlgorithm(JobManagerMixin):
             'media_ids': media_ids,
         }
 
-        for num_retries in range(MAX_SUBMIT_RETRIES):
-            try:
-                response = self.custom.create_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    body=manifest,
-                )
-                break
-            except ApiException:
-                logger.info(f"Failed to submit workflow:")
-                logger.info(f"{manifest}")
-                time.sleep(SUBMIT_RETRY_BACKOFF)
-        if num_retries == (MAX_SUBMIT_RETRIES - 1):
-            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        response = self.create_workflow(manifest)
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
