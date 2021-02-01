@@ -7,7 +7,7 @@ from ..search import TatorSearch
 from ..schema import MediaStatsSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
+from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 class MediaStatsAPI(BaseDetailView):
