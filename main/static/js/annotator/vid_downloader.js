@@ -32,6 +32,11 @@ class VideoDownloader
     this.initializeInfoObjects();
   }
 
+  specificBufferInitialized(buf_idx)
+  {
+    return this._fileInfoSent[buf_idx];
+  }
+
   buffersInitialized()
   {
     // Processed all the segment files yet?
@@ -226,6 +231,9 @@ class VideoDownloader
 
   }
 
+  // #TODO This needs to be changed. But packet_limit is currently
+  //       only used for specifically grabbing the first two packets (the init info).
+  //       This should be changed so that anyone can use the packet_limit.
   downloadNextSegment(buf_idx, packet_limit)
   {
     var currentSize=0;
@@ -296,11 +304,11 @@ class VideoDownloader
                            "pts_end": 0,
                            "percent_complete": percent_complete,
                            "offsets": offsets,
-                           "buffer": buffer};
+                           "buffer": buffer,
+                           "init": packet_limit == 2};
                   postMessage(data, [data.buffer]);
 
                  if (packet_limit == 2) {
-                   //console.log("**** media init, buf_idx: " + buf_idx);
                    that._fileInfoSent[buf_idx] = true;
 
                    // If the initialization of each of the files have been completed,
@@ -329,7 +337,7 @@ onmessage = function(e)
   }
   else if (type == 'download')
   {
-    if (ref.buffersInitialized() == true)
+    if (ref.specificBufferInitialized(msg.buf_idx))
     {
       ref.downloadNextSegment(msg.buf_idx);
     }
