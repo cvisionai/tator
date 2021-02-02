@@ -927,6 +927,7 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[this.activeLocalization.id];
         this._activeTrack = track;
+        this._activeTrackFrame = this.currentFrame();
       }
     }
 
@@ -2431,6 +2432,7 @@ class AnnotationCanvas extends TatorElement
     {
       const track = this._data._trackDb[localization.id];
       this._activeTrack = track
+      this._activeTrackFrame = this.currentFrame();
       this.dispatchEvent(new CustomEvent("select", {
         detail: track,
         composed: true,
@@ -2446,14 +2448,24 @@ class AnnotationCanvas extends TatorElement
   deselectTrack()
   {
     this._activeTrack = null;
+    this._activeTrackFrame = -1;
   }
 
   selectTrack(track, frameHint, skipGoToFrame)
   {
+
     let frame = frameHint;
     if (frame == undefined)
     {
       frame = track.segments[0][0];
+    }
+
+    // Checking against the active track prevents infinite recursion cases due to refreshes
+    // hitting the pause function and in turn hitting this method.
+    // Checking the frame allows the track slider work in the entity browser.
+    if (track == this._activeTrack && frame == this._activeTrackFrame)
+    {
+      return;
     }
 
     let trackSelectFunctor = () => {
@@ -2468,6 +2480,7 @@ class AnnotationCanvas extends TatorElement
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
                 this._activeTrack = track;
+                this._activeTrackFrame = frame;
                 return;
               }
             }
@@ -2531,6 +2544,7 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[localization.id];
         this._activeTrack = track
+        this._activeTrackFrame = this.currentFrame();
         this.dispatchEvent(new CustomEvent("select", {
           detail: track,
           composed: true,
