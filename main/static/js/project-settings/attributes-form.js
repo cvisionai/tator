@@ -4,6 +4,7 @@ class AttributesForm extends HTMLElement {
 
     // Required helpers.
     this.inputHelper = new SettingsInput("media-types-main-edit");
+
   }
 
   _initEmptyForm(){
@@ -277,11 +278,11 @@ class AttributesForm extends HTMLElement {
       });
 
       // Add placeholder for warning, and listen for change.
-      selectBox.appendChild(this._inlineWarningDiv());
+      let warningEl = this._inlineWarningDiv();
+      selectBox.appendChild(warningEl);
       selectBox.addEventListener("change", (e) => {
         //when changed check if we need to show a warning.
         let newType = e.target.value;
-        let warningEl = e.target.parentNode.parentNode.parentNode.querySelector(".inline-warning");
         let message = ""
 
         if(this._getIrreverasibleDTypeArray({ "currentDT": dtype, "newDT": newType})){
@@ -319,6 +320,35 @@ class AttributesForm extends HTMLElement {
 
     }
     return selectBox;
+  }
+
+  getWarning(err){
+    let warning = this._inlineWarningDiv();
+    let thisWarning = _inlineWarning({"el":warning, "message":err})
+    return thisWarning;
+  }
+
+  hideWarning(warning){
+    return warning.remove();
+  }
+
+  _inlineWarning({
+    el = "",
+    message = ""
+  }){
+    //empty el
+    el.innerHTML = "";
+    let inlineL= document.createElement("span");
+    inlineL.setAttribute("class", "col-4");
+    inlineL.innerHTML = "&nbsp;"
+    el.appendChild(inlineL);
+
+    let inlineR= document.createElement("span");
+    inlineR.setAttribute("class", "col-8");
+    inlineR.innerHTML = message;
+    el.appendChild(inlineR);
+
+    return el.hidden = false;
   }
 
   _inlineWarningDiv(){
@@ -411,25 +441,6 @@ class AttributesForm extends HTMLElement {
     });
   }
 
-  _inlineWarning({
-    el = "",
-    message = ""
-  }){
-    //empty el
-    el.innerHTML = "";
-    let inlineL= document.createElement("span");
-    inlineL.setAttribute("class", "col-4");
-    inlineL.innerHTML = "&nbsp;"
-    el.appendChild(inlineL);
-
-    let inlineR= document.createElement("span");
-    inlineR.setAttribute("class", "col-8");
-    inlineR.innerHTML = message;
-    el.appendChild(inlineR);
-
-    return el.hidden = false;
-  }
-
   _getAttributeFormData(form){
     let name = form.querySelector('[name="name"]').value;
 
@@ -483,6 +494,7 @@ class AttributesForm extends HTMLElement {
 
   _makeDefaultCorrectType(dtype, _defaultVal){
     let _default = _defaultVal;
+    //@todo datetime and geopos
     try{
       if(dtype == "bool"){
         _default = Boolean(_defaultVal);

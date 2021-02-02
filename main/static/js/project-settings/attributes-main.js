@@ -1,6 +1,8 @@
 class AttributesMain extends HTMLElement {
   constructor() {
     super();
+    this.loading = new LoadingSpinner();
+    this.loadingImg = this.loading.getImg()
   }
 
   _init(typeName, fromId, projectId, data){
@@ -14,6 +16,7 @@ class AttributesMain extends HTMLElement {
     // add main div
     this.attributeDiv = document.createElement("div");
     this.appendChild(this.attributeDiv);
+    this.appendChild(this.loadingImg);
 
     // Required helpers.
     this.boxHelper = new SettingsBox( this.attributeDiv );
@@ -114,6 +117,8 @@ class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(form){
+    this.boxHelper._modalCloseCallback();
+    this.loading.showSpinner();
     let formJSON = {
       "entity_type": this.typeName,
       "addition": this.attributeFormHelper._getAttributeFormData( form )
@@ -136,8 +141,12 @@ class AttributesMain extends HTMLElement {
       if(status == 201) iconWrap.appendChild(succussIcon);
       if(status == 400) iconWrap.appendChild(warningIcon);
 
-      this.boxHelper._modalCloseCallback();
+      
+      this.loading.hideSpinner();
       this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+    }).catch((error) => {
+      this.loading.hideSpinner();
+      this.boxHelper._modalErrin(`Error: ${error}`);
     });
   }
 
@@ -161,6 +170,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _getCloneModal(){
+    this.loading.showSpinner();
     let typesData = new ProjectTypesData(this.projectId);
     console.log(typesData);
     typesData._getAttributeDataByType().then( (attributeDataByType) => {
@@ -175,12 +185,16 @@ class AttributesMain extends HTMLElement {
         return cloneData.createClones().then((r) => this.boxHelper._modalComplete(r));               
       });
 
+      this.loading.hideSpinner();
       return this.boxHelper._modalConfirm({
         "titleText" : "Clone Attribute(s)",
         "mainText" : cloneForm,
         "buttonSave" : cloneSave,
         "scroll" : true
       });
+    }).catch((error) => {
+      this.loading.hideSpinner();
+      this.boxHelper._modalErrin(`Error: ${error}`);
     });
     
   }
