@@ -1,7 +1,6 @@
 import os
 import traceback
 
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
@@ -79,25 +78,12 @@ class ModelDiffMixin(object):
             if name != "attributes" and v != new_v:
                 yield (f"_{name}", v, new_v)
 
-        # diffs = [
-        #     (f"_{name}", v, new[name])
-        #     for name, v in old.items()
-        #     if name != "attributes" and v != new[name]
-        # ]
-
         old_attributes = old.get("attributes", {})
         new_attributes = new.get("attributes", {})
         for name, v in new_attributes.items():
             old_v = old_attributes.get(name)
             if v != old_v:
                 yield (name, old_v, v)
-
-        # diffs.extend(
-        #     (name, old_attributes[name], v)
-        #     for name, v in new_attributes.items()
-        #     if v != old_attributes.get(name)
-        # )
-        # return diffs
 
     @property
     def model_dict(self):
