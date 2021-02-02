@@ -2,7 +2,6 @@ import logging
 from django.db.models import Subquery
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from django.forms.models import model_to_dict
 
 from ..models import ChangeLog
 from ..models import ChangeToObject
@@ -179,12 +178,12 @@ class LocalizationListAPI(BaseListView):
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
 
     def _delete(self, params):
-        project = params["project"]
-        qs = get_annotation_queryset(project, params, 'localization')
+        qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
             # Get info to populate ChangeLog entry
             obj = qs.first()
+            project = obj.project
             delete_dict = obj.delete_dict
             ref_table = ContentType.objects.get_for_model(obj)
             ref_ids = [o.id for o in qs]
@@ -195,7 +194,7 @@ class LocalizationListAPI(BaseListView):
 
             # Delete the localizations.
             qs._raw_delete(qs.db)
-            query = get_annotation_es_query(project, params, 'localization')
+            query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
 
             # Create ChangeLog and associate with all objects in the queryset
