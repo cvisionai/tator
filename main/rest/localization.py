@@ -1,8 +1,12 @@
 import logging
 from django.db.models import Subquery
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
+from django.forms.models import model_to_dict
+from pprint import pformat
 
 from ..models import ChangeLog
+from ..models import ChangeToObject
 from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
@@ -283,12 +287,20 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.thumbnail_image.save()
 
         obj.save()
-        ChangeLog(
+        cl = ChangeLog(
             project=obj.project,
             user=self.request.user,
-            tracked_object=obj,
             description_of_change=obj.to_change_dict(),
-        ).save()
+        )
+        logger.info(pformat(model_to_dict(cl)))
+        cl.save()
+        cto = ChangeToObject(
+            ref_table=ContentType.objects.get_for_model(obj),
+            ref_id=obj.id,
+            change_id=cl,
+        )
+        logger.info(pformat(model_to_dict(cto)))
+        cto.save()
 
         return {'message': f'Localization {params["id"]} successfully updated!'}
 

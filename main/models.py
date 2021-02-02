@@ -23,7 +23,6 @@ from django.contrib.gis.db.models import FilePathField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
-from django.contrib.gis.db.models import DO_NOTHING
 from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
@@ -98,7 +97,7 @@ class ModelDiffMixin(object):
     @property
     def _dict(self):
         d = model_to_dict(self, fields=[field.name for field in self._meta.fields])
-        if "attributes" in d:
+        if "attributes" in d and d["attributes"]:
             d["attributes"] = dict(d["attributes"])
         return d
 
@@ -1044,12 +1043,9 @@ class Bookmark(Model):
 
 class ChangeLog(Model):
     """ Stores individual changesets for entities """
-    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    user = ForeignKey(User, on_delete=SET_NULL, db_column='user')
+    project = ForeignKey(Project, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=SET_NULL, null=True)
     modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    content_type = ForeignKey(ContentType, on_delete=DO_NOTHING)
-    object_id = PositiveIntegerField()
-    tracked_object = GenericForeignKey('content_type', 'object_id')
     description_of_change = JSONField()
     """
     The description of the change applied. A single object with the keys `old` and `new`, each
@@ -1073,6 +1069,15 @@ class ChangeLog(Model):
       }]
     }
     """
+
+class ChangeToObject(Model):
+    """ Association table that correlates a ChangeLog object to one or more objects """
+    ref_table = ForeignKey(ContentType, on_delete=SET_NULL, null=True)
+    """ The model of the changed object """
+    ref_id = PositiveIntegerField()
+    """ The id of the changed object """
+    change_id = ForeignKey(ChangeLog, on_delete=SET_NULL, null=True)
+    """ The change that affected the object """
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
