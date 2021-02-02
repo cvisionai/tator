@@ -231,6 +231,7 @@ class LocalizationDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'])
+        original_dict = obj.model_dict
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -290,7 +291,7 @@ class LocalizationDetailAPI(BaseDetailView):
         cl = ChangeLog(
             project=obj.project,
             user=self.request.user,
-            description_of_change=obj.to_change_dict(),
+            description_of_change=obj.change_dict(original_dict),
         )
         logger.info(pformat(model_to_dict(cl)))
         cl.save()
@@ -305,8 +306,23 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Localization.objects.get(pk=params['id']).delete()
-        return {'message': f'Localization {params["id"]} successfully deleted!'}
+        obj = Localization.objects.get(pk=params["id"])
+        project = obj.project
+        description_of_change = obj.delete_dict
+        ref_table = ContentType.objects.get_for_model(obj)
+        ref_id = obj.id
+
+        obj.delete()
+
+        cl = ChangeLog(
+            project=project, user=self.request.user, description_of_change=description_of_change
+        )
+        logger.info(pformat(model_to_dict(cl)))
+        cl.save()
+        cto = ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+        logger.info(pformat(model_to_dict(cto)))
+        cto.save()
+        return {"message": f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Localization.objects.all()

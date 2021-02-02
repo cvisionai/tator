@@ -68,46 +68,84 @@ class ModelDiffMixin(object):
     Based on the code in https://stackoverflow.com/a/13842223.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(ModelDiffMixin, self).__init__(*args, **kwargs)
-        self.__initial = self._dict
+    @staticmethod
+    def _diff(old, new):
+        """
+        Calculates the difference between two model dicts from the same object after a change was
+        applied.
+        """
+        for name, v in old.items():
+            new_v = new[name]
+            if name != "attributes" and v != new_v:
+                yield (f"_{name}", v, new_v)
+
+        # diffs = [
+        #     (f"_{name}", v, new[name])
+        #     for name, v in old.items()
+        #     if name != "attributes" and v != new[name]
+        # ]
+
+        old_attributes = old.get("attributes", {})
+        new_attributes = new.get("attributes", {})
+        for name, v in new_attributes.items():
+            old_v = old_attributes.get(name)
+            if v != old_v:
+                yield (name, old_v, v)
+
+        # diffs.extend(
+        #     (name, old_attributes[name], v)
+        #     for name, v in new_attributes.items()
+        #     if v != old_attributes.get(name)
+        # )
+        # return diffs
 
     @property
-    def diff(self):
-        d1 = self.__initial
-        d2 = self._dict
-        diffs = [
-            (f"_{name}", v, d2[name])
-            for name, v in d1.items()
-            if name != "attributes" and v != d2[name]
-        ]
-
-        a1 = d1.get("attributes", {})
-        a2 = d2.get("attributes", {})
-        diffs.extend((name, a1[name], v) for name, v in a2.items() if v != a1.get(name))
-        return diffs
-
-    def save(self, *args, **kwargs):
+    def model_dict(self):
         """
-        Saves model and set initial state.
+        Returns the dictionary representation of the model for comparison.
         """
-        super(ModelDiffMixin, self).save(*args, **kwargs)
-        self.__initial = self._dict
+        model_fields = [field.name for field in self._meta.fields]
+        model_dict = model_to_dict(self, fields=model_fields)
+        for field in model_fields:
+            if (
+                field in model_dict
+                and self._meta.get_field(field).get_internal_type() == "JSONField"
+            ):
+                model_dict[field] = dict(model_dict[field]) if model_dict[field] else {}
+        return model_dict
+
+    @staticmethod
+    def _init_change_dict():
+        return {"old": [], "new": []}
+
+    def change_dict(self, old):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table.
+        """
+        change_dict = self._init_change_dict()
+
+        for name, old_val, new_val in self._diff(old, self.model_dict):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
+
+        return change_dict
 
     @property
-    def _dict(self):
-        d = model_to_dict(self, fields=[field.name for field in self._meta.fields])
-        if "attributes" in d and d["attributes"]:
-            d["attributes"] = dict(d["attributes"])
-        return d
+    def delete_dict(self):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table when a row is deleted.
+        """
+        change_dict = self._init_change_dict()
 
-    def to_change_dict(self):
-        change_dict = {"old": [], "new": []}
+        old = self.model_dict
+        new = {key: None for key in old.keys() if key != "attributes"}
+        new["attributes"] = {key: None for key in old.get("attributes", {})}
 
-        for change in self.diff:
-            name = change[0]
-            change_dict["old"].append({"name": name, "value": change[1]})
-            change_dict["new"].append({"name": name, "value": change[2]})
+        for name, old_val, new_val in self._diff(old, new):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
 
         return change_dict
 
