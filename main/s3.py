@@ -23,25 +23,22 @@ class TatorS3:
             cls.s3 = boto3.client('s3')
 
     def get_download_url(self, path, expiration):
-        if path.startswith('/'):
-            url = path
+        bucket_name = os.getenv('BUCKET_NAME')
+        external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
+        if os.getenv('REQUIRE_HTTPS') == 'TRUE':
+            PROTO = 'https'
         else:
-            bucket_name = os.getenv('BUCKET_NAME')
-            external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
-            if os.getenv('REQUIRE_HTTPS') == 'TRUE':
-                PROTO = 'https'
-            else:
-                PROTO = 'http'
-            # Generate presigned url.
-            url = self.s3.generate_presigned_url(ClientMethod='get_object',
-                                                 Params={'Bucket': bucket_name,
-                                                         'Key': path},
-                                                 ExpiresIn=expiration)
-            # Replace host if external host is given.
-            if external_host:
-                parsed = urlsplit(url)
-                parsed = parsed._replace(netloc=external_host, scheme=PROTO)
-                url = urlunsplit(parsed)
+            PROTO = 'http'
+        # Generate presigned url.
+        url = self.s3.generate_presigned_url(ClientMethod='get_object',
+                                             Params={'Bucket': bucket_name,
+                                                     'Key': path},
+                                             ExpiresIn=expiration)
+        # Replace host if external host is given.
+        if external_host:
+            parsed = urlsplit(url)
+            parsed = parsed._replace(netloc=external_host, scheme=PROTO)
+            url = urlunsplit(parsed)
         return url
 
 TatorS3.setup_s3()

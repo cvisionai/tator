@@ -180,7 +180,6 @@ MEDIA_ROOT = '/media'
 
 RAW_ROOT = '/data/raw'
 
-UPLOAD_ROOT = '/uploads'
 ASGI_APPLICATION = 'tator_online.routing.application'
 
 

@@ -114,8 +114,6 @@ spec:
                   value: {{ .tlsKeySecretName | default "tls-key" }}
                 - name: CERT_SECRET_NAME
                   value: {{ .tlsCertSecretName | default "tls-cert" }}
-                - name: TRANSCODER_PVC_SIZE
-                  value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
                 - name: WORKFLOW_STORAGE_CLASS
                   value: {{ .Values.workflowStorageClass | default "nfs-client" | quote }}
                 {{- if hasKey .Values "slackToken" }}
@@ -162,26 +160,6 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
-                {{- if hasKey .Values.pv "mediaShards" }}
-                {{- $media_shards := "" }}
-                {{- range .Values.pv.mediaShards }}
-                {{- $media_shards = cat $media_shards "," .name }}
-                {{- end }}
-                {{- $media_shards = nospace $media_shards }}
-                {{- $media_shards = trimPrefix "," $media_shards }}
-                - name: MEDIA_SHARDS
-                  value: {{ $media_shards }}
-                {{- end }}
-                {{- if hasKey .Values.pv "uploadShards" }}
-                {{- $upload_shards := "" }}
-                {{- range .Values.pv.uploadShards }}
-                {{- $upload_shards = cat $upload_shards "," .name }}
-                {{- end }}
-                {{- $upload_shards = nospace $upload_shards }}
-                {{- $upload_shards = trimPrefix "," $upload_shards }}
-                - name: UPLOAD_SHARDS
-                  value: {{ $upload_shards }}
-                {{- end }}
               ports:
                 - containerPort: 8000
                   name: gunicorn

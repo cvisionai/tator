@@ -24,7 +24,7 @@ class ImageCanvas extends AnnotationCanvas
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      let url = `/media/${val.file}`;
+      let url = null;
       if (val.media_files) {
         if (val.media_files.image) {
           url = val.media_files.image[0].path;

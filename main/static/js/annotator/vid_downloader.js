@@ -14,17 +14,61 @@ class VideoDownloader
       this._headers["Authorization"] = auth_str;
     }
     this._num_res = media_files.length;
-    this._currentPacket=[];
-    this._numPackets=[];
-    this._info=[];
-    this._initialSent = false;
+    this._currentPacket = [];
+    this._numPackets = [];
+    this._fileInfoSent = [];
+    this._readyMessages = [];
+    this._readyMessagesSent = false;
+    this._info = [];
+    this._fileInfoRequested = false;
+    this._infoObjectsInitialized = 0;
     for (var idx = 0; idx < this._num_res; idx++)
     {
       this._currentPacket[idx] = 0;
       this._numPackets[idx] = 0;
+      this._fileInfoSent[idx] = false;
     }
 
     this.initializeInfoObjects();
+  }
+
+  specificBufferInitialized(buf_idx)
+  {
+    return this._fileInfoSent[buf_idx];
+  }
+
+  buffersInitialized()
+  {
+    // Processed all the segment files yet?
+    if (this._infoObjectsInitialized < this._num_res)
+    {
+      return false;
+    }
+
+    // Sent over the file info messages?
+    for (const fileInfoSent of this._fileInfoSent)
+    {
+      if (!fileInfoSent)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  sendReadyMessages()
+  {
+    if (this.buffersInitialized())
+    {
+      if (!this._readyMessagesSent)
+      {
+        this._readyMessagesSent = true;
+        for (const msg of this._readyMessages)
+        {
+          postMessage(msg);
+        }
+      }
+    }
   }
 
   initializeInfoObjects()
@@ -49,10 +93,12 @@ class VideoDownloader
     var that = this;
     if (info.status == 200)
     {
-      console.log("Fetched info");
       info.json().then(data => {
         that._info[buf_idx] = data
         that._numPackets[buf_idx]=data["segments"].length
+
+        //console.log("Fetched media file info (" + buf_idx + ") Number of segments: " + that._numPackets[buf_idx]);
+
         var version = 1;
         try
         {
@@ -67,10 +113,26 @@ class VideoDownloader
         {
           startBias = data.file.start;
         }
-        postMessage({"type": "ready",
-                     "startBias": startBias,
-                     "version": version,
-                     "buf_idx": buf_idx});
+
+        that._readyMessages.push(
+          {
+            "type": "ready",
+            "startBias": startBias,
+            "version": version,
+            "buf_idx": buf_idx
+          });
+
+        that._infoObjectsInitialized += 1;
+        if (that._infoObjectsInitialized == that._num_res)
+        {
+          that._fileInfoRequested = true;
+          for (let buf_idx = 0; buf_idx < that._media_files.length; buf_idx++)
+          {
+            // Download the initial fragment info into each buffer
+            that.downloadNextSegment(buf_idx, 2);
+          }
+        }
+
       });
     }
     else
@@ -78,21 +140,6 @@ class VideoDownloader
       postMessage({"type": "error", "status": info.status});
       console.warn(`Couldn't fetch '${info.url}'`);
     }
-  }
-
-  verifyInitialDownload()
-  {
-    if (this._initialSent == true)
-    {
-      return true;
-    }
-    for (let buf_idx = 0; buf_idx < this._media_files.length; buf_idx++)
-    {
-      // Download the initial fragment info into each buffer
-      this.downloadNextSegment(buf_idx, 2);
-    }
-    this._initialSent = true;
-    return false;
   }
 
   downloadForFrame(buf_idx, frame, time)
@@ -184,6 +231,9 @@ class VideoDownloader
 
   }
 
+  // #TODO This needs to be changed. But packet_limit is currently
+  //       only used for specifically grabbing the first two packets (the init info).
+  //       This should be changed so that anyone can use the packet_limit.
   downloadNextSegment(buf_idx, packet_limit)
   {
     var currentSize=0;
@@ -204,7 +254,7 @@ class VideoDownloader
 
     if (idx >= this._numPackets[buf_idx])
     {
-      console.log("Done downloading..");
+      //console.log("Done downloading... buf_idx: " + buf_idx);
       postMessage({"type": "finished"});
       return;
     }
@@ -232,11 +282,13 @@ class VideoDownloader
       idx++;
     }
 
-    //console.log(`Downloading '${currentSize}' at '${startByte}' (${idx})`);
-    this._currentPacket[buf_idx] = idx;
     var percent_complete=idx/this._numPackets[buf_idx];
+    //console.log(`Downloading '${currentSize}' at '${startByte}' (packet ${this._currentPacket[buf_idx]}:${idx} of ${this._numPackets[buf_idx]} ${parseInt(percent_complete*100)}) (buffer: ${buf_idx})`);
+    this._currentPacket[buf_idx] = idx;
+
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
+    var that = this;
     fetch(this._media_files[buf_idx].path,
           {headers: headers}
          ).then(
@@ -252,12 +304,20 @@ class VideoDownloader
                            "pts_end": 0,
                            "percent_complete": percent_complete,
                            "offsets": offsets,
-                           "buffer": buffer};
-                 postMessage(data, [data.buffer]);
+                           "buffer": buffer,
+                           "init": packet_limit == 2};
+                  postMessage(data, [data.buffer]);
+
+                 if (packet_limit == 2) {
+                   that._fileInfoSent[buf_idx] = true;
+
+                   // If the initialization of each of the files have been completed,
+                   // send out the ready messages for each of the buffers.
+                   that.sendReadyMessages();
+                 }
                });
            });
   }
-
 }
 
 var ref = null;
@@ -277,7 +337,7 @@ onmessage = function(e)
   }
   else if (type == 'download')
   {
-    if (ref.verifyInitialDownload() == true)
+    if (ref.specificBufferInitialized(msg.buf_idx))
     {
       ref.downloadNextSegment(msg.buf_idx);
     }

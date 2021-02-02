@@ -90,6 +90,7 @@ class VideoBufferDemux
     this._seekSource = new MediaSource();
     this._seekReady = false;
     this._pendingSeeks = [];
+    this._pendingSeekDeletes = [];
 
     var mime_str='video/mp4; codecs="avc1.64001e"';
 
@@ -373,6 +374,42 @@ class VideoBufferDemux
     return promise;
   }
 
+
+  cleanSeekBuffer()
+  {
+    if (this._pendingSeekDeletes.length > 0)
+    {
+      var pending = this._pendingSeekDeletes.shift();
+      this.deletePendingSeeks(pending.data, pending.time, pending.delete_range);
+    }
+  }
+
+  deletePendingSeeks(data, time=undefined, delete_range=undefined)
+  {
+    // Add to the buffer directly else add to the pending
+    // seek to get it there next go around
+    if (this._seekBuffer.updating == false && this._seekReady == true)
+    {
+      this._seekBuffer.onupdateend = () => {
+
+        // Remove this handler
+        this._seekBuffer.onupdateend = null;
+        this.cleanSeekBuffer();
+      };
+
+      if (delete_range)
+      {
+        this._seekBuffer.remove(delete_range[0], delete_range[1]);
+      }
+    }
+    else
+    {
+      this._pendingSeekDeletes.push(
+        {'data': data,
+         'time': time,
+         'delete_range': delete_range});
+    }
+  }
   appendSeekBuffer(data, time=undefined, delete_range=undefined)
   {
     // Add to the buffer directly else add to the pending
@@ -387,12 +424,6 @@ class VideoBufferDemux
         if (time != undefined)
         {
           this._seekVideo.currentTime = time;
-        }
-
-        if (this._pendingSeeks.length > 0)
-        {
-          var pending = this._pendingSeeks.shift();
-          this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
         }
       };
 
@@ -410,26 +441,23 @@ class VideoBufferDemux
           // hq seek buffer.
           if (begin < time - 3)
           {
-            this._pendingSeeks.push({"delete_range": [begin,
-                                                      time - 1]});
+            this._pendingSeekDeletes.push({"delete_range": [begin,
+                                                            time-1]});
           }
           if (end > time + 3)
           {
-            this._pendingSeeks.push({"delete_range": [time+1,
-                                                      end]});
+            this._pendingSeekDeletes.push({"delete_range": [time+1,
+                                                            end]});
           }
         }
         this._seekBuffer.appendBuffer(data);
-      }
-      else if (delete_range)
-      {
-        this._seekBuffer.remove(delete_range[0], delete_range[1]);
       }
     }
     else
     {
       this._pendingSeeks.push({'data': data,
-                               'time': time});
+                               'time': time,
+                               'delete_range': delete_range});
     }
   }
 
@@ -935,8 +963,9 @@ class VideoCanvas extends AnnotationCanvas {
           Utilities.sendNotification(seek_msg);
         }
       }
-      else if (type =="buffer")
+      else if (type == "buffer")
       {
+        //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
         var error = video_buffer.error();
         if (error)
@@ -947,8 +976,7 @@ class VideoCanvas extends AnnotationCanvas {
 
         // recursive lamdba function to update source buffer
         var idx = 0;
-        var offsets=e.data["offsets"];
-
+        var offsets = e.data["offsets"];
         var data = e.data["buffer"];
         var appendBuffer=function(callback)
         {
@@ -957,6 +985,7 @@ class VideoCanvas extends AnnotationCanvas {
           {
             if (offsets[idx][2] == 'ftyp')
             {
+              console.log(`Video init of: ${e.data["buf_idx"]}`);
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
               video_buffer.appendAllBuffers(data.slice(begin, end), callback);
@@ -982,15 +1011,18 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx)
+          if (idx == offsets.length)
           {
-            that.dispatchEvent(new CustomEvent("bufferLoaded",
-                                               {composed: true,
-                                                detail: {"percent_complete":e.data["percent_complete"]}
-                                               }));
+            if (e.data["buf_idx"] == that._play_idx)
+            {
+              that.dispatchEvent(new CustomEvent("bufferLoaded",
+                                                {composed: true,
+                                                  detail: {"percent_complete":e.data["percent_complete"]}
+                                                }));
 
-            that._dlWorker.postMessage({"type": "download",
-                                        "buf_idx": e.data["buf_idx"]});
+              that._dlWorker.postMessage({"type": "download",
+                                          "buf_idx": e.data["buf_idx"]});
+            }
           }
           else
           {
@@ -1009,11 +1041,9 @@ class VideoCanvas extends AnnotationCanvas {
       {
         if (e.data["buf_idx"] == that._play_idx)
         {
-          that._dlWorker.postMessage({"type": "download",
-                                      "buf_idx": e.data["buf_idx"]});
           that._startBias = e.data["startBias"];
           that._videoVersion = e.data["version"];
-          console.info(`Video has start bias of ${that._startBias}`);
+          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._play_idx}`);
           console.info("Setting hi performance mode");
           guiFPS = 60;
         }
@@ -1310,7 +1340,6 @@ class VideoCanvas extends AnnotationCanvas {
                                source,
                                width,
                                height);
-
   }
 
   /// Only call this function from the context of an animation frame
@@ -1422,6 +1451,7 @@ class VideoCanvas extends AnnotationCanvas {
     var time=this.frameToTime(frame);
     var audio_time = this.frameToAudioTime(frame);
     var video=this.videoBuffer(frame, forceSeekBuffer);
+    var downloadSeekFrame = false;
 
     // Only support seeking if we are stopped (i.e. not playing)
     if (video == null && this._direction == Direction.STOPPED)
@@ -1444,10 +1474,7 @@ class VideoCanvas extends AnnotationCanvas {
       // Use the frame as a cookie to keep track of duplicated
       // seek operations
       this._seekFrame = frame;
-      that._dlWorker.postMessage({"type": "seek",
-                                  "frame": frame,
-                                  "time": time,
-                                  "buf_idx": this._hq_idx});
+      downloadSeekFrame = true;
 
       if (this._seek_expire)
       {
@@ -1497,7 +1524,19 @@ class VideoCanvas extends AnnotationCanvas {
             that._audioPlayer.currentTime = audio_time;
             console.info("Setting audio to " + audio_time);
           }
+
+          // Remove entries (if required to do so) now that we've drawn the frame
+          that._videoElement[that._hq_idx].cleanSeekBuffer();
         };
+
+        if (downloadSeekFrame)
+        {
+          that._dlWorker.postMessage(
+            {"type": "seek",
+             "frame": frame,
+             "time": time,
+             "buf_idx": that._hq_idx});
+        }
       });
 
     if (time <= video.duration || isNaN(video.duration))
@@ -1517,7 +1556,6 @@ class VideoCanvas extends AnnotationCanvas {
       frame=0;
       video.currentTime=0;
     }
-
     return promise;
   }
 
