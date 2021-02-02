@@ -23,6 +23,7 @@ from django.contrib.gis.db.models import FilePathField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
+from django.contrib.gis.db.models import DO_NOTHING
 from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
@@ -1046,7 +1047,7 @@ class ChangeLog(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=SET_NULL, db_column='user')
     modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    content_type = ForeignKey(ContentType)
+    content_type = ForeignKey(ContentType, on_delete=DO_NOTHING)
     object_id = PositiveIntegerField()
     tracked_object = GenericForeignKey('content_type', 'object_id')
     description_of_change = JSONField()
