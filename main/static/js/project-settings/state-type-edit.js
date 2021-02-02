@@ -1,8 +1,8 @@
-class StateTypeEdit extends SettingsSection {
+class StateTypeEdit extends TypeForm {
   constructor() {
     super();
-    this.fromType = "StateType";
-    this._shadow.appendChild(this.settingsSectionDiv);
+    this.typeName = "StateType";
+    this._shadow.appendChild(this.typeFormDiv);
   }
 
   _init(data){
@@ -12,13 +12,11 @@ class StateTypeEdit extends SettingsSection {
     if(this.data.length > 0){
       console.log(this.data);
 
-      
-
-      this.mediaTypeList = localStorage.getItem('MediaTypes_Project_'+this.data[0].project);
+      this.projectId = this.data[0].project;
 
       for(let i in this.data){
         let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-state-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+        itemDiv.id = `itemDivId-${this.typeName}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
         itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
         itemDiv.hidden = true;
 
@@ -32,14 +30,20 @@ class StateTypeEdit extends SettingsSection {
         itemDiv.appendChild( this._getSectionForm( this.data[i]) );
         itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
 
-        this.settingsSectionDiv.appendChild(itemDiv);
+        this.typeFormDiv.appendChild(itemDiv);
       }
       console.log("Init complete : Data length "+this.data.length);
-      return this.settingsSectionDiv;
+      return this.typeFormDiv;
 
     } else {
       console.log("Init complete : No data.");
     }
+  }
+
+  _getHeading(){
+    let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+
+    return `${icon} <span class="item-label">State Type</span>`
   }
 
   _getSectionForm(data){
@@ -90,9 +94,11 @@ class StateTypeEdit extends SettingsSection {
         "value": data[GROUPING.toLowerCase()]
       } ) );
 
+      // Media
       const MEDIA = "Media";
-      //const mediaList = this.mediaTypeList;
-      let mediaListWithChecked = this._getCompiledMediaList( data[MEDIA.toLowerCase()], JSON.parse(this.mediaTypeList));
+      const mediaData = localStorage.getItem(`MediaData_${this.projectId}`); 
+      const mediaList = new DataMediaList( JSON.parse(mediaData) );
+      let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
       _form.appendChild( this.inputHelper.multipleCheckboxes({
           "labelText" : MEDIA,
@@ -100,7 +106,7 @@ class StateTypeEdit extends SettingsSection {
           "checkboxList": mediaListWithChecked
       } ) );
 
-      //
+      // Child Associations
       const CHILDASSOC = "delete_child_localizations";
       _form.appendChild( this.inputHelper.inputRadioSlide({
         "labelText": "Delete Child Associations",
@@ -110,9 +116,9 @@ class StateTypeEdit extends SettingsSection {
 
       // attribute types
       if(data.attribute_types.length > 0){
-        this.attributeSection = document.createElement("settings-attributes");
+        this.attributeSection = document.createElement("attributes-main");
         //this.attributeSection._init("STATE", data.attribute_types);
-        this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
+        this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
         current.appendChild(this.attributeSection);
       }
 
@@ -153,22 +159,6 @@ class StateTypeEdit extends SettingsSection {
 
     return formData;
   }
-
-  reset(scope){
-    console.log("Not setup yet [Reset with project data.]");
-    //
-    return false;
-  }
-
-  resetHard(){
-    this._fetchNewProjectData();
-    this.reset();
-  }
-
-  _fetchNewProjectData(){
-    return false;
-  }
-
 }
 
 customElements.define("state-type-edit", StateTypeEdit);

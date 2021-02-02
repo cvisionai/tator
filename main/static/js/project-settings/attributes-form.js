@@ -3,7 +3,6 @@ class AttributesForm extends HTMLElement {
     super();
 
     // Required helpers.
-    this.boxHelper = new SettingsBox("media-types-main-edit");
     this.inputHelper = new SettingsInput("media-types-main-edit");
   }
 
@@ -69,7 +68,7 @@ class AttributesForm extends HTMLElement {
     // default
     this.form.appendChild( this._getDefaultInput( "" ) );
 
-    /*** The remaining are added when dtype is added or when values provided ***/
+    /*** @todo - The remaining are added when dtype is added or when values provided ***/
     // let placeholderDefault = document.createElement("div");
     // placeholderDefault.setAttribute("class", "placeholderDefault");
     // this.form.appendChild(placeholderDefault);
@@ -305,7 +304,7 @@ class AttributesForm extends HTMLElement {
       options.push("Select");
 
       selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type",
+        "labelText": "Data Type*",
         "value": "Select",
         "name" : "dtype",
         "optionsList": this._getDtypeOptions( options )
@@ -499,8 +498,8 @@ class AttributesForm extends HTMLElement {
     return _default;
   }
   _getAttributePromises({id = -1, entityType = null, attrForms = [], attrFormsChanged = []} = {}){
-    //let attrForms = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form`);
-    // let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} settings-attributes .attribute-form.changed`);
+    //let attrForms = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
+    // let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
     let attrPromises = {};
     attrPromises.promises = [];
     attrPromises.attrNamesNew = [];

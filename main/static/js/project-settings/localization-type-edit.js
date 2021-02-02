@@ -1,8 +1,8 @@
-class LocalizationEdit extends SettingsSection {
+class LocalizationEdit extends TypeForm {
   constructor() {
     super();
-    this.fromType = "LocalizationType";
-    this._shadow.appendChild(this.settingsSectionDiv);
+    this.typeName = "LocalizationType";
+    this._shadow.appendChild(this.typeFormDiv);
   }
 
   _init(data){
@@ -12,11 +12,11 @@ class LocalizationEdit extends SettingsSection {
     if(this.data.length > 0){
       console.log(this.data);
 
-      this.mediaTypeList = localStorage.getItem('MediaTypes_Project_'+this.data[0].project);
+      this.projectId = this.data[0].project;
 
       for(let i in this.data){
         let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-localization-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
+        itemDiv.id = `itemDivId-${this.typeName}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
         itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
         itemDiv.hidden = true;
 
@@ -29,14 +29,20 @@ class LocalizationEdit extends SettingsSection {
         itemDiv.appendChild( this._getSectionForm( this.data[i]) );
         itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
 
-        this.settingsSectionDiv.appendChild(itemDiv);
+        this.typeFormDiv.appendChild(itemDiv);
       }
 
       console.log("Init complete : Data length "+this.data.length);
-      return this.settingsSectionDiv;
+      return this.typeFormDiv;
     } else {
       console.log("Init complete : No data.");
     }
+  }
+
+  _getHeading(){
+    let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-target"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
+
+    return `${icon} <span class="item-label">Localization Type</span>`
   }
 
   _getSectionForm(data){
@@ -93,8 +99,9 @@ class LocalizationEdit extends SettingsSection {
     } ) );
 
     const MEDIA = "Media";
-    //const mediaList = this.mediaTypeList;
-    let mediaListWithChecked = this._getCompiledMediaList( data[MEDIA.toLowerCase()], JSON.parse(this.mediaTypeList));
+    const mediaData = localStorage.getItem(`MediaData_${this.projectId}`); 
+    const mediaList = new DataMediaList( JSON.parse(mediaData) );
+    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
     _form.appendChild( this.inputHelper.multipleCheckboxes({
         "labelText" : MEDIA,
@@ -104,9 +111,9 @@ class LocalizationEdit extends SettingsSection {
 
     // attribute types
     if(data.attribute_types.length > 0){
-      this.attributeSection = document.createElement("settings-attributes");
+      this.attributeSection = document.createElement("attributes-main");
       //this.attributeSection._init("LOCALIZATION", data.attribute_types);
-      this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
+      this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
       current.appendChild(this.attributeSection);
     }
 
@@ -142,21 +149,6 @@ class LocalizationEdit extends SettingsSection {
     };
 
     return formData;
-  }
-
-  reset(scope){
-    console.log("Not setup yet [Reset with project data.]");
-    //
-    return false;
-  }
-
-  resetHard(){
-    this._fetchNewProjectData();
-    this.reset();
-  }
-
-  _fetchNewProjectData(){
-    return false;
   }
 
 }

@@ -1,8 +1,8 @@
-class MediaTypeMainEdit extends SettingsSection {
+class MediaTypeMainEdit extends TypeForm {
   constructor() {
     super();
-    this.fromType = "MediaType";
-    this._shadow.appendChild(this.settingsSectionDiv);
+    this.typeName = "MediaType";
+    this._shadow.appendChild(this.typeFormDiv);
   }
 
   _init(data){
@@ -12,49 +12,45 @@ class MediaTypeMainEdit extends SettingsSection {
     if(this.data.length > 0){
       console.log(this.data);
 
-      const mediaList = [];
+      this.projectId = this.data[0].project;
 
       for(let i in this.data){
-        let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-media-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-        itemDiv.hidden = true;
-
-        // create reference list for later
-        mediaList.push({
-          "id" : this.data[i].id,
-          "name" : this.data[i].name
-        });
-
-        // Section h1.
-        const h1 = document.createElement("h1");
-        h1.setAttribute("class", "h2 pb-3");
-        h1.innerHTML = `Media settings.`;
-        itemDiv.appendChild(h1);
-
-        itemDiv.appendChild( this._getSectionForm(this.data[i]) );
-        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
-
-        this.settingsSectionDiv.appendChild(itemDiv);
+        let itemDiv = this._addMediaSection(this.data[i]);
       }
-
-
-      this._storeMediaTypesList(this.data[0].project, mediaList);
 
       console.log("Init complete : Data length "+this.data.length);
 
-      return this.settingsSectionDiv;
+      return this.typeFormDiv;
     } else {
       console.log("Init complete : No data.");
     }
   }
 
-  _storeMediaTypesList(projectId, mediaList){
-    let key = 'MediaTypes_Project_'+projectId
-    let value = JSON.stringify(mediaList)
+  _addMediaSection(itemData){
+    let itemDiv = document.createElement("div");
+    itemDiv.id = `itemDivId-${this.typeName}-${itemData.id}`; //#itemDivId-${type}-${itemId}
+    itemDiv.setAttribute("class", "item-box item-group-"+itemData.id);
+    itemDiv.hidden = true;
 
-    localStorage.setItem(key, value);
+    // Section h1.
+    const h1 = document.createElement("h1");
+    h1.setAttribute("class", "h2 pb-3");
+    h1.innerHTML = `Media settings.`;
+    itemDiv.appendChild(h1);
+
+    itemDiv.appendChild( this._getSectionForm(itemData) );
+    itemDiv.appendChild( this._getSubmitDiv( {"id": itemData.id }) );
+
+    return this.typeFormDiv.appendChild(itemDiv);
   }
+
+  _getHeading(){
+    let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6 5h2v2H6V5zm6-.5V14c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V2c0-.55.45-1 1-1h7.5L12 4.5zM11 5L8 2H1v11l3-5 2 4 2-2 3 3V5z"/></svg>';
+
+    return `${icon} <span class="item-label">Media Type</span>`
+  }
+
+
 
   _getSectionForm(data){
     let current = this.boxHelper.boxWrapDefault( {
@@ -121,8 +117,8 @@ class MediaTypeMainEdit extends SettingsSection {
 
       // attribute types
       //if(data.attribute_types.length > 0){
-      this.attributeSection = document.createElement("settings-attributes");
-      this.attributeSection._init(this.fromType, data.id, data.project, data.attribute_types);
+      this.attributeSection = document.createElement("attributes-main");
+      this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
       current.appendChild(this.attributeSection);
       //}
 
@@ -137,9 +133,6 @@ class MediaTypeMainEdit extends SettingsSection {
       // description only if changed
       let description = form.querySelector('[name="description"]').value;
 
-      // default only if changed || volume to Number
-      let default_volume = Number(form.querySelector('[name="default_volume"]').value);
-
       // Visible is a radio slide
       let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
       let visible = this.inputHelper._getSliderSetValue(visibleInputs);
@@ -147,25 +140,17 @@ class MediaTypeMainEdit extends SettingsSection {
       let formData = {
         name,
         description,
-        default_volume,
         visible
       };
 
+      // default only if changed || volume to Number
+      if(form.querySelector('[name="default_volume"]')) {
+        let default_volume = Number(form.querySelector('[name="default_volume"]').value);
+        formData["default_volume"] = default_volume;
+      }
+     
+
     return formData;
-  }
-
-  reset(scope){
-    console.log("Not setup yet [Reset with project data.]");
-    return false;
-  }
-
-  resetHard(){
-    this._fetchNewProjectData();
-    this.reset();
-  }
-
-  _fetchNewProjectData(){
-    //
   }
 
 }

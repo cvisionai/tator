@@ -1,19 +1,38 @@
-class ProjectMainEdit extends SettingsSection {
+class ProjectMainEdit extends TypeForm {
   constructor() {
     super();
     // MainDiv is the project's "item" box as it relates to nav.
-    this.settingsSectionDiv.setAttribute("class", "item-box");
+    this.typeFormDiv.setAttribute("class", "item-box");
 
     // New heading element.
     this.h1 = document.createElement("h1");
     this.h1.setAttribute("class", "h2 pb-3"); 
-    this.settingsSectionDiv.appendChild(this.h1);
+    this.typeFormDiv.appendChild(this.h1);
 
     // Name the Main Div.
-    this.settingsSectionDiv.id = "projectMain";
-    this.h1.innerHTML = `Project details.`; 
+    this.typeFormDiv.id = "projectMain";
+    this.h1.innerHTML = `Project settings.`; 
 
-    this._shadow.appendChild(this.settingsSectionDiv); 
+    this._shadow.appendChild(this.typeFormDiv); 
+  }
+  
+  _init(data){
+    console.log(`${this.tagName} init.`);
+
+    this.data = JSON.parse( data );
+    console.log(this.data);
+
+    this.projectId = this._setProjectId();
+
+    this.typeFormDiv.appendChild( this._getSectionForm() )
+    this.typeFormDiv.appendChild( this._getSubmitDiv({ "id":this.projectId}) );
+
+    return this.typeFormDiv;
+  }
+
+  _setProjectId(){
+    // Default
+    return this.data.id;
   }
 
   _getSectionForm() {
@@ -269,20 +288,20 @@ class ProjectMainEdit extends SettingsSection {
         return response.json().then(data => {
           console.log("Save response status: " + response.status)
           if (response.status == "200") {
-            this._modalSuccess(data.message);
+            this.boxHelper._modalSuccess(data.message);
             this._fetchNewProjectData();
           } else {
-            this._modalError(data.message);
+            this.boxHelper._modalError(data.message);
           }
         })
       }
       )
         .catch(error => {
           console.log('Error:', error.message);
-          this._modalError("Internal error: " + error.message);
+          this.boxHelper._modalError("Internal error: " + error.message);
         });
     } else {
-      this._modalSuccess("Nothing new to save!")
+      this.boxHelper._modalSuccess("Nothing new to save!")
     }
 
   }

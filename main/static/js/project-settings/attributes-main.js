@@ -1,28 +1,24 @@
-class SettingsAttributes extends HTMLElement {
+class AttributesMain extends HTMLElement {
   constructor() {
     super();
-
-    // Required helpers.
-    this.boxHelper = new SettingsBox("media-types-main-edit");
-    this.inputHelper = new SettingsInput("media-types-main-edit");
-    this.attributeFormHelper = new AttributesForm();
-    this.modal = document.createElement("modal-dialog");
   }
 
-  _init(fromType, fromId, projectId, data){
-    console.log(fromType.toLowerCase() + `__${this.tagName} init.`);
-
-    this.attributeDiv = document.createElement("div");
-    this.appendChild(this.attributeDiv);
+  _init(typeName, fromId, projectId, data){
+    console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
     //
     this.fromId = fromId;
-    this.fromType = fromType;
+    this.typeName = typeName;
     this.projectId = projectId;
 
-    // Prep the modal.
-    this.modal = document.createElement("modal-dialog");
-    this.attributeDiv.appendChild(this.modal);
+    // add main div
+    this.attributeDiv = document.createElement("div");
+    this.appendChild(this.attributeDiv);
+
+    // Required helpers.
+    this.boxHelper = new SettingsBox( this.attributeDiv );
+    this.inputHelper = new SettingsInput("media-types-main-edit");
+    this.attributeFormHelper = new AttributesForm();
 
     // get the form and +Add link
     this.attributeDiv.appendChild( this._getAttributesSection(data) );
@@ -77,6 +73,8 @@ class SettingsAttributes extends HTMLElement {
     return attributesSection;
   }
 
+
+  // Add Attribute
   _getNewAttributesTrigger(){
     // New attribute link
     let newAttributeTrigger = this.boxHelper.headingWrap({
@@ -90,11 +88,17 @@ class SettingsAttributes extends HTMLElement {
     newAttributeTrigger.addEventListener("click", (event) => {
       event.preventDefault();
       let afObj = this._getAddForm();
-      this._modalConfirm({
+
+      afObj.submitAttribute.addEventListener("click", (e) => {
+        e.preventDefault();
+  
+        this._postAttribute( afObj.addAttributeForm );
+      });
+
+      this.boxHelper._modalConfirm({
         "titleText" : "New Attribute",
         "mainText" : afObj.addAttributeForm,
-        "saveButton" : afObj.submitAttribute,
-        "buttonText" : "Save",
+        "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
     });
@@ -105,19 +109,13 @@ class SettingsAttributes extends HTMLElement {
   _getAddForm(){
     let addAttributeForm = this.attributeFormHelper._initEmptyForm();
     let submitAttribute = this.inputHelper.saveButton();
-    addAttributeForm.appendChild( submitAttribute );
-
-    submitAttribute.addEventListener("click", (e) => {
-      e.preventDefault();
-      this._saveAttribute( addAttributeForm );
-    });
 
     return {addAttributeForm, submitAttribute};
   }
 
-  _saveAttribute(form){
+  _postAttribute(form){
     let formJSON = {
-      "entity_type": this.fromType,
+      "entity_type": this.typeName,
       "addition": this.attributeFormHelper._getAttributeFormData( form )
     };
 
@@ -138,12 +136,12 @@ class SettingsAttributes extends HTMLElement {
       if(status == 201) iconWrap.appendChild(succussIcon);
       if(status == 400) iconWrap.appendChild(warningIcon);
 
-      this.modal._closeCallback();
-      this._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+      this.boxHelper._modalCloseCallback();
+      this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
     });
-
   }
 
+  // Clone Attribute
   _getCopyAttributesTrigger(){
     // New attribute link
     let newCopyTrigger = this.boxHelper.headingWrap({
@@ -153,24 +151,38 @@ class SettingsAttributes extends HTMLElement {
         "collapsed": false
       });
     newCopyTrigger.setAttribute("class", "clickable py-3");
-
-    let cloneSave = this.inputHelper.saveButton();
-    let cloneAttribute = new AttributesClone( this.projectId, this.fromType, this.fromId, this.modal, this.modal._footer, cloneSave);
-
+    
     newCopyTrigger.addEventListener("click", (event) => {
       event.preventDefault();
-      let form = cloneAttribute._init();
-
-      this._modalConfirm({
-        "titleText" : "Clone Attribute(s)",
-        "mainText" : form,
-        "saveButton" : cloneSave,
-        "buttonText" : "Save",
-        "scroll" : true
-      });
+      this._getCloneModal();    
     });
 
     return newCopyTrigger;
+  }
+
+  _getCloneModal(){
+    let typesData = new ProjectTypesData(this.projectId);
+    console.log(typesData);
+    typesData._getAttributeDataByType().then( (attributeDataByType) => {
+      let clone = new AttributesClone( attributeDataByType );
+      let cloneForm = clone._init();
+      let cloneSave = this.inputHelper.saveButton();
+      
+      cloneSave.addEventListener("click", (event) => {
+        event.preventDefault();
+        let inputs = clone.getInputs();
+        let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
+        return cloneData.createClones().then((r) => this.boxHelper._modalComplete(r));               
+      });
+
+      return this.boxHelper._modalConfirm({
+        "titleText" : "Clone Attribute(s)",
+        "mainText" : cloneForm,
+        "buttonSave" : cloneSave,
+        "scroll" : true
+      });
+    });
+    
   }
 
   _toggleAttributes(el){
@@ -202,8 +214,7 @@ class SettingsAttributes extends HTMLElement {
     let formId = attributes.name.replace(/[^\w]|_/g, "").toLowerCase();
 
     // Fields for this form
-    const newForm = document.createElement("attributes-form");
-    const formContents = newForm._getFormWithValues(attributes);
+    const formContents = this.attributeFormHelper._getFormWithValues(attributes);
     formContents.setAttribute("class", "attribute-form px-4");
     formContents.id = `${formId}_${this.fromId}`;
     formContents.data = attributes;
@@ -232,52 +243,6 @@ class SettingsAttributes extends HTMLElement {
     return this._shadow;
   }
 
-  _modalSuccess(message){
-    let text = document.createTextNode(" Success");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-success") );
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-    //this.modal._main.classList.add("fixed-heigh-scroll");
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-  _modalConfirm({
-    titleText = "",
-    mainText = "",
-    saveButton = document.createElement(""),
-    buttonText = "",
-    scroll = false
-  } = {}){
-    this._modalClear();
-    let modal = this.modal;
-    modal._titleDiv.innerHTML = titleText;
-    modal._main.appendChild(mainText);
-    modal._footer.appendChild(saveButton);
-    modal._main.classList.add("fixed-heigh-scroll");
-    modal.setAttribute("is-open", "true")
-
-    return modal;
-  }
-
-  _modalComplete(message){
-    let text = document.createTextNode("Complete");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-    this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-heigh-scroll");
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-  _modalClear(){
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._main.innerHTML = "";
-    this.modal._footer.innerHTML = "";
-  }
-
   _fetchPostPromise({formData = null } = {}){
     console.log("Attribute (new) Post Fetch");
 
@@ -299,4 +264,4 @@ class SettingsAttributes extends HTMLElement {
   }
 }
 
-customElements.define("settings-attributes", SettingsAttributes);
+customElements.define("attributes-main", AttributesMain);
