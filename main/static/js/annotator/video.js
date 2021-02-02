@@ -1502,7 +1502,6 @@ class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
-          console.log("...video.oncanplay: Frame " + frame);
           clearTimeout(that._seek_expire);
           that._seek_expire = null;
           // if we are masked, take it off
