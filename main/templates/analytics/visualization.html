@@ -1,0 +1,17 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Analytics | Visualization</title>
+{% endblock head %}
+
+{% block body %}
+<h1>Visualization</h1>
+<analytics-visualization 
+    username="{{ user|stringformat:'s' }}"
+    email="{{ user.email }}"
+    project-id="{{ project.id }}"
+    token="{{ token }}">
+</analytics-visualization>
+{% endblock body %}
