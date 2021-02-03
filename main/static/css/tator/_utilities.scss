@@ -6,8 +6,16 @@
   display: inline-flex;
 }
 
+.flex-row {
+  flex-direction: row;
+}
+
 .flex-column {
   flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .flex-grow {
@@ -34,12 +42,30 @@
   position: relative;
 }
 
+.v-align-top {
+  vertical-align: top;
+}
+
+.clearfix:after {
+  clear: both;
+}
+
+.clearfix:after,
+.clearfix:before {
+  display: table;
+  content: "";
+}
+
 .rounded-1 {
   border-radius: 3px;
 }
 
 .rounded-2 {
   border-radius: 6px;
+}
+
+.rounded-3 {
+  border-radius: 10px;
 }
 
 .rounded-bottom-2 {
@@ -51,18 +77,124 @@
   border-radius: 50%;
 }
 
-.col-1 { width: (1 / 12 * 100%); }
-.col-2 { width: (2 / 12 * 100%); }
-.col-3 { width: (3 / 12 * 100%); }
-.col-4 { width: (4 / 12 * 100%); }
-.col-5 { width: (5 / 12 * 100%); }
-.col-6 { width: (6 / 12 * 100%); }
-.col-7 { width: (7 / 12 * 100%); }
-.col-8 { width: (8 / 12 * 100%); }
-.col-9 { width: (9 / 12 * 100%); }
-.col-10 { width: (10 / 12 * 100%); }
-.col-11 { width: (11 / 12 * 100%); }
-.col-12 { width: 100% !important; }
+/*
+* Responsive Grid
+*/
+.col-1 {
+  width: (1 / 12 * 100%);
+}
+.col-2 {
+  width: (2 / 12 * 100%);
+}
+.col-3 {
+  width: (3 / 12 * 100%);
+}
+.col-4 {
+  width: (4 / 12 * 100%);
+}
+.col-5 {
+  width: (5 / 12 * 100%);
+}
+.col-6 {
+  width: (6 / 12 * 100%);
+}
+.col-7 {
+  width: (7 / 12 * 100%);
+}
+.col-8 {
+  width: (8 / 12 * 100%);
+}
+.col-9 {
+  width: (9 / 12 * 100%);
+}
+.col-10 {
+  width: (10 / 12 * 100%);
+}
+.col-11 {
+  width: (11 / 12 * 100%);
+}
+.col-12 {
+  width: 100% !important;
+}
+
+@each $breakpoint in map-keys($breakpoints) {
+  .col-#{$breakpoint}-1 {
+    width: (1 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-2 {
+    width: (2 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-3 {
+    width: (3 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-4 {
+    width: (4 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-5 {
+    width: (5 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-6 {
+    width: (6 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-7 {
+    width: (7 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-8 {
+    width: (8 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-9 {
+    width: (9 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-10 {
+    width: (10 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-11 {
+    width: (11 / 12 * 100%);
+  }
+  .col-#{$breakpoint}-12 {
+    width: 100%;
+  }
+}
+
+// Gutters
+// Apply padding and a negative margin to the outside of the container
+@mixin gutters($gutter-width: $spacer-3) {
+  margin-right: -$gutter-width;
+  margin-left: -$gutter-width;
+
+  > [class*="col-"] {
+    padding-right: $gutter-width !important;
+    padding-left: $gutter-width !important;
+  }
+}
+
+.gutter {
+  @include gutters($spacing-3);
+}
+
+.gutter-condensed {
+  @include gutters($spacing-2);
+}
+
+.gutter-spacious {
+  @include gutters($spacing-4);
+}
+
+@each $breakpoint in map-keys($breakpoints) {
+  .gutter-#{$breakpoint} {
+    @include gutters($spacing-3);
+  }
+  .gutter-#{$breakpoint}-condensed {
+    @include gutters($spacing-2);
+  }
+  .gutter-#{$breakpoint}-spacious {
+    @include gutters($spacing-4);
+  }
+}
+
+/*
+* Padding
+*/
 
 .py-0 {
   padding-bottom: $spacing-0;
@@ -97,6 +229,14 @@
 .py-6 {
   padding-bottom: $spacing-6;
   padding-top: $spacing-6;
+}
+
+.pt-4 {
+  padding-top: $spacing-4;
+}
+
+.pb-3 {
+  padding-bottom: $spacing-3;
 }
 
 .px-0 {
@@ -154,6 +294,6 @@
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0,0,0,0);
+  clip: rect(0, 0, 0, 0);
   border: 0;
 }

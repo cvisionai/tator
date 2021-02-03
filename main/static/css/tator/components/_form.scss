@@ -76,6 +76,10 @@
   }
   option {
     background-color: $color-charcoal--light;
+
+    &:checked {
+      color: $color-white;
+    }
   }
 }
 
@@ -310,4 +314,3 @@ strong.match {
     background: $color-purple;
     cursor: pointer;
 }
-

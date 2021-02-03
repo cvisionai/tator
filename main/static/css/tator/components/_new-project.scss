@@ -60,6 +60,7 @@
 
   div:first-child {
     border-bottom: 1px solid $color-charcoal--light;
+
   }
 
   button {
@@ -68,4 +69,20 @@
       text-decoration: underline;
     }
   }
+}
+
+.edit-project__config {
+  background-color: $color-charcoal--medium;
+  margin-bottom: 14px;
+
+  button {
+    &:hover,
+    &:focus {
+      text-decoration: underline;
+    }
+  }
+}
+
+.edit-project__label {
+  border-bottom: 1px solid $color-charcoal--light;
 }

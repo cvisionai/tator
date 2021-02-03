@@ -48,3 +48,31 @@ $spacing-3: 16px;
 $spacing-4: 24px;
 $spacing-5: 32px;
 $spacing-6: 40px;
+
+/**
+** Layout
+**/
+// Breakpoint widths
+$width-xs: 0 !default;
+// Small screen / phone
+$width-sm: 544px !default;
+// Medium screen / tablet
+$width-md: 768px !default;
+// Large screen / desktop (980 + (16 * 2)) <= container + gutters
+$width-lg: 1012px !default;
+// Extra large screen / wide desktop
+$width-xl: 1280px !default;
+
+// Responsive container widths
+$container-sm: $width-sm !default;
+$container-md: $width-md !default;
+$container-lg: $width-lg !default;
+$container-xl: $width-xl !default;
+
+// Breakpoints in the form (name: length)
+$breakpoints: (
+  sm: $width-sm,
+  md: $width-md,
+  lg: $width-lg,
+  xl: $width-xl
+) !default;
