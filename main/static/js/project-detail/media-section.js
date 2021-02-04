@@ -259,39 +259,14 @@ class MediaSection extends TatorElement {
   }
 
   _launchAlgorithm(evt) {
-    let body = {"algorithm_name": evt.detail.algorithmName};
-    if ('mediaIds' in evt.detail)
-    {
-      body["media_ids"] = evt.detail.mediaIds;
-    }
-    else
-    {
-      body["media_query"] = `?${this._sectionParams().toString()}`;
-    }
-    fetch(`/rest/AlgorithmLaunch/${this._project}`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body),
-    })
-    .then(response => {
-      const page = document.querySelector("project-detail");
-      if (response.status == 201) {
-        page._notify("Algorithm launched!",
-                     `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
-                     "ok");
-      } else {
-        page._notify("Error launching algorithm!",
-                     `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
-                     "error");
-      }
-      return response.json();
-    })
-    .then(data => console.log(data));
+    this.dispatchEvent(
+      new CustomEvent("runAlgorithm",
+        {composed: true,
+        detail: {
+          algorithmName: evt.detail.algorithmName,
+          mediaQuery: `?${this._sectionParams().toString()}`,
+          projectId: this._project,
+        }}));
   }
 
   _downloadFiles(evt) {
@@ -640,8 +615,9 @@ class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
+
+    // launch algorithm on all the media in this section
     this._more.addEventListener("algorithmMenu", this._launchAlgorithm.bind(this));
-    this._files.addEventListener("algorithm", this._launchAlgorithm.bind(this));
 
     this._more.addEventListener("download", this._downloadFiles.bind(this));
 
