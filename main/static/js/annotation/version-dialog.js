@@ -12,7 +12,7 @@ class VersionDialog extends ModalDialog {
     this._footer.remove();
 
     const tableDiv = document.createElement("div");
-    tableDiv.setAttribute("class", "py-4");
+    tableDiv.setAttribute("class", "py-4 annotation__version-list");
     this._header.appendChild(tableDiv);
 
     this._table = document.createElement("table");
@@ -58,6 +58,7 @@ class VersionDialog extends ModalDialog {
       tr.appendChild(tdName);
 
       const tdSelect = document.createElement("td");
+      tdSelect.setAttribute("class", "px-2");
       tr.appendChild(tdSelect);
 
       const select = document.createElement("version-select");
