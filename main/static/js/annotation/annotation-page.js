@@ -530,16 +530,15 @@ class AnnotationPage extends TatorPage {
         // Only display positive version numbers.
         versions = versions.filter(version => version.number >= 0);
 
-        for (let version of versions)
-        {
-          this._versionLookup[version['id']] = version;
+        for (const version of versions) {
+          this._versionLookup[version.id] = version;
         }
 
         // If there is a default version pick that one, otherwise use the first one.
         this._version == null;
         let default_version = versions[0].id;
         for (const membership of memberships) {
-          if (membership.username == this.getAttribute("username")) {
+          if (membership.user == this.getAttribute("user-id")) {
             if (membership.default_version) {
               default_version = membership.default_version;
             }
@@ -550,6 +549,7 @@ class AnnotationPage extends TatorPage {
         let selected_version_idx = 0;
         for (const [idx, version] of versions.entries()) {
           if (version.id == default_version) {
+            this._version = this._versionLookup[default_version];
             selected_version_idx = idx;
           }
         }
