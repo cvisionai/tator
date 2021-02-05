@@ -94,8 +94,7 @@ class MembershipDetailAPI(BaseDetailView):
         if 'default_version' in params:
             membership.default_version = Version.objects.get(pk=params['default_version'])
         membership.save()
-        return {'message': f"Membership of {membership.user} to {membership.project} "
-                           f"permissions updated to {params['permission']}!"}
+        return {'message': f"Membership {params['id']} successfully updated!"}
 
     def _delete(self, params):
         Membership.objects.get(pk=params['id']).delete()
