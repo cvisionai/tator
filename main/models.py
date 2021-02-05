@@ -268,6 +268,7 @@ class Membership(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
+    default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
 
