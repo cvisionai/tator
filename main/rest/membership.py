@@ -48,6 +48,9 @@ class MembershipListAPI(BaseListView):
         else:
             raise ValueError(f"Permission must have one of the following values: View Only, "
                               "Can Edit, Can Transfer, Can Execute, Full Control.")
+        existing = Membership.objects.filter(project=project, user=user)
+        if existing.exists():
+            raise RuntimeError(f"Membership already exists for project {project}, user {user}!")
         project = Project.objects.get(pk=project)
         user = User.objects.get(pk=user) 
         if default_version is not None:
