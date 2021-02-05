@@ -116,10 +116,7 @@ class AttributeTypeListAPI(BaseListView):
         old_name = params["old_attribute_type_name"]
         old_dtype = None
         old_attribute_type = None
-        new_attribute_type = dict(params["new_attribute_type"])
-        new_attribute_type.pop("description", None)
-        new_attribute_type.pop("required", None)
-        new_attribute_type.pop("order", None)
+        new_attribute_type = params["new_attribute_type"]
         new_name = new_attribute_type["name"]
         attribute_renamed = old_name != new_name
 
