@@ -490,6 +490,15 @@ class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    const membershipPromise = fetch(`/rest/Memberships/${projectId}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetch(url, {
@@ -507,40 +516,45 @@ class AnnotationPage extends TatorPage {
       getMetadataType("StateTypes"),
       versionPromise,
       favoritePromise,
+      membershipPromise,
     ])
-    .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse]) => {
+    .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse,
+            membershipResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
       const versionData = versionResponse.json();
       const favoriteData = favoriteResponse.json();
-      Promise.all([localizationData, stateData, versionData, favoriteData])
-      .then(([localizationTypes, stateTypes, versions, favorites]) => {
+      const membershipData = membershipResponse.json();
+      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData])
+      .then(([localizationTypes, stateTypes, versions, favorites, memberships]) => {
+        // Only display positive version numbers.
+        versions = versions.filter(version => version.number >= 0);
+
         for (let version of versions)
         {
           this._versionLookup[version['id']] = version;
         }
 
-        // If there is a version with the same name as the user
-        // pick that one.
+        // If there is a default version pick that one, otherwise use the first one.
         this._version == null;
-        let selected_version_idx = 0;
-        for (let v of  versions)
-        {
-          if (v.name == this.getAttribute("username"))
-          {
-            this._version = v;
-            break;
+        let default_version = versions[0].id;
+        for (const membership of memberships) {
+          if (membership.username == this.getAttribute("username")) {
+            if (membership.default_version) {
+              default_version = membership.default_version;
+            }
           }
-          selected_version_idx++;
         }
 
-
-        // TODO: Whats the right way to do a default here
-        if (this._version == null)
-        {
-          this._version = versions[versions.length - 1];
-          selected_version_idx = versions.length - 1;
+        // Finde the index of the default version.
+        let selected_version_idx = 0;
+        for (const [idx, version] of versions.entries()) {
+          if (version.id == default_version) {
+            selected_version_idx = idx;
+          }
         }
+
+        // Initialize version dialog.
         this._versionDialog.init(versions, selected_version_idx);
         if (versions.length == 0) {
           this._versionButton.style.display = "none";
