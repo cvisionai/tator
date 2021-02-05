@@ -16,6 +16,18 @@ data:
       proxy_ignore_client_abort on;
       client_max_body_size 0;
 
+      {{- if index .Values "kube-prometheus-stack" "enabled" }}
+      server {
+        listen 127.0.0.1:80;
+        location /status {
+          stub_status;
+          access_log off;
+          allow 127.0.0.1;
+          deny all;
+        }
+      }
+      {{- end }}
+
       {{- if hasKey .Values "redirects" }}
       {{- range .Values.redirects }}
 
@@ -148,52 +160,9 @@ data:
           }
           auth_request /auth-project;
         }
-        {{- if hasKey .Values.pv "mediaShards" }}
-        {{- range .Values.pv.mediaShards }}
-        location /{{ .name }} {
-          alias /{{ .name }}/;
-          autoindex off;
-          add_header Cache-Control "max-age=3600, must-revalidate";
-          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
-          add_header 'Access-Control-Allow-Headers' 'Authorization' always;
-
-          # Send CORS response from nginx
-          if ($request_method = OPTIONS)
-          {
-            add_header Content-Length 0;
-            add_header Content-Type text/plain;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
-            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
-            add_header Access-Control-Allow-Credentials true;
-            return 200;
-          }
-          auth_request /auth-project;
-        }
-        {{- end }}
-        {{- end }}
         location /media/working
         {
           return 403;
-        }
-        location /data/raw {
-          alias /data/raw;
-          autoindex off;
-          add_header Cache-Control "max-age=3600, must-revalidate";
-          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
-          add_header 'Access-Control-Allow-Headers' 'Authorization' always;
-          # Send CORS response from nginx
-          if ($request_method = OPTIONS)
-          {
-            add_header Content-Length 0;
-            add_header Content-Type text/plain;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
-            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
-            add_header Access-Control-Allow-Credentials true;
-            return 200;
-          }
-          auth_request /auth-project;
         }
         location /auth-project {
           internal;
@@ -287,6 +256,26 @@ data:
           gzip_types application/json;
           gzip_min_length 1024;
         }
+
+        {{- if index .Values "kube-prometheus-stack" "enabled" }}
+        location /grafana/ {
+          auth_request /auth-admin;
+          proxy_pass http://tator-grafana/;
+          proxy_set_header Host $host;
+        }
+
+        location /prometheus/ {
+          auth_request /auth-admin;
+          proxy_pass http://tator-kube-prometheus-stac-prometheus:9090/;
+          proxy_set_header Host $host;
+          sub_filter_types text/html;
+          sub_filter_once off;
+          sub_filter '="/' '="/prometheus/';
+          sub_filter 'var PATH_PREFIX = "";' 'var PATH_PREFIX = "/prometheus";';
+          rewrite ^/prometheus/?$ /prometheus/graph redirect;
+          rewrite ^/prometheus/(.*)$ /$1 break;
+        }
+        {{- end }}
 
         error_page 503 /static/maintenance.html;
         # Allow POST on static pages

@@ -102,65 +102,20 @@ class Utilities
         let fname = media_element.name;
         console.warn(`Can't find suitable download for ${fname}`);
       }
-    } else if (media_element.file) {
-      url = "/media/" + media_element.file;
     } else {
       let fname = media_element.name;
       console.warn(`Can't find suitable download for ${fname}`);
     }
 
-    // We either have a url set (old way) or a path and potentially host
-    // and http_auth
-
     let request = null;
-    if (url == undefined)
-    {
-      if (path) {
-        if (path.startsWith('/')) {
-          let sameOrigin = false;
-          // Default to self if hostname
-          if (hostname == undefined)
-          {
-            hostname = window.location.protocol + "//" + window.location.hostname;
-            sameOrigin = true;
-          }
-          url = hostname + path;
-          if (sameOrigin == true)
-          {
-            request = new Request(url,
-                                  {method: "GET",
-                                   credentials: "same-origin",
-                                   headers: session_headers
-                                  });
-          }
-          else
-          {
-            let cross_origin = new Headers();
-            cross_origin.append("Authorization", http_authorization);
-            // Don't leak CSRF or session to cross-domain resources
-            request = new Request(url,
-                                  {method: "GET",
-                                   credentials: "omit",
-                                   headers: cross_origin
-                                  });
-          }
-        } else if (path.startsWith('http')) {
-          url = path;
-          request = new Request(url,
-                                {method: "GET",
-                                 credentials: "omit",
-                                });
-        }
+    if (path) {
+      if (path.startsWith('http')) {
+        url = path;
+        request = new Request(url,
+                              {method: "GET",
+                               credentials: "omit",
+                              });
       }
-    }
-    else
-    {
-      // Deprecated behavior (this is the same host)
-      request = new Request(url,
-                            {method: "GET",
-                             credentials: "same-origin",
-                             headers: session_headers
-                            });
     }
 
     return request;

@@ -94,6 +94,12 @@ attribute_type_spec = {
     },
 }
 
+attribute_type_properties_no_defaults = {}
+
+for prop_name, prop_desc in attribute_type_properties.items():
+    new_desc = {k: v for k, v in prop_desc.items() if k != "default"}
+    attribute_type_properties_no_defaults[prop_name] = new_desc
+
 attribute_type_update = {
     "type": "object",
     "description": "Renames an attribute of a type.",
@@ -102,11 +108,18 @@ attribute_type_update = {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
+        "global": {
+            "type": "string",
+            "description": "If 'true', applies dtype mutation to all attributes with the same name."
+        },
         "old_attribute_type_name": {
             "type": "string",
             "description": "The attribute to rename.",
         },
-        "new_attribute_type": {'$ref': '#/components/schemas/AttributeType'},
+        "new_attribute_type": {
+            'type': 'object',
+            'properties': attribute_type_properties_no_defaults,
+        },
     },
 }
 

@@ -3,15 +3,18 @@ from collections import defaultdict
 import copy
 import logging
 
+from dateutil.parser import parse as dateutil_parse
+
 from ..models import LocalizationType
 from ..models import StateType
+from ..search import TatorSearch
 
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-def get_attribute_query(query_params, query, bools, project,
-                        is_media=True, annotation_bools=None, modified=None):
+def get_attribute_es_query(query_params, query, bools, project,
+                           is_media=True, annotation_bools=None, modified=None):
     """ TODO: add documentation for this """
     if annotation_bools is None:
         annotation_bools = []
@@ -45,7 +48,7 @@ def get_attribute_query(query_params, query, bools, project,
     }
     for o_p in attr_filter_params: #pylint: disable=too-many-nested-blocks
         if attr_filter_params[o_p] is not None:
-            for kv_pair in attr_filter_params[o_p].split(','):
+            for kv_pair in attr_filter_params[o_p]:
                 if o_p == 'attribute_distance':
                     key, dist_km, lat, lon = kv_pair.split(KV_SEPARATOR)
                     relation = 'annotation' if key in child_attrs else 'media'
@@ -173,3 +176,90 @@ def get_attribute_query(query_params, query, bools, project,
             query['query']['bool']['filter'].append(modified_query)
 
     return query
+
+ALLOWED_TYPES = {
+    'attribute': ('boolean', 'long', 'double', 'date', 'keyword', 'text'),
+    'attribute_lt': ('long', 'double', 'date'),
+    'attribute_lte': ('long', 'double', 'date'),
+    'attribute_gt': ('long', 'double', 'date'),
+    'attribute_gte': ('long', 'double', 'date'),
+    'attribute_contains': ('keyword', 'text'),
+    'attribute_distance': ('geo_point',)
+}
+
+OPERATOR_SUFFIXES = {
+    'attribute': '',
+    'attribute_lt': '__lt',
+    'attribute_lte': '__lte',
+    'attribute_gt': '__gt',
+    'attribute_gte': '__gte',
+    'attribute_contains': '__icontains',
+    'attribute_distance': '__distance__lte',
+}
+
+def _convert_boolean(value):
+    if value.lower() == 'false':
+        value = False
+    elif value.lower() == 'true':
+        value = True
+    else:
+        value = bool(value)
+    return value
+
+def _convert_attribute_filter_value(pair, mappings, operation):
+    kv = pair.split(KV_SEPARATOR, 1)
+    key, value = kv
+    if key not in mappings:
+        raise ValueError(f"Attribute '{key}' could not be found in project!")
+    if 'path' in mappings[key]:
+        dtype = mappings[key]['path'].split('_', 1)[1]
+    else:
+        dtype = mappings[key]['type']
+    if dtype not in ALLOWED_TYPES[operation]:
+        raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
+    if dtype == 'boolean':
+        value = _convert_boolean(value)
+    if dtype == 'double':
+        value = float(value)
+    elif dtype == 'long':
+        value = int(value)
+    elif dtype == 'date':
+        value = dateutil_parse(value)
+    return key, value, dtype
+
+def get_attribute_filter_ops(project, params):
+    filter_ops = []
+    use_es = False
+    if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
+        search = TatorSearch()
+        index_name = search.index_name(project)
+        mappings = TatorSearch().es.indices.get_mapping(index=index_name)
+        mappings = mappings[index_name]['mappings']['properties']
+
+        for op in ALLOWED_TYPES.keys():
+            if op in params:
+                for kv in params[op]:
+                    key, value, dtype = _convert_attribute_filter_value(kv, mappings, op)
+                    # Don't deal with type conversions required for date and geo_point filtering
+                    # in PSQL
+                    if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
+                        use_es = True
+                    filter_ops.append((key, value, op))
+    force_es = params.get('force_es')
+    if force_es:
+        use_es = True
+    return use_es, filter_ops
+
+def get_attribute_psql_queryset(qs, params, filter_ops):
+    attribute_null = params.get('attribute_null')
+
+    for key, value, op in filter_ops:
+        qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+
+    if attribute_null is not None:
+        for kv in attribute_null:
+            key, value = kv.split(KV_SEPARATOR)
+            value = _convert_boolean(value)
+            qs = qs.filter(**{f"attributes__{key}__isnull": value})
+    return qs
+

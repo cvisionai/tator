@@ -1,7 +1,5 @@
 from typing import Dict
 
-from django.db import transaction
-
 from ..models import (
     MediaType,
     Media,
@@ -16,7 +14,6 @@ from ..search import TatorSearch
 from ..schema import AttributeTypeListSchema, parse
 
 from ._base_views import BaseListView
-from ._annotation_query import get_annotation_queryset
 from ._attributes import (
     bulk_patch_attributes,
     bulk_rename_attributes,
@@ -115,7 +112,7 @@ class AttributeTypeListAPI(BaseListView):
     def _patch(self, params: Dict) -> Dict:
         """Rename an attribute on a type."""
         ts = TatorSearch()
-        global_operation = params["global"]
+        global_operation = params.get("global", "false").lower()
         old_name = params["old_attribute_type_name"]
         old_dtype = None
         old_attribute_type = None
@@ -128,8 +125,8 @@ class AttributeTypeListAPI(BaseListView):
         related_objects = self._get_related_objects(entity_type, old_name)
         if related_objects and global_operation == "false":
             raise ValueError(
-                f"Attempted to mutate attribute '{old_name}' without global flag, but it "
-                f"exists on other types."
+                f"Attempted to mutate attribute '{old_name}' without the global flag set to 'true',"
+                " but it exists on other types."
             )
 
         for attribute_type in entity_type.attribute_types:
@@ -246,11 +243,15 @@ class AttributeTypeListAPI(BaseListView):
         ts.create_mapping(entity_type)
 
         # Add new field to all existing attributes if there is a default value
-        if obj_qs.exists():
-            new_default = new_attribute_type.get("default")
+        if obj_qs.exists() and "default" in new_attribute_type:
+            new_attr = {new_name: new_attribute_type["default"]}
 
-            if new_default:
-                bulk_patch_attributes({new_name: new_default}, obj_qs)
+            # Add default value to PSQL
+            bulk_patch_attributes(new_attr, obj_qs)
+
+            # Add default value to ES
+            query = {"query": {"match": {"_meta": {"query": int(entity_type.id)}}}}
+            ts.update(entity_type.project.pk, entity_type, query, new_attr)
 
         return {"message": f"New attribute type '{new_name}' added"}
 

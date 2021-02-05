@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings postgis-image client-image wget-image curl-image
+IMAGES=python-bindings postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -110,6 +110,10 @@ status:
 
 .ONESHELL:
 
+.PHONY: check-migration
+check-migration:
+	scripts/check-migration.sh $(pwd)
+
 cluster: main/version.py
 	$(MAKE) images cluster-deps cluster-install
 
@@ -121,7 +125,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: main/version.py images
+cluster-upgrade: check-migration main/version.py images
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-uninstall:
@@ -153,24 +157,6 @@ tator-image: containers/tator/Dockerfile.gen
 	$(MAKE) min-js min-css r-docs docs
 	docker build $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
-
-.PHONY: wget-image
-wget-image: containers/wget/Dockerfile
-	docker build -t $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/wget:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/wget:latest
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/wget:$(GIT_VERSION) $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
-	docker push $(DOCKERHUB_USER)/wget:$(GIT_VERSION)
-
-.PHONY: curl-image
-curl-image: containers/curl/Dockerfile
-	docker build -t $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) -f $< . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/curl:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/curl:latest
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/curl:$(GIT_VERSION) $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
-	docker push $(DOCKERHUB_USER)/curl:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:  containers/postgis/Dockerfile.gen
@@ -272,6 +258,7 @@ FILES = \
     project-detail/new-algorithm-button.js \
     project-detail/algorithm-menu.js \
     project-detail/algorithm-button.js \
+    project-detail/confirm-run-algorithm.js \
     project-detail/activity-button.js \
     project-detail/project-text.js \
     project-detail/project-search.js \
@@ -282,6 +269,7 @@ FILES = \
     project-detail/big-download-form.js \
     project-detail/download-button.js \
     project-detail/rename-button.js \
+    project-detail/toggle-button.js \
     project-detail/delete-button.js \
     project-detail/section-more.js \
     project-detail/section-card.js \
@@ -424,9 +412,17 @@ cleanup-evicted:
 build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)"
 
-.PHONY: migrate-flat
-migrate-flat:
-	argo submit workflows/migrate-flat.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+.PHONY: s3-migrate
+s3-migrate:
+	argo submit workflows/s3-migrate.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+
+.PHONY: s3-verify
+s3-verify:
+	argo submit workflows/s3-verify.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
+
+.PHONY: efs-delete
+efs-delete:
+	argo submit workflows/efs-delete.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
 
 .PHONY: clean_js
 clean_js:

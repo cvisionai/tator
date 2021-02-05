@@ -1,9 +1,13 @@
+import os
 import logging
 from uuid import uuid1
+from urllib.parse import urlparse
 
 from rest_framework.authtoken.models import Token
+import requests
 
 from ..kube import TatorTranscode
+from ..s3 import TatorS3
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
@@ -28,6 +32,7 @@ class TranscodeAPI(BaseListView):
         gid = str(params['gid'])
         uid = params['uid']
         url = params['url']
+        upload_size = params.get('size')
         section = params['section']
         name = params['name']
         md5 = params['md5']
@@ -48,8 +53,29 @@ class TranscodeAPI(BaseListView):
             raise Exception(f"For project {project} given type {entity_type}, can not find a "
                              "destination media type")
 
-        # TODO: Get the file size of the uploaded blob (or remove pvc size computation)
-        upload_size = None
+        # Attempt to determine upload size. Only use size parameter if size cannot be determined.
+        parsed = urlparse(url)
+        same_object_host = f"{parsed.scheme}://{parsed.netloc}" == os.getenv('OBJECT_STORAGE_HOST')
+        same_main_host = parsed.netloc == os.getenv('MAIN_HOST')
+        if same_object_host or same_main_host:
+            # This is a presigned url for S3. Presigned urls do not allow HEAD requests, so parse
+            # out the object key and get object size via S3 api.
+            key = '/'.join(parsed.path.split('/')[-4:])
+            s3 = TatorS3().s3
+            response = s3.head_object(Bucket=os.getenv('BUCKET_NAME'), Key=key)
+            upload_size = response['ContentLength']
+        else:
+            # This is a normal url. Use HEAD request to obtain content length.
+            response = requests.head(url)
+            head_succeeded = False
+            if 'Content-Length' in response.headers:
+                head_size = int(response.headers['Content-Length'])
+                if head_size > 0:
+                    head_succeeded = True
+                    upload_size = head_size
+            if (upload_size is None) and (head_succeeded == False):
+                raise Exception("HEAD request failed. Supply `size` parameter to Transcode "
+                                "endpoint!")
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.

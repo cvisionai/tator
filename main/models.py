@@ -695,26 +695,12 @@ class Resource(Model):
             if os.path.islink(path_or_link):
                 path=os.readlink(path_or_link)
                 os.remove(path_or_link)
-        if path.startswith('/'):
-            try:
-                obj = Resource.objects.get(path=path)
-                if obj.media.all().count() == 0:
-                    logger.info(f"Deleting file {path}")
-                    obj.delete()
-                    os.remove(path)
-            except Resource.DoesNotExist as dne:
-                logger.info(f"Removing legacy resource {path}")
-                os.remove(path)
-            except Exception as e:
-                logger.error(f"{e} when lowering resource count of {path}")
-        else:
-            # This is an S3 object.
-            obj = Resource.objects.get(path=path)
-            if obj.media.all().count() == 0:
-                logger.info(f"Deleting object {path}")
-                obj.delete()
-                s3 = TatorS3().s3
-                s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
+        obj = Resource.objects.get(path=path)
+        if obj.media.all().count() == 0:
+            logger.info(f"Deleting object {path}")
+            obj.delete()
+            s3 = TatorS3().s3
+            s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
@@ -992,6 +978,9 @@ class Section(Model):
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
         to a "folder".
+    """
+    visible = BooleanField(default=True)
+    """ Whether this section should be displayed in the UI.
     """
 
 class Favorite(Model):

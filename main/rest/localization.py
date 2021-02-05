@@ -16,11 +16,12 @@ from ..search import TatorSearch
 from ..schema import LocalizationListSchema
 from ..schema import LocalizationDetailSchema
 from ..schema import parse
+from ..schema.components import localization as localization_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterMixin
+from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -30,7 +31,9 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class LocalizationListAPI(BaseListView, AttributeFilterMixin):
+LOCALIZATION_PROPERTIES = list(localization_schema['properties'].keys())
+
+class LocalizationListAPI(BaseListView):
     """ Interact with list of localizations.
 
         Localizations are shape annotations drawn on a video or image. They are currently of type
@@ -42,59 +45,15 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
     """
     schema = LocalizationListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = LocalizationType # Needed by attribute filter mixin
 
     def _get(self, params):
-        self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'operation', 'format', 'excludeParents','frame']
-        use_es = any([key not in postgres_params for key in params])
-
-        # Get the localization list.
-        if use_es:
-            response_data = []
-            annotation_ids, annotation_count, _ = get_annotation_queryset(
-                params['project'],
-                params,
-                'localization',
-            )
-            if self.operation == 'count':
-                response_data = {'count': len(annotation_ids)}
-            elif len(annotation_ids) > 0:
-                if params['excludeParents']:
-                    qs = Localization.objects.filter(pk__in=annotation_ids)
-                    parent_set = Localization.objects.filter(pk__in=Subquery(
-                        qs.values('parent')))
-                    result_set = qs.difference(parent_set).order_by('id')
-                    response_data = database_qs(result_set)
-                else:
-                    response_data = database_query_ids('main_localization',
-                                                       annotation_ids,
-                                                       'id')
-        else:
-            qs = Localization.objects.filter(project=params['project'])
-            if 'media_id' in params:
-                qs = qs.filter(media__in=params['media_id'])
-            if 'type' in params:
-                qs = qs.filter(meta=params['type'])
-            if 'version' in params:
-                qs = qs.filter(version__in=params['version'])
-            if 'frame' in params:
-                qs = qs.filter(frame=params['frame'])
-            # TODO: Remove modified parameter
-            qs = qs.exclude(modified=False)
-            if self.operation == 'count':
-                response_data = {'count': qs.count()}
-            else:
-                if params['excludeParents']:
-                    parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
-                    result_set = qs.difference(parent_set).order_by('id')
-                else:
-                    result_set = qs.order_by('id')
-                response_data = database_qs(result_set)
+        qs = get_annotation_queryset(self.kwargs['project'], params, 'localization')
+        response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 
         # Adjust fields for csv output.
-        if self.request.accepted_renderer.format == 'csv' and self.operation != 'count':
+        if self.request.accepted_renderer.format == 'csv':
             # CSV creation requires a bit more
             user_ids = set([d['user'] for d in response_data])
             users = list(User.objects.filter(id__in=user_ids).values('id','email'))
@@ -210,48 +169,38 @@ class LocalizationListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
 
     def _delete(self, params):
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, query = get_annotation_queryset(
-            params['project'],
-            params,
-            'localization',
-        )
-        if len(annotation_ids) > 0:
+        qs = get_annotation_queryset(params['project'], params, 'localization')
+        count = qs.count()
+        if count > 0:
             # Delete any state many to many relations to these localizations.
-            state_qs = State.localizations.through.objects.filter(localization__in=annotation_ids)
+            state_qs = State.localizations.through.objects.filter(localization__in=qs)
             state_qs._raw_delete(state_qs.db)
 
             # Delete the localizations.
-            qs = Localization.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
+            query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {len(annotation_ids)} localizations!'}
+        return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, query = get_annotation_queryset(
-            params['project'],
-            params,
-            'localization',
-        )
-        if len(annotation_ids) > 0:
-            qs = Localization.objects.filter(pk__in=annotation_ids)
+        qs = get_annotation_queryset(params['project'], params, 'localization')
+        count = qs.count()
+        if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             qs.update(modified_by=self.request.user)
+            query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-        return {'message': f'Successfully updated {len(annotation_ids)} localizations!'}
+        return {'message': f'Successfully updated {count} localizations!'}
 
-    def get_queryset(self):
-        params = parse(self.request)
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, _ = get_annotation_queryset(
-            params['project'],
-            params,
-            'localization',
-        )
-        queryset = Localization.objects.filter(pk__in=annotation_ids)
-        return queryset
+    def _put(self, params):
+        """ Retrieve list of localizations by ID.
+        """
+        response_data = []
+        ids = params['body']
+        if len(ids) > 0:
+            response_data = database_query_ids('main_localization', ids, 'id')
+        return response_data
 
 class LocalizationDetailAPI(BaseDetailView):
     """ Interact with single localization.

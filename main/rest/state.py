@@ -20,12 +20,12 @@ from ..schema import StateListSchema
 from ..schema import StateDetailSchema
 from ..schema import MergeStatesSchema
 from ..schema import TrimStateEndSchema
-from ..schema import parse
+from ..schema.components import state as state_schema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._attributes import AttributeFilterMixin
+from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -35,7 +35,30 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
-class StateListAPI(BaseListView, AttributeFilterMixin):
+STATE_PROPERTIES = list(state_schema['properties'].keys())
+STATE_PROPERTIES.pop(STATE_PROPERTIES.index('media'))
+STATE_PROPERTIES.pop(STATE_PROPERTIES.index('localizations'))
+
+def _fill_m2m(response_data):
+    # Get many to many fields.
+    state_ids = [state['id'] for state in response_data]
+    localizations = {obj['state_id']:obj['localizations'] for obj in
+        State.localizations.through.objects\
+        .filter(state__in=state_ids)\
+        .values('state_id').order_by('state_id')\
+        .annotate(localizations=ArrayAgg('localization_id')).iterator()}
+    media = {obj['state_id']:obj['media'] for obj in
+        State.media.through.objects\
+        .filter(state__in=state_ids)\
+        .values('state_id').order_by('state_id')\
+        .annotate(media=ArrayAgg('media_id')).iterator()}
+    # Copy many to many fields into response data.
+    for state in response_data:
+        state['localizations'] = localizations.get(state['id'], [])
+        state['media'] = media.get(state['id'], [])
+    return response_data
+
+class StateListAPI(BaseListView):
     """ Interact with list of states.
 
         A state is a description of a collection of other objects. The objects a state describes
@@ -53,62 +76,17 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
     """
     schema=StateListSchema()
     permission_classes = [ProjectEditPermission]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'put']
     entity_type = StateType # Needed by attribute filter mixin
 
     def _get(self, params):
-        self.validate_attribute_filter(params)
-        postgres_params = ['project', 'media_id', 'type', 'version', 'operation']
-        use_es = any([key not in postgres_params for key in params])
-
-        # Get the state list.
         t0 = datetime.datetime.now()
-        if use_es:
-            response_data = []
-            annotation_ids, annotation_count, _ = get_annotation_queryset(
-                params['project'],
-                params,
-                'state',
-            )
-            if self.operation == 'count':
-                response_data = {'count': len(annotation_ids)}
-            elif len(annotation_ids) > 0:
-                response_data = database_query_ids('main_state', annotation_ids, 'id')
+        qs = get_annotation_queryset(self.kwargs['project'], params, 'state')
+        response_data = list(qs.values(*STATE_PROPERTIES))
 
-        else:
-            qs = State.objects.filter(project=params['project'])
-            if 'media_id' in params:
-                qs = qs.filter(media__in=params['media_id'])
-            if 'type' in params:
-                qs = qs.filter(meta=params['type'])
-            if 'version' in params:
-                qs = qs.filter(version__in=params['version'])
-            # TODO: Remove modified parameter
-            qs = qs.exclude(modified=False)
-            if self.operation == 'count':
-                response_data = {'count': qs.count()}
-            else:
-                response_data = database_qs(qs.order_by('id'))
         t1 = datetime.datetime.now()
-        if self.operation != 'count':
-            # Get many to many fields.
-            state_ids = [state['id'] for state in response_data]
-            localizations = {obj['state_id']:obj['localizations'] for obj in
-                State.localizations.through.objects\
-                .filter(state__in=state_ids)\
-                .values('state_id').order_by('state_id')\
-                .annotate(localizations=ArrayAgg('localization_id')).iterator()}
-            media = {obj['state_id']:obj['media'] for obj in
-                State.media.through.objects\
-                .filter(state__in=state_ids)\
-                .values('state_id').order_by('state_id')\
-                .annotate(media=ArrayAgg('media_id')).iterator()}
-            # Copy many to many fields into response data.
-            for state in response_data:
-                state['localizations'] = localizations.get(state['id'], [])
-                state['media'] = media.get(state['id'], [])
+        response_data = _fill_m2m(response_data)
         if (self.request.accepted_renderer.format == 'csv'
-            and self.operation != 'count'
             and 'type' in params):
             type_object=StateType.objects.get(pk=params['type'])
             if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
@@ -247,53 +225,43 @@ class StateListAPI(BaseListView, AttributeFilterMixin):
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
 
     def _delete(self, params):
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, query = get_annotation_queryset(
-            params['project'],
-            params,
-            'state',
-        )
-        if len(annotation_ids) > 0:
+        qs = get_annotation_queryset(params['project'], params, 'state')
+        count = qs.count()
+        if count > 0:
             # Delete media many to many
-            media_qs = State.media.through.objects.filter(state__in=annotation_ids)
+            media_qs = State.media.through.objects.filter(state__in=qs)
             media_qs._raw_delete(media_qs.db)
 
             # Delete localization many to many
-            loc_qs = State.localizations.through.objects.filter(state__in=annotation_ids)
+            loc_qs = State.localizations.through.objects.filter(state__in=qs)
             loc_qs._raw_delete(loc_qs.db)
 
             # Delete states.
-            qs = State.objects.filter(pk__in=annotation_ids)
             qs._raw_delete(qs.db)
+            query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
-        return {'message': f'Successfully deleted {len(annotation_ids)} states!'}
+        return {'message': f'Successfully deleted {count} states!'}
 
     def _patch(self, params):
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, query = get_annotation_queryset(
-            params['project'],
-            params,
-            'state',
-        )
-        if len(annotation_ids) > 0:
-            qs = State.objects.filter(pk__in=annotation_ids)
+        qs = get_annotation_queryset(params['project'], params, 'state')
+        count = qs.count()
+        if count > 0:
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             qs.update(modified_by=self.request.user)
+            query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-        return {'message': f'Successfully updated {len(annotation_ids)} states!'}
+        return {'message': f'Successfully updated {count} states!'}
 
-    def get_queryset(self):
-        params = parse(self.request)
-        self.validate_attribute_filter(params)
-        annotation_ids, annotation_count, _ = get_annotation_queryset(
-            params['project'],
-            params,
-            'state',
-        )
-        queryset = State.objects.filter(pk__in=annotation_ids)
-        return queryset
-
+    def _put(self, params):
+        """ Retrieve list of states by ID.
+        """
+        response_data = []
+        ids = params['body']
+        if len(ids) > 0:
+            response_data = database_query_ids('main_state', ids, 'id')
+        response_data = _fill_m2m(response_data)
+        return response_data
 
 class StateDetailAPI(BaseDetailView):
     """ Interact with an individual state.

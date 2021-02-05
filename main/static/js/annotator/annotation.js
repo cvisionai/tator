@@ -701,6 +701,8 @@ class AnnotationCanvas extends TatorElement
        "color": "white",
        "background": "rgba(0,0,0,0.33)"};
     this._showTextOverlays = true;
+    this._gridRows = 0;
+    this._stretch = false;
 
     // Context menu (right-click): Tracks
     this._contextMenuTrack = document.createElement("canvas-context-menu");
@@ -773,6 +775,10 @@ class AnnotationCanvas extends TatorElement
     {
       console.warn("No offscreen canvas capability.");
     }
+  }
+
+  get contextMenuNone() {
+    return this._contextMenuNone;
   }
 
   set mediaType(val) {
@@ -927,6 +933,7 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[this.activeLocalization.id];
         this._activeTrack = track;
+        this._activeTrackFrame = this.currentFrame();
       }
     }
 
@@ -1062,6 +1069,29 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  // This function can be used to redo the guts of the openGL setup if one
+  // needs to. It can allow recovery from an openGL lost context.
+  reinitCanvas()
+  {
+    // Remove the old one
+    this._shadow.removeChild(this._canvas);
+    this._canvas=document.createElement("canvas");
+    this._canvas.setAttribute("class", "video");
+    this._canvas.style.zIndex = -1;
+    this._shadow.appendChild(this._canvas);
+
+    // Re-initalize openGL component
+    this._draw=new DrawGL(this._canvas);
+    this._dragHandler = new CanvasDrag(this,
+                                       this._canvas,
+                                       this._draw.displayToViewportScale.bind(this._draw),
+                                       this.dragHandler.bind(this));
+
+    // Set the canvas dimensions up correctly
+    this._draw.resizeViewport(this._dims[0], this._dims[1]);
+    this.refresh();
+  }
+
   resetRoi()
   {
     // Center zoom
@@ -1097,6 +1127,7 @@ class AnnotationCanvas extends TatorElement
 
   setupResizeHandler(dims, numGridRows, heightPadObject)
   {
+    this._gridRows = numGridRows;
     if (heightPadObject == null) {
       this.heightPadObject = {height: 175}; // Magic number here matching the header + footer
     }
@@ -1109,13 +1140,31 @@ class AnnotationCanvas extends TatorElement
     var resizeHandler = function()
     {
       var maxHeight;
-      if (numGridRows) {
-         maxHeight = (window.innerHeight - that.heightPadObject.height) / numGridRows;
+      if (that._gridRows) {
+        maxHeight = (window.innerHeight / that._gridRows) - that.heightPadObject.height;
       }
       else {
          maxHeight = window.innerHeight - that.heightPadObject.height;
       }
-      const maxWidth = maxHeight*ratio;
+      let maxWidth = maxHeight*ratio;
+
+      // If stretch mode is on, stretch the canvas
+      if (that._stretch)
+      {
+        let hStretch = (maxWidth/that._canvas.width);
+        let vStretch = (maxHeight/that._canvas.height);
+        if (hStretch > 1 || vStretch > 1)
+        {
+          that._canvas.width = maxWidth;
+          that._canvas.height = maxHeight;
+          that._draw.resizeViewport(maxWidth, maxHeight);
+        }
+      }
+      else
+      {
+        that._canvas.width = that._dims[0];
+        that._canvas.height = that._dims[1];
+      }
       that._canvas.style.maxHeight=`${maxHeight}px`;
       that.parentElement.style.maxWidth=`${maxWidth}px`;
       that._domParents.forEach(parent =>
@@ -1166,6 +1215,14 @@ class AnnotationCanvas extends TatorElement
 
   set mediaInfo(val) {
     this._mediaInfo = val;
+  }
+
+  set gridRows(val) {
+    this._gridRows = val;
+  }
+
+  set stretch(val) {
+    this._stretch = true;
   }
 
   set annotationData(val) {
@@ -2431,6 +2488,7 @@ class AnnotationCanvas extends TatorElement
     {
       const track = this._data._trackDb[localization.id];
       this._activeTrack = track
+      this._activeTrackFrame = this.currentFrame();
       this.dispatchEvent(new CustomEvent("select", {
         detail: track,
         composed: true,
@@ -2446,14 +2504,24 @@ class AnnotationCanvas extends TatorElement
   deselectTrack()
   {
     this._activeTrack = null;
+    this._activeTrackFrame = -1;
   }
 
   selectTrack(track, frameHint, skipGoToFrame)
   {
+
     let frame = frameHint;
     if (frame == undefined)
     {
       frame = track.segments[0][0];
+    }
+
+    // Checking against the active track prevents infinite recursion cases due to refreshes
+    // hitting the pause function and in turn hitting this method.
+    // Checking the frame allows the track slider work in the entity browser.
+    if (track == this._activeTrack && frame == this._activeTrackFrame)
+    {
+      return;
     }
 
     let trackSelectFunctor = () => {
@@ -2468,6 +2536,7 @@ class AnnotationCanvas extends TatorElement
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
                 this._activeTrack = track;
+                this._activeTrackFrame = frame;
                 return;
               }
             }
@@ -2531,6 +2600,7 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[localization.id];
         this._activeTrack = track
+        this._activeTrackFrame = this.currentFrame();
         this.dispatchEvent(new CustomEvent("select", {
           detail: track,
           composed: true,

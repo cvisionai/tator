@@ -38,7 +38,7 @@ class UploadInfoSchema(AutoSchema):
                     'schema': {'type': 'integer',
                                'minimum': 1,
                                'maximum': 86400,
-                               'default': 3600},
+                               'default': 86400},
                 },
                 {
                     'name': 'num_parts',

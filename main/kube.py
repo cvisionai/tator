@@ -45,20 +45,14 @@ def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return f"{num_megabytes}Mi"
 
+def spell_out_params(params):
+    yaml_params = [{"name": x} for x in params]
+    return yaml_params
+
 def get_client_image_name():
     """ Returns the location and version of the client image to use """
     registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
     return f"{registry}/tator_client:{Git.sha}"
-
-def get_wget_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/wget:{Git.sha}"
-
-def get_curl_image_name():
-    """ Returns the location and version of the client image to use """
-    registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
-    return f"{registry}/curl:{Git.sha}"
 
 def _get_api(cluster):
     """ Get custom objects api associated with a cluster specifier.
@@ -186,6 +180,27 @@ class JobManagerMixin:
             project = int(response['items'][0]['metadata']['labels']['project'])
         return project
 
+    def create_workflow(self, manifest):
+        # Create the workflow
+        for num_retries in range(MAX_SUBMIT_RETRIES):
+            try:
+                response = self.custom.create_namespaced_custom_object(
+                    group='argoproj.io',
+                    version='v1alpha1',
+                    namespace='default',
+                    plural='workflows',
+                    body=manifest,
+                )
+                break
+            except ApiException:
+                logger.info(f"Failed to submit workflow:")
+                logger.info(f"{manifest}")
+                time.sleep(SUBMIT_RETRY_BACKOFF)
+        if num_retries == (MAX_SUBMIT_RETRIES - 1):
+            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        return response
+
+
 class TatorTranscode(JobManagerMixin):
     """ Interface to kubernetes REST API for starting transcodes.
     """
@@ -219,27 +234,6 @@ class TatorTranscode(JobManagerMixin):
     def setup_common_steps(self):
         """ Sets up the basic steps for a transcode pipeline.
         """
-        # Setup common pipeline steps
-        # Define persistent volume claim.
-        self.pvc = {
-            'metadata': {
-                'name': 'transcode-scratch',
-            },
-            'spec': {
-                'storageClassName': _select_storage_class(),
-                'accessModes': [ 'ReadWriteOnce' ],
-                'resources': {
-                    'requests': {
-                        'storage': os.getenv("TRANSCODER_PVC_SIZE"),
-                    }
-                }
-            }
-        }
-
-        def spell_out_params(params):
-            yaml_params = [{"name": x} for x in params]
-            return yaml_params
-
         # Define each task in the pipeline.
 
         # Deletes the remote TUS file
@@ -251,7 +245,7 @@ class TatorTranscode(JobManagerMixin):
             'inputs': {'parameters' : spell_out_params(['url'])},
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
-                'image': '{{workflow.parameters.curl_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['curl',],
                 'args': ['-X', 'DELETE', '{{inputs.parameters.url}}'],
@@ -329,185 +323,6 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        self.create_media_task = {
-            'name': 'create-media',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters': spell_out_params(['entity_type', 'name', 'md5'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.create_media',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--project', '{{workflow.parameters.project}}',
-                         '--media_type', '{{inputs.parameters.entity_type}}',
-                         '--section', '{{workflow.parameters.section}}',
-                         '--name', '{{inputs.parameters.name}}',
-                         '--md5', '{{inputs.parameters.md5}}',
-                         '--gid', '{{workflow.parameters.gid}}',
-                         '--uid', '{{workflow.parameters.uid}}',
-                         '--attributes', '{{workflow.parameters.attributes}}',
-                         '--output', '/work/media_id.txt'],
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': '1Gi',
-                        'cpu': '250m',
-                    },
-                },
-            },
-            'outputs': {
-                'parameters': [{
-                    'name': 'media_id',
-                    'valueFrom': {'path': '/work/media_id.txt'},
-                }],
-            },
-        }
-
-        self.determine_transcode_task = {
-            'name': 'determine-transcode',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters': spell_out_params(['entity_type', 'original'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.determine_transcode',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--project', '{{workflow.parameters.project}}',
-                         '--media_type', '{{inputs.parameters.entity_type}}',
-                         '--output', '/work/workloads.json',
-                         '{{inputs.parameters.original}}'],
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
-                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
-                    },
-                },
-            },
-            'outputs': {
-                'parameters': [{
-                    'name': 'workloads',
-                    'valueFrom': {'path': '/work/workloads.json'},
-                }],
-            },
-        }
-
-        self.transcode_task = {
-            'name': 'transcode',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
-                                                        'category', 'raw_width', 'raw_height',
-                                                        'configs'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.transcode',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--media', '{{inputs.parameters.media}}',
-                         '--category', '{{inputs.parameters.category}}',
-                         '--raw_width', '{{inputs.parameters.raw_width}}',
-                         '--raw_height', '{{inputs.parameters.raw_height}}',
-                         '--configs', '{{inputs.parameters.configs}}',
-                         '--output', '{{inputs.parameters.transcoded}}',
-                         '--input', '{{inputs.parameters.original}}'],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
-                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
-                    },
-                },
-            },
-        }
-        self.thumbnail_task = {
-            'name': 'thumbnail',
-            'metadata': {
-                'labels': {'app': 'transcoder'},
-            },
-            'retryStrategy': {
-                'retryPolicy': 'Always',
-                'limit': 3,
-                'backoff': {
-                    'duration': '5s',
-                    'factor': 2
-                },
-            },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
-            'inputs': {'parameters' : spell_out_params(['original','thumbnail', 'thumbnail_gif', 'media'])},
-            'container': {
-                'image': '{{workflow.parameters.client_image}}',
-                'imagePullPolicy': 'IfNotPresent',
-                'command': ['python3',],
-                'args': ['-m', 'tator.transcode.make_thumbnails',
-                         '--host', '{{workflow.parameters.host}}',
-                         '--token', '{{workflow.parameters.token}}',
-                         '--media', '{{inputs.parameters.media}}',
-                         '--output', '{{inputs.parameters.thumbnail}}',
-                         '--gif', '{{inputs.parameters.thumbnail_gif}}',
-                         '{{inputs.parameters.original}}'],
-                'workingDir': '/scripts',
-                'volumeMounts': [{
-                    'name': 'transcode-scratch',
-                    'mountPath': '/work',
-                }],
-                'resources': {
-                    'limits': {
-                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
-                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
-                    },
-                },
-            },
-        }
-
         self.image_upload_task = {
             'name': 'image-upload',
             'metadata': {
@@ -552,6 +367,126 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+    def get_prepare_task(self, use_ram_disk):
+        prepare_task = {
+            'name': 'prepare',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': ['-m', 'tator.transcode.prepare',
+                         '--url', '{{workflow.parameters.url}}',
+                         '--work_dir', '/work',
+                         '--host', '{{workflow.parameters.host}}',
+                         '--token', '{{workflow.parameters.token}}',
+                         '--project', '{{workflow.parameters.project}}',
+                         '--type', '{{workflow.parameters.type}}',
+                         '--name', '{{workflow.parameters.upload_name}}',
+                         '--section', '{{workflow.parameters.section}}',
+                         '--gid', '{{workflow.parameters.gid}}',
+                         '--uid', '{{workflow.parameters.uid}}',
+                         '--attributes', '{{workflow.parameters.attributes}}',
+                         '--media_id', '{{workflow.parameters.media_id}}',
+                         '--size', '{{workflow.parameters.size}}',
+                ],
+                'workingDir': '/scripts',
+                'volumeMounts': [{
+                    'name': 'scratch-prepare',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
+                    },
+                },
+            },
+            'outputs': {
+                'parameters': [{
+                    'name': 'workloads',
+                    'valueFrom': {'path': '/work/workloads.json'},
+                }, {
+                    'name': 'media_id',
+                    'valueFrom': {'path': '/work/media_id.txt'},
+                }],
+            },
+        }
+        if use_ram_disk:
+            prepare_task['volumes'] = [{
+                'name': 'scratch-prepare',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }]
+        return prepare_task
+
+    def get_transcode_task(self, use_ram_disk):
+        transcode_task = {
+            'name': 'transcode',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
+                                                        'category', 'raw_width', 'raw_height',
+                                                        'configs', 'id'])},
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': ['-m', 'tator.transcode.transcode',
+                         '--url', '{{workflow.parameters.url}}',
+                         '--work_dir', '/work',
+                         '--host', '{{workflow.parameters.host}}',
+                         '--token', '{{workflow.parameters.token}}',
+                         '--media', '{{inputs.parameters.media}}',
+                         '--category', '{{inputs.parameters.category}}',
+                         '--raw_width', '{{inputs.parameters.raw_width}}',
+                         '--raw_height', '{{inputs.parameters.raw_height}}',
+                         '--configs', '{{inputs.parameters.configs}}',
+                         '--size', '{{workflow.parameters.size}}'],
+                'workingDir': '/scripts',
+                'volumeMounts': [{
+                    'name': 'scratch-{{inputs.parameters.id}}',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
+                    },
+                },
+            },
+        }
+        if use_ram_disk:
+            transcode_task['volumes'] = [{
+                'name': 'scratch-{{inputs.parameters.id}}',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }]
+        return transcode_task
+
     def get_download_task(self, headers=[]):
         # Download task exports the human readable filename a
         # workflow global to support the onExit handler
@@ -572,7 +507,7 @@ class TatorTranscode(JobManagerMixin):
                                        {'name': 'url'}]},
             'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
-                'image': '{{workflow.parameters.wget_image}}',
+                'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
                 'args': ['-O', '{{inputs.parameters.original}}'] + headers + \
@@ -583,8 +518,8 @@ class TatorTranscode(JobManagerMixin):
                 }],
                 'resources': {
                     'limits': {
-                        'memory': '1Gi',
-                        'cpu': '250m',
+                        'memory': '4Gi',
+                        'cpu': '1000m',
                     },
                 },
             },
@@ -700,19 +635,8 @@ class TatorTranscode(JobManagerMixin):
             'inputs': passthrough_parameters,
             'dag': {
                 'tasks': [{
-                    'name': 'thumbnail-task',
-                    'template': 'thumbnail',
-                    'arguments': {
-                        'parameters': passthrough_parameters['parameters'] + [{
-                            'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
-                                     if media_id is None else str(media_id),
-                        }],
-                    },
-                }, {
-                    'name': 'determine-transcode-task',
-                    'template': 'determine-transcode',
-                    'arguments': passthrough_parameters,
+                    'name': 'prepare-task',
+                    'template': 'prepare',
                 }, {
                     'name': 'transcode-task',
                     'template': 'transcode',
@@ -730,26 +654,21 @@ class TatorTranscode(JobManagerMixin):
                             'name': 'configs',
                             'value': '{{item.configs}}',
                         }, {
+                            'name': 'id',
+                            'value': '{{item.id}}',
+                        }, {
                             'name': 'media',
-                            'value': '{{tasks.create-media-task.outputs.parameters.media_id}}' \
+                            'value': '{{tasks.prepare-task.outputs.parameters.media_id}}' \
                                      if media_id is None else str(media_id),
                         }],
                     },
-                    'dependencies': ['thumbnail-task', 'determine-transcode-task'],
-                    'withParam': '{{tasks.determine-transcode-task.outputs.parameters.workloads}}',
+                    'dependencies': ['prepare-task'],
+                    'withParam': '{{tasks.prepare-task.outputs.parameters.workloads}}',
                 }],
             },
         }
-        if media_id is None:
-            pipeline_task['dag']['tasks'].insert(0, {
-                'name': 'create-media-task',
-                'template': 'create-media',
-                'arguments': passthrough_parameters,
-            })
-            pipeline_task['dag']['tasks'][1]['dependencies'] = ['create-media-task']
-
         return pipeline_task
-    def get_transcode_task(self, item, url):
+    def get_single_file_pipeline(self, item, url):
         """ Generate a task object describing the dependencies of a transcode """
         # Generate an args structure for the DAG
         args = [{'name': 'url', 'value': url}]
@@ -762,13 +681,9 @@ class TatorTranscode(JobManagerMixin):
             'dag': {
                 # First download, unpack and delete archive. Then Iterate over each video and upload
                 # Lastly iterate over all localization and state files.
-                'tasks' : [{'name': 'download-task',
-                            'template': 'download',
-                            'arguments': parameters},
-                            {'name': 'transcode-task',
+                'tasks' : [{'name': 'transcode-task',
                             'template': 'transcode-pipeline',
-                            'arguments' : parameters,
-                            'dependencies' : ['download-task']}]
+                            'arguments' : parameters}]
                 }
             }
 
@@ -796,28 +711,27 @@ class TatorTranscode(JobManagerMixin):
         if entity_type != -1:
             raise Exception("entity type is not -1!")
 
-        if upload_size:
-            rounded_size = upload_size * 4
-            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
+        pvc_size = bytes_to_mi_str(upload_size * 2.5)
 
         args = {'original': '/work/' + name,
                 'name': name}
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
+                       'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
                        'tus_url' : f'{host}/files/',
                        'project' : str(project),
+                       'type': '-1',
                        'token' : str(token),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name(),
-                       'attributes' : json.dumps(attributes)}
+                       'attributes' : json.dumps(attributes),
+                       'media_id': '-1'}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
@@ -841,18 +755,32 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'unpack-pipeline',
+                'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
+                'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
-                                'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [self.pvc],
+                                'secondsAfterFailure': 86400,
+                                'secondsAfterCompletion': 86400},
+                'volumeClaimTemplates': [{
+                    'metadata': {
+                        'name': 'transcode-scratch',
+                    },
+                    'spec': {
+                        'storageClassName': _select_storage_class(),
+                        'accessModes': [ 'ReadWriteOnce' ],
+                        'resources': {
+                            'requests': {
+                                'storage': pvc_size,
+                            }
+                        }
+                    }
+                }],
                 'parallelism': 4,
                 'templates': [
+                    self.get_prepare_task(False),
                     self.get_download_task(),
                     self.delete_task,
-                    self.create_media_task,
-                    self.determine_transcode_task,
-                    self.transcode_task,
-                    self.thumbnail_task,
+                    self.get_transcode_task(False),
                     self.image_upload_task,
                     self.unpack_task,
                     self.get_transcode_dag(),
@@ -863,28 +791,14 @@ class TatorTranscode(JobManagerMixin):
         }
 
         # Create the workflow
-        for num_retries in range(MAX_SUBMIT_RETRIES):
-            try:
-                response = self.custom.create_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    body=manifest,
-                )
-                break
-            except ApiException:
-                logger.info(f"Failed to submit workflow:")
-                logger.info(f"{manifest}")
-                time.sleep(SUBMIT_RETRY_BACKOFF)
-        if num_retries == (MAX_SUBMIT_RETRIES - 1):
-            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        response = self.create_workflow(manifest)
 
     def start_transcode(self, project,
                         entity_type, token, url, name,
                         section, md5, gid, uid,
                         user, upload_size,
                         attributes, media_id):
+        MAX_WORKLOADS = 7 # 5 resolutions + audio + archival
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -900,29 +814,42 @@ class TatorTranscode(JobManagerMixin):
             'name': name
         }
 
-        if upload_size:
-            rounded_size = upload_size * 4
-            self.pvc['spec']['resources']['requests']['storage'] = bytes_to_mi_str(rounded_size)
+        # Determine whether to use RAM disks (smaller files) or PVCs (larger files)
+        pvc_bytes = upload_size * 2.5
+        pvc_size = bytes_to_mi_str(pvc_bytes)
+        max_ram_disk_size = os.getenv('TRANSCODER_MAX_RAM_DISK_SIZE')
+        unit = max_ram_disk_size[-2:]
+        ram_disk_bytes = int(max_ram_disk_size[:-2])
+        if unit == 'Mi':
+            ram_disk_bytes *= 1024 * 1024
+        elif unit == 'Gi':
+            ram_disk_bytes *= 1024 * 1024 * 1024
+        else:
+            raise ValueError('Max RAM disk size units must be Mi or Gi!')
+        use_ram_disk = pvc_bytes < ram_disk_bytes
+        logger.info(f"Scratch space requirements for {name}: {pvc_size}, using RAM disk: {use_ram_disk}")
 
         docker_registry = os.getenv('SYSTEM_IMAGES_REGISTRY')
         host = f'{PROTO}{os.getenv("MAIN_HOST")}'
         global_args = {'upload_name': name,
+                       'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
                        'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
+                       'type': str(entity_type),
                        'section' : section,
                        'gid': gid,
                        'uid': uid,
                        'user': str(user),
                        'client_image' : get_client_image_name(),
-                       'wget_image' : get_wget_image_name(),
-                       'curl_image' : get_curl_image_name(),
-                       'attributes' : json.dumps(attributes)}
+                       'attributes' : json.dumps(attributes),
+                       'media_id': '-1' if media_id is None else str(media_id),
+                       'size': str(upload_size)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
-        pipeline_task = self.get_transcode_task(args, url)
+        pipeline_task = self.get_single_file_pipeline(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -943,31 +870,39 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'single-file-pipeline',
+                'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
+                'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
                 'ttlStrategy': {'secondsAfterSuccess': 300,
-                                'secondsAfterFailure': 86400},
-                'volumeClaimTemplates': [self.pvc],
+                                'secondsAfterFailure': 86400,
+                                'secondsAfterCompletion': 86400},
                 'templates': [
-                    self.get_download_task(),
-                    self.create_media_task,
-                    self.determine_transcode_task,
-                    self.transcode_task,
-                    self.thumbnail_task,
-                    self.image_upload_task,
+                    self.get_prepare_task(use_ram_disk),
+                    self.get_transcode_task(use_ram_disk),
                     self.get_transcode_dag(media_id),
                     pipeline_task,
                 ],
             },
         }
 
+        if not use_ram_disk:
+            manifest['spec']['volumeClaimTemplates'] = [{
+                'metadata': {
+                    'name': f'scratch-{workload}',
+                },
+                'spec': {
+                    'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
+                    'accessModes': [ 'ReadWriteOnce' ],
+                    'resources': {
+                        'requests': {
+                            'storage': pvc_size,
+                        }
+                    }
+                }
+            } for workload in ['prepare'] + list(range(MAX_WORKLOADS))]
+
         # Create the workflow
-        response = self.custom.create_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            body=manifest,
-        )
+        response = self.create_workflow(manifest)
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,
@@ -1087,22 +1022,7 @@ class TatorAlgorithm(JobManagerMixin):
             'media_ids': media_ids,
         }
 
-        for num_retries in range(MAX_SUBMIT_RETRIES):
-            try:
-                response = self.custom.create_namespaced_custom_object(
-                    group='argoproj.io',
-                    version='v1alpha1',
-                    namespace='default',
-                    plural='workflows',
-                    body=manifest,
-                )
-                break
-            except ApiException:
-                logger.info(f"Failed to submit workflow:")
-                logger.info(f"{manifest}")
-                time.sleep(SUBMIT_RETRY_BACKOFF)
-        if num_retries == (MAX_SUBMIT_RETRIES - 1):
-            raise Exception(f"Failed to submit workflow {MAX_SUBMIT_RETRIES} times!")
+        response = self.create_workflow(manifest)
 
         # Cache the job for cancellation/authentication.
         TatorCache().set_job({'uid': uid,

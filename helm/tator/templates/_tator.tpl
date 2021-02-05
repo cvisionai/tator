@@ -109,12 +109,14 @@ spec:
               {{- else }}
               value: "FALSE"
               {{- end }}
-            - name: TRANSCODER_PVC_SIZE
-              value: {{ .Values.transcoderPvcSize | default "10Gi" | quote }}
+            - name: TRANSCODER_MAX_RAM_DISK_SIZE
+              value: {{ .Values.transcoderMaxRamDiskSize | default "8Gi" | quote }}
             - name: TRANSCODER_CPU_LIMIT
               value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
             - name: TRANSCODER_MEMORY_LIMIT
-              value: {{ .Values.transcoderMemoryLimit | default "16Gi" | quote }}
+              value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
+            - name: POD_GC_STRATEGY
+              value: {{ .Values.podGCStrategy | default "OnPodCompletion" | quote }}
             - name: WORKFLOW_STORAGE_CLASSES
               {{- if hasKey .Values "workflowStorageClasses" }}
               {{- $storage_classes := "" }}
@@ -127,6 +129,8 @@ spec:
               {{- else }}
               value: nfs-client
               {{- end }}
+            - name: SCRATCH_STORAGE_CLASS
+              value: {{ .Values.scratchStorageClass | default "nfs-client" | quote }}
             {{- if hasKey .Values "slackToken" }}
             - name: TATOR_SLACK_TOKEN
               valueFrom:
@@ -138,6 +142,21 @@ spec:
                 secretKeyRef:
                   name: tator-secrets
                   key: slackChannel
+            {{- end }}
+            {{- if .Values.email.enabled }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "true"
+            - name: TATOR_EMAIL_SENDER
+              value: {{ .Values.email.sender }}
+            - name: TATOR_EMAIL_AWS_REGION
+              value: {{ .Values.email.aws_region }}
+            - name: TATOR_EMAIL_AWS_ACCESS_KEY_ID
+              value: {{ .Values.email.aws_access_key_id }}
+            - name: TATOR_EMAIL_AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.email.aws_secret_access_key }}
+            {{- else }}
+            - name: TATOR_EMAIL_ENABLED
+              value: "false"
             {{- end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - name: REMOTE_TRANSCODE_HOST
@@ -156,26 +175,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if hasKey .Values.pv "mediaShards" }}
-            {{- $media_shards := "" }}
-            {{- range .Values.pv.mediaShards }}
-            {{- $media_shards = cat $media_shards "," .name }}
-            {{- end }}
-            {{- $media_shards = nospace $media_shards }}
-            {{- $media_shards = trimPrefix "," $media_shards }}
-            - name: MEDIA_SHARDS
-              value: {{ $media_shards }}
-            {{- end }}
-            {{- if hasKey .Values.pv "uploadShards" }}
-            {{- $upload_shards := "" }}
-            {{- range .Values.pv.uploadShards }}
-            {{- $upload_shards = cat $upload_shards "," .name }}
-            {{- end }}
-            {{- $upload_shards = nospace $upload_shards }}
-            {{- $upload_shards = trimPrefix "," $upload_shards }}
-            - name: UPLOAD_SHARDS
-              value: {{ $upload_shards }}
-            {{- end }}
           ports:
             - containerPort: 8000
               name: gunicorn

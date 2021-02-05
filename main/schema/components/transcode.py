@@ -27,6 +27,13 @@ transcode_spec = {
             'description': 'Upload URL for the raw video.',
             'type': 'string',
         },
+        'size': {
+            'description': 'Size of the file in bytes. This parameter is required if '
+                           'the supplied URL is external (not produced by `DownloadInfo` '
+                           'and cannot accept HEAD requests.',
+            'type': 'integer',
+            'minimum': 0,
+        },
         'section': {
             'description': 'Media section name to upload to.',
             'type': 'string',

@@ -97,6 +97,9 @@ kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's
 
 If there are migrations or changes to the image, it's necessary to run `make cluster-upgrade`.
 
+`cluster-upgrade` will check to see if a migration will occur, and prompt the user. If this feature is not desired, such as in an automated build fixture, the
+environment variable `TATOR_ALWAYS_MIGRATE` can be set to `1`.
+
 ## Viewing logs
 
 To view REST logs, run `make gunicorn-logs`:

@@ -108,7 +108,7 @@ def create_test_bookmark(name, project, user):
 def create_test_image_file():
     this_path = os.path.dirname(os.path.abspath(__file__))
     img_path = os.path.join(this_path, 'static', 'images',
-                            'cvision_horizontal.png')
+                            'tator-logo.png')
     return SimpleUploadedFile(name='test.png',
                               content=open(img_path, 'rb').read(),
                               content_type='image/png')

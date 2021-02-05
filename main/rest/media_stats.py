@@ -1,11 +1,13 @@
 from collections import defaultdict
 
+from django.db.models import Sum
+
 from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaStatsSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
+from ._media_query import get_media_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 class MediaStatsAPI(BaseDetailView):
@@ -21,7 +23,7 @@ class MediaStatsAPI(BaseDetailView):
     def _get(self, params):
         
         # Get query associated with media filters.
-        _, _, query = get_media_queryset(params['project'], params, dry_run=True)
+        query = get_media_es_query(params['project'], params)
 
         # Update query with aggregations.
         query['aggs']['download_size'] = {'sum': {'field': '_download_size'}}

@@ -66,6 +66,11 @@
   box-sizing: border-box;
   margin-bottom: $spacing-4;
   width: 95%;
+
+  &.fixed-heigh-scroll{
+    max-height: 300px;
+    overflow-y: scroll;
+  }
 }
 
 .modal__footer {
@@ -93,6 +98,10 @@
 .modal__map {
   height: 50vh;
   width: 100%;
+}
+
+.modal__errors {
+  margin-top: $spacing-2;
 }
 
 .loading {

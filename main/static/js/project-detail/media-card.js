@@ -51,13 +51,14 @@ class MediaCard extends TatorElement {
     });
 
     this._more.addEventListener("algorithmMenu", evt => {
-      this.dispatchEvent(new CustomEvent("algorithm", {
-        detail: {
-          mediaIds: [Number(this.getAttribute("media-id"))],
-          algorithmName: evt.detail.algorithmName
-        },
-        composed: true
-      }));
+      this.dispatchEvent(
+        new CustomEvent("runAlgorithm",
+          {composed: true,
+          detail: {
+            algorithmName: evt.detail.algorithmName,
+            mediaIds: [Number(this.getAttribute("media-id"))],
+            projectId: this._more._project.id,
+          }}));
     });
 
     this._more.addEventListener("annotations", evt => {
@@ -186,11 +187,7 @@ class MediaCard extends TatorElement {
     this._media = val;
     this._more.media = val;
     let valid = false;
-    if (this._media.file != '')
-    {
-      valid = true;
-    }
-    else if (this._media.media_files)
+    if (this._media.media_files)
     {
       if ('streaming' in this._media.media_files ||
           'layout' in this._media.media_files ||
