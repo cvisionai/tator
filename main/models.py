@@ -698,8 +698,6 @@ class Resource(Model):
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    if instance.file and created:
-        Resource.add_resource(instance.file.path, instance)
     if instance.media_files and created:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
             for fp in instance.media_files.get(key, []):
@@ -735,12 +733,6 @@ def media_delete(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
-    if instance.file:
-        safe_delete(instance.file.path)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
@@ -753,8 +745,6 @@ def media_post_delete(sender, instance, **kwargs):
                 if key == 'streaming':
                     path = obj['segment_info']
                     safe_delete(path)
-    instance.thumbnail.delete(False)
-    instance.thumbnail_gif.delete(False)
 
 class Localization(Model):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
