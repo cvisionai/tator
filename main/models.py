@@ -18,7 +18,6 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import FileField
 from django.contrib.gis.db.models import FilePathField
-from django.contrib.gis.db.models import ImageField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
@@ -653,23 +652,17 @@ class Media(Model):
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
-    file = FileField(null=True, blank=True)
     last_edit_start = DateTimeField(null=True, blank=True)
     """ Start datetime of a session in which the media's annotations were edited.
     """
     last_edit_end = DateTimeField(null=True, blank=True)
     """ End datetime of a session in which the media's annotations were edited.
     """
-    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    thumbnail = ImageField(null=True, blank=True)
-    thumbnail_gif = ImageField(null=True, blank=True)
     num_frames = IntegerField(null=True, blank=True)
     fps = FloatField(null=True, blank=True)
     codec = CharField(null=True, blank=True, max_length=256)
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
-                                 blank=True)
     media_files = JSONField(null=True, blank=True)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
