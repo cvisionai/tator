@@ -43,38 +43,20 @@ def mediaFileSizes(file):
     s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
 
-    if file.thumbnail:
-        if os.path.exists(file.thumbnail.path):
-            total_size += file.thumbnail.size
-    if file.meta.dtype == 'video':
-        if file.media_files:
-            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
-                if key in file.media_files:
-                    for media_def in file.media_files[key]:
-                        size = _path_size(media_def['path'], s3, bucket_name)
-                        total_size += size
-                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
-                            download_size = size
-                        if key == 'streaming':
-                            try:
-                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
-                            except:
-                                logger.warning(f"Media {file.id} does not have a segment file "
-                                               f"definition {media_def['path']}!")
-        if file.original:
-            if os.path.exists(file.original):
-                statinfo = os.stat(file.original)
-                total_size += statinfo.st_size
-                if download_size is None:
-                    download_size = statinfo.st_size
-        if file.thumbnail_gif:
-            if os.path.exists(file.thumbnail_gif.path):
-                total_size += file.thumbnail_gif.size
-    if file.file:
-        if os.path.exists(file.file.path):
-            total_size += file.file.size
-            if download_size is None:
-                download_size = file.file.size
+    if file.media_files:
+        for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+            if key in file.media_files:
+                for media_def in file.media_files[key]:
+                    size = _path_size(media_def['path'], s3, bucket_name)
+                    total_size += size
+                    if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                        download_size = size
+                    if key == 'streaming':
+                        try:
+                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                        except:
+                            logger.warning(f"Media {file.id} does not have a segment file "
+                                           f"definition {media_def['path']}!")
     return (total_size, download_size)
 
 def drop_dupes(ids):
