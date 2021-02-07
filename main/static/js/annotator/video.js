@@ -99,7 +99,7 @@ class VideoBufferDemux
       {
         console.info("Applying pending seek data.");
         var pending = this._pendingSeeks.shift();
-        this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
+        this.appendSeekBuffer(pending.data, pending.time);
       }
     };
 
@@ -115,6 +115,7 @@ class VideoBufferDemux
     // Create another video buffer specifically used for onDemand playback
     // #TODO Verify just one buffer is enough for onDemand playback
     this._onDemandBufferIndex = this._numBuffers;
+    this._pendingOnDemandDeletes = [];
 
     this._init = false;
     this._dataLag = [];
@@ -282,46 +283,14 @@ class VideoBufferDemux
 
       // Note: The way it's setup right now, there should only be a continuous range
       //       But we'll keep the for loop for now.
-      var secondsBufferedBeforePlay = 5;
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
         var start = ranges.start(rangeIdx);
         var end = ranges.end(rangeIdx);
 
-        // Is the given time within this range? 
-        // Yes -> 
-        //    Is there enough data buffered? #TODO Maybe this should be moved out of this func?
-        //      Yes -> Return this video element 
-        //      No -> Is the data near the edge of the video?
-        //              Yes -> Return this video element
-        //              No -> Ignore this range
-        // No -> Ignore this range
-        var totalTime = end - start;
-        var nearVideoEdgeThreshold = 2; // seconds
-
         if (time >= start && time <= end)
         {
-          if (totalTime >= secondsBufferedBeforePlay)
-          {
-            return this._vidBuffers[this._onDemandBufferIndex];
-          }
-          else
-          {
-            if (direction == Direction.FORWARD)
-            {
-              if (time + nearVideoEdgeThreshold > maxTime)
-              {
-                return this._vidBuffers[this._onDemandBufferIndex];
-              }
-            }
-            else
-            {
-              if (time - nearVideoEdgeThreshold < 0)
-              {
-                return this._vidBuffers[this._onDemandBufferIndex];
-              }
-            }
-          }
+          return this._vidBuffers[this._onDemandBufferIndex];
         }
       }
     }
@@ -376,14 +345,72 @@ class VideoBufferDemux
   }
 
   /**
-   * Removes the given range from the play buffer
-   *
-   * @param {float} start - seconds
-   * @param {float} end - seconds
+   * Queues the requests to delete buffered onDemand video ranges
    */
-  removeTimeFromPlayBuffer(start, end)
+  resetOnDemandBuffer()
   {
-    this._sourceBuffers[this._onDemandBufferIndex].remove(start, end);
+    const video = this.playBuffer();
+    this._pendingOnDemandDeletes = [];
+    for (var rangeIdx = 0; rangeIdx < video.buffered.length; rangeIdx++)
+    {
+      let start = video.buffered.start(rangeIdx);
+      let end = video.buffered.end(rangeIdx);
+      this.deletePendingOnDemand([start, end]);
+    }
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer has no data
+   */
+  isOnDemandBufferCleared()
+  {
+    const video = this.playBuffer();
+    return video.buffered.length == 0;
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer is busy
+   */
+  isOnDemandBufferBusy()
+  {
+    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
+    return buffer.updating;
+  }
+
+  /**
+   * If there are any pending deletes for the onDemand buffer, this will rotate through
+   * them and delete them
+   */
+  cleanOnDemandBuffer()
+  {
+    if (this._pendingOnDemandDeletes.length > 0)
+    {
+      var pending = this._pendingOnDemandDeletes.shift();
+      this.deletePendingOnDemand(pending.delete_range);
+    }
+  }
+
+  /**
+   * Removes the given range from the play buffer
+   * @param {tuple} delete_range - start/end (seconds)
+   */
+  deletePendingOnDemand(delete_range)
+  {
+    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
+    if (buffer.updating == false)
+    {
+      buffer.onupdateend = () => {
+        buffer.onupdatedend = null;
+        this.cleanOnDemandBuffer();
+      };
+
+      buffer.remove(delete_range[0], delete_range[1]);
+    }
+    else
+    {
+      this._pendingOnDemandDeletes.push(
+        {"delete_range": delete_range});
+    }
   }
 
   seekBuffer()
@@ -484,17 +511,24 @@ class VideoBufferDemux
     return promise;
   }
 
-
+  /**
+   * If there are any pending deletes for the seek buffer, this will rotate through them
+   * and delete them
+   */
   cleanSeekBuffer()
   {
     if (this._pendingSeekDeletes.length > 0)
     {
       var pending = this._pendingSeekDeletes.shift();
-      this.deletePendingSeeks(pending.data, pending.time, pending.delete_range);
+      this.deletePendingSeeks(pending.delete_range);
     }
   }
 
-  deletePendingSeeks(data, time=undefined, delete_range=undefined)
+  /**
+   * Removes the given start/end time segment from the seek buffer
+   * @param {*} delete_range
+   */
+  deletePendingSeeks(delete_range=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
@@ -515,12 +549,10 @@ class VideoBufferDemux
     else
     {
       this._pendingSeekDeletes.push(
-        {'data': data,
-         'time': time,
-         'delete_range': delete_range});
+        {'delete_range': delete_range});
     }
   }
-  appendSeekBuffer(data, time=undefined, delete_range=undefined)
+  appendSeekBuffer(data, time=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
@@ -566,8 +598,7 @@ class VideoBufferDemux
     else
     {
       this._pendingSeeks.push({'data': data,
-                               'time': time,
-                               'delete_range': delete_range});
+                               'time': time});
     }
   }
 
@@ -683,7 +714,6 @@ class VideoBufferDemux
       setTimeout(callback, 0);
       return;
     }
-    console.info(`VIDEO: Updating all buffers with ${data.byteLength}`)
     var semaphore = this._numBuffers;
     var wrapper = function()
     {
@@ -1156,7 +1186,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           if (idx == offsets.length)
           {
-            if (e.data["buf_idx"] == that._play_idx)
+            if (e.data["buf_idx"] == that._scrub_idx)
             {
               that.dispatchEvent(new CustomEvent("bufferLoaded",
                                                 {composed: true,
@@ -1186,7 +1216,7 @@ class VideoCanvas extends AnnotationCanvas {
         {
           that._startBias = e.data["startBias"];
           that._videoVersion = e.data["version"];
-          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._play_idx}`);
+          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._scrub_idx}`);
           console.info("Setting hi performance mode");
           guiFPS = 60;
         }
@@ -1204,12 +1234,13 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "onDemandInit")
       {
-        // Download worker is in onDemand mode now
+        // Download worker's onDemand mode is ready
         that._onDemandInit = true;
       }
       else if (type == "onDemandFinished")
       {
-        console.log("onDemand finished downloading. Reached end of video.")
+        //console.log("onDemand finished downloading. Reached end of video.");
+        that._onDemandFinished = true;
       }
       else if (type == "onDemand")
       {
@@ -1267,10 +1298,11 @@ class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
-          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx)
+          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx && that._onDemandInit)
           {
             // Done processing the downloaded segment.
             // Watchdog will kick off the next segment to download.
+            that._onDemandPendingDownloads -= 1;
             return;
           }
           else
@@ -1588,7 +1620,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       ended = true;
     }
-    else if (this._direction == Direction.BACKARDS &&
+    else if (this._direction == Direction.BACKWARDS &&
              this._dispFrame <= 0)
     {
       ended = true;
@@ -1603,7 +1635,7 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   /**
-   * Pushes the frame stored in the sourcebuffer into the drawGL buffer
+   * Pushes the frame stored in the given source into the drawGL buffer
    *
    * @param {integer} frameIdx - Frame number
    * @param {array} source - Array of bytes representing the frame image
@@ -1666,8 +1698,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     if (bufferType == "seek")
     {
-      //return this._videoElement[this._hq_idx].returnSeekIfPresent(time, direction);
-      return null; // #TODO This automatically forces a request for data
+      return this._videoElement[this._hq_idx].returnSeekIfPresent(time, direction);
     }
     else if (bufferType == "play")
     {
@@ -2119,9 +2150,15 @@ class VideoCanvas extends AnnotationCanvas {
     // Set the onDemand watchdog download thread
     // This will request to download segments if needed
     this._onDemandInit = false;
-    this._onDemandInitCheck = 10;
+    this._onDemandInitSent = false;
+    this._onDemandPlaybackReady = false;
+    this._onDemandFinished = false;
+    this._loaderStarted = false;
     var onDemandDownload = function (_)
     {
+      const video = that._videoElement[that._play_idx];
+      const ranges = video.playBuffer().buffered;
+
       var downloadDirection;
       if (direction == Direction.FORWARD)
       {
@@ -2132,16 +2169,16 @@ class VideoCanvas extends AnnotationCanvas {
         downloadDirection = "backward";
       }
 
-      if (!that._onDemandInit)
+      if (!that._onDemandInit && !that._onDemandInitSent)
       {
-        if (that._onDemandInitCheck < 10) // #TODO Is this necessary now?
+        // Have not initialized yet.
+        // Send out the onDemandInit only if the buffer is clear. Otherwise, reset the
+        // underlying source buffer.
+        if (ranges.length == 0 && !video.isOnDemandBufferBusy())
         {
-          that._onDemandInitCheck++;
-        }
-        else
-        {
-          that._onDemandInitCheck = 0;
-
+          that._onDemandPendingDownloads = 0;
+          //console.log("Sending onDemandInit to downloader")
+          that._onDemandInitSent = true;
           that._dlWorker.postMessage(
             {
               "type": "onDemandInit",
@@ -2151,35 +2188,67 @@ class VideoCanvas extends AnnotationCanvas {
             }
           );
         }
+        else
+        {
+          if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
+          {
+            //console.log("Resetting onDemand buffer")
+            video.resetOnDemandBuffer();
+          }
+        }
       }
       else
       {
-        // Look at how much time is stored in the buffer and where we currently are.
-        // If we are within X seconds of the end of the buffer, drop the frames before
-        // the current one and start downloading again.
-        var needMoreData = false;
-        var trimData = false;
-        const video = that._videoElement[that._play_idx];
-        const ranges = video.playBuffer().buffered;
-        const currentTime = that.frameToTime(that._dispFrame);
-        const appendThreshold = 10; // Seconds #TODO Is it possible to make this configurable?
-        const bufferSizeThreshold = appendThreshold + 1;
-
-        if (ranges.length > 1)
+        // Stop if we've reached the end
+        if (direction == Direction.FORWARD)
         {
-          console.warn("Expected only one range for the onDemand buffer!");
-        }
-        else if (ranges.length == 0)
-        {
-          needMoreData = true; // No data in the buffer, big surprise - need more data.
+          if (that._numFrames == that._dispFrame)
+          {
+            return;
+          }
         }
         else
         {
+          if (that._dispFrame == 0)
+          {
+            return;
+          }
+        }
+
+        // Look at how much time is stored in the buffer and where we currently are.
+        // If we are within X seconds of the end of the buffer, drop the frames before
+        // the current one and start downloading again.
+        //console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
+
+        var needMoreData = false;
+        if (ranges.length == 0)
+        {
+          // No data in the buffer, big surprise - need more data.
+          needMoreData = true;
+        }
+        else
+        {
+          const currentTime = that.frameToTime(that._dispFrame);
+          const appendThreshold = 10; // Seconds #TODO Is it possible to make this configurable?
+
+          // Adjust the playback threshold if we're close to the edge of the video
+          var playbackReadyThreshold = 5; // Seconds
+          const totalVideoTime = that.frameToTime(that._numFrames);
+          if (direction == Direction.FORWARD &&
+            (totalVideoTime - currentTime < playbackReadyThreshold))
+          {
+            playbackReadyThreshold = 0;
+          }
+          else if (direction == Direction.BACKWARDS &&
+              (currentTime < playbackReadyThreshold))
+          {
+            playbackReadyThreshold = 0;
+          }
+
           for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
           {
             var end = ranges.end(rangeIdx);
             var start = ranges.start(rangeIdx);
-            var bufferedTime = end - start;
 
             if (direction == Direction.FORWARD)
             {
@@ -2187,68 +2256,81 @@ class VideoCanvas extends AnnotationCanvas {
             }
             else
             {
-              // Moving backward, so the calculations have to look at the start as the endpoint
-              // we care about.
               var timeToEnd = currentTime - start;
             }
 
-            if (timeToEnd < appendThreshold)
+            if (currentTime <= end && currentTime >= start)
             {
-              needMoreData = true;
-            }
-
-            if (bufferedTime > bufferSizeThreshold)
-            {
-              trimData = true;
-            }
-
-            console.log(`(start/end/current/timeToEnd/bufferedTime): ${start} ${end} ${currentTime} ${timeToEnd} ${bufferedTime}`)
-          }
-        }
-
-        if (needMoreData)
-        {
-          console.log("Requesting more onDemand data");
-
-          if (trimData)
-          {
-            console.log(`...Buffer start/end/currentTime: ${start} ${end} ${currentTime}`);
-
-            if (direction == Direction.FORWARD)
-            {
-              var trimEnd = currentTime - 5;
-              if (trimEnd > start)
+              if (timeToEnd > playbackReadyThreshold)
               {
-                console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
-                video.removeTimeFromPlayBuffer(start, trimEnd);
+                // Enough data to start playback
+                that._onDemandPlaybackReady = true;
+              }
+
+              if (timeToEnd < appendThreshold && that._onDemandPendingDownloads < 1)
+              {
+                // Need to download more video playback data
+                // Since we are requesting more data, trim the buffer
+                needMoreData = true;
+
+                if (direction == Direction.FORWARD)
+                {
+                  var trimEnd = currentTime - 2;
+                  if (trimEnd > start)
+                  {
+                    //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                    video.deletePendingOnDemand([start, trimEnd]);
+                  }
+                }
+                else
+                {
+                  var trimEnd = currentTime + 2;
+                  if (trimEnd < end)
+                  {
+                    //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                    video.deletePendingOnDemand([trimEnd, end]);
+                  }
+                }
               }
             }
             else
             {
-              var trimEnd = currentTime + 5;
-              if (trimEnd < end)
-              {
-                console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
-                video.removeTimeFromPlayBuffer(trimEnd, end);
-              }
+              console.warn("Video playback buffer range not overlapping currentTime");
             }
-          }
 
+            //console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
+          }
+        }
+
+        if (needMoreData && !that._onDemandFinished)
+        {
           // Kick of the download worker to get the next onDemand segments
+          //console.log("Requesting more onDemand data");
+          that._onDemandPendingDownloads += 1;
           that._dlWorker.postMessage({"type": "onDemandDownload"});
+        }
+
+        // Clear out unecessary parts of the video if there are pending deletes
+        video.cleanOnDemandBuffer();
+
+        // Kick off the loader thread once we have buffered enough data (do this just once)
+        if (that._onDemandPlaybackReady && !that._loaderStarted)
+        {
+          that._loaderStarted = true;
+          that._loaderTimeout = setTimeout(loader, 250);
         }
       }
 
-      // Sleep for a period before checking the onDemand status again
-      const onDemandDownloadRate = 250; // ms
-      that._onDemandDownloadTimeout = setTimeout(onDemandDownload, onDemandDownloadRate);
+      if (!that._onDemandFinished)
+      {
+        // Sleep for a period before checking the onDemand buffer again
+        const onDemandDownloadRate = 250; // ms
+        that._onDemandDownloadTimeout = setTimeout(onDemandDownload, onDemandDownloadRate);
+      }
     }
 
-    // Kick off the onDemand thread
+    // Kick off the onDemand thread immediately
     this._onDemandDownloadTimeout = setTimeout(onDemandDownload, 0);
-
-    // Kick off the loader thread shortly
-    this._loaderTimeout = setTimeout(loader, 250);
   }
 
   // Return whether the video is paused/stopped
@@ -2328,16 +2410,7 @@ class VideoCanvas extends AnnotationCanvas {
       this._dlWorker.postMessage({"type": "onDemandShutdown"});
     }
 
-    // Clear out the play buffer from all downloaded information
-    const video = this._videoElement[this._play_idx];
-    const ranges = video.playBuffer().buffered;
-    for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
-    {
-      var end = ranges.end(rangeIdx);
-      var start = ranges.start(rangeIdx);
-      video.removeTimeFromPlayBuffer(start, end);
-    }
-
+    this._onDemandInit = false;
     this._direction = Direction.STOPPED;
   }
 
