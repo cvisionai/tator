@@ -1680,7 +1680,6 @@ class LocalizationTypeTestCase(
 
 class MembershipTestCase(
         APITestCase,
-        PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
