@@ -372,10 +372,10 @@ class VideoDownloader
       // Establish the size of downloads
       // First set of segments will be downloaded more quickly (smaller chunks)
       this.downloadInit = false;
-      //if (this._onDemandConfig["numPacketsDownloaded"] < 20)
-      //{
-      //  iterBlockSize = this._startUpBlockSize;
-      //}
+      if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
+      {
+        iterBlockSize = this._startUpBlockSize * 2;
+      }
 
       // Determine the startByte for this block of data to download
       // Download range based on the block size and the direction

@@ -1239,7 +1239,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "onDemandFinished")
       {
-        //console.log("onDemand finished downloading. Reached end of video.");
+        console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
       }
       else if (type == "onDemand")
@@ -2177,7 +2177,7 @@ class VideoCanvas extends AnnotationCanvas {
         if (ranges.length == 0 && !video.isOnDemandBufferBusy())
         {
           that._onDemandPendingDownloads = 0;
-          //console.log("Sending onDemandInit to downloader")
+          console.log("Sending onDemandInit to downloader")
           that._onDemandInitSent = true;
           that._dlWorker.postMessage(
             {
@@ -2192,7 +2192,7 @@ class VideoCanvas extends AnnotationCanvas {
         {
           if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
           {
-            //console.log("Resetting onDemand buffer")
+            console.log("Resetting onDemand buffer")
             video.resetOnDemandBuffer();
           }
         }
@@ -2218,7 +2218,7 @@ class VideoCanvas extends AnnotationCanvas {
         // Look at how much time is stored in the buffer and where we currently are.
         // If we are within X seconds of the end of the buffer, drop the frames before
         // the current one and start downloading again.
-        //console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
+        console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
 
         var needMoreData = false;
         if (ranges.length == 0)
@@ -2278,7 +2278,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime - 2;
                   if (trimEnd > start)
                   {
-                    //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                    console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                     video.deletePendingOnDemand([start, trimEnd]);
                   }
                 }
@@ -2287,7 +2287,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime + 2;
                   if (trimEnd < end)
                   {
-                    //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                    console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                     video.deletePendingOnDemand([trimEnd, end]);
                   }
                 }
@@ -2298,14 +2298,14 @@ class VideoCanvas extends AnnotationCanvas {
               console.warn("Video playback buffer range not overlapping currentTime");
             }
 
-            //console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
+            console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
           }
         }
 
         if (needMoreData && !that._onDemandFinished)
         {
           // Kick of the download worker to get the next onDemand segments
-          //console.log("Requesting more onDemand data");
+          console.log("Requesting more onDemand data");
           that._onDemandPendingDownloads += 1;
           that._dlWorker.postMessage({"type": "onDemandDownload"});
         }
