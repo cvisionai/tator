@@ -225,8 +225,7 @@
 // Clearfix
 //
 // Clears floats via mixin.
-
-@mixin clearfix {
+.clearfix {
   &::before {
     display: table;
     content: "";
@@ -325,6 +324,9 @@
     .px-#{$breakpoint}-6 {
       padding-left: $spacing-6;
       padding-right: $spacing-6;
+    }
+    .pl-#{$breakpoint}-6 {
+      padding-left: 40px;
     }
   }
 }

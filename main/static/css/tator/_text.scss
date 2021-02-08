@@ -84,6 +84,10 @@
   color: $color-yellow;
 }
 
+.text-italic {
+  font-style: italic;
+}
+
 .hover-text-white {
   &:hover,
   &:focus {

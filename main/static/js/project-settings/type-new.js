@@ -1,51 +1,42 @@
 class TypeNew {
     constructor({
-        type, projectId, form, typeFormDiv, formData
+        type, projectId, formData
       }){
         this.type = type;
         this.projectId = projectId;
-        this.form = form;
-        this.formData = formData;
-        this.typeFormDiv = typeFormDiv;
-        this.boxHelper = new SettingsBox( this.typeFormDiv );
     }
 
     // Facilitate creation of a new type
     init(){
-        let buttonSave = this.getSave();
-        this.boxHelper._modalConfirm({
-            "titleText" : "Save",
-            "mainText" : this.form,
-            buttonSave
-          });
+        return this.getSave();
     }
 
     getSave(){
         const inputSubmit = document.createElement("input");
         inputSubmit.setAttribute("type", "submit");
-        inputSubmit.setAttribute("value", text);
+        inputSubmit.setAttribute("value", "Save");
         inputSubmit.setAttribute("class", `btn btn-clear f1 text-semibold`);
   
-        inputSubmit.addEventListener("click", this.saveFetch)
+        inputSubmit.addEventListener("click", this.saveFetch.bind(this));
 
         return inputSubmit;
     }
 
-    saveFetch(){     
-        this._fetchPostPromise().then( data => data.json).then(
-            (data) => {
-                console.log(data);
-            }
-        )
+    saveFetch(formData){     
+      return this._fetchPostPromise(formData).then( (response) => { 
+        return response.json();
+      }).then(
+        (data) => {
+            console.log(data);
+            return data;
+        }
+      )
     }
 
-    _fetchPostPromise({id = this.projectId } = {}){
-        console.log(`Creatinw new ${this.typeName} for Project id ${id}`);
-        let formData = this.formData(`${this.typeName}_New`);
-        console.log(formData);
+    _fetchPostPromise(formData){
+        console.log(`Creating new ${this.type} for Project id ${this.projectId}`);
     
-        //return fetch("/rest/StateType/" + id, {
-        return fetch(`/rest/${this.typeName}s/${id}`, {
+        return fetch(`/rest/${this.type}s/${this.projectId}`, {
           method: "POST",
           mode: "cors",
           credentials: "include",

@@ -12,6 +12,7 @@
     border-radius: 10px 10px 0 0;
     overflow: hidden;
     width: auto;
+    padding: 10px;
   }
 
   &:last-child {
@@ -20,7 +21,7 @@
   }
 }
 
-.SideNav-heading,
+.SideNav-heading button,
 .SideNav-item {
   position: relative;
   display: block;
@@ -31,19 +32,18 @@
   text-align: left;
   background-color: transparent;
   border: 0;
-  position: relatative;
   //border-top: 1px solid $color-gray--light;
 
-  &:first-child {
-    //border-top: 0;
-    //border-radius: 10px 10px 0 0;
-  }
+  //&:first-child {
+  //border-top: 0;
+  //border-radius: 10px 10px 0 0;
+  //}
 
-  &:last-child {
-    // makes sure there is a "bottom border" in case the list is not long enough
-    // stylelint-disable-next-line primer/box-shadow
-    box-shadow: 0 1px 0 1px;
-  }
+  // &:last-child {
+  //   // makes sure there is a "bottom border" in case the list is not long enough
+  //   // stylelint-disable-next-line primer/box-shadow
+  //   box-shadow: 0 1px 0 1px;
+  // }
 
   &[selected="true"] {
     //background-color: $color-charcoal--light70;
@@ -55,17 +55,10 @@
     pointer-events: none;
   }
 }
-
 .SideNav-item,
-button.SideNav-heading {
-  @extend .f1;
-  width: 100%;
+.SideNav-heading {
   border: 1px solid $color-charcoal--light70;
 
-  &:first-child {
-    //border-top: none;
-    //border-radius: 10px 10px 0 0;
-  }
   &:last-child {
     //border-bottom: none;
     border-radius: 0 0 10px 10px;
@@ -73,8 +66,10 @@ button.SideNav-heading {
 }
 
 // States
-.SideNav-heading:hover,
+.SideNav-heading button:hover,
 .SideNav-item:hover {
+  color: $color-white;
+
   // Bar on the left
   &::before {
     position: absolute;
@@ -90,7 +85,9 @@ button.SideNav-heading {
     border-top-right-radius: 6px;
   }
 }
+
 .SideNav-heading:focus,
+.SideNav-heading button:focus,
 .SideNav-item:focus {
   text-decoration: none;
   // stylelint-disable-next-line primer/colors
@@ -114,13 +111,13 @@ button.SideNav-heading {
   }
 }
 
-.SideNav-heading:active,
+.SideNav-heading button:active,
 .SideNav-item:active {
   background-color: $color-gray--light;
 }
 
-.SideNav-heading[aria-current]:not([aria-current="false"]),
-.SideNav-heading[aria-selected="true"],
+.SideNav-heading button[aria-current]:not([aria-current="false"]),
+.SideNav-heading button[aria-selected="true"],
 .SideNav-item[aria-current]:not([aria-current="false"]),
 .SideNav-item[aria-selected="true"] {
   background-color: $color-charcoal--light70;
@@ -177,9 +174,17 @@ button.SideNav-heading {
   font-weight: $weight-semibold;
   color: $color-white;
 }
+.SideNav-heading button span {
+  @extend .f1;
+}
+
+.SideNav-heading[selected="true"] {
+  background-color: $color-charcoal--light70;
+}
 
 .SideNav-item[selected="true"],
-.SideNav-heading[selected="true"] {
+.SideNav-heading[selected="true"] button,
+.SideNav-heading button[selected="true"] {
   background-color: $color-charcoal--light70;
   // KEEP this if they click into sub items
   // Bar on the left
@@ -204,9 +209,14 @@ button.SideNav-heading {
 // }
 
 .Nav-action {
-  transition: 300ms transform linear;
+  transition: all 0.2s ease-in-out;
+  font-weight: bold;
+  padding: 10px;
+  display: block;
+  box-sizing: border-box;
+  @extend .h3;
   &:hover {
-    transform: rotate(180deg);
+    //transform: scale(1.1);
     color: $color-purple;
   }
 }

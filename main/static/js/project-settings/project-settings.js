@@ -61,11 +61,16 @@ class ProjectSettings extends TatorPage {
       const localizationData = lo.json();
       const leafTypeData = le.json();
       const stateTypeData = st.json();
-      Promise.all( [projectData, mediaTypesData, localizationData, leafTypeData, stateTypeData] )
-        .then( (dataArray) => {
+      Promise.all( [
+        projectData, 
+        mediaTypesData, 
+        localizationData, 
+        leafTypeData, 
+        stateTypeData 
+      ] ).then( (dataArray) => {
           this.loading.hideSpinner();
           
-          for(let i in dataArray){
+          for(let i in this.settingsViewClasses){
             // Add a navigation section
             let objData =  dataArray[i] ;
             let tc = this.settingsViewClasses[i];
@@ -81,7 +86,6 @@ class ProjectSettings extends TatorPage {
                 "classBase": formView,
                 "hidden" : false
               });
-
 
               // Fill it with contents
               this.settingsNav.fillContainer({
@@ -102,6 +106,12 @@ class ProjectSettings extends TatorPage {
               });
 
             } else {
+              // an empty row in each TYPE
+              let emptyData = formView._getEmptyData();
+              emptyData.name = "+ Add new";
+              emptyData.project = this.projectId;
+              objData.push( emptyData );
+
               // Add item containers for Types
               this.makeContainers({
                 objData, 
@@ -111,7 +121,6 @@ class ProjectSettings extends TatorPage {
               // Add navs
               this.settingsNav._addNav({
                 "name" : formView._getHeading(),
-                "action" : formView._getAddTypeTrigger(), 
                 "type" : formView.typeName, 
                 "subItems" : objData 
               });
@@ -119,7 +128,7 @@ class ProjectSettings extends TatorPage {
               // Add contents for each Entity
               for(let g of objData){
                 let form = document.createElement(tc);
-                
+                  console.log(form);
                   this.settingsNav.fillContainer({
                     "type" : form.typeName,
                     "id" : g.id,

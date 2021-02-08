@@ -8,12 +8,13 @@ class TypeForm extends TatorElement {
 
     // Main Div to append content is an "item" for sideNav.
     this.typeFormDiv = document.createElement("div");
-    this.typeFormDiv.setAttribute("class", "px-md-6")
+    this.typeFormDiv.setAttribute("class", "pl-md-6")
     this._shadow.appendChild(this.typeFormDiv);
+    this.bgdimmer = this._shadow.querySelector("background-dimmer");
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.typeFormDiv );
-    this.inputHelper = new SettingsInput("media-types-main-edit");
+    this.boxHelper = new SettingsBox( this.typeFormDiv, this.bgdimmer );
+    this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg());
@@ -21,11 +22,11 @@ class TypeForm extends TatorElement {
 
   _init(data){
     console.log(`${this.readableTypeName} init.`);
-
+    console.log(data);
     //this.data = JSON.parse( data );
     this.data = data;
 
-    if(this.data){
+    if(!this.data.form && !this.data.form != "empty"){
       console.log(this.data);
       this.projectId = this.data.project;
       this.typeId = this.data.id
@@ -46,8 +47,41 @@ class TypeForm extends TatorElement {
       console.log("Init complete.");
       return this.typeFormDiv;
     } else {
-      console.log("Init complete : No data.");
+      this.projectId = this.data.project;
+
+      // Section h1.
+      const h1 = document.createElement("h1");
+      h1.setAttribute("class", "h2 pb-3 edit-project__h1");
+      const t = document.createTextNode(`Add New ${this.readableTypeName}.`); 
+      h1.appendChild(t);
+      this.typeFormDiv.appendChild(h1);
+
+      this.typeFormDiv.appendChild( this._getSectionForm( this._getEmptyData() ) );
+
+      const inputSubmit = document.createElement("input");
+      inputSubmit.setAttribute("type", "submit");
+      inputSubmit.setAttribute("value", "Save");
+      inputSubmit.setAttribute("class", `btn btn-clear f1 text-semibold`);
+      this.savePost = inputSubmit;
+
+      this.savePost.addEventListener("click", this._savePost.bind(this));
+      this.typeFormDiv.appendChild( this.savePost );
+      
+      return this.typeFormDiv;
     }
+  }
+
+  _savePost(){
+    let addNew = new TypeNew({
+      "type" : this.typeName,
+      "projectId" : this.projectId
+    });
+
+    let formData = this._getFormData("New", true);
+    addNew.saveFetch(formData).then((data) => {
+      console.log(data.message);
+      return this.boxHelper._modalComplete(data.message);
+    });
   }
 
   //
@@ -120,51 +154,30 @@ class TypeForm extends TatorElement {
     return headingSpan;
   }
 
-  _getAddTypeTrigger(){
-    let addSpan = document.createElement("span");
-    addSpan.setAttribute("class", "float-right Nav-action f1 text-bold");
-    let t = document.createTextNode(`+`); 
-    addSpan.appendChild(t);
-
-    addSpan.addEventListener("click", this.addTypeModal.bind(this))
-
-    return addSpan;
-  }
-
-  addTypeModal(){
-    console.log("Add a new type!");
-    let emptyData = this._getEmptyData();
-    let addNew = new TypeNew({
-      "type" : this.typeName,
-      "projectId" : this.projectId,
-      "form" : this._getSectionForm(emptyData),
-      "typeFormDiv" : this.typeFormDiv,
-      "formData" : this._getFormData
-    });
-
-    return addNew.init();
-  }
-
   deleteTypeSection(){
-    let deleteSection = new TypeDelete({
-      "type" : this.typeName,
-      "projectId" : this.projectId,
-      "typeFormDiv" : this.typeFormDiv,
-    });
+    // let deleteSection = new TypeDelete({
+    //   "type" : this.typeName,
+    //   "projectId" : this.projectId,
+    //   "typeFormDiv" : this.typeFormDiv,
+    // });
+    let deleteIcon = new DeleteButton();
 
-    return deleteSection.init();
+    return this.boxHelper.boxWrapDelete({
+      "children" : document.createTextNode(`${deleteIcon} Delete?`)
+    });
   }
 
   _getEmptyData() {
     return {
-      "id" : `${this.typeName}_New`,
+      "id" : `New`,
       "name" : "",
       "description" : "",
       "visible" : false,
       "grouping_default" : false,
       "media" : [],
       "dtype" : "",
-      "delete_child_localizations" : false
+      "delete_child_localizations" : false,
+      "form" : "empty"
     };
   }
 

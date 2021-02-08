@@ -9,8 +9,9 @@ class TypeDelete {
     }
 
     init(){
+      let deleteIcon = new DeleteButton();
         let deleteBox = this.boxHelper.boxWrapDelete({
-            "headingText" : `Delete?`,
+            "headingText" : `${deleteIcon} Delete?`,
             "descriptionText" : "Edit attribute.",
             "level":3,
             "collapsed":true

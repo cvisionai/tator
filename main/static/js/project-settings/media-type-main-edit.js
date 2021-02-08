@@ -76,7 +76,7 @@ class MediaTypeMainEdit extends TypeForm {
       return current;
   }
 
-  _getFormData(id){
+  _getFormData(id, includeDtype = false){
       let form = this._shadow.getElementById(id);
       // name only if changed || can not be ""
       let name = form.querySelector('[name="name"]').value;
@@ -98,7 +98,13 @@ class MediaTypeMainEdit extends TypeForm {
       if(form.querySelector('[name="default_volume"]')) {
         let default_volume = Number(form.querySelector('[name="default_volume"]').value);
         formData["default_volume"] = default_volume;
-      }   
+      }
+
+      // only send dtype when it's new
+      if(includeDtype) {
+        let dtype = form.querySelector('[name="dtype"]').value;
+        formData.dtype = dtype;
+      }
 
     return formData;
   }

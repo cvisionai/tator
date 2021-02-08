@@ -117,6 +117,7 @@ class AttributesMain extends HTMLElement {
         "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
+      this.setAttribute("has-open-modal", "");
     });
 
     return newAttributeTrigger;
@@ -159,7 +160,7 @@ class AttributesMain extends HTMLElement {
       this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
     }).catch((error) => {
       this.loading.hideSpinner();
-      this.boxHelper._modalErrin(`Error: ${error}`);
+      this.boxHelper._modalError(`Error: ${error}`);
     });
   }
 
@@ -263,13 +264,17 @@ class AttributesMain extends HTMLElement {
 
     boxOnPage.appendChild(formContents);
 
-    let deleteAttribute = new AttributesDelete({
-      "type" : this.typeName, 
-      "typeId" : this.fromId, 
-      "attributeName" : attributes.name, 
-      "pageDiv" : this.attributeDiv
+    // let deleteAttribute = new AttributesDelete({
+    //   "type" : this.typeName, 
+    //   "typeId" : this.fromId, 
+    //   "attributeName" : attributes.name, 
+    //   "pageDiv" : this.attributeDiv
+    // });
+    let deleteIcon = new DeleteButton();
+    let deleteBox = this.boxHelper.boxWrapDelete({
+      "children" : document.createTextNode(`${deleteIcon} Delete ${this.attributeName}?`)
     });
-    boxOnPage.appendChild( deleteAttribute.init() );
+    boxOnPage.appendChild( deleteBox );
 
     return boxOnPage;
   }

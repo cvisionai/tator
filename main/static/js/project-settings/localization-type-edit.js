@@ -2,7 +2,7 @@ class LocalizationEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "LocalizationType";
-    this.readableTypeName = "State Type";
+    this.readableTypeName = "Localization Type";
     this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
 
   }
@@ -73,19 +73,12 @@ class LocalizationEdit extends TypeForm {
         "checkboxList": mediaListWithChecked
     } ) );
 
-    // attribute types
-    this.attributeSection = document.createElement("attributes-main");
-    //this.attributeSection._init("LOCALIZATION", data.attribute_types);
-    this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
-    current.appendChild(this.attributeSection);
-    
-
     return current;
   }
 
-  _getFormData(id){
+  _getFormData(id, includeDtype = false){
     let form = this._shadow.getElementById(id);
-    // do not send dtype
+
     // name only if changed || can not be ""
     let name = form.querySelector('[name="name"]').value;
 
@@ -110,6 +103,12 @@ class LocalizationEdit extends TypeForm {
       grouping_default,
       media
     };
+
+    // only send dtype when it's new
+    if(includeDtype) {
+      let dtype = form.querySelector('[name="dtype"]').value;
+      formData.dtype = dtype;
+    }
 
     return formData;
   }

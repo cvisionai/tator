@@ -83,9 +83,9 @@ class StateTypeEdit extends TypeForm {
       return current;
   }
 
-  _getFormData(id){
+  _getFormData(id, includeDtype = false){
     let form = this._shadow.getElementById(id);
-      // do not send dtype
+
       // name only if changed || can not be ""
       let name = form.querySelector('[name="name"]').value;
 
@@ -114,6 +114,12 @@ class StateTypeEdit extends TypeForm {
         media,
         delete_child_localizations
       };
+
+      // only send dtype when it's new
+      if(includeDtype) {
+        let dtype = form.querySelector('[name="dtype"]').value;
+        formData.dtype = dtype;
+      }
 
     return formData;
   }

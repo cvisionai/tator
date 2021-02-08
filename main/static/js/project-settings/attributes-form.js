@@ -67,7 +67,7 @@ class AttributesForm extends HTMLElement {
     }) );
 
     // default
-    this.form.appendChild( this._getDefaultInput( "" ) );
+    this.form.appendChild( this._getDefaultInput( 0 ) );
 
     /*** @todo - The remaining are added when dtype is added or when values provided ***/
     // let placeholderDefault = document.createElement("div");
@@ -494,11 +494,10 @@ class AttributesForm extends HTMLElement {
 
   _makeDefaultCorrectType(dtype, _defaultVal){
     let _default = _defaultVal;
-    //@todo datetime and geopos
     try{
       if(dtype == "bool"){
         _default = Boolean(_defaultVal);
-      } else if (dtype == "int" || dtype == "float") {
+      } else if (dtype == "int" || dtype == "float" || dtype == "datetime" || dtype == "geopos") {
         _default = Number(_defaultVal);
       } else {
         _default = String(_defaultVal);

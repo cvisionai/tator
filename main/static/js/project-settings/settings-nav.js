@@ -19,19 +19,12 @@ class SettingsNav extends TatorElement {
   }
 
 
-  _addNav({name, type, subItems, action}){
-    if(subItems.length > 0){
-      return this._addHeadingWithSubItems({
-        name,
-        type,
-        subItems,
-        action
-      });
-    } else {
-      // No data
-      console.log(`${type} has no items.`);
-    }
-
+  _addNav({name, type, subItems}){
+    return this._addHeadingWithSubItems({
+      name,
+      type,
+      subItems
+    });
   }
 
   _addSimpleNav({name, type, id, selected}){
@@ -72,106 +65,118 @@ class SettingsNav extends TatorElement {
     return this.nav.appendChild(item);
   }
 
-// Creates a clickable heading that expands to show clickable subitem lisr
-_addHeadingWithSubItems({
-  name = document.createElement(""), 
-  type = "", 
-  subItems = [],
-  action = document.createTextNode("")
-} = {} ){
-  let itemHeading = document.createElement("button");
-  let hiddenSubNav = document.createElement("nav");
-  let navGroup = document.createElement("div");
+  // Creates a clickable heading that expands to show clickable subitem lisr
+  _addHeadingWithSubItems({
+    name = document.createElement(""), 
+    type = "", 
+    subItems = []
+  } = {} ){
+    let headingBox = document.createElement("div");
+    let itemHeading = document.createElement("button");
+    let hiddenSubNav = document.createElement("nav");
+    let navGroup = document.createElement("div");
 
-  navGroup.setAttribute("class", "SubNav")
-  navGroup.appendChild(itemHeading);
-  navGroup.appendChild(hiddenSubNav);
+    navGroup.setAttribute("class", "SubNav")
+    navGroup.appendChild(headingBox);
+    navGroup.appendChild(hiddenSubNav);
 
-  // Heading button
-  itemHeading.setAttribute("class", `h5 SideNav-heading toggle-subitems-${type}`); // ie. video,image,multi,localization,leaf,state
-  itemHeading.appendChild(name);
-  itemHeading.appendChild(action);
-  itemHeading.setAttribute("selected", "false");
-  
-  hiddenSubNav.setAttribute("class", `SideNav SubItems  subitems-${type}`);
-  hiddenSubNav.hidden = true;
+    headingBox.setAttribute("class", `SideNav-heading f1 clearfix`); // ie. video,image,multi,localization,leaf,state
 
-  // SubItems
-  if (subItems.length > 0){
-    for(let obj of subItems){
-      let itemId = obj.id; // ie. video type with ID of 62
-      let subNavLink = document.createElement("a");
-      let subItemText = obj.name;
+    // Heading button
+    itemHeading.setAttribute("class", `toggle-subitems-${type}`); // ie. video,image,multi,localization,leaf,state
+    itemHeading.appendChild(name);
+    itemHeading.setAttribute("selected", "false");
+    headingBox.appendChild(itemHeading);
 
-      subNavLink.setAttribute("class", "SideNav-subItem");
-      subNavLink.style.paddingLeft = "44px";
-
-      let itemIdSelector = `#itemDivId-${type}-${itemId}`
-      subNavLink.href = itemIdSelector;
-      subNavLink.innerHTML = subItemText;
-
-      hiddenSubNav.appendChild(subNavLink);
-
-      // Sub Nav Links
-      subNavLink.addEventListener("click", (event) => {
-        event.preventDefault();
-
-        this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-          el.setAttribute("selected", "false");
-        })
-        event.target.setAttribute("selected", "true");
-        event.target.parentNode.parentNode.querySelector('button').setAttribute("selected", "true");
-
-        console.log("id for toggle: "+itemIdSelector);
-
-        this.toggleItem({ "itemIdSelector" : itemIdSelector });
-      });
-
-    }
-  } else {
-    let link = action;
-    action.innerHTML = "+ Add New";
-    console.log("No subitems for heading "+name);
-    hiddenSubNav.appendChild( link );
-  }
-
-  this.nav.appendChild(navGroup);
-
-  // Heading toggle links
-  return this.nav.querySelector(`.toggle-subitems-${type}`).addEventListener(
-    "click", (event) => {
+    itemHeading.addEventListener("click", (event) => {
       event.preventDefault();
-
       this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
         el.setAttribute("selected", "false");
       })
+      
+      this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
 
+      return event.target.closest(".SideNav-heading").setAttribute("selected", "true");
+    });
+    
+    hiddenSubNav.setAttribute("class", `SideNav SubItems  subitems-${type}`);
+    hiddenSubNav.hidden = true;
 
-      let currentHide = this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
-      event.target.setAttribute("selected", currentHide);
+    // SubItems
+    if (subItems.length > 0){
+      for(let obj of subItems){
+        let itemId = obj.id; // ie. video type with ID of 62
+        let subNavLink = document.createElement("a");
+        let subItemText = obj.name;
+
+        subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
+        subNavLink.style.paddingLeft = "44px";
+
+        let itemIdSelector = `#itemDivId-${type}-${itemId}`
+        subNavLink.href = itemIdSelector;
+        subNavLink.innerHTML = subItemText;
+
+        hiddenSubNav.appendChild(subNavLink);
+
+        let addSpan = document.createElement("span");
+        // Add action if required'
+        if(itemId == "New"){
+          addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable");
+          let t = document.createTextNode(`+`); 
+          addSpan.appendChild(t);
+          headingBox.appendChild(addSpan);
+          itemHeading.classList.add("col-10");
+          itemHeading.classList.add("float-left");
+
+          // ADD Links
+          addSpan.addEventListener("click", (event) => {
+            event.preventDefault();
+        
+            this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+              el.setAttribute("selected", "false");
+            });
+
+            event.target.closest(".SideNav-heading").setAttribute("selected", "true");
+        
+            this.toggleItem({ "itemIdSelector" : itemIdSelector });
+          });
+        }
+
+        // Sub Nav Links
+        subNavLink.addEventListener("click", (event) => {
+          event.preventDefault();
+      
+          this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+            el.setAttribute("selected", "false");
+          })
+          event.target.setAttribute("selected", "true");
+          event.target.parentNode.parentNode.querySelector('.SideNav-heading').setAttribute("selected", "true");
+      
+          console.log("id for toggle: "+itemIdSelector);
+      
+          this.toggleItem({ "itemIdSelector" : itemIdSelector });
+        });
+      }
+    } else {
+      console.log("No subitems for heading "+name);
     }
-  );
 
-}
+    return this.nav.appendChild(navGroup);
+  }
 
   toggleItem({ itemIdSelector = ``} = {}){
     let targetEl = null;
-    //let typeDomArray = this._getDomArray();
     let dom = this._shadow;
-
-   // for(let dom of typeDomArray){
-      // Hide all other item boxes
-      dom.querySelectorAll('.item-box').forEach( (el) => {
-        //if(!dom.querySelector(".changed")){
-          el.hidden = true;
-          // Find and show our target
-          targetEl = dom.querySelector( itemIdSelector );
-          if(targetEl) targetEl.hidden = false;
-        //} else {
-        //  this.boxHelper._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
-        //}
+      
+    // Hide all other item boxes
+    dom.querySelectorAll('.item-box').forEach( (el) => {
+      el.hidden = true;
+      
+      // Find and show our target
+      targetEl = dom.querySelector( itemIdSelector );
+        if(targetEl) targetEl.hidden = false;
       } );
-    //}
+      return targetEl.hidden;
   };
 
   toggleSubItemList({ elClass = ``} = {}){
@@ -182,8 +187,9 @@ _addHeadingWithSubItems({
 
     //console.log(elClass);
     let targetEl = this.nav.querySelector( elClass );
+    targetEl.hidden = false;
 
-    return  targetEl.hidden = false;
+    return  targetEl.hidden;
   };
 
   getMain(){
@@ -205,7 +211,8 @@ _addHeadingWithSubItems({
     return this.itemsContainer.appendChild(itemDiv);
   }
 
-  fillContainer({ id = -1, itemContents = document.createElement("div"), type = ""}){
+  fillContainer({ id = -1, itemContents = document.createTextNode(""), type = ""}){
+    console.log(id);
     let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
 

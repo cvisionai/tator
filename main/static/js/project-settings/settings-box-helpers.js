@@ -1,9 +1,10 @@
 /* Class with methods return content in a styled DIV boxes.*/
 class SettingsBox {
-  constructor( mainDiv) {
+  constructor( mainDiv, bgdimmer) {
 
     this.modal = document.createElement("settings-modal");
     this.mainDiv = mainDiv;
+    this.bgdimmer = bgdimmer;
 
     this.mainDiv.appendChild(this.modal);
   }
@@ -19,7 +20,7 @@ class SettingsBox {
   boxWrapDelete( { children = {}, level = 1, customClass = ""} = {} ){
     let settingsBox = document.createElement("div");
     settingsBox.setAttribute("class", `text-red py-3 rounded-2 ${customClass} has-border is-remove`);
-    settingsBox.append( children );
+    //settingsBox.append( children );
 
     return settingsBox;
   }
@@ -115,8 +116,7 @@ class SettingsBox {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-heigh-scroll");
-    this.modal.setAttribute("is-open", "");
-    
+    //this.bgdimmer.classList.add("has-open-modal");
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -127,7 +127,7 @@ class SettingsBox {
     this.modal._titleDiv.append( document.createElement("modal-warning") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
-    
+    //this.bgdimmer.classList.add("has-open-modal");
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -139,7 +139,7 @@ class SettingsBox {
     let text = document.createTextNode("");
     if(titleText != "") this.modal._titleDiv.append(titleText);
     this.modal._main.innerHTML = mainText;
-
+    //this.bgdimmer.classList.add("has-open-modal");
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -157,18 +157,18 @@ class SettingsBox {
     } else {
       this.modal._main.innerHTML = mainText;
     }
-    
+    console.log("modal confirm");
     if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold");
     buttonClose.innerHTML = "Cancel";
 
-    buttonClose.addEventListener("click", this.modal._closeCallback);
+    buttonClose.addEventListener("click", this._modalCloseCallback);
 
     this.modal._footer.appendChild(buttonSave);
     this.modal._footer.appendChild(buttonClose);
-
+    //this.bgdimmer.classList.add("has-open-modal");
     return this.modal.setAttribute("is-open", "true");
   }
 
@@ -180,7 +180,7 @@ class SettingsBox {
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
     this.modal._main.classList.remove("fixed-heigh-scroll");
-
+    //this.bgdimmer.classList.add("has-open-modal");
     return this.modal.setAttribute("is-open", "true");
   }
 
@@ -188,11 +188,12 @@ class SettingsBox {
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
-
+    
     return this.modal;
   }
 
   _modalCloseCallback(){
+    //this.bgdimmer.classList.remove("has-open-modal");
     return this.modal._closeCallback();
   }
 
