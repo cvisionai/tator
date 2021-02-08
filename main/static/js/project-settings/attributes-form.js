@@ -510,16 +510,14 @@ class AttributesForm extends HTMLElement {
     return _default;
   }
   _getAttributePromises({id = -1, entityType = null, attrForms = [], attrFormsChanged = []} = {}){
-    //let attrForms = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
-    // let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
     let attrPromises = {};
     attrPromises.promises = [];
     attrPromises.attrNamesNew = [];
     attrPromises.attrNames = [];
 
-    console.log(`${attrFormsChanged.length} out of ${attrForms.length} attributes changed`);
+    //console.log(`${attrFormsChanged.length} out of ${attrForms.length} attributes changed`);
 
-    if(attrFormsChanged.length){
+    if(attrFormsChanged && attrFormsChanged.length){
       attrFormsChanged.forEach((form, i) => {
         let global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
         let formData = {

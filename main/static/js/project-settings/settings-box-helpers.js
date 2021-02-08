@@ -2,7 +2,7 @@
 class SettingsBox {
   constructor( mainDiv) {
 
-    this.modal = document.createElement("modal-dialog");
+    this.modal = document.createElement("settings-modal");
     this.mainDiv = mainDiv;
 
     this.mainDiv.appendChild(this.modal);
@@ -10,7 +10,15 @@ class SettingsBox {
 
   boxWrapDefault( { children = {}, level = 1, customClass = ""} = {} ){
     let settingsBox = document.createElement("div");
-    settingsBox.setAttribute("class", `py-3 px-6 rounded-2 ${customClass} ${level == 1 ? ' edit-project__config ' : ''}`);
+    settingsBox.setAttribute("class", `py-3 rounded-2 ${customClass} ${level == 1 ? ' edit-project__config ' : ''}`);
+    settingsBox.append( children );
+
+    return settingsBox;
+  }
+
+  boxWrapDelete( { children = {}, level = 1, customClass = ""} = {} ){
+    let settingsBox = document.createElement("div");
+    settingsBox.setAttribute("class", `text-red py-3 rounded-2 ${customClass} has-border is-remove`);
     settingsBox.append( children );
 
     return settingsBox;
@@ -25,7 +33,7 @@ class SettingsBox {
   ){
     /* Div to apppend the a HEADING and DESCRIPTION to. */
     let headingDiv = document.createElement("div");
-    headingDiv.setAttribute("class", "dflex flex-items-center py-2 px-2 ");
+    headingDiv.setAttribute("class", "dflex flex-items-center py-2");
 
     /* 1. Make HEADING. */
     let heading = null;
@@ -61,7 +69,7 @@ class SettingsBox {
 
       //let _descriptionText = document.createTextNode("");
       //_descriptionText.nodeValue = descriptionText;
-      //description.setAttribute("class", "f2 text-gray d-inline-flex ");
+      //description.setAttribute("class", "f1 text-gray d-inline-flex ");
       //description.appendChild( _descriptionText );
     }
 
@@ -107,7 +115,8 @@ class SettingsBox {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-heigh-scroll");
-
+    this.modal.setAttribute("is-open", "");
+    
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -118,7 +127,7 @@ class SettingsBox {
     this.modal._titleDiv.append( document.createElement("modal-warning") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
-
+    
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -152,7 +161,7 @@ class SettingsBox {
     if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
 
     let buttonClose = document.createElement("button")
-    buttonClose.setAttribute("class", "btn btn-clear f2 text-semibold");
+    buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold");
     buttonClose.innerHTML = "Cancel";
 
     buttonClose.addEventListener("click", this.modal._closeCallback);
@@ -160,7 +169,7 @@ class SettingsBox {
     this.modal._footer.appendChild(buttonSave);
     this.modal._footer.appendChild(buttonClose);
 
-    return this.modal.setAttribute("is-open", "true")
+    return this.modal.setAttribute("is-open", "true");
   }
 
   _modalComplete(message){
@@ -172,7 +181,7 @@ class SettingsBox {
     this.modal._footer.innerHTML = "";
     this.modal._main.classList.remove("fixed-heigh-scroll");
 
-    return this.modal.setAttribute("is-open", "true")
+    return this.modal.setAttribute("is-open", "true");
   }
 
   _modalClear(){
@@ -190,60 +199,5 @@ class SettingsBox {
   _modalDom(){
     return this.modal._shadow;
   }
-
-  /*_modalSuccess(message){
-    this.boxHelper._modalClear();
-    let text = document.createTextNode(" Success");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-success") );
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-    this.modal._main.classList.add("fixed-heigh-scroll");
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-  _modalError(message){
-    this.boxHelper._modalClear();
-    let text = document.createTextNode(" Error saving project details");
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-warning") );
-    this.modal._titleDiv.append(text);
-    this.modal._main.innerHTML = message;
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-
-
-  _modalConfirm({
-    titleText = "",
-    mainText = "",
-    buttonText = "",
-    buttonSave = document.createElement("button")
-  } = {}){
-    this.boxHelper._modalClear();
-    this.modal._titleDiv.innerHTML = titleText;
-    this.modal._main.innerHTML = mainText;
-    this.modal._main.classList.add("fixed-heigh-scroll");
-
-    let buttonClose = document.createElement("button")
-    buttonClose.setAttribute("class", "btn btn-clear f2 text-semibold");
-    buttonClose.innerHTML = "Cancel";
-
-    buttonClose.addEventListener("click", this.modal._closeCallback);
-
-    this.modal._footer.appendChild(buttonSave);
-    this.modal._footer.appendChild(buttonClose);
-
-    return this.modal.setAttribute("is-open", "true")
-  }
-
-  _modalClear(){
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._main.innerHTML = "";
-    this.modal._footer.innerHTML = "";
-    return this.modal;
-  }*/
 
 }

@@ -23,10 +23,23 @@ class AttributesMain extends HTMLElement {
     this.inputHelper = new SettingsInput("media-types-main-edit");
     this.attributeFormHelper = new AttributesForm();
 
+    // Section h1.
+    const h2 = document.createElement("h2");
+    h2.setAttribute("class", "h3 py-6 pb-3 edit-project__h1");
+    const t = document.createTextNode(`Attribute settings.`); 
+    h2.appendChild(t);
+    this.attributeDiv.appendChild(h2);
+
+    this.attributeBox = this.boxHelper.boxWrapDefault( {
+      "children" : ""
+    } );
+
     // get the form and +Add link
-    this.attributeDiv.appendChild( this._getAttributesSection(data) );
-    this.attributeDiv.appendChild( this._getNewAttributesTrigger() );
-    this.attributeDiv.appendChild( this._getCopyAttributesTrigger() );
+    this.attributeBox.appendChild( this._getAttributesSection(data) );
+    this.attributeBox.appendChild( this._getNewAttributesTrigger() );
+    this.attributeBox.appendChild( this._getCopyAttributesTrigger() );
+
+    this.attributeDiv.appendChild(this.attributeBox);
 
     return this.attributeDiv;
   }
@@ -34,17 +47,17 @@ class AttributesMain extends HTMLElement {
   _getAttributesSection(attributeTypes = []){
     let attributesSection = document.createElement("div");
 
-    if(attributeTypes.length > 0){
-      // Seperator line @TODO could be a component?
-      let seperator = document.createElement("div");
-      seperator.setAttribute("class", "col-12 py-2");
-      seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-      seperator.innerHTML = "&nbsp;"
-      attributesSection.append(seperator);
+    if(attributeTypes && attributeTypes.length > 0){
+      // Seperator line @TODO component?
+      // let seperator = document.createElement("div");
+      // seperator.setAttribute("class", "col-12 py-2");
+      // seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
+      // seperator.innerHTML = "&nbsp;"
+      // attributesSection.append(seperator);
 
       // Attributes list main heading and trigger
       let heading = this.boxHelper.headingWrap({
-          "headingText" : `Attributes (${attributeTypes.length})`,
+          "headingText" : `Edit Attributes (${attributeTypes.length})`,
           "descriptionText" : "Edit media type.",
           "level": 2,
           "collapsed": true
@@ -194,7 +207,7 @@ class AttributesMain extends HTMLElement {
       });
     }).catch((error) => {
       this.loading.hideSpinner();
-      this.boxHelper._modalErrin(`Error: ${error}`);
+      this.boxHelper._modalError(`Error: ${error}`);
     });
     
   }
@@ -249,6 +262,14 @@ class AttributesMain extends HTMLElement {
     } );
 
     boxOnPage.appendChild(formContents);
+
+    let deleteAttribute = new AttributesDelete({
+      "type" : this.typeName, 
+      "typeId" : this.fromId, 
+      "attributeName" : attributes.name, 
+      "pageDiv" : this.attributeDiv
+    });
+    boxOnPage.appendChild( deleteAttribute.init() );
 
     return boxOnPage;
   }

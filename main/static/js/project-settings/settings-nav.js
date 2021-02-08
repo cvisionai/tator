@@ -1,21 +1,31 @@
 class SettingsNav extends TatorElement {
   constructor() {
     super();
-    //@TODO - this could be abstract component
-    // main structure
+
+    // Panels holder
+    this.div = document.createElement("div");
+    this.div.setAttribute("class", "py-6 clearfix position-relative px-md-6");
+    this._shadow.appendChild(this.div);
+
+    // Left navigation structure
     this.nav = document.createElement("nav");
-    this.nav.setAttribute("class", "SideNav rounded-2 col-3");
-    this.nav.style.float = "left";
-    this._shadow.appendChild(this.nav);
+    this.nav.setAttribute("class", "SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12");
+    this.div.appendChild(this.nav);
+
+    // Right side panel with contents
+    this.itemsContainer = document.createElement("div");
+    this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12");
+    this.div.appendChild(this.itemsContainer);
   }
 
 
-  _addNav({name, type, subItems}){
+  _addNav({name, type, subItems, action}){
     if(subItems.length > 0){
       return this._addHeadingWithSubItems({
         name,
         type,
-        subItems
+        subItems,
+        action
       });
     } else {
       // No data
@@ -24,25 +34,24 @@ class SettingsNav extends TatorElement {
 
   }
 
-  _addSimpleNav({name, type, hash, selected}){
+  _addSimpleNav({name, type, id, selected}){
     return this._addItem({
       name,
       type,
-      "linkData": hash,
+      "linkData": `#itemDivId-${type}-${id}`,
       selected
     });
   }
 
   //
-  _addItem({name = "Default", type = "project", mediaId = -1, linkData = "#", selected = false} = {} ){
-    //let item = document.createElement("h3");
-    //item.setAttribute("class", "py-3 lh-condensed text-semibold");
+  _addItem({name = "Default", type = "project", linkData = "#", selected = false} = {} ){
     let item = document.createElement("a");
     item.setAttribute("class", "SideNav-item ");
     item.href = linkData;
     item.title = type.replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
     if(selected) {
       item.setAttribute("selected", "true");
+      this.toggleItem({ "itemIdSelector":linkData});
     } else {
       item.setAttribute("selected", "false");
     }
@@ -64,7 +73,12 @@ class SettingsNav extends TatorElement {
   }
 
 // Creates a clickable heading that expands to show clickable subitem lisr
-_addHeadingWithSubItems({name = "Default", type = "project", subItems = [], itemDivId = -1, linkData = "#"} = {} ){
+_addHeadingWithSubItems({
+  name = document.createElement(""), 
+  type = "", 
+  subItems = [],
+  action = document.createTextNode("")
+} = {} ){
   let itemHeading = document.createElement("button");
   let hiddenSubNav = document.createElement("nav");
   let navGroup = document.createElement("div");
@@ -75,13 +89,15 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
 
   // Heading button
   itemHeading.setAttribute("class", `h5 SideNav-heading toggle-subitems-${type}`); // ie. video,image,multi,localization,leaf,state
-  itemHeading.innerHTML = name; // ie. "${icon} Media Type"
+  itemHeading.appendChild(name);
+  itemHeading.appendChild(action);
   itemHeading.setAttribute("selected", "false");
+  
+  hiddenSubNav.setAttribute("class", `SideNav SubItems  subitems-${type}`);
+  hiddenSubNav.hidden = true;
 
   // SubItems
   if (subItems.length > 0){
-    hiddenSubNav.setAttribute("class", `SideNav subitems-${type}`);
-    hiddenSubNav.hidden = true;
     for(let obj of subItems){
       let itemId = obj.id; // ie. video type with ID of 62
       let subNavLink = document.createElement("a");
@@ -108,13 +124,15 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
 
         console.log("id for toggle: "+itemIdSelector);
 
-        // @TODO could use type to find dom from array (make array assoc.)
         this.toggleItem({ "itemIdSelector" : itemIdSelector });
       });
 
     }
   } else {
+    let link = action;
+    action.innerHTML = "+ Add New";
     console.log("No subitems for heading "+name);
+    hiddenSubNav.appendChild( link );
   }
 
   this.nav.appendChild(navGroup);
@@ -138,9 +156,10 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
 
   toggleItem({ itemIdSelector = ``} = {}){
     let targetEl = null;
-    let typeDomArray = this._getDomArray();
+    //let typeDomArray = this._getDomArray();
+    let dom = this._shadow;
 
-    for(let dom of typeDomArray){
+   // for(let dom of typeDomArray){
       // Hide all other item boxes
       dom.querySelectorAll('.item-box').forEach( (el) => {
         //if(!dom.querySelector(".changed")){
@@ -152,18 +171,46 @@ _addHeadingWithSubItems({name = "Default", type = "project", subItems = [], item
         //  this.boxHelper._modalError("You have unsaved changes", "Please save or discard changes to "+dom.querySelector(".changed h2"));
         //}
       } );
-    }
+    //}
   };
 
   toggleSubItemList({ elClass = ``} = {}){
+    // Hide any  others that are open, and toggen this one.
+    this._shadow.querySelectorAll(".SubItems").forEach((item, i) => {
+      item.hidden = true;
+    });
+
     //console.log(elClass);
     let targetEl = this.nav.querySelector( elClass );
-    let targetElHidden = targetEl.hidden;
 
-    targetEl.hidden = !targetElHidden
-
-    return targetElHidden;
+    return  targetEl.hidden = false;
   };
+
+  getMain(){
+    return this.main;
+  }
+
+  getItemsContainer(){
+    return this.itemsContainer;
+  }
+
+  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true}){
+    let itemDiv = document.createElement("div");
+    itemDiv.id = `itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
+    itemDiv.setAttribute("class", `item-box item-group-${id}`);
+    itemDiv.hidden = hidden;
+
+    if(itemContents != "") itemDiv.appendChild(itemContents);
+
+    return this.itemsContainer.appendChild(itemDiv);
+  }
+
+  fillContainer({ id = -1, itemContents = document.createElement("div"), type = ""}){
+    let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
+    let itemDiv = this._shadow.querySelector(itemDivId);
+
+    return itemDiv.appendChild(itemContents);
+  }
 
   
   /* @TODO - If the item's name is updated in the form, update it here too */

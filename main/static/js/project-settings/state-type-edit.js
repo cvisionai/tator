@@ -2,48 +2,9 @@ class StateTypeEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "StateType";
-    this._shadow.appendChild(this.typeFormDiv);
-  }
+    this.readableTypeName = "State Type";
+    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
 
-  _init(data){
-    console.log(`${this.tagName} init.`);
-
-    this.data = JSON.parse( data );
-    if(this.data.length > 0){
-      console.log(this.data);
-
-      this.projectId = this.data[0].project;
-
-      for(let i in this.data){
-        let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-${this.typeName}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-        itemDiv.hidden = true;
-
-        // Section h1.
-        const h1 = document.createElement("h1");
-        h1.setAttribute("class", "h2 pb-3");
-        //h1.innerHTML = `Set media and attribute details.`;
-        h1.innerHTML = this.data[i].name;
-        itemDiv.appendChild(h1);
-
-        itemDiv.appendChild( this._getSectionForm( this.data[i]) );
-        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
-
-        this.typeFormDiv.appendChild(itemDiv);
-      }
-      console.log("Init complete : Data length "+this.data.length);
-      return this.typeFormDiv;
-
-    } else {
-      console.log("Init complete : No data.");
-    }
-  }
-
-  _getHeading(){
-    let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
-
-    return `${icon} <span class="item-label">State Type</span>`
   }
 
   _getSectionForm(data){
@@ -70,12 +31,17 @@ class StateTypeEdit extends TypeForm {
 
       // dtype
       const DTYPE = "Dtype";
+      const dTypeOptions = [
+        { "optText": "Select", "optValue": "" },
+        { "optText": "Leaf", "optValue": "leaf" }
+      ];
+      let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
       _form.appendChild( this.inputHelper.inputSelectOptions( {
         "labelText": "Data Type",
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
-        "optionsList" : ["leaf"],
-        "disabledInput" : true
+        "optionsList" : dTypeOptions,
+        "disabledInput" : disableDtype
       } ) );
 
       // visible
@@ -114,14 +80,6 @@ class StateTypeEdit extends TypeForm {
         "value": data[CHILDASSOC]
       } ) );
 
-      // attribute types
-      if(data.attribute_types.length > 0){
-        this.attributeSection = document.createElement("attributes-main");
-        //this.attributeSection._init("STATE", data.attribute_types);
-        this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
-        current.appendChild(this.attributeSection);
-      }
-
       return current;
   }
 
@@ -159,6 +117,7 @@ class StateTypeEdit extends TypeForm {
 
     return formData;
   }
+
 }
 
 customElements.define("state-type-edit", StateTypeEdit);

@@ -8,7 +8,7 @@ class SettingsInput {
   /* Returns an input of type text with an initial value */
   inputText({
         value = '',
-        customCol = 'col-8',
+        customCol = 'col-md-9 col-sm-8',
         labelText = '',
         type = 'text', // can also be HIDDEN
         name = ''
@@ -39,7 +39,7 @@ class SettingsInput {
 
   arrayInputText({
     value = '',
-    customCol = 'col-8',
+    customCol = 'col-md-9 col-sm-8',
     labelText = '',
     type = 'text', // can also be HIDDEN
     name = ''
@@ -49,7 +49,7 @@ class SettingsInput {
     const forId = this._getUniqueIdentifier(name);
 
     // VALUE will be an array -- Loop the array and create TEXT INPUTS
-    if(value.length > 0 ){
+    if(value && value.length > 0 ){
       for(let key in value){
         let showLabel = key == 0 ? labelText : "";
         // output smaller inputs into 3 cols
@@ -128,7 +128,7 @@ class SettingsInput {
   } = {}){
     const setName = this._getUniqueIdentifier(name);
     const checkboxes = document.createElement("div");
-    checkboxes.setAttribute("class", `col-8`);
+    checkboxes.setAttribute("class", `col-md-9 col-sm-8`);
 
     const checkboxInner = document.createElement("div");
     checkboxInner.setAttribute("class", `d-flex flex-row flex-wrap flex-justify-between`);
@@ -142,7 +142,7 @@ class SettingsInput {
     const checkboxesWithLabel = this.labelWrap({
       "labelText": labelText,
       "inputNode": checkboxes,
-      "labelElement" : "fieldset"
+      "labelType" : "fieldset"
     });
 
     return checkboxesWithLabel;
@@ -182,7 +182,7 @@ class SettingsInput {
   inputSelectOptions({
     value = "", //current value
     labelText = "",
-    customCol = "col-8",
+    customCol = "col-md-9 col-sm-8",
     optionsList = [],
     disabledInput = false,
     name = "",
@@ -243,7 +243,7 @@ class SettingsInput {
     value = "", // img path
     imgEl = document.createElement("img"),
     labelText = "",
-    customCol = "col-8",
+    customCol = "col-md-9 col-sm-8",
     disabledInput = false,
     name = "",
     forId = ""
@@ -266,7 +266,7 @@ class SettingsInput {
         "labelText": labelText,
         "inputNode": imgEl,
         "name": setName,
-        "labelElement": "div"
+        "labelType": "div"
       });
 
       inputWithLabel.appendChild(editButton);
@@ -280,7 +280,6 @@ class SettingsInput {
   labelWrap({
       labelText = '',
       disabled = false,
-      labelElement = "label",
       forId = "",
       labelType = "label",
       inputNode //required
@@ -289,10 +288,10 @@ class SettingsInput {
       let labelWrap = "";
       labelWrap = document.createElement(labelType);
       labelWrap.setAttribute("for", forId);
-      labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
+      labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
 
       const spanTextNode = document.createElement("span");
-      spanTextNode.setAttribute("class", `col-4 ${(disabled) ? "text-gray" : ""}`);
+      spanTextNode.setAttribute("class", `col-3 ${(disabled) ? "text-gray" : ""}`);
       labelWrap.append(spanTextNode);
 
       const spanText = document.createTextNode("");
@@ -300,7 +299,7 @@ class SettingsInput {
       spanTextNode.appendChild(spanText);
 
       const labelDiv = document.createElement("div");
-      labelDiv.setAttribute("class", "py-2 px-2 f2");
+      labelDiv.setAttribute("class", "py-2 f1");
       labelDiv.appendChild(labelWrap);
 
       labelWrap.append(inputNode);
@@ -313,19 +312,19 @@ class SettingsInput {
         callback = null
       } = {}){
         const labelWrap = document.createElement("label");
-        labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f2");
+        labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
 
         const spanTextNode = document.createElement("span");
         const spanText = document.createTextNode("");
-        const labelDiv = document.createElement("div");
+        const labelDiv = document.createElement("div"); 
 
-        spanTextNode.setAttribute("class", "col-4 text-gray clickable");
+        spanTextNode.setAttribute("class", "col-sm-4 col-md-3 text-gray clickable");
         spanText.nodeValue = labelText;
         spanTextNode.appendChild(spanText);
 
         labelWrap.append(spanTextNode);
 
-        labelDiv.setAttribute("class", "py-2 px-2 f2");
+        labelDiv.setAttribute("class", "py-2 f1 text-semibold");
         labelDiv.appendChild(labelWrap);
 
         return labelDiv;
@@ -351,7 +350,7 @@ class SettingsInput {
       const inputSubmit = document.createElement("input");
       inputSubmit.setAttribute("type", "submit");
       inputSubmit.setAttribute("value", text);
-      inputSubmit.setAttribute("class", `btn btn-clear f2 text-semibold`);
+      inputSubmit.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
       return inputSubmit;
     }
@@ -360,7 +359,7 @@ class SettingsInput {
     resetLink({ text = "Reset"} = {}){
       const resetLink = document.createElement("a");
       resetLink.setAttribute("href", "#");
-      resetLink.setAttribute("class", `px-5 f2 text-gray hover-text-white`);
+      resetLink.setAttribute("class", `px-5 f1 text-gray hover-text-white`);
 
       let resetLinkText = document.createTextNode(text);
       resetLink.appendChild( resetLinkText );

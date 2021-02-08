@@ -42,20 +42,21 @@
   position: relative;
 }
 
+// Vertical align
 .v-align-top {
   vertical-align: top;
 }
 
-.clearfix:after {
-  clear: both;
+// Supports for float-based grids
+.float-left {
+  float: left;
 }
 
-.clearfix:after,
-.clearfix:before {
-  display: table;
-  content: "";
+.float-right {
+  float: right;
 }
 
+// Rounded edges
 .rounded-1 {
   border-radius: 3px;
 }
@@ -75,121 +76,6 @@
 
 .circle {
   border-radius: 50%;
-}
-
-/*
-* Responsive Grid
-*/
-.col-1 {
-  width: (1 / 12 * 100%);
-}
-.col-2 {
-  width: (2 / 12 * 100%);
-}
-.col-3 {
-  width: (3 / 12 * 100%);
-}
-.col-4 {
-  width: (4 / 12 * 100%);
-}
-.col-5 {
-  width: (5 / 12 * 100%);
-}
-.col-6 {
-  width: (6 / 12 * 100%);
-}
-.col-7 {
-  width: (7 / 12 * 100%);
-}
-.col-8 {
-  width: (8 / 12 * 100%);
-}
-.col-9 {
-  width: (9 / 12 * 100%);
-}
-.col-10 {
-  width: (10 / 12 * 100%);
-}
-.col-11 {
-  width: (11 / 12 * 100%);
-}
-.col-12 {
-  width: 100% !important;
-}
-
-@each $breakpoint in map-keys($breakpoints) {
-  .col-#{$breakpoint}-1 {
-    width: (1 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-2 {
-    width: (2 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-3 {
-    width: (3 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-4 {
-    width: (4 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-5 {
-    width: (5 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-6 {
-    width: (6 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-7 {
-    width: (7 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-8 {
-    width: (8 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-9 {
-    width: (9 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-10 {
-    width: (10 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-11 {
-    width: (11 / 12 * 100%);
-  }
-  .col-#{$breakpoint}-12 {
-    width: 100%;
-  }
-}
-
-// Gutters
-// Apply padding and a negative margin to the outside of the container
-@mixin gutters($gutter-width: $spacer-3) {
-  margin-right: -$gutter-width;
-  margin-left: -$gutter-width;
-
-  > [class*="col-"] {
-    padding-right: $gutter-width !important;
-    padding-left: $gutter-width !important;
-  }
-}
-
-.gutter {
-  @include gutters($spacing-3);
-}
-
-.gutter-condensed {
-  @include gutters($spacing-2);
-}
-
-.gutter-spacious {
-  @include gutters($spacing-4);
-}
-
-@each $breakpoint in map-keys($breakpoints) {
-  .gutter-#{$breakpoint} {
-    @include gutters($spacing-3);
-  }
-  .gutter-#{$breakpoint}-condensed {
-    @include gutters($spacing-2);
-  }
-  .gutter-#{$breakpoint}-spacious {
-    @include gutters($spacing-4);
-  }
 }
 
 /*
@@ -296,4 +182,192 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+// Responsive media queries
+@mixin breakpoint($breakpoint) {
+  @if $breakpoint == "" {
+    @content;
+  } @else {
+    // Retrieves the value from the key
+    $value: map-get($breakpoints, $breakpoint);
+
+    // If the key exists in the map
+    @if $value != null {
+      // Prints a media query based on the value
+      @media (min-width: $value) {
+        @content;
+      }
+    }
+
+    // If the key doesn't exist in the map
+    @else {
+      @warn "Unfortunately, no value could be retrieved from `#{$breakpoint}`. "
+        + "Please make sure it is defined in `$breakpoints` map.";
+    }
+  }
+}
+
+// Retina media query
+
+@mixin retina-media-query {
+  @media only screen and (-webkit-min-device-pixel-ratio: 2),
+    only screen and (min--moz-device-pixel-ratio: 2),
+    only screen and (-moz-min-device-pixel-ratio: 2),
+    only screen and (-o-min-device-pixel-ratio: 2/1),
+    only screen and (min-device-pixel-ratio: 2),
+    only screen and (min-resolution: 192dpi),
+    only screen and (min-resolution: 2dppx) {
+    @content;
+  }
+}
+
+// Clearfix
+//
+// Clears floats via mixin.
+
+@mixin clearfix {
+  &::before {
+    display: table;
+    content: "";
+  }
+
+  &::after {
+    display: table;
+    clear: both;
+    content: "";
+  }
+}
+
+/*
+* Responsive Grid
+*/
+.col-1 {
+  width: (1 / 12 * 100%);
+}
+.col-2 {
+  width: (2 / 12 * 100%);
+}
+.col-3 {
+  width: (3 / 12 * 100%);
+}
+.col-4 {
+  width: (4 / 12 * 100%);
+}
+.col-5 {
+  width: (5 / 12 * 100%);
+}
+.col-6 {
+  width: (6 / 12 * 100%);
+}
+.col-7 {
+  width: (7 / 12 * 100%);
+}
+.col-8 {
+  width: (8 / 12 * 100%);
+}
+.col-9 {
+  width: (9 / 12 * 100%);
+}
+.col-10 {
+  width: (10 / 12 * 100%);
+}
+.col-11 {
+  width: (11 / 12 * 100%);
+}
+.col-12 {
+  width: 100% !important;
+}
+
+@each $breakpoint in map-keys($breakpoints) {
+  @include breakpoint($breakpoint) {
+    .col-#{$breakpoint}-1 {
+      width: (1 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-2 {
+      width: (2 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-3 {
+      width: (3 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-4 {
+      width: (4 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-5 {
+      width: (5 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-6 {
+      width: (6 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-7 {
+      width: (7 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-8 {
+      width: (8 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-9 {
+      width: (9 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-10 {
+      width: (10 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-11 {
+      width: (11 / 12 * 100%);
+    }
+    .col-#{$breakpoint}-12 {
+      width: 100%;
+    }
+  }
+}
+
+@each $breakpoint in map-keys($breakpoints) {
+  @include breakpoint($breakpoint) {
+    .px-#{$breakpoint}-6 {
+      padding-left: $spacing-6;
+      padding-right: $spacing-6;
+    }
+  }
+}
+
+@each $breakpoint in map-keys($breakpoints) {
+  @include breakpoint($breakpoint) {
+    .offset-#{$breakpoint}-1 {
+      margin-left: (1 / 12 * 100%);
+    }
+    .offset-#{$breakpoint}-2 {
+      margin-left: (2 / 12 * 100%);
+    }
+    .offset-#{$breakpoint}-3 {
+      margin-left: (3 / 12 * 100%);
+    }
+    .offset-#{$breakpoint}-4 {
+      margin-left: (4 / 12 * 100%);
+    }
+  }
+}
+
+// Hide utilities for each breakpoint
+// Each hide utility only applies to one breakpoint range.
+@media (max-width: $width-sm - 1px) {
+  .hide-sm {
+    display: none !important;
+  }
+}
+
+@media (min-width: $width-sm) and (max-width: $width-md - 1px) {
+  .hide-md {
+    display: none !important;
+  }
+}
+
+@media (min-width: $width-md) and (max-width: $width-lg - 1px) {
+  .hide-lg {
+    display: none !important;
+  }
+}
+
+@media (min-width: $width-lg) {
+  .hide-xl {
+    display: none !important;
+  }
 }

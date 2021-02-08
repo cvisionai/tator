@@ -2,47 +2,9 @@ class LocalizationEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "LocalizationType";
-    this._shadow.appendChild(this.typeFormDiv);
-  }
+    this.readableTypeName = "State Type";
+    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
 
-  _init(data){
-    console.log(`${this.tagName} init.`);
-    this.data = JSON.parse( data );
-
-    if(this.data.length > 0){
-      console.log(this.data);
-
-      this.projectId = this.data[0].project;
-
-      for(let i in this.data){
-        let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-${this.typeName}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-        itemDiv.hidden = true;
-
-        // Section h1.
-        const h1 = document.createElement("h1");
-        h1.setAttribute("class", "h2 pb-3");
-        h1.innerHTML = `Localization settings.`;
-        itemDiv.appendChild(h1);
-
-        itemDiv.appendChild( this._getSectionForm( this.data[i]) );
-        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
-
-        this.typeFormDiv.appendChild(itemDiv);
-      }
-
-      console.log("Init complete : Data length "+this.data.length);
-      return this.typeFormDiv;
-    } else {
-      console.log("Init complete : No data.");
-    }
-  }
-
-  _getHeading(){
-    let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-target"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
-
-    return `${icon} <span class="item-label">Localization Type</span>`
   }
 
   _getSectionForm(data){
@@ -70,16 +32,18 @@ class LocalizationEdit extends TypeForm {
     // dtype
     const DTYPE = "Dtype";
     const dTypeOptions = [
+      { "optText": "Select", "optValue": "" },
       { "optText": "Box", "optValue": "box" },
       { "optText": "Line", "optValue": "line" },
       { "optText": "Dot", "optValue": "dot" }
     ]
+    let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
     _form.appendChild( this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
-      "disabledInput" : true
+      "disabledInput" : disableDtype
     }) );
 
     // visible
@@ -110,12 +74,11 @@ class LocalizationEdit extends TypeForm {
     } ) );
 
     // attribute types
-    if(data.attribute_types.length > 0){
-      this.attributeSection = document.createElement("attributes-main");
-      //this.attributeSection._init("LOCALIZATION", data.attribute_types);
-      this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
-      current.appendChild(this.attributeSection);
-    }
+    this.attributeSection = document.createElement("attributes-main");
+    //this.attributeSection._init("LOCALIZATION", data.attribute_types);
+    this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
+    current.appendChild(this.attributeSection);
+    
 
     return current;
   }
@@ -151,6 +114,8 @@ class LocalizationEdit extends TypeForm {
     return formData;
   }
 
+
+  
 }
 
 customElements.define("localization-edit", LocalizationEdit);

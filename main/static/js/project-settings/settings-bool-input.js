@@ -8,15 +8,15 @@ class SettingsBoolInput extends HTMLElement {
     //this._shadow.appendChild(fieldset);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "py-2 px-2 radio-slide-wrap d-flex flex-justify-between flex-items-center");
+    div.setAttribute("class", "py-2 radio-slide-wrap d-flex flex-justify-between flex-items-center");
     fieldset.appendChild(div);
 
     this._legend = document.createElement("legend");
-    this._legend.setAttribute("class", "f2");
+    this._legend.setAttribute("class", "f1");
     div.appendChild(this._legend);
 
     const controls = document.createElement("div");
-    controls.setAttribute("class", "d-flex flex-items-center col-8");
+    controls.setAttribute("class", "d-flex flex-items-center col-sm-8 col-md-9");
     div.appendChild(controls);
 
     this._on = document.createElement("input");

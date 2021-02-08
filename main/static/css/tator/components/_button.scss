@@ -8,7 +8,7 @@
   height: 46px;
   justify-content: center;
   width: 148px;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: background-color, color;
   &:focus {
     outline: none;
@@ -108,10 +108,10 @@
 .btn-edit-overlay {
   position: absolute;
   top: 84px;
-  left: 50%;
+  left: 25%; // col width
   width: 84px;
 
-  &.add-new-thumbnail{
+  &.add-new-thumbnail {
     top: 10px;
   }
 }
