@@ -192,10 +192,8 @@ Setting up NFS
 ==============
 Tator creates all Kubernetes persistent volumes using a single NFS share with a particular directory layout. The subdirectories are as follows:
 
-* The **media** directory is for storing transcoded media.
-* The **upload** directory is for storing temporary upload data.
+* The **media** directory is for storing temporary files and algorithm manifests.
 * The **static** directory contains static website files (javascript, images).
-* The **raw** directory is for storing raw media.
 * The **backup** directory is for storing database backups.
 * The **migrations** directory is for storing migrations.
 * The **elasticsearch** directory is for persistence in the optional Elasticsearch helm chart.
@@ -228,8 +226,6 @@ Preparing NFS server node
    mkdir /media/kubernetes_share/media
    mkdir /media/kubernetes_share/static
    mkdir /media/kubernetes_share/backup
-   mkdir /media/kubernetes_share/raw
-   mkdir /media/kubernetes_share/upload
    mkdir /media/kubernetes_share/migrations
    mkdir /media/kubernetes_share/scratch
    mkdir /media/kubernetes_share/elasticsearch
