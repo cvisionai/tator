@@ -6,6 +6,7 @@ from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
 from ..models import MediaType
+from ..models import Membership
 from ..models import State
 from ..models import User
 from ..models import Project
@@ -89,17 +90,22 @@ class LocalizationListAPI(BaseListView):
             raise Exception('Localization creation requires list of localizations!')
 
         # Get a default version.
-        default_version = Version.objects.filter(project=params['project'], number=0)
-        if default_version.exists():
-            default_version = default_version[0]
+        membership = Membership.objects.get(user=self.request.user, project=params['project'])
+        if membership.default_version:
+            default_version = membership.default_version
         else:
-            # If version 0 does not exist, create it.
-            default_version = Version.objects.create(
-                name="Baseline",
-                description="Initial version",
-                project=project,
-                number=0,
-            )
+            default_version = Version.objects.filter(project=params['project'],
+                                                     number__gte=0).order_by('number')
+            if default_version.exists():
+                default_version = default_version[0]
+            else:
+                # If no versions exist, create one.
+                default_version = Version.objects.create(
+                    name="Baseline",
+                    description="Initial version",
+                    project=project,
+                    number=0,
+                )
 
         # Find unique foreign keys.
         meta_ids = set([loc['type'] for loc in loc_specs])
