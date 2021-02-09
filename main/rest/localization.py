@@ -285,7 +285,11 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Localization.objects.get(pk=params['id']).delete()
+        qs = Localization.objects.filter(pk=params['id'])
+        TatorSearch().delete_document(qs[0])
+        qs.update(recycled_from=qs[0].project)
+        qs.update(project=None,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
