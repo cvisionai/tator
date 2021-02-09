@@ -349,10 +349,10 @@ class VideoDownloader
 
     // Establish the size of downloads
     // First set of segments will be downloaded more quickly (smaller chunks)
-    if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
-    {
-      iterBlockSize = this._startUpBlockSize * 2;
-    }
+    //if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
+    //{
+    //  iterBlockSize = this._startUpBlockSize * 2;
+    //}
 
     // Determine the startByte for this block of data to download
     // Download range based on the block size and the direction
@@ -590,10 +590,10 @@ class VideoDownloader
 
     // Use 1 Mb blocks if in the first 5 packets
     var iterBlockSize=this._blockSize;
-    if (idx < 5)
-    {
-        iterBlockSize=1024*1024;
-    }
+    //if (idx < 5)
+    //{
+    //    iterBlockSize=1024*1024;
+    //}
     var offsets=[];
     while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx] && offsets.length < packet_limit)
     {
@@ -653,7 +653,7 @@ onmessage = function(e)
     if (ref == null)
     {
       ref = new VideoDownloader(msg.media_files,
-                                5*1024*1024, // Download in 5 MB chunks
+                                1*1024*1024, // Download in 5 MB chunks
                                 msg.offsite_config);
     }
   }

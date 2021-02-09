@@ -1350,35 +1350,8 @@ class VideoCanvas extends AnnotationCanvas {
     };
 
     let new_play_idx = find_closest(this._videoObject, quality);
-    if (new_play_idx == this._scrub_idx)
-    {
-      console.info("Ignoring duplicate quality change");
-    }
-    else
-    {
-      console.info(`Changing quality to ${new_play_idx}`);
-
-      // Stop any existing download
-      this.dispatchEvent(new CustomEvent("bufferLoaded",
-                                               {composed: true,
-                                                detail: {"percent_complete":0.0}
-                                               }));
-      this.stopDownload();
-
-      // Reinitialize the buffers
-      this._scrub_idx = new_play_idx;
-      this._videoElement = [];
-      let streaming_files = this._videoObject.media_files["streaming"];
-      for (let idx = 0; idx < streaming_files.length; idx++)
-      {
-        this._videoElement.push(new VideoBufferDemux());
-        this._videoElement[idx].named_idx = idx;
-      }
-      // Clear the buffer in case this is a hot-swap
-      this._draw.clear();
-      this.startDownload(streaming_files);
-
-    }
+    this._play_idx = new_play_idx;
+    console.log("Setting 1x playback quality to: " + quality);
   }
 
   video_id()
@@ -1433,6 +1406,7 @@ class VideoCanvas extends AnnotationCanvas {
     let scrub_idx = -1;
     let hq_idx = -1;
     let streaming_files = null;
+    this._lastSeekFrame = -1;
     if (videoObject.media_files)
     {
       streaming_files = videoObject.media_files["streaming"];
@@ -1750,6 +1724,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       bufferType = "play";
     }
+    //console.log(`seekFrame: ${frame} ${bufferType}`)
     var video = this.videoBuffer(frame, bufferType);
 
     // Only support seeking if we are stopped (i.e. not playing) and we are not
@@ -1774,23 +1749,27 @@ class VideoCanvas extends AnnotationCanvas {
       // Use the frame as a cookie to keep track of duplicated
       // seek operations
       this._seekFrame = frame;
-      downloadSeekFrame = true;
+
+      if (this._lastSeekFrame != this._seekFrame)
+      {
+        downloadSeekFrame = true;
+      }
 
       if (this._seek_expire)
       {
         clearTimeout(this._seek_expire);
       }
       this._seek_expire = setTimeout(() => {
-        this._seekFrame = -1;
-        this._seek_expire = null;
+        that._lastSeekFrame = that._seekFrame;
+        that._seekFrame = -1;
+        that._seek_expire = null;
         document.body.style.cursor = null;
         console.warn("Network Seek expired");
-        this.refresh(false);
+        that.refresh(false);
       },2500);
     }
     else if (video == null)
     {
-      console.warn("Video is not loaded yet.");
       return new Promise(
         function(resolve,reject)
         {
@@ -1920,8 +1899,222 @@ class VideoCanvas extends AnnotationCanvas {
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
+
+  _playGenericScrub(direction)
+  {
+    var that = this;
+    console.log("Setting direction " + direction);
+    this._direction=direction;
+
+    // Reset the GPU buffer on a new play action
+    this._draw.clear();
+
+    // Reset perioidc health check in motion comp
+    this._motionComp.clearTimesVector();
+
+    /// This is the notional scheduled diagnostic interval
+    var schedDiagInterval=2000.0;
+
+    // set the current frame based on what is displayed
+    var currentFrame=this._dispFrame;
+
+    this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    let fpsInterval = 1000.0 / (this._fps);
+    let frameIncrement = this._motionComp.frameIncrement(this._fps,this._playbackRate);
+    // This is the time to wait to start playing when the buffer is dead empty.
+    // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
+    // This may end up being a tuneable thing, or we may want to calculate it
+    // more intelligently.
+    var bufferWaitTime=fpsInterval*4;
+
+    var lastTime=performance.now();
+    var animationIdx = 0;
+
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    var audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
+    var player=function(domtime){
+
+      // Start the FPS monitor once we start playing
+      if (that._diagTimeout == null)
+      {
+        that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+      }
+
+      that._motionComp.periodicRateCheck(domtime);
+      let increment = that._motionComp.animationIncrement(domtime, lastTime);
+      if (increment > 0)
+      {
+        lastTime=domtime;
+        // Based on how many clocks happened we may actually
+        // have to update late
+        for (let tempIdx = increment; tempIdx > 0; tempIdx--)
+        {
+          if (that._motionComp.timeToUpdate(animationIdx+increment))
+          {
+            that.displayLatest();
+            if (audioEligible && that._audioPlayer.paused)
+            {
+              that._audioPlayer.play();
+            }
+            break;
+          }
+        }
+        animationIdx = animationIdx + increment;
+      }
+
+      if (that._draw.canPlay())
+      {
+        that._playerTimeout=window.requestAnimationFrame(player);
+      }
+      else
+      {
+        if (audioEligible && that._audioPlayer.paused)
+        {
+          that._audioPlayer.pause();
+        }
+        that._motionComp.clearTimesVector();
+        that._playerTimeout=null;
+      }
+    };
+
+    /// This is the loader thread it recalculates intervals based on GUI changes
+    /// and seeks to the current frame in the off-screen buffer. If the player
+    /// isn't running and there are sufficient frames it will kick off the player
+    /// in 10 load cycles
+    var loader=function(){
+
+      // If the load buffer is full try again in the load interval
+      if (that._draw.canLoad() == false)
+      {
+        that._loaderTimeout=setTimeout(loader, fpsInterval*4);
+        return;
+      }
+
+      frameIncrement = that._motionComp.frameIncrement(that._fps,that._playbackRate);
+
+      // Canidate next frame
+      var nextFrame=currentFrame+(direction * frameIncrement);
+
+      //Schedule the next load if we are done loading
+      var pushAndGoToNextFrame=function(frameIdx, source, width, height)
+      {
+        that._fpsLoadDiag++;
+        that.pushFrame(frameIdx, source, width, height);
+
+        // If the next frame is loadable and we didn't get paused set a timer, else exit
+        if (nextFrame >= 0 && nextFrame < that._numFrames && that._direction!=Direction.STOPPED)
+        {
+          // Update the next frame to display and recurse back at twice the framerate
+          currentFrame=nextFrame;
+          that._loaderTimeout=setTimeout(loader, 0);
+        }
+        else
+        {
+          that._loaderTimeout=null;
+        }
+      }
+
+
+      // Seek to the current frame and call our atomic callback
+      that.seekFrame(currentFrame, pushAndGoToNextFrame);
+
+
+      // If the player is dead, we should restart it
+      if (that._playerTimeout == null && that._draw.canPlay())
+      {
+        that._playerTimeout=setTimeout(player, bufferWaitTime);
+      }
+    };
+
+    // turn on/off diagnostics
+    if (true)
+    {
+      this._fpsDiag=0;
+      this._fpsLoadDiag=0;
+      this._fpsScore=3;
+      this._networkUpdate = 0;
+      this._audioCheck = 0;
+      let AUDIO_CHECK_INTERVAL=1; // This could be tweaked if we are too CPU intensive
+
+      var diagRoutine=function(last)
+      {
+        var diagInterval = Date.now()-last;
+        var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
+        var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
+        var targetFPS = that._motionComp.targetFPS;
+        let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
+        that._audioCheck++;
+        if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+        {
+          // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
+          const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+          const correction = 1.0 + (audioDelta/2000);
+          const swag = Math.max(0.99,Math.min(1.01,correction));
+          that._audioPlayer.playbackRate = (swag) * that._playbackRate;
+
+          fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
+          if (Math.abs(audioDelta) >= 100)
+          {
+            console.info("Readjusting audio time");
+            const audio_increment = 1+that._motionComp.frameIncrement(that._fps,that._playbackRate);
+            that._audioPlayer.currentTime = that.frameToAudioTime(that._dispFrame+audio_increment);
+          }
+        }
+        console.info(fps_msg);
+        that._fpsDiag=0;
+        that._fpsLoadDiag=0;
+
+        if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+        {
+          Utilities.sendNotification(fps_msg);
+        }
+        that._networkUpdate += 1;
+
+        if (that._fpsScore)
+        {
+          var healthyFPS = targetFPS * 0.90;
+          if (calculatedFPS < healthyFPS)
+          {
+            that._fpsScore--;
+          }
+          else
+          {
+            that._fpsScore = Math.min(that._fpsScore + 1,7);
+          }
+
+          if (that._fpsScore == 0)
+          {
+            console.warn("Detected slow performance, entering safe mode.");
+            that.dispatchEvent(new Event("safeMode"));
+            that._motionComp.safeMode();
+            that.rateChange(that._playbackRate);
+          }
+        }
+
+        if (that._direction!=Direction.STOPPED)
+        {
+          that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+        }
+
+      };
+    }
+
+    // Kick off the loader
+    this._loaderTimeout=setTimeout(loader, 0);
+  }
+
   /**
-   * Start the video playback
+   * Start the video onDemand playback
    *
    * Launches the following threads:
    * - player thread
@@ -1930,7 +2123,7 @@ class VideoCanvas extends AnnotationCanvas {
    *
    * @param {Direction} direction Forward or backward playback
    */
-  _playGeneric(direction)
+  _playGenericOnDemand(direction)
   {
     var that = this;
     console.log("Setting direction " + direction);
@@ -2220,7 +2413,7 @@ class VideoCanvas extends AnnotationCanvas {
         // Look at how much time is stored in the buffer and where we currently are.
         // If we are within X seconds of the end of the buffer, drop the frames before
         // the current one and start downloading again.
-        console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
+        //console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
 
         var needMoreData = false;
         if (ranges.length == 0 && that._onDemandPendingDownloads < 1)
@@ -2308,10 +2501,10 @@ class VideoCanvas extends AnnotationCanvas {
             }
             else
             {
-              console.warn("Video playback buffer range not overlapping currentTime");
+              //console.warn("Video playback buffer range not overlapping currentTime");
             }
 
-            console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
+            //console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
           }
         }
 
@@ -2387,7 +2580,14 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      this._playGeneric(Direction.FORWARD);
+      if (this._playbackRate > 1.0)
+      {
+        this._playGenericScrub(Direction.FORWARD);
+      }
+      else
+      {
+        this._playGenericOnDemand(Direction.FORWARD);
+      }
       return true;
     }
   }
@@ -2401,7 +2601,14 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      this._playGeneric(Direction.BACKWARDS);
+      if (this._playbackRate > 1.0)
+      {
+        this._playGenericScrub(Direction.BACKWARDS);
+      }
+      else
+      {
+        this._playGenericOnDemand(Direction.BACKWARDS);
+      }
       return true;
     }
   }
