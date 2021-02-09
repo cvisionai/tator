@@ -170,7 +170,7 @@ class VideoDownloader
     this._onDemandConfig["mediaFileIndex"] = mediaFileIndex;
     this._onDemandConfig["currentPacket"] = 0;
     this._onDemandConfig["numPacketsDownloaded"] = 0;
-    this._onDemandConfig["videoInfoDownloaded"] = false;
+    this._onDemandConfig["init"] = false;
     this._onDemandConfig["lastStartByte"] = -1;
 
     postMessage({"type": "onDemandInit"});
@@ -311,33 +311,13 @@ class VideoDownloader
     var startByte;
     var iterBlockSize = this._blockSize;
 
-    if (!this._onDemandConfig["videoInfoDownloaded"])
+    if (!this._onDemandConfig["init"])
     {
-      // Have we initialized yet? If not:
-      // 1. Get the first two packets to get the video file information
-      // 2. Set the current packet based on the play start frame
-
-      // Setup getting the file info
-      packetIndex = 0;
-      startByte = 0;
-      while (
-        currentSize < iterBlockSize &&
-        packetIndex < this._numPackets[mediaFileIndex] &&
-        offsets.length < 2)
-      {
-        const packet = this._info[mediaFileIndex]["segments"][packetIndex];
-        const pos = parseInt(packet["offset"]);
-        const size = parseInt(packet["size"]);
-        offsets.push([pos - startByte, size, packet["name"]]);
-        currentSize = pos + size - startByte;
-        packetIndex++;
-      }
-
       // Set the current packet based on the play start frame plus some wiggle room
-      var frameToStart = 0;
+      this._onDemandConfig["init"] = true;
       if (this._onDemandConfig["direction"] == "forward")
       {
-        frameToStart = this._onDemandConfig["frame"] ;
+        var frameToStart = this._onDemandConfig["frame"] ;
         if (frameToStart < 0)
         {
           frameToStart = 0;
@@ -345,7 +325,7 @@ class VideoDownloader
       }
       else
       {
-        frameToStart = this._onDemandConfig["frame"];
+        var frameToStart = this._onDemandConfig["frame"];
       }
       let {matchIdx, boundary, lastPacket, lastFrame} = this.getSegmentIndex(frameToStart, mediaFileIndex);
       if (this._onDemandConfig["direction"] == "backward")
@@ -365,52 +345,65 @@ class VideoDownloader
         return;
       }
       packetIndex = matchIdx;
-      this.downloadInit = true;
+    }
+
+    // Establish the size of downloads
+    // First set of segments will be downloaded more quickly (smaller chunks)
+    if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
+    {
+      iterBlockSize = this._startUpBlockSize * 2;
+    }
+
+    // Determine the startByte for this block of data to download
+    // Download range based on the block size and the direction
+    if (this._onDemandConfig["direction"] == "forward")
+    {
+      if (packetIndex >= this._numPackets[mediaFileIndex])
+      {
+        //console.log("onDemand playback (forward) reached end of video.");
+        postMessage({"type": "onDemandFinished"});
+        return;
+      }
+
+      startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex]["offset"]);
+      while (currentSize < iterBlockSize && packetIndex < this._numPackets[mediaFileIndex])
+      {
+        const packet = this._info[mediaFileIndex]["segments"][packetIndex];
+        const pos = parseInt(packet["offset"]);
+        const size = parseInt(packet["size"]);
+        offsets.push([pos - startByte, size, packet["name"]]);
+        currentSize = pos + size - startByte;
+        packetIndex++;
+      }
     }
     else
     {
-      // Establish the size of downloads
-      // First set of segments will be downloaded more quickly (smaller chunks)
-      this.downloadInit = false;
-      if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
+      // Need to download segments backwards
+      if (packetIndex < 2)
       {
-        iterBlockSize = this._startUpBlockSize * 2;
+        //console.log("onDemand playback (backward) reached the beginning of video.");
+        postMessage({"type": "onDemandFinished"});
+        return;
       }
 
-      // Determine the startByte for this block of data to download
-      // Download range based on the block size and the direction
-      if (this._onDemandConfig["direction"] == "forward")
+      var packetData = [];
+      while (currentSize < iterBlockSize && packetIndex >= 2)
       {
-        if (packetIndex >= this._numPackets[mediaFileIndex])
-        {
-          //console.log("onDemand playback (forward) reached end of video.");
-          postMessage({"type": "onDemandFinished"});
-          return;
-        }
+        const packet = this._info[mediaFileIndex]["segments"][packetIndex];
+        const packetStart = parseInt(packet["offset"]);
+        const packetSize = parseInt(packet["size"]);
 
-        startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex]["offset"]);
-        while (currentSize < iterBlockSize && packetIndex < this._numPackets[mediaFileIndex])
-        {
-          const packet = this._info[mediaFileIndex]["segments"][packetIndex];
-          const pos = parseInt(packet["offset"]);
-          const size = parseInt(packet["size"]);
-          offsets.push([pos - startByte, size, packet["name"]]);
-          currentSize = pos + size - startByte;
-          packetIndex++;
-        }
+        packetData.push({start: packetStart, size: packetSize, name: packet["name"]})
+        currentSize += packetSize;
+        packetIndex--;
       }
-      else
-      {
-        // Need to download segments backwards
-        if (packetIndex < 2)
-        {
-          //console.log("onDemand playback (backward) reached the beginning of video.");
-          postMessage({"type": "onDemandFinished"});
-          return;
-        }
 
-        var packetData = [];
-        while (currentSize < iterBlockSize && packetIndex >= 2)
+      // #TODO This can be combined with the while loop above
+      if (this._info[mediaFileIndex]["segments"][packetIndex+1]["name"] != "moof")
+      {
+        // We didn't land on a moof packet, which will cause decoding errors.
+        // Continue looking backwards until the next "moof" is reached
+        while (packetIndex >= 2)
         {
           const packet = this._info[mediaFileIndex]["segments"][packetIndex];
           const packetStart = parseInt(packet["offset"]);
@@ -419,47 +412,30 @@ class VideoDownloader
           packetData.push({start: packetStart, size: packetSize, name: packet["name"]})
           currentSize += packetSize;
           packetIndex--;
-        }
 
-        // #TODO This can be combined with the while loop above
-        if (this._info[mediaFileIndex]["segments"][packetIndex+1]["name"] != "moof")
-        {
-          // We didn't land on a moof packet, which will cause decoding errors.
-          // Continue looking backwards until the next "moof" is reached
-          while (packetIndex >= 2)
+          if (packet["name"] == "moof")
           {
-            const packet = this._info[mediaFileIndex]["segments"][packetIndex];
-            const packetStart = parseInt(packet["offset"]);
-            const packetSize = parseInt(packet["size"]);
-
-            packetData.push({start: packetStart, size: packetSize, name: packet["name"]})
-            currentSize += packetSize;
-            packetIndex--;
-
-            if (packet["name"] == "moof")
-            {
-              break;
-            }
+            break;
           }
-        }
-
-        // Set the startByte and the offsets now that we have figured out how many segments
-        // we need to download
-        startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex + 1]["offset"]);
-        for (var idx = packetData.length - 1; idx >= 0; idx--)
-        {
-          const packet = packetData[idx];
-          offsets.push([packet.start - startByte, packet.size, packet.name]);
-        }
-
-        if (this._onDemandConfig["lastStartByte"] > 0)
-        {
-          currentSize = this._onDemandConfig["lastStartByte"] - startByte;
         }
       }
 
-      this._onDemandConfig["numPacketsDownloaded"] += offsets.length;
+      // Set the startByte and the offsets now that we have figured out how many segments
+      // we need to download
+      startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex + 1]["offset"]);
+      for (var idx = packetData.length - 1; idx >= 0; idx--)
+      {
+        const packet = packetData[idx];
+        offsets.push([packet.start - startByte, packet.size, packet.name]);
+      }
+
+      if (this._onDemandConfig["lastStartByte"] > 0)
+      {
+        currentSize = this._onDemandConfig["lastStartByte"] - startByte;
+      }
     }
+
+    this._onDemandConfig["numPacketsDownloaded"] += offsets.length;
 
     this._onDemandConfig["currentPacket"] = packetIndex;
     this._onDemandConfig["lastStartByte"] = startByte;
@@ -479,11 +455,6 @@ class VideoDownloader
               response.arrayBuffer().then(
                 (buffer) =>
                 {
-                  if (that.downloadInit)
-                  {
-                    that._onDemandConfig["videoInfoDownloaded"] = true;
-                  }
-
                   var data={"type": "onDemand",
                            "buf_idx" : mediaFileIndex,
                            "offsets": offsets,

@@ -113,9 +113,9 @@ class VideoBufferDemux
     }
 
     // Create another video buffer specifically used for onDemand playback
-    // #TODO Verify just one buffer is enough for onDemand playback
     this._onDemandBufferIndex = this._numBuffers;
     this._pendingOnDemandDeletes = [];
+    this._waitPlayback = false;
 
     this._init = false;
     this._dataLag = [];
@@ -1161,6 +1161,7 @@ class VideoCanvas extends AnnotationCanvas {
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
               video_buffer.appendAllBuffers(data.slice(begin, end), callback);
+              video_buffer.appendOnDemandBuffer(data.slice(begin, end), () => {});
               idx+=2;
             }
             else
@@ -2154,6 +2155,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
     this._loaderStarted = false;
+    this._sentPlaybackReady = false;
     var onDemandDownload = function (_)
     {
       const video = that._videoElement[that._play_idx];
@@ -2221,7 +2223,7 @@ class VideoCanvas extends AnnotationCanvas {
         console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
 
         var needMoreData = false;
-        if (ranges.length == 0)
+        if (ranges.length == 0 && that._onDemandPendingDownloads < 1)
         {
           // No data in the buffer, big surprise - need more data.
           needMoreData = true;
@@ -2263,8 +2265,19 @@ class VideoCanvas extends AnnotationCanvas {
             {
               if (timeToEnd > playbackReadyThreshold)
               {
-                // Enough data to start playback
-                that._onDemandPlaybackReady = true;
+                if (that._waitPlayback)
+                {
+                  if (!that._sentPlaybackReady)
+                  {
+                    that._sentPlaybackReady = true;
+                    that.dispatchEvent(new CustomEvent("playbackReady", {composed: true}));
+                  }
+                }
+                else
+                {
+                  // Enough data to start playback
+                  that._onDemandPlaybackReady = true;
+                }
               }
 
               if (timeToEnd < appendThreshold && that._onDemandPendingDownloads < 1)
@@ -2324,8 +2337,15 @@ class VideoCanvas extends AnnotationCanvas {
       if (!that._onDemandFinished)
       {
         // Sleep for a period before checking the onDemand buffer again
-        const onDemandDownloadRate = 250; // ms
-        that._onDemandDownloadTimeout = setTimeout(onDemandDownload, onDemandDownloadRate);
+        // This period is quicker when we have not begun playback
+        if (!that._onDemandPlaybackReady)
+        {
+          that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 100);
+        }
+        else
+        {
+          that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 250);
+        }
       }
     }
 
@@ -2347,6 +2367,15 @@ class VideoCanvas extends AnnotationCanvas {
   addPauseListener(cb)
   {
     this._pauseCb.push(cb);
+  }
+
+  /**
+   * @param {boolean} val - True if playback should wait until this is set to false.
+   *                        False, playback immediately
+   */
+  set waitPlayback(val)
+  {
+    this._waitPlayback = val;
   }
 
   play()
@@ -2422,6 +2451,7 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
+
     // Stop the player thread first
     this.stopPlayerThread();
 

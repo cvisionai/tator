@@ -141,7 +141,7 @@ class AnnotationMulti extends TatorElement {
         play.setAttribute("is-paused","");
         for (let video of this._videos)
         {
-          video.stopPlayerThread();
+          video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
           video.seekFrame(frame, video.drawFrame)
             .then(this._lastScrub = Date.now());
         }
@@ -159,7 +159,7 @@ class AnnotationMulti extends TatorElement {
 
       for (let video of this._videos)
       {
-        video.stopPlayerThread();
+        video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
         // Use the hq buffer when the input is finalized
         video.seekFrame(frame, video.drawFrame, true)
           .then(this._lastScrub = Date.now());
@@ -180,6 +180,7 @@ class AnnotationMulti extends TatorElement {
     rewind.addEventListener("click", () => {
       for (let video of this._videos)
       {
+        video.waitPlayback = true;
         video.pause();
         video.rateChange(this._rate);
         if (video.playBackwards())
@@ -418,6 +419,9 @@ class AnnotationMulti extends TatorElement {
       "auto ".repeat(this._multi_layout[0]);
     this._vidDiv.appendChild(multi_container);
     let idx = 0;
+
+    this._playbackReadyCount = 0;
+    this._numVideos = val.media_files['ids'].length;
     for (const vid_id of val.media_files['ids'])
     {
       const wrapper_div = document.createElement("div");
@@ -431,6 +435,20 @@ class AnnotationMulti extends TatorElement {
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
+
+      var that = this;
+      roi_vid.addEventListener("playbackReady", () =>
+      {
+        that._playbackReadyCount += 1;
+        if (that._playbackReadyCount == that._numVideos)
+        {
+          that._playbackReadyCount = 0;
+          for (var video of that._videos)
+          {
+            video.waitPlayback = false;
+          }
+        }
+      });
 
       idx += 1;
     }
@@ -504,6 +522,7 @@ class AnnotationMulti extends TatorElement {
       let playing = false;
       for (let video of this._videos)
       {
+        video.waitPlayback = true;
         video.rateChange(this._rate);
         playing |= video.play();
       }
