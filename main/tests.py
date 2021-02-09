@@ -105,24 +105,12 @@ def create_test_favorite(name, project, user, meta):
 def create_test_bookmark(name, project, user):
     return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
 
-def create_test_image_file():
-    this_path = os.path.dirname(os.path.abspath(__file__))
-    img_path = os.path.join(this_path, 'static', 'images',
-                            'tator-logo.png')
-    return SimpleUploadedFile(name='test.png',
-                              content=open(img_path, 'rb').read(),
-                              content_type='image/png')
-
 def create_test_video(user, name, entity_type, project):
     return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        original='',
         md5='',
-        file=SimpleUploadedFile(name='asdf.mp4', content=b'asdfasdf'),
-        thumbnail=create_test_image_file(),
-        thumbnail_gif=create_test_image_file(),
         num_frames=1,
         fps=30.0,
         codec='H264',
@@ -136,8 +124,6 @@ def create_test_image(user, name, entity_type, project):
         meta=entity_type,
         project=project,
         md5='',
-        file=create_test_image_file(),
-        thumbnail=create_test_image_file(),
         width='640',
         height='480',
     )
@@ -1694,7 +1680,6 @@ class LocalizationTypeTestCase(
 
 class MembershipTestCase(
         APITestCase,
-        PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):

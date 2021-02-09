@@ -118,8 +118,6 @@ where `FILESYSTEM_ID` is the EFS filesystem ID from the previous step.
 cd efs
 sudo mkdir static
 sudo mkdir media
-sudo mkdir raw
-sudo mkdir upload
 sudo mkdir backup
 sudo mkdir migrations
 ```

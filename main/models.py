@@ -18,7 +18,6 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import FileField
 from django.contrib.gis.db.models import FilePathField
-from django.contrib.gis.db.models import ImageField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
@@ -269,6 +268,7 @@ class Membership(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
+    default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
 
@@ -653,23 +653,17 @@ class Media(Model):
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
-    file = FileField(null=True, blank=True)
     last_edit_start = DateTimeField(null=True, blank=True)
     """ Start datetime of a session in which the media's annotations were edited.
     """
     last_edit_end = DateTimeField(null=True, blank=True)
     """ End datetime of a session in which the media's annotations were edited.
     """
-    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    thumbnail = ImageField(null=True, blank=True)
-    thumbnail_gif = ImageField(null=True, blank=True)
     num_frames = IntegerField(null=True, blank=True)
     fps = FloatField(null=True, blank=True)
     codec = CharField(null=True, blank=True, max_length=256)
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
-                                 blank=True)
     media_files = JSONField(null=True, blank=True)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
@@ -705,8 +699,6 @@ class Resource(Model):
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    if instance.file and created:
-        Resource.add_resource(instance.file.path, instance)
     if instance.media_files and created:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
             for fp in instance.media_files.get(key, []):
@@ -742,12 +734,6 @@ def media_delete(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
-    if instance.file:
-        safe_delete(instance.file.path)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
@@ -760,8 +746,6 @@ def media_post_delete(sender, instance, **kwargs):
                 if key == 'streaming':
                     path = obj['segment_info']
                     safe_delete(path)
-    instance.thumbnail.delete(False)
-    instance.thumbnail_gif.delete(False)
 
 class Localization(Model):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')

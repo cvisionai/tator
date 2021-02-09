@@ -133,7 +133,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(meta=filter_type)
 
     if name is not None:
-        qs = qs.filter(name=name)
+        qs = qs.filter(name__iexact=name)
 
     if section_uuid is not None:
         qs = qs.filter(attributes__tator_user_sections=section_uuid)
