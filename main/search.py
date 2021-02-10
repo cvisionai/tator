@@ -443,7 +443,10 @@ class TatorSearch:
         logger.info("HERE MA 3")
 
         # Copy values from old mapping to new mapping.
-        body = {'script': f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];"}
+        body = {
+            "script": f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];",
+            "query": {"exists": {"field": old_mapping_name}},
+        }
         logger.info(f"HERE update by query index {self.index_name(entity_type.project.pk)}")
         logger.info(f"HERE update by query body {body}")
         self.es.update_by_query(
