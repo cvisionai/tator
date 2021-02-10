@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from django.db import transaction
 from django.db.models import Case, When
+from django.http import Http404
 from PIL import Image
 
 from ..models import Media
@@ -412,7 +413,10 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        response_data = database_qs(Media.objects.filter(pk=params['id']))[0]
+        qs = Media.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        response_data = database_qs(qs)[0]
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = TatorS3()
@@ -426,7 +430,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        obj = Media.objects.select_for_update().get(pk=params['id'])
+        obj = Media.objects.select_for_update().get(pk=params['id'], deleted=False)
 
         if 'attributes' in params:
             new_attrs = validate_attributes(params, obj)
@@ -491,7 +495,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params['id'])
+        qs = Media.objects.filter(pk=params['id'], deleted=False)
         TatorSearch().delete_document(qs[0])
         qs.update(deleted=True,
                   modified_datetime=datetime.datetime.now(datetime.timezone.utc))

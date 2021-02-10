@@ -1,6 +1,8 @@
 import logging
+import datetime
 from django.db.models import Subquery
 from django.db import transaction
+from django.http import Http404
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -218,11 +220,14 @@ class LocalizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Localization.objects.filter(pk=params['id']))[0]
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        return database_qs(qs)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'])
+        obj = Localization.objects.get(pk=params['id'], deleted=False)
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -282,7 +287,9 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        qs = Localization.objects.filter(pk=params['id'])
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
         TatorSearch().delete_document(qs[0])
         qs.update(deleted=True,
                   modified_datetime=datetime.datetime.now(datetime.timezone.utc))
