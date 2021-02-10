@@ -513,7 +513,10 @@ class TatorSearch:
         uuid, delete_idx, mapping_name = self.check_deletion(entity_type, name)
 
         # Replace values in mapping with null.
-        body = {'script': f"ctx._source['{mapping_name}']=null;"}
+        body = {
+            'script': f"ctx._source['{mapping_name}']=null;",
+            "query": {"exists": {"field": mapping_name}},
+        }
         self.es.update_by_query(
             index=self.index_name(entity_type.project.pk),
             body=body,
