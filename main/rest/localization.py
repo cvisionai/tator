@@ -178,12 +178,9 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete any state many to many relations to these localizations.
-            state_qs = State.localizations.through.objects.filter(localization__in=qs)
-            state_qs._raw_delete(state_qs.db)
-
             # Delete the localizations.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} localizations!'}
@@ -287,8 +284,7 @@ class LocalizationDetailAPI(BaseDetailView):
     def _delete(self, params):
         qs = Localization.objects.filter(pk=params['id'])
         TatorSearch().delete_document(qs[0])
-        qs.update(recycled_from=qs[0].project)
-        qs.update(project=None,
+        qs.update(deleted=True,
                   modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 

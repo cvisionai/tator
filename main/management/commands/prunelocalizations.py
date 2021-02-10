@@ -1,8 +1,17 @@
 from django.core.management.base import BaseCommand
+from main.models import State
 from main.models import Localization
 import logging
 
 logger = logging.getLogger(__name__)
+
+def _delete_localizations(qs):
+    # Delete any state many to many relations to these localizations.
+    state_qs = State.localizations.through.objects.filter(localization__in=qs)
+    state_qs._raw_delete(state_qs.db)
+
+    # Delete the localizations.
+    qs.delete()
 
 class Command(BaseCommand):
     help = 'Deletes any localizations marked for deletion with null project, type, version, or media.'
@@ -17,6 +26,8 @@ class Command(BaseCommand):
         while True:
             # We cannot delete with a LIMIT query, so make a separate query
             # using IDs.
+            deleted = Localization.objects.filter(deleted=True, 
+                                                  modified_datetime__lte=max_datetime)
             null_project = Localization.objects.filter(project__isnull=True,
                                                        modified_datetime__lte=max_datetime)
             null_meta = Localization.objects.filter(meta__isnull=True,
@@ -25,13 +36,13 @@ class Command(BaseCommand):
                                                        modified_datetime__lte=max_datetime)
             null_media = Localization.objects.filter(media__isnull=True,
                                                      modified_datetime__lte=max_datetime)
-            loc_ids = (null_project | null_meta | null_version | null_media)\
+            loc_ids = (deleted | null_project | null_meta | null_version | null_media)\
                       .distinct()\
                       .values_list('pk', flat=True)[:BATCH_SIZE]
             localizations = Localization.objects.filter(pk__in=loc_ids)
             num_localizations = localizations.count()
             if num_localizations == 0:
                 break
-            localizations.delete()
+            _delete_localizations(localizations)
             num_deleted += num_localizations
             logger.info(f"Deleted a total of {num_deleted} localizations...")
