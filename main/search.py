@@ -459,7 +459,10 @@ class TatorSearch:
         logger.info("HERE MA 4")
 
         # Replace values in old mapping with null.
-        body = {'script': f"ctx._source['{old_mapping_name}']=null;"}
+        body = {
+            "script": f"ctx._source['{old_mapping_name}']=null;",
+            "query": {"exists": {"field": old_mapping_name}},
+        }
         self.es.update_by_query(
             index=self.index_name(entity_type.project.pk),
             body=body,
