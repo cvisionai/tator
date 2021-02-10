@@ -115,9 +115,7 @@ class AttributeTypeListAPI(BaseListView):
 
     def _patch(self, params: Dict) -> Dict:
         """Rename an attribute on a type."""
-        lognum = 0
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 0")
         ts = TatorSearch()
         global_operation = params.get("global", "false").lower()
         old_name = params["old_attribute_type_name"]
@@ -126,14 +124,12 @@ class AttributeTypeListAPI(BaseListView):
         new_attribute_type = params["new_attribute_type"]
         new_name = new_attribute_type["name"]
         attribute_renamed = old_name != new_name
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 1")
 
         # Get the old and new dtypes
         entity_type, obj_qs = self._get_objects(params)
         related_objects = self._get_related_objects(entity_type, old_name)
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 2")
         if related_objects and global_operation == "false":
             raise ValueError(
                 f"Attempted to mutate attribute '{old_name}' without the global flag set to 'true',"
@@ -150,8 +146,7 @@ class AttributeTypeListAPI(BaseListView):
                 f"Could not find attribute name {old_name} in entity type "
                 "{type(entity_type)} ID {entity_type.id}"
             )
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 3")
 
         # Determine if the attribute is being mutated
         attribute_mutated = False
@@ -163,8 +158,7 @@ class AttributeTypeListAPI(BaseListView):
             if old_value is None or old_value != new_value:
                 attribute_mutated = True
                 break
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 4")
 
         # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a problem
         # that would cause either a rename or a mutation to fail.
@@ -172,23 +166,20 @@ class AttributeTypeListAPI(BaseListView):
             ts.check_rename(entity_type, old_name, new_name)
             for instance, _ in related_objects:
                 ts.check_rename(instance, old_name, new_name)
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 5")
         if attribute_mutated:
             self._check_attribute_type(new_attribute_type)
             ts.check_mutation(entity_type, old_name, new_attribute_type)
             for instance, _ in related_objects:
                 ts.check_mutation(instance, old_name, new_attribute_type)
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 6")
 
         # List of success messages to return
         messages = []
 
         # Renames the attribute alias for the entity type in PSQL and ES
         if attribute_renamed:
-            logger.info(f"HERE {lognum}")
-            lognum += 1
+            logger.info(f"HERE 7")
             # Update entity type alias
             updated_types = ts.rename_alias(entity_type, related_objects, old_name, new_name)
             for instance in updated_types:
@@ -208,22 +199,18 @@ class AttributeTypeListAPI(BaseListView):
             entity_type, obj_qs = self._get_objects(params)
             related_objects = self._get_related_objects(entity_type, new_name)
 
-        logger.info(f"HERE {lognum}")
-        lognum += 1
+        logger.info(f"HERE 8")
         if attribute_mutated:
-            logger.info(f"HERE {lognum}")
-            lognum += 1
+            logger.info(f"HERE 9")
             # Update entity type attribute type
             ts.mutate_alias(entity_type, new_name, new_attribute_type).save()
             for instance, _ in related_objects:
                 ts.mutate_alias(instance, new_name, new_attribute_type).save()
-            logger.info(f"HERE {lognum}")
-            lognum += 1
+            logger.info(f"HERE 10")
 
             # Convert entity values
             if obj_qs.exists():
-                logger.info(f"HERE {lognum}")
-                lognum += 1
+                logger.info(f"HERE 11")
                 # Get the new attribute type to convert the existing value
                 new_attribute = None
                 for attribute_type in entity_type.attribute_types:
@@ -231,13 +218,11 @@ class AttributeTypeListAPI(BaseListView):
                         new_attribute = attribute_type
                         break
 
-                logger.info(f"HERE {lognum}")
-                lognum += 1
+                logger.info(f"HERE 12")
                 # Mutate the entity attribute values
                 bulk_mutate_attributes(new_attribute, obj_qs)
 
-            logger.info(f"HERE {lognum}")
-            lognum += 1
+            logger.info(f"HERE 13")
             for _, qs in related_objects:
                 if qs.exists():
                     # Get the new attribute type to convert the existing value
@@ -247,13 +232,11 @@ class AttributeTypeListAPI(BaseListView):
                             new_attribute = attribute_type
                             break
 
-                    logger.info(f"HERE {lognum}")
-                    lognum += 1
+                    logger.info(f"HERE 14")
                     # Mutate the entity attribute values
                     bulk_mutate_attributes(new_attribute, qs)
 
-            logger.info(f"HERE {lognum}")
-            lognum += 1
+            logger.info(f"HERE 15")
             messages.append(
                 f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{new_attribute_type}"
             )
