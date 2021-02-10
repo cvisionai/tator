@@ -666,8 +666,9 @@ class TatorSearch:
         # If project is null, the entire index should have been deleted.
         if not entity.project is None:
             index = self.index_name(entity.project.pk)
-            if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
-                self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
+            if entity.meta:
+                if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
+                    self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
 
     def search_raw(self, project, query):
         return self.es.search(
