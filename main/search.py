@@ -420,9 +420,11 @@ class TatorSearch:
         :returns: Entity type with updated attribute_types.
         """
         # Check mutation before applying atomically
+        logger.info("HERE MA 0")
         uuid, replace_idx, old_mapping_name = self.check_mutation(
             entity_type, name, new_attribute_type
         )
+        logger.info("HERE MA 1")
 
         # Create new alias definition and mapping.
         if new_style is not None:
@@ -433,10 +435,12 @@ class TatorSearch:
                         'path': mapping_name}}
         mapping = {mapping_name: {'type': mapping_type}}
         # Create new mapping.
+        logger.info("HERE MA 2")
         self.es.indices.put_mapping(
             index=self.index_name(entity_type.project.pk),
             body={'properties': {**mapping, **alias}},
         )
+        logger.info("HERE MA 3")
 
         # Copy values from old mapping to new mapping.
         body = {'script': f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];"}
@@ -445,6 +449,7 @@ class TatorSearch:
             body=body,
             conflicts='proceed',
         )
+        logger.info("HERE MA 4")
 
         # Replace values in old mapping with null.
         body = {'script': f"ctx._source['{old_mapping_name}']=null;"}
@@ -453,6 +458,7 @@ class TatorSearch:
             body=body,
             conflicts='proceed',
         )
+        logger.info("HERE MA 5")
 
         # Update entity type object with new values.
         entity_type.attribute_types[replace_idx] = new_attribute_type

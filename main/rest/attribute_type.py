@@ -204,13 +204,14 @@ class AttributeTypeListAPI(BaseListView):
             logger.info(f"HERE 9")
             # Update entity type attribute type
             ts.mutate_alias(entity_type, new_name, new_attribute_type).save()
+            logger.info(f"HERE 10")
             for instance, _ in related_objects:
                 ts.mutate_alias(instance, new_name, new_attribute_type).save()
-            logger.info(f"HERE 10")
+            logger.info(f"HERE 11")
 
             # Convert entity values
             if obj_qs.exists():
-                logger.info(f"HERE 11")
+                logger.info(f"HERE 12")
                 # Get the new attribute type to convert the existing value
                 new_attribute = None
                 for attribute_type in entity_type.attribute_types:
@@ -218,11 +219,11 @@ class AttributeTypeListAPI(BaseListView):
                         new_attribute = attribute_type
                         break
 
-                logger.info(f"HERE 12")
+                logger.info(f"HERE 13")
                 # Mutate the entity attribute values
                 bulk_mutate_attributes(new_attribute, obj_qs)
 
-            logger.info(f"HERE 13")
+            logger.info(f"HERE 14")
             for _, qs in related_objects:
                 if qs.exists():
                     # Get the new attribute type to convert the existing value
@@ -232,11 +233,11 @@ class AttributeTypeListAPI(BaseListView):
                             new_attribute = attribute_type
                             break
 
-                    logger.info(f"HERE 14")
+                    logger.info(f"HERE 15")
                     # Mutate the entity attribute values
                     bulk_mutate_attributes(new_attribute, qs)
 
-            logger.info(f"HERE 15")
+            logger.info(f"HERE 16")
             messages.append(
                 f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{new_attribute_type}"
             )
