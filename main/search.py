@@ -450,6 +450,7 @@ class TatorSearch:
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
         )
         logger.info("HERE MA 4")
 
@@ -459,6 +460,7 @@ class TatorSearch:
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
         )
         logger.info("HERE MA 5")
 
