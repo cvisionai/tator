@@ -234,16 +234,9 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Delete media many to many
-            media_qs = State.media.through.objects.filter(state__in=qs)
-            media_qs._raw_delete(media_qs.db)
-
-            # Delete localization many to many
-            loc_qs = State.localizations.through.objects.filter(state__in=qs)
-            loc_qs._raw_delete(loc_qs.db)
-
             # Delete states.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} states!'}
@@ -340,10 +333,15 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        state.delete()
+        state.update(deleted=True,
+                     modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+        TatorSearch().delete_document(state)
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
-        qs._raw_delete(qs.db)
+        qs.update(deleted=True,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+        for loc in qs.iterator():
+            TatorSearch().delete_document(loc)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 

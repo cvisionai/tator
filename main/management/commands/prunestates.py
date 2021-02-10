@@ -4,6 +4,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _delete_states(qs):
+    # Delete media many to many
+    media_qs = State.media.through.objects.filter(state__in=qs)
+    media_qs._raw_delete(media_qs.db)
+
+    # Delete localization many to many
+    loc_qs = State.localizations.through.objects.filter(state__in=qs)
+    loc_qs._raw_delete(loc_qs.db)
+
+    # Delete states.
+    qs.delete()
+
 class Command(BaseCommand):
     help = 'Deletes any states marked for deletion with null project, type, or version.'
 
@@ -22,6 +34,6 @@ class Command(BaseCommand):
             num_states = states.count()
             if num_states == 0:
                 break
-            states.delete()
+            _delete_states(states)
             num_deleted += num_states
             logger.info(f"Deleted a total of {num_deleted} states...")
