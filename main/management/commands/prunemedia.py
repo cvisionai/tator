@@ -13,7 +13,7 @@ def _delete_media(qs):
     state_media_qs._raw_delete(state_media_qs.db)
 
     # Delete any states that now have null media many-to-many.
-    state_qs = State.objects.filter(project=params['project'], media__isnull=True)
+    state_qs = State.objects.filter(media__isnull=True)
 
     # Delete any localizations associated to this media
     loc_qs = Localization.objects.filter(media__in=qs)
