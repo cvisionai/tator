@@ -169,7 +169,8 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} leaves!'}
@@ -218,7 +219,11 @@ class LeafDetailAPI(BaseDetailView):
         return {'message': 'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Leaf.objects.get(pk=params['id']).delete()
+        leaf = Leaf.objects.get(pk=params['id'])
+        TatorSearch().delete_document(leaf)
+        leaf.deleted = True
+        leaf.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+        leaf.save()
         return {'message': 'Leaf {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
