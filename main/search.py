@@ -451,6 +451,7 @@ class TatorSearch:
             body=body,
             conflicts='proceed',
             slices="auto",
+            requests_per_second=-1,
         )
         logger.info("HERE MA 4")
 
@@ -461,6 +462,7 @@ class TatorSearch:
             body=body,
             conflicts='proceed',
             slices="auto",
+            requests_per_second=-1,
         )
         logger.info("HERE MA 5")
 
