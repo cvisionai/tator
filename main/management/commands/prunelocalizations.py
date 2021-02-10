@@ -23,6 +23,8 @@ class Command(BaseCommand):
     def handle(self, **options):
         BATCH_SIZE = 1000
         num_deleted = 0
+        min_delta = datetime.timedelta(days=options['min_age_days'])
+        max_datetime = datetime.datetime.now(datetime.timezone.utc) - min_delta
         while True:
             # We cannot delete with a LIMIT query, so make a separate query
             # using IDs.
