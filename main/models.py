@@ -135,6 +135,24 @@ class ModelDiffMixin(object):
 
         return change_dict
 
+    @property
+    def create_dict(self):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table when a row is created.
+        """
+        change_dict = self._init_change_dict()
+
+        new = self.model_dict
+        old = {key: None for key in new.keys() if key != "attributes"}
+        old["attributes"] = {key: None for key in new.get("attributes", {})}
+
+        for name, old_val, new_val in self._diff(old, new):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
+
+        return change_dict
+
 
 class Depth(Transform):
     lookup_name = "depth"

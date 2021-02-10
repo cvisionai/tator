@@ -29,6 +29,7 @@ from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
+from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
@@ -135,33 +136,30 @@ class LocalizationListAPI(BaseListView):
                       for loc in loc_specs]
 
         # Create the localization objects.
-        localizations = []
-        create_buffer = []
-        for loc_spec, attrs in zip(loc_specs, attr_specs):
-            parent = None
-            if loc_spec.get('parent', None):
-                parent = Localization.objects.get(pk=loc_spec.get('parent', None))
-            loc = Localization(project=project,
-                               meta=metas[loc_spec['type']],
-                               media=medias[loc_spec['media_id']],
-                               user=self.request.user,
-                               attributes=attrs,
-                               created_by=self.request.user,
-                               modified_by=self.request.user,
-                               version=versions[loc_spec.get('version', None)],
-                               parent=parent,
-                               x=loc_spec.get('x', None),
-                               y=loc_spec.get('y', None),
-                               u=loc_spec.get('u', None),
-                               v=loc_spec.get('v', None),
-                               width=loc_spec.get('width', None),
-                               height=loc_spec.get('height', None),
-                               frame=loc_spec.get('frame', None))
-            create_buffer.append(loc)
-            if len(create_buffer) > 1000:
-                localizations += Localization.objects.bulk_create(create_buffer)
-                create_buffer = []
-        localizations += Localization.objects.bulk_create(create_buffer)
+        objs = (
+            Localization(
+                project=project,
+                meta=metas[loc_spec["type"]],
+                media=medias[loc_spec["media_id"]],
+                user=self.request.user,
+                attributes=attrs,
+                created_by=self.request.user,
+                modified_by=self.request.user,
+                version=versions[loc_spec.get("version", None)],
+                parent=Localization.objects.get(pk=loc_spec.get("parent"))
+                if loc_spec.get("parent")
+                else None,
+                x=loc_spec.get("x", None),
+                y=loc_spec.get("y", None),
+                u=loc_spec.get("u", None),
+                v=loc_spec.get("v", None),
+                width=loc_spec.get("width", None),
+                height=loc_spec.get("height", None),
+                frame=loc_spec.get("frame", None),
+            )
+            for loc_spec, attrs in zip(loc_specs, attr_specs)
+        )
+        localizations = bulk_create_from_generator(objs, Localization)
 
         # Build ES documents.
         ts = TatorSearch()
@@ -173,8 +171,25 @@ class LocalizationListAPI(BaseListView):
                 documents = []
         ts.bulk_add_documents(documents)
 
-        # Return created IDs.
+        # Create ChangeLogs
+        objs = (
+            ChangeLog(
+                project=project, user=self.request.user, description_of_change=loc.create_dict
+            )
+            for loc in localizations
+        )
+        change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+        # Associate ChangeLogs with created objects
+        ref_table = ContentType.objects.get_for_model(localizations[0])
         ids = [loc.id for loc in localizations]
+        objs = (
+            ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+            for ref_id, cl in zip(ids, change_logs)
+        )
+        bulk_create_from_generator(objs, ChangeToObject)
+
+        # Return created IDs.
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
 
     def _delete(self, params):
@@ -184,7 +199,7 @@ class LocalizationListAPI(BaseListView):
             # Get info to populate ChangeLog entry
             obj = qs.first()
             project = obj.project
-            delete_dict = obj.delete_dict
+            delete_dicts = [obj.delete_dict for obj in qs]
             ref_table = ContentType.objects.get_for_model(obj)
             ref_ids = [o.id for o in qs]
 
@@ -197,17 +212,20 @@ class LocalizationListAPI(BaseListView):
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
 
-            # Create ChangeLog and associate with all objects in the queryset
-            cl = ChangeLog(
-                project=project, user=self.request.user, description_of_change=delete_dict
+            # Create ChangeLogs
+            objs = (
+                ChangeLog(project=project, user=self.request.user, description_of_change=dd)
+                for dd in delete_dicts
             )
-            cl.save()
-            ChangeToObject.objects.bulk_create(
-                [
-                    ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-                    for ref_id in ref_ids
-                ]
+            change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+            # Associate ChangeLogs with deleted objects
+            objs = (
+                ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+                for ref_id, cl in zip(ref_ids, change_logs)
             )
+            bulk_create_from_generator(objs, ChangeToObject)
+
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
@@ -233,9 +251,8 @@ class LocalizationListAPI(BaseListView):
                 project=obj.project, user=self.request.user, description_of_change=change_dict
             )
             cl.save()
-            ChangeToObject.objects.bulk_create(
-                [ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs]
-            )
+            objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
+            bulk_create_from_generator(objs, ChangeToObject)
 
         return {'message': f'Successfully updated {count} localizations!'}
 
