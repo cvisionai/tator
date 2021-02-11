@@ -4,6 +4,7 @@ import itertools
 
 from django.db import transaction
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.http import Http404
 import numpy as np
 
 from ..models import State
@@ -234,16 +235,9 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Delete media many to many
-            media_qs = State.media.through.objects.filter(state__in=qs)
-            media_qs._raw_delete(media_qs.db)
-
-            # Delete localization many to many
-            loc_qs = State.localizations.through.objects.filter(state__in=qs)
-            loc_qs._raw_delete(loc_qs.db)
-
             # Delete states.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} states!'}
@@ -283,7 +277,10 @@ class StateDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        state = database_qs(State.objects.filter(pk=params['id']))[0]
+        qs = State.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        state = database_qs(qs)[0]
         # Get many to many fields.
         state['localizations'] = list(State.localizations.through.objects\
                                       .filter(state_id=state['id'])\
@@ -297,7 +294,7 @@ class StateDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        obj = State.objects.get(pk=params['id'])
+        obj = State.objects.get(pk=params['id'], deleted=False)
 
         if 'frame' in params:
             obj.frame = params['frame']
@@ -327,8 +324,7 @@ class StateDetailAPI(BaseDetailView):
         return {'message': f'State {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        state = State.objects.get(pk=params['id'])
-
+        state = State.objects.get(pk=params['id'], deleted=False)
         delete_localizations = []
         if state.meta.delete_child_localizations:
 
@@ -340,10 +336,16 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        state.delete()
+        state.deleted=True
+        state.modified_datetime=datetime.datetime.now(datetime.timezone.utc)
+        state.save()
+        TatorSearch().delete_document(state)
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
-        qs._raw_delete(qs.db)
+        qs.update(deleted=True,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+        for loc in qs.iterator():
+            TatorSearch().delete_document(loc)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 
@@ -388,7 +390,7 @@ class TrimStateEndAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params: dict) -> dict:
 
-        obj = State.objects.get(pk=params['id'])
+        obj = State.objects.get(pk=params['id'], deleted=False)
         localizations = obj.localizations.order_by('frame')
 
         if params['endpoint'] == 'start':

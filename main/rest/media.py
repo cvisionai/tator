@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from django.db import transaction
 from django.db.models import Case, When
+from django.http import Http404
 from PIL import Image
 
 from ..models import Media
@@ -333,30 +334,22 @@ class MediaListAPI(BaseListView):
         qs = get_media_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
-            # Delete any state many-to-many relations to this media.
-            state_media_qs = State.media.through.objects.filter(media__in=qs)
-            state_media_qs._raw_delete(state_media_qs.db)
+            # Mark media for deletion by setting project to null.
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
 
-            # Delete any states that now have null media many-to-many.
-            state_qs = State.objects.filter(project=params['project'], media__isnull=True)
+            # Any states that are only associated to deleted media should also be marked 
+            # for deletion.
+            not_deleted_media = Media.objects.filter(project=params['project'], deleted=False)
+            state_qs = State.objects.filter(project=params['project']).exclude(media__in=not_deleted_media)
+            state_qs.update(deleted=True,
+                            modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+
 
             # Delete any localizations associated to this media
-            loc_qs = Localization.objects.filter(media__in=qs)
-
-            # Delete any state many to many relations to these localizations.
-            state_loc_qs = State.localizations.through.objects.filter(localization__in=loc_qs)
-            state_loc_qs._raw_delete(state_loc_qs.db)
-            loc_state_qs = State.localizations.through.objects.filter(state__in=state_qs)
-            loc_state_qs._raw_delete(loc_state_qs.db)
-
-            # Delete states and localizations.
-            state_qs._raw_delete(state_qs.db)
-            loc_qs._raw_delete(loc_qs.db)
-
-            # Mark media for deletion by setting project to null.
-            qs.update(project=None,
-                      recycled_from=Project.objects.get(pk=params['project']),
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+            loc_qs = Localization.objects.filter(project=params['project'], media__in=qs)
+            loc_qs.update(deleted=True,
+                          modified_datetime=datetime.datetime.now(datetime.timezone.utc))
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -420,7 +413,10 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        response_data = database_qs(Media.objects.filter(pk=params['id']))[0]
+        qs = Media.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        response_data = database_qs(qs)[0]
         presigned = params.get('presigned')
         if presigned is not None:
             s3 = TatorS3()
@@ -434,7 +430,7 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        obj = Media.objects.select_for_update().get(pk=params['id'])
+        obj = Media.objects.select_for_update().get(pk=params['id'], deleted=False)
 
         if 'attributes' in params:
             new_attrs = validate_attributes(params, obj)
@@ -499,10 +495,9 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params['id'])
+        qs = Media.objects.filter(pk=params['id'], deleted=False)
         TatorSearch().delete_document(qs[0])
-        qs.update(recycled_from=qs[0].project)
-        qs.update(project=None,
+        qs.update(deleted=True,
                   modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         return {'message': f'Media {params["id"]} successfully deleted!'}
 

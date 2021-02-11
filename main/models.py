@@ -665,6 +665,7 @@ class Media(Model):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
+    deleted = BooleanField(default=False)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
@@ -790,6 +791,7 @@ class Localization(Model):
     """ Height for boxes."""
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
+    deleted = BooleanField(default=False)
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -842,6 +844,7 @@ class State(Model):
                            blank=True,
                            related_name='extracted',
                            db_column='extracted')
+    deleted = BooleanField(default=False)
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -899,6 +902,7 @@ class Leaf(Model):
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField(unique=True)
     name = CharField(max_length=255)
+    deleted = BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Leaves"

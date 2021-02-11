@@ -1,6 +1,8 @@
 import logging
+import datetime
 from django.db.models import Subquery
 from django.db import transaction
+from django.http import Http404
 
 from ..models import Localization
 from ..models import LocalizationType
@@ -178,12 +180,9 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete any state many to many relations to these localizations.
-            state_qs = State.localizations.through.objects.filter(localization__in=qs)
-            state_qs._raw_delete(state_qs.db)
-
             # Delete the localizations.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} localizations!'}
@@ -221,11 +220,14 @@ class LocalizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Localization.objects.filter(pk=params['id']))[0]
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        return database_qs(qs)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'])
+        obj = Localization.objects.get(pk=params['id'], deleted=False)
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -285,7 +287,12 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Localization.objects.get(pk=params['id']).delete()
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        TatorSearch().delete_document(qs[0])
+        qs.update(deleted=True,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
