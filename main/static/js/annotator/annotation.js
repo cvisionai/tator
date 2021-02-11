@@ -2582,25 +2582,7 @@ class AnnotationCanvas extends TatorElement
       if (this._emphasis != localization)
       {
         this._emphasis = localization;
-        this.refresh().then(() => {
-          // Handle case when localization is in a track
-          if (localization.id in this._data._trackDb)
-          {
-            // Explicitly not setting the active track here like it is done in other spots.
-            // It's possible the localization is emphasized, but the active track is still another
-            // selected track (e.g. selected a track but hovered over another one)
-            const track = this._data._trackDb[localization.id];
-            this.dispatchEvent(new CustomEvent("select", {
-              detail: track,
-              composed: true,
-            }));
-          } else {
-            this.dispatchEvent(new CustomEvent("select", {
-              detail: localization,
-              composed: true,
-            }));
-          }
-        });
+        this.refresh();
       }
     }
   }
