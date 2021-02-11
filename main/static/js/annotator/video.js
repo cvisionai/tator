@@ -1240,7 +1240,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "onDemandFinished")
       {
-        console.log("onDemand finished downloading. Reached end of video.");
+        //console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
       }
       else if (type == "onDemand")
@@ -1867,7 +1867,7 @@ class VideoCanvas extends AnnotationCanvas {
   processRateChange(event)
   {
     this._playbackRate=this._controls.rateControl.val();
-    console.log("set rate to: " + this._playbackRate);
+    console.log("Set playback rate to: " + this._playbackRate);
     return false;
   }
 
@@ -1914,7 +1914,7 @@ class VideoCanvas extends AnnotationCanvas {
   _playGenericScrub(direction)
   {
     var that = this;
-    console.log("Setting direction " + direction);
+    console.log("Setting playback direction " + direction);
     this._direction=direction;
 
     // Reset the GPU buffer on a new play action
@@ -2382,7 +2382,7 @@ class VideoCanvas extends AnnotationCanvas {
         if (ranges.length == 0 && !video.isOnDemandBufferBusy())
         {
           that._onDemandPendingDownloads = 0;
-          console.log("Sending onDemandInit to downloader")
+          //console.log("Sending onDemandInit to downloader")
           that._onDemandInitSent = true;
           that._dlWorker.postMessage(
             {
@@ -2397,7 +2397,7 @@ class VideoCanvas extends AnnotationCanvas {
         {
           if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
           {
-            console.log("Resetting onDemand buffer")
+            //console.log("Resetting onDemand buffer")
             video.resetOnDemandBuffer();
           }
         }
@@ -2472,8 +2472,11 @@ class VideoCanvas extends AnnotationCanvas {
                 {
                   if (!that._sentPlaybackReady)
                   {
-                    that._sentPlaybackReady = true;
-                    that.dispatchEvent(new CustomEvent("playbackReady", {composed: true}));
+                    if (video.playBuffer().readyState > 0)
+                    {
+                      that._sentPlaybackReady = true;
+                      that.dispatchEvent(new Event("playbackReady", {composed: true}));
+                    }
                   }
                 }
                 else
@@ -2494,7 +2497,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime - 2;
                   if (trimEnd > start && that._onDemandPlaybackReady)
                   {
-                    console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                    //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                     video.deletePendingOnDemand([start, trimEnd]);
                   }
                 }
@@ -2503,7 +2506,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime + 2;
                   if (trimEnd < end && that._onDemandPlaybackReady)
                   {
-                    console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                    //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                     video.deletePendingOnDemand([trimEnd, end]);
                   }
                 }
@@ -2521,7 +2524,7 @@ class VideoCanvas extends AnnotationCanvas {
         if (needMoreData && !that._onDemandFinished)
         {
           // Kick of the download worker to get the next onDemand segments
-          console.log("Requesting more onDemand data");
+          //console.log("Requesting more onDemand data");
           that._onDemandPendingDownloads += 1;
           that._dlWorker.postMessage({"type": "onDemandDownload"});
         }
