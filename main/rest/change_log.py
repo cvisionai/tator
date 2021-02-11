@@ -11,6 +11,7 @@ from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
 
+CHANGE_LOG_PROPERTIES = ["id", "project", "user", "modified_datetime", "description_of_change"]
 
 class ChangeLogListAPI(BaseListView):
     """
@@ -22,31 +23,28 @@ class ChangeLogListAPI(BaseListView):
 
     schema = ChangeLogListSchema()
     permission_classes = [ProjectFullControlPermission]
-    http_method_names = ["get", "delete"]
-    entity_type = LocalizationType  # Needed by attribute filter mixin
+    http_method_names = ["get"]
 
     def _get(self, params):
         response_data = []
         # Get query parameters.
-        media_id = params.get("media_id")
-        filter_type = params.get("type")
-        version = params.get("version")
-        frame = params.get("frame")
-        exclude_parents = params.get("excludeParents")
-        start = params.get("start")
-        stop = params.get("stop")
+        project = params["project"]
+        user_id = params.get("user_id")
+        entity_id = params.get("entity_id")
 
-        qs = ChangeLog.objects.filter(project=project)
-        if media_id is not None:
-            qs = qs.filter(media__in=media_id)
+        if all(value is None for value in [user_id, entity_id]):
+            raise ValueError(
+                f"At least one of the following fields need to be set: user_id, entity_id"
+            )
 
-        if filter_type is not None:
-            qs = qs.filter(meta=filter_type)
+        cl_qs = ChangeLog.objects.filter(project=project)
 
-        if version is not None:
-            qs = qs.filter(version__in=version)
+        if user_id is not None:
+            cl_qs = cl_qs.filter(user=user_id)
 
-        if frame is not None:
-            qs = qs.filter(frame=frame)
+        if entity_id is not None:
+            cto_qs = ChangeToObject.objects.filter(ref_id=entity_id)
+            cl_qs = cl_qs.filter(pk__in=[cto.change_id.id for cto in cto_qs])
 
+        response_data = list(cl_qs.values(*CHANGE_LOG_PROPERTIES))
         return response_data
