@@ -1,22 +1,45 @@
 class TypeDelete {
     constructor({
-        type, projectId, typeFormDiv
+        type, typeId
       }){
         this.type = type;
-        this.projectId = projectId;
-        this.typeFormDiv = typeFormDiv;
-        this.boxHelper = new SettingsBox( this.typeFormDiv );
+        this.typeId = typeId;
     }
 
-    init(){
-      let deleteIcon = new DeleteButton();
-        let deleteBox = this.boxHelper.boxWrapDelete({
-            "headingText" : `${deleteIcon} Delete?`,
-            "descriptionText" : "Edit attribute.",
-            "level":3,
-            "collapsed":true
-          });
+        // Facilitate creation of a new type
+      init(){
+        return this.getDelete();
+      }
+  
+      getDelete(){
+          const deleteButton = document.createElement("button");
+          deleteButton.setAttribute("value", "Save");
+          deleteButton.setAttribute("class", `btn btn-clear f1 text-semibold btn-red`);
+    
+          deleteButton.addEventListener("click", this.deleteFetch.bind(this));
+  
+          return inputSubmit;
+      }
 
-          return deleteBox;
+    async deleteFetch(){     
+      const response = await this._fetchPromise();
+      const data = await response.json();
+      console.log(data);
+      return data;
     }
+
+    _fetchPromise(){
+        console.log(`Deleting ${this.type} id ${this.typeId}`);
+    
+        return fetch(`/rest/${this.type}/${this.typeId}`, {
+          method: "DELETE",
+          mode: "cors",
+          credentials: "include",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          }
+        })
+      }
 }

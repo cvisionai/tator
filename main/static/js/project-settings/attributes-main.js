@@ -8,7 +8,7 @@ class AttributesMain extends HTMLElement {
   _init(typeName, fromId, projectId, data){
     console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
-    //
+    // Init object global vars
     this.fromId = fromId;
     this.typeName = typeName;
     this.projectId = projectId;
@@ -22,6 +22,7 @@ class AttributesMain extends HTMLElement {
     this.boxHelper = new SettingsBox( this.attributeDiv );
     this.inputHelper = new SettingsInput("media-types-main-edit");
     this.attributeFormHelper = new AttributesForm();
+    this.refreshTypeEvent = new Event('settings-refresh');
 
     // Section h1.
     const h2 = document.createElement("h2");
@@ -30,16 +31,14 @@ class AttributesMain extends HTMLElement {
     h2.appendChild(t);
     this.attributeDiv.appendChild(h2);
 
-    this.attributeBox = this.boxHelper.boxWrapDefault( {
-      "children" : ""
-    } );
+    // Create a styled box & Add box to page
+    this.attributeBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
+    this.attributeDiv.appendChild(this.attributeBox);
 
-    // get the form and +Add link
+    // Add the form and +Add links
     this.attributeBox.appendChild( this._getAttributesSection(data) );
     this.attributeBox.appendChild( this._getNewAttributesTrigger() );
-    this.attributeBox.appendChild( this._getCopyAttributesTrigger() );
-
-    this.attributeDiv.appendChild(this.attributeBox);
+    this.attributeBox.appendChild( this._getCopyAttributesTrigger() );    
 
     return this.attributeDiv;
   }
@@ -154,14 +153,21 @@ class AttributesMain extends HTMLElement {
 
       if(status == 201) iconWrap.appendChild(succussIcon);
       if(status == 400) iconWrap.appendChild(warningIcon);
-
       
       this.loading.hideSpinner();
-      this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+      this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+    
+      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this));
+    
     }).catch((error) => {
       this.loading.hideSpinner();
       this.boxHelper._modalError(`Error: ${error}`);
     });
+  }
+
+  _dispatchRefresh(e){
+    console.log("modal complete closed");
+    this.dispatchEvent(this.refreshTypeEvent);   
   }
 
   // Clone Attribute
@@ -196,7 +202,12 @@ class AttributesMain extends HTMLElement {
         event.preventDefault();
         let inputs = clone.getInputs();
         let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
-        return cloneData.createClones().then((r) => this.boxHelper._modalComplete(r));               
+        return cloneData.createClones().then((r) => {
+          console.log("Clone finished - event dispatched");
+          console.log(this);
+          this.dispatchEvent(this.refreshTypeEvent);
+          this.boxHelper._modalComplete(r)
+        });               
       });
 
       this.loading.hideSpinner();
@@ -277,10 +288,6 @@ class AttributesMain extends HTMLElement {
     boxOnPage.appendChild( deleteBox );
 
     return boxOnPage;
-  }
-
-  getDOM(){
-    return this._shadow;
   }
 
   _fetchPostPromise({formData = null } = {}){

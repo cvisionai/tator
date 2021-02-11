@@ -4,74 +4,88 @@ class TypeForm extends TatorElement {
 
     // Correct name for the type, ie. "LocalizationType"
     this.typeName = "";
-    this.readableTypeName = "Media Type";
+    this.readableTypeName = "";
 
     // Main Div to append content is an "item" for sideNav.
     this.typeFormDiv = document.createElement("div");
     this.typeFormDiv.setAttribute("class", "pl-md-6")
     this._shadow.appendChild(this.typeFormDiv);
-    this.bgdimmer = this._shadow.querySelector("background-dimmer");
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.typeFormDiv, this.bgdimmer );
+    this.boxHelper = new SettingsBox( this.typeFormDiv );
     this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
+    
+    // Loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg());
   }
 
-  _init(data){
+  _init({ data, modal }){
+    // Log to verify init
     console.log(`${this.readableTypeName} init.`);
     console.log(data);
-    //this.data = JSON.parse( data );
+    
+    // Initial values
     this.data = data;
+    this.modal = modal;
+    this.projectId = this.data.project;
+    this.typeId = this.data.id
 
+    // Register the update nav events
+    //if name is edited
+    this.updateNavEvent = new Event('settings-nav-update', { detail : `${this.typeName}-${this.typeId}` });
+    // trigger when new type added
+    this.addNavEvent = new Event('settings-nav-new', { detail : `${this.typeName}-${this.typeId}` });
+
+    // Add form to page
+    this.setupFormPage(data)
+  }
+
+  setupFormPage(data = this.data) {
+    // Log to verify setupTypeFormPage
+    console.log(`${this.readableTypeName} setupTypeFormPage.`);
+
+    // Section h1.
+    const h1 = document.createElement("h1");
+    h1.setAttribute("class", "h2 pb-3 edit-project__h1");
+
+    // Create a form with values, or empty editable form
     if(!this.data.form && !this.data.form != "empty"){
-      console.log(this.data);
-      this.projectId = this.data.project;
-      this.typeId = this.data.id
-
-      // Section h1.
-      const h1 = document.createElement("h1");
-      h1.setAttribute("class", "h2 pb-3 edit-project__h1");
-      const t = document.createTextNode(`${this.readableTypeName} settings.`); 
+      const t = document.createTextNode(`${this.readableTypeName} ${this.typeId} settings.`); 
       h1.appendChild(t);
-      this.typeFormDiv.appendChild(h1);
 
+      // Add all elements to page
+      this.typeFormDiv.appendChild(h1);
       this.typeFormDiv.appendChild( this._getSectionForm( this.data) );
       this.typeFormDiv.appendChild( this._getAttributeSection( ) );
       this.typeFormDiv.appendChild( this._getSubmitDiv( {"id": this.data.id }) );
-
       this.typeFormDiv.appendChild( this.deleteTypeSection() );
-
-      console.log("Init complete.");
       return this.typeFormDiv;
     } else {
-      this.projectId = this.data.project;
-
-      // Section h1.
-      const h1 = document.createElement("h1");
-      h1.setAttribute("class", "h2 pb-3 edit-project__h1");
-      const t = document.createTextNode(`Add New ${this.readableTypeName}.`); 
+      const t = document.createTextNode(`Add new ${this.readableTypeName}.`); 
       h1.appendChild(t);
+
       this.typeFormDiv.appendChild(h1);
-
       this.typeFormDiv.appendChild( this._getSectionForm( this._getEmptyData() ) );
+      this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
 
-      const inputSubmit = document.createElement("input");
-      inputSubmit.setAttribute("type", "submit");
-      inputSubmit.setAttribute("value", "Save");
-      inputSubmit.setAttribute("class", `btn btn-clear f1 text-semibold`);
-      this.savePost = inputSubmit;
-
-      this.savePost.addEventListener("click", this._savePost.bind(this));
-      this.typeFormDiv.appendChild( this.savePost );
-      
       return this.typeFormDiv;
     }
   }
 
+  _getSubmitNewDiv(){
+    this.savePost = document.createElement("input");
+    this.savePost.setAttribute("value", "Save");
+    this.savePost.setAttribute("class", `btn btn-clear text-center f1 text-semibold`);
+    this.savePost.style.margin = "0 auto";
+    this.savePost.addEventListener("click", this._savePost.bind(this));
+    
+    return this.savePost;
+  }
+
   _savePost(){
+    this.loading.showSpinner();
     let addNew = new TypeNew({
       "type" : this.typeName,
       "projectId" : this.projectId
@@ -80,7 +94,8 @@ class TypeForm extends TatorElement {
     let formData = this._getFormData("New", true);
     addNew.saveFetch(formData).then((data) => {
       console.log(data.message);
-      return this.boxHelper._modalComplete(data.message);
+      this.loading.hideSpinner();
+      return this._modalComplete(data.message);
     });
   }
 
@@ -98,9 +113,17 @@ class TypeForm extends TatorElement {
 
   _getAttributeSection(){
     this.attributeSection = document.createElement("attributes-main");
-    this.attributeSection._init(this.typeName, this.data.id, this.data.project, this.data.attribute_types);
+    this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
+    this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types);
+
+    // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
+    this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
 
     return this.attributeSection;
+  }
+
+  _attRefreshListener(e){
+    return this.resetHard();
   }
 
   _saveEntityButton(id){
@@ -113,7 +136,7 @@ class TypeForm extends TatorElement {
       } else {
         // @TODO- UX Save button disabled until form change
         let happyMsg = "Nothing new to save!";
-        this.boxHelper._modalSuccess( happyMsg );
+        this._modalSuccess( happyMsg );
       }
     });
     return this.saveButton;
@@ -132,21 +155,20 @@ class TypeForm extends TatorElement {
   }
 
   // form with parts put together
-  _getForm({inputs = [], id = -1}){
-    let _form = document.createElement("form");
-    _form.id = data.id;
-    current.appendChild( _form );
+  _setForm(){
+    this._form = document.createElement("form");
+    this._form.id = this.typeId;
 
-    return _form.addEventListener("change", (event) => {
-      this._formChanged(_form, event);
-    });
+    this._form.addEventListener("change", this._formChanged.bind(this));
+
+    return this._form;
   }
 
   _getHeading(){
     let headingSpan = document.createElement("span");
     let labelSpan = document.createElement("span");
     labelSpan.setAttribute("class", "item-label");
-    let t = document.createTextNode(`${this.readableTypeName}`); 
+    let t = document.createTextNode(`${this.readableTypeName}s`); 
     labelSpan.appendChild(t);
     headingSpan.innerHTML = this.icon;
     headingSpan.appendChild(labelSpan);
@@ -155,16 +177,79 @@ class TypeForm extends TatorElement {
   }
 
   deleteTypeSection(){
-    // let deleteSection = new TypeDelete({
-    //   "type" : this.typeName,
-    //   "projectId" : this.projectId,
-    //   "typeFormDiv" : this.typeFormDiv,
-    // });
-    let deleteIcon = new DeleteButton();
+    let button = document.createElement("button");
+    button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
+    button.style.marginRight = "10px";
 
-    return this.boxHelper.boxWrapDelete({
-      "children" : document.createTextNode(`${deleteIcon} Delete?`)
+    let deleteText = document.createTextNode(`Delete`);
+    button.appendChild( deleteText );
+
+    let descriptionText = `Delete this ${this.readableTypeName} and all its data?`;
+    let headingDiv = document.createElement("div");
+    headingDiv.setAttribute("class", "clearfix py-6");
+
+    let heading = document.createElement("div");
+    heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
+    
+    heading.appendChild( button );
+        
+    let description = document.createElement("div");
+    let _descriptionText = document.createTextNode("");
+    _descriptionText.nodeValue = descriptionText;
+    description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
+    description.appendChild( _descriptionText );
+    
+    headingDiv.appendChild(heading);
+    headingDiv.appendChild(description);
+
+    this.deleteBox = this.boxHelper.boxWrapDelete( {
+      "children" : headingDiv
+    } );
+
+    this.deleteBox.style.backgroundColor = "transparent";
+
+    button.addEventListener("click", this._deleteTypeConfirm.bind(this))
+
+    return this.deleteBox;
+  }
+
+  _deleteTypeConfirm(){
+    let button = document.createElement("button");
+    let confirmText = document.createTextNode("Confirm")
+    button.appendChild(confirmText);
+    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+
+    button.addEventListener("click", this._deleteType.bind(this));
+
+    this._modalConfirm({
+      "titleText" : `Delete Confirmation`,
+      "mainText" : `Pressing confirm will delete this ${this.typeName} and all its data from your account. Do you want to continue?`,
+      "buttonSave" : button,
+      "scroll" : false    
     });
+  }
+
+  _deleteType(){
+    this._modalCloseCallback();
+    this.loading.showSpinner();
+    let deleteType = new TypeDelete({
+      "type" : this.typeName,
+      "typeId" : this.typeId
+    });
+  
+    if(this.typeId != "undefined"){
+      deleteType.deleteFetch().then((data) => {
+        console.log(data.message);
+        this.loading.hideSpinner();
+        return this._modalComplete(data.message);
+      });
+    } else {
+      console.log("this.typeId");
+      console.log(this.typeId);
+      this.loading.hideSpinner();
+      return this._modalError("Error with delete.");
+    }
+
   }
 
   _getEmptyData() {
@@ -288,7 +373,7 @@ class TypeForm extends TatorElement {
                 
                 let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
                 this.loading.hideSpinner();
-                this.boxHelper._modalConfirm({
+                this._modalConfirm({
                   "titleText" : "Complete",
                   mainText,
                   buttonSave
@@ -296,10 +381,9 @@ class TypeForm extends TatorElement {
               } else {
                 let mainText = `${message}`;
                 this.loading.hideSpinner();
-                this.boxHelper._modalNeutral({
-                  "titleText" : "Complete",
+                this._modalComplete(
                   mainText
-                });
+                );
                 // Reset forms to the saved data from model
                 this.resetHard(id);
               }
@@ -322,22 +406,16 @@ class TypeForm extends TatorElement {
           this.loading.hideSpinner();
         });
     } else {
-      this.boxHelper._modalSuccess("Nothing new to save!");
+      this._modalSuccess("Nothing new to save!");
     }
 
 
   }
 
-  _formChanged( _form, event = "") {
-    console.log("Change in "+_form.id);
-    let changedFormEl = this._shadow.querySelector(`[id="${_form.id}"] `);
-
+  _formChanged( event ) {
     if(event != "") console.log("Change value... "+event.target.value);
-
-    return changedFormEl.classList.add("changed");
+    return this._form.classList.add("changed");
   }
-
-
 
   _handleResponseWithAttributes({
     id = -1,
@@ -394,8 +472,8 @@ class TypeForm extends TatorElement {
 
     buttonSave.addEventListener("click", (e) => {
       e.preventDefault();
-      let confirmCheckboxes = this.boxHelper._modalDom().querySelectorAll('[name="global"]');
-      this.boxHelper._modalCloseCallback();
+      let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
+      this._modalCloseCallback();
          
       console.log(confirmCheckboxes);
       for(let check of confirmCheckboxes){
@@ -435,12 +513,6 @@ class TypeForm extends TatorElement {
 
     return el.hidden = !hidden;
   };
-
-  
-
-  getDom(){
-    return this._shadow;
-  }
 
   // name
   _getNameFromData({ data = this.data} = {}){
@@ -507,50 +579,112 @@ class TypeForm extends TatorElement {
     return this._editDescription.querySelector("input").value = newValue;
   }
 
-  
-
   // RESET FUNCTIONS
-  reset(scope){
-    let itemDiv = this._shadow.querySelector(`#itemDivId-${this.typeName}-${scope}`);
-    let itemH = this._shadow.querySelector(`#itemDivId-${this.typeName}-${scope} h1`);
-    let itemData = this._findItemDataById(scope);
-
-    if(itemData != false){
-      itemDiv.innerHTML = '';
-      itemDiv.appendChild( itemH );
-      itemDiv.appendChild( this._getSectionForm(itemData) );
-      itemDiv.appendChild( this._getAttributeSection( ) );
-      itemDiv.appendChild( this._getSubmitDiv( {"id": scope } ) );
-      return itemDiv;
-    }
-
-    // if we somehow get here, just refreshing page will data?
-    return setTimeout(function(){ location.reload(); }, 3000);;
+  reset(data = this.data){
+    this.typeFormDiv.innerHTML = "";
+    return this.setupFormPage(data);
   }
 
-  resetHard(scope){
+  async resetHard(){
     console.log("reset hard");
-    this._fetchNewProjectData(scope).then( (data) => {
-      return this.reset(scope);
-    });
-
+    this.loading.showSpinner();
+    Utilities.warningAlert("Refreshing data", "#fff", false);
+    const response = await this._fetchGetPromise();
+    const data = await response.json();
+    this.data = this._findDataById(data)
+    Utilities.hideAlert()
+    this.loading.hideSpinner();
+    return this.reset(this.data);
   }
 
-  _findItemDataById(id){
-    for(let x in this.data){
-      if (this.data[x].id == id) return this.data[x];
+  _findDataById(allData){
+    for(let x in allData){
+      if (allData[x].id == this.typeId) return allData[x];
+      console.log("didn't match "+allData.id);
     }
     return false;
   }
 
-  _fetchNewProjectData(){
-    //
-    return this._fetchGetPromise().then(data => data.json).then( data => {
-        return data = this.data;
-      }     
-    );
+  // MODAL
+  _modalSuccess(message){
+    console.log("modal success");
+    this._modalClear();
+    let text = document.createTextNode(" Success");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append( document.createElement("modal-success") );
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    //this.modal._main.classList.add("fixed-heigh-scroll");
+
+    return this.modal.setAttribute("is-open", "true")
   }
 
+  _modalError(message){
+    console.log("modal error");
+    this._modalClear();
+    let text = document.createTextNode(" Error");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append( document.createElement("modal-warning") );
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    return this.modal.setAttribute("is-open", "true")
+  }
+
+  _modalConfirm({
+    titleText = "",
+    mainText = "",
+    buttonSave = document.createElement("button"),
+    scroll = true
+  } = {}){
+    console.log("modal confirm");
+    this._modalClear();
+    this.modal._titleDiv.innerHTML = titleText;
+
+    if(mainText.nodeType == Node.ELEMENT_NODE){
+      this.modal._main.appendChild(mainText);
+    } else {
+      this.modal._main.innerHTML = mainText;
+    }
+    
+    if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
+
+    let buttonClose = document.createElement("button")
+    buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold btn-charcoal");
+    buttonClose.innerHTML = "Cancel";
+
+    buttonClose.addEventListener("click", this._modalCloseCallback);
+
+    this.modal._footer.appendChild(buttonSave);
+    this.modal._footer.appendChild(buttonClose);
+    return this.modal.setAttribute("is-open", "true");
+  }
+
+  _modalComplete(message){
+    console.log("modal complete");
+    this._modalClear();
+    let text = document.createTextNode("Complete");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    this.modal._footer.innerHTML = "";
+    this.modal._main.classList.remove("fixed-heigh-scroll");
+
+    return this.modal.setAttribute("is-open", "true");
+  }
+
+  _modalClear(){
+    console.log("modal clear");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._main.innerHTML = "";
+    this.modal._footer.innerHTML = "";
+    
+    return this.modal;
+  }
+
+  _modalCloseCallback(){
+    console.log("modal close");
+    return this.modal._closeCallback();
+  }
 }
 
 customElements.define("type-form", TypeForm);

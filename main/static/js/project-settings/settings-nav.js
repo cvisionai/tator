@@ -16,6 +16,7 @@ class SettingsNav extends TatorElement {
     this.itemsContainer = document.createElement("div");
     this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12");
     this.div.appendChild(this.itemsContainer);
+
   }
 
 
@@ -217,20 +218,6 @@ class SettingsNav extends TatorElement {
     let itemDiv = this._shadow.querySelector(itemDivId);
 
     return itemDiv.appendChild(itemContents);
-  }
-
-  
-  /* @TODO - If the item's name is updated in the form, update it here too */
-  // ie. listen for {}, and run ~renameNavItem()~ ...........
-  /******/
-
-
-  _setDomArray(array){
-    this.domArray = array;
-  }
-
-  _getDomArray(){
-    return this.domArray;
   }
 
 }

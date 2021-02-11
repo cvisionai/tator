@@ -278,7 +278,8 @@ class AttributesForm extends HTMLElement {
       });
 
       // Add placeholder for warning, and listen for change.
-      let warningEl = this._inlineWarningDiv();
+      let warning = document.createElement("form-warning");
+      let warningEl = warning._inlineWarningDiv();
       selectBox.appendChild(warningEl);
       selectBox.addEventListener("change", (e) => {
         //when changed check if we need to show a warning.
@@ -290,7 +291,7 @@ class AttributesForm extends HTMLElement {
         } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} may cause data loss.`;
         }
-        this._inlineWarning({
+        warning._inlineWarning({
           "el" : warningEl,
           "message" : message
         });
@@ -321,44 +322,6 @@ class AttributesForm extends HTMLElement {
     }
     return selectBox;
   }
-
-  getWarning(err){
-    let warning = this._inlineWarningDiv();
-    let thisWarning = _inlineWarning({"el":warning, "message":err})
-    return thisWarning;
-  }
-
-  hideWarning(warning){
-    return warning.remove();
-  }
-
-  _inlineWarning({
-    el = "",
-    message = ""
-  }){
-    //empty el
-    el.innerHTML = "";
-    let inlineL= document.createElement("span");
-    inlineL.setAttribute("class", "col-4");
-    inlineL.innerHTML = "&nbsp;"
-    el.appendChild(inlineL);
-
-    let inlineR= document.createElement("span");
-    inlineR.setAttribute("class", "col-8");
-    inlineR.innerHTML = message;
-    el.appendChild(inlineR);
-
-    return el.hidden = false;
-  }
-
-  _inlineWarningDiv(){
-    let inlineWarning = document.createElement("div");
-    inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
-    inlineWarning.hidden = true;
-
-    return inlineWarning;
-  }
-
 
   _setAttributeDTypes(){
     this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];
@@ -442,11 +405,12 @@ class AttributesForm extends HTMLElement {
   }
 
   _getAttributeFormData(form){
-    let name = form.querySelector('[name="name"]').value;
+    let hasErrors = "";
+    //let name = form.querySelector('[name="name"]').value;
 
     let description = form.querySelector('[name="description"]').value;
 
-    let dtype = form.querySelector('[name="dtype"]').value;
+    //let dtype = form.querySelector('[name="dtype"]').value;
 
     let order = Number(form.querySelector('[name="order"]').value);
 
@@ -457,35 +421,65 @@ class AttributesForm extends HTMLElement {
     let visible = this.inputHelper._getSliderSetValue(visibleInputs);
 
     let formData = {
-      name,
       description,
-      dtype,
       order,
       required,
       visible
     };
 
-    let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
-    formData["default"] = _default;
+    // name only if changed || can not be "" 
+    let nameInput = form.querySelector('[name="name"]');
+    let name = nameInput.value;
+    if(name !== "" || name !== null) {
+      formData["name"] = name;
+      nameInput.classList.remove("has-border");
+      nameInput.classList.remove("is-invalid");
+    } else {
+      nameInput.classList.add("has-border");
+      nameInput.classList.add("is-invalid");
+      hasErrors += "Name cannot be blank\n";
+    }    
 
-    if(dtype === "int" || dtype === "float"){
-      let minimum = Number(form.querySelector('[name="minimum"]').value);
-      formData["minimum"] = minimum;
 
-      let maximum = Number(form.querySelector('[name="maximum"]').value);
-      formData["maximum"] = maximum;
+    // only send dtype when it's new, if included cannot be ""
+    let dtypeSelect = form.querySelector('[name="dtype"]');
+    let dtype = dtypeSelect.value;
+    if(dtype !== "" || dtype !== null) {
+
+      // Set dtype
+      formData.dtype = dtype;
+      dtypeSelect.classList.remove("has-border");
+      dtypeSelect.classList.remove("is-invalid");
+
+      // Fields that rely on dtype
+      let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
+      formData["default"] = _default;
+
+      if(dtype === "int" || dtype === "float"){
+        let minimum = Number(form.querySelector('[name="minimum"]').value);
+        formData["minimum"] = minimum;
+  
+        let maximum = Number(form.querySelector('[name="maximum"]').value);
+        formData["maximum"] = maximum;
+      }
+  
+      if(dtype === "enum"){
+        let choicesInputs =  form.querySelectorAll('input[name="choices"]');
+        let choices = this.inputHelper._getArrayInputValue(choicesInputs);
+        formData["choices"] = choices;
+  
+        let labelsInputs =  form.querySelectorAll('input[name="labels"]');
+        let labels = this.inputHelper._getArrayInputValue(labelsInputs);
+        formData["labels"] = labels;
+      }
+
+    } else {
+      dtypeSelect.classList.add("has-border");
+      dtypeSelect.classList.add("is-invalid");
+      hasErrors += "Name cannot be blank\n";
     }
-
-    if(dtype === "enum"){
-      let choicesInputs =  form.querySelectorAll('input[name="choices"]');
-      let choices = this.inputHelper._getArrayInputValue(choicesInputs);
-      formData["choices"] = choices;
-
-      let labelsInputs =  form.querySelectorAll('input[name="labels"]');
-      let labels = this.inputHelper._getArrayInputValue(labelsInputs);
-      formData["labels"] = labels;
-    }
-
+    
+    //if(hasErrors != "") return `Form error: ${hasErrors}`
     console.log(formData);
     return formData;
   }
@@ -536,10 +530,16 @@ class AttributesForm extends HTMLElement {
 
         formData.new_attribute_type = this._getAttributeFormData(form);
 
-        form.classList.remove("changed");
+       // if(formData.new_attribute_type && formData.new_attribute_type.indexOf("Error") > -1){
+       //   return false;
+       // } else {
+          form.classList.remove("changed");
 
-        let currentPatch = this._fetchAttributePatchPromise(id, formData);
-        attrPromises.promises.push(currentPatch);
+          let currentPatch = this._fetchAttributePatchPromise(id, formData);
+          attrPromises.promises.push(currentPatch);
+      //  }
+
+        
       });
       return attrPromises;
     } else {

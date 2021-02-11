@@ -12,7 +12,6 @@
     border-radius: 10px 10px 0 0;
     overflow: hidden;
     width: auto;
-    padding: 10px;
   }
 
   &:last-child {
@@ -50,9 +49,15 @@
     color: $color-white;
   }
 
+  .SideNav-heading button,
   .item-label,
   .SideNav-icon {
     pointer-events: none;
+  }
+
+  .item-label,
+  .SideNav-icon {
+    vertical-align: top;
   }
 }
 .SideNav-item,
@@ -91,7 +96,7 @@
 .SideNav-item:focus {
   text-decoration: none;
   // stylelint-disable-next-line primer/colors
-  background-color: $color-charcoal--light70;
+  //background-color: $color-charcoal--light70;
   color: $color-white;
   outline: none;
 
@@ -182,9 +187,8 @@
   background-color: $color-charcoal--light70;
 }
 
-.SideNav-item[selected="true"],
-.SideNav-heading[selected="true"] button,
-.SideNav-heading button[selected="true"] {
+.SideNav-item[selected="true"] {
+  //.SideNav-heading button[selected="true"] {
   background-color: $color-charcoal--light70;
   // KEEP this if they click into sub items
   // Bar on the left

@@ -6,31 +6,10 @@ class TypeNew {
         this.projectId = projectId;
     }
 
-    // Facilitate creation of a new type
-    init(){
-        return this.getSave();
-    }
-
-    getSave(){
-        const inputSubmit = document.createElement("input");
-        inputSubmit.setAttribute("type", "submit");
-        inputSubmit.setAttribute("value", "Save");
-        inputSubmit.setAttribute("class", `btn btn-clear f1 text-semibold`);
-  
-        inputSubmit.addEventListener("click", this.saveFetch.bind(this));
-
-        return inputSubmit;
-    }
-
-    saveFetch(formData){     
-      return this._fetchPostPromise(formData).then( (response) => { 
-        return response.json();
-      }).then(
-        (data) => {
-            console.log(data);
-            return data;
-        }
-      )
+    async saveFetch(formData){     
+      const response = await this._fetchPostPromise(formData);
+      const data = await response.json();
+      return data;
     }
 
     _fetchPostPromise(formData){

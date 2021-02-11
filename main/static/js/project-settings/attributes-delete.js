@@ -10,13 +10,6 @@ class AttributesDelete {
     }
 
     init(){
-        let deleteBox = this.boxHelper.boxWrapDelete({
-            "headingText" : `Delete ${this.attributeName}?`,
-            "descriptionText" : "Edit attribute.",
-            "level": 3,
-            "collapsed":true
-          });
-
-        return deleteBox;
+        
     }
 }

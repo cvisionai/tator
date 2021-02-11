@@ -2,10 +2,12 @@ class ProjectSettings extends TatorPage {
   constructor() {
     super();
 
+    // loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg());
     this.loading.showSpinner();
 
+    // main element
     this.main = document.createElement("main");
     this.main.setAttribute("class", "position-relative");
     this._shadow.appendChild(this.main);
@@ -14,6 +16,7 @@ class ProjectSettings extends TatorPage {
     this.settingsNav =  document.createElement("settings-nav");
     this.main.appendChild( this.settingsNav );
 
+    // Web Components for this page
     this.settingsViewClasses = [
       "project-main-edit",
       "media-type-main-edit",
@@ -21,6 +24,12 @@ class ProjectSettings extends TatorPage {
       "leaf-type-edit",
       "state-type-edit"
     ];
+
+    // Modal parent - to pass to page components
+    this.modal = document.createElement("modal-dialog");
+    this._shadow.appendChild( this.modal );
+    this.modal.addEventListener("open", this.showDimmer.bind(this));
+    this.modal.addEventListener("close", this.hideDimmer.bind(this));
 
     // Error catch all
     window.addEventListener("error", (evt) => {
@@ -95,11 +104,11 @@ class ProjectSettings extends TatorPage {
               });
 
               // init form with the data
-              formView._init(objData)
+              formView._init({ "data": objData, "modal" : this.modal})
 
               // Add nav to that container
               this.settingsNav._addSimpleNav({
-                "name" : formView._getHeading(),
+                "name" : formView._getHeading(objData.id),
                 "type" : formView.typeName ,
                 "id" : objData.id,
                 "selected" : true
@@ -136,7 +145,7 @@ class ProjectSettings extends TatorPage {
                   });
 
                   // init form with the data
-                  form._init(g)
+                  form._init({ "data": g, "modal" : this.modal})
               }
             }
           }    
@@ -154,7 +163,6 @@ class ProjectSettings extends TatorPage {
     this.settingsNav.addItemContainer({
       "type" : classBase.typeName,
       "id" : objData.id,
-      //"itemContents" : classBase,
       hidden
     });
   }
@@ -164,6 +172,15 @@ class ProjectSettings extends TatorPage {
        console.log("Data ID: "+data.id);
       this.makeContainer({"objData" : data, classBase, hidden});
     }
+  }
+
+  // Modal for this page, and handlers
+  showDimmer(){
+    return this.setAttribute("has-open-modal", "");
+  }
+
+  hideDimmer(){
+    return this.removeAttribute("has-open-modal");
   }
 
 }

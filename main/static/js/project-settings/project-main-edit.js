@@ -1,41 +1,43 @@
 class ProjectMainEdit extends TypeForm {
   constructor() {
     super();
-    // MainDiv is the project's "item" box as it relates to nav.
-    //this.typeFormDiv.setAttribute("class", "item-box");
-    this.typeName = "Project";
 
-    // Main Div to append content is an "item" for sideNav.
+    //
+    this.typeName = "Project";
+    this.readableTypeName = "Project";
+
+    // Content div
     this.typeFormDiv = document.createElement("div");
     this.typeFormDiv.setAttribute("class", "px-md-6")
     this._shadow.appendChild(this.typeFormDiv);
+  }
+  
+  _init({ data, modal}){
+    console.log(`${this.tagName} init.`);
+    console.log(this.data);
 
+    // init vars
+    this.data = data;
+    this.typeId = this.data.id;
+    this.projectId = this.data.id;
+    this.modal = modal;
+
+    this.setupFormPage();
+  }
+
+  setupFormPage(){
     // New heading element.
     this.h1 = document.createElement("h1");
     this.h1.setAttribute("class", "h2 pb-3 edit-project__h1");
-    const t = document.createTextNode(`Project settings.`); 
+    const t = document.createTextNode(`Project ${this.projectId} settings.`); 
     this.h1.appendChild(t);
     this.typeFormDiv.appendChild(this.h1);
-  }
-  
-  _init(data){
-    console.log(`${this.tagName} init.`);
-
-    this.data = data;
-    console.log(this.data);
-
-    this.projectId = this._setProjectId();
 
     this.typeFormDiv.appendChild( this._getSectionForm() )
     this.typeFormDiv.appendChild( this._getSubmitDiv({ "id":this.projectId}) );
     this.typeFormDiv.appendChild( this.deleteTypeSection() );
 
     return this.typeFormDiv;
-  }
-
-  _setProjectId(){
-    // Default
-    return this.data.id;
   }
 
   _getSectionForm() {
@@ -69,8 +71,6 @@ class ProjectMainEdit extends TypeForm {
     // Enable downloads at project level,
     this._downloadEnable = this._setDownloadInputFromData();
     _form.appendChild(this._downloadEnable);
-
-    let formElements = [this._editName, this._editSummary];
 
     return this.boxOnPage;
   }
@@ -258,13 +258,6 @@ class ProjectMainEdit extends TypeForm {
     console.log("[Reset with newly fetched project data.]");
   }
 
-
-  // input methods for unique 
-
-
-
-
-
   // save and formdata
   _getFormData() {
     let formDataJSON = {};
@@ -291,40 +284,27 @@ class ProjectMainEdit extends TypeForm {
         return response.json().then(data => {
           console.log("Save response status: " + response.status)
           if (response.status == "200") {
-            this.boxHelper._modalSuccess(data.message);
+            this._modalSuccess(data.message);
             this._fetchNewProjectData();
           } else {
-            this.boxHelper._modalError(data.message);
+            this._modalError(data.message);
           }
         })
       }
       )
         .catch(error => {
           console.log('Error:', error.message);
-          this.boxHelper._modalError("Internal error: " + error.message);
+          this._modalError("Internal error: " + error.message);
         });
     } else {
-      this.boxHelper._modalSuccess("Nothing new to save!")
+      this._modalSuccess("Nothing new to save!")
     }
 
   }
 
-  _getHeading(){
+  _getHeading(id){
     let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
-    return `${icon} <span class="item-label">Project</span>`
-  }
-
-  deleteTypeSection(){
-    // let deleteSection = new TypeDelete({
-    //   "type" : this.typeName,
-    //   "projectId" : this.projectId,
-    //   "typeFormDiv" : this.typeFormDiv,
-    // });
-    let deleteIcon = new DeleteButton();
-
-    return this.boxHelper.boxWrapDelete({
-      "children" : document.createTextNode(`${deleteIcon} Delete project?`)
-    });
+    return `${icon} <span class="item-label">Project ${id}</span>`
   }
 
 }
