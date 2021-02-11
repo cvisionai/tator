@@ -731,7 +731,8 @@ class TatorTranscode(JobManagerMixin):
                        'user': str(user),
                        'client_image' : get_client_image_name(),
                        'attributes' : json.dumps(attributes),
-                       'media_id': '-1'}
+                       'media_id': '-1',
+                       'size': str(upload_size)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
         pipeline_task = self.get_unpack_and_transcode_tasks(args, url)
