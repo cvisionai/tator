@@ -513,6 +513,8 @@ class TatorSearch:
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
+            requests_per_second=-1,
         )
 
         # Remove attribute from entity type object.
