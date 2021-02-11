@@ -12,7 +12,7 @@ class ProjectMainEdit extends TypeForm {
     this._shadow.appendChild(this.typeFormDiv);
   }
   
-  _init({ data, modal}){
+  _init({ data, modal, sidenav}){
     console.log(`${this.tagName} init.`);
     console.log(this.data);
 
@@ -21,6 +21,10 @@ class ProjectMainEdit extends TypeForm {
     this.typeId = this.data.id;
     this.projectId = this.data.id;
     this.modal = modal;
+    this.sideNav = sidenav;
+
+    // Pass modal to helper
+    this.boxHelper = new SettingsBox( this.modal );
 
     this.setupFormPage();
   }

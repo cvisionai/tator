@@ -104,7 +104,11 @@ class ProjectSettings extends TatorPage {
               });
 
               // init form with the data
-              formView._init({ "data": objData, "modal" : this.modal})
+              formView._init({ 
+                "data": objData, 
+                "modal" : this.modal, 
+                "sidenav" : this.settingsNav
+              });
 
               // Add nav to that container
               this.settingsNav._addSimpleNav({
@@ -145,7 +149,11 @@ class ProjectSettings extends TatorPage {
                   });
 
                   // init form with the data
-                  form._init({ "data": g, "modal" : this.modal})
+                  form._init({ 
+                    "data": g, 
+                    "modal" : this.modal, 
+                    "sidenav" : this.settingsNav
+                  })
               }
             }
           }    

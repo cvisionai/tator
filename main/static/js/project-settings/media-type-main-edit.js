@@ -96,12 +96,13 @@ class MediaTypeMainEdit extends TypeForm {
         formData["default_volume"] = default_volume;
       }
 
-      // name only if changed || can not be ""
+      // can not be ""
       if(this._nameChanged()){
         let nameInput = form.querySelector('[name="name"]');
         let name = nameInput.value;
         if(name !== "" || name !== null) {
           formData["name"] = name;
+          this._updateNavEvent("rename", name);
           nameInput.classList.remove("has-border");
           nameInput.classList.remove("is-invalid");
         } else {

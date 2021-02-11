@@ -5,13 +5,14 @@ class AttributesMain extends HTMLElement {
     this.loadingImg = this.loading.getImg()
   }
 
-  _init(typeName, fromId, projectId, data){
+  _init(typeName, fromId, projectId, data, modal){
     console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
     // Init object global vars
     this.fromId = fromId;
     this.typeName = typeName;
     this.projectId = projectId;
+    this.modal = modal;
 
     // add main div
     this.attributeDiv = document.createElement("div");
@@ -19,7 +20,7 @@ class AttributesMain extends HTMLElement {
     this.appendChild(this.loadingImg);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.attributeDiv );
+    this.boxHelper = new SettingsBox( this.modal );
     this.inputHelper = new SettingsInput("media-types-main-edit");
     this.attributeFormHelper = new AttributesForm();
     this.refreshTypeEvent = new Event('settings-refresh');

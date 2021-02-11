@@ -6,13 +6,12 @@ class TypeForm extends TatorElement {
     this.typeName = "";
     this.readableTypeName = "";
 
-    // Main Div to append content is an "item" for sideNav.
+    // Main Div
     this.typeFormDiv = document.createElement("div");
     this.typeFormDiv.setAttribute("class", "pl-md-6")
     this._shadow.appendChild(this.typeFormDiv);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.typeFormDiv );
     this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
     
@@ -21,7 +20,7 @@ class TypeForm extends TatorElement {
     this._shadow.appendChild( this.loading.getImg());
   }
 
-  _init({ data, modal }){
+  _init({ data, modal, sidenav}){
     // Log to verify init
     console.log(`${this.readableTypeName} init.`);
     console.log(data);
@@ -31,12 +30,10 @@ class TypeForm extends TatorElement {
     this.modal = modal;
     this.projectId = this.data.project;
     this.typeId = this.data.id
+    this.sideNav = sidenav;
 
-    // Register the update nav events
-    //if name is edited
-    this.updateNavEvent = new Event('settings-nav-update', { detail : `${this.typeName}-${this.typeId}` });
-    // trigger when new type added
-    this.addNavEvent = new Event('settings-nav-new', { detail : `${this.typeName}-${this.typeId}` });
+    // Pass modal to helper
+    this.boxHelper = new SettingsBox( this.modal );
 
     // Add form to page
     this.setupFormPage(data)
@@ -94,10 +91,13 @@ class TypeForm extends TatorElement {
     });
 
     let formData = this._getFormData("New", true);
+    console.log("New form Data....");
+    console.log(formData);
+
     addNew.saveFetch(formData).then((data) => {
       console.log(data.message);
       this.loading.hideSpinner();
-      
+
       return this._modalComplete(data.message);
     });
   }
@@ -117,7 +117,7 @@ class TypeForm extends TatorElement {
   _getAttributeSection(){
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
-    this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types);
+    this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types, this.modal);
 
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
@@ -243,6 +243,7 @@ class TypeForm extends TatorElement {
     if(this.typeId != "undefined"){
       deleteType.deleteFetch().then((data) => {
         console.log(data.message);
+        this._updateNavEvent("remove");
         this.loading.hideSpinner();
         return this._modalComplete(data.message);
       });
@@ -393,15 +394,17 @@ class TypeForm extends TatorElement {
           }).then( () => {
             console.log(this);
             // Reset changed flag
-            for(let f in attrFormsChanged) f.classList.remove("changed");
-            let mainForm = this._shadow.getElementById(id);
-            if(mainForm.classList.contains("changed")) mainForm.classList.remove("changed");
-            
-            let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
-            if(attrFormsChanged.length > 0 ) {
-              for(let f of attrFormsChanged) f.classList.remove("changed");
+            if(attrFormsChanged){
+              for(let f in attrFormsChanged) f.classList.remove("changed");
+              let mainForm = this._shadow.getElementById(id);
+              if(mainForm.classList.contains("changed")) mainForm.classList.remove("changed");
+              
+              let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
+              if(attrFormsChanged.length > 0 ) {
+                for(let f of attrFormsChanged) f.classList.remove("changed");
+              }
             }
-          
+         
           });
 
         }).catch(err => {
@@ -536,7 +539,7 @@ class TypeForm extends TatorElement {
   }
 
   _nameChanged() {
-    console.log(this.data.name);
+    console.log("This name changed");
     if (this._getNameInputValue() === this._getNameFromData()) return false;
     return true;
   }
@@ -655,7 +658,7 @@ class TypeForm extends TatorElement {
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold btn-charcoal");
     buttonClose.innerHTML = "Cancel";
 
-    buttonClose.addEventListener("click", this._modalCloseCallback);
+    buttonClose.addEventListener("click", this.modal._closeCallback);
 
     this.modal._footer.appendChild(buttonSave);
     this.modal._footer.appendChild(buttonClose);
@@ -688,6 +691,24 @@ class TypeForm extends TatorElement {
     console.log("modal close");
     return this.modal._closeCallback();
   }
+
+  // Update the navigation
+  _updateNavEvent(whatChanged, newName = ""){
+    console.log("Update the nav....");
+    if(whatChanged == "rename"){
+      let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
+      this.sideNav.dispatchEvent(event);
+    } else if(whatChanged == "remove") {
+      let event = this.sideNav.renameItemEvent(this.typeId, this.typeName, newName);
+      this.sideNav.dispatchEvent(event);
+    } else if(whatChanged == "new") {
+      let event = this.sideNav.newItemEvent(this.typeId, this.typeName, newName);
+      this.sideNav.dispatchEvent(event);
+    } else {
+      console.log("Need more information to update the sidenav.");
+    }
+  }
+
 }
 
 customElements.define("type-form", TypeForm);

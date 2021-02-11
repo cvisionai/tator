@@ -17,6 +17,60 @@ class SettingsNav extends TatorElement {
     this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12");
     this.div.appendChild(this.itemsContainer);
 
+    // Listen for changes
+    this.addEventListener('settings-nav-new', this.newNavItem.bind(this));
+    this.addEventListener('settings-nav-rename', this.updateNavItem.bind(this))
+    this.addEventListener('settings-nav-remove', this.deleteNavItem.bind(this))
+  }
+
+  newItemEvent(typeId, typeName, newName){
+    let detail = {
+      "bubbles" : true,
+      "detail" : {
+        "typeId" : typeId,
+        "typeName" : typeName,
+        "newName" : newName
+      }
+    };
+    return new CustomEvent('settings-nav-new', detail);
+  }
+
+  renameItemEvent(typeId, typeName, newName){
+    let detail = {
+      "bubbles" : true,
+      "detail" : {
+        "typeId" : typeId,
+        "typeName" : typeName,
+        "newName" : newName
+      }
+    };
+    return new CustomEvent('settings-nav-rename', detail);
+  }
+
+  removeItemEvent(typeId, typeName){
+    let detail = {
+      "bubbles" : true,
+      "detail" : {
+        "typeId" : typeId,
+        "typeName" : typeName
+      }
+    };
+    return new CustomEvent('settings-nav-remove', detail);
+  }
+
+  newNavItem(e){
+    console.log("Event handler newNavItem")
+    console.log(e.detail);
+  }
+
+  updateNavItem(e){
+    console.log("Event handler newNavItem")
+    console.log(e.detail);
+  }
+
+  deleteNavItem(e){
+    console.log("Event handler newNavItem")
+    console.log(e.detail);
   }
 
 

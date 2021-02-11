@@ -1,12 +1,10 @@
 class AttributesDelete {
     constructor({
-        type, typeId, attributeName, pageDiv
+        type, typeId, attributeName
     }){
         this.type = type;
         this.typeId = typeId;
-        this.pageDiv = pageDiv;
         this.attributeName = attributeName;
-        this.boxHelper = new SettingsBox( this.pageDiv );
     }
 
     init(){

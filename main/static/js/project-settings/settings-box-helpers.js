@@ -1,12 +1,9 @@
 /* Class with methods return content in a styled DIV boxes.*/
 class SettingsBox {
-  constructor( mainDiv, bgdimmer) {
+  constructor( modal ) {
 
-    this.modal = document.createElement("settings-modal");
-    this.mainDiv = mainDiv;
-    this.bgdimmer = bgdimmer;
+    this.modal = modal;
 
-    this.mainDiv.appendChild(this.modal);
   }
 
   boxWrapDefault( { children = {}, level = 1, customClass = ""} = {} ){
