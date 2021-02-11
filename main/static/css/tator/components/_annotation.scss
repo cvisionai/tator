@@ -304,6 +304,12 @@ video-canvas {
   &:focus {
     color: $color-purple;
   }
+
+  &:disabled,
+  [disabled] {
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
 }
 
 .video__play-wrap {

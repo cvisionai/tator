@@ -221,6 +221,24 @@ class AnnotationSettings extends TatorElement {
   {
     this._quality = val;
   }
+
+  enableQualityChange()
+  {
+    this._quality.removeAttribute("disabled");
+  }
+  disableQualityChange()
+  {
+    this._quality.setAttribute("disabled", "");
+  }
+
+  enableRateChange()
+  {
+    this._rate.removeAttribute("disabled");
+  }
+  disableRateChange()
+  {
+    this._rate.setAttribute("disabled", "");
+  }
 }
 
 customElements.define("annotation-settings", AnnotationSettings);

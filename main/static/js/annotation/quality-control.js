@@ -24,6 +24,8 @@ class QualityControl extends TatorElement {
     {
       this._quality = Number(searchParams.get("quality"));
     }
+
+    this._select = null;
   }
 
   hide()
@@ -49,6 +51,7 @@ class QualityControl extends TatorElement {
   {
     const select = document.createElement("select");
     select.setAttribute("class", "form-select has-border select-sm1");
+    this._select = select;
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;
@@ -83,6 +86,25 @@ class QualityControl extends TatorElement {
         composed: true
       }));
     });
+  }
+
+  static get observedAttributes() {
+    return ["class", "disabled"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "disabled":
+        if (this._select != null)
+        {
+          if (newValue === null) {
+            this._select.removeAttribute("disabled");
+          } else {
+            this._select.setAttribute("disabled", "");
+          }
+          break;
+        }
+    }
   }
 }
 

@@ -20,6 +20,7 @@ class AnnotationMulti extends TatorElement {
 
     const rewind = document.createElement("rewind-button");
     playButtons.appendChild(rewind);
+    this._rewind = rewind;
 
     const play = document.createElement("play-button");
     this._play = play;
@@ -28,6 +29,7 @@ class AnnotationMulti extends TatorElement {
 
     const fastForward = document.createElement("fast-forward-button");
     playButtons.appendChild(fastForward);
+    this._fastForward = fastForward;
 
     const timelineDiv = document.createElement("div");
     timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-2");
@@ -150,6 +152,8 @@ class AnnotationMulti extends TatorElement {
 
     this._slider.addEventListener("change", evt => {
       play.setAttribute("is-paused","");
+      this.dispatchEvent(new Event("displayLoading", {composed: true}));
+
       // Only use the current frame to prevent glitches
       let frame = this._videos[0].currentFrame();
       if (evt.detail)
@@ -157,13 +161,33 @@ class AnnotationMulti extends TatorElement {
         frame = evt.detail.frame;
       }
 
+      var seekPromiseList = [];
       for (let video of this._videos)
       {
         video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
-        // Use the hq buffer when the input is finalized
-        video.seekFrame(frame, video.drawFrame, true)
-          .then(this._lastScrub = Date.now());
+        const seekPromise = video.seekFrame(frame, video.drawFrame, true);
+        seekPromiseList.push(seekPromise);
       }
+
+      // It's possible that the prime video will be out of sync with other videos if
+      // there are network seek expired. Until that's addressed, this will verify
+      // the videos are the same frame and if not, it'll attempt to seek to the
+      // prime video's location. This essentially is only a +1 retry.
+      Promise.allSettled(seekPromiseList).then(() => {
+        let primeFrame = that._videos[0].currentFrame();
+        this._lastScrub = Date.now();
+        for (const video of that._videos)
+        {
+          if (primeFrame != video.currentFrame())
+          {
+            video.seekFrame(frame, video.drawFrame, true).then(this._lastScrub = Date.now());
+          }
+        };
+        this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      })
+      .catch(() => {
+        this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      });
     });
 
     play.addEventListener("click", () => {
@@ -178,6 +202,11 @@ class AnnotationMulti extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
+
+      this.dispatchEvent(new Event("playing", {composed: true}));
+      fastForward.setAttribute("disabled", "");
+      rewind.setAttribute("disabled", "");
+
       for (let video of this._videos)
       {
         video.waitPlayback = true;
@@ -194,7 +223,7 @@ class AnnotationMulti extends TatorElement {
       for (let video of this._videos)
       {
         video.pause();
-        video.rateChange(2 * this._rate);
+        video.rateChange(2 * this._rate); // #TODO This is a bug, play() sets the rate back to 1.0
       }
       this.play();
     });
@@ -204,6 +233,9 @@ class AnnotationMulti extends TatorElement {
       {
         if (this.is_paused() == false)
         {
+          this.dispatchEvent(new Event("paused", {composed: true}));
+          fastForward.removeAttribute("disabled");
+          rewind.removeAttribute("disabled");
           video.pause().then(() => {
             video.back();
           });
@@ -220,6 +252,9 @@ class AnnotationMulti extends TatorElement {
       {
         if (this.is_paused() == false)
         {
+          this.dispatchEvent(new Event("paused", {composed: true}));
+          fastForward.removeAttribute("disabled");
+          rewind.removeAttribute("disabled");
           video.pause().then(() => {
             video.advance();
           });
@@ -436,14 +471,13 @@ class AnnotationMulti extends TatorElement {
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
 
-      var that = this;
       roi_vid.addEventListener("playbackReady", () =>
       {
-        that._playbackReadyCount += 1;
-        if (that._playbackReadyCount == that._numVideos)
+        this._playbackReadyCount += 1;
+        if (this._playbackReadyCount == this._numVideos)
         {
-          that._playbackReadyCount = 0;
-          for (var video of that._videos)
+          this._playbackReadyCount = 0;
+          for (var video of this._videos)
           {
             video.waitPlayback = false;
           }
@@ -517,6 +551,24 @@ class AnnotationMulti extends TatorElement {
 
   play()
   {
+    if (this._rate > 1.0)
+    {
+      // Check to see if the video player can play at this rate
+      // at the current frame. If not, inform the user.
+      for (let video of this._videos)
+      {
+        if (!video.canPlayRate(this._rate))
+        {
+          window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+          return;
+        }
+      }
+    }
+
+    this.dispatchEvent(new Event("playing", {composed: true}));
+    this._fastForward.setAttribute("disabled", "");
+    this._rewind.setAttribute("disabled", "");
+
     const paused = this.is_paused();
     if (paused) {
       let playing = false;
@@ -535,6 +587,10 @@ class AnnotationMulti extends TatorElement {
 
   pause()
   {
+    this.dispatchEvent(new Event("paused", {composed: true}));
+    this._fastForward.removeAttribute("disabled");
+    this._rewind.removeAttribute("disabled");
+
     const paused = this.is_paused();
     if (paused == false) {
       for (let video of this._videos)

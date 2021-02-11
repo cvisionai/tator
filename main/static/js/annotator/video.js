@@ -271,7 +271,7 @@ class VideoBufferDemux
    */
   forTime(time, buffer, direction, maxTime)
   {
-    // #TODO Figure out compatibility mode
+    // #TODO This needs to be revisited
     //if (this._compat)
     //{
     //  return this._vidBuffers[0];
@@ -956,10 +956,10 @@ class MotionComp {
     msg += "video FPS = " + videoFps + "\n";
     msg += "factor = " + factor + "\n";
     console.info(msg);
-    if (this._diagnosticMode == true)
-    {
-      Utilities.sendNotification(msg, true);
-    }
+    //if (this._diagnosticMode == true)
+    //{
+    //  Utilities.sendNotification(msg, true);
+    //}
   }
 
   /// Given an animation idx, return true if it is an update cycle
@@ -986,7 +986,7 @@ class MotionComp {
 
   safeMode()
   {
-    Utilities.sendNotification(`Entered safe mode on ${location.href}`);
+    //Utilities.sendNotification(`Entered safe mode on ${location.href}`);
     guiFPS = 15;
     this._safeMode = true;
   }
@@ -1064,7 +1064,7 @@ class VideoCanvas extends AnnotationCanvas {
       msg += `\tVERSION = ${gl.getParameter(gl.VERSION)}\n`;
       msg += `\tUNMASKED VENDOR = ${gl.getParameter(debug.UNMASKED_VENDOR_WEBGL)}\n`;
       msg += `\tUNMASKED RENDERER = ${gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)}\n`;
-      Utilities.sendNotification(msg, true);
+      //Utilities.sendNotification(msg, true);
     }
   }
 
@@ -1126,10 +1126,10 @@ class VideoCanvas extends AnnotationCanvas {
         let seek_time = performance.now() - that._seekStart;
         let seek_msg = `Seek time = ${seek_time} ms`;
         console.info(seek_msg);
-        if (that._diagnosticMode == true)
-        {
-          Utilities.sendNotification(seek_msg);
-        }
+        //if (that._diagnosticMode == true)
+        //{
+        //  Utilities.sendNotification(seek_msg);
+        //}
       }
       else if (type == "buffer")
       {
@@ -1714,6 +1714,7 @@ class VideoCanvas extends AnnotationCanvas {
     var time = this.frameToTime(frame);
     var audio_time = this.frameToAudioTime(frame);
     var downloadSeekFrame = false;
+    var createTimeout = false;
 
     var bufferType = "scrub";
     if (forceSeekBuffer)
@@ -1755,18 +1756,8 @@ class VideoCanvas extends AnnotationCanvas {
         downloadSeekFrame = true;
       }
 
-      if (this._seek_expire)
-      {
-        clearTimeout(this._seek_expire);
-      }
-      this._seek_expire = setTimeout(() => {
-        that._lastSeekFrame = that._seekFrame;
-        that._seekFrame = -1;
-        that._seek_expire = null;
-        document.body.style.cursor = null;
-        console.warn("Network Seek expired");
-        that.refresh(false);
-      },2500);
+      clearTimeout(this._seek_expire);
+      createTimeout = true;
     }
     else if (video == null)
     {
@@ -1813,6 +1804,19 @@ class VideoCanvas extends AnnotationCanvas {
           // Remove entries (if required to do so) now that we've drawn the frame
           that._videoElement[that._hq_idx].cleanSeekBuffer();
         };
+
+        if (createTimeout)
+        {
+          that._seek_expire = setTimeout(() => {
+            that._lastSeekFrame = that._seekFrame;
+            that._seekFrame = -1;
+            that._seek_expire = null;
+            document.body.style.cursor = null;
+            console.warn("Network Seek expired");
+            that.refresh(false);
+            reject();
+          }, 3000);
+        }
 
         if (downloadSeekFrame)
         {
@@ -1880,12 +1884,19 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
-    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
-    promise.then(()=>
-                 {this._pauseCb.forEach(cb => {cb(frameIdx);});
-                 }
-                );
-    return promise;
+    var finalPromise = new Promise((resolve, reject) => {
+      var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
+      promise.then(() =>
+        {
+          this._pauseCb.forEach(cb => {cb(frameIdx);
+          resolve();
+        });
+      }).catch(error =>
+        {
+          resolve();
+        });
+    });
+    return finalPromise;
   }
 
   captureFrame(localizations,frame)
@@ -2074,10 +2085,10 @@ class VideoCanvas extends AnnotationCanvas {
         that._fpsDiag=0;
         that._fpsLoadDiag=0;
 
-        if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
-        {
-          Utilities.sendNotification(fps_msg);
-        }
+        //if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+        //{
+        //  Utilities.sendNotification(fps_msg);
+        //}
         that._networkUpdate += 1;
 
         if (that._fpsScore)
@@ -2306,10 +2317,10 @@ class VideoCanvas extends AnnotationCanvas {
       that._fpsDiag=0;
       that._fpsLoadDiag=0;
 
-      if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
-      {
-        Utilities.sendNotification(fps_msg);
-      }
+      //if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+      //{
+      //  Utilities.sendNotification(fps_msg);
+      //}
       that._networkUpdate += 1;
 
       if (that._fpsScore)
@@ -2328,10 +2339,9 @@ class VideoCanvas extends AnnotationCanvas {
         {
           console.warn("Detected slow performance, entering safe mode.");
 
-          // #TODO
-          //that.dispatchEvent(new Event("safeMode"));
-          //that._motionComp.safeMode();
-          //that.rateChange(that._playbackRate);
+          that.dispatchEvent(new Event("safeMode"));
+          that._motionComp.safeMode();
+          that.rateChange(that._playbackRate);
         }
       }
 
@@ -2424,7 +2434,7 @@ class VideoCanvas extends AnnotationCanvas {
         else
         {
           const currentTime = that.frameToTime(that._dispFrame);
-          const appendThreshold = 10; // Seconds #TODO Is it possible to make this configurable?
+          const appendThreshold = 10; // Worth revisiting to make this configurable
 
           // Adjust the playback threshold if we're close to the edge of the video
           var playbackReadyThreshold = 5; // Seconds
@@ -2482,7 +2492,7 @@ class VideoCanvas extends AnnotationCanvas {
                 if (direction == Direction.FORWARD)
                 {
                   var trimEnd = currentTime - 2;
-                  if (trimEnd > start)
+                  if (trimEnd > start && that._onDemandPlaybackReady)
                   {
                     console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                     video.deletePendingOnDemand([start, trimEnd]);
@@ -2491,7 +2501,7 @@ class VideoCanvas extends AnnotationCanvas {
                 else
                 {
                   var trimEnd = currentTime + 2;
-                  if (trimEnd < end)
+                  if (trimEnd < end && that._onDemandPlaybackReady)
                   {
                     console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                     video.deletePendingOnDemand([trimEnd, end]);
@@ -2569,6 +2579,25 @@ class VideoCanvas extends AnnotationCanvas {
   set waitPlayback(val)
   {
     this._waitPlayback = val;
+  }
+
+  /**
+   * @param {float} rate - Playback rate
+   * @param {integer} frame - Frame number to start playing at
+   * @returns {boolean} True if video can play with the given parameters. False otherwise.
+   */
+  canPlayRate(rate, frame)
+  {
+    // If the rate is 1.0 or less, we will use the onDemand buffer so we're good to go.
+    if (rate <= 1.0)
+    {
+      return true;
+    }
+
+    // Rate is higher than 1.0, we need to check if we've buffered enough data in
+    // the scrub buffer.
+    const video = this.videoBuffer(frame, "scrub");
+    return video != null;
   }
 
   play()
@@ -2671,7 +2700,15 @@ class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._play_idx].pause();
 
       // force a redraw at the currently displayed frame
-      return this.seekFrame(this._dispFrame, this.drawFrame, true);
+      var finalPromise = new Promise((resolve, reject) => {
+        var seekPromise = this.seekFrame(this._dispFrame, this.drawFrame, true);
+        seekPromise.then(() => {
+          resolve();
+        }).catch(() => {
+          resolve();
+        });
+      });
+      return finalPromise;
     }
   }
 

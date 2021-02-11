@@ -3,7 +3,7 @@ class AnnotationPage extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", "/static/images/loading.svg");
+    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
@@ -60,7 +60,7 @@ class AnnotationPage extends TatorPage {
     });
 
     window.addEventListener("error", (evt) => {
-      this._shadow.removeChild(this._loading);
+      this._loading.style.display = "none";
       window.alert("System error detected");
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
@@ -119,7 +119,7 @@ class AnnotationPage extends TatorPage {
                !('layout' in data.media_files) &&
                !('image' in data.media_files)))
           {
-            this._shadow.removeChild(this._loading);
+            this._loading.style.display = "none";
             Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
@@ -342,7 +342,7 @@ class AnnotationPage extends TatorPage {
       if (this._dataInitialized && this._canvasInitialized) {
         try
         {
-          this._shadow.removeChild(this._loading);
+          this._loading.style.display = "none";
           this.removeAttribute("has-open-modal");
           window.dispatchEvent(new Event("resize"));
         }
@@ -368,6 +368,23 @@ class AnnotationPage extends TatorPage {
     // only during a network operation
     canvas.addEventListener("temporarilyMaskEdits", maskEdits);
     this._undo.addEventListener("temporarilyMaskEdits", maskEdits);
+
+
+    canvas.addEventListener("displayLoading", () => {
+      this.setAttribute("has-open-modal", "");
+    });
+    canvas.addEventListener("hideLoading", () => {
+      this.removeAttribute("has-open-modal");
+    });
+
+    canvas.addEventListener("playing", () => {
+      this._settings.disableRateChange();
+      this._settings.disableQualityChange();
+    });
+    canvas.addEventListener("paused", () => {
+      this._settings.enableRateChange();
+      this._settings.enableQualityChange();
+    });
 
     canvas.addEventListener("canvasReady", () => {
       this._canvasInitialized = true;
