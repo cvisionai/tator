@@ -109,7 +109,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project)
+    qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     if media_id is not None:
         qs = qs.filter(media__in=media_id)
 

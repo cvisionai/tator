@@ -2267,7 +2267,7 @@ class ResourceTestCase(APITestCase):
         """ Emulates a prunemedia operation that clears out media with null project
             IDs.
         """
-        media = Media.objects.filter(project__isnull=True)
+        media = Media.objects.filter(deleted=True)
         for m in media:
             m.delete()
 
