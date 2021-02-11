@@ -1,7 +1,9 @@
 import logging
+import datetime
 from django.db.models import Subquery
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
+from django.http import Http404
 
 from ..models import ChangeLog
 from ..models import ChangeToObject
@@ -203,12 +205,9 @@ class LocalizationListAPI(BaseListView):
             ref_table = ContentType.objects.get_for_model(obj)
             ref_ids = [o.id for o in qs]
 
-            # Delete any state many to many relations to these localizations.
-            state_qs = State.localizations.through.objects.filter(localization__in=qs)
-            state_qs._raw_delete(state_qs.db)
-
             # Delete the localizations.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
 
@@ -278,11 +277,14 @@ class LocalizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Localization.objects.filter(pk=params['id']))[0]
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        return database_qs(qs)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'])
+        obj = Localization.objects.get(pk=params['id'], deleted=False)
         original_dict = obj.model_dict
 
         # Patch common attributes.
@@ -355,18 +357,21 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        obj = Localization.objects.get(pk=params["id"])
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        obj = qs[0]
         project = obj.project
         delete_dict = obj.delete_dict
         ref_table = ContentType.objects.get_for_model(obj)
         ref_id = obj.id
-
-        obj.delete()
-
+        TatorSearch().delete_document(obj)
+        qs.update(deleted=True,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
         cl = ChangeLog(project=project, user=self.request.user, description_of_change=delete_dict)
         cl.save()
         ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
-        return {"message": f'Localization {params["id"]} successfully deleted!'}
+        return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Localization.objects.all()

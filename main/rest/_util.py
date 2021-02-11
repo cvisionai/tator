@@ -39,7 +39,7 @@ def computeRequiredFields(typeObj):
 
     datafields={}
     for field in newObjType._meta.get_fields(include_parents=False):
-        if not field.is_relation and not field.blank:
+        if not field.is_relation and not field.blank and field.default is None:
             datafields[field.name] = field.description
 
     attributes={}

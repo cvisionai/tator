@@ -56,34 +56,25 @@ def updateProjectTotals(force=False):
                         f"Duration = {project.duration}")
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
-            if not media:
-                media = Media.objects.filter(project=project, thumbnail__isnull=False).first()
             if media:
                 s3 = TatorS3().s3
                 bucket_name = os.getenv('BUCKET_NAME')
-                if media.thumbnail:
-                    transfer = S3Transfer(s3)
-                    fname = os.path.basename(media.thumbnail.url)
-                    s3_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                    transfer.upload_file(media.thumbnail.url, bucket_name, s3_key)
-                    project.thumb = s3_key
-                elif media.media_files:
-                    if 'thumbnail' in media.media_files:
-                        if len(media.media_files['thumbnail']) > 0:
-                            src_key = media.media_files['thumbnail'][0]['path']
-                            fname = os.path.basename(src_key)
-                            dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                            try:
-                                # S3 requires source key to include bucket name.
-                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                               CopySource={'Bucket': bucket_name,
-                                                           'Key': f"{bucket_name}/{src_key}"})
-                            except:
-                                # Minio requires source key to not include bucket name.
-                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                               CopySource={'Bucket': bucket_name,
-                                                           'Key': src_key})
-                            project.thumb = dest_key
+                if 'thumbnail' in media.media_files:
+                    if len(media.media_files['thumbnail']) > 0:
+                        src_key = media.media_files['thumbnail'][0]['path']
+                        fname = os.path.basename(src_key)
+                        dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                        try:
+                            # S3 requires source key to include bucket name.
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': f"{bucket_name}/{src_key}"})
+                        except:
+                            # Minio requires source key to not include bucket name.
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': src_key})
+                        project.thumb = dest_key
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
         usernames = [str(user) for user in users]

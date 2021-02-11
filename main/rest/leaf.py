@@ -1,7 +1,9 @@
 import logging
+import datetime
 from collections import defaultdict
 
 from django.db import transaction
+from django.http import Http404
 
 from ..models import Leaf
 from ..models import LeafType
@@ -169,7 +171,8 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
             query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} leaves!'}
@@ -201,11 +204,14 @@ class LeafDetailAPI(BaseDetailView):
     lookup_field = 'id'
 
     def _get(self, params):
-        return database_qs(Leaf.objects.filter(pk=params['id']))[0]
+        qs = Leaf.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        return database_qs(qs)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Leaf.objects.get(pk=params['id'])
+        obj = Leaf.objects.get(pk=params['id'], deleted=False)
 
         # Patch common attributes.
         if 'name' in params:
@@ -218,7 +224,11 @@ class LeafDetailAPI(BaseDetailView):
         return {'message': 'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Leaf.objects.get(pk=params['id']).delete()
+        leaf = Leaf.objects.get(pk=params['id'], deleted=False)
+        leaf.deleted = True
+        leaf.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+        leaf.save()
+        TatorSearch().delete_document(leaf)
         return {'message': 'Leaf {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
