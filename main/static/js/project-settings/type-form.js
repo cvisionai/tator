@@ -75,7 +75,9 @@ class TypeForm extends TatorElement {
   }
 
   _getSubmitNewDiv(){
-    this.savePost = document.createElement("input");
+    let text = document.createTextNode("Save");
+    this.savePost = document.createElement("Button");
+    this.savePost.appendChild(text);
     this.savePost.setAttribute("value", "Save");
     this.savePost.setAttribute("class", `btn btn-clear text-center f1 text-semibold`);
     this.savePost.style.margin = "0 auto";
@@ -95,6 +97,7 @@ class TypeForm extends TatorElement {
     addNew.saveFetch(formData).then((data) => {
       console.log(data.message);
       this.loading.hideSpinner();
+      
       return this._modalComplete(data.message);
     });
   }
