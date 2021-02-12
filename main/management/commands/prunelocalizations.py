@@ -2,18 +2,9 @@ import datetime
 import logging
 
 from django.core.management.base import BaseCommand
-from main.models import State
 from main.models import Localization
 
 logger = logging.getLogger(__name__)
-
-def _delete_localizations(qs):
-    # Delete any state many to many relations to these localizations.
-    state_qs = State.localizations.through.objects.filter(localization__in=qs)
-    state_qs._raw_delete(state_qs.db)
-
-    # Delete the localizations.
-    qs.delete()
 
 class Command(BaseCommand):
     help = 'Deletes any localizations marked for deletion with null project, type, version, or media.'
@@ -47,6 +38,7 @@ class Command(BaseCommand):
             num_localizations = localizations.count()
             if num_localizations == 0:
                 break
-            _delete_localizations(localizations)
+            localizations.delete()
             num_deleted += num_localizations
             logger.info(f"Deleted a total of {num_deleted} localizations...")
+        logger.info(f"Deleted a total of {num_deleted} localizations!")

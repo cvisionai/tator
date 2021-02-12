@@ -237,7 +237,8 @@ class StateListAPI(BaseListView):
         if count > 0:
             # Delete states.
             qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} states!'}
@@ -338,12 +339,14 @@ class StateDetailAPI(BaseDetailView):
 
         state.deleted=True
         state.modified_datetime=datetime.datetime.now(datetime.timezone.utc)
+        state.modified_by=self.request.user
         state.save()
         TatorSearch().delete_document(state)
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
         qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                  modified_by=self.request.user)
         for loc in qs.iterator():
             TatorSearch().delete_document(loc)
 

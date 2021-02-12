@@ -332,24 +332,28 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being deleted.
         """
         qs = get_media_queryset(params['project'], params)
+        media_ids = list(qs.values_list('pk', flat=True).distinct())
         count = qs.count()
         if count > 0:
-            # Mark media for deletion by setting project to null.
+            # Mark media for deletion.
             qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
 
             # Any states that are only associated to deleted media should also be marked 
             # for deletion.
             not_deleted_media = Media.objects.filter(project=params['project'], deleted=False)
             state_qs = State.objects.filter(project=params['project']).exclude(media__in=not_deleted_media)
             state_qs.update(deleted=True,
-                            modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                            modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                            modified_by=self.request.user)
 
 
             # Delete any localizations associated to this media
-            loc_qs = Localization.objects.filter(project=params['project'], media__in=qs)
+            loc_qs = Localization.objects.filter(project=params['project'], media__in=media_ids)
             loc_qs.update(deleted=True,
-                          modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                          modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                          modified_by=self.request.user)
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -360,7 +364,7 @@ class MediaListAPI(BaseListView):
                     + [f'line_{id_}' for id_ in loc_qs.iterator()] \
                     + [f'dot_{id_}' for id_ in loc_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
-            state_ids = [f'state_{_id}' for id_ in state_qs.iterator()]
+            state_ids = [f'state_{id_}' for id_ in state_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': state_ids}}})
         return {'message': f'Successfully deleted {count} medias!'}
 
@@ -495,10 +499,28 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        qs = Media.objects.filter(pk=params['id'], deleted=False)
-        TatorSearch().delete_document(qs[0])
-        qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+        media = Media.objects.get(pk=params['id'], deleted=False)
+        project = media.project
+        media.deleted = True
+        media.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+        media.modified_by = self.request.user
+        media.save()
+        TatorSearch().delete_document(media)
+
+        # Any states that are only associated to deleted media should also be marked 
+        # for deletion.
+        not_deleted_media = Media.objects.filter(project=project, deleted=False)
+        state_qs = State.objects.filter(project=project).exclude(media__in=not_deleted_media)
+        state_qs.update(deleted=True,
+                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                        modified_by=self.request.user)
+
+        # Delete any localizations associated to this media
+        loc_qs = Localization.objects.filter(project=project, media__in=[media.id])
+        loc_qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
+
         return {'message': f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

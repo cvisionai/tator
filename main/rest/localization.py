@@ -182,7 +182,8 @@ class LocalizationListAPI(BaseListView):
         if count > 0:
             # Delete the localizations.
             qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} localizations!'}
@@ -292,7 +293,8 @@ class LocalizationDetailAPI(BaseDetailView):
             raise Http404
         TatorSearch().delete_document(qs[0])
         qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                  modified_by=self.request.user)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
