@@ -394,10 +394,12 @@ class AnnotationPage extends TatorPage {
 
 
     canvas.addEventListener("displayLoading", () => {
-      this.setAttribute("has-open-modal", "");
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.setAttribute("has-open-modal", "");
     });
     canvas.addEventListener("hideLoading", () => {
-      this.removeAttribute("has-open-modal");
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.removeAttribute("has-open-modal");
     });
 
     canvas.addEventListener("playing", () => {
