@@ -40,4 +40,5 @@ class Command(BaseCommand):
                 break
             states.delete()
             num_deleted += num_states
-        logger.info(f"Deleted a total of {num_deleted} states...")
+            logger.info(f"Deleted a total of {num_deleted} states...")
+        logger.info(f"Deleted a total of {num_deleted} states!")

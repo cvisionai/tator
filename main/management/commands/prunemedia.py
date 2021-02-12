@@ -38,4 +38,5 @@ class Command(BaseCommand):
             for media in medias:
                 media.delete()
             num_deleted += num_media
-        logger.info(f"Deleted a total of {num_deleted} media...")
+            logger.info(f"Deleted a total of {num_deleted} media...")
+        logger.info(f"Deleted a total of {num_deleted} media!")
