@@ -1349,9 +1349,12 @@ class VideoCanvas extends AnnotationCanvas {
       return play_idx;
     };
 
-    let new_play_idx = find_closest(this._videoObject, quality);
-    this._play_idx = new_play_idx;
-    console.log("Setting 1x playback quality to: " + quality);
+    if (this._videoObject)
+    {
+      let new_play_idx = find_closest(this._videoObject, quality);
+      this._play_idx = new_play_idx;
+      console.log("Setting 1x playback quality to: " + quality);
+    }
   }
 
   video_id()
