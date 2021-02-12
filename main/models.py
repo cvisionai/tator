@@ -444,6 +444,8 @@ class MediaType(Model):
             options can contain 'timeZone' which comes from the TZ database name
             https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
             Example: America/Los_Angeles or America/New_York
+
+    Overlay can optionally be a list of multiple overlays
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
