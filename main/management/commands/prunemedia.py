@@ -30,12 +30,12 @@ class Command(BaseCommand):
             media_ids = (deleted | null_project | null_meta)\
                         .distinct()\
                         .values_list('pk', flat=True)[:BATCH_SIZE]
-            media = Media.objects.filter(pk__in=media_ids)
-            num_media = media.count()
+            medias = Media.objects.filter(pk__in=media_ids)
+            num_media = medias.count()
             if num_media == 0:
                 break
             # Delete in a loop to avoid resource deletion errors.
-            for media in qs:
+            for media in medias:
                 media.delete()
             num_deleted += num_media
         logger.info(f"Deleted a total of {num_deleted} media...")
