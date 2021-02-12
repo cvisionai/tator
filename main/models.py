@@ -233,7 +233,7 @@ class Project(Model):
 class Version(Model):
     name = CharField(max_length=128)
     description = CharField(max_length=1024, blank=True)
-    number = PositiveIntegerField()
+    number = IntegerField()
     project = ForeignKey(Project, on_delete=CASCADE)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
