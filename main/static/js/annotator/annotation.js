@@ -649,7 +649,8 @@ class TextOverlay extends TatorElement {
 
     let style = {"fontSize": "24pt",
                  "fontWeight": "bold",
-                 "color": "white"};
+                 "color": "white",
+                 "background": "rgba(0,0,0,0.33)"};
     if (userStyle)
     {
       const keys = Object.getOwnPropertyNames(userStyle);
