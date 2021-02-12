@@ -233,7 +233,10 @@ cognito:
     aws-region: <user pool region>
     pool-id: <user pool id>
     client-id: <client id>
-    domain: <user pool name>
+    domain: <cognito domain>
+    domain-prefix: <cognito domain prefix>
+    access-key: <access key for IAM with cognito access>
+    secret-key: <secret key for IAM with cognito access>
 ```
 
 The values above should be set such that `https://<domain>.auth.<region>.amazoncognito.com/oauth2/token` is a valid URL. User pool-id and client-id can

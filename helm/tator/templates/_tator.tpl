@@ -175,6 +175,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: COGNITO_ENABLED
+            {{- if .Values.cognito.enabled }}
+              value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
           ports:
             - containerPort: 8000
               name: gunicorn
