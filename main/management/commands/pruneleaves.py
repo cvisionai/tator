@@ -37,3 +37,4 @@ class Command(BaseCommand):
             leaves.delete()
             num_deleted += num_leaves
             logger.info(f"Deleted a total of {num_deleted} leaves...")
+        logger.info(f"Deleted a total of {num_deleted} leaves!")

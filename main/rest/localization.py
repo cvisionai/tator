@@ -207,7 +207,8 @@ class LocalizationListAPI(BaseListView):
 
             # Delete the localizations.
             qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
 
@@ -367,7 +368,8 @@ class LocalizationDetailAPI(BaseDetailView):
         ref_id = obj.id
         TatorSearch().delete_document(obj)
         qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc))
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                  modified_by=self.request.user)
         cl = ChangeLog(project=project, user=self.request.user, description_of_change=delete_dict)
         cl.save()
         ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
