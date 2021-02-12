@@ -841,7 +841,7 @@ class AnnotationCanvas extends TatorElement
 
       let locale = 'en-US';
       let options = {"timeZone": "UTC", "timeZoneName": "short"};
-      if (val.locale)
+      if (overlay_config.locale)
       {
         locale = overlay_config.locale;
       }
@@ -880,7 +880,7 @@ class AnnotationCanvas extends TatorElement
       // Run first update
       update_function(0);
 
-      if (val.dtype == "video" || val.dtype == "multi")
+      if (this._mediaType.dtype == "video" || this._mediaType.dtype == "multi")
       {
         this.addEventListener("frameChange", (evt) => {
           const frame = evt.detail.frame;
