@@ -43,6 +43,7 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .cognito import TatorCognito
 
 from collections import UserDict
 
@@ -155,6 +156,22 @@ class User(AbstractUser):
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
+
+    def move_to_cognito(self, email_verified=False, temp_pw=None):
+        cognito = TatorCognito()
+        response = cognito.create_user(self, email_verified, temp_pw)
+        for attribute in response['User']['Attributes']:
+            if attribute['Name'] == 'sub':
+                self.cognito_id = attribute['Value']
+        self.save()
+
+    def set_password_cognito(self, temp_pw):
+        cognito = TatorCognito()
+        cognito.set_temporary_password(self, temp_pw)
+
+    def reset_password_cognito(self):
+        cognito = TatorCognito()
+        cognito.reset_password(self)
 
     def __str__(self):
         if self.first_name or self.last_name:
@@ -427,6 +444,8 @@ class MediaType(Model):
             options can contain 'timeZone' which comes from the TZ database name
             https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
             Example: America/Los_Angeles or America/New_York
+
+    Overlay can optionally be a list of multiple overlays
     """
     def __str__(self):
         return f'{self.name} | {self.project}'

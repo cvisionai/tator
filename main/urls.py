@@ -40,7 +40,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
-    path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/account-profile/', AccountProfileView.as_view(), name='account-profile'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('new-project/custom/', CustomView.as_view(), name='custom'),
@@ -55,6 +54,9 @@ urlpatterns = [
 if settings.COGNITO_ENABLED:
     urlpatterns += [
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
+else:
+    urlpatterns += [
+        path('accounts/', include('django.contrib.auth.urls'))]
 
 # This is used for REST calls
 urlpatterns += [

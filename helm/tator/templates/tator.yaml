@@ -2,6 +2,7 @@
 {{- $gunicornSettings := dict "Values" .Values "name" "gunicorn-deployment" "app" "gunicorn" "selector" "webServer: \"yes\""  "command" "[gunicorn]" "args" "[\"--workers\", \"3\", \"--worker-class=gevent\", \"--timeout\", \"600\",\"--reload\", \"-b\", \":8000\", \"tator_online.wsgi\"]" "init" "[echo]" "replicas" .Values.hpa.gunicornMinReplicas }}
 {{include "tator.template" $gunicornSettings }}
 ---
+{{- if .Values.maintenanceCron.enabled }}
 {{- $sizerSettings := dict "Values" .Values "name" "sizer-cron" "app" "sizer" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"updateprojects\"]" "schedule" "10 * * * *"  }}
 {{include "tatorCron.template" $sizerSettings }}
 ---
@@ -29,6 +30,10 @@
 {{- $backupSettings := dict "Values" .Values "name" "backup-cron" "app" "backup" "selector" "webServer: \"yes\"" "command" "[/bin/sh]" "args" "[\"-c\", \"pg_dump -Fc -h $POSTGRES_HOST -U $POSTGRES_USERNAME -d tator_online -f /backup/tator_online_$(date +%Y_%m_%d__%H_%M_%S)_$(GIT_VERSION).sql;\"]" "schedule" "40 6 * * *" }}
 {{include "dbCron.template" $backupSettings }}
 ---
+{{- $moveBackupSettings := dict "Values" .Values "name" "move-backup-cron" "app" "move-backup" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"movebackups\"]" "schedule" "40 18 * * *"  }}
+{{include "tatorCron.template" $moveBackupSettings }}
+---
+{{- end }}
 {{ if .Values.requireHttps }}
 {{ if .Values.certCron.enabled }}
 {{- $certSettings := dict "Values" .Values "name" "cert-cron" "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "schedule" "50 5 15 * *" "domain" .Values.domain }}
