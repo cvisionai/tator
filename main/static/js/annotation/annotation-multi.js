@@ -993,6 +993,15 @@ class AnnotationMulti extends TatorElement {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
           return;
         }
+        video.rateChange(this._rate);
+        playing |= video.play();
+      }
+
+      if (playing)
+      {
+        this._play.removeAttribute("is-paused");
+        this._syncThread = setTimeout(() => {this.syncCheck()},
+                                      500);
       }
     }
 
@@ -1057,6 +1066,7 @@ class AnnotationMulti extends TatorElement {
       }
       this._play.setAttribute("is-paused", "");
     }
+    clearTimeout(this._syncThread);
   }
 
   refresh() {
