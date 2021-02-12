@@ -424,3 +424,15 @@ def set_default_versions():
             membership.save()
     logger.info(f"Set all default versions!")
 
+def move_backups_to_s3():
+    s3 = TatorS3().s3
+    transfer = S3Transfer(s3)
+    bucket_name = os.getenv('BUCKET_NAME')
+    num_moved = 0
+    for backup in os.listdir('/backup'):
+        logger.info(f"Moving {backup} to S3...")
+        key = f'backup/{backup}'
+        path = os.path.join('/backup', backup)
+        transfer.upload_file(path, bucket_name, key)
+        num_moved += 1
+    logger.info(f"Finished moving {num_moved} files!")
