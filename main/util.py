@@ -434,5 +434,6 @@ def move_backups_to_s3():
         key = f'backup/{backup}'
         path = os.path.join('/backup', backup)
         transfer.upload_file(path, bucket_name, key)
+        os.remove(path)
         num_moved += 1
     logger.info(f"Finished moving {num_moved} files!")
