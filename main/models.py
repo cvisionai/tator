@@ -43,6 +43,7 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .cognito import TatorCognito
 
 from collections import UserDict
 
@@ -155,6 +156,14 @@ class User(AbstractUser):
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
+
+    def move_to_cognito(self):
+        cognito = TatorCognito()
+        response = cognito.create_user(self)
+        for attribute in response['User']['Attributes']:
+            if attribute['Name'] == 'sub':
+                self.cognito_id = attribute['Value']
+        self.save()
 
     def __str__(self):
         if self.first_name or self.last_name:
