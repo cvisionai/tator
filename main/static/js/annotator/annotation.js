@@ -897,9 +897,9 @@ class AnnotationCanvas extends TatorElement
     // Handle overlay config
     if (val.overlay_config)
     {
-      if (Array.isArray(val.overlay_config))
+      if ('many' in val.overlay_config)
       {
-        for (let config of val.overlay_config)
+        for (let config of val.overlay_config.many)
         {
           this.setupOverlay(config);
         }
