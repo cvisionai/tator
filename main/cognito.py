@@ -27,7 +27,7 @@ class TatorCognito:
                                                   Username=user.username,
                                                   UserAttributes=[{
                                                      'Name': 'email_verified',
-                                                     'Value': email_verified,
+                                                     'Value': str(email_verified),
                                                   }, {
                                                      'Name': 'email',
                                                      'Value': user.email,
