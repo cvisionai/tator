@@ -1188,6 +1188,66 @@ class VideoTestCase(
     def tearDown(self):
         self.project.delete()
 
+    def test_annotation_delete(self):
+        medias = [
+            create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
+            for idx in range(random.randint(6, 10))
+        ]
+        state_type = StateType.objects.create(project=self.project,
+                                              name='track_type',
+                                              association='Localization',
+                                              attribute_types=[])
+        state_type.media.add(self.entity_type)
+        loc_type = LocalizationType.objects.create(project=self.project,
+                                                   name='loc_type',
+                                                   dtype='box',
+                                                   attribute_types=[])
+        loc_type.media.add(self.entity_type)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[0], 0)
+                for _ in range(random.randint(2, 5))]
+        for _ in range(random.randint(2, 5)):
+            state = State.objects.create(project=self.project,
+                                         meta=state_type,
+                                         frame=0)
+            state.media.add(medias[0])
+            for loc in locs:
+                state.localizations.add(loc)
+        # Test detail delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.delete(f'/rest/Media/{medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[1], 0)
+                for _ in range(random.randint(2, 5))]
+        for _ in range(random.randint(2, 5)):
+            state = State.objects.create(project=self.project,
+                                         meta=state_type,
+                                         frame=0)
+            state.media.add(medias[1])
+            for loc in locs:
+                state.localizations.add(loc)
+        # Test list delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+
 class ImageTestCase(
         APITestCase,
         AttributeTestMixin,
