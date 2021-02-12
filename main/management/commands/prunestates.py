@@ -31,10 +31,10 @@ class Command(BaseCommand):
                                                 modified_datetime__lte=max_datetime)
             null_media = State.objects.filter(media__isnull=True,
                                               modified_datetime__lte=max_datetime)
-            loc_ids = (deleted | null_project | null_meta | null_version)\
-                      .distinct()\
-                      .values_list('pk', flat=True)[:BATCH_SIZE]
-            states = State.objects.filter(pk__in=loc_ids)
+            state_ids = (deleted | null_project | null_meta | null_version | null_media)\
+                         .distinct()\
+                         .values_list('pk', flat=True)[:BATCH_SIZE]
+            states = State.objects.filter(pk__in=state_ids)
             num_states = states.count()
             if num_states == 0:
                 break
