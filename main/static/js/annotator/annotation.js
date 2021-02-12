@@ -775,106 +775,111 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  setupOverlay(overlay_config)
+  {
+    const mode = overlay_config.mode;
+    let pos = [0.5,0.9];
+    let value = null;
+    if (overlay_config.pos)
+    {
+      pos = overlay_config.pos;
+    }
+    if (mode == "constant")
+    {
+      if (overlay_config.source == "name")
+      {
+        value = this._mediaInfo.name;
+      }
+      if (overlay_config.source == "constant")
+      {
+        value = overlay_config.consant;
+      }
+      if (overlay_config.source == "attribute")
+      {
+        value = this._mediaInfo.attributes[overlay_config.key];
+      }
+      this._textOverlay.addText(pos[0],pos[1],value);
+    }
+
+    if (mode == "datetime")
+    {
+      let name = this._mediaInfo.name;
+
+      // Trim off ID if it is there
+      if (name[1] == '_')
+      {
+        name = name.substr(2);
+      }
+      let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+      let time_since_epoch = Date.parse(start_time_8601);
+      if (isNaN(time_since_epoch) == true)
+      {
+        console.info("Could not deduce time from file name");
+        return;
+      }
+
+      let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
+      let lastUpdate = null;
+
+      let locale = 'en-US';
+      let options = {"timeZone": "UTC", "timeZoneName": "short"};
+      if (val.locale)
+      {
+        locale = overlay_config.locale;
+      }
+      if (overlay_config.options)
+      {
+        const keys = Object.getOwnPropertyNames(overlay_config.options);
+        for (const key of keys)
+        {
+          options[key] = overlay_config.options[key];
+        }
+      }
+      let update_function = (seconds) => {
+        if (lastUpdate == seconds)
+        {
+          return;
+        }
+        lastUpdate = seconds;
+        const milliseconds = seconds * 1000;
+        // This is automatically in the wrong timezone (go javascript)
+        const d_bad_tz = new Date(time_since_epoch + milliseconds);
+
+        // Strip timezone from previous object resolve to UTC time
+        // and make a new timezone-aware object based on truth
+        let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
+                                  d_bad_tz.getMonth(),
+                                  d_bad_tz.getDate(),
+                                  d_bad_tz.getHours(),
+                                  d_bad_tz.getMinutes(),
+                                  d_bad_tz.getSeconds(),
+                                  d_bad_tz.getMilliseconds()));
+
+        // Output to the text format specified by the media type schema
+        this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
+      };
+
+      // Run first update
+      update_function(0);
+
+      if (val.dtype == "video" || val.dtype == "multi")
+      {
+        this.addEventListener("frameChange", (evt) => {
+          const frame = evt.detail.frame;
+          const seconds = Math.floor(frame / this._mediaInfo.fps);
+          update_function(seconds);
+        });
+      }
+    }
+  }
+
   set mediaType(val) {
     this._mediaType = val;
 
     // Handle overlay config
     if (val.overlay_config)
     {
-      const mode = val.overlay_config.mode;
-      let pos = [0.5,0.9];
-      let value = null;
-      if (val.overlay_config.pos)
-      {
-        pos = val.overlay_config.pos;
-      }
-      if (mode == "constant")
-      {
-        if (val.overlay_config.source == "name")
-        {
-          value = this._mediaInfo.name;
-        }
-        if (val.overlay_config.source == "constant")
-        {
-          value = val.overlay_config.consant;
-        }
-        if (val.overlay_config.source == "attribute")
-        {
-          value = this._mediaInfo.attributes[val.overlay_config.key];
-        }
-        this._textOverlay.addText(pos[0],pos[1],value);
-      }
-
-      if (mode == "datetime")
-      {
-        let name = this._mediaInfo.name;
-
-        // Trim off ID if it is there
-        if (name[1] == '_')
-        {
-          name = name.substr(2);
-        }
-        let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
-        let time_since_epoch = Date.parse(start_time_8601);
-        if (isNaN(time_since_epoch) == true)
-        {
-          console.info("Could not deduce time from file name");
-          return;
-        }
-
-        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
-        let lastUpdate = null;
-
-        let locale = 'en-US';
-        let options = {"timeZone": "UTC", "timeZoneName": "short"};
-        if (val.locale)
-        {
-          locale = val.overlay_config.locale;
-        }
-        if (val.overlay_config.options)
-        {
-          const keys = Object.getOwnPropertyNames(val.overlay_config.options);
-          for (const key of keys)
-          {
-            options[key] = val.overlay_config.options[key];
-          }
-        }
-        let update_function = (seconds) => {
-          if (lastUpdate == seconds)
-          {
-            return;
-          }
-          lastUpdate = seconds;
-          const milliseconds = seconds * 1000;
-          // This is automatically in the wrong timezone (go javascript)
-          const d_bad_tz = new Date(time_since_epoch + milliseconds);
-
-          // Strip timezone from previous object resolve to UTC time
-          // and make a new timezone-aware object based on truth
-          let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
-                                    d_bad_tz.getMonth(),
-                                    d_bad_tz.getDate(),
-                                    d_bad_tz.getHours(),
-                                    d_bad_tz.getMinutes(),
-                                    d_bad_tz.getSeconds(),
-                                    d_bad_tz.getMilliseconds()));
-
-          // Output to the text format specified by the media type schema
-          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
-        };
-
-        // Run first update
-        update_function(0);
-
-        if (val.dtype == "video" || val.dtype == "multi")
-        {
-          this.addEventListener("frameChange", (evt) => {
-            const frame = evt.detail.frame;
-            const seconds = Math.floor(frame / this._mediaInfo.fps);
-            update_function(seconds);
-          });
-        }
-      }
+      this.setupOverlay(val.overlay_config);
     }
   }
 
