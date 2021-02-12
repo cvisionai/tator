@@ -781,9 +781,14 @@ class AnnotationCanvas extends TatorElement
     const mode = overlay_config.mode;
     let pos = [0.5,0.9];
     let value = null;
+    let style = null;
     if (overlay_config.pos)
     {
       pos = overlay_config.pos;
+    }
+    if (overlay_config.style)
+    {
+      style = overlay_config.style;
     }
     if (mode == "constant")
     {
@@ -799,7 +804,7 @@ class AnnotationCanvas extends TatorElement
       {
         value = this._mediaInfo.attributes[overlay_config.key];
       }
-      this._textOverlay.addText(pos[0],pos[1],value);
+      this._textOverlay.addText(pos[0],pos[1],value, style);
     }
 
     if (mode == "datetime")
