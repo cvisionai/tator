@@ -50,4 +50,11 @@ class TatorCognito:
                                                         Permanent=False)
         return response
 
+    def reset_password(self, user):
+        if not user.cognito_id:
+            raise RuntimeError("Cognito ID does not exist for this user!")
+        response = self.cognito.admin_reset_user_password(UserPoolId=self.config['pool-id'],
+                                                          Username=user.username)
+        return response
+
 TatorCognito.setup_cognito()

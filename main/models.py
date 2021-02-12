@@ -169,6 +169,10 @@ class User(AbstractUser):
         cognito = TatorCognito()
         cognito.set_temporary_password(self, temp_pw)
 
+    def reset_password_cognito(self):
+        cognito = TatorCognito()
+        cognito.reset_password(self)
+
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
