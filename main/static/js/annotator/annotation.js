@@ -804,6 +804,18 @@ class AnnotationCanvas extends TatorElement
       {
         value = this._mediaInfo.attributes[overlay_config.key];
       }
+      if (value && overlay_config.slice)
+      {
+        const slice = overlay_config.slice;
+        if (1 in slice)
+        {
+          value = value.slice(slice[0],slice[1]);
+        }
+        else
+        {
+          value = value.slice(slice[0]);
+        }
+      }
       this._textOverlay.addText(pos[0],pos[1],value, style);
     }
 
