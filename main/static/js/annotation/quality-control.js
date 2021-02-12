@@ -70,6 +70,7 @@ class QualityControl extends TatorElement {
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;
+    resolutions.sort((a, b) => a - b);
     for (let idx = 0; idx < resolutions.length; idx++)
     {
       let diff = Math.abs(resolutions[idx]-this._quality);
