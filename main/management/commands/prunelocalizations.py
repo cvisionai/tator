@@ -40,4 +40,4 @@ class Command(BaseCommand):
                 break
             localizations.delete()
             num_deleted += num_localizations
-            logger.info(f"Deleted a total of {num_deleted} localizations...")
+        logger.info(f"Deleted a total of {num_deleted} localizations...")
