@@ -16,6 +16,7 @@ from ..search import TatorSearch
 from ._media_query import get_media_queryset
 from ._base_views import BaseListView
 from ._permissions import ClonePermission
+from ._util import bulk_create_from_generator
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,17 @@ class CloneMediaListAPI(BaseListView):
     http_method_names = ['post']
     entity_type = MediaType # Needed by attribute filter mixin
     MAX_NUM_MEDIA = 500
+
+    @staticmethod
+    def _media_obj_generator(original_medias, dest_project, dest_type, section):
+        for media in original_medias.iterator():
+            new_obj = media
+            new_obj.pk = None
+            new_obj.project = Project.objects.get(pk=dest_project)
+            new_obj.meta = MediaType.objects.get(pk=dest_type)
+            if section:
+                new_obj.attributes['tator_user_sections'] = section.tator_user_sections
+            yield new_obj
 
     def _post(self, params):
         dest = params['dest_project']
@@ -64,17 +76,8 @@ class CloneMediaListAPI(BaseListView):
             else:
                 section = sections[0]
 
-        new_objs = []
-        for media in original_medias.iterator():
-            new_obj = media
-            new_obj.pk = None
-            new_obj.project = Project.objects.get(pk=dest)
-            new_obj.meta = MediaType.objects.get(pk=params['dest_type'])
-            if section:
-                new_obj.attributes['tator_user_sections'] = section.tator_user_sections
-
-            new_objs.append(new_obj)
-        medias = Media.objects.bulk_create(new_objs)
+        objs = self._media_obj_generator(original_medias, dest, params["dest_type"], section)
+        medias = bulk_create_from_generator(objs, Media)
 
         # Update resources.
         for media in medias:

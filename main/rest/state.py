@@ -31,6 +31,7 @@ from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
+from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
@@ -158,21 +159,19 @@ class StateListAPI(BaseListView):
                       for state in state_specs]
 
         # Create the state objects.
-        states = []
-        create_buffer = []
-        for state_spec, attrs in zip(state_specs, attr_specs):
-            state = State(project=project,
-                          meta=metas[state_spec['type']],
-                          attributes=attrs,
-                          created_by=self.request.user,
-                          modified_by=self.request.user,
-                          version=versions[state_spec.get('version', None)],
-                          frame=state_spec.get('frame', None))
-            create_buffer.append(state)
-            if len(create_buffer) > 1000:
-                states += State.objects.bulk_create(create_buffer)
-                create_buffer = []
-        states += State.objects.bulk_create(create_buffer)
+        objs = (
+            State(
+                project=project,
+                meta=metas[state_spec["type"]],
+                attributes=attrs,
+                created_by=self.request.user,
+                modified_by=self.request.user,
+                version=versions[state_spec.get("version", None)],
+                frame=state_spec.get("frame", None),
+            )
+            for state_spec, attrs in zip(state_specs, attr_specs)
+        )
+        states = bulk_create_from_generator(objs, State)
 
         # Create media relations.
         media_relations = []

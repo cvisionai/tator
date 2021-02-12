@@ -23,6 +23,7 @@ from ._leaf_query import get_leaf_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
+from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._permissions import ProjectViewOnlyPermission
@@ -103,6 +104,27 @@ class LeafListAPI(BaseListView):
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
 
+    @staticmethod
+    def _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user):
+        for leaf_spec, attrs in zip(leaf_specs, attr_specs):
+            parent = leaf_spec.get("parent")
+            if parent is not None:
+                parent = Leaf.objects.get(pk=parent)
+                if parent.project.pk != project.id:
+                    raise Exception(f"Specified parent ID is not in project {project.id}")
+
+            leaf = Leaf(
+                project=project,
+                meta=metas[leaf_spec["type"]],
+                attributes=attrs,
+                created_by=user,
+                modified_by=user,
+                name=leaf_spec["name"],
+                parent=parent,
+            )
+            leaf.path = leaf.computePath()
+            yield leaf
+
     def _post(self, params):
         # Check that we are getting a leaf list.
         if 'body' in params:
@@ -118,7 +140,7 @@ class LeafListAPI(BaseListView):
 
         # Construct foreign key dictionaries.
         project = Project.objects.get(pk=params['project'])
-        metas = {obj.id:obj for obj in meta_qs.iterator()}
+        metas = {obj.id: obj for obj in meta_qs.iterator()}
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
@@ -128,30 +150,11 @@ class LeafListAPI(BaseListView):
                                             required_fields[leaf['type']][2],
                                             leaf)
                       for leaf in leaf_specs]
-       
+
         # Create the leaf objects.
-        leaves = []
+        objs = self._leaf_obj_generator(project, leaf_specs, attr_specs, metas, self.request.user)
+        leaves = bulk_create_from_generator(objs, Leaf)
         create_buffer = []
-        for leaf_spec, attrs in zip(leaf_specs, attr_specs):
-            parent = None
-            if 'parent' in leaf_spec:
-                if leaf_spec['parent'] is not None:
-                    parent = Leaf.objects.get(pk=leaf_spec['parent'])
-                    if parent.project.pk != params['project']:
-                        raise Exception(f"Specified parent ID is not in project {params['project']}")
-            leaf = Leaf(project=project,
-                        meta=metas[leaf_spec['type']],
-                        attributes=attrs,
-                        created_by=self.request.user,
-                        modified_by=self.request.user,
-                        name=leaf_spec['name'],
-                        parent=parent)
-            leaf.path = leaf.computePath()
-            create_buffer.append(leaf)
-            if len(create_buffer) > 1000:
-                leaves += Leaf.objects.bulk_create(create_buffer)
-                create_buffer = []
-        leaves += Leaf.objects.bulk_create(create_buffer)
 
         # Build ES documents.
         ts = TatorSearch()
