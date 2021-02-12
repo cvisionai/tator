@@ -38,4 +38,4 @@ class TatorCognito:
                                                   }])
         return response
 
-TatorS3.setup_cognito()
+TatorCognito.setup_cognito()
