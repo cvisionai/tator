@@ -157,13 +157,17 @@ class User(AbstractUser):
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
 
-    def move_to_cognito(self):
+    def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
-        response = cognito.create_user(self)
+        response = cognito.create_user(self, email_verified, temp_pw)
         for attribute in response['User']['Attributes']:
             if attribute['Name'] == 'sub':
                 self.cognito_id = attribute['Value']
         self.save()
+
+    def set_password_cognito(self, temp_pw):
+        cognito = TatorCognito()
+        cognito.set_temporary_password(self, temp_pw)
 
     def __str__(self):
         if self.first_name or self.last_name:

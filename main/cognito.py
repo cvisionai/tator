@@ -24,7 +24,7 @@ class TatorCognito:
         if temp_pw:
             pw_args['TemporaryPassword'] = temp_pw
         response = self.cognito.admin_create_user(UserPoolId=self.config['pool-id'],
-                                                  UserName=user.username,
+                                                  Username=user.username,
                                                   UserAttributes=[{
                                                      'Name': 'email_verified',
                                                      'Value': email_verified,
@@ -39,6 +39,15 @@ class TatorCognito:
                                                      'Value': user.last_name,
                                                   }],
                                                   **pw_args)
+        return response
+
+    def set_temporary_password(self, user, temp_pw):
+        if not user.cognito_id:
+            raise RuntimeError("Cognito ID does not exist for this user!")
+        response = self.cognito.admin_set_user_password(UserPoolId=self.config['pool-id'],
+                                                        Username=user.username,
+                                                        Password=temp_pw,
+                                                        Permanent=False)
         return response
 
 TatorCognito.setup_cognito()
