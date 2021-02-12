@@ -954,6 +954,32 @@ class AnnotationMulti extends TatorElement {
     return this._play.hasAttribute("is-paused");
   }
 
+
+  syncCheck()
+  {
+    let idx = 0;
+    let primeFrame = 0;
+    for (let video of this._videos)
+    {
+      if (idx == 0)
+      {
+        primeFrame = video.currentFrame();
+      }
+      else
+      {
+        let delta = video.currentFrame()-primeFrame;
+        const correction = 1.0 + (delta/100);
+        const swag = Math.max(0.95,Math.min(1.05,correction));
+        video.rateChange(this._rate*swag);
+      }
+      idx++;
+    }
+
+    // Re-enter sync check at interval
+    this._syncThread = setTimeout(() => {this.syncCheck()},
+                                  500);
+  }
+
   play()
   {
     if (this._rate > 1.0)
