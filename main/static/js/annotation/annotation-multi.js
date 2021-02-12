@@ -625,17 +625,10 @@ class AnnotationMulti extends TatorElement {
   }
 
   setQuality(quality) {
-    // For now reload the video
-    if (this.is_paused())
+    for (let video of this._videos)
     {
-      this._video.setQuality(quality);
+      video.setQuality(quality);
     }
-    else
-    {
-      this.pause();
-      this._video.setQuality(quality);
-    }
-    this._video.refresh(true);
   }
 
   zoomPlus() {

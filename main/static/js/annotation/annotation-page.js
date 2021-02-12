@@ -102,6 +102,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
+        const searchParams = new URLSearchParams(window.location.search);
         fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
@@ -208,6 +209,29 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
+
+              // Set the quality control based on the prime video
+              fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+                }
+              })
+              .then(response => response.json())
+              .then(primeMediaData => {
+                this._settings.mediaInfo = primeMediaData;
+                var playbackQuality = data.media_files.quality;
+                if (searchParams.has("quality"))
+                {
+                  playbackQuality = Number(searchParams.get("quality"));
+                }
+                this._settings.quality = playbackQuality;
+                this._player.setQuality(playbackQuality);
+              });
+
             } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
@@ -226,7 +250,6 @@ class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             this.enableEditing(true);
           });
-          const searchParams = new URLSearchParams(window.location.search);
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after", data.name);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;

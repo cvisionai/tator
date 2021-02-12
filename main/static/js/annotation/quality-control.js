@@ -33,6 +33,11 @@ class QualityControl extends TatorElement {
     this.style.visibility = 'hidden';
   }
 
+  show()
+  {
+    this.style.visibility = 'visible';
+  }
+
   set quality(quality)
   {
     this._quality = quality;
@@ -45,6 +50,16 @@ class QualityControl extends TatorElement {
     newUrl += "?" + searchArgs;
 
     window.history.replaceState(quality,"Quality",newUrl);
+
+    for (let index = 0; index < this._select.options.length; index++)
+    {
+      const option = this._select.options[index];
+      if (option.textContent == `${quality}p`)
+      {
+        this._select.selectedIndex = index;
+        break;
+      }
+    }
   }
 
   set resolutions(resolutions)
