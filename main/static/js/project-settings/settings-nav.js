@@ -304,7 +304,6 @@ class SettingsNav extends TatorElement {
   }
 
   fillContainer({ id = -1, itemContents = document.createTextNode(""), type = ""}){
-    console.log(id);
     let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
 

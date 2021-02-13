@@ -10,6 +10,7 @@ class ProjectMainEdit extends TypeForm {
     this.typeFormDiv = document.createElement("div");
     this.typeFormDiv.setAttribute("class", "px-md-6")
     this._shadow.appendChild(this.typeFormDiv);
+
   }
   
   _init({ data, modal, sidenav}){
@@ -22,7 +23,6 @@ class ProjectMainEdit extends TypeForm {
     this.projectId = this.data.id;
     this.modal = modal;
     this.sideNav = sidenav;
-    this.userName = userName;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox( this.modal );
@@ -41,15 +41,15 @@ class ProjectMainEdit extends TypeForm {
     this.typeFormDiv.appendChild( this._getSectionForm() )
     this.typeFormDiv.appendChild( this._getSubmitDiv({ "id":this.projectId}) );
 
-    // if(this.userHasPermission) {
-    //   this.typeFormDiv.appendChild( this.deleteTypeSection() );
-    // }
+    if(this.userHasPermission()) {
+      this.typeFormDiv.appendChild( this.deleteProjectSection() );
+    }
 
     return this.typeFormDiv;
   }
 
   userHasPermission(){
-    return Utilities.hasPermission(this.data.permission, "Creator");
+    return hasPermission( this.data.permission, "Creator" );
   }
 
   _getSectionForm() {
@@ -316,6 +316,87 @@ class ProjectMainEdit extends TypeForm {
   _getHeading(id){
     let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
     return `${icon} <span class="item-label">Project ${id}</span>`
+  }
+
+  deleteProjectSection(){
+    let button = document.createElement("button");
+    button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
+    button.style.marginRight = "10px";
+
+    let deleteText = document.createTextNode(`Delete`);
+    button.appendChild( deleteText );
+
+    let descriptionText = `Delete this ${this.readableTypeName} and all its data?`;
+    let headingDiv = document.createElement("div");
+    headingDiv.setAttribute("class", "clearfix py-6");
+
+    let heading = document.createElement("div");
+    heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
+    
+    heading.appendChild( button );
+        
+    let description = document.createElement("div");
+    let _descriptionText = document.createTextNode("");
+    _descriptionText.nodeValue = descriptionText;
+    description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
+    description.appendChild( _descriptionText );
+    
+    headingDiv.appendChild(heading);
+    headingDiv.appendChild(description);
+
+    this.deleteBox = this.boxHelper.boxWrapDelete( {
+      "children" : headingDiv
+    } );
+
+    this.deleteBox.style.backgroundColor = "transparent";
+
+    button.addEventListener("click", this._deleteTypeConfirm.bind(this))
+
+    return this.deleteBox;
+  }
+
+  _deleteTypeConfirm(){
+    let button = document.createElement("button");
+    let confirmText = document.createTextNode("Confirm")
+    button.appendChild(confirmText);
+    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+
+    button.addEventListener("click", this._deleteType.bind(this));
+
+    this._modalConfirm({
+      "titleText" : `Delete Confirmation`,
+      "mainText" : `Pressing confirm will delete this ${this.typeName} and all its data from your account. Do you want to continue?`,
+      "buttonSave" : button,
+      "scroll" : false    
+    });
+  }
+
+  _deleteType(){
+    this._modalCloseCallback();
+    this.loading.showSpinner();
+    let deleteProject = new ProjectDelete({
+      "projectId" : this.projectId
+    });
+  
+    if(this.typeId != "undefined"){
+      deleteProject.deleteFetch().then((data) => {
+        console.log(data.message);
+        this.loading.hideSpinner();
+        this._modalComplete(data.message)
+        return setTimeout(function(){
+          window.location.href = '/projects/';
+       }, 3000);;
+      }).catch((err) => {
+        console.error(err);
+        this.loading.hideSpinner();
+        return this._modalError("Error with delete.");
+      });
+    } else {
+      console.error("Type Id is not defined.");
+      this.loading.hideSpinner();
+      return this._modalError("Error with delete.");
+    }
+
   }
 
 }
