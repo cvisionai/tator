@@ -131,7 +131,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(form){
-    this.boxHelper._modalCloseCallback();
+    this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = {
       "entity_type": this.typeName,
@@ -314,48 +314,58 @@ class AttributesMain extends HTMLElement {
 
     this.deleteBox.style.backgroundColor = "transparent";
 
-    button.addEventListener("click", this._deleteAttrConfirm.bind(this))
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._deleteAttrConfirm(name);
+    });
 
     return this.deleteBox;
   }
 
-  _deleteAttrConfirm(){
+  _deleteAttrConfirm(name){
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
     button.setAttribute("class", "btn btn-clear f1 text-semibold")
 
-    button.addEventListener("click", this._deleteAttrType.bind(this));
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._deleteAttrType(name);
+    });
 
-    this._modalConfirm({
+    this.boxHelper._modalConfirm({
       "titleText" : `Delete Confirmation`,
-      "mainText" : `Pressing confirm will delete this attribute from ${this.typeName} and all its data. Do you want to continue?`,
+      "mainText" : `Pressing confirm will delete attribute "${name}". Do you want to continue?`,
       "buttonSave" : button,
       "scroll" : false    
     });
   }
 
-  _deleteAttrType(){
-    this._modalCloseCallback();
+  _deleteAttrType(name){
+    this.modal._closeCallback();;
     this.loading.showSpinner();
-    // let deleteType = new TypeDelete({
-    //   "type" : this.typeName,
-    //   "typeId" : this.typeId
-    // });
+
+    let deleteAttribute = new AttributesDelete({
+      "type" : this.typeName,
+      "typeId" : this.fromId,
+      "attributeName" : name
+    });
   
-    // if(this.typeId != "undefined"){
-    //   deleteType.deleteFetch().then((data) => {
-    //     console.log(data.message);
-    //     this._updateNavEvent("remove");
-    //     this.loading.hideSpinner();
-    //     return this._modalComplete(data.message);
-    //   });
-    // } else {
-    //   console.log("this.typeId");
-    //   console.log(this.typeId);
-    //   this.loading.hideSpinner();
-    //   return this._modalError("Error with delete.");
-    // }
+    if(name != "undefined"){
+      deleteAttribute.deleteFetch().then((data) => {
+        console.log(data.message);
+        this.loading.hideSpinner();
+        this.dispatchEvent(this.refreshTypeEvent);
+        return this.boxHelper._modalComplete(data.message);
+      }).catch((err) => {
+        console.error(err);
+        this.loading.hideSpinner();
+        return this.boxHelper._modalError("Error with delete.");
+      });
+    } else {
+      this.loading.hideSpinner();
+      return this.boxHelper._modalError("Error with delete.");
+    }
 
   }
 

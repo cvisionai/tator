@@ -40,9 +40,6 @@ class TypeForm extends TatorElement {
   }
 
   setupFormPage(data = this.data) {
-    // Log to verify setupTypeFormPage
-    console.log(`${this.readableTypeName} setupTypeFormPage.`);
-
     // Section h1.
     const h1 = document.createElement("h1");
     h1.setAttribute("class", "h2 pb-3 edit-project__h1");
@@ -129,6 +126,10 @@ class TypeForm extends TatorElement {
 
       // Let user know everything's all set!
       return this._modalComplete(data.message);
+    }).catch((err) => {
+      console.error(err);
+      this.loading.hideSpinner();
+      return this._modalError("Error adding new type.");
     });
   }
 
@@ -301,10 +302,13 @@ class TypeForm extends TatorElement {
         this._updateNavEvent("remove");
         this.loading.hideSpinner();
         return this._modalComplete(data.message);
+      }).catch((err) => {
+        console.error(err);
+        this.loading.hideSpinner();
+        return this._modalError("Error with delete.");
       });
     } else {
-      console.log("this.typeId");
-      console.log(this.typeId);
+      console.error("Type Id is not defined.");
       this.loading.hideSpinner();
       return this._modalError("Error with delete.");
     }
@@ -652,15 +656,18 @@ class TypeForm extends TatorElement {
     Utilities.warningAlert("Refreshing data", "#fff", false);
     const response = await this._fetchGetPromise();
     const data = await response.json();
-    this.data = this._findDataById(data)
-    Utilities.hideAlert()
+    this.data = this._findDataById(data);
+    Utilities.hideAlert();
     this.loading.hideSpinner();
     return this.reset(this.data);
   }
 
   _findDataById(allData){
-    for(let x in allData){
-      if (allData[x].id == this.typeId) return allData[x];
+    console.log("allData");
+    console.log(allData);
+    for(let x of allData){
+      console.log(`allData.id ${allData.id} and this.typeId ${this.typeId}`);
+      if (allData.id == this.typeId) return allData[x];
       console.log("didn't match "+allData.id);
     }
     return false;

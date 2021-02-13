@@ -14,7 +14,7 @@ class ProjectMainEdit extends TypeForm {
   
   _init({ data, modal, sidenav}){
     console.log(`${this.tagName} init.`);
-    console.log(this.data);
+    console.log(data);
 
     // init vars
     this.data = data;
@@ -22,6 +22,7 @@ class ProjectMainEdit extends TypeForm {
     this.projectId = this.data.id;
     this.modal = modal;
     this.sideNav = sidenav;
+    this.userName = userName;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox( this.modal );
@@ -39,16 +40,22 @@ class ProjectMainEdit extends TypeForm {
 
     this.typeFormDiv.appendChild( this._getSectionForm() )
     this.typeFormDiv.appendChild( this._getSubmitDiv({ "id":this.projectId}) );
-    this.typeFormDiv.appendChild( this.deleteTypeSection() );
+
+    // if(this.userHasPermission) {
+    //   this.typeFormDiv.appendChild( this.deleteTypeSection() );
+    // }
 
     return this.typeFormDiv;
+  }
+
+  userHasPermission(){
+    return Utilities.hasPermission(this.data.permission, "Creator");
   }
 
   _getSectionForm() {
     this.boxOnPage = this.boxHelper.boxWrapDefault({
       "children": document.createTextNode("")
-    }); 
-
+    });
   
     let _form = document.createElement("form");
     _form.id = "project-" + this.data.id;

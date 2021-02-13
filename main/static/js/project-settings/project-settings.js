@@ -85,9 +85,6 @@ class ProjectSettings extends TatorPage {
             let tc = this.settingsViewClasses[i];
             let formView = document.createElement(tc);
 
-            console.log(`Starting navigation panels for ${formView.typeName}`);
-            console.log(objData);
-
             if(formView.typeName == "Project"){
               // Add project container and nav (set to selected)
               this.makeContainer({
@@ -141,19 +138,18 @@ class ProjectSettings extends TatorPage {
               // Add contents for each Entity
               for(let g of objData){
                 let form = document.createElement(tc);
-                  console.log(form);
-                  this.settingsNav.fillContainer({
-                    "type" : form.typeName,
-                    "id" : g.id,
-                    "itemContents" : form
-                  });
+                this.settingsNav.fillContainer({
+                  "type" : form.typeName,
+                  "id" : g.id,
+                  "itemContents" : form
+                });
 
-                  // init form with the data
-                  form._init({ 
-                    "data": g, 
-                    "modal" : this.modal, 
-                    "sidenav" : this.settingsNav
-                  });
+                // init form with the data
+                form._init({ 
+                  "data": g, 
+                  "modal" : this.modal, 
+                  "sidenav" : this.settingsNav
+                });
               }
             }
           }    
@@ -177,7 +173,6 @@ class ProjectSettings extends TatorPage {
   
   makeContainers({objData = {}, classBase, hidden = true}){
      for(let data of objData){
-       console.log("Data ID: "+data.id);
       this.makeContainer({"objData" : data, classBase, hidden});
     }
   }

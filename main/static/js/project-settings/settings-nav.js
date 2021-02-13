@@ -95,8 +95,11 @@ class SettingsNav extends TatorElement {
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
     let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
 
+    navItem.parentNode.firstChild.click();
+    container.remove();
+
     // Show something else...
-    return navItem.parentNode.firstChild.click();
+    return navItem.remove();
   }
 
 
@@ -310,8 +313,6 @@ class SettingsNav extends TatorElement {
 
   // Hide and show to centralize where we are doing this action
   hide(el){
-    console.log(`Hide item! --->`);
-    console.log(el);
     if(el.nodeType == Node.ELEMENT_NODE){
       return el.hidden = true;
     } else {
@@ -321,8 +322,6 @@ class SettingsNav extends TatorElement {
     
   }
   show(el){
-    console.log(`Show item! --->`);
-    console.log(el);
     if(el.nodeType == Node.ELEMENT_NODE){
       return el.hidden = false;
     } else {

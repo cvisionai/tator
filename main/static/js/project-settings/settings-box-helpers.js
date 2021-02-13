@@ -157,7 +157,7 @@ class SettingsBox {
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold");
     buttonClose.innerHTML = "Cancel";
 
-    buttonClose.addEventListener("click", this._modalCloseCallback);
+    buttonClose.addEventListener("click", this.modal._closeCallback);
 
     this.modal._footer.appendChild(buttonSave);
     this.modal._footer.appendChild(buttonClose);
