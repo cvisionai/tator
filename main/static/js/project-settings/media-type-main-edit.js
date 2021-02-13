@@ -100,33 +100,35 @@ class MediaTypeMainEdit extends TypeForm {
       if(this._nameChanged()){
         let nameInput = form.querySelector('[name="name"]');
         let name = nameInput.value;
-        if(name !== "" || name !== null) {
+        //if(name !== "" || name !== null) {
           formData["name"] = name;
-          this._updateNavEvent("rename", name);
+          //
           nameInput.classList.remove("has-border");
           nameInput.classList.remove("is-invalid");
-        } else {
-          nameInput.classList.add("has-border");
-          nameInput.classList.add("is-invalid");
-          hasErrors += "Name cannot be blank\n";
-        }    
+        // } else {
+        //   nameInput.classList.add("has-border");
+        //   nameInput.classList.add("is-invalid");
+        //   hasErrors += "Name cannot be blank\n";
+        // } 
+        if(!includeDtype) {
+          this._updateNavEvent("rename", name);
+        }   
       }
-
+    
       // only send dtype when it's new, if included cannot be ""
       if(includeDtype) {
         let dtypeSelect = form.querySelector('[name="dtype"]');
         let dtype = dtypeSelect.value;
-        if(name !== "" || name !== null) {
-          formData["name"] = name;
-        } else {
-          this._input.classList.add("has-border");
-          this._input.classList.add("is-invalid");
-          hasErrors += "Name cannot be blank\n";
-        }
-        formData.dtype = dtype;
+        //if(dtype !== "" || dtype !== null) {
+          formData.dtype = dtype;
+        // } else {
+        //   this._input.classList.add("has-border");
+        //   this._input.classList.add("is-invalid");
+        //   hasErrors += "Data Type cannot be blank\n";
+        // }
       }
 
-    if(hasErrors != "") return `Form error: ${hasErrors}`
+    //if(hasErrors != "") return `Form error: ${hasErrors}`
     return formData;
   }
 

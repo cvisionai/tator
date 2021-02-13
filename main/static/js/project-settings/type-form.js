@@ -98,8 +98,63 @@ class TypeForm extends TatorElement {
       console.log(data.message);
       this.loading.hideSpinner();
 
+      // Hide the add new form
+      this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+
+      // Create and show the container with new type
+      this.sideNav.addItemContainer({
+        "type" : this.typeName,
+        "id" : data.id,
+        "hidden" : false
+      });
+
+      let form = document.createElement( this._getTypeClass() );
+
+      this.sideNav.fillContainer({
+        "type" : this.typeName,
+        "id" : data.id,
+        "itemContents" : form
+      });
+
+      // init form with the data
+      formData.id = data.id;
+      form._init({ 
+        "data": formData, 
+        "modal" : this.modal, 
+        "sidenav" : this.sideNav
+      });
+
+      // Add the item to navigation
+      this._updateNavEvent("new", formData.name, data.id);
+
+      // Let user know everything's all set!
       return this._modalComplete(data.message);
     });
+  }
+
+  // this.settingsViewClasses = [
+  //   "project-main-edit",
+  //   "media-type-main-edit",
+  //   "localization-edit",
+  //   "leaf-type-edit",
+  //   "state-type-edit"
+  // ];
+
+  _getTypeClass(){
+    switch (this.typeName) {
+      case "MediaType" :
+        return "media-type-main-edit";
+      case "LocalizationType" :
+        return "localization-edit";
+      case "LeafType" :
+        return  "leaf-type-edit";
+      case "StateType" : 
+        return "state-type-edit";
+      case "Project" : 
+        return "project-main-edit";
+      default:
+        break;
+    }
   }
 
   //
@@ -693,16 +748,16 @@ class TypeForm extends TatorElement {
   }
 
   // Update the navigation
-  _updateNavEvent(whatChanged, newName = ""){
+  _updateNavEvent(whatChanged, newName = "", newId = -1){
     console.log("Update the nav....");
-    if(whatChanged == "rename"){
+    if(whatChanged == "remove"){
       let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
       this.sideNav.dispatchEvent(event);
-    } else if(whatChanged == "remove") {
+    } else if(whatChanged == "rename") {
       let event = this.sideNav.renameItemEvent(this.typeId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
     } else if(whatChanged == "new") {
-      let event = this.sideNav.newItemEvent(this.typeId, this.typeName, newName);
+      let event = this.sideNav.newItemEvent(newId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
     } else {
       console.log("Need more information to update the sidenav.");

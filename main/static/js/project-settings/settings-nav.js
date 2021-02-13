@@ -59,18 +59,44 @@ class SettingsNav extends TatorElement {
   }
 
   newNavItem(e){
-    console.log("Event handler newNavItem")
+    console.log("START: Event handler newNavItem")
     console.log(e.detail);
+    
+    // Create the link.
+    let obj = {
+      "id" : e.detail.typeId,
+      "name" : e.detail.newName
+    }
+    let itemSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}`;
+    let subNavLink = this.getSubItem(obj, e.detail.typeName, itemSelector);
+    console.log(subNavLink);
+    
+    // Find the end of the type's section.
+    let addNewNode = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-New']`);
+    //let parentNode = addNewNode.parentNode;
+    addNewNode.before(subNavLink);
+
+    return subNavLink.click();
   }
 
   updateNavItem(e){
-    console.log("Event handler newNavItem")
+    console.log("Event handler updateNavItem")
     console.log(e.detail);
+
+    let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
+    return navItem.innerHTML = e.detail.newName;
   }
 
   deleteNavItem(e){
-    console.log("Event handler newNavItem")
+    console.log("Event handler deleteNavItem")
     console.log(e.detail);
+
+    // Delete the side nav item, and container
+    let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
+    let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
+
+    // Show something else...
+    return navItem.parentNode.firstChild.click();
   }
 
 
@@ -83,7 +109,7 @@ class SettingsNav extends TatorElement {
   }
 
   _addSimpleNav({name, type, id, selected}){
-    return this._addItem({
+    return this._addNavItem({
       name,
       type,
       "linkData": `#itemDivId-${type}-${id}`,
@@ -92,14 +118,15 @@ class SettingsNav extends TatorElement {
   }
 
   //
-  _addItem({name = "Default", type = "project", linkData = "#", selected = false} = {} ){
+  _addNavItem({name = "Default", type = "project", linkData = "#", selected = false} = {} ){
     let item = document.createElement("a");
     item.setAttribute("class", "SideNav-item ");
     item.href = linkData;
     item.title = type.replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
+
     if(selected) {
       item.setAttribute("selected", "true");
-      this.toggleItem({ "itemIdSelector":linkData});
+      this.toggleItemContainer({ "itemIdSelector":linkData});
     } else {
       item.setAttribute("selected", "false");
     }
@@ -109,12 +136,13 @@ class SettingsNav extends TatorElement {
     item.addEventListener("click", (event) => {
       event.preventDefault();
 
-      this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+      let selectedItems = this._shadow.querySelectorAll('[selected="true"]');
+      for(let el of selectedItems){
         el.setAttribute("selected", "false");
-      })
+      }
       event.target.setAttribute("selected", "true");
 
-      this.toggleItem({ "itemIdSelector":linkData});
+      this.toggleItemContainer({ "itemIdSelector":linkData});
     });
 
     return this.nav.appendChild(item);
@@ -127,133 +155,139 @@ class SettingsNav extends TatorElement {
     subItems = []
   } = {} ){
     let headingBox = document.createElement("div");
-    let itemHeading = document.createElement("button");
-    let hiddenSubNav = document.createElement("nav");
-    let navGroup = document.createElement("div");
-
-    navGroup.setAttribute("class", "SubNav")
-    navGroup.appendChild(headingBox);
-    navGroup.appendChild(hiddenSubNav);
-
-    headingBox.setAttribute("class", `SideNav-heading f1 clearfix`); // ie. video,image,multi,localization,leaf,state
+    headingBox.setAttribute("class", `SideNav-heading f1 clearfix heading-for-${type}`); // ie. video,image,multi,localization,leaf,state
 
     // Heading button
+    let itemHeading = document.createElement("button");
     itemHeading.setAttribute("class", `toggle-subitems-${type}`); // ie. video,image,multi,localization,leaf,state
     itemHeading.appendChild(name);
     itemHeading.setAttribute("selected", "false");
     headingBox.appendChild(itemHeading);
-
-    itemHeading.addEventListener("click", (event) => {
-      event.preventDefault();
-      this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-        el.setAttribute("selected", "false");
-      })
-      
-      this.toggleSubItemList({ "elClass" : `.subitems-${type}`});
-
-      return event.target.closest(".SideNav-heading").setAttribute("selected", "true");
-    });
-    
+     
+    // SubItems holder
+    let hiddenSubNav = document.createElement("nav");
     hiddenSubNav.setAttribute("class", `SideNav SubItems  subitems-${type}`);
     hiddenSubNav.hidden = true;
+
+    // Group the above
+    let navGroup = document.createElement("div");
+    navGroup.setAttribute("class", "SubNav")
+    navGroup.appendChild(headingBox);
+    navGroup.appendChild(hiddenSubNav);
+
+    // Listener to expand
+    itemHeading.addEventListener("click", (e) => {
+      e.preventDefault();
+      let selectedItems = this._shadow.querySelectorAll('[selected="true"]')
+      for(let el of selectedItems) {
+        el.setAttribute("selected", "false");
+      };
+      
+      this.toggleSubItemList({ "targetEl" : hiddenSubNav});
+  
+      return headingBox.setAttribute("selected", "true");
+    });
 
     // SubItems
     if (subItems.length > 0){
       for(let obj of subItems){
-        let itemId = obj.id; // ie. video type with ID of 62
-        let subNavLink = document.createElement("a");
-        let subItemText = obj.name;
+        let itemIdSelector = `#itemDivId-${type}-${obj.id}`
 
-        subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
-        subNavLink.style.paddingLeft = "44px";
+        hiddenSubNav.appendChild( this.getSubItem(obj, type, itemIdSelector) );
 
-        let itemIdSelector = `#itemDivId-${type}-${itemId}`
-        subNavLink.href = itemIdSelector;
-        subNavLink.innerHTML = subItemText;
-
-        hiddenSubNav.appendChild(subNavLink);
-
-        let addSpan = document.createElement("span");
-        // Add action if required'
-        if(itemId == "New"){
-          addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable");
-          let t = document.createTextNode(`+`); 
-          addSpan.appendChild(t);
-          headingBox.appendChild(addSpan);
-          itemHeading.classList.add("col-10");
-          itemHeading.classList.add("float-left");
-
-          // ADD Links
-          addSpan.addEventListener("click", (event) => {
-            event.preventDefault();
-        
-            this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-              el.setAttribute("selected", "false");
-            });
-
-            event.target.closest(".SideNav-heading").setAttribute("selected", "true");
-        
-            this.toggleItem({ "itemIdSelector" : itemIdSelector });
-          });
+        // If we don't allow New items, this object won't exist
+        if(obj.id == "New"){    
+          this.addSpan(headingBox, itemHeading, itemIdSelector);
         }
-
-        // Sub Nav Links
-        subNavLink.addEventListener("click", (event) => {
-          event.preventDefault();
-      
-          this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
-            el.setAttribute("selected", "false");
-          })
-          event.target.setAttribute("selected", "true");
-          event.target.parentNode.parentNode.querySelector('.SideNav-heading').setAttribute("selected", "true");
-      
-          console.log("id for toggle: "+itemIdSelector);
-      
-          this.toggleItem({ "itemIdSelector" : itemIdSelector });
-        });
       }
     } else {
       console.log("No subitems for heading "+name);
+      // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
     return this.nav.appendChild(navGroup);
   }
 
-  toggleItem({ itemIdSelector = ``} = {}){
-    let targetEl = null;
-    let dom = this._shadow;
-      
-    // Hide all other item boxes
-    dom.querySelectorAll('.item-box').forEach( (el) => {
-      el.hidden = true;
-      
-      // Find and show our target
-      targetEl = dom.querySelector( itemIdSelector );
-        if(targetEl) targetEl.hidden = false;
-      } );
-      return targetEl.hidden;
-  };
+  // This is the the "+" next to item heading
+  addSpan(headingBox, itemHeading, itemIdSelector){
+    let addSpan = document.createElement("span");
+    addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable");
+    let t = document.createTextNode(`+`); 
+    addSpan.appendChild(t);
+    headingBox.appendChild(addSpan);
+    itemHeading.classList.add("col-10");
+    itemHeading.classList.add("float-left");
 
-  toggleSubItemList({ elClass = ``} = {}){
-    // Hide any  others that are open, and toggen this one.
-    this._shadow.querySelectorAll(".SubItems").forEach((item, i) => {
-      item.hidden = true;
+    // ADD Links
+    addSpan.addEventListener("click", (e) => {
+      e.preventDefault();
+  
+      this._shadow.querySelectorAll('[selected="true"]').forEach( el => {
+        el.setAttribute("selected", "false");
+      });
+
+      e.target.closest(".SideNav-heading").setAttribute("selected", "true");
+      this.toggleItemContainer({ "itemIdSelector" : itemIdSelector });
+    });
+  }
+
+  getSubItem(obj, type, itemIdSelector){
+    /* obj requires ---> id, name */
+    //
+    let itemId = obj.id; // ie. video type with ID of 62
+    let subNavLink = document.createElement("a");
+    let subItemText = obj.name;
+
+    subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
+    subNavLink.style.paddingLeft = "44px";
+    subNavLink.href = itemIdSelector;
+    subNavLink.innerHTML = subItemText;
+
+    // Sub Nav Links
+    subNavLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      console.log("id for toggle: "+itemIdSelector);
+
+      this.makeNavItemsActive( e.target, type );
+      this.toggleItemContainer({ "itemIdSelector" : itemIdSelector });
     });
 
-    //console.log(elClass);
-    let targetEl = this.nav.querySelector( elClass );
-    targetEl.hidden = false;
+    return subNavLink;
+  }
 
-    return  targetEl.hidden;
+  makeNavItemsActive( item, type ){
+    let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
+    for(let el of currentSelected){
+      el.setAttribute("selected", "false");
+    }
+    item.setAttribute("selected", "true");
+    this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");
+  }
+
+  toggleItemContainer({ itemIdSelector = ``} = {}){
+    let targetEl = this._shadow.querySelector( itemIdSelector );
+    if(targetEl){
+      // Hide all other item containers
+      let currentSelected = this._shadow.querySelector('.item-box:not([hidden])');
+      this.hide(currentSelected);
+      return this.show( targetEl );
+    } else {
+      Utilities.warningAlert("Could not find selected nav item", "#ff3e1d", false);
+    }
   };
 
-  getMain(){
-    return this.main;
-  }
-
-  getItemsContainer(){
-    return this.itemsContainer;
-  }
+  toggleSubItemList({ targetEl = ``} = {}){
+    if(targetEl){
+      // Hide any  others that are open, and toggen this one.
+      let subItems = this._shadow.querySelectorAll(".SubItems")
+      for(let el of subItems) {
+        this.hide(el);
+      }
+      return this.show( targetEl );
+    } else {
+      Utilities.warningAlert("No sub items available", "#ff3e1d", false);
+    }
+  };
 
   addItemContainer({ id = -1, itemContents = "", type = "", hidden = true}){
     let itemDiv = document.createElement("div");
@@ -272,6 +306,29 @@ class SettingsNav extends TatorElement {
     let itemDiv = this._shadow.querySelector(itemDivId);
 
     return itemDiv.appendChild(itemContents);
+  }
+
+  // Hide and show to centralize where we are doing this action
+  hide(el){
+    console.log(`Hide item! --->`);
+    console.log(el);
+    if(el.nodeType == Node.ELEMENT_NODE){
+      return el.hidden = true;
+    } else {
+      let node = this._shadow.getElementById(el);
+      return node.hidden = true;
+    }
+    
+  }
+  show(el){
+    console.log(`Show item! --->`);
+    console.log(el);
+    if(el.nodeType == Node.ELEMENT_NODE){
+      return el.hidden = false;
+    } else {
+      let node = this._shadow.getElementById(el);
+      return node.hidden = false;
+    }
   }
 
 }

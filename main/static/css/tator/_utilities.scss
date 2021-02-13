@@ -356,7 +356,7 @@
   }
 }
 
-// Hide utilities for each breakpoint
+// Hide utilities
 // Each hide utility only applies to one breakpoint range.
 @media (max-width: $width-sm - 1px) {
   .hide-sm {

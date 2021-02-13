@@ -274,21 +274,89 @@ class AttributesMain extends HTMLElement {
       "level":2
     } );
 
+    //delete section 
+    formContents.appendChild(this.deleteAttr(attributes.name));
+
     boxOnPage.appendChild(formContents);
 
-    // let deleteAttribute = new AttributesDelete({
-    //   "type" : this.typeName, 
-    //   "typeId" : this.fromId, 
-    //   "attributeName" : attributes.name, 
-    //   "pageDiv" : this.attributeDiv
-    // });
-    let deleteIcon = new DeleteButton();
-    let deleteBox = this.boxHelper.boxWrapDelete({
-      "children" : document.createTextNode(`${deleteIcon} Delete ${this.attributeName}?`)
-    });
-    boxOnPage.appendChild( deleteBox );
-
     return boxOnPage;
+  }
+
+  deleteAttr(name){
+    let button = document.createElement("button");
+    button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
+    button.style.marginRight = "10px";
+
+    let deleteText = document.createTextNode(`Delete`);
+    button.appendChild( deleteText );
+
+    let descriptionText = `Delete ${name} from this ${this.typeName} and all its data?`;
+    let headingDiv = document.createElement("div");
+    headingDiv.setAttribute("class", "clearfix py-6");
+
+    let heading = document.createElement("div");
+    heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
+    
+    heading.appendChild( button );
+        
+    let description = document.createElement("div");
+    let _descriptionText = document.createTextNode("");
+    _descriptionText.nodeValue = descriptionText;
+    description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
+    description.appendChild( _descriptionText );
+    
+    headingDiv.appendChild(heading);
+    headingDiv.appendChild(description);
+
+    this.deleteBox = this.boxHelper.boxWrapDelete( {
+      "children" : headingDiv
+    } );
+
+    this.deleteBox.style.backgroundColor = "transparent";
+
+    button.addEventListener("click", this._deleteAttrConfirm.bind(this))
+
+    return this.deleteBox;
+  }
+
+  _deleteAttrConfirm(){
+    let button = document.createElement("button");
+    let confirmText = document.createTextNode("Confirm")
+    button.appendChild(confirmText);
+    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+
+    button.addEventListener("click", this._deleteAttrType.bind(this));
+
+    this._modalConfirm({
+      "titleText" : `Delete Confirmation`,
+      "mainText" : `Pressing confirm will delete this attribute from ${this.typeName} and all its data. Do you want to continue?`,
+      "buttonSave" : button,
+      "scroll" : false    
+    });
+  }
+
+  _deleteAttrType(){
+    this._modalCloseCallback();
+    this.loading.showSpinner();
+    // let deleteType = new TypeDelete({
+    //   "type" : this.typeName,
+    //   "typeId" : this.typeId
+    // });
+  
+    // if(this.typeId != "undefined"){
+    //   deleteType.deleteFetch().then((data) => {
+    //     console.log(data.message);
+    //     this._updateNavEvent("remove");
+    //     this.loading.hideSpinner();
+    //     return this._modalComplete(data.message);
+    //   });
+    // } else {
+    //   console.log("this.typeId");
+    //   console.log(this.typeId);
+    //   this.loading.hideSpinner();
+    //   return this._modalError("Error with delete.");
+    // }
+
   }
 
   _fetchPostPromise({formData = null } = {}){

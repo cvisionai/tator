@@ -153,7 +153,7 @@ class ProjectSettings extends TatorPage {
                     "data": g, 
                     "modal" : this.modal, 
                     "sidenav" : this.settingsNav
-                  })
+                  });
               }
             }
           }    
