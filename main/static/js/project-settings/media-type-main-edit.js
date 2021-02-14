@@ -33,6 +33,7 @@ class MediaTypeMainEdit extends TypeForm {
       { "optText": "Image", "optValue": "image" },
       { "optText": "Multiview", "optValue": "multi" }
     ];
+    // Emptyform uses "" for dtype value
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
     this.dtypeSelect = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",

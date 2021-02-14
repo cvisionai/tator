@@ -281,12 +281,16 @@ class SettingsNav extends TatorElement {
 
   toggleSubItemList({ targetEl = ``} = {}){
     if(targetEl){
-      // Hide any  others that are open, and toggen this one.
-      let subItems = this._shadow.querySelectorAll(".SubItems")
-      for(let el of subItems) {
-        this.hide(el);
+      if(!targetEl.hidden){
+        this.hide(targetEl);
+      } else {
+        // Hide any  others that are open, and toggen this one.
+        let subItems = this._shadow.querySelectorAll(".SubItems")
+        for(let el of subItems) {
+          this.hide(el);
+        }
+        return this.show( targetEl );
       }
-      return this.show( targetEl );
     } else {
       Utilities.warningAlert("No sub items available", "#ff3e1d", false);
     }

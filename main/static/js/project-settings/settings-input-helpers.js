@@ -133,9 +133,7 @@ class SettingsInput {
     const checkboxInner = document.createElement("div");
     checkboxInner.setAttribute("class", `d-flex flex-row flex-wrap flex-justify-between`);
 
-    console.log("checkboxList");
     for(let data of checkboxList){
-      console.log(data);
       checkboxInner.appendChild( this._miniCheckboxSet(data, setName) );
     }
 

@@ -11,29 +11,15 @@ class LeafTypeEdit extends TypeForm {
         "children" : ""
       } );
 
-      // Only editable items inside this form
-      const _form = document.createElement("form");
-      _form.id = data.id;
-      current.appendChild( _form );
-
-      _form.addEventListener("change", (event) => {
-        this._formChanged(_form, event);
-      });
+      //
+      this._setForm();
 
       // append input for name
       const NAME = "Name";
-      _form.appendChild( this.inputHelper.inputText( {
+      this._form.appendChild( this.inputHelper.inputText( {
         "labelText": NAME,
         "name": NAME.toLowerCase(),
         "value": data[NAME.toLowerCase()]
-      } ) );
-
-      //description
-      const DESCRIPTION = "Description";
-      _form.appendChild( this.inputHelper.inputText( {
-        "labelText": DESCRIPTION,
-        "name": DESCRIPTION.toLowerCase(),
-        "value": data[DESCRIPTION.toLowerCase()]
       } ) );
 
       // dtype
@@ -42,8 +28,9 @@ class LeafTypeEdit extends TypeForm {
         { "optText": "Select", "optValue": "" },
         { "optValue" : "leaf", "optText" : "Leaf"}
       ];
+      // Emptyform uses "" for dtype value
       let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
-      _form.appendChild( this.inputHelper.inputSelectOptions( {
+      this._form.appendChild( this.inputHelper.inputSelectOptions( {
         "labelText": "Data Type",
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
@@ -51,13 +38,23 @@ class LeafTypeEdit extends TypeForm {
         "disabledInput" : disableDtype
       } ) );
 
+      //description
+      const DESCRIPTION = "Description";
+      this._form.appendChild( this.inputHelper.inputText( {
+        "labelText": DESCRIPTION,
+        "name": DESCRIPTION.toLowerCase(),
+        "value": data[DESCRIPTION.toLowerCase()]
+      } ) );
+
       // visible
       const VISIBLE = "Visible";
-      _form.appendChild( this.inputHelper.inputRadioSlide({
+      this._form.appendChild( this.inputHelper.inputRadioSlide({
         "labelText": VISIBLE,
         "name": VISIBLE.toLowerCase(),
         "value": data[VISIBLE.toLowerCase()]
       } ) );
+
+      current.appendChild( this._form );
 
       return current;
   }

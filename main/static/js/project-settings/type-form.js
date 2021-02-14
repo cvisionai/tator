@@ -91,41 +91,47 @@ class TypeForm extends TatorElement {
     console.log("New form Data....");
     console.log(formData);
 
-    addNew.saveFetch(formData).then((data) => {
+    addNew.saveFetch(formData).then(([data, status]) => {
       console.log(data.message);
       this.loading.hideSpinner();
 
-      // Hide the add new form
-      this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+      if(status != 400){
+        // Hide the add new form
+        this.sideNav.hide(`itemDivId-${this.typeName}-New`);
 
-      // Create and show the container with new type
-      this.sideNav.addItemContainer({
-        "type" : this.typeName,
-        "id" : data.id,
-        "hidden" : false
-      });
+        // Create and show the container with new type
+        this.sideNav.addItemContainer({
+          "type" : this.typeName,
+          "id" : data.id,
+          "hidden" : false
+        });
 
-      let form = document.createElement( this._getTypeClass() );
+        let form = document.createElement( this._getTypeClass() );
 
-      this.sideNav.fillContainer({
-        "type" : this.typeName,
-        "id" : data.id,
-        "itemContents" : form
-      });
+        this.sideNav.fillContainer({
+          "type" : this.typeName,
+          "id" : data.id,
+          "itemContents" : form
+        });
 
-      // init form with the data
-      formData.id = data.id;
-      form._init({ 
-        "data": formData, 
-        "modal" : this.modal, 
-        "sidenav" : this.sideNav
-      });
+        // init form with the data
+        formData.id = data.id;
+        form._init({ 
+          "data": formData, 
+          "modal" : this.modal, 
+          "sidenav" : this.sideNav
+        });
 
-      // Add the item to navigation
-      this._updateNavEvent("new", formData.name, data.id);
+        // Add the item to navigation
+        this._updateNavEvent("new", formData.name, data.id);
 
-      // Let user know everything's all set!
-      return this._modalComplete(data.message);
+              // Let user know everything's all set!
+        return this._modalSuccess(data.message);
+      } else {
+        return this._modalError(data.message);
+      } 
+
+
     }).catch((err) => {
       console.error(err);
       this.loading.hideSpinner();
@@ -453,11 +459,10 @@ class TypeForm extends TatorElement {
           }).then( () => {
             console.log(this);
             // Reset changed flag
-            if(attrFormsChanged){
-              for(let f in attrFormsChanged) f.classList.remove("changed");
-              let mainForm = this._shadow.getElementById(id);
-              if(mainForm.classList.contains("changed")) mainForm.classList.remove("changed");
-              
+            //let mainForm = this._shadow.getElementById(id);
+            if(this._form.classList.contains("changed")) this._form.classList.remove("changed");
+
+            if(hasAttributeChanges){            
               let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
               if(attrFormsChanged.length > 0 ) {
                 for(let f of attrFormsChanged) f.classList.remove("changed");
@@ -473,8 +478,6 @@ class TypeForm extends TatorElement {
     } else {
       this._modalSuccess("Nothing new to save!");
     }
-
-
   }
 
   _formChanged( event ) {
@@ -653,14 +656,15 @@ class TypeForm extends TatorElement {
   async resetHard(){
     console.log("reset hard");
     this.loading.showSpinner();
-    Utilities.warningAlert("Refreshing data", "#fff", false);
+    //Utilities.warningAlert("Refreshing data", "#fff", false);
     const response = await this._fetchGetPromise();
     const data = await response.json();
     this.data = this._findDataById(data);
-    Utilities.hideAlert();
+    //Utilities.hideAlert();
     this.loading.hideSpinner();
 
     if(this.typeName == "MediaType"){
+      console.log(this.typeName);
       const mediaList = new DataMediaList( this.projectId );
       mediaList._setProjectMediaList(data, true);
     }

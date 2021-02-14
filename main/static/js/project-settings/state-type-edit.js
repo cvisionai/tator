@@ -12,74 +12,70 @@ class StateTypeEdit extends TypeForm {
         "children" : ""
       } );
 
-      // Only editable items inside this form
-      const _form = document.createElement("form");
-      _form.id = data.id;
-      current.appendChild( _form );
+    //
+    this._setForm();
 
-      _form.addEventListener("change", (event) => {
-        this._formChanged(_form, event);
-      });
+    // append input for name
+    const NAME = "Name";
+    this._form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
 
-      // append input for name
-      const NAME = "Name";
-      _form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
+    // dtype
+    const DTYPE = "Dtype";
+    const dTypeOptions = [
+      { "optText": "Select", "optValue": "" },
+      { "optText": "State", "optValue": "state" }
+    ];
+    let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+    this._form.appendChild( this.inputHelper.inputSelectOptions( {
+      "labelText": "Data Type",
+      "name": DTYPE.toLowerCase(),
+      "value": data[DTYPE.toLowerCase()],
+      "optionsList" : dTypeOptions,
+      "disabledInput" : disableDtype
+    } ) );
 
-      //description
-      const DESCRIPTION = "Description";
-      _form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    //description
+    const DESCRIPTION = "Description";
+    this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
 
-      // dtype
-      const DTYPE = "Dtype";
-      const dTypeOptions = [
-        { "optText": "Select", "optValue": "" },
-        { "optText": "Leaf", "optValue": "leaf" }
-      ];
-      let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
-      _form.appendChild( this.inputHelper.inputSelectOptions( {
-        "labelText": "Data Type",
-        "name": DTYPE.toLowerCase(),
-        "value": data[DTYPE.toLowerCase()],
-        "optionsList" : dTypeOptions,
-        "disabledInput" : disableDtype
-      } ) );
+    // visible
+    const VISIBLE = "Visible";
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
+      "labelText": VISIBLE,
+      "name": VISIBLE.toLowerCase(),
+      "value": data[VISIBLE.toLowerCase()]
+    } ) );
 
-      // visible
-      const VISIBLE = "Visible";
-      _form.appendChild( this.inputHelper.inputRadioSlide({
-        "labelText": VISIBLE,
-        "name": VISIBLE.toLowerCase(),
-        "value": data[VISIBLE.toLowerCase()]
-      } ) );
+    // grouping default
+    const GROUPING = "grouping_default";
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
+      "labelText": "Grouping Default",
+      "name": GROUPING.toLowerCase(),
+      "value": data[GROUPING.toLowerCase()]
+    } ) );
 
-      // grouping default
-      const GROUPING = "grouping_default";
-      _form.appendChild( this.inputHelper.inputRadioSlide({
-        "labelText": "Grouping Default",
-        "name": GROUPING.toLowerCase(),
-        "value": data[GROUPING.toLowerCase()]
-      } ) );
+    // Media
+    const MEDIA = "Media";
+    const mediaList = new DataMediaList( this.projectId );
+    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
-      // Media
-      const MEDIA = "Media";
-      const mediaList = new DataMediaList( this.projectId );
-      let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
+    this._form.appendChild( this.inputHelper.multipleCheckboxes({
+        "labelText" : MEDIA,
+        "name": MEDIA.toLowerCase(),
+        "checkboxList": mediaListWithChecked
+    } ) );
 
-      _form.appendChild( this.inputHelper.multipleCheckboxes({
-          "labelText" : MEDIA,
-          "name": MEDIA.toLowerCase(),
-          "checkboxList": mediaListWithChecked
-      } ) );
+    // Child Associations
+    const CHILDASSOC = "delete_child_localizations";
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
+      "labelText": "Delete Child Associations",
+      "name": CHILDASSOC,
+      "value": data[CHILDASSOC]
+    } ) );
 
-      // Child Associations
-      const CHILDASSOC = "delete_child_localizations";
-      _form.appendChild( this.inputHelper.inputRadioSlide({
-        "labelText": "Delete Child Associations",
-        "name": CHILDASSOC,
-        "value": data[CHILDASSOC]
-      } ) );
+    current.appendChild( this._form );
 
-      return current;
+    return current;
   }
 
   _getFormData(id, includeDtype = false){

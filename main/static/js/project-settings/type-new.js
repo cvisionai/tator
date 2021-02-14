@@ -8,8 +8,9 @@ class TypeNew {
 
     async saveFetch(formData){     
       const response = await this._fetchPostPromise(formData);
+      const status = response.status;
       const data = await response.json();
-      return data;
+      return [data, status];
     }
 
     _fetchPostPromise(formData){

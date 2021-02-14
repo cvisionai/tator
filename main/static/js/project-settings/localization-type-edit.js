@@ -13,21 +13,16 @@ class LocalizationEdit extends TypeForm {
     } );
 
     //
-    const _form = document.createElement("form");
-    _form.id = data.id;
-    current.appendChild( _form );
-
-    _form.addEventListener("change", (event) => {
-      this._formChanged(_form, event);
-    });
+    this._setForm();
 
     // append input for name
     const NAME = "Name";
-    _form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
-
-    //description
-    const DESCRIPTION = "Description";
-    _form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    this._editName = this.inputHelper.inputText( {
+      "labelText": NAME,
+      "name": NAME.toLowerCase(),
+      "value": data[NAME.toLowerCase()]
+    });
+    this._form.appendChild( this._editName );
 
     // dtype
     const DTYPE = "Dtype";
@@ -38,17 +33,22 @@ class LocalizationEdit extends TypeForm {
       { "optText": "Dot", "optValue": "dot" }
     ]
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
-    _form.appendChild( this.inputHelper.inputSelectOptions({
+    this.dtypeSelect = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
       "disabledInput" : disableDtype
-    }) );
+    })
+    this._form.appendChild( this.dtypeSelect );
+
+    //description
+    const DESCRIPTION = "Description";
+    this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
 
     // visible
     const VISIBLE = "Visible";
-    _form.appendChild( this.inputHelper.inputRadioSlide({
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": VISIBLE,
       "name": VISIBLE.toLowerCase(),
       "value": data[VISIBLE.toLowerCase()]
@@ -56,7 +56,7 @@ class LocalizationEdit extends TypeForm {
 
     // grouping default
     const GROUPING = "grouping_default";
-    _form.appendChild( this.inputHelper.inputRadioSlide({
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": "Grouping Default",
       "name": GROUPING.toLowerCase(),
       "value": data[GROUPING.toLowerCase()]
@@ -66,11 +66,13 @@ class LocalizationEdit extends TypeForm {
     const mediaList = new DataMediaList( this.projectId );
     let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
-    _form.appendChild( this.inputHelper.multipleCheckboxes({
+    this._form.appendChild( this.inputHelper.multipleCheckboxes({
         "labelText" : MEDIA,
         "name": MEDIA.toLowerCase(),
         "checkboxList": mediaListWithChecked
     } ) );
+
+    current.appendChild(this._form);
 
     return current;
   }
