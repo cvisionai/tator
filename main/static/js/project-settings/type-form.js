@@ -116,6 +116,7 @@ class TypeForm extends TatorElement {
 
         // init form with the data
         formData.id = data.id;
+        formData.project = this.projectId;
         form._init({ 
           "data": formData, 
           "modal" : this.modal, 
@@ -325,6 +326,7 @@ class TypeForm extends TatorElement {
     return {
       "id" : `New`,
       "name" : "",
+      "project" : this.projectId,
       "description" : "",
       "visible" : false,
       "grouping_default" : false,
