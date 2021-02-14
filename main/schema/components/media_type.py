@@ -11,7 +11,7 @@ media_type_properties = {
     'dtype': {
         'description': 'Type of the media, image or video.',
         'type': 'string',
-        'enum': ['image', 'video','multi'],
+        'enum': ['image', 'video', 'multi'],
     },
     'file_format': {
         'description': 'File extension. If omitted, any recognized file '
@@ -47,6 +47,10 @@ media_type_properties = {
         'type': 'object',
         'additionalProperties': True,
     },
+    'visible': {
+        'description': 'Visible configuration',
+        'type': 'boolean',
+    },
 }
 
 media_type_spec = {
@@ -63,6 +67,7 @@ media_type_update = {
         'file_format': media_type_properties['file_format'],
         'archive_config': media_type_properties['archive_config'],
         'streaming_config': media_type_properties['streaming_config'],
+        'visible': media_type_properties['visible'],
     },
 }
 
@@ -81,4 +86,3 @@ media_type = {
         **media_type_properties,
     },
 }
-
