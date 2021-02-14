@@ -102,6 +102,7 @@ class MediaTypeDetailAPI(BaseDetailView):
         streaming_config = params.get('streaming_config', None)
         overlay_config = params.get('overlay_config', None)
         visible = params.get('visible', None)
+        default_volume = params.get('default_volume', None)
 
         obj = MediaType.objects.get(pk=params['id'])
         if name is not None:
@@ -118,6 +119,8 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.overlay_config = overlay_config
         if visible is not None:
             obj.visible = visible
+        if default_volume is not None:
+            obj.default_volume = default_volume
 
         obj.save()
         return {'message': 'Media type updated successfully!'}

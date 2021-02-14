@@ -68,6 +68,7 @@ media_type_update = {
         'archive_config': media_type_properties['archive_config'],
         'streaming_config': media_type_properties['streaming_config'],
         'visible': media_type_properties['visible'],
+        'default_volume': media_type_properties['default_volume'],
     },
 }
 
