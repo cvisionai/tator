@@ -95,7 +95,7 @@ class StateTypeEdit extends TypeForm {
       let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
       let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
 
-      let mediaInputs =  form.querySelectorAll('input[name="media"]');
+      let mediaInputs =  form.querySelectorAll('input[name^="media"]');
       let media = this.inputHelper._getArrayInputValue(mediaInputs);
 
       let delete_child_localizationsInputs =  form.querySelectorAll('.radio-slide-wrap input[name="delete_child_localizations"]');

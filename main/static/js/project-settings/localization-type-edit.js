@@ -94,8 +94,10 @@ class LocalizationEdit extends TypeForm {
     let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
     let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
 
-    let mediaInputs =  form.querySelectorAll('input[name="media"]');
+    let mediaInputs =  form.querySelectorAll('input[name^="media"]');
+    console.log(mediaInputs);
     let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
+    //let media_ids = media;
 
     let formData = {
       name,

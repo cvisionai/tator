@@ -93,6 +93,7 @@ class MediaTypeMainEdit extends TypeForm {
 
       // default volume to Number
       if(form.querySelector('[name="default_volume"]')) {
+        //maximum of 100
         let default_volume = Number(form.querySelector('[name="default_volume"]').value);
         formData["default_volume"] = default_volume;
       }

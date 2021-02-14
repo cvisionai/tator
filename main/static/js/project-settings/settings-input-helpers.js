@@ -392,8 +392,8 @@ class SettingsInput {
         if(el.value != "" && el.value != null){
           if(type == "input"){
             array.push(el.value);
-          } else if (type == "checkboxes"){
-            if(el.checked == true) array.push(el.value);
+          } else if (type == "checkbox"){
+            if(el.checked == true) array.push(Number(el.value));
           }
         }
       }
