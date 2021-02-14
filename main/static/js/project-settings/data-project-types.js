@@ -4,40 +4,38 @@ class ProjectTypesData {
     }
 
     // Creates navigatable to get from type > entity > attributes
-    _getAttributeDataByType(projectId = this.projectId){
+    async _getAttributeDataByType(projectId = this.projectId){
       console.log("_getProjectTypesData: "+projectId);
       // Promise all.... then bundle them up
       let promises = this._getAllTypePromises(projectId);
       this.attributeDataByType = {};
   
-      return Promise.all(promises)
-      .then( async([mta, lo, le, st]) => {
-        const mediaTypesData = mta.json();
-        const localizationData = lo.json();
-        const leafTypeData = le.json();
-        const stateTypeData = st.json();
-        Promise.all( [mediaTypesData, localizationData, leafTypeData, stateTypeData] )
-          .then( ([mediaTypes, localization, leaf, state]) => {
-            this.attributeDataByType.MediaType = {};
-            this.attributeDataByType.LocalizationType = {};
-            this.attributeDataByType.LeafType = {};
-            this.attributeDataByType.StateType = {};
-  
-            for(let entity of mediaTypes){
-                this.attributeDataByType.MediaType[entity.name] = entity.attribute_types;
-            }
-            for(let entity of localization){
-                this.attributeDataByType.LocalizationType[entity.name] = entity.attribute_types;
-            }
-            for(let entity of leaf){
-                this.attributeDataByType.LeafType[entity.name] = entity.attribute_types;
-            }
-            for(let entity of state){
-                this.attributeDataByType.StateType[entity.name] = entity.attribute_types;
-            }
-          });
-          return this.attributeDataByType;
+      const [mta, lo, le, st] = await Promise.all(promises);
+      const mediaTypesData = mta.json();
+      const localizationData = lo.json();
+      const leafTypeData = le.json();
+      const stateTypeData = st.json();
+      Promise.all([mediaTypesData, localizationData, leafTypeData, stateTypeData])
+        .then(([mediaTypes, localization, leaf, state]) => {
+          this.attributeDataByType.MediaType = {};
+          this.attributeDataByType.LocalizationType = {};
+          this.attributeDataByType.LeafType = {};
+          this.attributeDataByType.StateType = {};
+
+          for (let entity of mediaTypes) {
+            this.attributeDataByType.MediaType[entity.name] = entity.attribute_types;
+          }
+          for (let entity_1 of localization) {
+            this.attributeDataByType.LocalizationType[entity_1.name] = entity_1.attribute_types;
+          }
+          for (let entity_2 of leaf) {
+            this.attributeDataByType.LeafType[entity_2.name] = entity_2.attribute_types;
+          }
+          for (let entity_3 of state) {
+            this.attributeDataByType.StateType[entity_3.name] = entity_3.attribute_types;
+          }
         });
+        return this.attributeDataByType;
       }
 
       _getAllTypePromises(projectId = this.projectId){

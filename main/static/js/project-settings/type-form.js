@@ -659,16 +659,19 @@ class TypeForm extends TatorElement {
     this.data = this._findDataById(data);
     Utilities.hideAlert();
     this.loading.hideSpinner();
+
+    if(this.typeName == "MediaType"){
+      const mediaList = new DataMediaList( this.projectId );
+      mediaList._setProjectMediaList(data, true);
+    }
+
     return this.reset(this.data);
   }
 
   _findDataById(allData){
-    console.log("allData");
-    console.log(allData);
     for(let x of allData){
-      console.log(`allData.id ${allData.id} and this.typeId ${this.typeId}`);
-      if (allData.id == this.typeId) return allData[x];
-      console.log("didn't match "+allData.id);
+      console.log(`allData.id ${x.id} and this.typeId ${this.typeId}`);
+      if (x.id == this.typeId) return x;
     }
     return false;
   }

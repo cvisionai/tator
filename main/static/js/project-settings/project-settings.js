@@ -151,6 +151,10 @@ class ProjectSettings extends TatorPage {
                   "sidenav" : this.settingsNav
                 });
               }
+              if(formView.typeName == "MediaType"){
+                const mediaList = new DataMediaList( this.projectId );
+                mediaList._setProjectMediaList(objData, true);
+              }
             }
           }    
 
