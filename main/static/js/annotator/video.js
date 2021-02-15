@@ -116,6 +116,7 @@ class VideoBufferDemux
     this._onDemandBufferIndex = this._numBuffers;
     this._pendingOnDemandDeletes = [];
     this._waitPlayback = false;
+    this._waitId = null;
 
     this._init = false;
     this._dataLag = [];
@@ -2489,7 +2490,12 @@ class VideoCanvas extends AnnotationCanvas {
                     if (video.playBuffer().readyState > 0)
                     {
                       that._sentPlaybackReady = true;
-                      that.dispatchEvent(new Event("playbackReady", {composed: true}));
+                      that.dispatchEvent(new CustomEvent(
+                        "playbackReady",
+                        {
+                          composed: true,
+                          detail: {playbackReadyId: that._waitId},
+                        }));
                     }
                   }
                 }
@@ -2590,12 +2596,14 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   /**
-   * @param {boolean} val - True if playback should wait until this is set to false.
-   *                        False, playback immediately
+   * @param {boolean} waitStatus - True if playback should wait until this is set to false.
+   *                               False, playback immediately
+   * @param {integer} waitId - Unique ID associated with this wait used for synchronization purposes
    */
-  set waitPlayback(val)
+  waitPlayback(waitStatus, waitId)
   {
-    this._waitPlayback = val;
+    this._waitPlayback = waitStatus;
+    this._waitId = waitId;
   }
 
   /**

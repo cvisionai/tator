@@ -207,16 +207,20 @@ class AnnotationMulti extends TatorElement {
       fastForward.setAttribute("disabled", "");
       rewind.setAttribute("disabled", "");
 
-      for (let video of this._videos)
-      {
-        video.waitPlayback = true;
-        video.pause();
-        video.rateChange(this._rate);
-        if (video.playBackwards())
+      this._playbackReadyId += 1;
+      this._playbackReadyCount = 0;
+      this.goToFrame(this._videos[0].currentFrame()).then(() => {
+        for (let video of this._videos)
         {
-          play.removeAttribute("is-paused");
+          video.waitPlayback(true, this._playbackReadyId);
+          video.pause();
+          video.rateChange(this._rate);
+          if (video.playBackwards())
+          {
+            play.removeAttribute("is-paused");
+          }
         }
-      }
+      });
     });
 
     fastForward.addEventListener("click", () => {
@@ -455,7 +459,7 @@ class AnnotationMulti extends TatorElement {
     this._vidDiv.appendChild(multi_container);
     let idx = 0;
 
-    this._playbackReadyCount = 0;
+    this._playbackReadyId = 0;
     this._numVideos = val.media_files['ids'].length;
     for (const vid_id of val.media_files['ids'])
     {
@@ -471,15 +475,17 @@ class AnnotationMulti extends TatorElement {
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
 
-      roi_vid.addEventListener("playbackReady", () =>
+      roi_vid.addEventListener("playbackReady", (evt) =>
       {
-        this._playbackReadyCount += 1;
-        if (this._playbackReadyCount == this._numVideos)
+        if (evt.detail.playbackReadyId == this._playbackReadyId)
         {
-          this._playbackReadyCount = 0;
-          for (var video of this._videos)
+          this._playbackReadyCount += 1;
+          if (this._playbackReadyCount == this._numVideos)
           {
-            video.waitPlayback = false;
+            for (var video of this._videos)
+            {
+              video.waitPlayback(false, this._playbackReadyId);
+            }
           }
         }
       });
@@ -572,16 +578,20 @@ class AnnotationMulti extends TatorElement {
     const paused = this.is_paused();
     if (paused) {
       let playing = false;
-      for (let video of this._videos)
-      {
-        video.waitPlayback = true;
-        video.rateChange(this._rate);
-        playing |= video.play();
-      }
-      if (playing)
-      {
-        this._play.removeAttribute("is-paused");
-      }
+      this._playbackReadyId += 1;
+      this._playbackReadyCount = 0;
+      this.goToFrame(this._videos[0].currentFrame()).then(() => {
+        for (let video of this._videos)
+        {
+          video.waitPlayback(true, this._playbackReadyId);
+          video.rateChange(this._rate);
+          playing |= video.play();
+        }
+        if (playing)
+        {
+          this._play.removeAttribute("is-paused");
+        }
+      });
     }
   }
 
@@ -780,13 +790,6 @@ class AnnotationMulti extends TatorElement {
 
   selectTimelineData(data) {
     this._timelineAttrRange.selectData(data);
-  }
-
-  frameChange(frame) {
-    for (let video of this._video)
-    {
-      video.goToFrame
-    }
   }
 
   _frameToTime(frame) {
