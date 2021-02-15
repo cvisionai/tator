@@ -36,25 +36,6 @@ class TatorCache:
         group = f'creds_{project_id}'
         self.rds.delete(group)
 
-    def set_upload_permission_cache(self, upload_uid, token):
-        self.rds.hset('uploads', upload_uid, token)
-
-    def get_upload_permission_cache(self, upload_uid, token):
-        granted = False
-        if self.rds.hexists('uploads', upload_uid):
-            granted = self.rds.hget('uploads', upload_uid).decode() == token
-        return granted
-
-    def set_upload_uid_cache(self, upload_url, upload_uid):
-        if not self.rds.hexists('upload_uids', upload_url):
-            self.rds.hset('upload_uids', upload_url, upload_uid)
-
-    def get_upload_uid_cache(self, upload_url):
-        uid = self.rds.hget('upload_uids', upload_url)
-        if uid is not None:
-            uid = uid.decode()
-        return uid
-
     def set_job(self, job):
         """ Stores a job for cancellation or authentication. Job is a dict including
             uid, gid, user id, project id, algorithm id (-1 if not an algorithm), 

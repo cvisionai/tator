@@ -165,19 +165,32 @@ class User(AbstractUser):
                 self.cognito_id = attribute['Value']
         self.save()
 
-    def set_password_cognito(self, temp_pw):
+    def set_password_cognito(self, password, permanent=False):
         cognito = TatorCognito()
-        cognito.set_temporary_password(self, temp_pw)
+        cognito.set_password(self, password, permanent)
 
     def reset_password_cognito(self):
         cognito = TatorCognito()
         cognito.reset_password(self)
+
+    def set_password(self, password):
+        super().set_password(password)
+        if os.getenv('COGNITO_ENABLED'):
+            self.set_password_cognito(password, True)
 
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
         else:
             return "---"
+
+@receiver(post_save, sender=User)
+def user_save(sender, instance, created, **kwargs):
+    if os.getenv('COGNITO_ENABLED'):
+        if created:
+            instance.move_to_cognito()
+        else:
+            TatorCognito().update_attributes(instance)
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
@@ -233,7 +246,7 @@ class Project(Model):
 class Version(Model):
     name = CharField(max_length=128)
     description = CharField(max_length=1024, blank=True)
-    number = PositiveIntegerField()
+    number = IntegerField()
     project = ForeignKey(Project, on_delete=CASCADE)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
