@@ -59,7 +59,6 @@ class ProjectMainEdit extends TypeForm {
   
     let _form = document.createElement("form");
     _form.id = "project-" + this.data.id;
-    this.boxOnPage.appendChild(_form); 
 
     _form.addEventListener("change", e => this._formChanged(_form, e))
 
@@ -82,6 +81,9 @@ class ProjectMainEdit extends TypeForm {
     // Enable downloads at project level,
     this._downloadEnable = this._setDownloadInputFromData();
     _form.appendChild(this._downloadEnable);
+
+    this._form = _form;
+    this.boxOnPage.appendChild(this._form);
 
     return this.boxOnPage;
   }
@@ -263,8 +265,14 @@ class ProjectMainEdit extends TypeForm {
     this._setDownloadEnableInputValue(this._getDownloadEnableValueData());
   }
 
-  resetHard() {
-    this._fetchNewProjectData();
+  async resetHard() {
+    console.log("reset hard");
+    this.loading.showSpinner();
+    const response = await this._fetchGetPromise();
+    const data = await response.json();
+    this.data = data;
+    this.loading.hideSpinner();
+
     this.reset();
     console.log("[Reset with newly fetched project data.]");
   }
@@ -296,7 +304,7 @@ class ProjectMainEdit extends TypeForm {
           console.log("Save response status: " + response.status)
           if (response.status == "200") {
             this._modalSuccess(data.message);
-            this._fetchNewProjectData();
+            this.resetHard();
           } else {
             this._modalError(data.message);
           }
