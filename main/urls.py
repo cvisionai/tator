@@ -55,7 +55,8 @@ urlpatterns = [
 if settings.COGNITO_ENABLED:
     urlpatterns += [
         path('accounts/password_change/', PasswordChangeView.as_view()),
-        path('accounts/password_change/done', PasswordChangeDoneView.as_view()),
+        path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
+             name='password_change_done'),
         path('accounts/logout/', LogoutView.as_view()),
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
 else:
