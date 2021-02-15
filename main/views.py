@@ -201,60 +201,6 @@ class AuthAdminView(View):
 
         return HttpResponse(status=403)
 
-class AuthUploadView(View):
-    def dispatch(self, request, *args, **kwargs):
-        """ Identifies permissions for an uploaded file.
-
-        If this is a POST, we create a key/value pair in redis between
-        upload uid and auth token. If this is a PATCH or GET request,
-        we check for the existence of this key/value pair.
-        """
-
-        original_url = request.headers['X-Original-URI']
-        original_method = request.headers['X-Original-METHOD']
-        upload_uid = request.headers.get('Upload-Uid', None)
-        token = request.headers.get('Authorization', None)
-
-        # For some reason, TokenAuthentication doesn't work by default
-        # So if the session authentication didn't trigger, manually check
-        # to see if a token was provided. Bail out if the user is anonymous
-        # before we get too far
-        user = request.user
-        if isinstance(user, AnonymousUser):
-            try:
-                (user, _) = TokenAuthentication().authenticate(request)
-            except Exception as e:
-                msg = "*Security Alert:* "
-                msg += f"Attempted to access unauthorized upload {original_url}."
-                Notify.notify_admin_msg(msg)
-                logger.warn(msg)
-                return HttpResponse(status=403)
-
-        authorized = False
-        if (upload_uid is not None) and (token is not None):
-            if original_method == 'POST':
-                # Store token and upload uid. Susequent calls with same upload UID
-                # will require the same token.
-                TatorCache().set_upload_permission_cache(upload_uid, token)
-                authorized = True
-            else:
-                authorized = TatorCache().get_upload_permission_cache(upload_uid, token)
-            if original_method == 'PATCH':
-                # Store uri and upload uid. This is used by the move video endpoint
-                # to include uid in the header for download.
-                TatorCache().set_upload_uid_cache(original_url, upload_uid)
-
-        if authorized:
-            return HttpResponse(status=200)
-        else:
-            # Files that aren't in the whitelist or database are forbidden
-            msg = f"({user}/{user.id}): "
-            msg += f"Attempted to access unauthorized upload {original_url}."
-            Notify.notify_admin_msg(msg)
-            return HttpResponse(status=403)
-
-        return HttpResponse(status=403)
-
 def ErrorNotifierView(request, code,message,details=None):
 
     context = {}

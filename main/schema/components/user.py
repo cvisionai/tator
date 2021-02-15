@@ -28,7 +28,11 @@ user_properties = {
 
 user_update = {
     'type': 'object',
-    'properties': user_properties,
+    'properties': {
+        fields.first_name: user_properties[fields.first_name],
+        fields.last_name: user_properties[fields.last_name],
+        fields.email: user_properties[fields.email],
+    },
 }
 
 user = {

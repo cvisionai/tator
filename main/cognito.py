@@ -41,13 +41,13 @@ class TatorCognito:
                                                   **pw_args)
         return response
 
-    def set_temporary_password(self, user, temp_pw):
+    def set_password(self, user, password, permanent=False):
         if not user.cognito_id:
             raise RuntimeError("Cognito ID does not exist for this user!")
         response = self.cognito.admin_set_user_password(UserPoolId=self.config['pool-id'],
                                                         Username=user.username,
-                                                        Password=temp_pw,
-                                                        Permanent=False)
+                                                        Password=password,
+                                                        Permanent=permanent)
         return response
 
     def reset_password(self, user):
@@ -56,5 +56,26 @@ class TatorCognito:
         response = self.cognito.admin_reset_user_password(UserPoolId=self.config['pool-id'],
                                                           Username=user.username)
         return response
+
+    def update_attributes(self, user, email_verified=True):
+        if not user.cognito_id:
+            raise RuntimeError("Cognito ID does not exist for this user!")
+        response = self.cognito.admin_update_user_attributes(UserPoolId=self.config['pool-id'],
+                                                             Username=user.username,
+                                                             UserAttributes=[{
+                                                                'Name': 'email_verified',
+                                                                'Value': str(email_verified),
+                                                             }, {
+                                                                'Name': 'email',
+                                                                'Value': user.email,
+                                                             }, {
+                                                                'Name': 'given_name',
+                                                                'Value': user.first_name,
+                                                             }, {
+                                                                'Name': 'family_name',
+                                                                'Value': user.last_name,
+                                                             }])
+        return response
+                                                             
 
 TatorCognito.setup_cognito()
