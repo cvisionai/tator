@@ -1851,6 +1851,14 @@ class VideoCanvas extends AnnotationCanvas {
     return promise;
   }
 
+  /**
+   * Note: Once in safe mode, there's no mechanism to get out of it.
+   */
+  safeMode()
+  {
+    this._motionComp.safeMode();
+  }
+
   ////////////////////////////////
   /// Button handlers
   ////////////////////////////////

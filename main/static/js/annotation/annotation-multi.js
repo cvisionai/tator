@@ -395,10 +395,6 @@ class AnnotationMulti extends TatorElement {
           this.pause();
         });
 
-        prime.addEventListener("safeMode", () => {
-          this.safeMode();
-        });
-
         prime.addPauseListener(() => {
           const prime_frame = prime.currentFrame();
           for (let idx = 1; idx < this._videos.length; idx++)
@@ -409,6 +405,10 @@ class AnnotationMulti extends TatorElement {
           }
         });
       }
+
+      this._videos[idx].addEventListener("safeMode", () => {
+        this.safeMode();
+      });
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
@@ -763,6 +763,11 @@ class AnnotationMulti extends TatorElement {
   }
 
   safeMode() {
+    for (let video of this._videos)
+    {
+      video.safeMode();
+    }
+
     this._scrubInterval = 1000.0/guiFPS;
     console.info("Entered video safe mode");
     return 0;
