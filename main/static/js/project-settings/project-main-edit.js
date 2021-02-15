@@ -282,8 +282,10 @@ class ProjectMainEdit extends TypeForm {
     let formDataJSON = {};
 
     if (this._nameChanged()) formDataJSON.name = this._getNameInputValue();
-    if (this._summaryChanged()) formDataJSON.summary = this._getSummaryInputValue();
-    if (this._downloadEnabledChanged()) formDataJSON.enable_downloads = this._getDownloadEnableInputValue();
+    //if (this._summaryChanged()) formDataJSON.summary = this._getSummaryInputValue();
+    formDataJSON.summary = this._getSummaryInputValue();
+    //if (this._downloadEnabledChanged()) formDataJSON.enable_downloads = this._getDownloadEnableInputValue();
+    formDataJSON.enable_downloads = this._getDownloadEnableInputValue();
     if (this._thumbInputChanged()) {
       let thumbVal = this._getThumbInputValue();
       if (thumbVal != "" && thumbVal != null) formDataJSON.thumb = thumbVal;
