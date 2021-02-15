@@ -174,7 +174,7 @@ class User(AbstractUser):
         cognito.reset_password(self)
 
     def set_password(self, password):
-        super().set_password(self, password)
+        super().set_password(password)
         if os.getenv('COGNITO_ENABLED'):
             self.set_password_cognito(password, True)
 
