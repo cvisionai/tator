@@ -2385,31 +2385,34 @@ class VideoCanvas extends AnnotationCanvas {
         downloadDirection = "backward";
       }
 
-      if (!that._onDemandInit && !that._onDemandInitSent)
+      if (!that._onDemandInit)
       {
-        // Have not initialized yet.
-        // Send out the onDemandInit only if the buffer is clear. Otherwise, reset the
-        // underlying source buffer.
-        if (ranges.length == 0 && !video.isOnDemandBufferBusy())
+        if (!that._onDemandInitSent)
         {
-          that._onDemandPendingDownloads = 0;
-          //console.log("Sending onDemandInit to downloader")
-          that._onDemandInitSent = true;
-          that._dlWorker.postMessage(
-            {
-              "type": "onDemandInit",
-              "frame": currentFrame,
-              "direction": downloadDirection,
-              "mediaFileIndex": that._play_idx
-            }
-          );
-        }
-        else
-        {
-          if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
+          // Have not initialized yet.
+          // Send out the onDemandInit only if the buffer is clear. Otherwise, reset the
+          // underlying source buffer.
+          if (ranges.length == 0 && !video.isOnDemandBufferBusy())
           {
-            //console.log("Resetting onDemand buffer")
-            video.resetOnDemandBuffer();
+            that._onDemandPendingDownloads = 0;
+            //console.log("Sending onDemandInit to downloader")
+            that._onDemandInitSent = true;
+            that._dlWorker.postMessage(
+              {
+                "type": "onDemandInit",
+                "frame": currentFrame,
+                "direction": downloadDirection,
+                "mediaFileIndex": that._play_idx
+              }
+            );
+          }
+          else
+          {
+            if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
+            {
+              //console.log("Resetting onDemand buffer")
+              video.resetOnDemandBuffer();
+            }
           }
         }
       }
