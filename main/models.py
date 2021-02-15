@@ -175,7 +175,7 @@ class User(AbstractUser):
 
     def set_password(self, password):
         super().set_password(password)
-        if os.getenv('COGNITO_ENABLED'):
+        if os.getenv('COGNITO_ENABLED') == 'TRUE':
             self.set_password_cognito(password, True)
 
     def __str__(self):
@@ -186,7 +186,7 @@ class User(AbstractUser):
 
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):
-    if os.getenv('COGNITO_ENABLED'):
+    if os.getenv('COGNITO_ENABLED') == 'TRUE':
         if created:
             instance.move_to_cognito()
         else:
