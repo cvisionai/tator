@@ -5,6 +5,8 @@ from django.urls import path
 from django.urls import include
 from django.conf.urls import url
 from django.conf import settings
+from django.contrib.auth.views import PasswordChangeView
+from django.contrib.auth.views import LogoutView
 
 from rest_framework.authtoken import views
 from rest_framework.authentication import SessionAuthentication
@@ -51,6 +53,8 @@ urlpatterns = [
 
 if settings.COGNITO_ENABLED:
     urlpatterns += [
+        path('accounts/password_change/', PasswordChangeView.as_view()),
+        path('accounts/logout/', LogoutView.as_view()),
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
 else:
     urlpatterns += [
