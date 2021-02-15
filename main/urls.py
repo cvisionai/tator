@@ -22,7 +22,6 @@ from .views import ProjectSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
-from .views import AuthUploadView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -48,7 +47,6 @@ urlpatterns = [
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
-    path('auth-upload', AuthUploadView.as_view()),
 ]
 
 if settings.COGNITO_ENABLED:
