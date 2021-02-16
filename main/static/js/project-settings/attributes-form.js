@@ -23,7 +23,7 @@ class AttributesForm extends HTMLElement {
     // append input for name
     const NAME = "Name";
     this.form.appendChild( this.inputHelper.inputText({
-      "labelText" : NAME+"*",
+      "labelText" : NAME,
       "name" : NAME.toLowerCase(),
       "value" : ""
     }) );
@@ -274,7 +274,7 @@ class AttributesForm extends HTMLElement {
       options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
 
       selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type*",
+        "labelText": "Data Type",
         "value": dtype,
         "optionsList": options,
         "name" : "dtype"
@@ -317,7 +317,7 @@ class AttributesForm extends HTMLElement {
       options.push("Select");
 
       selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type*",
+        "labelText": "Data Type",
         "value": "Select",
         "name" : "dtype",
         "optionsList": this._getDtypeOptions( options )
