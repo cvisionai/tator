@@ -29,6 +29,18 @@ class VideoDownloader
       this._fileInfoSent[idx] = false;
     }
 
+    // In addition, the downloader can also handle on demand downloading for a media file
+    this._onDemandConfig = null;
+
+    // These buffers will store the download requests that occur while the downloader
+    // is in onDemand mode
+    this._bufferedSegmentDownloads = [];
+    this._bufferedSeeks = null;
+
+    // Used with the initial download to get the initial set of frames quicker to the player
+    // (assuming that blockSize is large than this)
+    this._startUpBlockSize = 1024 * 1024
+
     this.initializeInfoObjects();
   }
 
@@ -142,6 +154,316 @@ class VideoDownloader
     }
   }
 
+  /**
+   * Initializes the onDemand downlaoding feature.
+   * This also resets the internal on-demand downloading.
+   *
+   * @param {string} direction - 'forward'|'backward'
+   * @param {integer} frame - Frame number to start downloading from
+   * @param {integer} mediaFileIndex - Index of media file list from constructor to use
+   */
+  setupOnDemandDownload(direction, frame, mediaFileIndex)
+  {
+    this._onDemandConfig = {};
+    this._onDemandConfig["direction"] = direction;
+    this._onDemandConfig["frame"] = frame;
+    this._onDemandConfig["mediaFileIndex"] = mediaFileIndex;
+    this._onDemandConfig["currentPacket"] = 0;
+    this._onDemandConfig["numPacketsDownloaded"] = 0;
+    this._onDemandConfig["init"] = false;
+    this._onDemandConfig["lastStartByte"] = -1;
+
+    postMessage({"type": "onDemandInit"});
+  }
+
+  /**
+   * @returns {boolean} True if in onDemand mode. False otherwise.
+   */
+  inOnDemandMode()
+  {
+    return this._onDemandConfig != null;
+  }
+
+  /**
+   * Save the download next segment request
+   * @param {integer} buf_idx - Index of media file list (ie mediaFileIndex)
+   */
+  saveDownloadNextSegmentRequest(buf_idx)
+  {
+    this._bufferedSegmentDownloads.push(buf_idx);
+  }
+
+  /**
+   * Save the download seek request.
+   * This will only save a single seek request
+   *
+   * @param {integer} buf_idx - Index of media file list (ie mediaFileIndex)
+   * @param {integer} frame - Frame to seek to
+   * @param {float} time - Seek target time in seconds
+   */
+  saveSeekRequest(buf_idx, frame, time)
+  {
+    this._bufferedSeek = {"buf_idx": buf_idx, "frame": frame, "time": time};
+  }
+
+  /**
+   * Shutdown the onDemand downloading.
+   * Restart requested downloads (seek first, then segments)
+   * Allow downloads to go through.
+   */
+  shutdownOnDemandDownload()
+  {
+    this._onDemandConfig = null;
+
+    if (this._bufferedSeek != null)
+    {
+      this.downloadForFrame(
+          this._bufferedSeek["buf_idx"],
+          this._bufferedSeek["frame"],
+          this._bufferedSeek["time"])
+    }
+
+    while (this._bufferedSegmentDownloads.length > 0)
+    {
+      var buf_idx = this._bufferedSegmentDownloads.shift();
+      this.downloadNextSegment(buf_idx);
+    }
+  }
+
+  /**
+   * Returns the segment index for the given media/frame. This is used to get
+   * the appropriate packet to download corresponding with the frame. Use this
+   * when jumping around the video / going backwards to decode properly.
+   *
+   * @param {integer} frame - Target frame to search for
+   * @param {integer} buf_idx - Index of media file list (ie mediaFileIndex elsewhere)
+   * @returns {object} matchIdx, boundary, lastPacket
+   *   - matchIdx: Returns with -1 if no segment match is found
+   *   - boundary: True if the frame is within 5 frames of the edge of the segment
+   */
+  getSegmentIndex(frame, buf_idx)
+  {
+    var matchIdx = -1;
+    var boundary = false;
+
+    // Check version of media. If it doesn't match
+    var version = 1;
+    try
+    {
+      version = this._info[buf_idx]["file"]["version"];
+    }
+    catch(error)
+    {
+
+    }
+    if (version < 2 || version == undefined)
+    {
+      console.warn("Old version of segment file doesn't support seek operation");
+      return {matchIdx, boundary};
+    }
+
+    var lastPacket = 0;
+    var lastFrame = 0;
+    for (var idx = 0; idx < this._numPackets[buf_idx]; idx++)
+    {
+      if (this._info[buf_idx]["segments"][idx]["name"] == "moof")
+      {
+        var frame_start = parseInt(this._info[buf_idx]["segments"][idx]["frame_start"]);
+        var frame_samples = parseInt(this._info[buf_idx]["segments"][idx]["frame_samples"]);
+        lastPacket = idx;
+        var frame_end = frame_start + frame_samples;
+
+        if (lastFrame < frame_end)
+        {
+          lastFrame = frame_end;
+        }
+
+        if (frame >= frame_start && frame < frame_end)
+        {
+          matchIdx = idx;
+          if (frame - frame_start > frame_samples - 5)
+          {
+            boundary = true;
+          }
+          break;
+        }
+        else if (idx == 2 && frame < frame_start)
+        {
+          // Handle beginning of videos
+          matchIdx = idx;
+        }
+      }
+    }
+
+    return {matchIdx, boundary, lastPacket, lastFrame};
+  }
+
+  /**
+   * Downloads the next block of video using the initialized blockSize
+   * setupOnDemandDownload must have been called prior to running this function.
+   */
+  downloadNextOnDemandBlock()
+  {
+    var currentSize = 0;
+    var packetIndex = this._onDemandConfig["currentPacket"];
+    var mediaFileIndex = this._onDemandConfig["mediaFileIndex"];
+    var offsets = [];  // Stores the segments (aka packets)
+    var startByte;
+    var iterBlockSize = this._blockSize;
+
+    if (!this._onDemandConfig["init"])
+    {
+      // Set the current packet based on the play start frame plus some wiggle room
+      this._onDemandConfig["init"] = true;
+      if (this._onDemandConfig["direction"] == "forward")
+      {
+        var frameToStart = this._onDemandConfig["frame"] ;
+        if (frameToStart < 0)
+        {
+          frameToStart = 0;
+        }
+      }
+      else
+      {
+        var frameToStart = this._onDemandConfig["frame"];
+      }
+      let {matchIdx, boundary, lastPacket, lastFrame} = this.getSegmentIndex(frameToStart, mediaFileIndex);
+      if (this._onDemandConfig["direction"] == "backward")
+      {
+        if (frameToStart > lastFrame)
+        {
+          matchIdx = lastPacket;
+        }
+        else
+        {
+          matchIdx += 1;
+        }
+      }
+      if (matchIdx == -1)
+      {
+        console.warn(`Couldn't fetch onDemand video for (${this._onDemandConfig["frame"]})`)
+        return;
+      }
+      packetIndex = matchIdx;
+    }
+
+    // Establish the size of downloads
+    // First set of segments will be downloaded more quickly (smaller chunks)
+    //if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
+    //{
+    //  iterBlockSize = this._startUpBlockSize * 2;
+    //}
+
+    // Determine the startByte for this block of data to download
+    // Download range based on the block size and the direction
+    if (this._onDemandConfig["direction"] == "forward")
+    {
+      if (packetIndex >= this._numPackets[mediaFileIndex])
+      {
+        //console.log("onDemand playback (forward) reached end of video.");
+        postMessage({"type": "onDemandFinished"});
+        return;
+      }
+
+      startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex]["offset"]);
+      while (currentSize < iterBlockSize && packetIndex < this._numPackets[mediaFileIndex])
+      {
+        const packet = this._info[mediaFileIndex]["segments"][packetIndex];
+        const pos = parseInt(packet["offset"]);
+        const size = parseInt(packet["size"]);
+        offsets.push([pos - startByte, size, packet["name"]]);
+        currentSize = pos + size - startByte;
+        packetIndex++;
+      }
+    }
+    else
+    {
+      // Need to download segments backwards
+      if (packetIndex < 2)
+      {
+        //console.log("onDemand playback (backward) reached the beginning of video.");
+        postMessage({"type": "onDemandFinished"});
+        return;
+      }
+
+      var packetData = [];
+      while (currentSize < iterBlockSize && packetIndex >= 2)
+      {
+        const packet = this._info[mediaFileIndex]["segments"][packetIndex];
+        const packetStart = parseInt(packet["offset"]);
+        const packetSize = parseInt(packet["size"]);
+
+        packetData.push({start: packetStart, size: packetSize, name: packet["name"]})
+        currentSize += packetSize;
+        packetIndex--;
+      }
+
+      // #TODO This can be combined with the while loop above
+      if (this._info[mediaFileIndex]["segments"][packetIndex+1]["name"] != "moof")
+      {
+        // We didn't land on a moof packet, which will cause decoding errors.
+        // Continue looking backwards until the next "moof" is reached
+        while (packetIndex >= 2)
+        {
+          const packet = this._info[mediaFileIndex]["segments"][packetIndex];
+          const packetStart = parseInt(packet["offset"]);
+          const packetSize = parseInt(packet["size"]);
+
+          packetData.push({start: packetStart, size: packetSize, name: packet["name"]})
+          currentSize += packetSize;
+          packetIndex--;
+
+          if (packet["name"] == "moof")
+          {
+            break;
+          }
+        }
+      }
+
+      // Set the startByte and the offsets now that we have figured out how many segments
+      // we need to download
+      startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex + 1]["offset"]);
+      for (var idx = packetData.length - 1; idx >= 0; idx--)
+      {
+        const packet = packetData[idx];
+        offsets.push([packet.start - startByte, packet.size, packet.name]);
+      }
+
+      if (this._onDemandConfig["lastStartByte"] > 0)
+      {
+        currentSize = this._onDemandConfig["lastStartByte"] - startByte;
+      }
+    }
+
+    this._onDemandConfig["numPacketsDownloaded"] += offsets.length;
+
+    this._onDemandConfig["currentPacket"] = packetIndex;
+    this._onDemandConfig["lastStartByte"] = startByte;
+    var downloadSize = currentSize - 1;
+
+    //console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex})`);
+
+    let headers = {'range':`bytes=${startByte}-${startByte+downloadSize}`,
+                   ...self._headers};
+
+    var that = this;
+    fetch(this._media_files[mediaFileIndex].path,
+          {headers: headers}
+         ).then(
+          (response) =>
+            {
+              response.arrayBuffer().then(
+                (buffer) =>
+                {
+                  var data={"type": "onDemand",
+                           "buf_idx" : mediaFileIndex,
+                           "offsets": offsets,
+                           "buffer": buffer};
+                  postMessage(data, [data.buffer]);
+                });
+            });
+  }
+
   downloadForFrame(buf_idx, frame, time)
   {
     var version = 1;
@@ -182,6 +504,7 @@ class VideoDownloader
         }
       }
     }
+
     // No match
     if (matchIdx == -1)
     {
@@ -267,10 +590,10 @@ class VideoDownloader
 
     // Use 1 Mb blocks if in the first 5 packets
     var iterBlockSize=this._blockSize;
-    if (idx < 5)
-    {
-        iterBlockSize=1024*1024;
-    }
+    //if (idx < 5)
+    //{
+    //    iterBlockSize=1024*1024;
+    //}
     var offsets=[];
     while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx] && offsets.length < packet_limit)
     {
@@ -325,13 +648,12 @@ onmessage = function(e)
 {
   msg = e.data;
   var type = msg['type'];
-  // Download in 5 MB chunks
   if (type == 'start')
   {
     if (ref == null)
     {
       ref = new VideoDownloader(msg.media_files,
-                                5*1024*1024,
+                                1*1024*1024, // Download in 5 MB chunks
                                 msg.offsite_config);
     }
   }
@@ -339,11 +661,40 @@ onmessage = function(e)
   {
     if (ref.specificBufferInitialized(msg.buf_idx))
     {
-      ref.downloadNextSegment(msg.buf_idx);
+      if (ref.inOnDemandMode())
+      {
+        ref.saveDownloadNextSegmentRequest(msg.buf_idx);
+      }
+      else
+      {
+        ref.downloadNextSegment(msg.buf_idx);
+      }
     }
   }
   else if (type == 'seek')
   {
-    ref.downloadForFrame(msg.buf_idx, msg['frame'], msg['time']);
+    if (ref.inOnDemandMode())
+    {
+      ref.saveSeekRequest(msg.buf_idx, msg['frame'], msg['time'])
+    }
+    else
+    {
+      ref.downloadForFrame(msg.buf_idx, msg['frame'], msg['time']);
+    }
+  }
+  else if (type == 'onDemandInit')
+  {
+    ref.setupOnDemandDownload(msg['direction'], msg['frame'], msg['mediaFileIndex']);
+  }
+  else if (type == 'onDemandDownload')
+  {
+    if (ref.inOnDemandMode())
+    {
+      ref.downloadNextOnDemandBlock();
+    }
+  }
+  else if (type == 'onDemandShutdown')
+  {
+    ref.shutdownOnDemandDownload();
   }
 }

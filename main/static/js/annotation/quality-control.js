@@ -24,11 +24,18 @@ class QualityControl extends TatorElement {
     {
       this._quality = Number(searchParams.get("quality"));
     }
+
+    this._select = null;
   }
 
   hide()
   {
     this.style.visibility = 'hidden';
+  }
+
+  show()
+  {
+    this.style.visibility = 'visible';
   }
 
   set quality(quality)
@@ -43,15 +50,27 @@ class QualityControl extends TatorElement {
     newUrl += "?" + searchArgs;
 
     window.history.replaceState(quality,"Quality",newUrl);
+
+    for (let index = 0; index < this._select.options.length; index++)
+    {
+      const option = this._select.options[index];
+      if (option.textContent == `${quality}p`)
+      {
+        this._select.selectedIndex = index;
+        break;
+      }
+    }
   }
 
   set resolutions(resolutions)
   {
     const select = document.createElement("select");
     select.setAttribute("class", "form-select has-border select-sm1");
+    this._select = select;
 
     let closest_idx = 0;
     let max_diff = Number.MAX_SAFE_INTEGER;
+    resolutions.sort((a, b) => a - b);
     for (let idx = 0; idx < resolutions.length; idx++)
     {
       let diff = Math.abs(resolutions[idx]-this._quality);
@@ -83,6 +102,25 @@ class QualityControl extends TatorElement {
         composed: true
       }));
     });
+  }
+
+  static get observedAttributes() {
+    return ["class", "disabled"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "disabled":
+        if (this._select != null)
+        {
+          if (newValue === null) {
+            this._select.removeAttribute("disabled");
+          } else {
+            this._select.setAttribute("disabled", "");
+          }
+          break;
+        }
+    }
   }
 }
 

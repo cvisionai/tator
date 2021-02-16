@@ -135,7 +135,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = Leaf.objects.filter(project=project)
+    qs = Leaf.objects.filter(project=project, deleted=False)
     if leaf_id is not None:
         qs = qs.filter(pk__in=leaf_id)
 

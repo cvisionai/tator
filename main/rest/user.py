@@ -48,8 +48,6 @@ class UserDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         user = User.objects.get(pk=params['id'])
-        if 'username' in params:
-            user.username = params['username']
         if 'first_name' in params:
             user.first_name = params['first_name']
         if 'last_name' in params:

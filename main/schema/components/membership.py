@@ -9,10 +9,16 @@ membership_properties = {
         'type': 'string',
         'enum': ['View Only', 'Can Edit', 'Can Transfer', 'Can Execute', 'Full Control'],
     },
+    'default_version': {
+        'description': 'Unique integer identifying a version.',
+        'type': 'integer',
+        'minimum': 1,
+    },
 }
 
 membership_spec = {
     'type': 'object',
+    'required': ['user', 'permission'],
     'properties': membership_properties,
 }
 
@@ -20,6 +26,7 @@ membership_update = {
     'type': 'object',
     'properties': {
         'permission': membership_properties['permission'],
+        'default_version': membership_properties['default_version'],
     },
 }
 
@@ -37,6 +44,7 @@ membership = {
             'type': 'string',
         },
         'permission': membership_properties['permission'],
+        'default_version': membership_properties['default_version'],
     },
 }
 

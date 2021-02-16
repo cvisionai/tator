@@ -8,12 +8,14 @@
 {{- $makePostgisSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-postgis-extension" "app" "make-postgis-extension" "selector" "webServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"$(POSTGRES_USERNAME)\", \"-h\", \"$(POSTGRES_HOST)\", \"-p\", \"5432\", \"-d\", \"tator_online\", \"-c\", \"CREATE EXTENSION IF NOT EXISTS POSTGIS;\"]" "hookWeight" "-1" "hook" "post-install" }}
 {{ include "dbjob.template" $makePostgisSettings }}
 ---
+{{- if .Values.migrations.enabled }}
 {{- $makeMigrationsSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-migrations" "app" "make-migrations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"makemigrations\"]" "hookWeight" "0" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $makeMigrationsSettings }}
 ---
 {{- $migrateSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "migrate" "app" "migrate" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"migrate\"]" "hookWeight" "1" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $migrateSettings }}
 ---
+{{- end }}
 {{- $collectStaticSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "collect-static" "app" "collect-static" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"collectstatic\", \"--noinput\"]" "hookWeight" "2" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $collectStaticSettings }}
 ---

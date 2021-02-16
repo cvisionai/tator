@@ -125,7 +125,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = Media.objects.filter(project=project)
+    qs = Media.objects.filter(project=project, deleted=False)
     if media_id is not None:
         qs = qs.filter(pk__in=media_id)
 
@@ -133,7 +133,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(meta=filter_type)
 
     if name is not None:
-        qs = qs.filter(name=name)
+        qs = qs.filter(name__iexact=name)
 
     if section_uuid is not None:
         qs = qs.filter(attributes__tator_user_sections=section_uuid)

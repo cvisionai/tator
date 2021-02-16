@@ -105,24 +105,12 @@ def create_test_favorite(name, project, user, meta):
 def create_test_bookmark(name, project, user):
     return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
 
-def create_test_image_file():
-    this_path = os.path.dirname(os.path.abspath(__file__))
-    img_path = os.path.join(this_path, 'static', 'images',
-                            'tator-logo.png')
-    return SimpleUploadedFile(name='test.png',
-                              content=open(img_path, 'rb').read(),
-                              content_type='image/png')
-
 def create_test_video(user, name, entity_type, project):
     return Media.objects.create(
         name=name,
         meta=entity_type,
         project=project,
-        original='',
         md5='',
-        file=SimpleUploadedFile(name='asdf.mp4', content=b'asdfasdf'),
-        thumbnail=create_test_image_file(),
-        thumbnail_gif=create_test_image_file(),
         num_frames=1,
         fps=30.0,
         codec='H264',
@@ -136,8 +124,6 @@ def create_test_image(user, name, entity_type, project):
         meta=entity_type,
         project=project,
         md5='',
-        file=create_test_image_file(),
-        thumbnail=create_test_image_file(),
         width='640',
         height='480',
     )
@@ -1202,6 +1188,66 @@ class VideoTestCase(
     def tearDown(self):
         self.project.delete()
 
+    def test_annotation_delete(self):
+        medias = [
+            create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
+            for idx in range(random.randint(6, 10))
+        ]
+        state_type = StateType.objects.create(project=self.project,
+                                              name='track_type',
+                                              association='Localization',
+                                              attribute_types=[])
+        state_type.media.add(self.entity_type)
+        loc_type = LocalizationType.objects.create(project=self.project,
+                                                   name='loc_type',
+                                                   dtype='box',
+                                                   attribute_types=[])
+        loc_type.media.add(self.entity_type)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[0], 0)
+                for _ in range(random.randint(2, 5))]
+        for _ in range(random.randint(2, 5)):
+            state = State.objects.create(project=self.project,
+                                         meta=state_type,
+                                         frame=0)
+            state.media.add(medias[0])
+            for loc in locs:
+                state.localizations.add(loc)
+        # Test detail delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.delete(f'/rest/Media/{medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[1], 0)
+                for _ in range(random.randint(2, 5))]
+        for _ in range(random.randint(2, 5)):
+            state = State.objects.create(project=self.project,
+                                         meta=state_type,
+                                         frame=0)
+            state.media.add(medias[1])
+            for loc in locs:
+                state.localizations.add(loc)
+        # Test list delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+
 class ImageTestCase(
         APITestCase,
         AttributeTestMixin,
@@ -1694,7 +1740,6 @@ class LocalizationTypeTestCase(
 
 class MembershipTestCase(
         APITestCase,
-        PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
@@ -2282,7 +2327,7 @@ class ResourceTestCase(APITestCase):
         """ Emulates a prunemedia operation that clears out media with null project
             IDs.
         """
-        media = Media.objects.filter(project__isnull=True)
+        media = Media.objects.filter(deleted=True)
         for m in media:
             m.delete()
 

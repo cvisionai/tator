@@ -1,11 +1,14 @@
 import logging
+import datetime
 from django.db.models import Subquery
 from django.db import transaction
+from django.http import Http404
 
 from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
 from ..models import MediaType
+from ..models import Membership
 from ..models import State
 from ..models import User
 from ..models import Project
@@ -89,17 +92,22 @@ class LocalizationListAPI(BaseListView):
             raise Exception('Localization creation requires list of localizations!')
 
         # Get a default version.
-        default_version = Version.objects.filter(project=params['project'], number=0)
-        if default_version.exists():
-            default_version = default_version[0]
+        membership = Membership.objects.get(user=self.request.user, project=params['project'])
+        if membership.default_version:
+            default_version = membership.default_version
         else:
-            # If version 0 does not exist, create it.
-            default_version = Version.objects.create(
-                name="Baseline",
-                description="Initial version",
-                project=project,
-                number=0,
-            )
+            default_version = Version.objects.filter(project=params['project'],
+                                                     number__gte=0).order_by('number')
+            if default_version.exists():
+                default_version = default_version[0]
+            else:
+                # If no versions exist, create one.
+                default_version = Version.objects.create(
+                    name="Baseline",
+                    description="Initial version",
+                    project=project,
+                    number=0,
+                )
 
         # Find unique foreign keys.
         meta_ids = set([loc['type'] for loc in loc_specs])
@@ -172,12 +180,10 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete any state many to many relations to these localizations.
-            state_qs = State.localizations.through.objects.filter(localization__in=qs)
-            state_qs._raw_delete(state_qs.db)
-
             # Delete the localizations.
-            qs._raw_delete(qs.db)
+            qs.update(deleted=True,
+                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                      modified_by=self.request.user)
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
         return {'message': f'Successfully deleted {count} localizations!'}
@@ -215,11 +221,14 @@ class LocalizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Localization.objects.filter(pk=params['id']))[0]
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        return database_qs(qs)[0]
 
     @transaction.atomic
     def _patch(self, params):
-        obj = Localization.objects.get(pk=params['id'])
+        obj = Localization.objects.get(pk=params['id'], deleted=False)
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -279,7 +288,13 @@ class LocalizationDetailAPI(BaseDetailView):
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
-        Localization.objects.get(pk=params['id']).delete()
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        TatorSearch().delete_document(qs[0])
+        qs.update(deleted=True,
+                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                  modified_by=self.request.user)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

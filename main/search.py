@@ -43,38 +43,20 @@ def mediaFileSizes(file):
     s3 = TatorS3().s3
     bucket_name = os.getenv('BUCKET_NAME')
 
-    if file.thumbnail:
-        if os.path.exists(file.thumbnail.path):
-            total_size += file.thumbnail.size
-    if file.meta.dtype == 'video':
-        if file.media_files:
-            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
-                if key in file.media_files:
-                    for media_def in file.media_files[key]:
-                        size = _path_size(media_def['path'], s3, bucket_name)
-                        total_size += size
-                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
-                            download_size = size
-                        if key == 'streaming':
-                            try:
-                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
-                            except:
-                                logger.warning(f"Media {file.id} does not have a segment file "
-                                               f"definition {media_def['path']}!")
-        if file.original:
-            if os.path.exists(file.original):
-                statinfo = os.stat(file.original)
-                total_size += statinfo.st_size
-                if download_size is None:
-                    download_size = statinfo.st_size
-        if file.thumbnail_gif:
-            if os.path.exists(file.thumbnail_gif.path):
-                total_size += file.thumbnail_gif.size
-    if file.file:
-        if os.path.exists(file.file.path):
-            total_size += file.file.size
-            if download_size is None:
-                download_size = file.file.size
+    if file.media_files:
+        for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+            if key in file.media_files:
+                for media_def in file.media_files[key]:
+                    size = _path_size(media_def['path'], s3, bucket_name)
+                    total_size += size
+                    if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                        download_size = size
+                    if key == 'streaming':
+                        try:
+                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                        except:
+                            logger.warning(f"Media {file.id} does not have a segment file "
+                                           f"definition {media_def['path']}!")
     return (total_size, download_size)
 
 def drop_dupes(ids):
@@ -457,19 +439,29 @@ class TatorSearch:
         )
 
         # Copy values from old mapping to new mapping.
-        body = {'script': f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];"}
+        body = {
+            "script": f"ctx._source['{mapping_name}']=ctx._source['{old_mapping_name}'];",
+            "query": {"exists": {"field": old_mapping_name}},
+        }
         self.es.update_by_query(
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
+            requests_per_second=-1,
         )
 
         # Replace values in old mapping with null.
-        body = {'script': f"ctx._source['{old_mapping_name}']=null;"}
+        body = {
+            "script": f"ctx._source['{old_mapping_name}']=null;",
+            "query": {"exists": {"field": old_mapping_name}},
+        }
         self.es.update_by_query(
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
+            requests_per_second=-1,
         )
 
         # Update entity type object with new values.
@@ -513,11 +505,16 @@ class TatorSearch:
         uuid, delete_idx, mapping_name = self.check_deletion(entity_type, name)
 
         # Replace values in mapping with null.
-        body = {'script': f"ctx._source['{mapping_name}']=null;"}
+        body = {
+            'script': f"ctx._source['{mapping_name}']=null;",
+            "query": {"exists": {"field": mapping_name}},
+        }
         self.es.update_by_query(
             index=self.index_name(entity_type.project.pk),
             body=body,
             conflicts='proceed',
+            slices="auto",
+            requests_per_second=-1,
         )
 
         # Remove attribute from entity type object.
@@ -684,8 +681,9 @@ class TatorSearch:
         # If project is null, the entire index should have been deleted.
         if not entity.project is None:
             index = self.index_name(entity.project.pk)
-            if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
-                self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
+            if entity.meta:
+                if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
+                    self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
 
     def search_raw(self, project, query):
         return self.es.search(

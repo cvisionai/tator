@@ -3,7 +3,7 @@ class AnnotationPage extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", "/static/images/loading.svg");
+    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
@@ -60,7 +60,7 @@ class AnnotationPage extends TatorPage {
     });
 
     window.addEventListener("error", (evt) => {
-      this._shadow.removeChild(this._loading);
+      this._loading.style.display = "none";
       window.alert("System error detected");
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
@@ -102,6 +102,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
+        const searchParams = new URLSearchParams(window.location.search);
         fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
@@ -119,7 +120,7 @@ class AnnotationPage extends TatorPage {
                !('layout' in data.media_files) &&
                !('image' in data.media_files)))
           {
-            this._shadow.removeChild(this._loading);
+            this._loading.style.display = "none";
             Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
@@ -208,6 +209,29 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
+
+              // Set the quality control based on the prime video
+              fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+                }
+              })
+              .then(response => response.json())
+              .then(primeMediaData => {
+                this._settings.mediaInfo = primeMediaData;
+                var playbackQuality = data.media_files.quality;
+                if (searchParams.has("quality"))
+                {
+                  playbackQuality = Number(searchParams.get("quality"));
+                }
+                this._settings.quality = playbackQuality;
+                this._player.setQuality(playbackQuality);
+              });
+
             } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
@@ -226,7 +250,6 @@ class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             this.enableEditing(true);
           });
-          const searchParams = new URLSearchParams(window.location.search);
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after", data.name);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
@@ -342,7 +365,7 @@ class AnnotationPage extends TatorPage {
       if (this._dataInitialized && this._canvasInitialized) {
         try
         {
-          this._shadow.removeChild(this._loading);
+          this._loading.style.display = "none";
           this.removeAttribute("has-open-modal");
           window.dispatchEvent(new Event("resize"));
         }
@@ -368,6 +391,25 @@ class AnnotationPage extends TatorPage {
     // only during a network operation
     canvas.addEventListener("temporarilyMaskEdits", maskEdits);
     this._undo.addEventListener("temporarilyMaskEdits", maskEdits);
+
+
+    canvas.addEventListener("displayLoading", () => {
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.setAttribute("has-open-modal", "");
+    });
+    canvas.addEventListener("hideLoading", () => {
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.removeAttribute("has-open-modal");
+    });
+
+    canvas.addEventListener("playing", () => {
+      this._settings.disableRateChange();
+      this._settings.disableQualityChange();
+    });
+    canvas.addEventListener("paused", () => {
+      this._settings.enableRateChange();
+      this._settings.enableQualityChange();
+    });
 
     canvas.addEventListener("canvasReady", () => {
       this._canvasInitialized = true;
@@ -490,6 +532,15 @@ class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    const membershipPromise = fetch(`/rest/Memberships/${projectId}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
       return fetch(url, {
@@ -507,40 +558,45 @@ class AnnotationPage extends TatorPage {
       getMetadataType("StateTypes"),
       versionPromise,
       favoritePromise,
+      membershipPromise,
     ])
-    .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse]) => {
+    .then(([localizationResponse, stateResponse, versionResponse, favoriteResponse,
+            membershipResponse]) => {
       const localizationData = localizationResponse.json();
       const stateData = stateResponse.json();
       const versionData = versionResponse.json();
       const favoriteData = favoriteResponse.json();
-      Promise.all([localizationData, stateData, versionData, favoriteData])
-      .then(([localizationTypes, stateTypes, versions, favorites]) => {
-        for (let version of versions)
-        {
-          this._versionLookup[version['id']] = version;
+      const membershipData = membershipResponse.json();
+      Promise.all([localizationData, stateData, versionData, favoriteData, membershipData])
+      .then(([localizationTypes, stateTypes, versions, favorites, memberships]) => {
+        // Only display positive version numbers.
+        versions = versions.filter(version => version.number >= 0);
+
+        for (const version of versions) {
+          this._versionLookup[version.id] = version;
         }
 
-        // If there is a version with the same name as the user
-        // pick that one.
+        // If there is a default version pick that one, otherwise use the first one.
         this._version == null;
-        let selected_version_idx = 0;
-        for (let v of  versions)
-        {
-          if (v.name == this.getAttribute("username"))
-          {
-            this._version = v;
-            break;
+        let default_version = versions[0].id;
+        for (const membership of memberships) {
+          if (membership.user == this.getAttribute("user-id")) {
+            if (membership.default_version) {
+              default_version = membership.default_version;
+            }
           }
-          selected_version_idx++;
         }
 
-
-        // TODO: Whats the right way to do a default here
-        if (this._version == null)
-        {
-          this._version = versions[versions.length - 1];
-          selected_version_idx = versions.length - 1;
+        // Finde the index of the default version.
+        let selected_version_idx = 0;
+        for (const [idx, version] of versions.entries()) {
+          if (version.id == default_version) {
+            this._version = this._versionLookup[default_version];
+            selected_version_idx = idx;
+          }
         }
+
+        // Initialize version dialog.
         this._versionDialog.init(versions, selected_version_idx);
         if (versions.length == 0) {
           this._versionButton.style.display = "none";
