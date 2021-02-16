@@ -380,8 +380,11 @@ class TypeForm extends TatorElement {
 
 
   _save({id = -1, globalAttribute = false} = {}){
+    // If any fields still have errors don't submit the form.
+    const errorList = this._shadow.querySelectorAll(`.errored`);
+    if(errorList && errorList.length > 0) return false;
+    
     this.loading.showSpinner();
-
     let promises = []
     console.log("Settings _save method for id: "+id);
 
@@ -393,7 +396,7 @@ class TypeForm extends TatorElement {
     }
     let hasAttributeChanges =false;
     let attrPromises = null;
-    let attrForms = this._shadow. querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
+    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
     let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
 
     if(attrFormsChanged.length > 0 ){

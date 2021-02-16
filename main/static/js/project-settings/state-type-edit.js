@@ -27,7 +27,6 @@ class StateTypeEdit extends TypeForm {
     // dtype
     const DTYPE = "Dtype";
     const dTypeOptions = [
-      { "optText": "Select", "optValue": "" },
       { "optText": "State", "optValue": "state" }
     ];
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;

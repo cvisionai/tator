@@ -26,7 +26,6 @@ class LeafTypeEdit extends TypeForm {
       // dtype
       const DTYPE = "Dtype";      
       const dTypeOptions = [
-        { "optText": "Select", "optValue": "" },
         { "optValue" : "leaf", "optText" : "Leaf"}
       ];
       // Emptyform uses "" for dtype value
