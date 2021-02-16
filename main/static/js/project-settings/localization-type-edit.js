@@ -51,10 +51,15 @@ class LocalizationEdit extends TypeForm {
 
     // color map
     const COLORMAP = "colorMap";
+    let colMap = data[COLORMAP];
+    let colMapDefault = "";
+    if(typeof colMap !== "undefined" && colMap !== null){
+      if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
+    }
     this._form.appendChild( this.inputHelper.inputText({
       "labelText": "Color Map Default",
       "name": COLORMAP,
-      "value": data[COLORMAP],
+      "value": colMapDefault,
       "type" : "color"
     } ) );
 
