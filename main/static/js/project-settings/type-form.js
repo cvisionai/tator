@@ -332,6 +332,9 @@ class TypeForm extends TatorElement {
       "grouping_default" : false,
       "media" : [],
       "dtype" : "",
+      "colorMap" : null,
+      "interpolation" : "none",
+      "association" : "",
       "delete_child_localizations" : false,
       "form" : "empty"
     };

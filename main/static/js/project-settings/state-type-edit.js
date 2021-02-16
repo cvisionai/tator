@@ -72,13 +72,44 @@ class StateTypeEdit extends TypeForm {
         "checkboxList": mediaListWithChecked
     } ) );
 
-    // Child Associations
+    // Associations
+    const assocOptions = [
+      { "optText": "Select", "optValue": "" },
+      { "optText": "Media", "optValue": "Media" },
+      { "optText": "Frame", "optValue": "Frame" },
+      { "optText": "Localization", "optValue": "Localization" }
+    ];
+    const ASSOC = "association";
+    this._form.appendChild( this.inputHelper.inputSelectOptions({
+      "labelText": "Association",
+      "name": ASSOC,
+      "value": data[ASSOC],
+      "optionsList" : assocOptions
+    } ) );
+
+    // Interpolation
+    const interpOptions = [
+      { "optText": "None", "optValue": "none" },
+      { "optText": "Latest", "optValue": "latest" },
+      { "optText": "Attr Style Range", "optValue": "attr_style_range" }
+    ];
+    const INTERP = "interpolation";
+    this._form.appendChild( this.inputHelper.inputSelectOptions({
+      "labelText": "Interpolation",
+      "name": INTERP,
+      "value": data[INTERP],
+      "optionsList" : interpOptions
+    } ) );
+
+    // Child Localizations
     const CHILDASSOC = "delete_child_localizations";
     this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": "Delete Child Associations",
+      "labelText": "Delete Child Localizations",
       "name": CHILDASSOC,
       "value": data[CHILDASSOC]
     } ) );
+
+
 
     current.appendChild( this._form );
 
@@ -105,6 +136,10 @@ class StateTypeEdit extends TypeForm {
       let mediaInputs =  form.querySelectorAll('input[name^="media"]');
       let media = this.inputHelper._getArrayInputValue(mediaInputs);
 
+      let association = form.querySelector('[name="association"]').value;
+      
+      let interpolation = form.querySelector('[name="association"]').value;
+
       let delete_child_localizationsInputs =  form.querySelectorAll('.radio-slide-wrap input[name="delete_child_localizations"]');
       let delete_child_localizations = this.inputHelper._getSliderSetValue(delete_child_localizationsInputs);
 
@@ -114,7 +149,9 @@ class StateTypeEdit extends TypeForm {
         visible,
         grouping_default,
         media,
-        delete_child_localizations
+        delete_child_localizations,
+        association,
+        interpolation
       };
 
       // only send dtype when it's new
