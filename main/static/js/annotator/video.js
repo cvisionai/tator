@@ -294,6 +294,11 @@ class VideoBufferDemux
           return this._vidBuffers[this._onDemandBufferIndex];
         }
       }
+
+      if (ranges.length > 0)
+      {
+        console.warn(`Playback buffer doesn't contain time (ranges/start/end/time) ${ranges.length} ${start} ${end} ${time}`);
+      }
     }
     else if (buffer == "scrub")
     {
@@ -2175,6 +2180,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     var lastTime=performance.now();
     var animationIdx = 0;
+    this._playing = false;
 
     // We are eligible for audio if we are at a supported playback rate
     // have audio, and are going forward.
@@ -2268,6 +2274,7 @@ class VideoCanvas extends AnnotationCanvas {
           // Normal playback
           that._fpsLoadDiag++;
           that.pushFrame(frameIdx, source, width, height);
+          that._playing = true;
 
           // If the next frame is loadable and we didn't get paused set a timer, else exit
           if (nextFrame >= 0 && nextFrame < that._numFrames && that._direction != Direction.STOPPED)
@@ -2515,7 +2522,7 @@ class VideoCanvas extends AnnotationCanvas {
                 if (direction == Direction.FORWARD)
                 {
                   var trimEnd = currentTime - 2;
-                  if (trimEnd > start && that._onDemandPlaybackReady)
+                  if (trimEnd > start && that._playing)
                   {
                     //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                     video.deletePendingOnDemand([start, trimEnd]);
@@ -2524,7 +2531,7 @@ class VideoCanvas extends AnnotationCanvas {
                 else
                 {
                   var trimEnd = currentTime + 2;
-                  if (trimEnd < end && that._onDemandPlaybackReady)
+                  if (trimEnd < end && that._playing)
                   {
                     //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                     video.deletePendingOnDemand([trimEnd, end]);
