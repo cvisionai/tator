@@ -126,9 +126,8 @@ class LocalizationEdit extends TypeForm {
     let line_width = Number(form.querySelector('[name="line_width"]').value);
 
     let mediaInputs =  form.querySelectorAll('input[name^="media"]');
-    console.log(mediaInputs);
     let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
-    //let media_ids = media;
+    let media_types = media;
 
     let formData = {
       name,
@@ -136,6 +135,7 @@ class LocalizationEdit extends TypeForm {
       visible,
       grouping_default,
       media,
+      media_types,
       line_width
     };
 

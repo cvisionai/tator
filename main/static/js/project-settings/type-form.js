@@ -335,6 +335,7 @@ class TypeForm extends TatorElement {
       "colorMap" : null,
       "interpolation" : "none",
       "association" : "",
+      "line_width" : 2,
       "delete_child_localizations" : false,
       "form" : "empty"
     };
