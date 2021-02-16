@@ -117,7 +117,7 @@ class TypeForm extends TatorElement {
         // init form with the data
         formData.id = data.id;
         formData.project = this.projectId;
-        if(this.typeName == "LocalizationType") formData.media = formData.media_types;
+        if(this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
         form._init({ 
           "data": formData, 
           "modal" : this.modal, 
@@ -335,7 +335,7 @@ class TypeForm extends TatorElement {
       "dtype" : "",
       "colorMap" : null,
       "interpolation" : "none",
-      "association" : "",
+      "association" : "Media",
       "line_width" : 2,
       "delete_child_localizations" : false,
       "form" : "empty"

@@ -74,7 +74,6 @@ class StateTypeEdit extends TypeForm {
 
     // Associations
     const assocOptions = [
-      { "optText": "Select", "optValue": "" },
       { "optText": "Media", "optValue": "Media" },
       { "optText": "Frame", "optValue": "Frame" },
       { "optText": "Localization", "optValue": "Localization" }
@@ -134,11 +133,12 @@ class StateTypeEdit extends TypeForm {
       let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
 
       let mediaInputs =  form.querySelectorAll('input[name^="media"]');
-      let media = this.inputHelper._getArrayInputValue(mediaInputs);
+      let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
+      let media_types = media;
 
       let association = form.querySelector('[name="association"]').value;
       
-      let interpolation = form.querySelector('[name="association"]').value;
+      let interpolation = form.querySelector('[name="interpolation"]').value;
 
       let delete_child_localizationsInputs =  form.querySelectorAll('.radio-slide-wrap input[name="delete_child_localizations"]');
       let delete_child_localizations = this.inputHelper._getSliderSetValue(delete_child_localizationsInputs);
@@ -148,7 +148,8 @@ class StateTypeEdit extends TypeForm {
         description,
         visible,
         grouping_default,
-        media,
+        //media,
+        media_types,
         delete_child_localizations,
         association,
         interpolation
