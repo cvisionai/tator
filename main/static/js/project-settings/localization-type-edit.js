@@ -71,6 +71,17 @@ class LocalizationEdit extends TypeForm {
       "value": data[VISIBLE.toLowerCase()]
     } ) );
 
+    // line_width
+    const LINE = "line_width";
+    this._form.appendChild( this.inputHelper.inputText({
+      "labelText": "Line Width",
+      "name": LINE,
+      "value": data[LINE],
+      "type" : "number",
+      "min" : 1,
+      "max" : 10
+    } ) );
+
     // grouping default
     const GROUPING = "grouping_default";
     this._form.appendChild( this.inputHelper.inputRadioSlide({
@@ -111,6 +122,9 @@ class LocalizationEdit extends TypeForm {
     let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
     let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
 
+    // line width
+    let line_width = Number(form.querySelector('[name="line_width"]').value);
+
     let mediaInputs =  form.querySelectorAll('input[name^="media"]');
     console.log(mediaInputs);
     let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
@@ -121,7 +135,8 @@ class LocalizationEdit extends TypeForm {
       description,
       visible,
       grouping_default,
-      media
+      media,
+      line_width
     };
 
     // only send dtype when it's new

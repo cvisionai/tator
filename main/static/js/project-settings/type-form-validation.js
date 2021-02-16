@@ -23,6 +23,12 @@ class TypeFormValidation{
                 } else {
                     return `${val} is greater than the maximum of 100.`;
                 }
+            case "line_width" :
+                if(this.numberMax(val, 10) && this.numberMin(val, 1)){
+                    return false;
+                } else {
+                    return `${val} is not within acceptable range of 1-10.`;
+                }
             default :
                 return false
                 
@@ -31,7 +37,12 @@ class TypeFormValidation{
 
     // Number Max ie. < 100
     numberMax(val, max){
-        return val < max;
+        return val <= max;
+    }
+
+    // Number Max ie. > 0
+    numberMin(val, min){
+        return val >= min;
     }
 
     // Not empty
