@@ -116,6 +116,12 @@ class ProjectSettings extends TatorPage {
               });
 
             } else {
+              // Make media new list before we add an empty row
+              if(formView.typeName == "MediaType"){
+                const mediaList = new DataMediaList( this.projectId );
+                mediaList._setProjectMediaList(objData, true);
+              }
+
               // an empty row in each TYPE
               let emptyData = formView._getEmptyData();
               emptyData.name = "+ Add new";
@@ -150,10 +156,6 @@ class ProjectSettings extends TatorPage {
                   "modal" : this.modal, 
                   "sidenav" : this.settingsNav
                 });
-              }
-              if(formView.typeName == "MediaType"){
-                const mediaList = new DataMediaList( this.projectId );
-                mediaList._setProjectMediaList(objData, true);
               }
             }
           }    
