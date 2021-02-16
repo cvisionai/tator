@@ -289,6 +289,30 @@ FILES = \
     project-detail/activity-nav.js \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
+    project-settings/loading-spinner.js \
+    project-settings/type-form-validation.js \
+    project-settings/settings-input-helpers.js \
+    project-settings/settings-box-helpers.js \
+    project-settings/settings-bool-input.js \
+    project-settings/type-delete.js \
+    project-settings/type-form.js \
+    project-settings/settings-nav.js \
+    project-settings/inline-warning.js \
+    project-settings/single-upload.js \
+    project-settings/data-media-list.js \
+    project-settings/data-project-types.js \
+    project-settings/data-attributes-clone.js \
+    project-settings/type-new.js \
+    project-settings/attributes-clone.js \
+    project-settings/attributes-main.js \
+    project-settings/attributes-form.js \
+    project-settings/attributes-delete.js \
+    project-settings/media-type-main-edit.js \
+    project-settings/project-delete.js \
+    project-settings/project-main-edit.js \
+    project-settings/localization-type-edit.js \
+    project-settings/leaf-type-edit.js \
+    project-settings/state-type-edit.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
