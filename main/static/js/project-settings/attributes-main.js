@@ -5,13 +5,14 @@ class AttributesMain extends HTMLElement {
     this.loadingImg = this.loading.getImg()
   }
 
-  _init(typeName, fromId, projectId, data){
+  _init(typeName, fromId, projectId, data, modal){
     console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
-    //
+    // Init object global vars
     this.fromId = fromId;
     this.typeName = typeName;
     this.projectId = projectId;
+    this.modal = modal;
 
     // add main div
     this.attributeDiv = document.createElement("div");
@@ -19,14 +20,26 @@ class AttributesMain extends HTMLElement {
     this.appendChild(this.loadingImg);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.attributeDiv );
+    this.boxHelper = new SettingsBox( this.modal );
     this.inputHelper = new SettingsInput("media-types-main-edit");
     this.attributeFormHelper = new AttributesForm();
+    this.refreshTypeEvent = new Event('settings-refresh');
 
-    // get the form and +Add link
-    this.attributeDiv.appendChild( this._getAttributesSection(data) );
-    this.attributeDiv.appendChild( this._getNewAttributesTrigger() );
-    this.attributeDiv.appendChild( this._getCopyAttributesTrigger() );
+    // Section h1.
+    const h2 = document.createElement("h2");
+    h2.setAttribute("class", "h3 py-6 pb-3 edit-project__h1");
+    const t = document.createTextNode(`Attribute settings.`); 
+    h2.appendChild(t);
+    this.attributeDiv.appendChild(h2);
+
+    // Create a styled box & Add box to page
+    this.attributeBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
+    this.attributeDiv.appendChild(this.attributeBox);
+
+    // Add the form and +Add links
+    this.attributeBox.appendChild( this._getAttributesSection(data) );
+    this.attributeBox.appendChild( this._getNewAttributesTrigger() );
+    this.attributeBox.appendChild( this._getCopyAttributesTrigger() );    
 
     return this.attributeDiv;
   }
@@ -34,17 +47,17 @@ class AttributesMain extends HTMLElement {
   _getAttributesSection(attributeTypes = []){
     let attributesSection = document.createElement("div");
 
-    if(attributeTypes.length > 0){
-      // Seperator line @TODO could be a component?
-      let seperator = document.createElement("div");
-      seperator.setAttribute("class", "col-12 py-2");
-      seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-      seperator.innerHTML = "&nbsp;"
-      attributesSection.append(seperator);
+    if(attributeTypes && attributeTypes.length > 0){
+      // Seperator line @TODO component?
+      // let seperator = document.createElement("div");
+      // seperator.setAttribute("class", "col-12 py-2");
+      // seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
+      // seperator.innerHTML = "&nbsp;"
+      // attributesSection.append(seperator);
 
       // Attributes list main heading and trigger
       let heading = this.boxHelper.headingWrap({
-          "headingText" : `Attributes (${attributeTypes.length})`,
+          "headingText" : `Edit Attributes (${attributeTypes.length})`,
           "descriptionText" : "Edit media type.",
           "level": 2,
           "collapsed": true
@@ -104,6 +117,7 @@ class AttributesMain extends HTMLElement {
         "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
+      this.setAttribute("has-open-modal", "");
     });
 
     return newAttributeTrigger;
@@ -117,7 +131,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(form){
-    this.boxHelper._modalCloseCallback();
+    this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = {
       "entity_type": this.typeName,
@@ -140,14 +154,21 @@ class AttributesMain extends HTMLElement {
 
       if(status == 201) iconWrap.appendChild(succussIcon);
       if(status == 400) iconWrap.appendChild(warningIcon);
-
       
       this.loading.hideSpinner();
-      this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+      this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+    
+      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this));
+    
     }).catch((error) => {
       this.loading.hideSpinner();
-      this.boxHelper._modalErrin(`Error: ${error}`);
+      this.boxHelper._modalError(`Error: ${error}`);
     });
+  }
+
+  _dispatchRefresh(e){
+    console.log("modal complete closed");
+    this.dispatchEvent(this.refreshTypeEvent);   
   }
 
   // Clone Attribute
@@ -182,7 +203,12 @@ class AttributesMain extends HTMLElement {
         event.preventDefault();
         let inputs = clone.getInputs();
         let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
-        return cloneData.createClones().then((r) => this.boxHelper._modalComplete(r));               
+        return cloneData.createClones().then((r) => {
+          console.log("Clone finished - event dispatched");
+          console.log(this);
+          this.dispatchEvent(this.refreshTypeEvent);
+          this.boxHelper._modalComplete(r)
+        });               
       });
 
       this.loading.hideSpinner();
@@ -194,7 +220,7 @@ class AttributesMain extends HTMLElement {
       });
     }).catch((error) => {
       this.loading.hideSpinner();
-      this.boxHelper._modalErrin(`Error: ${error}`);
+      this.boxHelper._modalError(`Error: ${error}`);
     });
     
   }
@@ -248,13 +274,99 @@ class AttributesMain extends HTMLElement {
       "level":2
     } );
 
+    //delete section 
+    formContents.appendChild(this.deleteAttr(attributes.name));
+
     boxOnPage.appendChild(formContents);
 
     return boxOnPage;
   }
 
-  getDOM(){
-    return this._shadow;
+  deleteAttr(name){
+    let button = document.createElement("button");
+    button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
+    button.style.marginRight = "10px";
+
+    let deleteText = document.createTextNode(`Delete`);
+    button.appendChild( deleteText );
+
+    let descriptionText = `Delete ${name} from this ${this.typeName} and all its data?`;
+    let headingDiv = document.createElement("div");
+    headingDiv.setAttribute("class", "clearfix py-6");
+
+    let heading = document.createElement("div");
+    heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
+    
+    heading.appendChild( button );
+        
+    let description = document.createElement("div");
+    let _descriptionText = document.createTextNode("");
+    _descriptionText.nodeValue = descriptionText;
+    description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
+    description.appendChild( _descriptionText );
+    
+    headingDiv.appendChild(heading);
+    headingDiv.appendChild(description);
+
+    this.deleteBox = this.boxHelper.boxWrapDelete( {
+      "children" : headingDiv
+    } );
+
+    this.deleteBox.style.backgroundColor = "transparent";
+
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._deleteAttrConfirm(name);
+    });
+
+    return this.deleteBox;
+  }
+
+  _deleteAttrConfirm(name){
+    let button = document.createElement("button");
+    let confirmText = document.createTextNode("Confirm")
+    button.appendChild(confirmText);
+    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._deleteAttrType(name);
+    });
+
+    this.boxHelper._modalConfirm({
+      "titleText" : `Delete Confirmation`,
+      "mainText" : `Pressing confirm will delete attribute "${name}". Do you want to continue?`,
+      "buttonSave" : button,
+      "scroll" : false    
+    });
+  }
+
+  _deleteAttrType(name){
+    this.modal._closeCallback();;
+    this.loading.showSpinner();
+
+    let deleteAttribute = new AttributesDelete({
+      "type" : this.typeName,
+      "typeId" : this.fromId,
+      "attributeName" : name
+    });
+  
+    if(name != "undefined"){
+      deleteAttribute.deleteFetch().then((data) => {
+        console.log(data.message);
+        this.loading.hideSpinner();
+        this.dispatchEvent(this.refreshTypeEvent);
+        return this.boxHelper._modalComplete(data.message);
+      }).catch((err) => {
+        console.error(err);
+        this.loading.hideSpinner();
+        return this.boxHelper._modalError("Error with delete.");
+      });
+    } else {
+      this.loading.hideSpinner();
+      return this.boxHelper._modalError("Error with delete.");
+    }
+
   }
 
   _fetchPostPromise({formData = null } = {}){

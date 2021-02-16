@@ -2,58 +2,38 @@ class ProjectSettings extends TatorPage {
   constructor() {
     super();
 
+    // loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg());
     this.loading.showSpinner();
 
-    // Template top.
-    const main = document.createElement("main");
-    main.setAttribute("class", "layout-max py-4");
-    this._shadow.appendChild(main);
+    // main element
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "position-relative");
+    this._shadow.appendChild(this.main);
 
-    // Left navigation
+    // Navigation panels main for item settings.
     this.settingsNav =  document.createElement("settings-nav");
-    main.appendChild(this.settingsNav);
+    this.main.appendChild( this.settingsNav );
 
-    // Right side - settings container
-    const configContainer = document.createElement("div");
-    configContainer.setAttribute("class", "col-8");
-    configContainer.style.float = "right";
-    main.appendChild(configContainer);
+    // Web Components for this page
+    this.settingsViewClasses = [
+      "project-main-edit",
+      "media-type-main-edit",
+      "localization-edit",
+      "leaf-type-edit",
+      "state-type-edit"
+    ];
 
-    // Project section.
-    this.projectBlock = document.createElement("project-main-edit");
-    configContainer.appendChild(this.projectBlock);
-
-    // Media Type section.
-    this.mediaTypesBlock = document.createElement("media-type-main-edit");
-    configContainer.appendChild(this.mediaTypesBlock);
-
-    // Localizations section.
-    this.localizationBlock = document.createElement("localization-edit");
-    configContainer.appendChild(this.localizationBlock);
-
-    // Leaf Type section.
-    this.leafTypesBlock = document.createElement("leaf-type-edit");
-    configContainer.appendChild(this.leafTypesBlock);
-
-    // State Type section.
-    this.stateTypesBlock = document.createElement("state-type-edit");
-    configContainer.appendChild(this.stateTypesBlock);
-
-    // Reference for toggling shadow content
-    // @TODO abstract form components into nav items without access to inner items of shadow dom!
-    this.settingsNav._setDomArray([
-      this.projectBlock.getDom(),
-      this.mediaTypesBlock.getDom(),
-      this.localizationBlock.getDom(),
-      this.leafTypesBlock.getDom(),
-      this.stateTypesBlock.getDom()
-    ]); 
+    // Modal parent - to pass to page components
+    this.modal = document.createElement("modal-dialog");
+    this._shadow.appendChild( this.modal );
+    this.modal.addEventListener("open", this.showDimmer.bind(this));
+    this.modal.addEventListener("close", this.hideDimmer.bind(this));
 
     // Error catch all
     window.addEventListener("error", (evt) => {
-      //if(this._shadow.querySelector('._loading').length > 0) this._shadow.removeChild(this._loading);
+      //
     });
 
   }
@@ -74,13 +54,13 @@ class ProjectSettings extends TatorPage {
   /* Run when project-id is set to run fetch the page content. */
   _init() {
     this.projectId = this.getAttribute("project-id");
+    this.projectView = new ProjectMainEdit();
+    this.typesData = new ProjectTypesData(this.projectId);
+    let typePromises = this.typesData._getAllTypePromises();
 
     const promiseList = [
-      this.projectBlock._fetchGetPromise({"id": this.projectId} ),
-      this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} ),
-      this.localizationBlock._fetchGetPromise({"id": this.projectId} ),
-      this.leafTypesBlock._fetchGetPromise({"id": this.projectId} ),
-      this.stateTypesBlock._fetchGetPromise({"id": this.projectId} )
+      this.projectView._fetchGetPromise({"id": this.projectId} ),
+      ...typePromises
     ];
 
     Promise.all(promiseList)
@@ -90,51 +70,93 @@ class ProjectSettings extends TatorPage {
       const localizationData = lo.json();
       const leafTypeData = le.json();
       const stateTypeData = st.json();
-      Promise.all( [projectData, mediaTypesData, localizationData, leafTypeData, stateTypeData] )
-        .then( ([project, mediaTypes, localization, leaf, state]) => {
+      Promise.all( [
+        projectData, 
+        mediaTypesData, 
+        localizationData, 
+        leafTypeData, 
+        stateTypeData 
+      ] ).then( (dataArray) => {
           this.loading.hideSpinner();
+          
+          for(let i in this.settingsViewClasses){
+            // Add a navigation section
+            let objData =  dataArray[i] ;
+            let tc = this.settingsViewClasses[i];
+            let formView = document.createElement(tc);
 
-          // Add dynamic navigation items
-          this.settingsNav._addSimpleNav({
-            "name" : this._getHeading(),
-            "type" : "project",
-            "hash" : "#projectMain",
-            "selected" : true
-          });
-          this.settingsNav._addNav({
-            "name" : this.mediaTypesBlock._getHeading(), 
-            "type" : this.mediaTypesBlock.typeName, 
-            "subItems" : mediaTypes });
-          this.settingsNav._addNav({
-            "name" : this.localizationBlock._getHeading(), 
-            "type" : this.localizationBlock.typeName, 
-            "subItems" : localization });
-          this.settingsNav._addNav({
-            "name" : this.leafTypesBlock._getHeading(), 
-            "type" : this.leafTypesBlock.typeName, 
-            "subItems" : leaf });
-          this.settingsNav._addNav({
-            "name" : this.stateTypesBlock._getHeading(), 
-            "type" : this.stateTypesBlock.typeName, 
-            "subItems" : state });
+            if(formView.typeName == "Project"){
+              // Add project container and nav (set to selected)
+              this.makeContainer({
+                objData, 
+                "classBase": formView,
+                "hidden" : false
+              });
 
-          // Setup data to be passed into projects
-          const projectDataStr = JSON.stringify(project);
-          const mediaDataStr = JSON.stringify(mediaTypes);
-          const localizationDataStr = JSON.stringify(localization);
-          const leafDataStr = JSON.stringify(leaf);
-          const stateDataStr = JSON.stringify(state);
+              // Fill it with contents
+              this.settingsNav.fillContainer({
+                "type" : formView.typeName,
+                "id" : objData.id,
+                "itemContents" : formView
+              });
 
-          // Prepare for later
-          localStorage.setItem(`MediaData_${this.projectId}`, mediaDataStr); 
+              // init form with the data
+              formView._init({ 
+                "data": objData, 
+                "modal" : this.modal, 
+                "sidenav" : this.settingsNav
+              });
 
-          // Project edit and nav (first seen on page).
-          this.projectBlock._init( projectDataStr );
-          // Pre-load the sections data.
-          this.mediaTypesBlock._init( mediaDataStr );
-          this.localizationBlock._init( localizationDataStr );
-          this.leafTypesBlock._init( leafDataStr );
-          this.stateTypesBlock._init( stateDataStr );
+              // Add nav to that container
+              this.settingsNav._addSimpleNav({
+                "name" : formView._getHeading(objData.id),
+                "type" : formView.typeName ,
+                "id" : objData.id,
+                "selected" : true
+              });
+
+            } else {
+              // an empty row in each TYPE
+              let emptyData = formView._getEmptyData();
+              emptyData.name = "+ Add new";
+              emptyData.project = this.projectId;
+              objData.push( emptyData );
+
+              // Add item containers for Types
+              this.makeContainers({
+                objData, 
+                "classBase": formView
+              });
+
+              // Add navs
+              this.settingsNav._addNav({
+                "name" : formView._getHeading(),
+                "type" : formView.typeName, 
+                "subItems" : objData 
+              });
+
+              // Add contents for each Entity
+              for(let g of objData){
+                let form = document.createElement(tc);
+                this.settingsNav.fillContainer({
+                  "type" : form.typeName,
+                  "id" : g.id,
+                  "itemContents" : form
+                });
+
+                // init form with the data
+                form._init({ 
+                  "data": g, 
+                  "modal" : this.modal, 
+                  "sidenav" : this.settingsNav
+                });
+              }
+              if(formView.typeName == "MediaType"){
+                const mediaList = new DataMediaList( this.projectId );
+                mediaList._setProjectMediaList(objData, true);
+              }
+            }
+          }    
 
         })
         //.catch(err => {
@@ -144,9 +166,30 @@ class ProjectSettings extends TatorPage {
       });
   }
 
-  _getHeading(){
-    let icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M1.75 0A1.75 1.75 0 000 1.75v12.5C0 15.216.784 16 1.75 16h12.5A1.75 1.75 0 0016 14.25V1.75A1.75 1.75 0 0014.25 0H1.75zM1.5 1.75a.25.25 0 01.25-.25h12.5a.25.25 0 01.25.25v12.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V1.75zM11.75 3a.75.75 0 00-.75.75v7.5a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0v-5.5zM8 3a.75.75 0 00-.75.75v3.5a.75.75 0 001.5 0v-3.5A.75.75 0 008 3z"></path></svg>';
-    return `${icon} <span class="item-label">Project</span>`
+  makeContainer({objData = {}, classBase, hidden = true}){
+    // Adds item panels for each view
+    this.settingsNav.addItemContainer({
+      "type" : classBase.typeName,
+      "id" : objData.id,
+      hidden
+    });
+  }
+  
+  makeContainers({objData = {}, classBase, hidden = true}){
+     for(let data of objData){
+      this.makeContainer({"objData" : data, classBase, hidden});
+    }
+  }
+
+  // Modal for this page, and handlers
+  showDimmer(){
+    console.log("Modal opened!");
+    return this.setAttribute("has-open-modal", "");
+  }
+
+  hideDimmer(){
+    console.log("Modal closed!");
+    return this.removeAttribute("has-open-modal");
   }
 
 }

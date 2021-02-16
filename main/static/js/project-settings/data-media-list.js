@@ -1,22 +1,43 @@
 class DataMediaList{
-    constructor(mediaData){
-        this.projectMediaList = this._setProjectMediaList(mediaData);
+    constructor(projectId){
+      this.projectId = projectId;
     }
 
-    _setProjectMediaList(mediaData){
-        const mediaList = [];
-        for(let i in mediaData){
-            // create reference list for later
-            mediaList.push({
-                "id" : mediaData[i].id,
-                "name" : mediaData[i].name
-            });
-        }
-        return mediaList;
+    _setProjectMediaList(data = "", update = false){
+      console.log(data);
+      if(data == "") return this.projectMediaList = this.getProjectMediaList(update);
+      
+      
+      return this.projectMediaList = this.getListFromData(data);
     }
 
-    getProjectMediaList(){
-       return this.projectMediaList;
+    getListFromData(data){
+      const mediaList = [];
+      for(let d of data){
+        // create reference list for later
+        mediaList.push({
+            "id" : d.id,
+            "name" : d.name
+        });
+      }
+      localStorage.setItem(`MediaData_${this.projectId}`, JSON.stringify(mediaList));
+
+      return mediaList;
+    }
+
+    getProjectMediaList(update){     
+      const mediaListData = localStorage.getItem(`MediaData_${this.projectId}`);
+
+      if(!update && mediaListData){
+        return JSON.parse(mediaListData);      
+      } else {
+        let m = document.createElement("media-type-main-edit");
+        m._fetchGetPromise({"id": this.projectId} )
+        .then(data => data.json).then( data => {
+
+          return this.getListFromData(data);
+        }).catch(err => console.error("Could not get media types."));
+      }      
     }
 
     // Returns an Array of Object with:
@@ -24,15 +45,22 @@ class DataMediaList{
     // - checked is true if the both lists contain the id
     getCompiledMediaList( mediaIds ){
         let newList = [];
-    
+        console.log("getCompiledMediaList");
+        this._setProjectMediaList();
+
+        if(mediaIds && mediaIds.length > 0){
+          
+        }
         this.projectMediaList.forEach((media, i) => {
-          for(let id of mediaIds ){
-            if (media.id == id ) {
-              return newList.push({
-                "id" : media.id,
-                "name" : media.name,
-                "checked" : true
-              });
+          if(mediaIds && mediaIds.length > 0){
+            for(let id of mediaIds ){
+              if (media.id == id ) {
+                return newList.push({
+                  "id" : media.id,
+                  "name" : media.name,
+                  "checked" : true
+                });
+              }
             }
           }
           return newList.push({
@@ -41,6 +69,7 @@ class DataMediaList{
             "checked" : false
           });
         });
+        console.log(newList);
     
         return newList;
     }

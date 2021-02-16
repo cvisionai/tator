@@ -51,6 +51,7 @@ class ModalDialog extends TatorElement {
           this._div.classList.remove("is-open");
         } else {
           this._div.classList.add("is-open");
+          this.dispatchEvent(new Event("open"));
         }
         break;
     }
