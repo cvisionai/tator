@@ -62,13 +62,20 @@ class ProjectMainEdit extends TypeForm {
 
     _form.addEventListener("change", e => this._formChanged(_form, e))
 
-    // Image upload
+    // Image upload visible, and hidden - Plus Custom warning area.
+    this.uploadWarningRow = document.createElement("div");
+    this.uploadWarningRow.setAttribute("class", "offset-md-3 offset-sm-4 col-md-9 col-sm-8 pb-3");
+    
     this._thumbInput = this._getThumbInput(this._getThumbValueData());
     _form.appendChild(this._thumbInput);
+    
     this._hiddenThumbInput = this._getHiddenThumbInput();
     _form.appendChild(this._hiddenThumbInput);
+    
     this._thumbEdit = this._getThumbnailEdit()
     _form.appendChild(this._thumbEdit);
+    
+    this._thumbEdit.appendChild(this.uploadWarningRow);
 
     // Input for name
     this._editName = this._setNameInput(this._getNameFromData());
@@ -182,15 +189,47 @@ class ProjectMainEdit extends TypeForm {
         isImage
       };
 
+      console.log(file.size);
+
       // set preview
       this._thumbnailPreview(file);
 
       // upload file and set input
       let uploader = new SingleUpload( uploadData );
-      return uploader.start().then(key => {
+      return uploader.start().then( (key) => {
         this._setHiddenThumbInputValue(key);
         console.log("Uploader complete.");
       });
+    });
+
+    // Validate file size / show warning
+    this.validate = new TypeFormValidation();
+    const warning = new InlineWarning();
+    this.uploadWarningRow.appendChild(warning.div());
+
+    // Dispatch events to validate, and listen for errors
+    uploadInput.addEventListener("change", (e) => {
+      let file = e.target.files[0];
+      let hasError = this.validate.findError("thumb_size", file.size);
+      if(hasError){
+        let errorEvent = new CustomEvent("input-invalid", {"detail" : 
+          {"errorMsg" : hasError}
+        });
+        uploadInput.dispatchEvent(errorEvent);
+      } else {
+        let successEvent = new CustomEvent("input-valid");
+        uploadInput.dispatchEvent(successEvent);
+      }
+    });
+
+    uploadInput.addEventListener("input-invalid", (e) => {
+      warning.show(e.detail.errorMsg);
+      uploadInput.classList.add("invalid");
+    });
+
+    uploadInput.addEventListener("input-valid", (e) => {
+      uploadInput.classList.remove("invalid");
+      warning.hide();
     });
 
     return uploadInput;
@@ -207,6 +246,14 @@ class ProjectMainEdit extends TypeForm {
 
   _setHiddenThumbInputValue(val, isFile = false) {
     return this._hiddenThumbInput.value = val;
+  }
+
+  _setHiddenThumbSize(size){
+    return this._hiddenThumbInput.dataset.fileSize = size;
+  }
+
+  _getHiddenThumbSize(size){
+    return this._hiddenThumbInput.dataset.fileSize;
   }
 
   _thumbInputChanged() {

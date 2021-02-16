@@ -29,6 +29,15 @@ class TypeFormValidation{
                 } else {
                     return `${val} is not within acceptable range of 1-10.`;
                 }
+            case "thumb_size" :
+                let valNum = Number(val);
+                let valAsKB = valNum / 1000;
+
+                if(this.numberMax(valAsKB, 1000)){
+                    return false;
+                } else {
+                    return `Please choose a smaller thumbnail image. Current file is ${~~valAsKB}KB and max is 1000KB.`;
+                }
             default :
                 return false
                 

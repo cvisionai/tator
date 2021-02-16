@@ -40,6 +40,7 @@ class SettingsInput {
       inputTextElement.setAttribute("class", classes);
 
       if(labelText == null){
+        // No label also means inline warning needs to be set separately
         return inputTextElement;
       } else {
         const inputWithLabel = this.labelWrap({
