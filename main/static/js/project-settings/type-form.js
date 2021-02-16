@@ -363,18 +363,24 @@ class TypeForm extends TatorElement {
     let formData = this._getFormData(id);
     console.log(formData);
 
-    //return fetch("/rest/StateType/" + id, {
-    return fetch(`/rest/${this.typeName}/${id}`, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-    })
+    if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
+      return this._modalError("Please fix form errors first.");
+    } else if (Object.entries(formData).length === 0) {
+      console.log("No formData")
+      return this._modalSuccess("Nothing new to save!");
+    } else {
+      return fetch(`/rest/${this.typeName}/${id}`, {
+        method: "PATCH",
+        mode: "cors",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+    }
   }
 
 
@@ -382,24 +388,40 @@ class TypeForm extends TatorElement {
   _save({id = -1, globalAttribute = false} = {}){
     // If any fields still have errors don't submit the form.
     const errorList = this._shadow.querySelectorAll(`.errored`);
-    if(errorList && errorList.length > 0) return false;
+    if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
     
-    this.loading.showSpinner();
-    let promises = []
+    // Start spinner & Get promises list
     console.log("Settings _save method for id: "+id);
-
+    this.loading.showSpinner();
+    
+    let promises = []
     let mainForm = this._shadow.getElementById(id);
-    let mainFormChanged = false;
+    let errors = 0;
+
+    // Main type form
     if(mainForm.classList.contains("changed")) {
-      mainFormChanged = true;
-      promises.push( this._fetchPatchPromise({id}) );
+      let mainPromise = this._fetchPatchPromise({id});
+      
+      // Promise will return false if there are errors.
+      if(mainPromise){
+        promises.push( this._fetchPatchPromise({id}) );
+      } else {
+        errors += 1;
+      }
     }
+
+    // Attribute forms
     let hasAttributeChanges =false;
     let attrPromises = null;
-    let attrForms = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
-    let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
+    let attrForms = this._shadow.querySelectorAll(`.attribute-form`);
+    let attrFormsChanged = this._shadow.querySelectorAll(`.attribute-form.changed`);
+    let attrFormsInvalid = this._shadow.querySelectorAll(`.attribute-form .invalid`);
 
-    if(attrFormsChanged.length > 0 ){
+    if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
+      // Check Attr forms for errors if there are changes.
+      errors += 1;
+    } else if (attrFormsChanged.length > 0 && attrFormsInvalid.length === 0){
+      // If any of the changed but no errors, proceed.
       hasAttributeChanges = true;
       attrPromises = this.attributeFormHelper._getAttributePromises({
         id,
@@ -408,11 +430,15 @@ class TypeForm extends TatorElement {
         attrForms,
         attrFormsChanged
       });
-      promises = [...promises, ...attrPromises.promises];
+      console.log("attrPromises");
+      console.log(attrPromises);
+      if(attrPromises){
+        promises = [...promises, ...attrPromises.promises];
+      }      
     }
 
     let messageObj = {};
-    if(promises.length > 0){
+    if(promises.length > 0 && errors === 0){
       // Check if anything changed
       Promise.all(promises).then( async( respArray ) => {
         console.log(respArray);
@@ -485,8 +511,16 @@ class TypeForm extends TatorElement {
           console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
           this.loading.hideSpinner();
         });
+    } else if (!promises.length > 0 ) {
+      console.log(promises);
+      this.loading.hideSpinner();
+      return this._modalSuccess("Nothing new to save!");
+    } else if (!errors === 0) {
+      this.loading.hideSpinner();
+      return this._modalError("Please fix form errors.");
     } else {
-      this._modalSuccess("Nothing new to save!");
+      this.loading.hideSpinner();
+      return this._modalError("Problem getting saving form data.");
     }
   }
 
