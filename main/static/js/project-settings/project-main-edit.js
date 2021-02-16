@@ -110,10 +110,11 @@ class ProjectMainEdit extends TypeForm {
   _fetchPatchPromise({ id = this.projectId } = {}) {
     let data = this._getFormData();
     console.log(data);
-    console.log("Does this form have Errors? "+this._shadow.querySelectorAll(".errored"));
 
-    if (Object.entries(data).length === 0 || this._shadow.querySelectorAll(".errored")) {
-      return false;
+    if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
+      return this._modalError("Please fix form errors first.");
+    } else if (Object.entries(data).length === 0) {
+      return this._modalSuccess("Nothing new to save!");
     } else {
       // Set in child element,
       return fetch("/rest/Project/" + id, {
@@ -348,7 +349,7 @@ class ProjectMainEdit extends TypeForm {
     console.log(`Project _save method for id: ${id}`);
     const patch = this._fetchPatchPromise({ "id": id });
 
-    if (patch != false) {
+    if (patch) {
       patch.then(response => {
         return response.json().then(data => {
           console.log("Save response status: " + response.status)
@@ -365,8 +366,6 @@ class ProjectMainEdit extends TypeForm {
           console.log('Error:', error.message);
           this._modalError("Internal error: " + error.message);
         });
-    } else {
-      this._modalSuccess("Nothing new to save!")
     }
 
   }
