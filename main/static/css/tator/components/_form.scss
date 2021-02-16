@@ -315,3 +315,34 @@ strong.match {
   background: $color-purple;
   cursor: pointer;
 }
+
+.invalid,
+input:out-of-range,
+input:invalid {
+  border-color: $color-red !important;
+}
+
+.form-group {
+  // Our inline errors
+  .successed {
+    border-color: $color-green;
+  }
+
+  .errored {
+    border-color: $color-red;
+  }
+}
+
+input[type="color"] {
+  width: 100px;
+  border: none;
+  background: none;
+}
+
+input[type="datetime-local"] {
+  width: auto;
+}
+
+::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}

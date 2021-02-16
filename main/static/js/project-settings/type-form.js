@@ -591,7 +591,7 @@ class TypeForm extends TatorElement {
 
   _setNameInput(name){
     let key = "name"
-    return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name } );
+    return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name, "required" : true } );
   }
 
   _getNameInputValue(){

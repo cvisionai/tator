@@ -103,8 +103,9 @@ class ProjectMainEdit extends TypeForm {
   _fetchPatchPromise({ id = this.projectId } = {}) {
     let data = this._getFormData();
     console.log(data);
+    console.log("Does this form have Errors? "+this._shadow.querySelectorAll(".errored"));
 
-    if (Object.entries(data).length === 0) {
+    if (Object.entries(data).length === 0 || this._shadow.querySelectorAll(".errored")) {
       return false;
     } else {
       // Set in child element,

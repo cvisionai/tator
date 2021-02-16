@@ -21,7 +21,8 @@ class MediaTypeMainEdit extends TypeForm {
     this._editName = this.inputHelper.inputText( {
       "labelText": NAME,
       "name": NAME.toLowerCase(),
-      "value": data[NAME.toLowerCase()]
+      "value": data[NAME.toLowerCase()],
+      "required" : true 
     });
     this._form.appendChild( this._editName );
 
@@ -35,12 +36,14 @@ class MediaTypeMainEdit extends TypeForm {
     ];
     // Emptyform uses "" for dtype value
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+    let dtypeRequired = !disableDtype ? true : false;
     this.dtypeSelect = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
-      "disabledInput" : disableDtype
+      "disabledInput" : disableDtype,
+      "required" : dtypeRequired
     });
     this._form.appendChild( this.dtypeSelect );
 
@@ -59,7 +62,9 @@ class MediaTypeMainEdit extends TypeForm {
       "labelText": "Default Volume",
       "name": VOLUME.toLowerCase(),
       "value": data[VOLUME.toLowerCase()],
-      "type":"number"
+      "type":"number",
+      "max" : 100,
+      "min" : 0
     } ) );
 
     // visible

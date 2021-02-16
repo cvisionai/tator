@@ -19,7 +19,8 @@ class LeafTypeEdit extends TypeForm {
       this._form.appendChild( this.inputHelper.inputText( {
         "labelText": NAME,
         "name": NAME.toLowerCase(),
-        "value": data[NAME.toLowerCase()]
+        "value": data[NAME.toLowerCase()],
+        "required" : true 
       } ) );
 
       // dtype
@@ -30,12 +31,14 @@ class LeafTypeEdit extends TypeForm {
       ];
       // Emptyform uses "" for dtype value
       let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+      let dtypeRequired = !disableDtype ? true : false;
       this._form.appendChild( this.inputHelper.inputSelectOptions( {
         "labelText": "Data Type",
         "name": DTYPE.toLowerCase(),
         "value": data[DTYPE.toLowerCase()],
         "optionsList" : dTypeOptions,
-        "disabledInput" : disableDtype
+        "disabledInput" : disableDtype,
+        "required" : dtypeRequired
       } ) );
 
       //description

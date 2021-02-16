@@ -3,6 +3,7 @@ class SettingsInput {
   constructor(customClass, customColClass) {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.customClass = customClass || "";
+    this.validate = new TypeFormValidation();
   }
 
   /* Returns an input of type text with an initial value */
@@ -11,7 +12,13 @@ class SettingsInput {
         customCol = 'col-md-9 col-sm-8',
         labelText = '',
         type = 'text', // can also be HIDDEN
-        name = ''
+        name = '',
+        min = false,
+        max = false,
+        required = false,
+        minlength = false,
+        maxlength = false,
+        pattern = false
       } = {}
     ){
       const forId = this._getUniqueIdentifier(name);
@@ -20,6 +27,14 @@ class SettingsInput {
       inputTextElement.setAttribute("value", value);
       inputTextElement.setAttribute("name", name);
       inputTextElement.setAttribute("id", forId);
+
+      // HTML5 built-in validation attributes
+      if (min) inputTextElement.setAttribute("min", min);
+      if (max) inputTextElement.setAttribute("max", max);
+      if (required) inputTextElement.setAttribute("required", required);
+      if (minlength) inputTextElement.setAttribute("minlength", minlength);
+      if (maxlength) inputTextElement.setAttribute("maxlength", maxlength);
+      if (pattern) inputTextElement.setAttribute("pattern", pattern);
 
       const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
       inputTextElement.setAttribute("class", classes);
@@ -290,19 +305,59 @@ class SettingsInput {
       labelWrap.setAttribute("for", forId);
       labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
 
+      // Create text for label
       const spanTextNode = document.createElement("span");
-      spanTextNode.setAttribute("class", `col-3 ${(disabled) ? "text-gray" : ""}`);
+      spanTextNode.setAttribute("class", `col-md-3 col-sm-4 ${(disabled) ? "text-gray" : ""}`);
       labelWrap.append(spanTextNode);
 
       const spanText = document.createTextNode("");
       spanText.nodeValue = labelText;
       spanTextNode.appendChild(spanText);
 
+      // Add label & text to a container
       const labelDiv = document.createElement("div");
-      labelDiv.setAttribute("class", "py-2 f1");
+      labelDiv.setAttribute("class", "form-group py-2 f1");
       labelDiv.appendChild(labelWrap);
 
+      // Apppend Input (needs to be appened after the Label)
       labelWrap.append(inputNode);
+
+      // Warning Message Spot
+      let warningRow = document.createElement("div");
+      warningRow.setAttribute("class", "offset-md-3 offset-sm-4 col-md-9 col-sm-8 pb-3");
+      labelDiv.appendChild(warningRow);
+
+      const warning = new InlineWarning();
+      warningRow.appendChild(warning.div());
+
+      // Dispatch events to validate, and listen for errors
+      inputNode.addEventListener("input", (e) => {
+        let hasError = this.validate.findError(inputNode.name, inputNode.value);
+        if(hasError){
+          let errorEvent = new CustomEvent("input-invalid", {"detail" : 
+            {"errorMsg" : hasError}
+          });
+          inputNode.classList.add("invalid");
+          inputNode.dispatchEvent(errorEvent);
+        } else {
+          let successEvent = new CustomEvent("input-valid");
+          inputNode.classList.remove("invalid");
+          inputNode.dispatchEvent(successEvent);
+        }
+      });
+
+      inputNode.addEventListener("input-invalid", (e) => {
+        console.log(e.detail.errorMsg);
+        warning.show(e.detail.errorMsg);
+        labelWrap.classList.remove("successed");
+        labelWrap.classList.add("errored");
+      });
+
+      inputNode.addEventListener("input-valid", (e) => {
+        labelWrap.classList.add("successed");
+        labelWrap.classList.remove("errored");
+        warning.hide();
+      });
 
       return labelDiv;
     }

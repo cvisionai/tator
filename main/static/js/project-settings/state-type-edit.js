@@ -17,7 +17,12 @@ class StateTypeEdit extends TypeForm {
 
     // append input for name
     const NAME = "Name";
-    this._form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
+    this._form.appendChild( this.inputHelper.inputText({ 
+      "labelText": NAME, 
+      "name": NAME.toLowerCase(), 
+      "value": data[NAME.toLowerCase()],
+      "required" : true 
+    }) );
 
     // dtype
     const DTYPE = "Dtype";
@@ -26,12 +31,14 @@ class StateTypeEdit extends TypeForm {
       { "optText": "State", "optValue": "state" }
     ];
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+    let dtypeRequired = !disableDtype ? true : false;
     this._form.appendChild( this.inputHelper.inputSelectOptions( {
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
-      "disabledInput" : disableDtype
+      "disabledInput" : disableDtype,
+      "required" : dtypeRequired
     } ) );
 
     //description

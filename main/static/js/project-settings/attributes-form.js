@@ -200,13 +200,16 @@ class AttributesForm extends HTMLElement {
     }
   }
 
-  _getDefaultInput( value ){
+  _getDefaultInput( value, dtype ){
     const DEFAULT = "Default";
+    let defaultType = "text"
+    if(dtype && dtype == "datetime") defaultType = "datetime-local";
+    
     return this.inputHelper.inputText({
       "value" : value,
       "labelText" : DEFAULT,
       "name" : DEFAULT.toLowerCase(),
-      "type" : "text"
+      "type" : defaultType
     } ) ;
   }
 
@@ -278,9 +281,8 @@ class AttributesForm extends HTMLElement {
       });
 
       // Add placeholder for warning, and listen for change.
-      let warning = document.createElement("form-warning");
-      let warningEl = warning._inlineWarningDiv();
-      selectBox.appendChild(warningEl);
+      let warning = document.createElement("inline-warning");
+      selectBox.appendChild(warning.div());
       selectBox.addEventListener("change", (e) => {
         //when changed check if we need to show a warning.
         let newType = e.target.value;
@@ -291,10 +293,7 @@ class AttributesForm extends HTMLElement {
         } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} may cause data loss.`;
         }
-        warning._inlineWarning({
-          "el" : warningEl,
-          "message" : message
-        });
+        warning.show(message);
 
         // should hide and show them, do not remove data
         this._getDtypeFields(newType);

@@ -20,7 +20,8 @@ class LocalizationEdit extends TypeForm {
     this._editName = this.inputHelper.inputText( {
       "labelText": NAME,
       "name": NAME.toLowerCase(),
-      "value": data[NAME.toLowerCase()]
+      "value": data[NAME.toLowerCase()],
+      "required" : true 
     });
     this._form.appendChild( this._editName );
 
@@ -33,18 +34,29 @@ class LocalizationEdit extends TypeForm {
       { "optText": "Dot", "optValue": "dot" }
     ]
     let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+    let dtypeRequired = !disableDtype ? true : false;
     this.dtypeSelect = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
-      "disabledInput" : disableDtype
+      "disabledInput" : disableDtype,
+      "required" : dtypeRequired
     })
     this._form.appendChild( this.dtypeSelect );
 
-    //description
+    // description
     const DESCRIPTION = "Description";
     this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+
+    // color map
+    const COLORMAP = "colorMap";
+    this._form.appendChild( this.inputHelper.inputText({
+      "labelText": "Color Map Default",
+      "name": COLORMAP,
+      "value": data[COLORMAP],
+      "type" : "color"
+    } ) );
 
     // visible
     const VISIBLE = "Visible";
@@ -113,10 +125,11 @@ class LocalizationEdit extends TypeForm {
       formData.dtype = dtype;
     }
 
+    let colorMap = form.querySelector('input[name="colorMap"]').value;
+    if(colorMap != "") formData.colorMap = { "default" : colorMap} ;
+
     return formData;
   }
-
-
   
 }
 
