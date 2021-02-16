@@ -16,9 +16,21 @@ class InlineWarning extends TatorElement {
       return this.inlineWarning;
     }
 
+  showCaution(msg){
+    // Clear whatever was there
+    this.clear();
+
+    // Append new msg
+    this.inlineWarning.classList.add("caution");
+    this.inlineWarning.append(msg);
+
+    // Show
+    return this.inlineWarning.hidden = false;
+  }
+
   show(msg){
     // Clear whatever was there
-    this.inlineWarning.innerHTML = "";
+    this.clear();
 
     // Append new msg
     this.inlineWarning.append(msg);
@@ -28,8 +40,13 @@ class InlineWarning extends TatorElement {
   }
 
   hide(){
-    this.inlineWarning.innerHTML = "";
+    this.clear();
     return this.inlineWarning.hidden = true;
+  }
+
+  clear(){
+    this.inlineWarning.classList.remove("caution");
+    this.inlineWarning.innerHTML = "";
   }
 
 

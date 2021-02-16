@@ -281,19 +281,31 @@ class AttributesForm extends HTMLElement {
       });
 
       // Add placeholder for warning, and listen for change.
-      let warning = document.createElement("inline-warning");
-      selectBox.appendChild(warning.div());
-      selectBox.addEventListener("change", (e) => {
+      let selectorInBox = selectBox.querySelector("select");
+      selectorInBox.addEventListener("change", (e) => {
         //when changed check if we need to show a warning.
         let newType = e.target.value;
         let message = ""
 
         if(this._getIrreverasibleDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} is not reversible.`;
+          // Caution 
+          let errorEvent = new CustomEvent("input-caution", {"detail" : 
+            {"errorMsg" : message}
+          });
+          selectorInBox.dispatchEvent(errorEvent);
         } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} may cause data loss.`;
+          // Caution 
+          let errorEvent = new CustomEvent("input-caution", {"detail" : 
+            {"errorMsg" : message}
+          });
+          selectorInBox.dispatchEvent(errorEvent);
+        } else {
+          // No probz
+          let successEvent = new CustomEvent("input-valid");
+          selectorInBox.dispatchEvent(successEvent);
         }
-        warning.show(message);
 
         // should hide and show them, do not remove data
         this._getDtypeFields(newType);

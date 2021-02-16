@@ -349,13 +349,23 @@ class SettingsInput {
       inputNode.addEventListener("input-invalid", (e) => {
         console.log(e.detail.errorMsg);
         warning.show(e.detail.errorMsg);
+        labelWrap.classList.remove("caution");
         labelWrap.classList.remove("successed");
         labelWrap.classList.add("errored");
+      });
+
+      inputNode.addEventListener("input-caution", (e) => {
+        console.log(e.detail.errorMsg);
+        warning.showCaution(e.detail.errorMsg);
+        labelWrap.classList.remove("successed");
+        labelWrap.classList.remove("errored");
+        labelWrap.classList.add("caution");
       });
 
       inputNode.addEventListener("input-valid", (e) => {
         labelWrap.classList.add("successed");
         labelWrap.classList.remove("errored");
+        labelWrap.classList.remove("caution");
         warning.hide();
       });
 

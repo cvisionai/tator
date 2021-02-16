@@ -324,12 +324,27 @@ input:invalid {
 
 .form-group {
   // Our inline errors
-  .successed {
-    border-color: $color-green;
+  input,
+  select {
+    &.successed {
+      border-color: $color-green;
+    }
+
+    &.errored {
+      border-color: $color-red;
+    }
+
+    &.caution {
+      border-color: $color-yellow;
+    }
   }
 
-  .errored {
-    border-color: $color-red;
+  .inline-warning {
+    color: $color-red;
+
+    &.caution {
+      color: $color-yellow;
+    }
   }
 }
 
