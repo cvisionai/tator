@@ -134,11 +134,12 @@ class LocalizationEdit extends TypeForm {
       description,
       visible,
       grouping_default,
-      media,
+      //media, 
       media_types,
       line_width
     };
 
+    
     // only send dtype when it's new
     if(includeDtype) {
       let dtype = form.querySelector('[name="dtype"]').value;
