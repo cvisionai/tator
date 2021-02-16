@@ -47,14 +47,20 @@ class DataMediaList{
         let newList = [];
         console.log("getCompiledMediaList");
         this._setProjectMediaList();
+
+        if(mediaIds && mediaIds.length > 0){
+          
+        }
         this.projectMediaList.forEach((media, i) => {
-          for(let id of mediaIds ){
-            if (media.id == id ) {
-              return newList.push({
-                "id" : media.id,
-                "name" : media.name,
-                "checked" : true
-              });
+          if(mediaIds && mediaIds.length > 0){
+            for(let id of mediaIds ){
+              if (media.id == id ) {
+                return newList.push({
+                  "id" : media.id,
+                  "name" : media.name,
+                  "checked" : true
+                });
+              }
             }
           }
           return newList.push({

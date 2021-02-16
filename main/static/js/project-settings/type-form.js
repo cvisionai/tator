@@ -117,6 +117,7 @@ class TypeForm extends TatorElement {
         // init form with the data
         formData.id = data.id;
         formData.project = this.projectId;
+        if(this.typeName == "LocalizationType") formData.media = formData.media_types;
         form._init({ 
           "data": formData, 
           "modal" : this.modal, 
