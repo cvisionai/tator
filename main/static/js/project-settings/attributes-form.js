@@ -15,7 +15,7 @@ class AttributesForm extends HTMLElement {
     this.form.addEventListener("change", (event) => {
       console.log("attribute form changed");
       console.log("Event target... "+event.target.value);
-      return this.form.classList.add("changed");
+      return event.target.closest('form').classList.add("changed");
     });   
 
 
@@ -476,6 +476,7 @@ class AttributesForm extends HTMLElement {
 
   _makeDefaultCorrectType(dtype, _defaultVal){
     let _default = _defaultVal;
+    console.log(_defaultVal);
     try{
       if(dtype == "bool"){
         _default = Boolean(_defaultVal);
