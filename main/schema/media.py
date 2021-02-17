@@ -73,7 +73,7 @@ class MediaListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema
         if method in ['GET', 'PUT']:
             params += [{
