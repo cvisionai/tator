@@ -187,10 +187,12 @@
   background-color: $color-charcoal--light70;
 }
 
+.SideNav-heading[selected="true"] button,
 .SideNav-item[selected="true"] {
-  //.SideNav-heading button[selected="true"] {
-  background-color: $color-charcoal--light70;
+  color: white;
+  //background-color: $color-charcoal--light70;
   // KEEP this if they click into sub items
+  // Bar on the left
   // Bar on the left
   &::before {
     position: absolute;
@@ -206,11 +208,6 @@
     border-top-right-radius: 6px;
   }
 }
-
-//
-// .NavItem {
-//   //padding-left: 16px;
-// }
 
 .Nav-action {
   transition: all 0.2s ease-in-out;
