@@ -6,6 +6,7 @@ from urllib import parse as urllib_parse
 from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
+from ..models import State
 
 from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
@@ -19,6 +20,9 @@ def get_media_es_query(project, params):
     """
     # Get query parameters.
     media_id = params.get('media_id')
+    media_id_put = params.get('media_ids') # PUT request only
+    localization_ids = params.get('localization_ids') # PUT request only
+    state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
     name = params.get('name')
     section = params.get('section')
@@ -42,10 +46,28 @@ def get_media_es_query(project, params):
     }}]
     annotation_bools = []
 
+    media_ids = []
+    if media_id_put is not None:
+        media_ids += [f'image_{id_}' for id_ in media_id_put]\
+                   + [f'video_{id_}' for id_ in media_id_put]\
+                   + [f'multi_{id_}' for id_ in media_id_put]
+
     if media_id is not None:
-        ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]\
-            + [f'multi_{id_}' for id_ in media_id]
-        bools.append({'ids': {'values': ids}})
+        media_ids += [f'image_{id_}' for id_ in media_id]\
+                   + [f'video_{id_}' for id_ in media_id]\
+                   + [f'multi_{id_}' for id_ in media_id]
+    if media_ids:
+        bools.append({'ids': {'values': media_ids}})
+
+    annotation_ids = []
+    if localization_ids is not None:
+        annotation_ids += [f'box_{id_}' for id_ in localization_ids]\
+                        + [f'line_{id_}' for id_ in localization_ids]\
+                        + [f'dot_{id_}' for id_ in localization_ids]
+    if state_ids is not None:
+        annotation_ids += [f'state_{id_}' for id_ in state_ids]
+    if annotation_ids:
+        annotation_bools.append({'ids': {'values': annotation_ids}})
 
     if filter_type is not None:
         bools.append({'match': {'_meta': {'query': int(filter_type)}}})
@@ -116,6 +138,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """
     # Get query parameters.
     media_id = params.get('media_id')
+    media_id_put = params.get('media_ids') # PUT request only
+    localization_ids = params.get('localization_ids') # PUT request only
+    state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
     name = params.get('name')
     dtype = params.get('dtype')
@@ -126,8 +151,20 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     stop = params.get('stop')
 
     qs = Media.objects.filter(project=project, deleted=False)
+    media_ids = []
+    if media_id_put is not None:
+        media_ids += media_id_put
     if media_id is not None:
-        qs = qs.filter(pk__in=media_id)
+        media_ids += media_id
+    if state_ids is not None:
+        media_ids += list(State.media.through.objects\
+                          .filter(state__in=state_ids)\
+                          .values_list('media_id', flat=True).distinct())
+    if media_ids:
+        qs = qs.filter(pk__in=media_ids)
+
+    if localization_ids is not None:
+        qs = qs.filter(localization__in=localization_ids)
 
     if filter_type is not None:
         qs = qs.filter(meta=filter_type)
