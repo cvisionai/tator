@@ -186,6 +186,38 @@ media_update = {
     },
 }
 
+media_id_query = {
+    'type': 'object',
+    'properties': {
+        'media_ids': {
+            'description': 'Array of media IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'localization_ids': {
+            'description': 'Array of child localization IDs for which media should '
+                           'be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'state_ids': {
+            'description': 'Array of child state IDs for which media should '
+                           'be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
+}
+
 media = {
     'type': 'object',
     'properties': {

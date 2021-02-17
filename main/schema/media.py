@@ -121,12 +121,7 @@ class MediaListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    'description': 'List of unique integers identifying Media objects.',
-                    'type': 'array',
-                    'items': {
-                        'type': 'integer',
-                        'minimum': 1,
-                    },
+                    '$ref': '#/components/schemas/MediaIdQuery',
                 },
             }}}
         return body
