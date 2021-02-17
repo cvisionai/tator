@@ -15,7 +15,7 @@ class AttributesForm extends HTMLElement {
     this.form.addEventListener("change", (event) => {
       console.log("attribute form changed");
       console.log("Event target... "+event.target.value);
-      return this.form.classList.add("changed");
+      return event.target.closest('form').classList.add("changed");
     });   
 
 
@@ -416,12 +416,10 @@ class AttributesForm extends HTMLElement {
   }
 
   _getAttributeFormData(form){
-    let hasErrors = "";
-    //let name = form.querySelector('[name="name"]').value;
+    // name only if changed || can not be "" 
+    let name = form.querySelector('[name="name"]').value;
 
     let description = form.querySelector('[name="description"]').value;
-
-    //let dtype = form.querySelector('[name="dtype"]').value;
 
     let order = Number(form.querySelector('[name="order"]').value);
 
@@ -432,35 +430,19 @@ class AttributesForm extends HTMLElement {
     let visible = this.inputHelper._getSliderSetValue(visibleInputs);
 
     let formData = {
+      name,
       description,
       order,
       required,
       visible
     };
 
-    // name only if changed || can not be "" 
-    let nameInput = form.querySelector('[name="name"]');
-    let name = nameInput.value;
-    if(name !== "" || name !== null) {
-      formData["name"] = name;
-      nameInput.classList.remove("has-border");
-      nameInput.classList.remove("is-invalid");
-    } else {
-      nameInput.classList.add("has-border");
-      nameInput.classList.add("is-invalid");
-      hasErrors += "Name cannot be blank\n";
-    }    
-
-
     // only send dtype when it's new, if included cannot be ""
     let dtypeSelect = form.querySelector('[name="dtype"]');
     let dtype = dtypeSelect.value;
     if(dtype !== "" || dtype !== null) {
-
       // Set dtype
       formData.dtype = dtype;
-      dtypeSelect.classList.remove("has-border");
-      dtypeSelect.classList.remove("is-invalid");
 
       // Fields that rely on dtype
       let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
@@ -484,13 +466,8 @@ class AttributesForm extends HTMLElement {
         formData["labels"] = labels;
       }
 
-    } else {
-      dtypeSelect.classList.add("has-border");
-      dtypeSelect.classList.add("is-invalid");
-      hasErrors += "Name cannot be blank\n";
     }
     
-    //if(hasErrors != "") return `Form error: ${hasErrors}`
     console.log(formData);
     return formData;
   }
@@ -499,6 +476,7 @@ class AttributesForm extends HTMLElement {
 
   _makeDefaultCorrectType(dtype, _defaultVal){
     let _default = _defaultVal;
+    console.log(_defaultVal);
     try{
       if(dtype == "bool"){
         _default = Boolean(_defaultVal);
@@ -519,9 +497,7 @@ class AttributesForm extends HTMLElement {
     attrPromises.attrNamesNew = [];
     attrPromises.attrNames = [];
 
-    //console.log(`${attrFormsChanged.length} out of ${attrForms.length} attributes changed`);
-
-    if(attrFormsChanged && attrFormsChanged.length){
+    if(attrFormsChanged && attrFormsChanged.length > 0){
       attrFormsChanged.forEach((form, i) => {
         let global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
         let formData = {
@@ -531,8 +507,6 @@ class AttributesForm extends HTMLElement {
           "new_attribute_type": {}
         };
 
-        console.log("Old name: "+form.dataset.oldName);
-
         let attrNameNew = form.querySelector('input[name="name"]').value;
         attrPromises.attrNamesNew.push(attrNameNew);
 
@@ -540,22 +514,13 @@ class AttributesForm extends HTMLElement {
         attrPromises.attrNames.push(attrNameOld);
 
         formData.new_attribute_type = this._getAttributeFormData(form);
+        form.classList.remove("changed");
 
-       // if(formData.new_attribute_type && formData.new_attribute_type.indexOf("Error") > -1){
-       //   return false;
-       // } else {
-          form.classList.remove("changed");
-
-          let currentPatch = this._fetchAttributePatchPromise(id, formData);
-          attrPromises.promises.push(currentPatch);
-      //  }
-
-        
+        let currentPatch = this._fetchAttributePatchPromise(id, formData);
+        attrPromises.promises.push(currentPatch);
+       
       });
       return attrPromises;
-    } else {
-      console.log(`No [attribute] promise array created.`);
-      return false;
     }
   }
 

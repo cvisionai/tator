@@ -113,8 +113,10 @@ class ProjectMainEdit extends TypeForm {
 
     if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
       return this._modalError("Please fix form errors first.");
+      return false;
     } else if (Object.entries(data).length === 0) {
-      return this._modalSuccess("Nothing new to save!");
+      this._modalSuccess("Nothing new to save!");
+      return false;
     } else {
       // Set in child element,
       return fetch("/rest/Project/" + id, {

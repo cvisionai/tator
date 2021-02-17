@@ -158,7 +158,9 @@ class AttributesMain extends HTMLElement {
       this.loading.hideSpinner();
       this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
     
-      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this));
+      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
+        once : true
+      });
     
     }).catch((error) => {
       this.loading.hideSpinner();

@@ -316,6 +316,10 @@ strong.match {
   cursor: pointer;
 }
 
+.error-label {
+  color: $color-red;
+}
+
 .invalid,
 input:out-of-range,
 input:invalid {
