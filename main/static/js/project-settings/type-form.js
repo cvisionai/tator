@@ -499,7 +499,7 @@ class TypeForm extends TatorElement {
             if(this._form.classList.contains("changed")) this._form.classList.remove("changed");
 
             if(hasAttributeChanges){            
-              let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
+              let attrFormsChanged = this._shadow.querySelectorAll(`.attribute-form.changed`);
               if(attrFormsChanged.length > 0 ) {
                 for(let f of attrFormsChanged) f.classList.remove("changed");
               }
@@ -560,7 +560,7 @@ class TypeForm extends TatorElement {
           iconWrap.appendChild(warningIcon);
           console.log("Return Message - It's a 400 response for main form.");
           messageError += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if(hasAttributeChanges && currentMessage.indexOf("global") > 0) {
+        } else if(hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
           console.log("Return Message - It's a 400 response for attr form.");
           let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
           let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
