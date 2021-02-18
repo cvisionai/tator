@@ -209,6 +209,7 @@ FILES = \
     components/cancel-confirm.js \
     components/big-upload-form.js \
     components/upload-element.js \
+    components/entity-card.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
