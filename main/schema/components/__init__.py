@@ -49,6 +49,7 @@ from .media_prev import media_prev
 from .media import media_spec
 from .media import media_update
 from .media import media
+from .media import media_id_query
 from .media_stats import media_stats
 from .media_type import media_type_spec
 from .media_type import media_type_update
