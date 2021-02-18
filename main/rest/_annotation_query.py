@@ -8,7 +8,6 @@ from ..models import Localization
 from ..models import State
 from ..search import TatorSearch
 
-from ._media_query import query_string_to_media_ids
 from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
@@ -23,7 +22,6 @@ def get_annotation_es_query(project, params, annotation_type):
        annotation_type: Should be one of `localization` or `state`.
     """
     media_id = params.get('media_id')
-    media_query = params.get('media_query')
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
@@ -52,11 +50,6 @@ def get_annotation_es_query(project, params, annotation_type):
         annotation_bools = [{'match': {'_dtype': 'state'}}]
     else:
         raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
-
-    if media_query is not None:
-        media_ids = query_string_to_media_ids(project, media_query)
-        ids = [f'image_{id_}' for id_ in media_ids] + [f'video_{id_}' for id_ in media_ids]
-        media_bools.append({'ids': {'values': ids}})
 
     elif media_id is not None:
         ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]
@@ -142,7 +135,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'after', 'media_query']
+    ES_ONLY_PARAMS = ['search', 'after']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
