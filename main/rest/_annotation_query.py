@@ -177,6 +177,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('id')
+    qs = qs.distinct()
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
     elif start is not None:
@@ -217,6 +218,7 @@ def get_annotation_queryset(project, params, annotation_type):
             qs = qs.difference(parent_set)
 
         qs = qs.order_by('id')
+        qs = qs.distinct()
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
