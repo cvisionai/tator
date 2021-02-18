@@ -112,6 +112,37 @@ state_update = {
     },
 }
 
+state_id_query = {
+    'type': 'object',
+    'properties': {
+        'media_ids': {
+            'description': 'Array of parent media IDs for which states should be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'localization_ids': {
+            'description': 'Array of child localization IDs for which states should '
+                           'be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'state_ids': {
+            'description': 'Array of state IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
+}
+
 state = {
     'type': 'object',
     'properties': {
@@ -148,3 +179,4 @@ state_merge_update = {
         },
     }
 }
+

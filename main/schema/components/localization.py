@@ -145,6 +145,36 @@ localization_update = {
     },
 }
 
+localization_id_query = {
+    'type': 'object',
+    'properties': {
+        'media_ids': {
+            'description': 'Array of parent media IDs for which localizations should be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'localization_ids': {
+            'description': 'Array of localization IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'state_ids': {
+            'description': 'Array of parent state IDs for which localizations should be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
+}
+
 localization = {
     'type': 'object',
     'properties': {
