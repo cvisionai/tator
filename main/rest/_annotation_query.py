@@ -22,6 +22,9 @@ def get_annotation_es_query(project, params, annotation_type):
        annotation_type: Should be one of `localization` or `state`.
     """
     media_id = params.get('media_id')
+    media_id_put = params.get('media_ids') # PUT request only
+    localization_ids = params.get('localization_ids') # PUT request only
+    state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
@@ -33,6 +36,12 @@ def get_annotation_es_query(project, params, annotation_type):
     if exclude_parents and (start or stop):
         raise Exception("Elasticsearch based queries with pagination are incompatible with "
                         "'excludeParents'!")
+
+    if state_ids and (annotation_type == 'localization'):
+        raise Exception("Elasticsearch based localization queries do not support 'state_ids'!")
+
+    if localization_ids and (annotation_type == 'state'):
+        raise Exception("Elasticsearch based state queries do not support 'localization_ids'!")
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
@@ -51,9 +60,28 @@ def get_annotation_es_query(project, params, annotation_type):
     else:
         raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
 
-    elif media_id is not None:
-        ids = [f'image_{id_}' for id_ in media_id] + [f'video_{id_}' for id_ in media_id]
-        media_bools.append({'ids': {'values': ids}})
+    media_ids = []
+    if media_id_put is not None:
+        media_ids += [f'image_{id_}' for id_ in media_id_put]\
+                   + [f'video_{id_}' for id_ in media_id_put]\
+                   + [f'multi_{id_}' for id_ in media_id_put]
+
+    if media_id is not None:
+        media_ids += [f'image_{id_}' for id_ in media_id]\
+                   + [f'video_{id_}' for id_ in media_id]\
+                   + [f'multi_{id_}' for id_ in media_id]
+    if media_ids:
+        media_bools.append({'ids': {'values': media_ids}})
+
+    annotation_ids = []
+    if localization_ids is not None:
+        annotation_ids += [f'box_{id_}' for id_ in localization_ids]\
+                        + [f'line_{id_}' for id_ in localization_ids]\
+                        + [f'dot_{id_}' for id_ in localization_ids]
+    if state_ids is not None:
+        annotation_ids += [f'state_{id_}' for id_ in state_ids]
+    if annotation_ids:
+        annotation_bools.append({'ids': {'values': annotation_ids}})
 
     if filter_type is not None:
         annotation_bools.append({'match': {'_meta': {'query': int(filter_type)}}})
@@ -95,6 +123,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """
     # Get query parameters.
     media_id = params.get('media_id')
+    media_id_put = params.get('media_ids') # PUT request only
+    localization_id_put = params.get('localization_ids') # PUT request only
+    state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
@@ -103,8 +134,29 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     stop = params.get('stop')
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
+    media_ids = []
+    if media_id_put is not None:
+        media_ids += media_id_put
     if media_id is not None:
-        qs = qs.filter(media__in=media_id)
+        media_ids += media_id
+    if media_ids:
+        qs = qs.filter(media__in=media_ids)
+
+    localization_ids = []
+    if localization_id_put:
+        localization_ids += localization_id_put
+    if state_ids and (annotation_type == 'localization'):
+        localization_ids += list(State.localizations.through.objects\
+                                 .filter(state__in=state_ids)\
+                                 .values_list('localization_id', flat=True).distinct())
+    if localization_ids:
+        if annotation_type == 'localization':
+            qs = qs.filter(pk__in=localization_ids)
+        elif annotation_type == 'state':
+            qs = qs.filter(localizations__in=localization_ids)
+
+    if state_ids and (annotation_type == 'state'):
+        qs = qs.filter(pk__in=state_ids)
 
     if filter_type is not None:
         qs = qs.filter(meta=filter_type)
