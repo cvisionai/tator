@@ -390,13 +390,7 @@ class MediaListAPI(BaseListView):
     def _put(self, params):
         """ Retrieve list of media by ID.
         """
-        qs = get_media_queryset(self.kwargs['project'], params)
-        response_data = list(qs.values(*MEDIA_PROPERTIES))
-        presigned = params.get('presigned')
-        if presigned is not None:
-            s3 = TatorS3()
-            response_data = [_presign(s3, presigned, item) for item in response_data]
-        return response_data
+        return self._get(params)
 
 class MediaDetailAPI(BaseDetailView):
     """ Interact with individual media.
