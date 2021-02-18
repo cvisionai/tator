@@ -97,7 +97,7 @@ class LocalizationListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema
         return params
 

@@ -140,7 +140,7 @@ class LeafListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = leaf_filter_parameter_schema + attribute_filter_parameter_schema
             # Remove search as it is not yet supported.
             params = [p for p in params if p['name'] != 'search']
