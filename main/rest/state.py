@@ -257,12 +257,7 @@ class StateListAPI(BaseListView):
     def _put(self, params):
         """ Retrieve list of states by ID.
         """
-        response_data = []
-        ids = params['body']
-        if len(ids) > 0:
-            response_data = database_query_ids('main_state', ids, 'id')
-        response_data = _fill_m2m(response_data)
-        return response_data
+        return self._get(params)
 
 class StateDetailAPI(BaseDetailView):
     """ Interact with an individual state.
