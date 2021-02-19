@@ -25,15 +25,11 @@ from .views import ProjectSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
-<<<<<<< HEAD
-from .views import AuthUploadView
 from .views import AnalyticsDashboardView
 from .views import AnalyticsAnnotationsView
 from .views import AnalyticsCollectionsView
 from .views import AnalyticsVisualizationView
 from .views import AnalyticsReportsView
-=======
->>>>>>> 11389cfaa3323a303298404c06992dde4cced451
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
