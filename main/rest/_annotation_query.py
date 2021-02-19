@@ -256,8 +256,3 @@ def get_annotation_count(project, params, annotation_type):
         count = qs.count()
     return count
 
-def query_string_to_annotation_ids(project_id, url, annotation_type):
-    """ TODO: add documentation for this """
-    params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
-    ids = get_annotation_queryset(project_id, params, annotation_type).values_list('id', flat=True)
-    return ids
