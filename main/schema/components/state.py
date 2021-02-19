@@ -137,7 +137,7 @@ state_id_query = {
                 'minimum': 1,
             },
         },
-        'state_ids': {
+        'ids': {
             'description': 'Array of state IDs to retrieve.',
             'type': 'array',
             'items': {

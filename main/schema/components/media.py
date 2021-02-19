@@ -189,7 +189,7 @@ media_update = {
 media_id_query = {
     'type': 'object',
     'properties': {
-        'media_ids': {
+        'ids': {
             'description': 'Array of media IDs to retrieve.',
             'type': 'array',
             'items': {

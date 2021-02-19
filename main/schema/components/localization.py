@@ -161,7 +161,7 @@ localization_id_query = {
                 'minimum': 1,
             },
         },
-        'localization_ids': {
+        'ids': {
             'description': 'Array of localization IDs to retrieve.',
             'type': 'array',
             'items': {

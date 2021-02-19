@@ -58,7 +58,7 @@ leaf_update = {
 leaf_id_query = {
     'type': 'object',
     'properties': {
-        'leaf_ids': {
+        'ids': {
             'description': 'Array of leaf IDs to retrieve.',
             'type': 'array',
             'items': {
