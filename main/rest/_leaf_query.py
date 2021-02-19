@@ -135,7 +135,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     """
     # Get query parameters.
     leaf_id = params.get('leaf_id')
-    leaf_id_put = params.get('leaf_ids', None) # PUT request only
+    leaf_id_put = params.get('ids', None) # PUT request only
     project = params['project']
     filter_type = params.get('type')
     name = params.get('name')
