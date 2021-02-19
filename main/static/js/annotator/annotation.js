@@ -649,7 +649,8 @@ class TextOverlay extends TatorElement {
 
     let style = {"fontSize": "24pt",
                  "fontWeight": "bold",
-                 "color": "white"};
+                 "color": "white",
+                 "background": "rgba(0,0,0,0.33)"};
     if (userStyle)
     {
       const keys = Object.getOwnPropertyNames(userStyle);
@@ -775,105 +776,137 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
+  setupOverlay(overlay_config)
+  {
+    const mode = overlay_config.mode;
+    let pos = [0.5,0.9];
+    let value = null;
+    let style = null;
+    if (overlay_config.pos)
+    {
+      pos = overlay_config.pos;
+    }
+    if (overlay_config.style)
+    {
+      style = overlay_config.style;
+    }
+    if (mode == "constant")
+    {
+      if (overlay_config.source == "name")
+      {
+        value = this._mediaInfo.name;
+      }
+      if (overlay_config.source == "constant")
+      {
+        value = overlay_config.consant;
+      }
+      if (overlay_config.source == "attribute")
+      {
+        value = this._mediaInfo.attributes[overlay_config.key];
+      }
+      if (value && overlay_config.slice)
+      {
+        const slice = overlay_config.slice;
+        if (1 in slice)
+        {
+          value = value.slice(slice[0],slice[1]);
+        }
+        else
+        {
+          value = value.slice(slice[0]);
+        }
+      }
+      this._textOverlay.addText(pos[0],pos[1],value, style);
+    }
+
+    if (mode == "datetime")
+    {
+      let name = this._mediaInfo.name;
+
+      // Trim off ID if it is there
+      if (name[1] == '_')
+      {
+        name = name.substr(2);
+      }
+      let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+      let time_since_epoch = Date.parse(start_time_8601);
+      if (isNaN(time_since_epoch) == true)
+      {
+        console.info("Could not deduce time from file name");
+        return;
+      }
+
+      let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
+      let lastUpdate = null;
+
+      let locale = 'en-US';
+      let options = {"timeZone": "UTC", "timeZoneName": "short"};
+      if (overlay_config.locale)
+      {
+        locale = overlay_config.locale;
+      }
+      if (overlay_config.options)
+      {
+        const keys = Object.getOwnPropertyNames(overlay_config.options);
+        for (const key of keys)
+        {
+          options[key] = overlay_config.options[key];
+        }
+      }
+      let update_function = (seconds) => {
+        if (lastUpdate == seconds)
+        {
+          return;
+        }
+        lastUpdate = seconds;
+        const milliseconds = seconds * 1000;
+        // This is automatically in the wrong timezone (go javascript)
+        const d_bad_tz = new Date(time_since_epoch + milliseconds);
+
+        // Strip timezone from previous object resolve to UTC time
+        // and make a new timezone-aware object based on truth
+        let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
+                                  d_bad_tz.getMonth(),
+                                  d_bad_tz.getDate(),
+                                  d_bad_tz.getHours(),
+                                  d_bad_tz.getMinutes(),
+                                  d_bad_tz.getSeconds(),
+                                  d_bad_tz.getMilliseconds()));
+
+        // Output to the text format specified by the media type schema
+        this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
+      };
+
+      // Run first update
+      update_function(0);
+
+      if (this._mediaType.dtype == "video" || this._mediaType.dtype == "multi")
+      {
+        this.addEventListener("frameChange", (evt) => {
+          const frame = evt.detail.frame;
+          const seconds = Math.floor(frame / this._mediaInfo.fps);
+          update_function(seconds);
+        });
+      }
+    }
+  }
+
   set mediaType(val) {
     this._mediaType = val;
 
     // Handle overlay config
     if (val.overlay_config)
     {
-      const mode = val.overlay_config.mode;
-      let pos = [0.5,0.9];
-      let value = null;
-      if (val.overlay_config.pos)
+      if ('many' in val.overlay_config)
       {
-        pos = val.overlay_config.pos;
+        for (let config of val.overlay_config.many)
+        {
+          this.setupOverlay(config);
+        }
       }
-      if (mode == "constant")
+      else
       {
-        if (val.overlay_config.source == "name")
-        {
-          value = this._mediaInfo.name;
-        }
-        if (val.overlay_config.source == "constant")
-        {
-          value = val.overlay_config.consant;
-        }
-        if (val.overlay_config.source == "attribute")
-        {
-          value = this._mediaInfo.attributes[val.overlay_config.key];
-        }
-        this._textOverlay.addText(pos[0],pos[1],value);
-      }
-
-      if (mode == "datetime")
-      {
-        let name = this._mediaInfo.name;
-
-        // Trim off ID if it is there
-        if (name[1] == '_')
-        {
-          name = name.substr(2);
-        }
-        let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
-        let time_since_epoch = Date.parse(start_time_8601);
-        if (isNaN(time_since_epoch) == true)
-        {
-          console.info("Could not deduce time from file name");
-          return;
-        }
-
-        let time_idx = this._textOverlay.addText(pos[0],pos[1],"");
-        let lastUpdate = null;
-
-        let locale = 'en-US';
-        let options = {"timeZone": "UTC", "timeZoneName": "short"};
-        if (val.locale)
-        {
-          locale = val.overlay_config.locale;
-        }
-        if (val.overlay_config.options)
-        {
-          const keys = Object.getOwnPropertyNames(val.overlay_config.options);
-          for (const key of keys)
-          {
-            options[key] = val.overlay_config.options[key];
-          }
-        }
-        let update_function = (seconds) => {
-          if (lastUpdate == seconds)
-          {
-            return;
-          }
-          lastUpdate = seconds;
-          const milliseconds = seconds * 1000;
-          // This is automatically in the wrong timezone (go javascript)
-          const d_bad_tz = new Date(time_since_epoch + milliseconds);
-
-          // Strip timezone from previous object resolve to UTC time
-          // and make a new timezone-aware object based on truth
-          let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
-                                    d_bad_tz.getMonth(),
-                                    d_bad_tz.getDate(),
-                                    d_bad_tz.getHours(),
-                                    d_bad_tz.getMinutes(),
-                                    d_bad_tz.getSeconds(),
-                                    d_bad_tz.getMilliseconds()));
-
-          // Output to the text format specified by the media type schema
-          this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
-        };
-
-        // Run first update
-        update_function(0);
-
-        if (val.dtype == "video" || val.dtype == "multi")
-        {
-          this.addEventListener("frameChange", (evt) => {
-            const frame = evt.detail.frame;
-            const seconds = Math.floor(frame / this._mediaInfo.fps);
-            update_function(seconds);
-          });
-        }
+        this.setupOverlay(val.overlay_config);
       }
     }
   }
@@ -927,6 +960,7 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[this.activeLocalization.id];
         this._activeTrack = track;
+        this._activeTrackFrame = this.currentFrame();
       }
     }
 
@@ -2381,10 +2415,18 @@ class AnnotationCanvas extends TatorElement
     // a localization
     if (localization.frame != this.currentFrame())
     {
-      if (skipGoToFrame) {
+      if (skipGoToFrame)
+      {
+        clearStatus();
+        this.clearAnimation();
+        this.activeLocalization = null;
+        this.deselectTrack();
+        this.refresh();
+        this._mouseMode = MouseMode.QUERY;
         return;
       }
-      else {
+      else
+      {
         this.gotoFrame(localization.frame).then(() => {
           this.selectLocalization(localization, skipAnimation, muteOthers);
         });
@@ -2431,21 +2473,27 @@ class AnnotationCanvas extends TatorElement
     {
       const track = this._data._trackDb[localization.id];
       this._activeTrack = track
-      this.dispatchEvent(new CustomEvent("select", {
-        detail: track,
-        composed: true,
-      }));
-    } else {
-      this.dispatchEvent(new CustomEvent("select", {
-        detail: localization,
-        composed: true,
-      }));
+      this._activeTrackFrame = this.currentFrame();
     }
+
+    this.dispatchEvent(new CustomEvent("select", {
+      detail: localization,
+      composed: true,
+    }));
   }
 
   deselectTrack()
   {
     this._activeTrack = null;
+    this._activeTrackFrame = -1;
+  }
+
+  selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame)
+  {
+    const ids = this._data._dataByType.get(stateTypeId).map(elem => elem.id);
+    const index = ids.indexOf(stateId);
+    const elem = this._data._dataByType.get(stateTypeId)[index];
+    this.selectTrack(elem, frameHint, skipGoToFrame);
   }
 
   selectTrack(track, frameHint, skipGoToFrame)
@@ -2455,6 +2503,22 @@ class AnnotationCanvas extends TatorElement
     {
       frame = track.segments[0][0];
     }
+
+    // Checking against the active track prevents infinite recursion cases due to refreshes
+    // hitting the pause function and in turn hitting this method.
+    // Checking the frame allows the track slider work in the entity browser.
+    if (track == this._activeTrack && frame == this._activeTrackFrame)
+    {
+      return;
+    }
+
+    clearStatus();
+    this.clearAnimation();
+    this.activeLocalization = null;
+    this.deselectTrack();
+    this.refresh();
+    this._mouseMode = MouseMode.QUERY;
+    this._activeTrack = track;
 
     let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
@@ -2467,7 +2531,7 @@ class AnnotationCanvas extends TatorElement
               const firstFrame = localization.frame == frame;
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
-                this._activeTrack = track;
+                this._activeTrackFrame = frame;
                 return;
               }
             }
@@ -2531,16 +2595,13 @@ class AnnotationCanvas extends TatorElement
       {
         const track = this._data._trackDb[localization.id];
         this._activeTrack = track
-        this.dispatchEvent(new CustomEvent("select", {
-          detail: track,
-          composed: true,
-        }));
-      } else {
-        this.dispatchEvent(new CustomEvent("select", {
-          detail: localization,
-          composed: true,
-        }));
+        this._activeTrackFrame = this.currentFrame();
       }
+
+      this.dispatchEvent(new CustomEvent("select", {
+        detail: localization,
+        composed: true,
+      }));
     });
 
     this._draw.dispImage(true, muteOthers);
@@ -2568,25 +2629,7 @@ class AnnotationCanvas extends TatorElement
       if (this._emphasis != localization)
       {
         this._emphasis = localization;
-        this.refresh().then(() => {
-          // Handle case when localization is in a track
-          if (localization.id in this._data._trackDb)
-          {
-            // Explicitly not setting the active track here like it is done in other spots.
-            // It's possible the localization is emphasized, but the active track is still another
-            // selected track (e.g. selected a track but hovered over another one)
-            const track = this._data._trackDb[localization.id];
-            this.dispatchEvent(new CustomEvent("select", {
-              detail: track,
-              composed: true,
-            }));
-          } else {
-            this.dispatchEvent(new CustomEvent("select", {
-              detail: localization,
-              composed: true,
-            }));
-          }
-        });
+        this.refresh();
       }
     }
   }

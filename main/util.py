@@ -56,34 +56,25 @@ def updateProjectTotals(force=False):
                         f"Duration = {project.duration}")
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
-            if not media:
-                media = Media.objects.filter(project=project, thumbnail__isnull=False).first()
             if media:
                 s3 = TatorS3().s3
                 bucket_name = os.getenv('BUCKET_NAME')
-                if media.thumbnail:
-                    transfer = S3Transfer(s3)
-                    fname = os.path.basename(media.thumbnail.url)
-                    s3_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                    transfer.upload_file(media.thumbnail.url, bucket_name, s3_key)
-                    project.thumb = s3_key
-                elif media.media_files:
-                    if 'thumbnail' in media.media_files:
-                        if len(media.media_files['thumbnail']) > 0:
-                            src_key = media.media_files['thumbnail'][0]['path']
-                            fname = os.path.basename(src_key)
-                            dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                            try:
-                                # S3 requires source key to include bucket name.
-                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                               CopySource={'Bucket': bucket_name,
-                                                           'Key': f"{bucket_name}/{src_key}"})
-                            except:
-                                # Minio requires source key to not include bucket name.
-                                s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                               CopySource={'Bucket': bucket_name,
-                                                           'Key': src_key})
-                            project.thumb = dest_key
+                if 'thumbnail' in media.media_files:
+                    if len(media.media_files['thumbnail']) > 0:
+                        src_key = media.media_files['thumbnail'][0]['path']
+                        fname = os.path.basename(src_key)
+                        dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
+                        try:
+                            # S3 requires source key to include bucket name.
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': f"{bucket_name}/{src_key}"})
+                        except:
+                            # Minio requires source key to not include bucket name.
+                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
+                                           CopySource={'Bucket': bucket_name,
+                                                       'Key': src_key})
+                        project.thumb = dest_key
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
         usernames = [str(user) for user in users]
@@ -418,23 +409,31 @@ def make_resources():
         logger.info(f"Created {num_relations} media relations...")
     logger.info("Media relation creation complete!")
 
-def delete_disk_media(project, dry_run=True):
-    temporary_files = TemporaryFile.objects.filter(project=project)
-    algorithms = Algorithm.objects.filter(project=project)
-    keep = [tf.path for tf in temporary_files]
-    keep += [f"/media/{alg.manifest}" for alg in algorithms]
-    num_deleted = 0
-    for root, dirs, files in os.walk(f'/media/{project}'):
-        for file_ in files:
-            full_path = os.path.join(root, file_)
-            if not full_path in keep:
-                if dry_run:
-                    print(f"Would delete {full_path}...")
-                else:
-                    print(f"Deleting {full_path}...")
-                    os.remove(full_path)
-                num_deleted += 1
-    if dry_run:
-        print(f"Would have deleted {num_deleted} files!")
-    else:
-        print(f"Deleted {num_deleted} files!")
+def set_default_versions():
+    memberships = Membership.objects.all()
+    for membership in list(memberships):
+        versions = Version.objects.filter(project=membership.project, number__gte=0).order_by('number')
+        if versions.exists():
+            versions_by_name = {version.name: version for version in versions}
+            if str(membership.user) in versions_by_name:
+                membership.default_version = versions_by_name[str(membership.user)]
+            else:
+                membership.default_version = versions[0]
+            logger.info(f"Set default version for user {membership.user}, project "
+                        f"{membership.project} to {membership.default_version.name}...")
+            membership.save()
+    logger.info(f"Set all default versions!")
+
+def move_backups_to_s3():
+    s3 = TatorS3().s3
+    transfer = S3Transfer(s3)
+    bucket_name = os.getenv('BUCKET_NAME')
+    num_moved = 0
+    for backup in os.listdir('/backup'):
+        logger.info(f"Moving {backup} to S3...")
+        key = f'backup/{backup}'
+        path = os.path.join('/backup', backup)
+        transfer.upload_file(path, bucket_name, key)
+        os.remove(path)
+        num_moved += 1
+    logger.info(f"Finished moving {num_moved} files!")

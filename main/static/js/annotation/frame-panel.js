@@ -74,50 +74,6 @@ class FramePanel extends TatorElement {
       const typeObj = evt.detail.typeObj;
       if ((typeObj.id === val.id) && (this._frame !== null)) {
         this._updateAttributes(evt.detail.data);
-
-        // If there are no annotations for this type, make a default one at frame 0.
-        if (this._data._dataByType.get(typeObj.id).length == 0) {
-          const mediaId = Number(this.getAttribute("media-id"));
-          const body = {
-            type: Number(val.id.split("_")[1]),
-            name: val.name,
-            media_ids: [mediaId],
-            frame: 0,
-            version: this._version.id,
-          }
-
-          if (this._stateMediaIds) {
-            body.media_ids = this._stateMediaIds;
-          }
-
-          for (const column of val.attribute_types) {
-            let defaultValue;
-            if (column.default !== null) {
-              defaultValue = column.default;
-            } else {
-              switch (column.dtype) {
-                case "bool":
-                  defaultValue = false;
-                  break;
-                case "int":
-                  defaultValue = 0;
-                  break;
-                case "float":
-                  defaultValue = 0.0;
-                  break;
-                case "enum":
-                  defaultValue = "";
-                  break;
-                case "string":
-                  defaultValue = "";
-                  break;
-                // TODO: Handle default datetime and geopos
-              }
-            }
-            body[column.name] = defaultValue;
-          }
-          this._undo.post("States", body, typeObj);
-        }
       }
     });
   }

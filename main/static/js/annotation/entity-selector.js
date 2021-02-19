@@ -246,6 +246,10 @@ class EntitySelector extends TatorElement {
     }
   }
 
+  set globalDataBuffer(val) {
+    this._globalData = val;
+  }
+
   update(data) {
     this._data = data;
     this._count.textContent = String(data.length);
@@ -348,12 +352,35 @@ class EntitySelector extends TatorElement {
       }
     }
 
+    // If this is a localization, see if it's associated with a track.
+    // If it's associated, pass along the associated track information
+    var associatedState = null;
+    var associatedStateType = null;
+
+    var dataList = this._globalData._dataByType.get(this._data[index].meta);
+    const elemIndex = dataList.findIndex(elem => elem.id === this._data[index].id);
+    if (elemIndex > -1)
+    {
+      const data = dataList[elemIndex];
+      const isLocalization = data.meta.includes("box") || data.meta.includes("line") || data.meta.includes("dot");
+      if (isLocalization)
+      {
+        if (data.id in this._globalData._trackDb)
+        {
+          associatedState = this._globalData._trackDb[data.id];
+          associatedStateType = this._globalData._dataTypes[associatedState.meta];
+        }
+      }
+    }
+
     this.dispatchEvent(new CustomEvent("select", {
       detail: {
         data: this._data[index],
         dataType: this._dataType,
         byUser: byUser,
-        goToEntityFrame: goToEntityFrame
+        goToEntityFrame: goToEntityFrame,
+        associatedState: associatedState,
+        associatedStateType: associatedStateType
       },
       composed: composed,
     }));

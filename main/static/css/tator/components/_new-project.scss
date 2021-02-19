@@ -24,7 +24,7 @@
 .new-project__card {
   background-color: $color-charcoal--medium;
   box-shadow: 0 2px 4px $color-charcoal--dark70;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: transform;
   &:hover,
   &:focus {
@@ -68,4 +68,29 @@
       text-decoration: underline;
     }
   }
+}
+
+.edit-project__h1 {
+  //border-bottom: 1px solid $color-charcoal--light;
+  padding-bottom: 5px;
+}
+
+.edit-project__config {
+  background-color: $color-charcoal--medium;
+  padding: 25px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  margin: 15px 0;
+
+  button {
+    &:hover,
+    &:focus {
+      text-decoration: underline;
+    }
+  }
+}
+
+.edit-project__label {
+  border-bottom: 1px solid $color-charcoal--light;
+  padding-bottom: 5px;
 }

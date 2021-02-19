@@ -210,6 +210,7 @@ class AnnotationSettings extends TatorElement {
         quality_list.push(media_file.resolution[0]);
       }
       this._quality.resolutions = quality_list;
+      this._quality.show();
     }
     else
     {
@@ -219,7 +220,25 @@ class AnnotationSettings extends TatorElement {
 
   set quality(val)
   {
-    this._quality = val;
+    this._quality.quality = val;
+  }
+
+  enableQualityChange()
+  {
+    this._quality.removeAttribute("disabled");
+  }
+  disableQualityChange()
+  {
+    this._quality.setAttribute("disabled", "");
+  }
+
+  enableRateChange()
+  {
+    this._rate.removeAttribute("disabled");
+  }
+  disableRateChange()
+  {
+    this._rate.setAttribute("disabled", "");
   }
 }
 

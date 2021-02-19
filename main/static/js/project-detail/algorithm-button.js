@@ -35,30 +35,14 @@ class AlgorithmButton extends TatorElement {
     switch (name) {
       case "project-id":
         this._algorithmMenu.addEventListener("algorithmMenu", evt => {
-          fetch("/rest/AlgorithmLaunch/" + newValue, {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              "algorithm_name": evt.detail.algorithmName,
-            }),
-          })
-          .then(response => {
-            const page = document.querySelector("project-detail");
-            if (response.status == 201) {
-              page._progress.notify("Algorithm launched!", true);
-            } else {
-              //page._progress.error("Error launching algorithm!");
-            }
-            return response.json();
-          })
-          .then(data => console.log(data));
+          this.dispatchEvent(
+            new CustomEvent("runAlgorithm",
+              {composed: true,
+              detail: {
+                algorithmName: evt.detail.algorithmName,
+                projectId: newValue,
+              }}));
         });
-        break;
     }
   }
 

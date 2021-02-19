@@ -100,9 +100,10 @@ def bulk_mutate_attributes(attribute_type, q_s):
 
     entities = []
     for entity in q_s:
-        if name in entity.attributes:
-            entity.attributes[name] = fn(entity.attributes[name])
-            entities.append(entity)
+        if entity.attributes:
+            if name in entity.attributes:
+                entity.attributes[name] = fn(entity.attributes[name])
+                entities.append(entity)
 
     if entities:
         type(entities[0]).objects.bulk_update(entities, ["attributes"], batch_size=1000)

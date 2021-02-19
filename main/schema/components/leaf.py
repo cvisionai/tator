@@ -55,6 +55,22 @@ leaf_update = {
     },
 }
 
+leaf_id_query = {
+    'type': 'object',
+    'properties': {
+        'ids': {
+            'description': 'Array of leaf IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
+}
+
+
+
 leaf = {
     'type': 'object',
     'description': 'Leaf object.',

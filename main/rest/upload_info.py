@@ -1,5 +1,7 @@
 import os
 import logging
+import random
+import string
 from uuid import uuid1
 from urllib.parse import urlsplit, urlunsplit
 
@@ -46,6 +48,11 @@ class UploadInfoAPI(BaseDetailView):
         else:
             if filename:
                 name = filename
+                # If name was specified append a random string to it, to prevent eventual
+                # collisions
+                rand_str = ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(10))
+                components = os.path.splitext(name)
+                name = f"{components[0]}_{rand_str}{components[1]}"
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
                 key = f"{organization}/{project}/{media_id}/{name}"

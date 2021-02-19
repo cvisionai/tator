@@ -28,7 +28,7 @@ spec:
               resources:
                 limits:
                   cpu: 500m
-                  memory: 1Gi
+                  memory: 2Gi
               env:
                 - name: DJANGO_SECRET_KEY
                   valueFrom:
