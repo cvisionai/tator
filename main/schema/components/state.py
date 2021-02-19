@@ -115,6 +115,11 @@ state_update = {
 state_id_query = {
     'type': 'object',
     'properties': {
+        'media_query': {
+            'description': 'Query string used to filter media IDs. This can be used '
+                           'to avoid serialization and download of a media ID list.',
+            'type': 'string',
+        },
         'media_ids': {
             'description': 'Array of parent media IDs for which states should be retrieved.',
             'type': 'array',

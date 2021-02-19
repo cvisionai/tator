@@ -8,6 +8,7 @@ from ..models import Localization
 from ..models import State
 from ..search import TatorSearch
 
+from ._media_query import query_string_to_media_ids
 from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
@@ -23,6 +24,7 @@ def get_annotation_es_query(project, params, annotation_type):
     """
     media_id = params.get('media_id')
     media_id_put = params.get('media_ids') # PUT request only
+    media_query = params.get('media_query') # PUT request only
     localization_ids = params.get('localization_ids') # PUT request only
     state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
@@ -65,6 +67,12 @@ def get_annotation_es_query(project, params, annotation_type):
         media_ids += [f'image_{id_}' for id_ in media_id_put]\
                    + [f'video_{id_}' for id_ in media_id_put]\
                    + [f'multi_{id_}' for id_ in media_id_put]
+
+    if media_query is not None:
+        media_query_ids = query_string_to_media_ids(project, media_query)
+        media_ids += [f'image_{id_}' for id_ in media_query_ids]\
+                   + [f'video_{id_}' for id_ in media_query_ids]\
+                   + [f'multi_{id_}' for id_ in media_query_ids]
 
     if media_id is not None:
         media_ids += [f'image_{id_}' for id_ in media_id]\
@@ -248,3 +256,8 @@ def get_annotation_count(project, params, annotation_type):
         count = qs.count()
     return count
 
+def query_string_to_annotation_ids(project_id, url, annotation_type):
+    """ TODO: add documentation for this """
+    params = dict(urllib_parse.parse_qsl(urllib_parse.urlsplit(url).query))
+    ids = get_annotation_queryset(project_id, params, annotation_type).values_list('id', flat=True)
+    return ids
