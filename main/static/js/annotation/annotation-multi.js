@@ -734,7 +734,13 @@ class AnnotationMulti extends TatorElement {
         video.selectTrack(track, frameHint, skipGoToFrame);
       }
     }
+  }
 
+  selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame) {
+    const ids = this._annotationData._dataByType.get(stateTypeId).map(elem => elem.id);
+    const index = ids.indexOf(stateId);
+    const track = this._annotationData._dataByType.get(stateTypeId)[index];
+    this.selectTrack(track, frameHint, skipGoToFrame);
   }
 
   deselectTrack() {

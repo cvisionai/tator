@@ -41,6 +41,10 @@ class AnnotationBrowser extends TatorElement {
             this._framePanels[typeId].style.display = "block";
           }
         });
+
+        entity.addEventListener("goToTrack", evt => {
+          this.selectEntity(evt.detail.track, true);
+        });
       }
     }
     for (const dataType of dataTypes) {
@@ -137,12 +141,58 @@ class AnnotationBrowser extends TatorElement {
     }
   }
 
-  selectEntity(obj) {
-    const typeId = obj.meta;
+  selectEntity(obj, forceOpen = false) {
+
+    var typeId = obj.meta;
+    var objDataType = this._data._dataTypes[typeId];
+    var selectObj = obj;
+
+    // Find the associated track if the given object is a localization
+    var associatedState = null;
+    if (objDataType.isLocalization && obj.id in this._data._trackDb)
+    {
+      associatedState = this._data._trackDb[obj.id];
+    }
+
+    // This variable can be changed in the future if there's a project setting to
+    // force a default behavior when selecting a track
+    var selectTrackInstead = true;
+    if (!forceOpen)
+    {
+      // If the user has a state panel open and a track's localization was selected,
+      // the panel should not be changed. It should stay on the state panel.
+      //
+      // If the user has the localization panel open and a track was selected,
+      // the panel should not be changed. It should stay on the localization panel.
+      for (const key in this._entityPanels)
+      {
+        const panel = this._entityPanels[key];
+        const dataType = this._data._dataTypes[key];
+        if (dataType.isTrack && panel.style.display == "block" && associatedState != null)
+        {
+          typeId = associatedState.meta;
+          selectObj = associatedState;
+          selectTrackInstead = false;
+          break;
+        }
+        else if (dataType.isLocalization && panel.style.display == "block" && associatedState != null)
+        {
+          selectTrackInstead = false;
+          break;
+        }
+      }
+    }
+
+    if (selectTrackInstead && associatedState != null)
+    {
+      typeId = associatedState.meta;
+      selectObj = associatedState;
+    }
+
     this._openForTypeId(typeId);
     if (typeId in this._entityPanels)
     {
-      this._entityPanels[typeId].selectEntity(obj);
+      this._entityPanels[typeId].selectEntity(selectObj);
     }
     else
     {

@@ -52,6 +52,19 @@ Follow these steps to test the annotation tools.
     - python3 ./create_multi_video.py --host <host> --token <token> --project <project_id> --media <media_id_1> <media_id_2> --multi-media-name test --layout-rows 2 --layout-cols 1 --quality 360 --section-name test_multi_folder
     - Repeat frame-state creation (ie not tracks) from step 29
 
+### Annotation Browser Tests
+1) Upload a video in a project with the same types as step 1 from the "State Related Tests"
+2) Draw a box, line, and dot on the same frame. When the save dialog appears, verify there is no track slider and "View Associated track-type-name" button in the modal/dialog.
+3) Combine them all into the same track/state using the right click menu
+4) Adjust the annotation browser so that no entity is selected. Click on one of the localizations and verify the annotation browser shows the track.
+5) Use the back button on the annotation browser and click on line selector. Click on the box and verify the annotation browser shows the box type.
+6) Verify there is a button to "View Associated track-type-name" and there is no track slider. Use it and verify the browser changes to the track.
+7) Draw other boxes and verify those localizations do not have the "View Associated track-type-name" option.
+8) Go to another frame, draw a box. Create a track from that box and extend the track forwards and backwards using the duplicate method. Repeat this step in another part of the window. Verify there are three tracks in the annotation browser.
+9) Verify you can cycle between the three tracks using the entity selector.
+10) Use the jump frame button on the three tracks and verify the video frame changes and the track is selected.
+11) Use the track slider and verify the video frame changes and the track is selected.
+
 ## Video Playback Tests
 -----------------------
 Follow these steps to test the video playback capabilities.

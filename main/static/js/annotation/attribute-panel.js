@@ -49,15 +49,19 @@ class AttributePanel extends TatorElement {
     this._dataType = val;
     if (val.isTrack) {
       const div = document.createElement("div");
-      div.setAttribute("class", "d-flex annotation__panel-group px-4 py-3 text-gray f2");
+      div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
       this._shadow.insertBefore(div, this._div);
+
+      var sliderDiv = document.createElement("div");
+      sliderDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between py-1");
+      div.appendChild(sliderDiv);
 
       this._slider = document.createElement("input");
       this._slider.setAttribute("class", "range flex-grow");
       this._slider.setAttribute("type", "range");
       this._slider.setAttribute("step", "1");
       this._slider.setAttribute("value", "0");
-      div.appendChild(this._slider);
+      sliderDiv.appendChild(this._slider);
 
       this._slider.addEventListener("input", () => {
         if (this._emitChanges) {
@@ -71,6 +75,32 @@ class AttributePanel extends TatorElement {
 
       this._currentFrame = 0;
     }
+    else {
+      const div = document.createElement("div");
+      div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
+      this._shadow.insertBefore(div, this._div);
+
+      var goToTrackDiv = document.createElement("div");
+      goToTrackDiv.setAttribute("class", "d-flex flex-items-center py-1");
+      this._goToTrack = div;
+      div.appendChild(goToTrackDiv);
+
+      var label = document.createElement("legend");
+      this._goToTrackLabel = label;
+      goToTrackDiv.append(label);
+
+      var goToTrackButton = document.createElement("entity-track-button");
+      goToTrackButton.style.marginLeft = "16px";
+      goToTrackButton.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("goToTrack", {
+          detail: {track: this._associatedTrack},
+          composed: true
+        }
+        ));
+      });
+      goToTrackDiv.appendChild(goToTrackButton);
+    }
+
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
@@ -178,6 +208,20 @@ class AttributePanel extends TatorElement {
     this.setSlider(sliderData);
   }
 
+  /**
+   * @param {boolean} display - True if it's displayed. False to hide it.
+   */
+  displayGoToTrack(display) {
+    if (this._goToTrack) {
+      if (display) {
+        this._goToTrack.style.display = "block";
+      }
+      else {
+        this._goToTrack.style.display = "none";
+      }
+    }
+  }
+
   displaySlider(display) {
     if (this._slider){
       if (display) {
@@ -278,7 +322,7 @@ class AttributePanel extends TatorElement {
     }
   }
 
-  setValues(values) {
+  setValues(values, associatedTrack, associatedTrackType) {
     // Set the ID widget
     this._idWidget.setValue(values.id);
 
@@ -326,6 +370,19 @@ class AttributePanel extends TatorElement {
     sliderData.segments = values.segments;
     sliderData.currentFrame = this._currentFrame;
     this.setSlider(sliderData);
+
+    // If the provided values contain a track association ID, then display
+    // the go to track button. Otherwise, hide it.
+    if (associatedTrack != undefined && associatedTrackType != undefined)
+    {
+      this._goToTrackLabel.textContent = "View Associated " + associatedTrackType.name;
+      this._associatedTrack = associatedTrack;
+      this.displayGoToTrack(true);
+    }
+    else
+    {
+      this.displayGoToTrack(false);
+    }
 
     for (const widget of this._div.children) {
       const name = widget.getAttribute("name");
