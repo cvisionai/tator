@@ -383,7 +383,7 @@ class MediaSection extends TatorElement {
     }
     const params = joinParams(mediaParams, this._sectionParams());
     const getUrl = endpoint => {
-      return `/rest/${endpoint}/${this._project}?media_query=?${params.toString()}`;
+      return `/rest/${endpoint}/${this._project}?`;
     };
     const mediaUrl = `/rest/Medias/${this._project}?${params.toString()}`;
     const fileStream = streamSaver.createWriteStream(this._sectionName + ".zip");
@@ -427,18 +427,30 @@ class MediaSection extends TatorElement {
 
         // Function for dumping single batch of metadata to file.
         const getMetadataBatch = async (baseUrl, type, batchSize, batchNum,
-                                        baseFilename, lastId) => {
+                                        baseFilename, lastId, idQuery) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
             url += "&after=" + lastId;
           }
 
+          let request;
+          if (idQuery != null) {
+            request = {
+              method: "PUT",
+              credentials: "same-origin",
+              headers: headers,
+              body: JSON.stringify(idQuery),
+            };
+          } else {
+            request = {
+              method: "GET",
+              credentials: "same-origin",
+              headers: headers,
+            };
+          }
+
           // Fetch csv data first.
-          await fetchRetry(url + "&format=csv", {
-            method: "GET",
-            credentials: "same-origin",
-            headers: headers,
-          })
+          await fetchRetry(url + "&format=csv", request)
           .then(response => {
             const stream = () => response.body;
             const batch_str = "__batch_" + Number(batchNum).pad(5);
@@ -447,11 +459,7 @@ class MediaSection extends TatorElement {
           });
 
           // Fetch and return json data.
-          return fetchRetry(url, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: headers,
-          })
+          return fetchRetry(url, request)
           .then(response => {
             const clone = response.clone();
             const stream = () => response.body;
@@ -473,9 +481,10 @@ class MediaSection extends TatorElement {
             this._lastId = null;
             this._typeIndex = 0;
             this._batchSize = 1000;
+            this.ids = []; // Accumulation of retrieved IDs
           }
 
-          async next() {
+          async next(idQuery) {
             // Fetches next batch of metadata, iterating over types. Returns
             // whether all metadata has been fetched.
             let done = false;
@@ -489,6 +498,7 @@ class MediaSection extends TatorElement {
                 this._batchNum,
                 this._baseFilename,
                 this._lastId,
+                idQuery,
               )
               this._batchNum++;
               if (entities.length == 0) {
@@ -501,6 +511,7 @@ class MediaSection extends TatorElement {
                 }
               } else {
                 this._lastId = entities[entities.length - 1][this._lastField];
+                this.ids.push.apply(this.ids, entities.map(entity => entity.id));
               }
             }
             return done;
@@ -531,11 +542,11 @@ class MediaSection extends TatorElement {
         }
         else if (localizationsDone == false) {
           // Get next batch of localization metadata.
-          localizationsDone = await localizationFetcher.next();
+          localizationsDone = await localizationFetcher.next({media_ids: mediaFetcher.ids});
         }
         else if (statesDone == false) {
           // Get next batch of state metadata.
-          statesDone = await stateFetcher.next();
+          statesDone = await stateFetcher.next({media_ids: mediaFetcher.ids});
         }
         else {
           // Close the zip file.
