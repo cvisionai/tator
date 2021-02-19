@@ -20,7 +20,7 @@ def get_media_es_query(project, params):
     """
     # Get query parameters.
     media_id = params.get('media_id')
-    media_id_put = params.get('media_ids') # PUT request only
+    media_id_put = params.get('ids') # PUT request only
     localization_ids = params.get('localization_ids') # PUT request only
     state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')
@@ -138,7 +138,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """
     # Get query parameters.
     media_id = params.get('media_id')
-    media_id_put = params.get('media_ids') # PUT request only
+    media_id_put = params.get('ids') # PUT request only
     localization_ids = params.get('localization_ids') # PUT request only
     state_ids = params.get('state_ids') # PUT request only
     filter_type = params.get('type')

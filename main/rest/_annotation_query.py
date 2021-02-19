@@ -25,8 +25,12 @@ def get_annotation_es_query(project, params, annotation_type):
     media_id = params.get('media_id')
     media_id_put = params.get('media_ids') # PUT request only
     media_query = params.get('media_query') # PUT request only
-    localization_ids = params.get('localization_ids') # PUT request only
-    state_ids = params.get('state_ids') # PUT request only
+    if annotation_type == 'localization':
+        localization_ids = params.get('ids') # PUT request only
+        state_ids = params.get('state_ids') # PUT request only
+    elif annotation_type == 'state':
+        localization_ids = params.get('localization_ids') # PUT request only
+        state_ids = params.get('ids') # PUT request only
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
@@ -132,8 +136,12 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     # Get query parameters.
     media_id = params.get('media_id')
     media_id_put = params.get('media_ids') # PUT request only
-    localization_id_put = params.get('localization_ids') # PUT request only
-    state_ids = params.get('state_ids') # PUT request only
+    if annotation_type == 'localization':
+        localization_id_put = params.get('ids') # PUT request only
+        state_ids = params.get('state_ids') # PUT request only
+    elif annotation_type == 'state':
+        localization_id_put = params.get('localization_ids') # PUT request only
+        state_ids = params.get('ids') # PUT request only
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
