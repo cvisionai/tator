@@ -11,23 +11,23 @@ $color-red: #ff3e1d;
 $color-brown: #9e702b;
 
 $color-white: #ffffff;
-$color-white--50: rgba($color-white, .5);
+$color-white--50: rgba($color-white, 0.5);
 
 $color-gray--light: #a2afcd;
 $color-gray--medium: #72809d;
 $color-gray--dark: #6d7a96;
-$color-gray--dark50: rgba($color-gray--dark, .5);
+$color-gray--dark50: rgba($color-gray--dark, 0.5);
 
 $color-charcoal--light: #262e3d;
-$color-charcoal--light70: rgba($color-charcoal--light, .7);
+$color-charcoal--light70: rgba($color-charcoal--light, 0.7);
 $color-charcoal--medium: #151b28;
-$color-charcoal--medium70: rgba($color-charcoal--medium, .7);
+$color-charcoal--medium70: rgba($color-charcoal--medium, 0.7);
 $color-charcoal--dark: #00070d;
-$color-charcoal--dark70: rgba($color-charcoal--dark, .7);
-$color-charcoal--brown: #2E2314;
+$color-charcoal--dark70: rgba($color-charcoal--dark, 0.7);
+$color-charcoal--brown: #2e2314;
 $color-charcoal--red: #281d26;
-
-
+$color-steel--dark: #3d4147;
+$color-steel--medium: #5c626b;
 
 /**
 ** Font Weights
@@ -36,12 +36,11 @@ $color-charcoal--red: #281d26;
 $weight-regular: 400;
 $weight-semibold: 600;
 
-
 /**
 ** Spacing
 **/
 
-$spacing-0:	0;
+$spacing-0: 0;
 $spacing-1: 4px;
 $spacing-2: 8px;
 $spacing-3: 16px;
@@ -71,8 +70,9 @@ $container-xl: $width-xl !default;
 
 // Breakpoints in the form (name: length)
 $breakpoints: (
+  xs: $width-xs,
   sm: $width-sm,
   md: $width-md,
   lg: $width-lg,
-  xl: $width-xl
+  xl: $width-xl,
 ) !default;

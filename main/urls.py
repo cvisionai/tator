@@ -5,6 +5,9 @@ from django.urls import path
 from django.urls import include
 from django.conf.urls import url
 from django.conf import settings
+from django.contrib.auth.views import PasswordChangeView
+from django.contrib.auth.views import PasswordChangeDoneView
+from django.contrib.auth.views import LogoutView
 
 from rest_framework.authtoken import views
 from rest_framework.authentication import SessionAuthentication
@@ -22,7 +25,6 @@ from .views import ProjectSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
-from .views import AuthUploadView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -40,7 +42,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
-    path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/account-profile/', AccountProfileView.as_view(), name='account-profile'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('new-project/custom/', CustomView.as_view(), name='custom'),
@@ -49,12 +50,18 @@ urlpatterns = [
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
-    path('auth-upload', AuthUploadView.as_view()),
 ]
 
 if settings.COGNITO_ENABLED:
     urlpatterns += [
+        path('accounts/password_change/', PasswordChangeView.as_view()),
+        path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
+             name='password_change_done'),
+        path('accounts/logout/', LogoutView.as_view()),
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
+else:
+    urlpatterns += [
+        path('accounts/', include('django.contrib.auth.urls'))]
 
 # This is used for REST calls
 urlpatterns += [

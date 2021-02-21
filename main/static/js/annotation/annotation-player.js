@@ -21,6 +21,7 @@ class AnnotationPlayer extends TatorElement {
 
     const rewind = document.createElement("rewind-button");
     playButtons.appendChild(rewind);
+    this._rewind = rewind;
 
     const play = document.createElement("play-button");
     this._play = play;
@@ -29,6 +30,7 @@ class AnnotationPlayer extends TatorElement {
 
     const fastForward = document.createElement("fast-forward-button");
     playButtons.appendChild(fastForward);
+    this._fastForward = fastForward;
 
     const timelineDiv = document.createElement("div");
     timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-2");
@@ -148,6 +150,7 @@ class AnnotationPlayer extends TatorElement {
 
     this._slider.addEventListener("change", evt => {
       play.setAttribute("is-paused","");
+      this.dispatchEvent(new Event("displayLoading", {composed: true}));
       // Only use the current frame to prevent glitches
       let frame = this._video.currentFrame();
       if (evt.detail)
@@ -155,9 +158,14 @@ class AnnotationPlayer extends TatorElement {
         frame = evt.detail.frame;
       }
       this._video.stopPlayerThread();
+
       // Use the hq buffer when the input is finalized
-      this._video.seekFrame(frame, this._video.drawFrame, true)
-      .then(this._lastScrub = Date.now());
+      this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
+        this._lastScrub = Date.now()
+        this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      }).catch(() => {
+        this.dispatchEvent(new Event("hideLoading", {composed: true}));
+      });
     });
 
     play.addEventListener("click", () => {
@@ -172,6 +180,11 @@ class AnnotationPlayer extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
+
+      this.dispatchEvent(new Event("playing", {composed: true}));
+      fastForward.setAttribute("disabled", "");
+      rewind.setAttribute("disabled", "");
+
       this._video.pause();
       this._video.rateChange(this._rate);
       if (this._video.playBackwards())
@@ -185,6 +198,7 @@ class AnnotationPlayer extends TatorElement {
       this._video.rateChange(2 * this._rate);
       if (this._video.play())
       {
+        this.dispatchEvent(new Event("playing", {composed: true}));
         play.removeAttribute("is-paused");
       }
     });
@@ -192,6 +206,9 @@ class AnnotationPlayer extends TatorElement {
     framePrev.addEventListener("click", () => {
       if (this.is_paused() == false)
       {
+        this.dispatchEvent(new Event("paused", {composed: true}));
+        fastForward.removeAttribute("disabled");
+        rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
           this._video.back();
         });
@@ -205,6 +222,9 @@ class AnnotationPlayer extends TatorElement {
     frameNext.addEventListener("click", () => {
       if (this.is_paused() == false)
       {
+        this.dispatchEvent(new Event("paused", {composed: true}));
+        fastForward.removeAttribute("disabled");
+        rewind.removeAttribute("disabled");
         this._video.pause().then(() => {
           this._video.advance();
         });
@@ -322,6 +342,21 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
+    if (this._rate > 1.0)
+    {
+      // Check to see if the video player can play at this rate
+      // at the current frame. If not, inform the user.
+      if (!this._video.canPlayRate(this._rate))
+      {
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        return;
+      }
+    }
+
+    this.dispatchEvent(new Event("playing", {composed: true}));
+    this._fastForward.setAttribute("disabled", "");
+    this._rewind.setAttribute("disabled", "");
+
     const paused = this.is_paused();
     if (paused) {
       this._video.rateChange(this._rate);
@@ -334,6 +369,10 @@ class AnnotationPlayer extends TatorElement {
 
   pause()
   {
+    this.dispatchEvent(new Event("paused", {composed: true}));
+    this._fastForward.removeAttribute("disabled");
+    this._rewind.removeAttribute("disabled");
+
     const paused = this.is_paused();
     if (paused == false) {
       this._video.pause();
@@ -421,6 +460,10 @@ class AnnotationPlayer extends TatorElement {
 
   selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame) {
     this._video.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
+  }
+
+  selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame) {
+    this._video.selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame);
   }
 
   selectTrack(track, frameHint, skipGoToFrame) {

@@ -2,47 +2,9 @@ class LocalizationEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "LocalizationType";
-    this._shadow.appendChild(this.typeFormDiv);
-  }
+    this.readableTypeName = "Localization Type";
+    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="1 1 20 20" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
 
-  _init(data){
-    console.log(`${this.tagName} init.`);
-    this.data = JSON.parse( data );
-
-    if(this.data.length > 0){
-      console.log(this.data);
-
-      this.projectId = this.data[0].project;
-
-      for(let i in this.data){
-        let itemDiv = document.createElement("div");
-        itemDiv.id = `itemDivId-${this.typeName}-${this.data[i].id}`; //#itemDivId-${type}-${itemId}
-        itemDiv.setAttribute("class", "item-box item-group-"+this.data[i].id);
-        itemDiv.hidden = true;
-
-        // Section h1.
-        const h1 = document.createElement("h1");
-        h1.setAttribute("class", "h2 pb-3");
-        h1.innerHTML = `Localization settings.`;
-        itemDiv.appendChild(h1);
-
-        itemDiv.appendChild( this._getSectionForm( this.data[i]) );
-        itemDiv.appendChild( this._getSubmitDiv( {"id": this.data[i].id }) );
-
-        this.typeFormDiv.appendChild(itemDiv);
-      }
-
-      console.log("Init complete : Data length "+this.data.length);
-      return this.typeFormDiv;
-    } else {
-      console.log("Init complete : No data.");
-    }
-  }
-
-  _getHeading(){
-    let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-target"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>';
-
-    return `${icon} <span class="item-label">Localization Type</span>`
   }
 
   _getSectionForm(data){
@@ -51,78 +13,101 @@ class LocalizationEdit extends TypeForm {
     } );
 
     //
-    const _form = document.createElement("form");
-    _form.id = data.id;
-    current.appendChild( _form );
-
-    _form.addEventListener("change", (event) => {
-      this._formChanged(_form, event);
-    });
+    this._setForm();
 
     // append input for name
     const NAME = "Name";
-    _form.appendChild( this.inputHelper.inputText({ "labelText": NAME, "name": NAME.toLowerCase(), "value": data[NAME.toLowerCase()]}) );
-
-    //description
-    const DESCRIPTION = "Description";
-    _form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    this._editName = this.inputHelper.inputText( {
+      "labelText": NAME,
+      "name": NAME.toLowerCase(),
+      "value": data[NAME.toLowerCase()],
+      "required" : true 
+    });
+    this._form.appendChild( this._editName );
 
     // dtype
     const DTYPE = "Dtype";
     const dTypeOptions = [
+      { "optText": "Select", "optValue": "" },
       { "optText": "Box", "optValue": "box" },
       { "optText": "Line", "optValue": "line" },
       { "optText": "Dot", "optValue": "dot" }
     ]
-    _form.appendChild( this.inputHelper.inputSelectOptions({
+    let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
+    let dtypeRequired = !disableDtype ? true : false;
+    this.dtypeSelect = this.inputHelper.inputSelectOptions({
       "labelText": "Data Type",
       "name": DTYPE.toLowerCase(),
       "value": data[DTYPE.toLowerCase()],
       "optionsList" : dTypeOptions,
-      "disabledInput" : true
-    }) );
+      "disabledInput" : disableDtype,
+      "required" : dtypeRequired
+    })
+    this._form.appendChild( this.dtypeSelect );
+
+    // description
+    const DESCRIPTION = "Description";
+    this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+
+    // color map
+    const COLORMAP = "colorMap";
+    let colMap = data[COLORMAP];
+    let colMapDefault = "";
+    if(typeof colMap !== "undefined" && colMap !== null){
+      if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
+    }
+    this._form.appendChild( this.inputHelper.inputText({
+      "labelText": "Color Map Default",
+      "name": COLORMAP,
+      "value": colMapDefault,
+      "type" : "color"
+    } ) );
 
     // visible
     const VISIBLE = "Visible";
-    _form.appendChild( this.inputHelper.inputRadioSlide({
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": VISIBLE,
       "name": VISIBLE.toLowerCase(),
       "value": data[VISIBLE.toLowerCase()]
     } ) );
 
+    // line_width
+    const LINE = "line_width";
+    this._form.appendChild( this.inputHelper.inputText({
+      "labelText": "Line Width",
+      "name": LINE,
+      "value": data[LINE],
+      "type" : "number",
+      "min" : 1,
+      "max" : 10
+    } ) );
+
     // grouping default
     const GROUPING = "grouping_default";
-    _form.appendChild( this.inputHelper.inputRadioSlide({
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
       "labelText": "Grouping Default",
       "name": GROUPING.toLowerCase(),
       "value": data[GROUPING.toLowerCase()]
     } ) );
 
-    const MEDIA = "Media";
-    const mediaData = localStorage.getItem(`MediaData_${this.projectId}`); 
-    const mediaList = new DataMediaList( JSON.parse(mediaData) );
+    const MEDIA = "Media"; 
+    const mediaList = new DataMediaList( this.projectId );
     let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
-    _form.appendChild( this.inputHelper.multipleCheckboxes({
+    this._form.appendChild( this.inputHelper.multipleCheckboxes({
         "labelText" : MEDIA,
         "name": MEDIA.toLowerCase(),
         "checkboxList": mediaListWithChecked
     } ) );
 
-    // attribute types
-    if(data.attribute_types.length > 0){
-      this.attributeSection = document.createElement("attributes-main");
-      //this.attributeSection._init("LOCALIZATION", data.attribute_types);
-      this.attributeSection._init(this.typeName, data.id, data.project, data.attribute_types);
-      current.appendChild(this.attributeSection);
-    }
+    current.appendChild(this._form);
 
     return current;
   }
 
-  _getFormData(id){
+  _getFormData(id, includeDtype = false){
     let form = this._shadow.getElementById(id);
-    // do not send dtype
+
     // name only if changed || can not be ""
     let name = form.querySelector('[name="name"]').value;
 
@@ -137,20 +122,36 @@ class LocalizationEdit extends TypeForm {
     let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
     let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
 
-    let mediaInputs =  form.querySelectorAll('input[name="media"]');
+    // line width
+    let line_width = Number(form.querySelector('[name="line_width"]').value);
+
+    let mediaInputs =  form.querySelectorAll('input[name^="media"]');
     let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
+    let media_types = media;
 
     let formData = {
       name,
       description,
       visible,
       grouping_default,
-      media
+      //media, 
+      media_types,
+      line_width
     };
+
+    
+    // only send dtype when it's new
+    if(includeDtype) {
+      let dtype = form.querySelector('[name="dtype"]').value;
+      formData.dtype = dtype;
+    }
+
+    let colorMap = form.querySelector('input[name="colorMap"]').value;
+    if(colorMap != "") formData.colorMap = { "default" : colorMap} ;
 
     return formData;
   }
-
+  
 }
 
 customElements.define("localization-edit", LocalizationEdit);

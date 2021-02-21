@@ -194,8 +194,7 @@ class LeafListAPI(BaseListView):
     def _put(self, params):
         """ Retrieve list of leaves by ID.
         """
-        qs = Leaf.objects.filter(pk__in=params['body'])
-        return list(qs.values(*LEAF_PROPERTIES))
+        return self._get(params)
 
 class LeafDetailAPI(BaseDetailView):
     """ Interact with individual leaf.

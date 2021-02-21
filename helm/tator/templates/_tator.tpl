@@ -30,10 +30,10 @@ spec:
           resources:
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: 16Gi
             requests:
               cpu: 1000m
-              memory: 2Gi
+              memory: 4Gi
           env:
             - name: DJANGO_SECRET_KEY
               valueFrom:
@@ -175,6 +175,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: COGNITO_ENABLED
+            {{- if .Values.cognito.enabled }}
+              value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
           ports:
             - containerPort: 8000
               name: gunicorn

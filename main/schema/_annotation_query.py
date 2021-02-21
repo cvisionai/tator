@@ -1,13 +1,5 @@
 annotation_filter_parameter_schema = [
     {
-        'name': 'media_query',
-        'in': 'query',
-        'required': False,
-        'description': 'Query string used to filter media IDs. If '
-                       'supplied, media_id will be ignored.',
-        'schema': {'type': 'string'},
-    },
-    {
         'name': 'media_id',
         'in': 'query',
         'required': False,

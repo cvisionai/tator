@@ -121,3 +121,26 @@ summary {
   -ms-user-select: none;
   user-select: none;
 }
+
+// Firefox
+* {
+  scrollbar-color: $color-steel--dark $color-steel--medium;
+}
+
+// Chrome / edge
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  display: none;
+  //background: $color-charcoal--medium;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: $color-steel--dark;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: $color-steel--medium;
+}

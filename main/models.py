@@ -45,6 +45,7 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .cognito import TatorCognito
 
 from collections import UserDict
 
@@ -254,11 +255,40 @@ class User(AbstractUser):
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
 
+    def move_to_cognito(self, email_verified=False, temp_pw=None):
+        cognito = TatorCognito()
+        response = cognito.create_user(self, email_verified, temp_pw)
+        for attribute in response['User']['Attributes']:
+            if attribute['Name'] == 'sub':
+                self.cognito_id = attribute['Value']
+        self.save()
+
+    def set_password_cognito(self, password, permanent=False):
+        cognito = TatorCognito()
+        cognito.set_password(self, password, permanent)
+
+    def reset_password_cognito(self):
+        cognito = TatorCognito()
+        cognito.reset_password(self)
+
+    def set_password(self, password):
+        super().set_password(password)
+        if os.getenv('COGNITO_ENABLED') == 'TRUE':
+            self.set_password_cognito(password, True)
+
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
         else:
             return "---"
+
+@receiver(post_save, sender=User)
+def user_save(sender, instance, created, **kwargs):
+    if os.getenv('COGNITO_ENABLED') == 'TRUE':
+        if created:
+            instance.move_to_cognito()
+        else:
+            TatorCognito().update_attributes(instance)
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
@@ -314,7 +344,7 @@ class Project(Model):
 class Version(Model):
     name = CharField(max_length=128)
     description = CharField(max_length=1024, blank=True)
-    number = PositiveIntegerField()
+    number = IntegerField()
     project = ForeignKey(Project, on_delete=CASCADE)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
@@ -525,6 +555,8 @@ class MediaType(Model):
             options can contain 'timeZone' which comes from the TZ database name
             https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
             Example: America/Los_Angeles or America/New_York
+
+    Overlay can optionally be a list of multiple overlays
     """
     def __str__(self):
         return f'{self.name} | {self.project}'

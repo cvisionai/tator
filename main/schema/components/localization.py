@@ -145,6 +145,41 @@ localization_update = {
     },
 }
 
+localization_id_query = {
+    'type': 'object',
+    'properties': {
+        'media_query': {
+            'description': 'Query string used to filter media IDs. This can be used '
+                           'to avoid serialization and download of a media ID list.',
+            'type': 'string',
+        },
+        'media_ids': {
+            'description': 'Array of parent media IDs for which localizations should be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'ids': {
+            'description': 'Array of localization IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'state_ids': {
+            'description': 'Array of parent state IDs for which localizations should be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
+}
+
 localization = {
     'type': 'object',
     'properties': {

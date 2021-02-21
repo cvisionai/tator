@@ -15,7 +15,7 @@ class AttributesForm extends HTMLElement {
     this.form.addEventListener("change", (event) => {
       console.log("attribute form changed");
       console.log("Event target... "+event.target.value);
-      return this.form.classList.add("changed");
+      return event.target.closest('form').classList.add("changed");
     });   
 
 
@@ -23,7 +23,7 @@ class AttributesForm extends HTMLElement {
     // append input for name
     const NAME = "Name";
     this.form.appendChild( this.inputHelper.inputText({
-      "labelText" : NAME+"*",
+      "labelText" : NAME,
       "name" : NAME.toLowerCase(),
       "value" : ""
     }) );
@@ -67,7 +67,7 @@ class AttributesForm extends HTMLElement {
     }) );
 
     // default
-    this.form.appendChild( this._getDefaultInput( "" ) );
+    this.form.appendChild( this._getDefaultInput( 0 ) );
 
     /*** @todo - The remaining are added when dtype is added or when values provided ***/
     // let placeholderDefault = document.createElement("div");
@@ -200,13 +200,16 @@ class AttributesForm extends HTMLElement {
     }
   }
 
-  _getDefaultInput( value ){
+  _getDefaultInput( value, dtype ){
     const DEFAULT = "Default";
+    let defaultType = "text"
+    if(dtype && dtype == "datetime") defaultType = "datetime-local";
+    
     return this.inputHelper.inputText({
       "value" : value,
       "labelText" : DEFAULT,
       "name" : DEFAULT.toLowerCase(),
-      "type" : "text"
+      "type" : defaultType
     } ) ;
   }
 
@@ -271,29 +274,38 @@ class AttributesForm extends HTMLElement {
       options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
 
       selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type*",
+        "labelText": "Data Type",
         "value": dtype,
         "optionsList": options,
         "name" : "dtype"
       });
 
       // Add placeholder for warning, and listen for change.
-      let warningEl = this._inlineWarningDiv();
-      selectBox.appendChild(warningEl);
-      selectBox.addEventListener("change", (e) => {
+      let selectorInBox = selectBox.querySelector("select");
+      selectorInBox.addEventListener("change", (e) => {
         //when changed check if we need to show a warning.
         let newType = e.target.value;
         let message = ""
 
         if(this._getIrreverasibleDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} is not reversible.`;
+          // Caution 
+          let errorEvent = new CustomEvent("input-caution", {"detail" : 
+            {"errorMsg" : message}
+          });
+          selectorInBox.dispatchEvent(errorEvent);
         } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
           message = `Warning: ${dtype} to ${newType} may cause data loss.`;
+          // Caution 
+          let errorEvent = new CustomEvent("input-caution", {"detail" : 
+            {"errorMsg" : message}
+          });
+          selectorInBox.dispatchEvent(errorEvent);
+        } else {
+          // No probz
+          let successEvent = new CustomEvent("input-valid");
+          selectorInBox.dispatchEvent(successEvent);
         }
-        this._inlineWarning({
-          "el" : warningEl,
-          "message" : message
-        });
 
         // should hide and show them, do not remove data
         this._getDtypeFields(newType);
@@ -305,7 +317,7 @@ class AttributesForm extends HTMLElement {
       options.push("Select");
 
       selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type*",
+        "labelText": "Data Type",
         "value": "Select",
         "name" : "dtype",
         "optionsList": this._getDtypeOptions( options )
@@ -321,44 +333,6 @@ class AttributesForm extends HTMLElement {
     }
     return selectBox;
   }
-
-  getWarning(err){
-    let warning = this._inlineWarningDiv();
-    let thisWarning = _inlineWarning({"el":warning, "message":err})
-    return thisWarning;
-  }
-
-  hideWarning(warning){
-    return warning.remove();
-  }
-
-  _inlineWarning({
-    el = "",
-    message = ""
-  }){
-    //empty el
-    el.innerHTML = "";
-    let inlineL= document.createElement("span");
-    inlineL.setAttribute("class", "col-4");
-    inlineL.innerHTML = "&nbsp;"
-    el.appendChild(inlineL);
-
-    let inlineR= document.createElement("span");
-    inlineR.setAttribute("class", "col-8");
-    inlineR.innerHTML = message;
-    el.appendChild(inlineR);
-
-    return el.hidden = false;
-  }
-
-  _inlineWarningDiv(){
-    let inlineWarning = document.createElement("div");
-    inlineWarning.setAttribute("class", "text-red d-flex inline-warning");
-    inlineWarning.hidden = true;
-
-    return inlineWarning;
-  }
-
 
   _setAttributeDTypes(){
     this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];
@@ -442,11 +416,10 @@ class AttributesForm extends HTMLElement {
   }
 
   _getAttributeFormData(form){
+    // name only if changed || can not be "" 
     let name = form.querySelector('[name="name"]').value;
 
     let description = form.querySelector('[name="description"]').value;
-
-    let dtype = form.querySelector('[name="dtype"]').value;
 
     let order = Number(form.querySelector('[name="order"]').value);
 
@@ -459,33 +432,42 @@ class AttributesForm extends HTMLElement {
     let formData = {
       name,
       description,
-      dtype,
       order,
       required,
       visible
     };
 
-    let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
-    formData["default"] = _default;
+    // only send dtype when it's new, if included cannot be ""
+    let dtypeSelect = form.querySelector('[name="dtype"]');
+    let dtype = dtypeSelect.value;
+    if(dtype !== "" || dtype !== null) {
+      // Set dtype
+      formData.dtype = dtype;
 
-    if(dtype === "int" || dtype === "float"){
-      let minimum = Number(form.querySelector('[name="minimum"]').value);
-      formData["minimum"] = minimum;
+      // Fields that rely on dtype
+      let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
+      formData["default"] = _default;
 
-      let maximum = Number(form.querySelector('[name="maximum"]').value);
-      formData["maximum"] = maximum;
+      if(dtype === "int" || dtype === "float"){
+        let minimum = Number(form.querySelector('[name="minimum"]').value);
+        formData["minimum"] = minimum;
+  
+        let maximum = Number(form.querySelector('[name="maximum"]').value);
+        formData["maximum"] = maximum;
+      }
+  
+      if(dtype === "enum"){
+        let choicesInputs =  form.querySelectorAll('input[name="choices"]');
+        let choices = this.inputHelper._getArrayInputValue(choicesInputs);
+        formData["choices"] = choices;
+  
+        let labelsInputs =  form.querySelectorAll('input[name="labels"]');
+        let labels = this.inputHelper._getArrayInputValue(labelsInputs);
+        formData["labels"] = labels;
+      }
+
     }
-
-    if(dtype === "enum"){
-      let choicesInputs =  form.querySelectorAll('input[name="choices"]');
-      let choices = this.inputHelper._getArrayInputValue(choicesInputs);
-      formData["choices"] = choices;
-
-      let labelsInputs =  form.querySelectorAll('input[name="labels"]');
-      let labels = this.inputHelper._getArrayInputValue(labelsInputs);
-      formData["labels"] = labels;
-    }
-
+    
     console.log(formData);
     return formData;
   }
@@ -494,11 +476,11 @@ class AttributesForm extends HTMLElement {
 
   _makeDefaultCorrectType(dtype, _defaultVal){
     let _default = _defaultVal;
-    //@todo datetime and geopos
+    console.log(_defaultVal);
     try{
       if(dtype == "bool"){
         _default = Boolean(_defaultVal);
-      } else if (dtype == "int" || dtype == "float") {
+      } else if (dtype == "int" || dtype == "float" || dtype == "datetime" || dtype == "geopos") {
         _default = Number(_defaultVal);
       } else {
         _default = String(_defaultVal);
@@ -510,16 +492,12 @@ class AttributesForm extends HTMLElement {
     return _default;
   }
   _getAttributePromises({id = -1, entityType = null, attrForms = [], attrFormsChanged = []} = {}){
-    //let attrForms = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form`);
-    // let attrFormsChanged = this._shadow.querySelectorAll(`.item-group-${id} attributes-main .attribute-form.changed`);
     let attrPromises = {};
     attrPromises.promises = [];
     attrPromises.attrNamesNew = [];
     attrPromises.attrNames = [];
 
-    console.log(`${attrFormsChanged.length} out of ${attrForms.length} attributes changed`);
-
-    if(attrFormsChanged.length){
+    if(attrFormsChanged && attrFormsChanged.length > 0){
       attrFormsChanged.forEach((form, i) => {
         let global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
         let formData = {
@@ -529,8 +507,6 @@ class AttributesForm extends HTMLElement {
           "new_attribute_type": {}
         };
 
-        console.log("Old name: "+form.dataset.oldName);
-
         let attrNameNew = form.querySelector('input[name="name"]').value;
         attrPromises.attrNamesNew.push(attrNameNew);
 
@@ -538,16 +514,13 @@ class AttributesForm extends HTMLElement {
         attrPromises.attrNames.push(attrNameOld);
 
         formData.new_attribute_type = this._getAttributeFormData(form);
-
         form.classList.remove("changed");
 
         let currentPatch = this._fetchAttributePatchPromise(id, formData);
         attrPromises.promises.push(currentPatch);
+       
       });
       return attrPromises;
-    } else {
-      console.log(`No [attribute] promise array created.`);
-      return false;
     }
   }
 

@@ -63,16 +63,14 @@ var src_path="/static/js/annotator/";
 
 /// Support multiple off-screen videos at varying resolutions
 /// the intention is this class is used to store raw video
-/// frames as they are downloaded. There are two
-/// internal buffers the default ; and a seek buffer.
-/// The default can be filled linearly or
+/// frames as they are downloaded.
 class VideoBufferDemux
 {
   constructor()
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
-    this._numBuffers = 30;
+    this._numBuffers = 30; // Technically +1 to this value for onDemand
 
     this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
@@ -101,11 +99,11 @@ class VideoBufferDemux
       {
         console.info("Applying pending seek data.");
         var pending = this._pendingSeeks.shift();
-        this.appendSeekBuffer(pending.data, pending.time, pending.delete_range);
+        this.appendSeekBuffer(pending.data, pending.time);
       }
     };
 
-    for (var idx = 0; idx < this._numBuffers; idx++)
+    for (var idx = 0; idx <= this._numBuffers; idx++)
     {
       this._vidBuffers.push(document.createElement("VIDEO"));
       this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
@@ -113,6 +111,12 @@ class VideoBufferDemux
       this._sourceBuffers.push(null);
       this._full.push(false);
     }
+
+    // Create another video buffer specifically used for onDemand playback
+    this._onDemandBufferIndex = this._numBuffers;
+    this._pendingOnDemandDeletes = [];
+    this._waitPlayback = false;
+    this._waitId = null;
 
     this._init = false;
     this._dataLag = [];
@@ -122,12 +126,20 @@ class VideoBufferDemux
       let that = this;
       var makeSourceBuffer = function(idx, event)
       {
-        var args=this;
+        var args = this;
         var ms = args["ms"];
         var idx = args["idx"];
         ms.onsourceopen=null;
+
         // Need to add a source buffer for the video.
         that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
+
+        // Reached the onDemand buffer, rest of the function isn't associated with it
+        if (idx == that._numBuffers)
+        {
+          return;
+        }
+
         for (let idx = 0; idx < that._numBuffers; idx++)
         {
           if (that._sourceBuffers[idx] == null)
@@ -159,11 +171,16 @@ class VideoBufferDemux
           that._init = true;
         }
       }
-      for (var idx = 0; idx < this._numBuffers; idx++)
+
+      // This links the source element buffers with a paired video element and also
+      // a media source
+      //
+      // Note: +1 for onDemand buffer
+      for (var idx = 0; idx <= this._numBuffers; idx++)
       {
-        var ms=new MediaSource();
+        var ms = new MediaSource();
         this._mediaSources[idx] = ms;
-        this._vidBuffers[idx].src=URL.createObjectURL(this._mediaSources[idx]);
+        this._vidBuffers[idx].src = URL.createObjectURL(this._mediaSources[idx]);
         ms.onsourceopen=makeSourceBuffer.bind({"idx": idx, "ms": ms});
       }
     };
@@ -243,23 +260,60 @@ class VideoBufferDemux
     return null;
   }
 
-  forTime(time, direction)
+  /**
+   * Return the source buffer associated with the given frame / buffer type.
+   *
+   * @param {float} time - Seconds timestamp of frame request
+   * @param {string} buffer - "play" | "scrub"
+   * @param {Direction} direction - Forward or backward class
+   * @param {float} maxTime - Maximum number of seconds in the video
+   * @returns Video element based on the provided time. Returns null if the given time does not
+   *          match any of the video buffers.
+   */
+  forTime(time, buffer, direction, maxTime)
   {
-    if (this._compat)
+    // #TODO This needs to be revisited
+    //if (this._compat)
+    //{
+    //  return this._vidBuffers[0];
+    //}
+
+    if (buffer == "play")
     {
-      return this._vidBuffers[0];
-    }
-    for (var idx = this._activeBuffers-1; idx >= 0; idx--)
-    {
-      var ranges = this._vidBuffers[idx].buffered;
+      var ranges = this._vidBuffers[this._onDemandBufferIndex].buffered;
+
+      // Note: The way it's setup right now, there should only be a continuous range
+      //       But we'll keep the for loop for now.
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
-        var start=ranges.start(rangeIdx);
+        var start = ranges.start(rangeIdx);
         var end = ranges.end(rangeIdx);
-        if (time >= start &&
-            time <= end)
+
+        if (time >= start && time <= end)
         {
-          return this._vidBuffers[idx];
+          return this._vidBuffers[this._onDemandBufferIndex];
+        }
+      }
+
+      if (ranges.length > 0)
+      {
+        console.warn(`Playback buffer doesn't contain time (ranges/start/end/time) ${ranges.length} ${start} ${end} ${time}`);
+      }
+    }
+    else if (buffer == "scrub")
+    {
+      for (var idx = this._activeBuffers-1; idx >= 0; idx--)
+      {
+        var ranges = this._vidBuffers[idx].buffered;
+        for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
+        {
+          var start = ranges.start(rangeIdx);
+          var end = ranges.end(rangeIdx);
+          if (time >= start &&
+              time <= end)
+          {
+            return this._vidBuffers[idx];
+          }
         }
       }
     }
@@ -271,11 +325,12 @@ class VideoBufferDemux
   // The time buffer if in there
   returnSeekIfPresent(time, direction)
   {
-    let time_result= this.forTime(time, direction);
-    if (time_result)
-    {
-      return time_result;
-    }
+    //let time_result= this.forTime(time, "scrub");
+    //if (time_result)
+    //{
+    //  return time_result;
+    //}
+
     for (let idx = 0; idx < this._seekVideo.buffered.length; idx++)
     {
       // If the time is comfortably in the range don't bother getting
@@ -289,6 +344,81 @@ class VideoBufferDemux
     }
     return null;
   }
+
+  playBuffer()
+  {
+    return this._vidBuffers[this._onDemandBufferIndex];
+  }
+
+  /**
+   * Queues the requests to delete buffered onDemand video ranges
+   */
+  resetOnDemandBuffer()
+  {
+    const video = this.playBuffer();
+    this._pendingOnDemandDeletes = [];
+    for (var rangeIdx = 0; rangeIdx < video.buffered.length; rangeIdx++)
+    {
+      let start = video.buffered.start(rangeIdx);
+      let end = video.buffered.end(rangeIdx);
+      this.deletePendingOnDemand([start, end]);
+    }
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer has no data
+   */
+  isOnDemandBufferCleared()
+  {
+    const video = this.playBuffer();
+    return video.buffered.length == 0;
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer is busy
+   */
+  isOnDemandBufferBusy()
+  {
+    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
+    return buffer.updating;
+  }
+
+  /**
+   * If there are any pending deletes for the onDemand buffer, this will rotate through
+   * them and delete them
+   */
+  cleanOnDemandBuffer()
+  {
+    if (this._pendingOnDemandDeletes.length > 0)
+    {
+      var pending = this._pendingOnDemandDeletes.shift();
+      this.deletePendingOnDemand(pending.delete_range);
+    }
+  }
+
+  /**
+   * Removes the given range from the play buffer
+   * @param {tuple} delete_range - start/end (seconds)
+   */
+  deletePendingOnDemand(delete_range)
+  {
+    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
+    if (buffer.updating == false)
+    {
+      buffer.onupdateend = () => {
+        buffer.onupdatedend = null;
+        this.cleanOnDemandBuffer();
+      };
+
+      buffer.remove(delete_range[0], delete_range[1]);
+    }
+    else
+    {
+      this._pendingOnDemandDeletes.push(
+        {"delete_range": delete_range});
+    }
+  }
+
   seekBuffer()
   {
     return this._seekVideo;
@@ -319,6 +449,9 @@ class VideoBufferDemux
     }
   }
 
+  /**
+   * Set to compatibility mode
+   */
   compat(videoUrl)
   {
     this._vidBuffers[0].src=videoUrl;
@@ -326,14 +459,24 @@ class VideoBufferDemux
     this._compat = true;
   }
 
+  /**
+   * Pause each of the video elements
+   */
   pause()
   {
-    for (var idx = 0; idx < this._numBuffers; idx++)
+    // <= instead of < to include onDemand buffer
+    for (var idx = 0; idx <= this._numBuffers; idx++)
     {
       this._vidBuffers[idx].pause();
     }
   }
 
+  /**
+   * Used for initialization of the video object.
+   * @returns Promise that is resolved when the first video element is in the ready state or
+   *          data has been loaded. This promise is rejected if an error occurs
+   *          with the video element.
+   */
   loadedDataPromise(video)
   {
     var that = this;
@@ -374,17 +517,24 @@ class VideoBufferDemux
     return promise;
   }
 
-
+  /**
+   * If there are any pending deletes for the seek buffer, this will rotate through them
+   * and delete them
+   */
   cleanSeekBuffer()
   {
     if (this._pendingSeekDeletes.length > 0)
     {
       var pending = this._pendingSeekDeletes.shift();
-      this.deletePendingSeeks(pending.data, pending.time, pending.delete_range);
+      this.deletePendingSeeks(pending.delete_range);
     }
   }
 
-  deletePendingSeeks(data, time=undefined, delete_range=undefined)
+  /**
+   * Removes the given start/end time segment from the seek buffer
+   * @param {*} delete_range
+   */
+  deletePendingSeeks(delete_range=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
@@ -405,12 +555,10 @@ class VideoBufferDemux
     else
     {
       this._pendingSeekDeletes.push(
-        {'data': data,
-         'time': time,
-         'delete_range': delete_range});
+        {'delete_range': delete_range});
     }
   }
-  appendSeekBuffer(data, time=undefined, delete_range=undefined)
+  appendSeekBuffer(data, time=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
@@ -456,8 +604,7 @@ class VideoBufferDemux
     else
     {
       this._pendingSeeks.push({'data': data,
-                               'time': time,
-                               'delete_range': delete_range});
+                               'time': time});
     }
   }
 
@@ -487,11 +634,11 @@ class VideoBufferDemux
         if (newSize > (this._bufferSize *0.95) &&
             latest != (this._numBuffers - 1))
         {
-          this._updateBuffers([latest,latest+1],data,callback);
+          this._updateBuffers([latest,latest+1], data, callback, "scrub");
         }
         else
         {
-          this._updateBuffers([latest],data,callback);
+          this._updateBuffers([latest], data, callback, "scrub");
         }
       }
     }
@@ -502,11 +649,37 @@ class VideoBufferDemux
 
   }
 
-  _updateBuffers(buffersToUpdate, data, callback)
+  /**
+   * Appends the video data to the onDemand buffer.
+   * After the buffer has been updated, the callback routine will be called.
+   *
+   * @param {bytes} data - Video segment
+   * @param {function} callback - Callback executed once the buffer has been updated
+   */
+  appendOnDemandBuffer(data, callback)
   {
-    var semaphore = buffersToUpdate.length;
+    this._updateBuffers([this._onDemandBufferIndex], data, callback, "onDemand");
+  }
+
+  /**
+   *
+   * @param {array} buffersToUpdate - List of buffer indices to add data to
+   * @param {array} data - Array of video bytes to store
+   * @param {function} callback - Callback function
+   * @param {string} bufferType - "scrub" | "onDemand"
+   */
+  _updateBuffers(buffersToUpdate, data, callback, bufferType)
+  {
     var that = this;
-    this._activeBuffers=Math.max(...buffersToUpdate)+1;
+
+    if (bufferType == "scrub")
+    {
+      this._activeBuffers=Math.max(...buffersToUpdate)+1;
+    }
+
+    // Callback wrapper function used to help keep track of how many buffers
+    // have been updated.
+    var semaphore = buffersToUpdate.length;
     var wrapper=function()
     {
       that._sourceBuffers[this].onupdateend=null;
@@ -517,6 +690,8 @@ class VideoBufferDemux
       }
     };
 
+    // Place the provided frame data into each of the buffers if it's safe to do so.
+    // Once the all the buffers have been updated, perform the callback
     for (var idx = 0; idx < buffersToUpdate.length; idx++)
     {
       var bIdx = buffersToUpdate[idx];
@@ -527,7 +702,7 @@ class VideoBufferDemux
         updateStatus("Video Decode Error", "danger", -1);
         return;
       }
-      this.safeUpdate(this._sourceBuffers[bIdx],data).then(wrapper.bind(idx));
+      this.safeUpdate(this._sourceBuffers[bIdx],data).then(wrapper.bind(bIdx));
       this._inUse[bIdx] += data.byteLength;
     }
   }
@@ -545,7 +720,6 @@ class VideoBufferDemux
       setTimeout(callback, 0);
       return;
     }
-    console.info(`VIDEO: Updating all buffers with ${data.byteLength}`)
     var semaphore = this._numBuffers;
     var wrapper = function()
     {
@@ -788,10 +962,10 @@ class MotionComp {
     msg += "video FPS = " + videoFps + "\n";
     msg += "factor = " + factor + "\n";
     console.info(msg);
-    if (this._diagnosticMode == true)
-    {
-      Utilities.sendNotification(msg, true);
-    }
+    //if (this._diagnosticMode == true)
+    //{
+    //  Utilities.sendNotification(msg, true);
+    //}
   }
 
   /// Given an animation idx, return true if it is an update cycle
@@ -818,7 +992,7 @@ class MotionComp {
 
   safeMode()
   {
-    Utilities.sendNotification(`Entered safe mode on ${location.href}`);
+    //Utilities.sendNotification(`Entered safe mode on ${location.href}`);
     guiFPS = 15;
     this._safeMode = true;
   }
@@ -896,7 +1070,7 @@ class VideoCanvas extends AnnotationCanvas {
       msg += `\tVERSION = ${gl.getParameter(gl.VERSION)}\n`;
       msg += `\tUNMASKED VENDOR = ${gl.getParameter(debug.UNMASKED_VENDOR_WEBGL)}\n`;
       msg += `\tUNMASKED RENDERER = ${gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)}\n`;
-      Utilities.sendNotification(msg, true);
+      //Utilities.sendNotification(msg, true);
     }
   }
 
@@ -917,7 +1091,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   stopDownload()
   {
-    // If there is an existing download, kill it
+    // If there is an existing download worker, kill it
     if (this._dlWorker != null)
     {
       this._dlWorker.terminate();
@@ -946,7 +1120,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         console.info("Stopping download worker.");
       }
-      else if (type =="seek_result")
+      else if (type == "seek_result")
       {
         if (that._seekFrame != e.data["frame"])
         {
@@ -958,10 +1132,10 @@ class VideoCanvas extends AnnotationCanvas {
         let seek_time = performance.now() - that._seekStart;
         let seek_msg = `Seek time = ${seek_time} ms`;
         console.info(seek_msg);
-        if (that._diagnosticMode == true)
-        {
-          Utilities.sendNotification(seek_msg);
-        }
+        //if (that._diagnosticMode == true)
+        //{
+        //  Utilities.sendNotification(seek_msg);
+        //}
       }
       else if (type == "buffer")
       {
@@ -978,21 +1152,27 @@ class VideoCanvas extends AnnotationCanvas {
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
+
+        // Stores the downloaded data in the appropriate local buffer
         var appendBuffer=function(callback)
         {
           var offsets = e.data["offsets"];
-          if (idx <  offsets.length)
+          if (idx < offsets.length)
           {
             if (offsets[idx][2] == 'ftyp')
             {
+              // First part of the fragmented mp4 segment info. Need this and the subsequent
+              // "moov" atom to define the file information
               console.log(`Video init of: ${e.data["buf_idx"]}`);
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
               video_buffer.appendAllBuffers(data.slice(begin, end), callback);
+              video_buffer.appendOnDemandBuffer(data.slice(begin, end), () => {});
               idx+=2;
             }
             else
             {
+              // Rest of the fragmented mp4 segment info
               var begin=offsets[idx][0];
               var end=offsets[idx][0] + offsets[idx][1];
               video_buffer.appendLatestBuffer(data.slice(begin, end), callback);
@@ -1013,7 +1193,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           if (idx == offsets.length)
           {
-            if (e.data["buf_idx"] == that._play_idx)
+            if (e.data["buf_idx"] == that._scrub_idx)
             {
               that.dispatchEvent(new CustomEvent("bufferLoaded",
                                                 {composed: true,
@@ -1039,11 +1219,11 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "ready")
       {
-        if (e.data["buf_idx"] == that._play_idx)
+        if (e.data["buf_idx"] == that._scrub_idx)
         {
           that._startBias = e.data["startBias"];
           that._videoVersion = e.data["version"];
-          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._play_idx}`);
+          console.info(`Video has start bias of ${that._startBias} - buffer: ${that._scrub_idx}`);
           console.info("Setting hi performance mode");
           guiFPS = 60;
         }
@@ -1059,7 +1239,95 @@ class VideoCanvas extends AnnotationCanvas {
                                             detail: {"percent_complete":1.00}
                                            }));
       }
+      else if (type == "onDemandInit")
+      {
+        // Download worker's onDemand mode is ready
+        that._onDemandInit = true;
+      }
+      else if (type == "onDemandFinished")
+      {
+        //console.log("onDemand finished downloading. Reached end of video.");
+        that._onDemandFinished = true;
+      }
+      else if (type == "onDemand")
+      {
+        // Received the onDemand downloaded segments
+        var idx = 0;
+        var offsets = e.data["offsets"];
+        var data = e.data["buffer"];
+        var video_buffer = that._videoElement[e.data["buf_idx"]];
+        var error = video_buffer.error();
+        if (error)
+        {
+          updateStatus("Video decode error", "danger", "-1");
+          return;
+        }
+
+        // Function used to apply the frame data to the onDemand buffer
+        // Callback is called after the data has been applied
+        var appendBuffer = function(callback)
+        {
+          if (idx < offsets.length)
+          {
+            if (offsets[idx][2] == 'ftyp')
+            {
+              // First part of the fragmented mp4 segment info. Need this and the subsequent
+              // "moov" atom to define the file information
+              var begin = offsets[idx][0];
+              var end = offsets[idx+1][0] + offsets[idx+1][1];
+
+              // Note: There is only one buffer for the onDemand buffer, unlike the other
+              //       scrub buffers. So, we only need to initialize a single buffer
+              //       with this video information.
+              video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+              idx += 2;
+            }
+            else
+            {
+              // Rest of the video segment information (moof / mdat / mfra)
+              var begin = offsets[idx][0];
+              var end = offsets[idx][0] + offsets[idx][1];
+              video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+              idx++;
+            }
+          }
+        }
+
+        // Function called after frame data has been applied to the onDemand buffer
+        var afterUpdate = function(_)
+        {
+          var error = video_buffer.error();
+          if (error)
+          {
+            // Something catastrophic happened with the video.
+            console.error("Error " + error.code + "; details: " + error.message);
+            updateStatus("Video Decode Error", "danger", -1);
+            return;
+          }
+
+          if (idx == offsets.length && e.data["buf_idx"] == that._play_idx && that._onDemandInit)
+          {
+            // Done processing the downloaded segment.
+            // Watchdog will kick off the next segment to download.
+            that._onDemandPendingDownloads -= 1;
+            return;
+          }
+          else
+          {
+            // Haven't finished processing thd downloaded data. Move to the next segment
+            // in the downloaded block and append that to the buffer
+            setTimeout(function()
+                       {
+                         appendBuffer(afterUpdate);
+                       },0);
+          }
+        }
+
+        appendBuffer(afterUpdate);
+      }
     };
+
+    // Start downloading the scrub buffer
     this._dlWorker.postMessage({"type": "start",
                                 "media_files": streaming_files,
                                 "play_idx": this._play_idx,
@@ -1087,35 +1355,11 @@ class VideoCanvas extends AnnotationCanvas {
       return play_idx;
     };
 
-    let new_play_idx = find_closest(this._videoObject, quality);
-    if (new_play_idx == this._play_idx)
+    if (this._videoObject)
     {
-      console.info("Ignoring duplicate quality change");
-    }
-    else
-    {
-      console.info(`Changing quality to ${new_play_idx}`);
-
-      // Stop any existing download
-      this.dispatchEvent(new CustomEvent("bufferLoaded",
-                                               {composed: true,
-                                                detail: {"percent_complete":0.0}
-                                               }));
-      this.stopDownload();
-
-      // Reinitialize the buffers
+      let new_play_idx = find_closest(this._videoObject, quality);
       this._play_idx = new_play_idx;
-      this._videoElement = [];
-      let streaming_files = this._videoObject.media_files["streaming"];
-      for (let idx = 0; idx < streaming_files.length; idx++)
-      {
-        this._videoElement.push(new VideoBufferDemux());
-        this._videoElement[idx].named_idx = idx;
-      }
-      // Clear the buffer in case this is a hot-swap
-      this._draw.clear();
-      this.startDownload(streaming_files);
-
+      console.log("Setting 1x playback quality to: " + quality);
     }
   }
 
@@ -1150,14 +1394,14 @@ class VideoCanvas extends AnnotationCanvas {
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
 
-    let find_closest = (videoObject, resolution) => {
+    let find_closest = (videoObject, target_quality) => {
       let play_idx = -1;
       let max_delta = videoObject.height;
       let resolutions = videoObject.media_files["streaming"].length;
       for (let idx = 0; idx < resolutions; idx++)
       {
         let height = videoObject.media_files["streaming"][idx].resolution[0];
-        let delta = Math.abs(quality - height);
+        let delta = Math.abs(target_quality - height);
         if (delta < max_delta)
         {
           max_delta = delta;
@@ -1171,6 +1415,7 @@ class VideoCanvas extends AnnotationCanvas {
     let scrub_idx = -1;
     let hq_idx = -1;
     let streaming_files = null;
+    this._lastSeekFrame = -1;
     if (videoObject.media_files)
     {
       streaming_files = videoObject.media_files["streaming"];
@@ -1179,11 +1424,6 @@ class VideoCanvas extends AnnotationCanvas {
       scrub_idx = find_closest(videoObject, 320);
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
-      let host = `${window.location.protocol}//${window.location.host}`;
-      if (offsite_config.host)
-      {
-        host = offsite_config.host;
-      }
       if ('audio' in videoObject.media_files && !offsite_config.hasOwnProperty('host'))
       {
         let audio_def = videoObject.media_files['audio'][0];
@@ -1196,9 +1436,8 @@ class VideoCanvas extends AnnotationCanvas {
         });
       }
 
-      // The streaming files may not be in order, so find the one with the largest height and
-      // use that as the "worst" index
-      var worst_idx = 0;
+      // The streaming files may not be in order, find the largest resolution
+      hq_idx = 0;
       var largest_height = 0;
       for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
       {
@@ -1206,22 +1445,13 @@ class VideoCanvas extends AnnotationCanvas {
         if (height > largest_height)
         {
           largest_height = height;
-          worst_idx = idx;
+          hq_idx = idx;
         }
       }
-      hq_idx = worst_idx;
 
-      // Use worst-case dims
-      dims = [streaming_files[worst_idx].resolution[1],
-              streaming_files[worst_idx].resolution[0]];
-
-      for (var idx = 0; idx < streaming_files.length; idx++)
-      {
-        if (streaming_files[idx].host)
-        {
-          host = streaming_files[idx].host;
-        }
-      }
+      // Use the largest resolution to set the viewport
+      dims = [streaming_files[hq_idx].resolution[1],
+              streaming_files[hq_idx].resolution[0]];
     }
     // Handle cases when there are no streaming files in the set
     if (play_idx == -1)
@@ -1250,18 +1480,18 @@ class VideoCanvas extends AnnotationCanvas {
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
 
-
     console.info(`Video dimensions = ${dims}`);
-    var that = this;
+
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
     this._fps=fps;
     this._numFrames=numFrames;
+    this._numSeconds=fps*numFrames;
     this._dims=dims;
     this.resetRoi();
 
     this.stopDownload();
-    var promise = this._videoElement[this._play_idx].loadedDataPromise(this);
+    var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
     this.startDownload(streaming_files, offsite_config);
     if (fps > guiFPS)
@@ -1277,13 +1507,19 @@ class VideoCanvas extends AnnotationCanvas {
     }
 
     // Set up slider max + scrub thresholds
-    //this._slider.slider("option", "max", numFrames);
     this.scrubThreshold = Math.max(25,numFrames/200);
     this._draw.resizeViewport(dims[0], dims[1]);
     if (resizeHandler)
     {
       this.setupResizeHandler(dims, numGridRows, heightPadObject);
     }
+
+    // #debug
+    // Display the video qualities used for each of the buffers
+    console.log(`--- Quality on scrub ${streaming_files[this._scrub_idx].resolution[0]}`)
+    console.log(`--- Quality on play ${streaming_files[this._play_idx].resolution[0]}`)
+    console.log(`--- Quality on pause ${streaming_files[this._hq_idx].resolution[0]}`)
+
     // On load seek to frame 0
     return promise;
   }
@@ -1342,8 +1578,16 @@ class VideoCanvas extends AnnotationCanvas {
                                height);
   }
 
-  /// Only call this function from the context of an animation frame
-  /// Only call this function if the drawing context can play.
+  /**
+   * Emits the latest image in the off-screen buffer
+   *
+   * Only call this function from the context of an animation frame
+   * Only call this function if the drawing context can play.
+   *
+   * @param {boolean} hold - Defaults to false. #TODO fill in with more information
+   * @emits frameChange Emitted with frame info
+   * @emits playbackEnded Only emitted if we've reached either end of the video
+   */
   displayLatest(hold)
   {
     this._fpsDiag++;
@@ -1360,7 +1604,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       ended = true;
     }
-    else if (this._direction == Direction.BACKARDS &&
+    else if (this._direction == Direction.BACKWARDS &&
              this._dispFrame <= 0)
     {
       ended = true;
@@ -1374,7 +1618,14 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  // Push a given frame into the drawGL buffer
+  /**
+   * Pushes the frame stored in the given source into the drawGL buffer
+   *
+   * @param {integer} frameIdx - Frame number
+   * @param {array} source - Array of bytes representing the frame image
+   * @param {float} width - Width of image
+   * @param {float} height - Height of image
+   */
   pushFrame(frameIdx, source, width, height)
   {
     var cWidth=this._canvas.width;
@@ -1402,8 +1653,14 @@ class VideoCanvas extends AnnotationCanvas {
     this._dirty=false;
   }
 
-  /// Returns the raw HTML5 buffer for a given frame (default current)
-  videoBuffer(frame, forceSeekBuffer)
+  /**
+   * Get the video element associated with the given buffer type and frame number
+   *
+   * @param {integer} frame - Target frame number
+   * @param {string} bufferType - "scrub" | "play" | "seek"
+   * @returns {video HTMLelement}
+   */
+  videoBuffer(frame, bufferType)
   {
     if (frame == undefined)
     {
@@ -1423,13 +1680,17 @@ class VideoCanvas extends AnnotationCanvas {
       }
     }
 
-    if (forceSeekBuffer)
+    if (bufferType == "seek")
     {
       return this._videoElement[this._hq_idx].returnSeekIfPresent(time, direction);
     }
+    else if (bufferType == "play")
+    {
+      return this._videoElement[this._play_idx].forTime(time, bufferType, direction, this._numSeconds);
+    }
     else
     {
-      return this._videoElement[this._play_idx].forTime(time, direction);
+      return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
     }
   }
 
@@ -1443,17 +1704,41 @@ class VideoCanvas extends AnnotationCanvas {
     return this._startBias + ((1/this._fps)*frame);
   }
 
-  /// Seeks to a specific frame of playback and calls callback when done
-  /// with the signature of (data, width, height)
+  /**
+   * Seeks to a specific frame of playback
+   *
+   * This is used for both jumping to a particular frame and for scrubbing as well.
+   * If scrubbing (which involves jumping frames very quickly), then the forceSeekBuffer
+   * should not be used.
+   *
+   * @param {integer} frame - Frame number to jump to
+   * @param {function} callback - Callback to execute when the frame has been updated.
+   *                              Expected callback signature -> data, width, height
+   * @param {bool} forceSeekBuffer - True if the high quality, single fetch should be used.
+   *                                 False if the downloaded scrub buffer should be used.
+   */
   seekFrame(frame, callback, forceSeekBuffer)
   {
     var that = this;
-    var time=this.frameToTime(frame);
+    var time = this.frameToTime(frame);
     var audio_time = this.frameToAudioTime(frame);
-    var video=this.videoBuffer(frame, forceSeekBuffer);
     var downloadSeekFrame = false;
+    var createTimeout = false;
 
-    // Only support seeking if we are stopped (i.e. not playing)
+    var bufferType = "scrub";
+    if (forceSeekBuffer)
+    {
+      bufferType = "seek";
+    }
+    else if (this._onDemandInit)
+    {
+      bufferType = "play";
+    }
+    //console.log(`seekFrame: ${frame} ${bufferType}`)
+    var video = this.videoBuffer(frame, bufferType);
+
+    // Only support seeking if we are stopped (i.e. not playing) and we are not
+    // attempting to seek to another frame
     if (video == null && this._direction == Direction.STOPPED)
     {
       // Set the seek buffer, and command worker to get the seek
@@ -1474,24 +1759,24 @@ class VideoCanvas extends AnnotationCanvas {
       // Use the frame as a cookie to keep track of duplicated
       // seek operations
       this._seekFrame = frame;
-      downloadSeekFrame = true;
 
-      if (this._seek_expire)
+      if (this._lastSeekFrame != this._seekFrame)
       {
-        clearTimeout(this._seek_expire);
+        downloadSeekFrame = true;
       }
-      this._seek_expire = setTimeout(() => {
-        this._seekFrame = -1;
-        this._seek_expire = null;
-        document.body.style.cursor = null;
-        console.warn("Network Seek expired");
-        this.refresh(false);
-      },2500);
+
+      clearTimeout(this._seek_expire);
+      createTimeout = true;
     }
     else if (video == null)
     {
-      console.warn("Video is not loaded yet.");
-      return new Promise((f,r)=>{});
+      return new Promise(
+        function(resolve,reject)
+        {
+          callback = callback.bind(that);
+          callback(frame, video, that._dims[0], that._dims[1]);
+          resolve();
+        });
     }
 
     var promise = new Promise(
@@ -1529,6 +1814,19 @@ class VideoCanvas extends AnnotationCanvas {
           that._videoElement[that._hq_idx].cleanSeekBuffer();
         };
 
+        if (createTimeout)
+        {
+          that._seek_expire = setTimeout(() => {
+            that._lastSeekFrame = that._seekFrame;
+            that._seekFrame = -1;
+            that._seek_expire = null;
+            document.body.style.cursor = null;
+            console.warn("Network Seek expired");
+            that.refresh(false);
+            reject();
+          }, 3000);
+        }
+
         if (downloadSeekFrame)
         {
           that._dlWorker.postMessage(
@@ -1541,22 +1839,30 @@ class VideoCanvas extends AnnotationCanvas {
 
     if (time <= video.duration || isNaN(video.duration))
     {
-      video.currentTime=time;
+      video.currentTime = time;
     }
     else if (time > video.duration)
     {
       var end = video.duration;
       time = end;
       frame = end*this._fps;
-      video.currentTime=end;
+      video.currentTime = end;
     }
     else
     {
       time = 0;
-      frame=0;
-      video.currentTime=0;
+      frame = 0;
+      video.currentTime = 0;
     }
     return promise;
+  }
+
+  /**
+   * Note: Once in safe mode, there's no mechanism to get out of it.
+   */
+  safeMode()
+  {
+    this._motionComp.safeMode();
   }
 
   ////////////////////////////////
@@ -1578,11 +1884,16 @@ class VideoCanvas extends AnnotationCanvas {
   processRateChange(event)
   {
     this._playbackRate=this._controls.rateControl.val();
-    console.log("set rate to: " + this._playbackRate);
+    console.log("Set playback rate to: " + this._playbackRate);
     return false;
   }
 
-  // Goto a given frame; optionally force usage of seek buffer
+  /**
+   * Only attempt to seek to a frame if the player is paused
+   *
+   * @param {integer} frameIdx - Frame number to go to
+   * @param {boolean} forceSeekBuffer - True if use high quality fetch, false uses scrub buffer
+   */
   gotoFrame(frameIdx, forceSeekBuffer)
   {
     if (this._direction != Direction.STOPPED)
@@ -1590,12 +1901,19 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
-    var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
-    promise.then(()=>
-                 {this._pauseCb.forEach(cb => {cb(frameIdx);});
-                 }
-                );
-    return promise;
+    var finalPromise = new Promise((resolve, reject) => {
+      var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
+      promise.then(() =>
+        {
+          this._pauseCb.forEach(cb => {cb(frameIdx);
+          resolve();
+        });
+      }).catch(error =>
+        {
+          resolve();
+        });
+    });
+    return finalPromise;
   }
 
   captureFrame(localizations,frame)
@@ -1609,10 +1927,11 @@ class VideoCanvas extends AnnotationCanvas {
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
-  _playGeneric(direction)
+
+  _playGenericScrub(direction)
   {
     var that = this;
-    console.log("Setting direction " + direction);
+    console.log("Setting playback direction " + direction);
     this._direction=direction;
 
     // Reset the GPU buffer on a new play action
@@ -1783,10 +2102,10 @@ class VideoCanvas extends AnnotationCanvas {
         that._fpsDiag=0;
         that._fpsLoadDiag=0;
 
-        if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
-        {
-          Utilities.sendNotification(fps_msg);
-        }
+        //if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+        //{
+        //  Utilities.sendNotification(fps_msg);
+        //}
         that._networkUpdate += 1;
 
         if (that._fpsScore)
@@ -1822,6 +2141,451 @@ class VideoCanvas extends AnnotationCanvas {
     this._loaderTimeout=setTimeout(loader, 0);
   }
 
+  /**
+   * Start the video onDemand playback
+   *
+   * Launches the following threads:
+   * - player thread
+   * - loader thread
+   * - diagnostics/audiosync thread
+   *
+   * @param {Direction} direction Forward or backward playback
+   */
+  _playGenericOnDemand(direction)
+  {
+    var that = this;
+    console.log("Setting direction " + direction);
+    this._direction=direction;
+
+    // Reset the GPU buffer on a new play action
+    this._draw.clear();
+
+    // Reset perioidc health check in motion comp
+    this._motionComp.clearTimesVector();
+
+    /// This is the notional scheduled diagnostic interval
+    var schedDiagInterval=2000.0;
+
+    // set the current frame based on what is displayed
+    var currentFrame=this._dispFrame;
+
+    this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    let fpsInterval = 1000.0 / (this._fps);
+    let frameIncrement = this._motionComp.frameIncrement(this._fps,this._playbackRate);
+    // This is the time to wait to start playing when the buffer is dead empty.
+    // 2 frame intervals gives the buffer to fill up a bit to have smooth playback
+    // This may end up being a tuneable thing, or we may want to calculate it
+    // more intelligently.
+    var bufferWaitTime=fpsInterval*4;
+
+    var lastTime=performance.now();
+    var animationIdx = 0;
+    this._playing = false;
+
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    var audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
+    // Video player thread
+    // This schedules the browser to update with the latest image and audio
+    var player=function(domtime){
+
+      // Start the FPS monitor once we start playing
+      if (that._diagTimeout == null)
+      {
+        that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+      }
+
+      that._motionComp.periodicRateCheck(domtime);
+      let increment = that._motionComp.animationIncrement(domtime, lastTime);
+      if (increment > 0)
+      {
+        lastTime=domtime;
+        // Based on how many clocks happened we may actually
+        // have to update late
+        for (let tempIdx = increment; tempIdx > 0; tempIdx--)
+        {
+          if (that._motionComp.timeToUpdate(animationIdx+increment))
+          {
+            that.displayLatest();
+            if (audioEligible && that._audioPlayer.paused)
+            {
+              that._audioPlayer.play();
+            }
+            break;
+          }
+        }
+        animationIdx = animationIdx + increment;
+      }
+
+      if (that._draw.canPlay())
+      {
+        // Ready to update the video.
+        // Request browser to call player function to update an animation before the next repaint
+        that._playerTimeout = window.requestAnimationFrame(player);
+      }
+      else
+      {
+        // Done playing, clear playback.
+        if (audioEligible && that._audioPlayer.paused)
+        {
+          that._audioPlayer.pause();
+        }
+        that._motionComp.clearTimesVector();
+        that._playerTimeout = null;
+      }
+    };
+
+    // Loader thread that seeks to the current frame and continually kicks off seeking
+    // to the next frame.
+    //
+    // This also kicks off the video player thread
+    var loader=function(){
+
+      // If the draw buffer is full try again in the load interval
+      if (that._draw.canLoad() == false)
+      {
+        that._loaderTimeout = setTimeout(loader, bufferWaitTime);
+        return;
+      }
+
+      frameIncrement = that._motionComp.frameIncrement(that._fps, that._playbackRate);
+      var nextFrame = currentFrame + (direction * frameIncrement);
+
+      // Callback function that pushes the given frame/image to the drawGL buffer
+      // and then schedules the next frame to be loaded
+      var pushAndGoToNextFrame=function(frameIdx, source, width, height)
+      {
+        if (source == null)
+        {
+          // Video isn't ready yet, wait and try again
+          that._loaderTimeout = setTimeout(loader, 250);
+        }
+        else
+        {
+          // Normal playback
+          that._fpsLoadDiag++;
+          that.pushFrame(frameIdx, source, width, height);
+          that._playing = true;
+
+          // If the next frame is loadable and we didn't get paused set a timer, else exit
+          if (nextFrame >= 0 && nextFrame < that._numFrames && that._direction != Direction.STOPPED)
+          {
+            // Update the next frame to display and recurse back at twice the framerate
+            currentFrame = nextFrame;
+            that._loaderTimeout = setTimeout(loader, 0);
+          }
+          else
+          {
+            that._loaderTimeout = null;
+          }
+        }
+      }
+
+      // Seek to the current frame and call our atomic callback
+      that.seekFrame(currentFrame, pushAndGoToNextFrame);
+
+      // Kick off the player thread
+      if (that._playerTimeout == null && that._draw.canPlay())
+      {
+        that._playerTimeout = setTimeout(player, bufferWaitTime);
+      }
+    };
+
+    // Diagnostics and audio readjust thread
+    this._fpsDiag = 0;
+    this._fpsLoadDiag = 0;
+    this._fpsScore = 3;
+    this._networkUpdate = 0;
+    this._audioCheck = 0;
+
+    var diagRoutine=function(last)
+    {
+      const AUDIO_CHECK_INTERVAL = 1; // This could be tweaked if we are too CPU intensive
+      var diagInterval = Date.now()-last;
+      var calculatedFPS = (that._fpsDiag / diagInterval)*1000.0;
+      var loadFPS = ((that._fpsLoadDiag / diagInterval)*1000.0);
+      var targetFPS = that._motionComp.targetFPS;
+      let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
+      that._audioCheck++;
+      if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+      {
+        // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
+        const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
+        const correction = 1.0 + (audioDelta/2000);
+        const swag = Math.max(0.99,Math.min(1.01,correction));
+        that._audioPlayer.playbackRate = (swag) * that._playbackRate;
+
+        fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
+        if (Math.abs(audioDelta) >= 100)
+        {
+          console.info("Readjusting audio time");
+          const audio_increment = 1+that._motionComp.frameIncrement(that._fps,that._playbackRate);
+          that._audioPlayer.currentTime = that.frameToAudioTime(that._dispFrame+audio_increment);
+        }
+      }
+      console.info(fps_msg);
+      that._fpsDiag=0;
+      that._fpsLoadDiag=0;
+
+      //if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
+      //{
+      //  Utilities.sendNotification(fps_msg);
+      //}
+      that._networkUpdate += 1;
+
+      if (that._fpsScore)
+      {
+        var healthyFPS = targetFPS * 0.90;
+        if (calculatedFPS < healthyFPS)
+        {
+          that._fpsScore--;
+        }
+        else
+        {
+          that._fpsScore = Math.min(that._fpsScore + 1,7);
+        }
+
+        if (that._fpsScore == 0)
+        {
+          console.warn("Detected slow performance, entering safe mode.");
+
+          that.dispatchEvent(new Event("safeMode"));
+          that._motionComp.safeMode();
+          that.rateChange(that._playbackRate);
+        }
+      }
+
+      if (that._direction!=Direction.STOPPED)
+      {
+        that._diagTimeout = setTimeout(diagRoutine, schedDiagInterval, Date.now());
+      }
+    };
+
+    // Set the onDemand watchdog download thread
+    // This will request to download segments if needed
+    this._onDemandInit = false;
+    this._onDemandInitSent = false;
+    this._onDemandPlaybackReady = false;
+    this._onDemandFinished = false;
+    this._loaderStarted = false;
+    this._sentPlaybackReady = false;
+    var onDemandDownload = function (_)
+    {
+      const video = that._videoElement[that._play_idx];
+      const ranges = video.playBuffer().buffered;
+
+      var downloadDirection;
+      if (direction == Direction.FORWARD)
+      {
+        downloadDirection = "forward";
+      }
+      else
+      {
+        downloadDirection = "backward";
+      }
+
+      if (!that._onDemandInit)
+      {
+        if (!that._onDemandInitSent)
+        {
+          // Have not initialized yet.
+          // Send out the onDemandInit only if the buffer is clear. Otherwise, reset the
+          // underlying source buffer.
+          if (ranges.length == 0 && !video.isOnDemandBufferBusy())
+          {
+            that._onDemandPendingDownloads = 0;
+            //console.log("Sending onDemandInit to downloader")
+            that._onDemandInitSent = true;
+            that._dlWorker.postMessage(
+              {
+                "type": "onDemandInit",
+                "frame": currentFrame,
+                "direction": downloadDirection,
+                "mediaFileIndex": that._play_idx
+              }
+            );
+          }
+          else
+          {
+            if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
+            {
+              //console.log("Resetting onDemand buffer")
+              video.resetOnDemandBuffer();
+            }
+          }
+        }
+      }
+      else
+      {
+        // Stop if we've reached the end
+        if (direction == Direction.FORWARD)
+        {
+          if (that._numFrames == that._dispFrame)
+          {
+            return;
+          }
+        }
+        else
+        {
+          if (that._dispFrame == 0)
+          {
+            return;
+          }
+        }
+
+        // Look at how much time is stored in the buffer and where we currently are.
+        // If we are within X seconds of the end of the buffer, drop the frames before
+        // the current one and start downloading again.
+        //console.log(`Pending onDemand downloads: ${that._onDemandPendingDownloads}`);
+
+        var needMoreData = false;
+        if (ranges.length == 0 && that._onDemandPendingDownloads < 1)
+        {
+          // No data in the buffer, big surprise - need more data.
+          needMoreData = true;
+        }
+        else
+        {
+          const currentTime = that.frameToTime(that._dispFrame);
+          const appendThreshold = 10; // Worth revisiting to make this configurable
+
+          // Adjust the playback threshold if we're close to the edge of the video
+          var playbackReadyThreshold = 5; // Seconds
+          const totalVideoTime = that.frameToTime(that._numFrames);
+          if (direction == Direction.FORWARD &&
+            (totalVideoTime - currentTime < playbackReadyThreshold))
+          {
+            playbackReadyThreshold = 0;
+          }
+          else if (direction == Direction.BACKWARDS &&
+              (currentTime < playbackReadyThreshold))
+          {
+            playbackReadyThreshold = 0;
+          }
+
+          for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
+          {
+            var end = ranges.end(rangeIdx);
+            var start = ranges.start(rangeIdx);
+
+            if (direction == Direction.FORWARD)
+            {
+              var timeToEnd = end - currentTime;
+            }
+            else
+            {
+              var timeToEnd = currentTime - start;
+            }
+
+            if (currentTime <= end && currentTime >= start)
+            {
+              if (timeToEnd > playbackReadyThreshold)
+              {
+                if (that._waitPlayback)
+                {
+                  if (!that._sentPlaybackReady)
+                  {
+                    if (video.playBuffer().readyState > 0)
+                    {
+                      that._sentPlaybackReady = true;
+                      that.dispatchEvent(new CustomEvent(
+                        "playbackReady",
+                        {
+                          composed: true,
+                          detail: {playbackReadyId: that._waitId},
+                        }));
+                    }
+                  }
+                }
+                else
+                {
+                  // Enough data to start playback
+                  that._onDemandPlaybackReady = true;
+                }
+              }
+
+              if (timeToEnd < appendThreshold && that._onDemandPendingDownloads < 1)
+              {
+                // Need to download more video playback data
+                // Since we are requesting more data, trim the buffer
+                needMoreData = true;
+
+                if (direction == Direction.FORWARD)
+                {
+                  var trimEnd = currentTime - 2;
+                  if (trimEnd > start && that._playing)
+                  {
+                    //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                    video.deletePendingOnDemand([start, trimEnd]);
+                  }
+                }
+                else
+                {
+                  var trimEnd = currentTime + 2;
+                  if (trimEnd < end && that._playing)
+                  {
+                    //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                    video.deletePendingOnDemand([trimEnd, end]);
+                  }
+                }
+              }
+            }
+            else
+            {
+              //console.warn("Video playback buffer range not overlapping currentTime");
+            }
+
+            //console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
+          }
+        }
+
+        if (needMoreData && !that._onDemandFinished)
+        {
+          // Kick of the download worker to get the next onDemand segments
+          //console.log("Requesting more onDemand data");
+          that._onDemandPendingDownloads += 1;
+          that._dlWorker.postMessage({"type": "onDemandDownload"});
+        }
+
+        // Clear out unecessary parts of the video if there are pending deletes
+        video.cleanOnDemandBuffer();
+
+        // Kick off the loader thread once we have buffered enough data (do this just once)
+        if (that._onDemandPlaybackReady && !that._loaderStarted)
+        {
+          that._loaderStarted = true;
+          that._loaderTimeout = setTimeout(loader, 250);
+        }
+      }
+
+      if (!that._onDemandFinished)
+      {
+        // Sleep for a period before checking the onDemand buffer again
+        // This period is quicker when we have not begun playback
+        if (!that._onDemandPlaybackReady)
+        {
+          that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 100);
+        }
+        else
+        {
+          that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 250);
+        }
+      }
+    }
+
+    // Kick off the onDemand thread immediately
+    this._onDemandDownloadTimeout = setTimeout(onDemandDownload, 0);
+  }
+
   // Return whether the video is paused/stopped
   isPaused()
   {
@@ -1838,6 +2602,36 @@ class VideoCanvas extends AnnotationCanvas {
     this._pauseCb.push(cb);
   }
 
+  /**
+   * @param {boolean} waitStatus - True if playback should wait until this is set to false.
+   *                               False, playback immediately
+   * @param {integer} waitId - Unique ID associated with this wait used for synchronization purposes
+   */
+  waitPlayback(waitStatus, waitId)
+  {
+    this._waitPlayback = waitStatus;
+    this._waitId = waitId;
+  }
+
+  /**
+   * @param {float} rate - Playback rate
+   * @param {integer} frame - Frame number to start playing at
+   * @returns {boolean} True if video can play with the given parameters. False otherwise.
+   */
+  canPlayRate(rate, frame)
+  {
+    // If the rate is 1.0 or less, we will use the onDemand buffer so we're good to go.
+    if (rate <= 1.0)
+    {
+      return true;
+    }
+
+    // Rate is higher than 1.0, we need to check if we've buffered enough data in
+    // the scrub buffer.
+    const video = this.videoBuffer(frame, "scrub");
+    return video != null;
+  }
+
   play()
   {
     if (this._dispFrame >= (this._numFrames - 1))
@@ -1847,7 +2641,14 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      this._playGeneric(Direction.FORWARD);
+      if (this._playbackRate > 1.0)
+      {
+        this._playGenericScrub(Direction.FORWARD);
+      }
+      else
+      {
+        this._playGenericOnDemand(Direction.FORWARD);
+      }
       return true;
     }
   }
@@ -1861,12 +2662,22 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      this._playGeneric(Direction.BACKWARDS);
+      if (this._playbackRate > 1.0)
+      {
+        this._playGenericScrub(Direction.BACKWARDS);
+      }
+      else
+      {
+        this._playGenericOnDemand(Direction.BACKWARDS);
+      }
       return true;
     }
   }
 
-  // If running will clear player context
+  /**
+   * Stops the threads that are kicked off when playing
+   * Seek frame and scrub buffer downloading will resume.
+   */
   stopPlayerThread()
   {
     if (this._audioPlayer)
@@ -1884,19 +2695,31 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._loaderTimeout);
       this._loaderTimeout=null;
     }
-
     if (this._diagTimeout)
     {
       clearTimeout(this._diagTimeout);
       this._diagTimeout=null;
     }
+    if (this._onDemandDownloadTimeout)
+    {
+      clearTimeout(this._onDemandDownloadTimeout);
+      this._onDemandDownloadTimeout=null;
+      this._dlWorker.postMessage({"type": "onDemandShutdown"});
+    }
+
+    this._onDemandInit = false;
     this._direction = Direction.STOPPED;
   }
 
+  /**
+   * This will stop all the player threads and set the video player to paused
+   * A redraw of the currently displayed frame will occur using the highest quality source
+   */
   pause()
   {
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
+
     // Stop the player thread first
     this.stopPlayerThread();
 
@@ -1909,10 +2732,21 @@ class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._play_idx].pause();
 
       // force a redraw at the currently displayed frame
-      return this.seekFrame(this._dispFrame, this.drawFrame, true);
+      var finalPromise = new Promise((resolve, reject) => {
+        var seekPromise = this.seekFrame(this._dispFrame, this.drawFrame, true);
+        seekPromise.then(() => {
+          resolve();
+        }).catch(() => {
+          resolve();
+        });
+      });
+      return finalPromise;
     }
   }
 
+  /**
+   * Move a single frame backward, forcing a fetch from the highest quality source
+   */
   back()
   {
     var newFrame=this._dispFrame-1;
@@ -1922,6 +2756,9 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  /**
+   * Move a single frame forward, forcing a fetch from the highest quality source
+   */
   advance()
   {
     var newFrame=this._dispFrame+1;

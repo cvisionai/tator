@@ -3,7 +3,7 @@ class AnnotationPage extends TatorPage {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", "/static/images/loading.svg");
+    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._shadow.appendChild(this._loading);
     this._versionLookup = {};
 
@@ -60,7 +60,7 @@ class AnnotationPage extends TatorPage {
     });
 
     window.addEventListener("error", (evt) => {
-      this._shadow.removeChild(this._loading);
+      this._loading.style.display = "none";
       window.alert("System error detected");
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
@@ -102,6 +102,7 @@ class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         this._settings.setAttribute("media-id", newValue);
+        const searchParams = new URLSearchParams(window.location.search);
         fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
@@ -119,7 +120,7 @@ class AnnotationPage extends TatorPage {
                !('layout' in data.media_files) &&
                !('image' in data.media_files)))
           {
-            this._shadow.removeChild(this._loading);
+            this._loading.style.display = "none";
             Utilities.sendNotification(`Unplayable file ${data.id}`);
             window.alert("Video can not be played. Please contact the system administrator.")
             return;
@@ -208,6 +209,29 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
+
+              // Set the quality control based on the prime video
+              fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+                }
+              })
+              .then(response => response.json())
+              .then(primeMediaData => {
+                this._settings.mediaInfo = primeMediaData;
+                var playbackQuality = data.media_files.quality;
+                if (searchParams.has("quality"))
+                {
+                  playbackQuality = Number(searchParams.get("quality"));
+                }
+                this._settings.quality = playbackQuality;
+                this._player.setQuality(playbackQuality);
+              });
+
             } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
@@ -226,7 +250,6 @@ class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             this.enableEditing(true);
           });
-          const searchParams = new URLSearchParams(window.location.search);
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after", data.name);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
@@ -342,7 +365,7 @@ class AnnotationPage extends TatorPage {
       if (this._dataInitialized && this._canvasInitialized) {
         try
         {
-          this._shadow.removeChild(this._loading);
+          this._loading.style.display = "none";
           this.removeAttribute("has-open-modal");
           window.dispatchEvent(new Event("resize"));
         }
@@ -368,6 +391,25 @@ class AnnotationPage extends TatorPage {
     // only during a network operation
     canvas.addEventListener("temporarilyMaskEdits", maskEdits);
     this._undo.addEventListener("temporarilyMaskEdits", maskEdits);
+
+
+    canvas.addEventListener("displayLoading", () => {
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.setAttribute("has-open-modal", "");
+    });
+    canvas.addEventListener("hideLoading", () => {
+      // #TODO Revisit. has-open-modal is too aggressive
+      //this.removeAttribute("has-open-modal");
+    });
+
+    canvas.addEventListener("playing", () => {
+      this._settings.disableRateChange();
+      this._settings.disableQualityChange();
+    });
+    canvas.addEventListener("paused", () => {
+      this._settings.enableRateChange();
+      this._settings.enableQualityChange();
+    });
 
     canvas.addEventListener("canvasReady", () => {
       this._canvasInitialized = true;
@@ -915,7 +957,7 @@ class AnnotationPage extends TatorPage {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon("Track extension done.");
-          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+          canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
         }
       });
     });
@@ -1005,7 +1047,7 @@ class AnnotationPage extends TatorPage {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
           Utilities.showSuccessIcon("Track extension done.");
-          canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+          canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
         });
       }
       else if (evt.detail.algorithm == "Auto") {
@@ -1054,7 +1096,7 @@ class AnnotationPage extends TatorPage {
             this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
             this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
             Utilities.showSuccessIcon("Track extension done.");
-            canvas.selectTrack(evt.detail.trackId, evt.detail.localization.frame);
+            canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
           }
         });
       }
@@ -1085,7 +1127,7 @@ class AnnotationPage extends TatorPage {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Track trimming done.");
-        canvas.selectTrack(evt.detail.trackId, evt.detail.frame);
+        canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.frame);
       });
     });
 
@@ -1109,7 +1151,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Detection added to track.");
-        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
+        canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
       });
     });
 
@@ -1134,7 +1176,7 @@ class AnnotationPage extends TatorPage {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Track merged.", this._successColor);
-        canvas.selectTrack(evt.detail.mainTrackId, evt.detail.frame);
+        canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
       });
     });
 

@@ -12,6 +12,9 @@
 - mountPath: /media
   name: main-pv-claim
   subPath: media
+- mountPath: /backup
+  name: main-pv-claim
+  subPath: backup
 {{- if .Values.remoteTranscodes.enabled }}
 - mountPath: /remote_transcodes
   name: remote-transcode-cert

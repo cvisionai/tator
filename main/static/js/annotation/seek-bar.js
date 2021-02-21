@@ -2,7 +2,7 @@ class SeekBar extends TatorElement {
   constructor() {
     super();
     this.bar = document.createElement("div");
-    this.bar.setAttribute("class", "range-div");
+    this.bar.setAttribute("class", "range-div select-pointer");
     this._shadow.appendChild(this.bar);
 
     this.handle = document.createElement("div");

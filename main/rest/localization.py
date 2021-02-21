@@ -259,11 +259,7 @@ class LocalizationListAPI(BaseListView):
     def _put(self, params):
         """ Retrieve list of localizations by ID.
         """
-        response_data = []
-        ids = params['body']
-        if len(ids) > 0:
-            response_data = database_query_ids('main_localization', ids, 'id')
-        return response_data
+        return self._get(params)
 
 class LocalizationDetailAPI(BaseDetailView):
     """ Interact with single localization.
