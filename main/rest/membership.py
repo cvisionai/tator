@@ -3,6 +3,7 @@ from django.db import transaction
 from ..models import Membership
 from ..models import Project
 from ..models import User
+from ..models import Version
 from ..serializers import MembershipSerializer
 from ..schema import MembershipListSchema
 from ..schema import MembershipDetailSchema
@@ -33,6 +34,7 @@ class MembershipListAPI(BaseListView):
         project = params['project']
         user = params['user']
         permission = params['permission']
+        default_version = params.get('default_version')
         if permission == 'View Only':
             permission = 'r'
         elif permission == 'Can Edit':
@@ -46,12 +48,18 @@ class MembershipListAPI(BaseListView):
         else:
             raise ValueError(f"Permission must have one of the following values: View Only, "
                               "Can Edit, Can Transfer, Can Execute, Full Control.")
+        existing = Membership.objects.filter(project=project, user=user)
+        if existing.exists():
+            raise RuntimeError(f"Membership already exists for project {project}, user {user}!")
         project = Project.objects.get(pk=project)
         user = User.objects.get(pk=user) 
+        if default_version is not None:
+            default_version = Version.objects.get(pk=default_version)
         membership = Membership.objects.create(
             project=project,
             user=user,
             permission=permission,
+            default_version=default_version,
         )
         membership.save()
         return {'message': f"Membership of {user} to {project} created!",
@@ -86,9 +94,10 @@ class MembershipDetailAPI(BaseDetailView):
         membership = Membership.objects.select_for_update().get(pk=params['id']) 
         if 'permission' in params:
             membership.permission = params['permission']
+        if 'default_version' in params:
+            membership.default_version = Version.objects.get(pk=params['default_version'])
         membership.save()
-        return {'message': f"Membership of {membership.user} to {membership.project} "
-                           f"permissions updated to {params['permission']}!"}
+        return {'message': f"Membership {params['id']} successfully updated!"}
 
     def _delete(self, params):
         Membership.objects.get(pk=params['id']).delete()

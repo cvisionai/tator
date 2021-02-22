@@ -73,7 +73,7 @@ class MediaListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = media_filter_parameter_schema + attribute_filter_parameter_schema
         if method in ['GET', 'PUT']:
             params += [{
@@ -121,12 +121,7 @@ class MediaListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    'description': 'List of unique integers identifying Media objects.',
-                    'type': 'array',
-                    'items': {
-                        'type': 'integer',
-                        'minimum': 1,
-                    },
+                    '$ref': '#/components/schemas/MediaIdQuery',
                 },
             }}}
         return body

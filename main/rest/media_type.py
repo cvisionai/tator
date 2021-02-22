@@ -12,7 +12,8 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
-          'default_volume', 'visible', 'archive_config', 'streaming_config','overlay_config']
+          'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config']
+
 
 class MediaTypeListAPI(BaseListView):
     """ Create or retrieve media types.
@@ -36,13 +37,16 @@ class MediaTypeListAPI(BaseListView):
         media_id = params.get('media_id', None)
         if media_id != None:
             if len(media_id) != 1:
-                raise Exception('Entity type list endpoints expect only one media ID!')
+                raise Exception(
+                    'Entity type list endpoints expect only one media ID!')
             media_element = Media.objects.get(pk=media_id[0])
             if media_element.project.id != self.kwargs['project']:
                 raise Exception('Media not in project!')
-            response_data = MediaType.objects.filter(pk=media_element.meta.pk).values(*fields)
+            response_data = MediaType.objects.filter(
+                pk=media_element.meta.pk).values(*fields)
         else:
-            response_data = MediaType.objects.filter(project=self.kwargs['project']).values(*fields)
+            response_data = MediaType.objects.filter(
+                project=self.kwargs['project']).values(*fields)
         return list(response_data)
 
     def _post(self, params):
@@ -54,12 +58,13 @@ class MediaTypeListAPI(BaseListView):
         """
         if params['name'] in attribute_keywords:
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                              "an attribute name!")
+                             "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         del params['body']
         obj = MediaType(**params)
         obj.save()
         return {'id': obj.id, 'message': 'Media type created successfully!'}
+
 
 class MediaTypeDetailAPI(BaseDetailView):
     """ Interact with an individual media type.
@@ -96,6 +101,8 @@ class MediaTypeDetailAPI(BaseDetailView):
         archive_config = params.get('archive_config', None)
         streaming_config = params.get('streaming_config', None)
         overlay_config = params.get('overlay_config', None)
+        visible = params.get('visible', None)
+        default_volume = params.get('default_volume', None)
 
         obj = MediaType.objects.get(pk=params['id'])
         if name is not None:
@@ -110,6 +117,10 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.streaming_config = streaming_config
         if overlay_config is not None:
             obj.overlay_config = overlay_config
+        if visible is not None:
+            obj.visible = visible
+        if default_volume is not None:
+            obj.default_volume = default_volume
 
         obj.save()
         return {'message': 'Media type updated successfully!'}
@@ -126,4 +137,3 @@ class MediaTypeDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return MediaType.objects.all()
-

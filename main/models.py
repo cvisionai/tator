@@ -18,7 +18,6 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import FileField
 from django.contrib.gis.db.models import FilePathField
-from django.contrib.gis.db.models import ImageField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
@@ -44,6 +43,7 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .cognito import TatorCognito
 
 from collections import UserDict
 
@@ -157,11 +157,40 @@ class User(AbstractUser):
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
 
+    def move_to_cognito(self, email_verified=False, temp_pw=None):
+        cognito = TatorCognito()
+        response = cognito.create_user(self, email_verified, temp_pw)
+        for attribute in response['User']['Attributes']:
+            if attribute['Name'] == 'sub':
+                self.cognito_id = attribute['Value']
+        self.save()
+
+    def set_password_cognito(self, password, permanent=False):
+        cognito = TatorCognito()
+        cognito.set_password(self, password, permanent)
+
+    def reset_password_cognito(self):
+        cognito = TatorCognito()
+        cognito.reset_password(self)
+
+    def set_password(self, password):
+        super().set_password(password)
+        if os.getenv('COGNITO_ENABLED') == 'TRUE':
+            self.set_password_cognito(password, True)
+
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
         else:
             return "---"
+
+@receiver(post_save, sender=User)
+def user_save(sender, instance, created, **kwargs):
+    if os.getenv('COGNITO_ENABLED') == 'TRUE':
+        if created:
+            instance.move_to_cognito()
+        else:
+            TatorCognito().update_attributes(instance)
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
@@ -217,7 +246,7 @@ class Project(Model):
 class Version(Model):
     name = CharField(max_length=128)
     description = CharField(max_length=1024, blank=True)
-    number = PositiveIntegerField()
+    number = IntegerField()
     project = ForeignKey(Project, on_delete=CASCADE)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True, related_name='version_created_by')
@@ -269,6 +298,7 @@ class Membership(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
+    default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
     def __str__(self):
         return f'{self.user} | {self.permission} | {self.project}'
 
@@ -427,6 +457,8 @@ class MediaType(Model):
             options can contain 'timeZone' which comes from the TZ database name
             https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
             Example: America/Los_Angeles or America/New_York
+
+    Overlay can optionally be a list of multiple overlays
     """
     def __str__(self):
         return f'{self.name} | {self.project}'
@@ -653,24 +685,19 @@ class Media(Model):
     name = CharField(max_length=256)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
-    file = FileField(null=True, blank=True)
     last_edit_start = DateTimeField(null=True, blank=True)
     """ Start datetime of a session in which the media's annotations were edited.
     """
     last_edit_end = DateTimeField(null=True, blank=True)
     """ End datetime of a session in which the media's annotations were edited.
     """
-    original = FilePathField(path=settings.RAW_ROOT, null=True, blank=True)
-    thumbnail = ImageField(null=True, blank=True)
-    thumbnail_gif = ImageField(null=True, blank=True)
     num_frames = IntegerField(null=True, blank=True)
     fps = FloatField(null=True, blank=True)
     codec = CharField(null=True, blank=True, max_length=256)
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-    segment_info = FilePathField(path=settings.MEDIA_ROOT, null=True,
-                                 blank=True)
     media_files = JSONField(null=True, blank=True)
+    deleted = BooleanField(default=False)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
@@ -705,8 +732,6 @@ class Resource(Model):
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
-    if instance.file and created:
-        Resource.add_resource(instance.file.path, instance)
     if instance.media_files and created:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
             for fp in instance.media_files.get(key, []):
@@ -742,12 +767,6 @@ def media_delete(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
-    if instance.file:
-        safe_delete(instance.file.path)
-    if instance.original != None:
-        path = str(instance.original)
-        safe_delete(path)
-
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
         for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
@@ -760,8 +779,6 @@ def media_post_delete(sender, instance, **kwargs):
                 if key == 'streaming':
                     path = obj['segment_info']
                     safe_delete(path)
-    instance.thumbnail.delete(False)
-    instance.thumbnail_gif.delete(False)
 
 class Localization(Model):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
@@ -806,6 +823,7 @@ class Localization(Model):
     """ Height for boxes."""
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
+    deleted = BooleanField(default=False)
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -858,6 +876,7 @@ class State(Model):
                            blank=True,
                            related_name='extracted',
                            db_column='extracted')
+    deleted = BooleanField(default=False)
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
@@ -915,6 +934,7 @@ class Leaf(Model):
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField(unique=True)
     name = CharField(max_length=255)
+    deleted = BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Leaves"

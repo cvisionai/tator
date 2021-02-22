@@ -173,6 +173,7 @@ class EntityBrowser extends TatorElement {
         selector.setAttribute("name", group);
         selector.dataType = this._dataType;
         selector.undoBuffer = this._undo;
+        selector.globalDataBuffer = this._data;
         selector.update(groups[group]);
         li.appendChild(selector);
         this._selectors[group] = selector;
@@ -224,7 +225,10 @@ class EntityBrowser extends TatorElement {
           });
 
           selector.addEventListener("select", evt => {
-            attributes.setValues(evt.detail.data);
+            attributes.setValues(
+              evt.detail.data,
+              evt.detail.associatedState,
+              evt.detail.associatedStateType);
           });
         };
 

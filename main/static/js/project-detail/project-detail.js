@@ -138,6 +138,11 @@ class ProjectDetail extends TatorPage {
 
     this._mediaSection = document.createElement("media-section");
     this._projects.appendChild(this._mediaSection);
+    this._mediaSection.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
+
+    this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
+    this._projects.appendChild(this._confirmRunAlgorithm);
+    this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
 
     const deleteSection = document.createElement("delete-section-form");
     this._projects.appendChild(deleteSection);
@@ -664,6 +669,82 @@ class ProjectDetail extends TatorPage {
       sectionName = section.name;
     }
     window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
+  }
+
+  /**
+   * Callback when user clicks on an algorithm button.
+   * This launches the confirm run algorithm modal window.
+   */
+  _openConfirmRunAlgoModal(evt) {
+
+    if ('mediaIds' in evt.detail)
+    {
+      this._confirmRunAlgorithm.init(
+        evt.detail.algorithmName, evt.detail.projectId, evt.detail.mediaIds, null);
+    }
+    else
+    {
+      this._confirmRunAlgorithm.init(
+        evt.detail.algorithmName, evt.detail.projectId, null, evt.detail.mediaQuery);
+    }
+
+    this._confirmRunAlgorithm.setAttribute("is-open","");
+    this.setAttribute("has-open-modal", "");
+    document.body.classList.add("shortcuts-disabled");
+  }
+
+  /**
+   * Callback from confirm run algorithm modal choice
+   */
+  _closeConfirmRunAlgoModal(evt) {
+
+    this._confirmRunAlgorithm.removeAttribute("is-open");
+    this.removeAttribute("has-open-modal");
+    document.body.classList.remove("shortcuts-disabled");
+
+    var that = this;
+    if (evt.detail.confirm)
+    {
+      if (evt.detail.mediaIds != null)
+      {
+        var body = JSON.stringify({
+          "algorithm_name": evt.detail.algorithmName,
+          "media_ids": evt.detail.mediaIds
+        });
+      }
+      else
+      {
+        var body = JSON.stringify({
+          "algorithm_name": evt.detail.algorithmName,
+          "media_query": evt.detail.mediaQuery
+        });
+      }
+
+      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: body,
+      })
+      .then(response => {
+        if (response.status == 201) {
+          that._notify("Algorithm launched!",
+                       `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
+                       "ok");
+        }
+        else {
+          that._notify("Error launching algorithm!",
+                      `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
+                      "error");
+        }
+        return response.json();
+      })
+      .then(data => console.log(data));
+    }
   }
 }
 

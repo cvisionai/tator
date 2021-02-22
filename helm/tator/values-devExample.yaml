@@ -47,6 +47,13 @@ certCron:
   # periodically from LetsEncrypt. If this is not provided, the Secret objects
   # tls-cert and tls-key must be created manually.
   enabled: false
+maintenanceCron:
+  # Enable this to allow maintenance cron jobs to run, such as garbage collection
+  # of deleted database objects and database backups.
+  enabled: true
+migrations:
+  # Enable this if database migrations are allowed.
+  enabled: true
 # List of storage classes for use by workflows. One of these will be randomly
 # passed as a workflow parameter to algorithm workflows, and randomly selected
 # for transcode workflows.
@@ -57,6 +64,15 @@ pv:
   nfsMountOptions:
     - nfsvers=4.1
   path: "/media/kubernetes_share"
+# Can optionally supply seperate pv for static files:
+# staticPv:
+#   enabled: true
+#   nfsServer: "192.168.1.220"
+#   nfsMountOptions:
+#     - nfsvers=4
+#     - nolock
+#   path: "/media/kubernetes_alt"
+#
 pvc:
   size: 10Ti
 hpa:

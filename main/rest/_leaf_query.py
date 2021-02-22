@@ -16,6 +16,7 @@ def get_leaf_es_query(params):
 
     # Get parameters.
     leaf_id = params.get('leaf_id', None)
+    leaf_id_put = params.get('ids', None) # PUT request only
     project = params['project']
     filter_type = params.get('type', None)
     start = params.get('start', None)
@@ -27,8 +28,13 @@ def get_leaf_es_query(params):
     query['sort']['_postgres_id'] = 'asc'
     bools = [{'match': {'_dtype': 'leaf'}}]
 
+    leaf_ids = []
     if leaf_id is not None:
-        ids = [f'leaf_{id_}' for id_ in leaf_id]
+        leaf_ids += leaf_id
+    if leaf_id_put is not None:
+        leaf_ids += leaf_id_put
+    if leaf_ids:
+        ids = [f'leaf_{id_}' for id_ in leaf_ids]
         bools.append({'ids': {'values': ids}})
 
     if filter_type is not None:
@@ -129,15 +135,22 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     """
     # Get query parameters.
     leaf_id = params.get('leaf_id')
+    leaf_id_put = params.get('ids', None) # PUT request only
     project = params['project']
     filter_type = params.get('type')
     name = params.get('name')
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = Leaf.objects.filter(project=project)
+    qs = Leaf.objects.filter(project=project, deleted=False)
+
+    leaf_ids = []
     if leaf_id is not None:
-        qs = qs.filter(pk__in=leaf_id)
+        leaf_ids += leaf_id
+    if leaf_id_put is not None:
+        leaf_ids += leaf_id_put
+    if leaf_ids:
+        qs = qs.filter(pk__in=leaf_ids)
 
     if filter_type is not None:
         qs = qs.filter(meta=filter_type)
@@ -148,6 +161,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('id')
+    qs = qs.distinct()
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:
@@ -180,6 +194,7 @@ def get_leaf_queryset(project, params):
         query = get_leaf_es_query(params)
         leaf_ids, _  = TatorSearch().search(project, query)
         qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
+        qs = qs.distinct()
     else:
         # If using PSQL, construct the queryset.
         qs = _get_leaf_psql_queryset(project, filter_ops, params)

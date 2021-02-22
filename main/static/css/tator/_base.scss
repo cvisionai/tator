@@ -58,10 +58,33 @@ summary {
   }
 }
 
+
+// 544px
+.layout-sm {
+  max-width: $width-sm;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 768px
+.layout-md {
+  max-width: $container-md;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 1004px - this matches the current fixed width: 980px + padding: px-3
+.layout-lg {
+  max-width: $container-lg;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// 1140px
 .layout-max {
   margin-left: auto;
   margin-right: auto;
-  max-width: 1140px;
+  max-width: $container-xl;
   width: 100%;
 }
 
@@ -97,4 +120,27 @@ summary {
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+// Firefox
+* {
+  scrollbar-color: $color-steel--dark $color-steel--medium;
+}
+
+// Chrome / edge
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  display: none;
+  //background: $color-charcoal--medium;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: $color-steel--dark;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: $color-steel--medium;
 }

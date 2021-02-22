@@ -46,6 +46,12 @@ attribute_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'ids': {
+            'description': 'Specific IDs to update. This is applied in addition to query '
+                           'parameters.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
     },
 }
 

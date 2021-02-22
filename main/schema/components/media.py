@@ -36,22 +36,6 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Unique integer identifying entity type of this media.',
     },
-    'file': {
-        'type': 'string',
-        'description': 'URL of the media file. Relative to https://<domain>/media/.',
-    },
-    'thumbnail': {
-        'type': 'string',
-        'description': 'URL of the thumbnail. Relative to https://<domain>/media/.',
-    },
-    'thumbnail_gif': {
-        'type': 'string',
-        'description': 'URL of the thumbnail gif for videos. Relative to https://<domain>/media/.',
-    },
-    'segment_info': {
-        'type': 'string',
-        'description': 'Path to segment info.',
-    },
     'created_datetime': {
         'type': 'string',
         'description': 'Datetime when this media was created.',
@@ -91,10 +75,6 @@ media_get_properties = {
     'height': {
         'type': 'integer',
         'description': 'Vertical resolution in pixels.',
-    },
-    'original': {
-        'type': 'string',
-        'description': 'DEPRECATED. Use media_files. Stores path to original media file.',
     },
     'gid': {
         'description': 'Group ID for the upload group of this media.',
@@ -204,6 +184,38 @@ media_update = {
         },
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},
     },
+}
+
+media_id_query = {
+    'type': 'object',
+    'properties': {
+        'ids': {
+            'description': 'Array of media IDs to retrieve.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'localization_ids': {
+            'description': 'Array of child localization IDs for which media should '
+                           'be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+        'state_ids': {
+            'description': 'Array of child state IDs for which media should '
+                           'be retrieved.',
+            'type': 'array',
+            'items': {
+                'type': 'integer',
+                'minimum': 1,
+            },
+        },
+    }
 }
 
 media = {

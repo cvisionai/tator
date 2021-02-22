@@ -1,7 +1,7 @@
 class RateControl extends TatorElement {
   constructor() {
     super();
-  
+
     const summary = document.createElement("summary");
     summary.style.cursor = "pointer";
     summary.setAttribute("class", "annotation__setting d-flex flex-items-center px-3 rounded-1");
@@ -20,6 +20,7 @@ class RateControl extends TatorElement {
     const select = document.createElement("select");
     select.setAttribute("class", "form-select has-border select-sm1");
     div.appendChild(select);
+    this._select = select;
 
     const rates = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
     for (const rate of rates)
@@ -38,6 +39,22 @@ class RateControl extends TatorElement {
         composed: true
       }));
     });
+  }
+
+  static get observedAttributes() {
+    return ["class", "disabled"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "disabled":
+        if (newValue === null) {
+          this._select.removeAttribute("disabled");
+        } else {
+          this._select.setAttribute("disabled", "");
+        }
+        break;
+    }
   }
 }
 

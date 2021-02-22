@@ -68,7 +68,7 @@ class StateListSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method in ['GET', 'PATCH', 'DELETE']:
+        if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
@@ -136,12 +136,7 @@ class StateListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    'description': 'List of unique integers identifying State objects.',
-                    'type': 'array',
-                    'items': {
-                        'type': 'integer',
-                        'minimum': 1,
-                    },
+                    '$ref': '#/components/schemas/LocalizationIdQuery',
                 },
             }}}
         return body
