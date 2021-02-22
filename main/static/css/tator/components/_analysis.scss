@@ -138,3 +138,27 @@
     width: 87px;
   }
 }
+
+.analysis__search {
+  width: 1200px;
+  input {
+    -webkit-appearance: none;
+    background-color:  $color-charcoal--medium;
+    border: none;
+    font-family: inherit;
+    & + .more {
+      display: none;
+    }
+    & + .more:hover {
+      display: block;
+    }
+    &:focus {
+      background-color: $color-charcoal--light;
+      outline: $color-purple;
+
+      & + .more {
+        display: block;
+      }
+    }
+  }
+}

@@ -2415,10 +2415,18 @@ class AnnotationCanvas extends TatorElement
     // a localization
     if (localization.frame != this.currentFrame())
     {
-      if (skipGoToFrame) {
+      if (skipGoToFrame)
+      {
+        clearStatus();
+        this.clearAnimation();
+        this.activeLocalization = null;
+        this.deselectTrack();
+        this.refresh();
+        this._mouseMode = MouseMode.QUERY;
         return;
       }
-      else {
+      else
+      {
         this.gotoFrame(localization.frame).then(() => {
           this.selectLocalization(localization, skipAnimation, muteOthers);
         });
@@ -2466,16 +2474,12 @@ class AnnotationCanvas extends TatorElement
       const track = this._data._trackDb[localization.id];
       this._activeTrack = track
       this._activeTrackFrame = this.currentFrame();
-      this.dispatchEvent(new CustomEvent("select", {
-        detail: track,
-        composed: true,
-      }));
-    } else {
-      this.dispatchEvent(new CustomEvent("select", {
-        detail: localization,
-        composed: true,
-      }));
     }
+
+    this.dispatchEvent(new CustomEvent("select", {
+      detail: localization,
+      composed: true,
+    }));
   }
 
   deselectTrack()
@@ -2484,9 +2488,16 @@ class AnnotationCanvas extends TatorElement
     this._activeTrackFrame = -1;
   }
 
+  selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame)
+  {
+    const ids = this._data._dataByType.get(stateTypeId).map(elem => elem.id);
+    const index = ids.indexOf(stateId);
+    const elem = this._data._dataByType.get(stateTypeId)[index];
+    this.selectTrack(elem, frameHint, skipGoToFrame);
+  }
+
   selectTrack(track, frameHint, skipGoToFrame)
   {
-
     let frame = frameHint;
     if (frame == undefined)
     {
@@ -2501,6 +2512,14 @@ class AnnotationCanvas extends TatorElement
       return;
     }
 
+    clearStatus();
+    this.clearAnimation();
+    this.activeLocalization = null;
+    this.deselectTrack();
+    this.refresh();
+    this._mouseMode = MouseMode.QUERY;
+    this._activeTrack = track;
+
     let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
       // all localizations to find the track
@@ -2512,7 +2531,6 @@ class AnnotationCanvas extends TatorElement
               const firstFrame = localization.frame == frame;
               if (sameId && firstFrame) {
                 this.selectLocalization(localization, true);
-                this._activeTrack = track;
                 this._activeTrackFrame = frame;
                 return;
               }
@@ -2578,16 +2596,12 @@ class AnnotationCanvas extends TatorElement
         const track = this._data._trackDb[localization.id];
         this._activeTrack = track
         this._activeTrackFrame = this.currentFrame();
-        this.dispatchEvent(new CustomEvent("select", {
-          detail: track,
-          composed: true,
-        }));
-      } else {
-        this.dispatchEvent(new CustomEvent("select", {
-          detail: localization,
-          composed: true,
-        }));
       }
+
+      this.dispatchEvent(new CustomEvent("select", {
+        detail: localization,
+        composed: true,
+      }));
     });
 
     this._draw.dispImage(true, muteOthers);

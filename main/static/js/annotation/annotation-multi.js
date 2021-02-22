@@ -380,7 +380,6 @@ class AnnotationMulti extends TatorElement {
       if (idx == 0)
       {
         let prime = this._videos[idx];
-        this._slider.setAttribute("max", Number(video_info.num_frames)-1);
         this._fps = video_info.fps;
         this._totalTime.textContent = "/ " + this._frameToTime(video_info.num_frames);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
@@ -500,10 +499,16 @@ class AnnotationMulti extends TatorElement {
         video_info.push(resp.json());
       }
       Promise.all(video_info).then((info) => {
+        let max_frames = 0;
         for (let idx = 0; idx < video_info.length; idx++)
         {
+          if (Number(info[idx].num_frames) > max_frames)
+          {
+            max_frames = Number(info[idx].num_frames);
+          }
           setup_video(idx, info[idx]);
         }
+        this._slider.setAttribute("max", max_frames-1);
 
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
@@ -734,7 +739,13 @@ class AnnotationMulti extends TatorElement {
         video.selectTrack(track, frameHint, skipGoToFrame);
       }
     }
+  }
 
+  selectTrackUsingId(stateId, stateTypeId, frameHint, skipGoToFrame) {
+    const ids = this._annotationData._dataByType.get(stateTypeId).map(elem => elem.id);
+    const index = ids.indexOf(stateId);
+    const track = this._annotationData._dataByType.get(stateTypeId)[index];
+    this.selectTrack(track, frameHint, skipGoToFrame);
   }
 
   deselectTrack() {
