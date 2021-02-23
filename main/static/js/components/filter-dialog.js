@@ -7,7 +7,15 @@ class FilterDialog extends ModalDialog {
   {
     super();
 
+    this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
+    this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
+    this._header.setAttribute("class", "px-3 py-3");
+    this._titleDiv.setAttribute("class", "h2");
     this._title.nodeValue = "Filter Data";
+
+    this._typesDiv = document.createElement("div");
+    this._typesDiv.setAttribute("class", "analysis__filter_types_list");
+    this._main.appendChild(this._typesDiv);
 
     //
     // Buttons
@@ -36,7 +44,6 @@ class FilterDialog extends ModalDialog {
     });
 
     this._data = null;
-    this._attributeTypes = [];
 
     // Handler when user hits the cancel button.
     cancel.addEventListener("click", () => {
@@ -69,8 +76,8 @@ class FilterDialog extends ModalDialog {
     {
       var elem = document.createElement("filter-attribute-type");
       elem.data = dataTypeData;
-      this._main.appendChild(elem);
-      this._attributeTypes.push(elem);
+      elem._div.style.marginTop = "10px";
+      this._typesDiv.appendChild(elem);
     }
 
     // Parse the URL then for settings information

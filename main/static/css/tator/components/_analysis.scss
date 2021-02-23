@@ -169,10 +169,24 @@
 }
 
 .analysis__filter {
-  background-color: $color-charcoal--dark70;
+  background-color: $color-charcoal--dark;
   border-bottom: 1px solid $color-gray--dark50;
   box-sizing: border-box;
   height: 100px;
   position: fixed;
   width: 100%;
+}
+
+.analysis__filter_attribute_border {
+  border: 1px solid $color-gray--dark50;
+}
+
+.analysis__filter_types_list {
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.analysis__filter_field_border {
+  border: 1px solid $color-charcoal--light;
+  margin: 3px;
 }
