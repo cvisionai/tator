@@ -51,6 +51,7 @@ class CustomGenerator(SchemaGenerator):
                 'BookmarkSpec': bookmark_spec,
                 'BookmarkUpdate': bookmark_update,
                 'Bookmark': bookmark,
+                'ChangeLog': change_log,
                 'CloneMediaSpec': clone_media_spec,
                 'DownloadInfoSpec': download_info_spec,
                 'DownloadInfo': download_info,
