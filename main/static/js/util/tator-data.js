@@ -10,22 +10,44 @@ class TatorData {
   async getAllLocalizationTypes() {
 
     var outData;
-    const restUrl = "/rest/LocalizationTypes/" + this._project;
-    const algorithmPromise = fetchRetry(restUrl, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
-    .then(response => { return response.json(); })
-    .then(data => {
-      outData = data;
+    var donePromise = new Promise(resolve => {
+
+      const mediaRestUrl = "/rest/MediaTypes/" + this._project;
+      const mediaPromise = fetchRetry(mediaRestUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      const localizationRestUrl = "/rest/LocalizationTypes/" + this._project;
+      const localizationPromise = fetchRetry(localizationRestUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([mediaPromise, localizationPromise])
+        .then(([mediaResponse, localizationResponse]) => {
+          const mediaJson = mediaResponse.json();
+          const localizationJson = localizationResponse.json();
+          Promise.all([mediaJson, localizationJson])
+        .then(([mediaTypes, localizationTypes]) => {
+          outData = [...mediaTypes, ...localizationTypes];
+          resolve();
+        });
+      });
+
     });
 
-    await algorithmPromise;
+    await donePromise;
     return outData;
   }
 }

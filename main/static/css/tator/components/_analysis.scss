@@ -139,12 +139,17 @@
   }
 }
 
+.analysis__search_wrapper {
+  width: 100vw;
+}
+
 .analysis__search {
-  width: 1200px;
+  flex-grow: 1;
+  margin-right: 100px;
   input {
     -webkit-appearance: none;
-    background-color:  $color-charcoal--medium;
-    border: none;
+    background-color: transparent;
+    border: 1px solid $color-charcoal--light;
     font-family: inherit;
     & + .more {
       display: none;
@@ -153,12 +158,35 @@
       display: block;
     }
     &:focus {
-      background-color: $color-charcoal--light;
-      outline: $color-purple;
+      border-color: $color-purple;
+      outline: none;
 
       & + .more {
         display: block;
       }
     }
   }
+}
+
+.analysis__filter {
+  background-color: $color-charcoal--dark;
+  border-bottom: 1px solid $color-gray--dark50;
+  box-sizing: border-box;
+  height: 100px;
+  position: fixed;
+  width: 100%;
+}
+
+.analysis__filter_attribute_border {
+  border: 1px solid $color-gray--dark50;
+}
+
+.analysis__filter_types_list {
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.analysis__filter_field_border {
+  border: 1px solid $color-charcoal--light;
+  margin: 3px;
 }
