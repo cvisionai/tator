@@ -224,6 +224,10 @@ class AnnotationPage extends TatorPage {
               .then(primeMediaData => {
                 this._settings.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
+                if (playbackQuality == undefined)
+                {
+                  playbackQuality = 360; // Default to something sensible
+                }
                 if (searchParams.has("quality"))
                 {
                   playbackQuality = Number(searchParams.get("quality"));
