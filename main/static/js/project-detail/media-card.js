@@ -2,9 +2,15 @@ class MediaCard extends EntityCard {
   constructor() {
     super();
 
-    // Media Card - Media menu listeners.
+    // Media Card
+    // Include More Menu
+    this._more.hidden = false;
 
-    // Algorithm button click.
+    // Handle Clicks of More Menu Items
+    // Algorithm button - Requires:
+    // - @media-id
+    // - @evt.detail.algorithmName
+    // - @this._more._project.id
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(
         new CustomEvent("runAlgorithm",
@@ -78,6 +84,7 @@ class MediaCard extends EntityCard {
     });
   }
 
+  // Related to "more" menu
   set project(val) {
     if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
