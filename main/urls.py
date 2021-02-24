@@ -25,6 +25,11 @@ from .views import ProjectSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
+from .views import AnalyticsDashboardView
+from .views import AnalyticsAnnotationsView
+from .views import AnalyticsCollectionsView
+from .views import AnalyticsVisualizationView
+from .views import AnalyticsReportsView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -43,6 +48,11 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/account-profile/', AccountProfileView.as_view(), name='account-profile'),
+    path('<int:project_id>/analytics/', AnalyticsDashboardView.as_view(), name='analytics-dashboard'),
+    path('<int:project_id>/analytics/annotations', AnalyticsAnnotationsView.as_view(), name='analytics-annotations'),
+    path('<int:project_id>/analytics/collections', AnalyticsCollectionsView.as_view(), name='analytics-collections'),
+    path('<int:project_id>/analytics/visualization', AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
+    path('<int:project_id>/analytics/reports', AnalyticsReportsView.as_view(), name='analytics-reports'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),

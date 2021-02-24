@@ -81,6 +81,21 @@ class ProjectDetailView(ProjectBase, TemplateView):
 class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
 
+class AnalyticsDashboardView(ProjectBase, TemplateView):
+    template_name = 'analytics/dashboard.html'
+
+class AnalyticsAnnotationsView(ProjectBase, TemplateView):
+    template_name = 'analytics/annotations.html'
+
+class AnalyticsCollectionsView(ProjectBase, TemplateView):
+    template_name = 'analytics/collections.html'
+
+class AnalyticsVisualizationView(ProjectBase, TemplateView):
+    template_name = 'analytics/visualization.html'
+
+class AnalyticsReportsView(ProjectBase, TemplateView):
+    template_name = 'analytics/reports.html'
+
 class AnnotationView(ProjectBase, TemplateView):
     template_name = 'annotation.html'
 

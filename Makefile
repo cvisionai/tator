@@ -211,6 +211,7 @@ FILES = \
     util/fetch-retry.js \
     util/has-permission.js \
     util/join-params.js \
+    util/tator-data.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
@@ -242,6 +243,11 @@ FILES = \
     components/success-light.js \
     components/warning-light.js \
     components/name-dialog.js \
+    components/filter-attribute-field.js \
+    components/filter-attribute-type.js \
+    components/filter-dialog.js \
+    components/filter-interface.js \
+    components/filter-data.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
@@ -383,6 +389,12 @@ FILES = \
     annotation/version-select.js \
     annotation/version-dialog.js \
     annotation/volume-control.js \
+    analytics/analytics-breadcrumbs.js \
+    analytics/dashboard/dashboard.js \
+    analytics/annotations/annotations.js \
+    analytics/collections/collections.js \
+    analytics/visualization/visualization.js \
+    analytics/reports/reports.js \
     third_party/autocomplete.js \
     utilities.js
 
