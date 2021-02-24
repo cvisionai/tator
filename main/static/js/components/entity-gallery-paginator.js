@@ -1,4 +1,4 @@
-class EntityGalleryPaginate extends TatorElement {
+class EntityGalleryPaginator extends TatorElement {
   constructor() {
     super();
 
@@ -228,4 +228,4 @@ class EntityGalleryPaginate extends TatorElement {
   }
 }
 
-customElements.define("section-paginator", SectionPaginator);
+customElements.define("entity-gallery-paginator", EntityGalleryPaginator);

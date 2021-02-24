@@ -19,13 +19,13 @@ class EntityCardGallery extends TatorElement {
   
       // Gallery List
       this._ul = document.createElement("ul");
-      this._ul.setAttribute("class", "");
+      this._ul.setAttribute("class", "project__files d-flex");
       this._main.appendChild(this._ul);
 
       // Gallery Pagination
-      this._ul = document.createElement("ul");
-      this._ul.setAttribute("class", "");
-      this._main.appendChild(this._ul);
+      this._paginator = document.createElement("entity-gallery-paginator");
+      this._paginator.setAttribute("class", "");
+      this._paginator.appendChild(this._ul);
     }
 
     init(cardList){
