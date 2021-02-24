@@ -1,51 +1,80 @@
 class EntityCard extends TatorElement {
     constructor() {
       super();
-  
+
+      // Entity Card
+
+      // - @this._name Title text
+      // - Card is list element; Parent can be UL element, or see: EntityCardGallery
+      // - Card links out to one destination
+      // Optional: 
+      // - @this.descDiv Div can contain anything else, desc or other (HIDDEN)
+      // - @this._ext Detail text
+      // - @this._pos_text Pagination position text
+      // - @this._more Menu (HIDDEN)
+      // - @this.getAttribute('thumb-gif') Gif for hover effect
+
+      // List element (card)
       this._li = document.createElement("li");
-      this._li.setAttribute("class", "project__file rounded-2");
+      this._li.setAttribute("class", "entity-card project__file rounded-2");
       this._shadow.appendChild(this._li);
   
+      // Link
       this._link = document.createElement("a");
-      this._link.setAttribute("class", "file__link d-flex flex-items-center text-white");
+      this._link.setAttribute("class", "entity-card--link file__link d-flex flex-items-center text-white");
       this._link.setAttribute("href", "#");
       this._li.appendChild(this._link);
   
+      // Image, spinner until SRC set
       this._img = document.createElement("img");
       this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
-      this._img.setAttribute("class", "col-12 rounded-1");
+      this._img.setAttribute("class", "entity-card--image col-12 rounded-1");
       this._link.appendChild(this._img);
   
+      // containing div for li element (styling)
       const div = document.createElement("div");
-      div.setAttribute("class", "py-2 px-2 lh-default");
+      div.setAttribute("class", "entity-card--title-container py-2 px-2 lh-default");
       this._li.appendChild(div);
   
+      // Title Div
       this.titleDiv = document.createElement("div");
-      this.titleDiv.setAttribute("class", "py-1 d-flex flex-justify-between");
+      this.titleDiv.setAttribute("class", "entity-card--title py-1 d-flex flex-justify-between");
       div.appendChild(this.titleDiv);
   
+      // Text for Title Div
       this._name = document.createElement("a");
       this._name.setAttribute("class", "text-semibold text-white css-truncate");
       this._name.setAttribute("href", "#");
       this.titleDiv.appendChild(this._name);
+
+      // OPTIONAL Description Div
+      this.descDiv = document.createElement("div");
+      this.descDiv.setAttribute("class", "entity-card--description py-1 d-flex flex-justify-between");
+      div.appendChild(this.descDiv);
+      this.descDiv.hidden = true; // HIDDEN default
   
+      // "More" (three dots) menu (OPTIONAL)
       this._more = document.createElement("media-more");
-      this._more.setAttribute("class", "position-relative");
+      this._more.setAttribute("class", "entity-card--more position-relative");
       this._more.style.opacity = 0;
-      this.titleDiv.appendChild(this._more);
+      this.titleDiv.appendChild(this._more); 
+      this._more.hidden = true; // HIDDEN default
   
+      // OPTIONAL Detail text
       this._ext = document.createElement("span");
       this._ext.setAttribute("class", "f3 text-gray");
       div.appendChild(this._ext);
   
+      // OPTIONAL Pagination position
       this._pos_text = document.createElement("span");
       this._pos_text.setAttribute("class", "f3 text-gray px-2");
       div.appendChild(this._pos_text);
   
+      // More menu styling (if included)
       this.addEventListener("mouseenter", () => {
         this._more.style.opacity = 1;
       });
-  
+
       this.addEventListener("mouseleave", () => {
         this._more.style.opacity = 0;
       });

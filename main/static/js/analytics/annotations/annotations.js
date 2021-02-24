@@ -44,6 +44,10 @@ class AnalyticsAnnotations extends TatorPage {
     this._filterView.addEventListener("closedFilterDialog", () => {
       this.removeAttribute("has-open-modal");
     });
+
+    // Gallery of cards showing filter results    
+    this._filterResults = document.createElement("annotations-gallery");
+    this._shadow.appendChild(this._filterResults);
   }
 
   _init() {
