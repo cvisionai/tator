@@ -12,6 +12,47 @@ class AnnotationsCard extends EntityCard {
     // - @this.getAttribute('thumb-gif') Gif for hover effect
   }
 
+  init(obj){
+    this._name = `ID ${obj.id}`;
+
+    this._img.setAttribute("src", obj.frameImage);
+
+    this.typeInfo = document.createElement('div');
+    this.typeInfo.innerHTML = `${obj.metaDetails.name} (${obj.metaDetails.type})`;
+    this.descDiv.appendChild(this.typeInfo);
+
+    this.mediaLink = document.createElement('div');
+    this.mediaLink.innerHTML = `Media: ${obj.mediaLink}`;
+    this.descDiv.appendChild(this.mediaLink);
+
+    this.mediaLink = document.createElement('div');
+    this.mediaLink.innerHTML = `Media: ${obj.mediaLink}`;
+    this.descDiv.appendChild(this.mediaLink);
+
+    this.attributesDiv = document.createElement('div');
+    for(let attr of obj.attributes){
+      let attrDiv = document.createElement("div");
+      let attribute = document.createTextNode(`${attr} : ${obj.attributes[attr]}`);
+      attrDiv.appendChild(attribute);
+      this.attributesDiv.appendChild(attrDiv);
+    }
+    this.descDiv.appendChild(this.attributesDiv);
+
+    this.created = document.createElement('div');
+    this.created.innerHTML = `Created: ${obj.created}`;
+    this.descDiv.appendChild(this.created);
+
+    this.modified = document.createElement('div');
+    this.modified.innerHTML = `Modified: ${obj.modified}`;
+    this.descDiv.appendChild(this.modified);
+
+    this.modifiedby = document.createElement('div');
+    this.modifiedby.innerHTML = `Modified by: ${obj.username}`;
+    this.descDiv.appendChild(this.modifiedby);
+
+    this.descDiv.hidden = false;
+  }
+
 }
   
 customElements.define("annotations-card", AnnotationsCard);

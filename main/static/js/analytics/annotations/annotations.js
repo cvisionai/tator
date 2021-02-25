@@ -58,9 +58,25 @@ class AnalyticsAnnotations extends TatorPage {
 
     // Filter interface
     this._filterDataView = new FilterData(this._modelData);
-    this._filterDataView.init().then(() => {
+    this._filterDataView.init().then((localizationTypes) => {
+      this.localizationTypes = localizationTypes;
       this._filterView.dataView = this._filterDataView;
     });
+
+    // Create card data for init
+    this.allLocalizations = await this._modelData.localizations();
+    this.cardData = new CardData({
+      projectId : projectId,
+      localizations : this.allLocalizations, 
+      localizationTypes : this.localizationTypes, 
+      getFrame : this._modelData.getFrame, // endpoint with project reference
+      getUser : this._modelData.getUser, // endpoint with project reference
+      localizationsCount : this._modelData.getLocalizationCount // endpoint with project reference 
+    });
+    this.cardList = this.cardData.makeCardList();
+    this._filterResults.init( this.cardList );
+
+    // @TODO card gallery to listen for update
 
   }
 
