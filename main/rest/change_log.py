@@ -9,7 +9,7 @@ from ..schema import ChangeLogListSchema
 from ._base_views import BaseListView
 from ._permissions import ProjectFullControlPermission
 
-logger = lgging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 CHANGE_LOG_PROPERTIES = ["id", "project", "user", "description_of_change"]
 
