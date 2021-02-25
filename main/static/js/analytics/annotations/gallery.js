@@ -17,10 +17,23 @@ class AnnotationsGallery extends EntityCardGallery {
     }
 
     init({
-      filtered = false
+      filtered = false,
+      cardList = []
     }){
       // Populate the pagination
       if(filtered) this._h3Text = document.createTextNode("Filtered Annotations");
+
+      this.appendCardList(cardList)
+    }
+
+    appendCardList(cardList){
+      for(let cardObj of cardList){
+        let card = document.createElement("annotations-card");
+        card.init( cardObj );
+
+        this._ul.appendChild(card);
+      }
+      return this._ul;
     }
 
 }
