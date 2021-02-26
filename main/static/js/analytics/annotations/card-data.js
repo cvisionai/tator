@@ -19,7 +19,7 @@ class CardData {
      }){
         this.cardList = [];
         this.localizationTypes = localizationTypes;
-        this.getCardList(localizations).then(() => {
+        return this.getCardList(localizations).then(() => {
             console.log("COMPLETE");
             console.log(this.cardList);
             return this.cardList;
@@ -33,7 +33,8 @@ class CardData {
             for(let l of localizations){
                 let id = l.id;
                 
-                let metaDetails = this.findMetaDetails( l.meta );
+                //let metaDetails = this.findMetaDetails( l.meta );
+                let metaDetails = {name : "sample name", type : "sample type"};
 
                 let mediaLink = document.createElement("a");
                 mediaLink.setAttribute("href", `/${this.projectId}/annotation/${l.media}`)
@@ -64,12 +65,12 @@ class CardData {
                     //console.log(card);
                     this.cardList.push(card);
                     counter --;
-                    console.log("counter went down is now: "+counter); 
+                    //console.log("counter went down is now: "+counter); 
                 });
                 
             }
             let counterCheckout = setInterval(function(){
-                console.log("interval check for counter "+counter); 
+                //console.log("interval check for counter "+counter); 
                 if(counter == 0){
                     resolve('complete');
                     clearInterval(counterCheckout);

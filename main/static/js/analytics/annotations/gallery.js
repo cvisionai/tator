@@ -28,6 +28,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     appendCardList(cardList){
       for(let cardObj of cardList){
+        console.log("appendCardList");
         let card = document.createElement("annotations-card");
         card.init( cardObj );
 
