@@ -50,7 +50,7 @@ class EntityCard extends TatorElement {
       // OPTIONAL Description Div
       this.descDiv = document.createElement("div");
       this.descDiv.setAttribute("class", "entity-card--description py-1 d-flex flex-justify-between");
-      div.appendChild(this.descDiv);
+      this._li.appendChild(this.descDiv);
       this.descDiv.hidden = true; // HIDDEN default
   
       // "More" (three dots) menu (OPTIONAL)

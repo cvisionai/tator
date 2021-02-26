@@ -67,13 +67,16 @@ class AnalyticsAnnotations extends TatorPage {
     this._modelData.getLocalizations().then((localizations) => {
       this.allLocalizations = localizations;
 
-      this.cardList = this.cardData.makeCardList({
+      this.cardData.makeCardList({
         localizations : this.allLocalizations, 
         localizationTypes : this.localizationTypes, 
+      }).then((cardList) => {
+        this.cardList = cardList;
+        console.log(this.cardList);
+        this._filterResults.init( {filtered : false, cardList : this.cardList} );
       });
       
-      this._filterResults.init( {filtered : false, cardList : this.cardList} );
-    })
+    });
     
 
     // @TODO card gallery to listen for update

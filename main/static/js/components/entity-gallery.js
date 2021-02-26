@@ -5,17 +5,18 @@ class EntityCardGallery extends TatorElement {
       // Gallery Container
       this._main = document.createElement("div");
       this._main.setAttribute("class", "");
+      this._main.style.marginTop = "150px";
       this._shadow.appendChild(this._main);
       
       // Gallery Tools
       this._tools = document.createElement("div");
-      this._tools.setAttribute("class", "");
-      this._shadow.appendChild(this._tools);
+      this._tools.setAttribute("class", "py-4 float-right");
+      this._main.appendChild(this._tools);
 
       // Gallery Heading
       this._h3 = document.createElement("div");
-      this._h3.setAttribute("class", "h3");
-      this._shadow.appendChild(this._h3);
+      this._h3.setAttribute("class", "h3 py-4");
+      this._main.appendChild(this._h3);
   
       // Gallery List
       this._ul = document.createElement("ul");
@@ -25,7 +26,7 @@ class EntityCardGallery extends TatorElement {
       // Gallery Pagination
       this._paginator = document.createElement("entity-gallery-paginator");
       this._paginator.setAttribute("class", "");
-      this._paginator.appendChild(this._ul);
+      this._main.appendChild(this._paginator);
     }
 
     init(cardList){
