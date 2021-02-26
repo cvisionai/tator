@@ -51,7 +51,6 @@ class AnalyticsAnnotations extends TatorPage {
   }
 
   _init() {
-
     // Database interface. This should only be used by the viewModel/interface code.
     const projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(projectId);
@@ -64,17 +63,18 @@ class AnalyticsAnnotations extends TatorPage {
     });
 
     // Create card data for init
-    this.allLocalizations = await this._modelData.localizations();
-    this.cardData = new CardData({
-      projectId : projectId,
-      localizations : this.allLocalizations, 
-      localizationTypes : this.localizationTypes, 
-      getFrame : this._modelData.getFrame, // endpoint with project reference
-      getUser : this._modelData.getUser, // endpoint with project reference
-      localizationsCount : this._modelData.getLocalizationCount // endpoint with project reference 
-    });
-    this.cardList = this.cardData.makeCardList();
-    this._filterResults.init( this.cardList );
+    this.cardData = new CardData({projectId : projectId, modelData : this._modelData});
+    this._modelData.getLocalizations().then((localizations) => {
+      this.allLocalizations = localizations;
+
+      this.cardList = this.cardData.makeCardList({
+        localizations : this.allLocalizations, 
+        localizationTypes : this.localizationTypes, 
+      });
+      
+      this._filterResults.init( {filtered : false, cardList : this.cardList} );
+    })
+    
 
     // @TODO card gallery to listen for update
 
