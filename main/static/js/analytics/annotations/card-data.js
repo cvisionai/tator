@@ -1,53 +1,82 @@
 class CardData {
+    /* projectId : projectId, modelData : this._modelData */
     constructor({ 
         projectId = null,
-        localizations = [], 
-        localizationTypes = [], 
-        getFrame = null, // endpoint with project reference
-        getUser = null, // endpoint with project reference
-        localizationsCount = null // endpoint with project reference 
+        modelData = null, 
+
       }){
           this.projectId = projectId;
-          this.localizations = localizations;
-          this.localizationTypes = localizationTypes;
-          this.getFrame = getFrame;
-          this.getUser = getUser;
-          this.localizationCount = localizationsCount;
+          this._modelData = modelData;
     }
 
     getLocalizationsCount(){
         // Used by paginator?
     }
 
-    makeCardList(){
-        const cardList = [];
-        for(let l of this.localizations){
-            let id = l.id;
-            let metaDetails = this.findMetaDetails( l.meta );
-            let mediaLink = document.createElement("a");
-            mediaLink.setAttribute("href", `/${this.projectId}/annotation/${l.media}`)
-            mediaLink.innerHTML = `Media ID ${l.media}`;
-            let frameImage = await this.frameImage(l.frame);
-            let attributes = l.attributes;
-            let created = new Date(l.created_datetime);
-            let modified = new Date(l.modified_datetime);
-            let userData = await this.getUser(l.modified_by);
-            let userName = userData.username;
+    makeCardList({
+        localizationTypes = [], 
+        localizations = []
+     }){
+        this.cardList = [];
+        this.localizationTypes = localizationTypes;
+        this.getCardList(localizations).then(() => {
+            console.log("COMPLETE");
+            console.log(this.cardList);
+            return this.cardList;
+        });
 
-            let card = {
-                id,
-                metaDetails,
-                mediaLink,
-                frameImage,
-                attributes,
-                created,
-                modified,
-                userName
+    }
+
+    getCardList(localizations){
+        return new Promise((resolve, reject) => {
+            let counter = localizations.length;
+            for(let l of localizations){
+                let id = l.id;
+                
+                let metaDetails = this.findMetaDetails( l.meta );
+
+                let mediaLink = document.createElement("a");
+                mediaLink.setAttribute("href", `/${this.projectId}/annotation/${l.media}`)
+                mediaLink.innerHTML = `Media ID ${l.media}`;
+            
+                let attributes = l.attributes;
+                let created = new Date(l.created_datetime);
+                let modified = new Date(l.modified_datetime);
+
+                let promises = [ this._modelData.getUser(l.modified_by) ]
+                
+                if(l.frame != 0) promises.push(this._modelData.getFrame(l.frame))
+                Promise.all(promises)
+                .then((respArray) => {
+                    let userName = respArray[0].username;
+                    let frameImage = l.frame != 0 ? respArray[1] : "";
+            
+                    let card = {
+                        id,
+                        metaDetails,
+                        mediaLink,
+                        frameImage,
+                        attributes,
+                        created,
+                        modified,
+                        userName
+                    };
+                    //console.log(card);
+                    this.cardList.push(card);
+                    counter --;
+                    console.log("counter went down is now: "+counter); 
+                });
+                
             }
-
-            cardList.push(card);
-        }
-        return cardList;
+            let counterCheckout = setInterval(function(){
+                console.log("interval check for counter "+counter); 
+                if(counter == 0){
+                    resolve('complete');
+                    clearInterval(counterCheckout);
+                    return this.cardList;
+                }
+                }, 500)
+        });
     }
 
     findMetaDetails(id){

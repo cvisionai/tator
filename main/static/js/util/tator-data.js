@@ -55,7 +55,7 @@ class TatorData {
    * Returns data for getFrame with project ID
    */
   async getFrame( frameId ){     
-    const response = fetch(`/rest/GetFrame/${frameId}`, {
+    const response = await fetch(`/rest/GetFrame/${frameId}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -66,7 +66,6 @@ class TatorData {
       }
     });
     const data = await response.json();
-    console.log(data);
 
     return data;
   }
@@ -76,7 +75,7 @@ class TatorData {
    * Returns a data for user with user ID
    */
   async getUser( userId ){     
-    const response = fetch(`/rest/User/${userId}`, {
+    const response = await fetch(`/rest/User/${userId}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -87,7 +86,6 @@ class TatorData {
       }
     });
     const data = await response.json();
-    console.log(data);
     
     return data;
   }
@@ -96,8 +94,8 @@ class TatorData {
   /**
    * Returns a data for user with user ID
    */
-  async getLocalizationCount({ start = 0, stop = 20} = {}){     
-    const response = fetch(`/rest/LocalizationCount/${userId}?start=${start}&stop=${stop}`, {
+  async getLocalizationCount(){     
+    const response = await fetch(`/rest/LocalizationCount/${this._project}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -108,7 +106,26 @@ class TatorData {
       }
     });
     const data = await response.json();
-    console.log(data);
+    
+    return data;
+  }
+
+
+  /**
+   * Returns a data for user with user ID
+   */
+  async getLocalizations({ start = 0, stop = 20} = {}){     
+    const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
     
     return data;
   }
