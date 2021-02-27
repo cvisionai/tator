@@ -1323,22 +1323,6 @@ class AnnotationCanvas extends TatorElement
       return;
     }
 
-    if (this._mouseMode == MouseMode.QUERY || this._mouseMode == MouseMode.SELECT) {
-      if (event.code == 'Space')
-      {
-        event.preventDefault();
-        if (this._direction == Direction.STOPPED ||
-            this._direction == Direction.BACKWARD)
-        {
-          this.play();
-        }
-        else
-        {
-          this.pause();
-        }
-      }
-    }
-
     if (this._mouseMode == MouseMode.QUERY)
     {
       if (event.code == 'Tab')
@@ -1374,19 +1358,6 @@ class AnnotationCanvas extends TatorElement
         event.stopPropagation();
         this.gotoFrame(this.currentFrame() - amount, true);
         return false;
-      }
-
-      if (event.key == 'b')
-      {
-        if (this._direction == Direction.STOPPED ||
-            this._direction == Direction.FORWARD)
-        {
-          this.playBackwards();
-        }
-        else
-        {
-          this.pause();
-        }
       }
     }
 
@@ -2844,7 +2815,7 @@ class AnnotationCanvas extends TatorElement
   newMetadataItem(typeId, metaMode, obj)
   {
     if ("pause" in this) {
-      this.pause();
+      this.dispatchEvent(new Event("pause"));
     }
     this.refresh();
     const objDescription = this._data._dataTypes[typeId];

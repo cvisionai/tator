@@ -180,17 +180,7 @@ class AnnotationPlayer extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
-
-      this.dispatchEvent(new Event("playing", {composed: true}));
-      fastForward.setAttribute("disabled", "");
-      rewind.setAttribute("disabled", "");
-
-      this._video.pause();
-      this._video.rateChange(this._rate);
-      if (this._video.playBackwards())
-      {
-        play.removeAttribute("is-paused");
-      }
+      this.playBackwards();
     });
 
     fastForward.addEventListener("click", () => {
@@ -273,6 +263,18 @@ class AnnotationPlayer extends TatorElement {
     document.addEventListener("keydown", evt => {
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
+      }
+      else if (evt.code == "Space")
+      {
+        evt.preventDefault();
+        if (this.is_paused())
+        {
+          this.play();
+        }
+        else
+        {
+          this.pause();
+        }
       }
     });
   }
@@ -364,6 +366,20 @@ class AnnotationPlayer extends TatorElement {
       {
         this._play.removeAttribute("is-paused");
       }
+    }
+  }
+
+  playBackwards()
+  {
+    this.dispatchEvent(new Event("playing", {composed: true}));
+    this._fastForward.setAttribute("disabled", "");
+    this._rewind.setAttribute("disabled", "");
+
+    this._video.pause();
+    this._video.rateChange(this._rate);
+    if (this._video.playBackwards())
+    {
+      this._play.removeAttribute("is-paused");
     }
   }
 

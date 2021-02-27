@@ -202,25 +202,7 @@ class AnnotationMulti extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
-
-      this.dispatchEvent(new Event("playing", {composed: true}));
-      fastForward.setAttribute("disabled", "");
-      rewind.setAttribute("disabled", "");
-
-      this._playbackReadyId += 1;
-      this._playbackReadyCount = 0;
-      this.goToFrame(this._videos[0].currentFrame()).then(() => {
-        for (let video of this._videos)
-        {
-          video.waitPlayback(true, this._playbackReadyId);
-          video.pause();
-          video.rateChange(this._rate);
-          if (video.playBackwards())
-          {
-            play.removeAttribute("is-paused");
-          }
-        }
-      });
+      this.playBackwards();
     });
 
     fastForward.addEventListener("click", () => {
@@ -290,6 +272,18 @@ class AnnotationMulti extends TatorElement {
     document.addEventListener("keydown", evt => {
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
+      }
+      else if (evt.code == "Space")
+      {
+        evt.preventDefault();
+        if (this.is_paused())
+        {
+          this.play();
+        }
+        else
+        {
+          this.pause();
+        }
       }
     });
   }
@@ -600,6 +594,29 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  playBackwards()
+  {
+    this.dispatchEvent(new Event("playing", {composed: true}));
+    this._fastForward.removeAttribute("disabled");
+    this._rewind.removeAttribute("disabled");
+
+    this._playbackReadyId += 1;
+    this._playbackReadyCount = 0;
+    this._pauseId = this._playbackReadyId;
+    this.goToFrame(this._videos[0].currentFrame()).then(() => {
+      for (let video of this._videos)
+      {
+        video.waitPlayback(true, this._playbackReadyId);
+        video.pause();
+        video.rateChange(this._rate);
+        if (video.playBackwards())
+        {
+          this._play.setAttribute("is-paused", "");
+        }
+      }
+    });
+  }
+
   pause()
   {
     this.dispatchEvent(new Event("paused", {composed: true}));
@@ -612,7 +629,7 @@ class AnnotationMulti extends TatorElement {
       {
         video.pause();
       }
-      this._play.setAttribute("is-paused", "")
+      this._play.setAttribute("is-paused", "");
     }
   }
 

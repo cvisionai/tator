@@ -90,4 +90,5 @@ Steps
 14) In a buffered scrub region, play the video at the 4x rate. Verify the video is playing back at a faster rate.
 15) Repeat the above while going playing backwards.
 16) Scrub around the video (click on the timeline dot and drag around)
-17) Repeat the above steps with a multi-view video.
+17) Use the spacebar to pause/play the video.
+18) Repeat the above steps with a multi-view video.
