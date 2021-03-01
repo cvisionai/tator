@@ -392,6 +392,7 @@ class AnnotationPlayer extends TatorElement {
       console.log("Provided invalid time (minutes:seconds) expected: " + this._currentTimeInput.value);
       this._currentTimeInput.classList.add("has-border");
       this._currentTimeInput.classList.add("is-invalid");
+      return;
     }
 
     var seconds = parseInt(timeTokens[1]);
@@ -400,6 +401,7 @@ class AnnotationPlayer extends TatorElement {
       console.log("Provided invalid time (minutes:seconds) expected: " + this._currentTimeInput.value);
       this._currentTimeInput.classList.add("has-border");
       this._currentTimeInput.classList.add("is-invalid");
+      return;
     }
 
     var frame = this._timeToFrame(minutes, seconds);
