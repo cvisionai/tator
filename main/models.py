@@ -1014,7 +1014,7 @@ def calc_segments(sender, **kwargs):
         segmentList.append(current)
     instance.segments = segmentList
 
-class Leaf(Model):
+class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
