@@ -70,6 +70,26 @@ class TatorData {
     return data;
   }
 
+    /**
+   * Returns data for getFrame with project ID
+   */
+  async getLocalizationGraphic( localizationID ){     
+    const response = await fetch(`/rest/LocalizationGraphic/${localizationID}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "image/*",
+        "Content-Type": "image/*"
+      }
+    });
+
+    const data = await response.blob();
+
+    return data;
+  }
+
 
   /**
    * Returns a data for user with user ID

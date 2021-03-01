@@ -62,24 +62,28 @@ class AnalyticsAnnotations extends TatorPage {
       this._filterView.dataView = this._filterDataView;
     });
 
-    // Create card data for init
+    // Card Gallery
     this.cardData = new CardData({projectId : projectId, modelData : this._modelData});
     this._modelData.getLocalizations().then((localizations) => {
       this.allLocalizations = localizations;
-
+      // Initial view-modal "Cardlist" from fetched localizations
       this.cardData.makeCardList({
         localizations : this.allLocalizations, 
         localizationTypes : this.localizationTypes, 
       }).then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
         this.cardList = cardList;
-        console.log(this.cardList);
         this._filterResults.init( {filtered : false, cardList : this.cardList} );
       });
-      
-    });
-    
 
-    // @TODO card gallery to listen for update
+    });
+
+    // Listen for filter events
+    this._filterView._filterDialog.addEventListener("applyFilterString", (e) =>{
+      console.log(e.detail.filterString);
+    });
+      
+    
 
   }
 

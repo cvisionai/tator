@@ -143,7 +143,7 @@ class LocalizationEdit extends TypeForm {
     // only send dtype when it's new
     if(includeDtype) {
       let dtype = form.querySelector('[name="dtype"]').value;
-      formData.dtype = dtype;
+      formData.dtype = dtype; 
     }
 
     let colorMap = form.querySelector('input[name="colorMap"]').value;

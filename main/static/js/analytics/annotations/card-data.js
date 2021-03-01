@@ -13,18 +13,14 @@ class CardData {
         // Used by paginator?
     }
 
-    makeCardList({
+    async makeCardList({
         localizationTypes = [], 
         localizations = []
      }){
         this.cardList = [];
         this.localizationTypes = localizationTypes;
-        return this.getCardList(localizations).then(() => {
-            console.log("COMPLETE");
-            console.log(this.cardList);
-            return this.cardList;
-        });
-
+        await this.getCardList(localizations);
+        return this.cardList;
     }
 
     getCardList(localizations){
@@ -44,19 +40,21 @@ class CardData {
                 let created = new Date(l.created_datetime);
                 let modified = new Date(l.modified_datetime);
 
-                let promises = [ this._modelData.getUser(l.modified_by) ]
+                let promises = [ 
+                        this._modelData.getUser(l.modified_by),
+                        this._modelData.getLocalizationGraphic(l.id)
+                    ]
                 
-                if(l.frame != 0) promises.push(this._modelData.getFrame(l.frame))
                 Promise.all(promises)
                 .then((respArray) => {
                     let userName = respArray[0].username;
-                    let frameImage = l.frame != 0 ? respArray[1] : "";
+                    let graphic = respArray[1];
             
                     let card = {
                         id,
                         metaDetails,
                         mediaLink,
-                        frameImage,
+                        graphic,
                         attributes,
                         created,
                         modified,

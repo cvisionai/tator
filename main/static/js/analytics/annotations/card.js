@@ -16,8 +16,10 @@ class AnnotationsCard extends EntityCard {
     console.log("card init");
     this.titleDiv.innerHTML = `ID ${obj.id}`;
 
-    if(obj.frameImage != "") {
-      this._img.setAttribute("src", obj.frameImage);
+    if(obj.graphic != "") {
+      const urlCreator = window.URL || window.webkitURL;
+      const imgSrc = urlCreator.createObjectURL(obj.graphic);
+      this._img.setAttribute("src", imgSrc);
     } else {
       this._img.hidden = true;
     }
