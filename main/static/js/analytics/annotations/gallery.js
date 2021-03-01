@@ -3,7 +3,7 @@ class AnnotationsGallery extends EntityCardGallery {
       super();
       /*
       * Add tools, headings and pagination for gallery here
-      *
+      * 
       */
 
       // Heading
@@ -12,6 +12,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Tools: Slider to grow or shrink images
       this._growCards = document.createElement('entity-card-grow');
+      this._growCards._initGallery(this._ul);
       this._tools.appendChild( this._growCards );
 
     }
