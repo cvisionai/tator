@@ -819,6 +819,20 @@ class AnnotationCanvas extends TatorElement
       this._textOverlay.addText(pos[0],pos[1],value, style);
     }
 
+    if (mode == "displayFrameNumber")
+    {
+      let frameNumberText = this._textOverlay.addText(0.9,0.1,"");
+      if (this._mediaType.dtype == "video" || this._mediaType.dtype == "multi")
+      {
+        this.addEventListener("frameChange", (evt) => {
+          this._textOverlay.modifyText(
+            frameNumberText,
+            {content: evt.detail.frame,
+             style: this.overlayTextStyle});
+        });
+      }
+    }
+
     if (mode == "datetime")
     {
       let name = this._mediaInfo.name;

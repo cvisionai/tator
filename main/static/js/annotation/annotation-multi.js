@@ -940,6 +940,13 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  enableDisplayFrame() {
+    for (let video of this._videos)
+    {
+      video.setupOverlay({mode: "displayFrameNumber"});
+    }
+  }
+
   safeMode() {
     for (let video of this._videos)
     {
