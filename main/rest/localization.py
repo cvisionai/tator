@@ -199,11 +199,14 @@ class LocalizationListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             # Get info to populate ChangeLog entry
-            obj = qs.first()
-            project = obj.project
-            delete_dicts = [obj.delete_dict for obj in qs]
-            ref_table = ContentType.objects.get_for_model(obj)
-            ref_ids = [o.id for o in qs]
+            first_obj = qs.first()
+            project = first_obj.project
+            ref_table = ContentType.objects.get_for_model(first_obj)
+            delete_dicts = []
+            ref_ids = []
+            for obj in qs:
+                delete_dicts.append(obj.delete_dict)
+                ref_ids.append(obj.id)
 
             # Delete the localizations.
             qs.update(deleted=True,
@@ -240,7 +243,7 @@ class LocalizationListAPI(BaseListView):
 
             # Get one object from the queryset to create the change log
             obj = qs.first()
-            change_dict = qs.first().change_dict(original_dict)
+            change_dict = obj.change_dict(original_dict)
             ref_table = ContentType.objects.get_for_model(obj)
 
             query = get_annotation_es_query(params['project'], params, 'localization')

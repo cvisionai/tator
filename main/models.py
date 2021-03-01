@@ -704,7 +704,7 @@ def leaf_type_save(sender, instance, **kwargs):
 
 # Entities (stores actual data)
 
-class Media(Model):
+class Media(Model, ModelDiffMixin):
     """
     Fields:
 
@@ -936,7 +936,7 @@ def localization_delete(sender, instance, **kwargs):
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
-class State(Model):
+class State(Model, ModelDiffMixin):
     """
     A State is an event that occurs, potentially independent, from that of
     a media element. It is associated with 0 (1 to be useful) or more media
