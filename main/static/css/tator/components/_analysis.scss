@@ -20,7 +20,7 @@
   position: fixed;
   left: 100%;
   top: 0;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: transform;
   width: calc(100% - 400px);
   z-index: 2;
@@ -48,7 +48,7 @@
 
 .analysis__parameters div {
   border: 1px solid transparent;
-  opacity: .6;
+  opacity: 0.6;
   pointer-events: none;
   position: absolute;
   top: 50%;
@@ -100,7 +100,7 @@
 .analysis__annotations {
   display: grid;
   grid-gap: 20px 10px;
-  grid-template-columns: repeat(auto-fill,minmax(87px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(87px, 1fr));
 }
 
 .analysis__annotation {
@@ -117,7 +117,7 @@
     &:before {
       content: "";
       background-color: $color-purple;
-      opacity: .3;
+      opacity: 0.3;
       position: absolute;
       top: 0;
       left: 0;
@@ -175,6 +175,7 @@
   height: 100px;
   position: fixed;
   width: 100%;
+  z-index: 1000;
 }
 
 .analysis__filter_attribute_border {
