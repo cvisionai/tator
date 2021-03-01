@@ -2647,7 +2647,14 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        this._playGenericOnDemand(Direction.FORWARD);
+        if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null)
+        {
+          this._playGenericScrub(Direction.FORWARD);
+        }
+        else
+        {
+          this._playGenericOnDemand(Direction.FORWARD);
+        }
       }
       return true;
     }
@@ -2668,7 +2675,14 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        this._playGenericOnDemand(Direction.BACKWARDS);
+        if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null)
+        {
+          this._playGenericScrub(Direction.BACKWARDS);
+        }
+        else
+        {
+          this._playGenericOnDemand(Direction.BACKWARDS);
+        }
       }
       return true;
     }
