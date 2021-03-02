@@ -296,7 +296,7 @@ FILES = \
     project-detail/activity-nav.js \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
-    project-settings/loading-spinner.js \
+    components/loading-spinner.js \
     project-settings/type-form-validation.js \
     project-settings/settings-input-helpers.js \
     project-settings/settings-box-helpers.js \
@@ -304,7 +304,7 @@ FILES = \
     project-settings/type-delete.js \
     project-settings/type-form.js \
     project-settings/settings-nav.js \
-    project-settings/inline-warning.js \
+    components/inline-warning.js \
     project-settings/single-upload.js \
     project-settings/data-media-list.js \
     project-settings/data-project-types.js \
