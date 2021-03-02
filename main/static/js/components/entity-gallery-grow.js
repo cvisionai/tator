@@ -37,7 +37,7 @@ class EntityCardGrow extends TatorElement {
       let newMinMax =  defaultMinMax * growValuePerc;
 
       //Img height by default .project__file img
-      // height: 130px
+      // height: 130px - Changed in Gallery
 
       return this._gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${newMinMax}px,1fr))`;
     }

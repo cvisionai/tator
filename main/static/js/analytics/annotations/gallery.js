@@ -17,25 +17,42 @@ class AnnotationsGallery extends EntityCardGallery {
 
     }
 
-    init({
+    show({
       filtered = false,
-      cardList = []
+      cardList = {}
     }){
       // Populate the pagination
-      if(filtered) this._h3Text = document.createTextNode("Filtered Annotations");
-
-      this.appendCardList(cardList)
+      if(filtered) {
+        this._ul.innerHTML = "";
+        this._h3Text = document.createTextNode("Filtered Annotations");
+      } else {
+        this._ul.innerHTML = "";
+        this._h3Text = document.createTextNode("All Annotations");
+      }
+      this._paginator.init(cardList.total);
+      this.appendCardList(cardList.cards)
     }
 
     appendCardList(cardList){
       for(let cardObj of cardList){
-        console.log("appendCardList");
         let card = document.createElement("annotations-card");
         card.init( cardObj );
+        
+        // Grow Tool needs to change style within card on change
+        this._growCards._slideInput.addEventListener("change", (e) => {
+          let growValue = e.target.value;
+          let growValuePerc = parseFloat( growValue / 100 );
+          return card._img.style.height = `${130 * growValuePerc}px`;
+        });
 
         this._ul.appendChild(card);
       }
       return this._ul;
+    }
+
+    // For pagination events
+    updatePage(start, stop){
+      
     }
 
 }

@@ -13,13 +13,12 @@ class AnnotationsCard extends EntityCard {
   }
 
   init(obj){
-    console.log("card init");
     this.titleDiv.innerHTML = `ID ${obj.id}`;
 
-    if(obj.graphic != "") {
-      const urlCreator = window.URL || window.webkitURL;
-      const imgSrc = urlCreator.createObjectURL(obj.graphic);
-      this._img.setAttribute("src", imgSrc);
+    if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
+      this.reader = new FileReader();
+      this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
+      this.reader.addEventListener("load", this._setImgSrc.bind(this));
     } else {
       this._img.hidden = true;
     }
@@ -58,6 +57,10 @@ class AnnotationsCard extends EntityCard {
     // this.descDiv.appendChild(this.modifiedby);
 
     this.descDiv.hidden = false;
+  }
+
+  _setImgSrc (e) {
+    return this._img.setAttribute("src", this.reader.result );
   }
 
 }
