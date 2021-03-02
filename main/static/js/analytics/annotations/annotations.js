@@ -48,12 +48,16 @@ class AnalyticsAnnotations extends TatorPage {
     // Gallery of cards showing filter results    
     this._filterResults = document.createElement("annotations-gallery");
     this._shadow.appendChild(this._filterResults);
+
+    // Class to hide and showing loading spinner
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild( this.loading.getImg() );
   }
 
   _init() {
     // Database interface. This should only be used by the viewModel/interface code.
-    const projectId = Number(this.getAttribute("project-id"));
-    this._modelData = new TatorData(projectId);
+    this.projectId = Number(this.getAttribute("project-id"));
+    this._modelData = new TatorData(this.projectId);
 
     // Filter interface
     this._filterDataView = new FilterData(this._modelData);
@@ -62,29 +66,22 @@ class AnalyticsAnnotations extends TatorPage {
       this._filterView.dataView = this._filterDataView;
     });
 
-    // Card Gallery
-    this.cardData = new CardData({projectId : projectId, modelData : this._modelData});
-    this._modelData.getLocalizations().then((localizations) => {
-      this.allLocalizations = localizations;
-      // Initial view-modal "Cardlist" from fetched localizations
-      this.cardData.makeCardList({
-        localizations : this.allLocalizations, 
-        localizationTypes : this.localizationTypes, 
-      }).then((cardList) => {
-        // CardList inits Gallery component with cards & pagination on page
-        this.cardList = cardList;
-        this._filterResults.init( {filtered : false, cardList : this.cardList} );
-      });
-
+    // Card Data class collects raw model and parses into view-model format
+    this.cardData = new CardData({
+      projectId : this.projectId, 
+      modelData : this._modelData,
+      localizationTypes : this.localizationTypes
     });
+
+    // Init Card Gallery with default : 0-20 of All Localizations
+    this._cardGallery({}); 
+
+    // Listen for pagination events
+    this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
 
     // Listen for filter events
-    this._filterView._filterDialog.addEventListener("applyFilterString", (e) =>{
-      console.log(e.detail.filterString);
-    });
-      
+    this._filterView._filterDialog.addEventListener("applyFilterString", this._updateFilterResults.bind(this));  
     
-
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -101,6 +98,34 @@ class AnalyticsAnnotations extends TatorPage {
 
   static get observedAttributes() {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+  }
+
+  _cardGallery({filtered = false, params = "", start = 0, stop = 50} = {}){
+    this.loading.showSpinner();
+    // Initial view-modal "Cardlist" from fetched localizations
+    this.cardData.makeCardList({params, start, stop})
+    .then((cardList) => {
+      this.loading.hideSpinner();
+      // CardList inits Gallery component with cards & pagination on page
+      this._filterResults.show( {filtered, start, stop, cardList} );
+    });
+  }
+
+  _updateFilterResults(e){
+    let params = this._localizationParams(e.detail.filterString);
+    this._cardGallery({
+      filtered : true,
+      params
+    });
+  }
+
+  _paginateFilterResults(e){
+    console.log(e.detail);
+  }
+
+  _localizationParams(string){
+    console.log("Convert this to usable query params? or ok ::: "+string);
+    return "";
   }
 
 }

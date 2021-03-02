@@ -3,28 +3,30 @@ class CardData {
     constructor({ 
         projectId = null,
         modelData = null, 
-
+        localizationTypes = []
       }){
           this.projectId = projectId;
           this._modelData = modelData;
+          this.localizationTypes = localizationTypes;
     }
 
-    getLocalizationsCount(){
-        // Used by paginator?
-    }
+    async makeCardList({ params = "", start = 0, stop = 20} = {}){
+        this.cardList = {};
+        this.cardList.cards = [];
+        this.cardList.total = this._modelData.getLocalizationCount({params});
 
-    async makeCardList({
-        localizationTypes = [], 
-        localizations = []
-     }){
-        this.cardList = [];
-        this.localizationTypes = localizationTypes;
-        await this.getCardList(localizations);
+        this.localizations= await this._modelData.getLocalizations({
+            params, 
+            start, 
+            stop
+        });
+        await this.getCardList(this.localizations, params);
         return this.cardList;
     }
 
-    getCardList(localizations){
+    getCardList(localizations, params){
         return new Promise((resolve, reject) => {
+
             let counter = localizations.length;
             for(let l of localizations){
                 let id = l.id;
@@ -42,13 +44,15 @@ class CardData {
 
                 let promises = [ 
                         this._modelData.getUser(l.modified_by),
-                        this._modelData.getLocalizationGraphic(l.id)
+                        this._modelData.getLocalizationGraphic(l.id),
+                        this._modelData.getLocalizationCount({params})
                     ]
                 
                 Promise.all(promises)
                 .then((respArray) => {
                     let userName = respArray[0].username;
                     let graphic = respArray[1];
+                    this.cardList.total = respArray[2];
             
                     let card = {
                         id,
@@ -61,7 +65,7 @@ class CardData {
                         userName
                     };
                     //console.log(card);
-                    this.cardList.push(card);
+                    this.cardList.cards.push(card);
                     counter --;
                     //console.log("counter went down is now: "+counter); 
                 });
@@ -70,9 +74,8 @@ class CardData {
             let counterCheckout = setInterval(function(){
                 //console.log("interval check for counter "+counter); 
                 if(counter == 0){
-                    resolve('complete');
                     clearInterval(counterCheckout);
-                    return this.cardList;
+                    resolve("complete");
                 }
                 }, 500)
         });

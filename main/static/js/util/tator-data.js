@@ -114,8 +114,8 @@ class TatorData {
   /**
    * Returns a data for user with user ID
    */
-  async getLocalizationCount(){     
-    const response = await fetch(`/rest/LocalizationCount/${this._project}`, {
+  async getLocalizationCount({params = ""} = {}){     
+    const response = await fetch(`/rest/LocalizationCount/${this._project}${params}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -134,8 +134,8 @@ class TatorData {
   /**
    * Returns a data for user with user ID
    */
-  async getLocalizations({ start = 0, stop = 20} = {}){     
-    const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}`, {
+  async getLocalizations({ params = "", start = 0, stop = 20} = {}){     
+    const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}${params}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
