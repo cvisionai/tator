@@ -17,11 +17,12 @@ class AnnotationsGallery extends EntityCardGallery {
 
     }
 
+    /* Init function to show and populate gallery w/ pagination */
     show({
       filtered = false,
       cardList = {}
     }){
-      // Populate the pagination
+      // Update Heading
       if(filtered) {
         this._ul.innerHTML = "";
         this._h3Text = document.createTextNode("Filtered Annotations");
@@ -29,11 +30,21 @@ class AnnotationsGallery extends EntityCardGallery {
         this._ul.innerHTML = "";
         this._h3Text = document.createTextNode("All Annotations");
       }
+
+      //Update descriptive count text
+      this._galleryCountText = document.createTextNode(`Showing 1-50 of ${cardList.total}`);
+      this._p.appendChild(this._galleryCountText);
+
+      // Populate the pagination
+      this._paginator_top.init(cardList.total);
       this._paginator.init(cardList.total);
+
+      // Append the cardList
       this.appendCardList(cardList.cards)
     }
 
-    appendCardList(cardList){
+    // Accepts a cardList object and appends each card to the page web component
+    appendCardList(cardList){    
       for(let cardObj of cardList){
         let card = document.createElement("annotations-card");
         card.init( cardObj );
@@ -52,7 +63,8 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // For pagination events
     updatePage(start, stop){
-      
+      this._ul.innerHTML = "";
+      return appendCardList(cardList);
     }
 
 }
