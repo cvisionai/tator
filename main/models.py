@@ -280,7 +280,7 @@ class User(AbstractUser):
         if self.first_name or self.last_name:
             return f"{self.first_name} {self.last_name}"
         else:
-            return "---"
+            return f"{self.username}"
 
 @receiver(post_save, sender=User)
 def user_save(sender, instance, created, **kwargs):

@@ -184,7 +184,7 @@ def _use_es(project, params):
     use_es = use_es or use_es_for_attributes
 
     return use_es, filter_ops
-        
+
 def get_leaf_queryset(project, params):
     # Determine whether to use ES or not.
     use_es, filter_ops = _use_es(project, params)
@@ -193,7 +193,7 @@ def get_leaf_queryset(project, params):
         # If using ES, do the search and construct the queryset.
         query = get_leaf_es_query(params)
         leaf_ids, _  = TatorSearch().search(project, query)
-        qs = Leaf.objects.filter(pk__in=leaf_ids).order_by('id')
+        qs = Leaf.objects.filter(pk__in=leaf_ids, deleted=False).order_by('id')
         qs = qs.distinct()
     else:
         # If using PSQL, construct the queryset.
