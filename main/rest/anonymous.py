@@ -1,6 +1,5 @@
 from django.contrib.auth import login
 from django.shortcuts import redirect
-
 from rest_framework.views import APIView
 
 from ..models import User
@@ -20,8 +19,10 @@ class AnonymousGatewayAPI(APIView):
             last_name='User',
             email='info@cvisionai.com',
         )
+        url = request.query_params.get("redirect", '/projects')
+        response = redirect(url)
 
         # Upgrade the connection to a session
         login(request, user)
-        return redirect("/projects")
+        return response
 
