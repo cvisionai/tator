@@ -15,8 +15,8 @@ class AnonymousGatewayAPI(APIView):
     def get(self, request, format=None, **kwargs):
         user, _ = User.objects.get_or_create(
             username='anonymous',
-            first_name='Anonymous',
-            last_name='User',
+            first_name='Guest',
+            last_name='Account',
             email='info@cvisionai.com',
         )
         url = request.query_params.get("redirect", '/projects')
