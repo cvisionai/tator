@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 % endif
 
 # Install pip packages
+RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 RUN pip3 --no-cache-dir --timeout=1000 install \
