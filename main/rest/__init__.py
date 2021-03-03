@@ -11,6 +11,7 @@ from .audio_file import AudioFileListAPI
 from .audio_file import AudioFileDetailAPI
 from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
+from .change_log import ChangeLogListAPI
 from .clone_media import CloneMediaListAPI
 from .download_info import DownloadInfoAPI
 from .email import EmailAPI
@@ -73,3 +74,4 @@ from .version import VersionDetailAPI
 from .video_file import VideoFileListAPI
 from .video_file import VideoFileDetailAPI
 from .jwt import JwtGatewayAPI
+from .anonymous import AnonymousGatewayAPI

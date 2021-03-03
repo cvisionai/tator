@@ -2,8 +2,11 @@ import logging
 import datetime
 from django.db.models import Subquery
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 
+from ..models import ChangeLog
+from ..models import ChangeToObject
 from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
@@ -28,6 +31,7 @@ from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
+from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
 from ._util import check_required_fields
 from ._permissions import ProjectEditPermission
@@ -132,35 +136,32 @@ class LocalizationListAPI(BaseListView):
                                             required_fields[loc['type']][2],
                                             loc)
                       for loc in loc_specs]
-       
+
         # Create the localization objects.
-        localizations = []
-        create_buffer = []
-        for loc_spec, attrs in zip(loc_specs, attr_specs):
-            parent = None
-            if loc_spec.get('parent', None):
-                parent = Localization.objects.get(pk=loc_spec.get('parent', None))
-            loc = Localization(project=project,
-                               meta=metas[loc_spec['type']],
-                               media=medias[loc_spec['media_id']],
-                               user=self.request.user,
-                               attributes=attrs,
-                               created_by=self.request.user,
-                               modified_by=self.request.user,
-                               version=versions[loc_spec.get('version', None)],
-                               parent=parent,
-                               x=loc_spec.get('x', None),
-                               y=loc_spec.get('y', None),
-                               u=loc_spec.get('u', None),
-                               v=loc_spec.get('v', None),
-                               width=loc_spec.get('width', None),
-                               height=loc_spec.get('height', None),
-                               frame=loc_spec.get('frame', None))
-            create_buffer.append(loc)
-            if len(create_buffer) > 1000:
-                localizations += Localization.objects.bulk_create(create_buffer)
-                create_buffer = []
-        localizations += Localization.objects.bulk_create(create_buffer)
+        objs = (
+            Localization(
+                project=project,
+                meta=metas[loc_spec["type"]],
+                media=medias[loc_spec["media_id"]],
+                user=self.request.user,
+                attributes=attrs,
+                created_by=self.request.user,
+                modified_by=self.request.user,
+                version=versions[loc_spec.get("version", None)],
+                parent=Localization.objects.get(pk=loc_spec.get("parent"))
+                if loc_spec.get("parent")
+                else None,
+                x=loc_spec.get("x", None),
+                y=loc_spec.get("y", None),
+                u=loc_spec.get("u", None),
+                v=loc_spec.get("v", None),
+                width=loc_spec.get("width", None),
+                height=loc_spec.get("height", None),
+                frame=loc_spec.get("frame", None),
+            )
+            for loc_spec, attrs in zip(loc_specs, attr_specs)
+        )
+        localizations = bulk_create_from_generator(objs, Localization)
 
         # Build ES documents.
         ts = TatorSearch()
@@ -172,31 +173,90 @@ class LocalizationListAPI(BaseListView):
                 documents = []
         ts.bulk_add_documents(documents)
 
-        # Return created IDs.
+        # Create ChangeLogs
+        objs = (
+            ChangeLog(
+                project=project, user=self.request.user, description_of_change=loc.create_dict
+            )
+            for loc in localizations
+        )
+        change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+        # Associate ChangeLogs with created objects
+        ref_table = ContentType.objects.get_for_model(localizations[0])
         ids = [loc.id for loc in localizations]
+        objs = (
+            ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+            for ref_id, cl in zip(ids, change_logs)
+        )
+        bulk_create_from_generator(objs, ChangeToObject)
+
+        # Return created IDs.
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
 
     def _delete(self, params):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
+            # Get info to populate ChangeLog entry
+            first_obj = qs.first()
+            project = first_obj.project
+            ref_table = ContentType.objects.get_for_model(first_obj)
+            delete_dicts = []
+            ref_ids = []
+            for obj in qs:
+                delete_dicts.append(obj.delete_dict)
+                ref_ids.append(obj.id)
+
             # Delete the localizations.
             qs.update(deleted=True,
                       modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                       modified_by=self.request.user)
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
+
+            # Create ChangeLogs
+            objs = (
+                ChangeLog(project=project, user=self.request.user, description_of_change=dd)
+                for dd in delete_dicts
+            )
+            change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+            # Associate ChangeLogs with deleted objects
+            objs = (
+                ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+                for ref_id, cl in zip(ref_ids, change_logs)
+            )
+            bulk_create_from_generator(objs, ChangeToObject)
+
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
+            # Get the current representation of the object for comparison
+            original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             qs.update(modified_by=self.request.user)
+
+            # Get one object from the queryset to create the change log
+            obj = qs.first()
+            change_dict = obj.change_dict(original_dict)
+            ref_table = ContentType.objects.get_for_model(obj)
+
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+
+            # Create the ChangeLog entry and associate it with all objects in the queryset
+            cl = ChangeLog(
+                project=obj.project, user=self.request.user, description_of_change=change_dict
+            )
+            cl.save()
+            objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
+            bulk_create_from_generator(objs, ChangeToObject)
+
         return {'message': f'Successfully updated {count} localizations!'}
 
     def _put(self, params):
@@ -225,6 +285,7 @@ class LocalizationDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'], deleted=False)
+        original_dict = obj.model_dict
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -281,16 +342,36 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.thumbnail_image.save()
 
         obj.save()
+        cl = ChangeLog(
+            project=obj.project,
+            user=self.request.user,
+            description_of_change=obj.change_dict(original_dict),
+        )
+        cl.save()
+        ChangeToObject(
+            ref_table=ContentType.objects.get_for_model(obj),
+            ref_id=obj.id,
+            change_id=cl,
+        ).save()
+
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         qs = Localization.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        TatorSearch().delete_document(qs[0])
+        obj = qs[0]
+        project = obj.project
+        delete_dict = obj.delete_dict
+        ref_table = ContentType.objects.get_for_model(obj)
+        ref_id = obj.id
+        TatorSearch().delete_document(obj)
         qs.update(deleted=True,
                   modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                   modified_by=self.request.user)
+        cl = ChangeLog(project=project, user=self.request.user, description_of_change=delete_dict)
+        cl.save()
+        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

@@ -3,6 +3,7 @@ from .affiliation import AffiliationDetailSchema
 from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
 from .algorithm import AlgorithmDetailSchema
+from .anonymous import AnonymousGatewaySchema
 from .attribute_type import AttributeTypeListSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
@@ -11,6 +12,7 @@ from .audio_file import AudioFileListSchema
 from .audio_file import AudioFileDetailSchema
 from .bookmark import BookmarkListSchema
 from .bookmark import BookmarkDetailSchema
+from .change_log import ChangeLogListSchema
 from .clone_media import CloneMediaListSchema
 from .download_info import DownloadInfoSchema
 from .email import EmailSchema

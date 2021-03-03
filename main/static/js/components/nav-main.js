@@ -19,17 +19,17 @@ class NavMain extends TatorElement {
     projects.textContent = "Projects";
     this._primary.appendChild(projects);
 
-    const changePassword = document.createElement("a");
-    changePassword.setAttribute("class", "nav__link");
-    changePassword.setAttribute("href", "/accounts/password_change");
-    changePassword.textContent = "Change Password";
-    this._primary.appendChild(changePassword);
+    this._changePassword = document.createElement("a");
+    this._changePassword.setAttribute("class", "nav__link");
+    this._changePassword.setAttribute("href", "/accounts/password_change");
+    this._changePassword.textContent = "Change Password";
+    this._primary.appendChild(this._changePassword);
 
-    const accountProfile = document.createElement("a");
-    accountProfile.setAttribute("class", "nav__link");
-    accountProfile.setAttribute("href", "/accounts/account-profile");
-    accountProfile.textContent = "Account Profile";
-    this._primary.appendChild(accountProfile);
+    this._accountProfile = document.createElement("a");
+    this._accountProfile.setAttribute("class", "nav__link");
+    this._accountProfile.setAttribute("href", "/accounts/account-profile");
+    this._accountProfile.textContent = "Account Profile";
+    this._primary.appendChild(this._accountProfile);
 
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
@@ -93,6 +93,11 @@ class NavMain extends TatorElement {
         }
         break;
     }
+  }
+
+  disableAccountSettings() {
+    this._primary.removeChild(this._changePassword);
+    this._primary.removeChild(this._accountProfile);
   }
 }
 

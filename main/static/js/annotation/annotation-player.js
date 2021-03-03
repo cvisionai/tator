@@ -37,14 +37,20 @@ class AnnotationPlayer extends TatorElement {
     div.appendChild(timelineDiv);
 
     const timeDiv = document.createElement("div");
-    timeDiv.style.display = "flex";
+    timeDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
     timelineDiv.appendChild(timeDiv);
 
-    const currentTime = document.createElement("div");
-    currentTime.textContent = "0:00";
-    currentTime.style.width = "35px";
-    //currentTime.style.float = "right";
-    timeDiv.appendChild(currentTime);
+    this._currentTimeInput = document.createElement("input");
+    this._currentTimeInput.setAttribute("class", "form-control input-sm1 f2 text-center");
+    this._currentTimeInput.setAttribute("type", "text");
+    this._currentTimeInput.style.display = "none";
+    this._currentTimeInput.style.width = "100px";
+    timeDiv.appendChild(this._currentTimeInput);
+
+    this._currentTimeText = document.createElement("div");
+    this._currentTimeText.textContent = "0:00";
+    this._currentTimeText.style.width = "35px";
+    timeDiv.appendChild(this._currentTimeText);
 
     this._totalTime = document.createElement("div");
     this._totalTime.setAttribute("class", "px-2 text-gray");
@@ -77,16 +83,27 @@ class AnnotationPlayer extends TatorElement {
     timelineDiv.appendChild(outerDiv);
 
     const frameDiv = document.createElement("div");
-    frameDiv.style.display = "flex";
+    frameDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
     timelineDiv.appendChild(frameDiv);
+
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
 
-    const currentFrame = document.createElement("div");
-    currentFrame.setAttribute("class", "f2 text-center");
-    currentFrame.textContent = "0";
-    currentFrame.style.width = "15px";
-    frameDiv.appendChild(currentFrame);
+    const currentFrameWrapper = document.createElement("div");
+    frameDiv.appendChild(currentFrameWrapper);
+
+    this._currentFrameInput = document.createElement("input");
+    this._currentFrameInput.setAttribute("class", "form-control input-sm1 f2 text-center");
+    this._currentFrameInput.setAttribute("type", "text");
+    this._currentFrameInput.style.display = "none";
+    this._currentFrameInput.style.width = "100px";
+    frameDiv.appendChild(this._currentFrameInput);
+
+    this._currentFrameText = document.createElement("div");
+    this._currentFrameText.setAttribute("class", "f2 text-center");
+    this._currentFrameText.textContent = "0";
+    this._currentFrameText.style.minWidth = "15px";
+    currentFrameWrapper.appendChild(this._currentFrameText);
 
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
@@ -180,17 +197,7 @@ class AnnotationPlayer extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
-
-      this.dispatchEvent(new Event("playing", {composed: true}));
-      fastForward.setAttribute("disabled", "");
-      rewind.setAttribute("disabled", "");
-
-      this._video.pause();
-      this._video.rateChange(this._rate);
-      if (this._video.playBackwards())
-      {
-        play.removeAttribute("is-paused");
-      }
+      this.playBackwards();
     });
 
     fastForward.addEventListener("click", () => {
@@ -239,10 +246,10 @@ class AnnotationPlayer extends TatorElement {
       const frame = evt.detail.frame;
       this._slider.value = frame;
       const time = this._frameToTime(frame);
-      currentTime.textContent = time;
-      currentFrame.textContent = frame;
-      currentTime.style.width = 10 * (time.length - 1) + 5 + "px";
-      currentFrame.style.width = (15 * String(frame).length) + "px";
+      this._currentTimeText.textContent = time;
+      this._currentFrameText.textContent = frame;
+      this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
+      this._currentFrameText.style.width = (15 * String(frame).length) + "px";
     });
 
     this._video.addEventListener("playbackEnded", evt => {
@@ -270,11 +277,147 @@ class AnnotationPlayer extends TatorElement {
       window.dispatchEvent(new Event("resize"));
     });
 
+    this._currentFrameInput.addEventListener("focus", () => {
+      document.body.classList.add("shortcuts-disabled");
+    });
+
+    this._currentFrameInput.addEventListener("change", () => {
+      this._currentFrameInput.blur(); // Lose focus to invoke the blur event
+    });
+
+    this._currentFrameInput.addEventListener("blur", () => {
+      document.body.classList.remove("shortcuts-disabled");
+      this._currentFrameText.style.display = "block";
+      this._currentFrameInput.style.display = "none";
+      this.processFrameInput();
+    });
+
+    this._currentFrameText.addEventListener("click", () => {
+      this._currentFrameInput.style.display = "block";
+      this._currentFrameInput.focus();
+      this._currentFrameText.style.display = "none";
+    });
+
+    this._currentTimeInput.addEventListener("focus", () => {
+      document.body.classList.add("shortcuts-disabled");
+    });
+
+    this._currentTimeInput.addEventListener("change", () => {
+      this._currentTimeInput.blur(); // Lose focus to invoke the blur event
+    });
+
+    this._currentTimeInput.addEventListener("blur", () => {
+      document.body.classList.remove("shortcuts-disabled");
+      this._currentTimeText.style.display = "block";
+      this._currentTimeInput.style.display = "none";
+      this.processTimeInput();
+    });
+
+    this._currentTimeText.addEventListener("click", () => {
+      this._currentTimeInput.style.display = "block";
+      this._currentTimeInput.focus();
+      this._currentTimeText.style.display = "none";
+    });
+
     document.addEventListener("keydown", evt => {
+
+      if (document.body.classList.contains("shortcuts-disabled"))
+      {
+        return;
+      }
+
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
+      else if (evt.code == "Space")
+      {
+        evt.preventDefault();
+        if (this.is_paused())
+        {
+          this.play();
+        }
+        else
+        {
+          this.pause();
+        }
+      }
     });
+  }
+
+  /**
+   * Process the frame input text field and attempts to jump to that frame
+   */
+  processFrameInput() {
+
+    var frame = parseInt(this._currentFrameInput.value);
+    if (isNaN(frame)) {
+      console.log("Provided invalid frame input: " + this._currentFrameInput.value);
+      this._currentFrameInput.classList.add("has-border");
+      this._currentFrameInput.classList.add("is-invalid");
+      return;
+    }
+
+    const maxFrame = this._mediaInfo.num_frames - 1;
+    if (frame > maxFrame)
+    {
+      frame = maxFrame;
+    }
+    else if (frame < 0)
+    {
+      frame = 0;
+    }
+
+    this._currentFrameInput.classList.remove("has-border");
+    this._currentFrameInput.classList.remove("is-invalid");
+    this.goToFrame(frame);
+  }
+
+  /**
+   * Process the time input text field and attempts to jump to the corresponding frame
+   */
+  processTimeInput() {
+
+    var timeTokens = this._currentTimeInput.value.split(":");
+    if (timeTokens.length != 2)
+    {
+      console.log("Provided invalid time (minutes:seconds) expected: " + this._currentTimeInput.value);
+      this._currentTimeInput.classList.add("has-border");
+      this._currentTimeInput.classList.add("is-invalid");
+      return;
+    }
+
+    var minutes = parseInt(timeTokens[0]);
+    if (isNaN(minutes))
+    {
+      console.log("Provided invalid time (minutes:seconds) expected: " + this._currentTimeInput.value);
+      this._currentTimeInput.classList.add("has-border");
+      this._currentTimeInput.classList.add("is-invalid");
+      return;
+    }
+
+    var seconds = parseInt(timeTokens[1]);
+    if (isNaN(seconds))
+    {
+      console.log("Provided invalid time (minutes:seconds) expected: " + this._currentTimeInput.value);
+      this._currentTimeInput.classList.add("has-border");
+      this._currentTimeInput.classList.add("is-invalid");
+      return;
+    }
+
+    var frame = this._timeToFrame(minutes, seconds);
+    const maxFrame = this._mediaInfo.num_frames - 1;
+    if (frame > maxFrame)
+    {
+      frame = maxFrame;
+    }
+    else if (frame < 0)
+    {
+      frame = 0;
+    }
+
+    this._currentTimeInput.classList.remove("has-border");
+    this._currentTimeInput.classList.remove("is-invalid");
+    this.goToFrame(frame);
   }
 
   set permission(val) {
@@ -364,6 +507,20 @@ class AnnotationPlayer extends TatorElement {
       {
         this._play.removeAttribute("is-paused");
       }
+    }
+  }
+
+  playBackwards()
+  {
+    this.dispatchEvent(new Event("playing", {composed: true}));
+    this._fastForward.setAttribute("disabled", "");
+    this._rewind.setAttribute("disabled", "");
+
+    this._video.pause();
+    this._video.rateChange(this._rate);
+    if (this._video.playBackwards())
+    {
+      this._play.removeAttribute("is-paused");
     }
   }
 
@@ -511,6 +668,11 @@ class AnnotationPlayer extends TatorElement {
     const secFormatted = ("0" + seconds).slice(-2);
     const minutes = Math.floor(totalSeconds / 60);
     return minutes + ":" + secFormatted;
+  }
+
+  _timeToFrame(minutes, seconds) {
+    var frame = minutes * 60 * this._fps + seconds * this._fps + 1;
+    return frame;
   }
 }
 

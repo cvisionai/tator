@@ -90,4 +90,7 @@ Steps
 14) In a buffered scrub region, play the video at the 4x rate. Verify the video is playing back at a faster rate.
 15) Repeat the above while going playing backwards.
 16) Scrub around the video (click on the timeline dot and drag around)
-17) Repeat the above steps with a multi-view video.
+17) Use the spacebar to pause/play the video.
+18) Select the frame number in the timeline and jump to a new frame. Put in a larger number than max, verify the video jumps to the max frame. Put in a negative number and verify the video jumps to 0. Put in a non-number and verify nothing happens. Use the arrow keys and space bar and ensure shortcuts are disabled.
+19) Repeat step 18 using the current time in the timeline.
+20) Repeat the above steps with a multi-view video.

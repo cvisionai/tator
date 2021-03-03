@@ -69,6 +69,7 @@ urlpatterns = [
          AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
+    path('anonymous-gateway', AnonymousGatewayAPI.as_view(), name='anonymous-gateway'),
 ]
 
 if settings.COGNITO_ENABLED:
@@ -139,6 +140,9 @@ urlpatterns += [
     path(
         'rest/Bookmark/<int:id>',
         BookmarkDetailAPI.as_view(),
+    ),
+    path('rest/ChangeLog/<int:project>',
+         ChangeLogListAPI.as_view(),
     ),
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
