@@ -2599,7 +2599,7 @@ class AnnotationCanvas extends TatorElement
   {
     if (localization == null)
     {
-      console.warning("Emphasizing null localization");
+      console.warn("Emphasizing null localization");
       return;
     }
     if (muteOthers)
