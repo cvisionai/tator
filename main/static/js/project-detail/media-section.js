@@ -350,14 +350,16 @@ class MediaSection extends TatorElement {
               filenames.add(basename);
 
               const request = Utilities.getDownloadRequest(media, headers);
-              // Download media file.
-              console.log("Downloading " + media.name + " from " + request.url + "...");
-              await fetchRetry(request)
-              .then(response => {
-                const stream = () => response.body;
-                const name = basename + ext;
-                ctrl.enqueue({name, stream});
-              });
+              if (request !== null) { // Media objects with no downloadable files will return null.
+                // Download media file.
+                console.log("Downloading " + media.name + " from " + request.url + "...");
+                await fetchRetry(request)
+                .then(response => {
+                  const stream = () => response.body;
+                  const name = basename + ext;
+                  ctrl.enqueue({name, stream});
+                });
+              }
             }
           });
         }
