@@ -56,7 +56,7 @@ class LocalizationEdit extends TypeForm {
     if(typeof colMap !== "undefined" && colMap !== null){
       if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
     }
-    this._form.appendChild( this.inputHelper.inputText({
+    this._form.appendChild( this.inputHelper.colorInput({
       "labelText": "Color Map Default",
       "name": COLORMAP,
       "value": colMapDefault,
@@ -140,14 +140,21 @@ class LocalizationEdit extends TypeForm {
     };
 
     
-    // only send dtype when it's new
+    // Dtype - only send when it's new
     if(includeDtype) {
       let dtype = form.querySelector('[name="dtype"]').value;
       formData.dtype = dtype;
     }
 
+    // Color map
+    let unspecifiedColor = form.querySelector('input[id="unspecifiedColor"]');
     let colorMap = form.querySelector('input[name="colorMap"]').value;
-    if(colorMap != "") formData.colorMap = { "default" : colorMap} ;
+
+    if(!unspecifiedColor.checked && colorMap !== "" && colorMap !== null) {
+      formData.colorMap = { "default" : colorMap} ;
+    } else if (unspecifiedColor.value == "na"){
+      formData.colorMap = {};
+    }
 
     return formData;
   }
