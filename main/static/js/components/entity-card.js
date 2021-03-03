@@ -21,24 +21,24 @@ class EntityCard extends TatorElement {
   
       // Link
       this._link = document.createElement("a");
-      this._link.setAttribute("class", "entity-card--link file__link d-flex flex-items-center text-white");
+      this._link.setAttribute("class", "entity-card__link file__link d-flex flex-items-center text-white");
       this._link.setAttribute("href", "#");
       this._li.appendChild(this._link);
   
       // Image, spinner until SRC set
       this._img = document.createElement("img");
       this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
-      this._img.setAttribute("class", "entity-card--image col-12 rounded-1");
+      this._img.setAttribute("class", "entity-card__image col-12 rounded-1");
       this._link.appendChild(this._img);
   
       // containing div for li element (styling)
       const div = document.createElement("div");
-      div.setAttribute("class", "entity-card--title-container py-2 px-2 lh-default");
+      div.setAttribute("class", "entity-card__title__container py-2 px-2 lh-default");
       this._li.appendChild(div);
   
       // Title Div
       this.titleDiv = document.createElement("div");
-      this.titleDiv.setAttribute("class", "entity-card--title py-1 d-flex flex-justify-between");
+      this.titleDiv.setAttribute("class", "entity-card__title py-1 d-flex flex-justify-between");
       div.appendChild(this.titleDiv);
   
       // Text for Title Div
@@ -49,13 +49,13 @@ class EntityCard extends TatorElement {
 
       // OPTIONAL Description Div
       this.descDiv = document.createElement("div");
-      this.descDiv.setAttribute("class", "entity-card--description py-1 d-flex flex-justify-between");
+      this.descDiv.setAttribute("class", "entity-card__description py-1 d-flex flex-justify-between");
       this._li.appendChild(this.descDiv);
       this.descDiv.hidden = true; // HIDDEN default
   
       // "More" (three dots) menu (OPTIONAL)
       this._more = document.createElement("media-more");
-      this._more.setAttribute("class", "entity-card--more position-relative");
+      this._more.setAttribute("class", "entity-card__more position-relative");
       this._more.style.opacity = 0;
       this.titleDiv.appendChild(this._more); 
       this._more.hidden = true; // HIDDEN default

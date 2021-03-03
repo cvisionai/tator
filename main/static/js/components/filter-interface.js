@@ -18,7 +18,7 @@ class FilterInterface extends TatorElement {
     div.appendChild(filterButton);
 
     const barDiv = document.createElement("div");
-    barDiv.setAttribute("class", "analysis__search d-flex px-6");
+    barDiv.setAttribute("class", "analysis__search d-flex");
     div.appendChild(barDiv);
 
     this._input = document.createElement("input");
