@@ -99,6 +99,9 @@ class ModelDiffMixin(object):
                 and self._meta.get_field(field).get_internal_type() == "JSONField"
             ):
                 model_dict[field] = dict(model_dict[field]) if model_dict[field] else {}
+        for k, v in model_dict.items():
+            if type(v) == datetime.datetime:
+                model_dict[k] = v.strftime("%Y_%m_%d__%H_%M_%S")
         return model_dict
 
     @staticmethod
