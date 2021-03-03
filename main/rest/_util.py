@@ -1,4 +1,5 @@
 import datetime
+from itertools import islice
 import logging
 
 from django.utils.http import urlencode
@@ -98,3 +99,13 @@ def paginate(query_params, queryset):
         qs = queryset[start:stop]
     return qs
 
+
+def bulk_create_from_generator(obj_generator, model, batch_size=1000):
+    saved_objects = []
+    while True:
+        batch = list(islice(obj_generator, batch_size))
+        if not batch:
+            break
+        saved_objects += model.objects.bulk_create(batch, batch_size)
+
+    return saved_objects

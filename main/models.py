@@ -1,6 +1,7 @@
 import os
 import traceback
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
 from django.contrib.gis.db.models import ManyToManyField
@@ -35,6 +36,7 @@ from django.db.models.signals import post_delete
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.conf import settings
+from django.forms.models import model_to_dict
 from enumfields import Enum
 from enumfields import EnumField
 from django_ltree.fields import PathField
@@ -56,6 +58,102 @@ import uuid
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
+
+
+class ModelDiffMixin(object):
+    """
+    A model mixin that tracks model fields' values and provide some useful api
+    to know what fields have been changed.
+
+    Based on the code in https://stackoverflow.com/a/13842223.
+    """
+
+    @staticmethod
+    def _diff(old, new):
+        """
+        Calculates the difference between two model dicts from the same object after a change was
+        applied.
+        """
+        for name, v in old.items():
+            new_v = new[name]
+            if name != "attributes" and v != new_v:
+                yield (f"_{name}", v, new_v)
+
+        old_attributes = old.get("attributes", {})
+        new_attributes = new.get("attributes", {})
+        for name, v in new_attributes.items():
+            old_v = old_attributes.get(name)
+            if v != old_v:
+                yield (name, old_v, v)
+
+    @property
+    def model_dict(self):
+        """
+        Returns the dictionary representation of the model for comparison.
+        """
+        model_fields = [field.name for field in self._meta.fields]
+        model_dict = model_to_dict(self, fields=model_fields)
+        for field in model_fields:
+            if (
+                field in model_dict
+                and self._meta.get_field(field).get_internal_type() == "JSONField"
+            ):
+                model_dict[field] = dict(model_dict[field]) if model_dict[field] else {}
+        return model_dict
+
+    @staticmethod
+    def _init_change_dict():
+        return {"old": [], "new": []}
+
+    def change_dict(self, old):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table.
+        """
+        change_dict = self._init_change_dict()
+
+        for name, old_val, new_val in self._diff(old, self.model_dict):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
+
+        return change_dict
+
+    @property
+    def delete_dict(self):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table when a row is deleted.
+        """
+        change_dict = self._init_change_dict()
+
+        old = self.model_dict
+        new = {key: None for key in old.keys() if key != "attributes"}
+        new["attributes"] = {key: None for key in old.get("attributes", {})}
+
+        for name, old_val, new_val in self._diff(old, new):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
+
+        return change_dict
+
+    @property
+    def create_dict(self):
+        """
+        Returns the dictionary that is stored in the `description_of_change` field of the ChangeLog
+        table when a row is created.
+        """
+        change_dict = self._init_change_dict()
+
+        new = self.model_dict
+        old = {key: None for key in new.keys() if key != "attributes"}
+        old["attributes"] = {key: None for key in new.get("attributes", {})}
+
+        for name, old_val, new_val in self._diff(old, new):
+            change_dict["old"].append({"name": name, "value": old_val})
+            change_dict["new"].append({"name": name, "value": new_val})
+
+        return change_dict
+
 
 class Depth(Transform):
     lookup_name = "depth"
@@ -606,7 +704,7 @@ def leaf_type_save(sender, instance, **kwargs):
 
 # Entities (stores actual data)
 
-class Media(Model):
+class Media(Model, ModelDiffMixin):
     """
     Fields:
 
@@ -780,7 +878,7 @@ def media_post_delete(sender, instance, **kwargs):
                     path = obj['segment_info']
                     safe_delete(path)
 
-class Localization(Model):
+class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
@@ -838,7 +936,7 @@ def localization_delete(sender, instance, **kwargs):
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
-class State(Model):
+class State(Model, ModelDiffMixin):
     """
     A State is an event that occurs, potentially independent, from that of
     a media element. It is associated with 0 (1 to be useful) or more media
@@ -916,7 +1014,7 @@ def calc_segments(sender, **kwargs):
         segmentList.append(current)
     instance.segments = segmentList
 
-class Leaf(Model):
+class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Meta points to the defintion of the attribute field. That is
@@ -1020,6 +1118,44 @@ class Bookmark(Model):
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
     name = CharField(max_length=128)
     uri = CharField(max_length=1024)
+
+class ChangeLog(Model):
+    """ Stores individual changesets for entities """
+    project = ForeignKey(Project, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=SET_NULL, null=True)
+    modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    description_of_change = JSONField()
+    """
+    The description of the change applied. A single object with the keys `old` and `new`, each
+    containing a list of objects with the keys `name` and `value`. Each object in the `old` list
+    should have a pair in the `new` list (i.e. the same value in the `name` field) with different
+    values in the `value` field. For example:
+    {
+      old: [{
+        name: "Species",
+        value: "Lobster"
+      }, {
+        name: "Length",
+        value: 31
+      }],
+      new: [{
+        name: "Species",
+        value: "Cod"
+      }, {
+        name: "Length",
+        value: 52
+      }]
+    }
+    """
+
+class ChangeToObject(Model):
+    """ Association table that correlates a ChangeLog object to one or more objects """
+    ref_table = ForeignKey(ContentType, on_delete=SET_NULL, null=True)
+    """ The model of the changed object """
+    ref_id = PositiveIntegerField()
+    """ The id of the changed object """
+    change_id = ForeignKey(ChangeLog, on_delete=SET_NULL, null=True)
+    """ The change that affected the object """
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

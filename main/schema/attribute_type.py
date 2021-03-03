@@ -1,4 +1,3 @@
-from typing import Dict, List
 from textwrap import dedent
 
 from rest_framework.schemas.openapi import AutoSchema

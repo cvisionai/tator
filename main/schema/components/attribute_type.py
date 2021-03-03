@@ -94,11 +94,10 @@ attribute_type_spec = {
     },
 }
 
-attribute_type_properties_no_defaults = {}
-
-for prop_name, prop_desc in attribute_type_properties.items():
-    new_desc = {k: v for k, v in prop_desc.items() if k != "default"}
-    attribute_type_properties_no_defaults[prop_name] = new_desc
+attribute_type_properties_no_defaults = {
+    prop_name: {k: v for k, v in prop_desc.items() if k != "default"}
+    for prop_name, prop_desc in attribute_type_properties.items()
+}
 
 attribute_type_update = {
     "type": "object",
