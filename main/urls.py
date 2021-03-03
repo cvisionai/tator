@@ -60,6 +60,7 @@ urlpatterns = [
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
+    path('anonymous-gateway', AnonymousGatewayAPI.as_view(), name='anonymous-gateway'),
 ]
 
 if settings.COGNITO_ENABLED:

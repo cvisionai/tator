@@ -73,3 +73,4 @@ from .version import VersionDetailAPI
 from .video_file import VideoFileListAPI
 from .video_file import VideoFileDetailAPI
 from .jwt import JwtGatewayAPI
+from .anonymous import AnonymousGatewayAPI
