@@ -325,7 +325,7 @@ class MediaSection extends TatorElement {
         async pull(ctrl) {
           let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
           if (lastFilename != null) {
-            url += "&after=" + lastFilename;
+            url += "&after=" + encodeURIComponent(lastFilename);
           }
           await fetchRetry(url, {
             method: "GET",
@@ -430,7 +430,7 @@ class MediaSection extends TatorElement {
                                         baseFilename, lastId, idQuery) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
-            url += "&after=" + lastId;
+            url += "&after=" + encodeURIComponent(lastId);
           }
 
           let request;
