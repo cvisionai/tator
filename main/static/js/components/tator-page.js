@@ -40,6 +40,9 @@ class TatorPage extends TatorElement {
     switch (name) {
       case "username":
         this._header.setAttribute("username", newValue);
+        if (newValue == 'Anonymous User') {
+          this._nav.disableAccountSettings();
+        }
         break;
       case "email":
         this._header.setAttribute("email", newValue);
