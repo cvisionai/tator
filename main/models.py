@@ -424,7 +424,7 @@ def ProjectBasedFileLocation(instance, filename):
 
 class JobCluster(Model):
     name = CharField(max_length=128)
-    owner = ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
+    organization = ForeignKey(Organization, null=True, blank=True, on_delete=SET_NULL)
     host = CharField(max_length=1024)
     port = PositiveIntegerField()
     token = CharField(max_length=1024)

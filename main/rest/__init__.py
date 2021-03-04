@@ -23,6 +23,8 @@ from .image_file import ImageFileListAPI
 from .image_file import ImageFileDetailAPI
 from .job import JobListAPI
 from .job import JobDetailAPI
+from .job_cluster import JobClusterListAPI
+from .job_cluster import JobClusterDetailAPI
 from .leaf import LeafSuggestionAPI
 from .leaf import LeafListAPI
 from .leaf import LeafDetailAPI

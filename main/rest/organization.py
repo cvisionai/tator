@@ -38,8 +38,8 @@ class OrganizationListAPI(BaseListView):
         return {'message': f"Organization {params['name']} created!", 'id': organization.id}
 
     def get_queryset(self):
-        associations = Association.objects.filter(user=self.request.user)
-        organization_ids = associations.values_list('organization', flat=True)
+        affiliations = Affiliation.objects.filter(user=self.request.user)
+        organization_ids = affiliations.values_list('organization', flat=True)
         organizations = Organization.objects.filter(pk__in=organization_ids).order_by('name')
         return organizations
 
@@ -56,7 +56,7 @@ class OrganizationDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        organization = Organization.objects.select_for_update().get(pk=params['id']) 
+        organization = Organization.objects.select_for_update().get(pk=params['id'])
         if 'name' in params:
             if Organization.objects.filter(
                 affiliation__user=self.request.user).filter(name__iexact=params['name']).exists():

@@ -32,6 +32,10 @@ from .favorite import favorite_update
 from .favorite import favorite
 from .job import job_node
 from .job import job
+from .job_cluster import (
+    job_cluster,
+    job_cluster_spec,
+)
 from .leaf_type import leaf_type_spec
 from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type

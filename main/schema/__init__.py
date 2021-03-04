@@ -24,6 +24,8 @@ from .image_file import ImageFileListSchema
 from .image_file import ImageFileDetailSchema
 from .job import JobListSchema
 from .job import JobDetailSchema
+from .job_cluster import JobClusterListSchema
+from .job_cluster import JobClusterDetailSchema
 from .jwt import JwtGatewaySchema
 from .leaf import LeafSuggestionSchema
 from .leaf import LeafListSchema
