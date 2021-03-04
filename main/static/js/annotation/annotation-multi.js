@@ -1055,6 +1055,7 @@ class AnnotationMulti extends TatorElement {
   {
     if (this._rate > 1.0)
     {
+      let playing = false;
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
       for (let video of this._videos)
