@@ -671,7 +671,7 @@ class AnnotationMulti extends TatorElement {
           }
           setup_video(idx, info[idx]);
         }
-        this._totalTime.textContent = "/ " + this._frameToTime(video_info.num_frames);
+        this._totalTime.textContent = "/ " + this._frameToTime(max_frames);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
         this._slider.setAttribute("max", max_frames-1);
         this._maxFrameNumber = max_frames - 1;
