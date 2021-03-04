@@ -46,11 +46,13 @@ class AlgorithmLaunchAPI(BaseListView):
         # Find the algorithm
         project_id = params['project']
         alg_name = params['algorithm_name']
-        alg_obj = Algorithm.objects.filter(project__id=project_id)
-        alg_obj = alg_obj.filter(name=alg_name)
-        if len(alg_obj) != 1:
+        try:
+            alg_obj = Algorithm.objects.get(project__id=project_id, name=alg_name)
+        except:
+            logger.error(
+                "Could not find algorithm '{alg_name}' in project '{project_id}'", exc_info=True
+            )
             raise Http404
-        alg_obj = alg_obj[0]
         files_per_job = alg_obj.files_per_job
 
         media_ids = []
