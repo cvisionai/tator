@@ -45,7 +45,7 @@ class AnalyticsAnnotations extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    // Gallery of cards showing filter results    
+    // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
     this._shadow.appendChild(this._filterResults);
 
@@ -68,20 +68,20 @@ class AnalyticsAnnotations extends TatorPage {
 
     // Card Data class collects raw model and parses into view-model format
     this.cardData = new CardData({
-      projectId : this.projectId, 
+      projectId : this.projectId,
       modelData : this._modelData,
       localizationTypes : this.localizationTypes
     });
 
     // Init Card Gallery with default : 0-20 of All Localizations
-    this._cardGallery({}); 
+    this._cardGallery({});
 
     // Listen for pagination events
     this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
 
     // Listen for filter events
-    this._filterView._filterDialog.addEventListener("applyFilterString", this._updateFilterResults.bind(this));  
-    
+    this._filterView._filterDialog.addEventListener("newFilterSet", this._updateFilterResults.bind(this));
+
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -101,11 +101,13 @@ class AnalyticsAnnotations extends TatorPage {
   }
 
   _cardGallery({filtered = false, params = "", start = 0, stop = 10} = {}){
+    this.setAttribute("has-open-modal", "");
     this.loading.showSpinner();
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList({params, start, stop})
     .then((cardList) => {
       this.loading.hideSpinner();
+      this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show( {filtered, start, stop, cardList} );
     });

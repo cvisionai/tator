@@ -20,6 +20,8 @@ class AnnotationsGallery extends EntityCardGallery {
       this._resizeCards._initGallery(this._ul, this.colSize);
       this._tools.appendChild( this._resizeCards );
 
+      this._galleryCountText = document.createTextNode("");
+      this._p.appendChild(this._galleryCountText);
     }
 
     /* Init function to show and populate gallery w/ pagination */
@@ -36,9 +38,8 @@ class AnnotationsGallery extends EntityCardGallery {
         this._h3Text = document.createTextNode("All Annotations");
       }
 
-      //Update descriptive count text
-      this._galleryCountText = document.createTextNode(`Showing 1-10 of ${cardList.total}`);
-      this._p.appendChild(this._galleryCountText);
+      // Update descriptive count text
+      this._galleryCountText.nodeValue = `Showing 1-10 of ${cardList.total}`;
 
       // Populate the pagination
       this._paginator.init(cardList.total);
