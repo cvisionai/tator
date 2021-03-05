@@ -62,7 +62,7 @@ class TranscodeAPI(BaseListView):
             # This is a presigned url for S3. Presigned urls do not allow HEAD requests, so parse
             # out the object key and get object size via S3 api.
             key = '/'.join(parsed.path.split('/')[-4:])
-            tator_s3 = TatorS3(project.bucket)
+            tator_s3 = TatorS3(project_obj.bucket)
             s3 = tator_s3.s3
             bucket_name = tator_s3.bucket_name
             response = s3.head_object(Bucket=bucket_name, Key=key)
