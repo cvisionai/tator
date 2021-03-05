@@ -4,6 +4,7 @@
 }
 
 .enitity-gallery__ul {
+  background-color: $color-charcoal--light;
   display: grid;
   grid-gap: 20px;
   grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
@@ -26,12 +27,12 @@
 .enitity-gallery__tools,
 .entity-gallery__paginator {
   background-color: $color-charcoal--light;
-  padding: $spacing-3;
-  margin: $spacing-3;
+  padding: $spacing-1;
+  margin: $spacing-3 0;
 }
 
 .entity-card {
-  background-color: $color-charcoal--light;
+  background-color: $color-charcoal--dark;
   padding: 6px;
   position: relative;
 
