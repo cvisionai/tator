@@ -23,6 +23,7 @@ from ..models import Localization
 from ..models import State
 from ..models import Project
 from ..models import Resource
+from ..models import Bucket
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -51,11 +52,12 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
-def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'image', 'thumbnail',
-                                            'thumbnail_gif']):
+def _presign(s3_lookup, expiration, media, fields=['archival', 'streaming', 'audio', 'image',
+                                                   'thumbnail', 'thumbnail_gif']):
     """ Replaces specified media fields with presigned urls.
     """
     if media.get('media_files') is not None:
+        s3 = s3_lookup[media.bucket]
         for field in fields:
             if field in media['media_files']:
                 for idx, media_def in enumerate(media['media_files'][field]):
@@ -84,8 +86,8 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    s3 = TatorS3()
-    bucket_name = os.getenv('BUCKET_NAME')
+    s3 = TatorS3(project_obj.bucket)
+    bucket_name = s3.bucket_name
 
     # Upload image.
     if media_obj.media_files is None:
@@ -135,8 +137,9 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = TatorS3()
-            response_data = [_presign(s3, presigned, item) for item in response_data]
+            buckets = set([item.bucket for item in response_data])
+            s3_lookup = {bucket:TatorS3(Bucket.objects.get(pk=bucket)) for bucket in buckets}
+            response_data = [_presign(s3_lookup, presigned, item) for item in response_data]
         return response_data
 
     def _post(self, params):
@@ -152,6 +155,7 @@ class MediaListAPI(BaseListView):
         new_attributes = params.get('attributes', None)
         if gid is not None:
             gid = str(gid)
+        project_obj = Project.objects.get(pk=project)
 
         # If section does not exist and is not an empty string, create a section.
         tator_user_sections = ""
@@ -161,7 +165,7 @@ class MediaListAPI(BaseListView):
                 tator_user_sections = section_obj[0].tator_user_sections
             else:
                 tator_user_sections = str(uuid1())
-                Section.objects.create(project=Project.objects.get(pk=project),
+                Section.objects.create(project=project_obj,
                                        name=section,
                                        tator_user_sections=tator_user_sections)
 
@@ -202,7 +206,6 @@ class MediaListAPI(BaseListView):
 
         if media_type.dtype == 'image':
             # Create the media object.
-            project_obj = Project.objects.get(pk=project)
             media_obj = Media.objects.create(
                 project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
@@ -213,6 +216,7 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                bucket=project_obj.bucket,
             )
             media_obj.media_files = {}
 
@@ -252,8 +256,9 @@ class MediaListAPI(BaseListView):
                 thumb.close()
 
             # Set up S3 client.
-            s3 = TatorS3().s3
-            bucket_name = os.getenv('BUCKET_NAME')
+            tator_s3 = TatorS3(project_obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
 
             if url:
                 # Upload image.
@@ -283,7 +288,6 @@ class MediaListAPI(BaseListView):
 
         else:
             # Create the media object.
-            project_obj = Project.objects.get(pk=project)
             media_obj = Media.objects.create(
                 project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
@@ -294,6 +298,7 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                bucket=project_obj.bucket,
             )
 
             # Add optional parameters.
@@ -470,8 +475,9 @@ class MediaDetailAPI(BaseDetailView):
         response_data = database_qs(qs)[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = TatorS3()
-            response_data = _presign(s3, presigned, response_data)
+            bucket = Bucket.objects.get(pk=response_data['bucket'])
+            s3_lookup = {bucket.id:TatorS3(bucket)}
+            response_data = [_presign(s3_lookup, presigned, item) for item in response_data]
         return response_data
 
     @transaction.atomic
