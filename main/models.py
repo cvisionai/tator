@@ -304,6 +304,16 @@ class Affiliation(Model):
     def __str__(self):
         return f'{self.user} | {self.organization}'
 
+class Bucket(Model):
+    """ Stores info required for remote S3 buckets.
+    """
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    name = CharField(max_length=63)
+    access_key = CharField(max_length=128)
+    secret_key = CharField(max_length=40)
+    endpoint_url = CharField(max_length=1024)
+    region = CharField(max_length=16)
+
 class Project(Model):
     name = CharField(max_length=128)
     creator = ForeignKey(User, on_delete=PROTECT, related_name='creator', db_column='creator')
@@ -324,6 +334,9 @@ class Project(Model):
     usernames = ArrayField(CharField(max_length=256), default=list)
     """ Mapping between attribute type names and UUIDs. Used internally for 
         maintaining elasticsearch field aliases.
+    """
+    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    """ If set, media will use this bucket by default.
     """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
@@ -801,6 +814,9 @@ class Media(Model, ModelDiffMixin):
     deleted = BooleanField(default=False)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
+    bucket = ForeignKey(Bucket, on_delete=SET_NULL, null=True, blank=True)
+    """ If set, media files are assumed to be stored in this bucket.
+    """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
