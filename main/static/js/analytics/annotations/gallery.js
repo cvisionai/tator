@@ -6,7 +6,8 @@ class AnnotationsGallery extends EntityCardGallery {
       * 
       */
 
-      this._main.classList.add("mx-6 pb-3");
+      this._main.classList.add("mx-6");
+      this._main.classList.add("pb-3");
 
       // Custom width for annotations gallery
       this.colSize = 200;
