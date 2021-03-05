@@ -30,7 +30,6 @@ class UploadInfoAPI(BaseDetailView):
         project = params['project']
         media_id = params.get('media_id')
         filename = params.get('filename')
-        bucket_name = os.getenv('BUCKET_NAME')
         external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
@@ -38,7 +37,8 @@ class UploadInfoAPI(BaseDetailView):
             PROTO = 'http'
 
         # Get organization.
-        organization = Project.objects.get(pk=project).organization.pk
+        project_obj = Project.objects.get(pk=project)
+        organization = project_obj.organization.pk
 
         # Check if media exists in this project (if media ID given).
         name = str(uuid1())
@@ -61,7 +61,9 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         urls = []
-        s3 = TatorS3().s3
+        tator_s3 = TatorS3(project_obj.bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
         upload_id = ''
         if num_parts == 1:
             # Generate a presigned upload url.

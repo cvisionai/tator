@@ -25,8 +25,9 @@ class MediaUtil:
         self._segment_info = None
 
         if video.media_files:
-            self._s3 = TatorS3().s3
-            self._bucket_name = os.getenv('BUCKET_NAME')
+            tator_s3 = TatorS3(video.bucket)
+            self._s3 = tator_s3.s3
+            self._bucket_name = tator_s3.bucket_name
             if "streaming" in video.media_files:
                 if quality is None:
                     # Select highest quality if not specified
