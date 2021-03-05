@@ -1,8 +1,12 @@
+from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 
+from ..models import Organization
 from ..models import Affiliation
 from ..models import Bucket
+from ..models import database_qs
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
 
@@ -18,7 +22,15 @@ class BucketListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        return database_qs(self.get_queryset())
+        # Make sure user has access to this organization.
+        affiliation = Affiliation.objects.filter(organization=params['organization'],
+                                                 user=self.request.user)
+        if affiliation.count() == 0:
+            raise PermissionDenied
+        if affiliation[0].permission != 'Admin':
+            raise PermissionDenied
+        buckets = Bucket.objects.filter(organization=params['organization'])
+        return database_qs(buckets)
 
     def _post(self, params):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
@@ -26,23 +38,29 @@ class BucketListAPI(BaseListView):
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
-    def get_queryset(self):
-        affiliations = Affiliation.objects.filter(user=self.request.user, permission='Admin')
-        organization_ids = affiliations.values_list('organization', flat=True)
-        buckets = Bucket.objects.filter(organization__in=organization_ids).order_by('id')
-        return buckets
-
 class BucketDetailAPI(BaseDetailView):
     """ Detail endpoint for Buckets.
     """
-    schema = ProjectDetailSchema()
-    permission_classes = [ProjectFullControlPermission]
+    schema = BucketDetailSchema()
+    permission_classes = [OrganizationAdminPermission]
     lookup_field = 'id'
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        bucket = Bucket.objects.filter(pk=params['id'])
-        return database_qs(bucket)[0]
+        # Make sure bucket exists.
+        buckets = Bucket.objects.filter(pk=params['id'])
+        if buckets.count() == 0:
+            raise Http404
+
+        # Make sure user has access to this organization.
+        affiliation = Affiliation.objects.filter(organization=buckets[0].organization,
+                                                 user=self.request.user)
+        if affiliation.count() == 0:
+            raise PermissionDenied
+        if affiliation[0].permission != 'Admin':
+            raise PermissionDenied
+
+        return database_qs(buckets)[0]
 
     @transaction.atomic
     def _patch(self, params):
