@@ -3,7 +3,7 @@ class EntityGalleryPaginator extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "entity-gallery--paginator flex-justify-center pagination d-flex flex-items-center f3 py-6 text-gray");
+    div.setAttribute("class", "entity-gallery__paginator flex-justify-center pagination d-flex flex-items-center py-5 text-gray");
     this._shadow.appendChild(div);
 
     this._prev = document.createElement("a");
@@ -122,7 +122,7 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    this._pageSize = 50;
+    this._pageSize = 10;
   }
 
   init(numFiles) {

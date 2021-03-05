@@ -30,7 +30,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._shadow.appendChild(main);
 
     const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter d-flex flex-items-center flex-justify-between px-6");
+    filterDiv.setAttribute("class", "analysis__filter py-6 px-6");
     main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
@@ -100,7 +100,7 @@ class AnalyticsAnnotations extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery({filtered = false, params = "", start = 0, stop = 50} = {}){
+  _cardGallery({filtered = false, params = "", start = 0, stop = 10} = {}){
     this.loading.showSpinner();
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList({params, start, stop})

@@ -10,6 +10,10 @@ class AnnotationsCard extends EntityCard {
     // - @this._pos_text Pagination position text
     // - @this._more Menu
     // - @this.getAttribute('thumb-gif') Gif for hover effect
+
+    // Add annotation class to list item
+    this._li.classList.add("analysis__annotation");
+
   }
 
   init(obj){

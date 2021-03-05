@@ -1,20 +1,20 @@
-class EntityCardGallery extends TatorElement {
+class EntityLabelSelect extends TatorElement {
     constructor() {
       super();
       
-      // Gallery Container
+      // Select Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "enitity-gallery px-6 py-4");
+      this._main.setAttribute("class", "enitity-labels-select");
       this._shadow.appendChild(this._main);
 
-      // Gallery Heading
+      // Select box
       this._h3 = document.createElement("div");
-      this._h3.setAttribute("class", "enitity-gallery__heading h3 py-2");
+      this._h3.setAttribute("class", "enitity-gallery__heading h3 pt-4 py-2");
       this._main.appendChild(this._h3);
 
       // Gallery count
       this._p = document.createElement("p");
-      this._p.setAttribute("class", "enitity-gallery__count py-2 text-gray");
+      this._p.setAttribute("class", "enitity-gallery__count pt-4 py-2 text-gray");
       this._galleryCountText = document.createTextNode("");
       this._p.appendChild(this._galleryCountText);
       this._main.appendChild(this._p);
@@ -25,12 +25,12 @@ class EntityCardGallery extends TatorElement {
       this._main.appendChild(this._tools);
 
       // Gallery Pagination Top
-      // this._paginator_top = document.createElement("entity-gallery-paginator");
-      // this._tools.appendChild(this._paginator_top);
+      this._paginator_top = document.createElement("entity-gallery-paginator");
+      this._tools.appendChild(this._paginator_top);
   
       // Gallery List
       this._ul = document.createElement("ul");
-      this._ul.setAttribute("class", "enitity-gallery__ul px-1 py-1");
+      this._ul.setAttribute("class", "enitity-gallery__ul project__files");
       this._main.appendChild(this._ul);
 
       // Gallery Pagination Bottom
@@ -52,4 +52,4 @@ class EntityCardGallery extends TatorElement {
    
   }
   
-  customElements.define("entity-card-gallery", EntityCardGallery);  
+  customElements.define("entity-card-gallery", EntityLabelSelect);  
