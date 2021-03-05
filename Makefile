@@ -196,6 +196,7 @@ FILES = \
     util/fetch-retry.js \
     util/has-permission.js \
     util/join-params.js \
+    util/filter-utilities.js \
     util/tator-data.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
@@ -229,8 +230,8 @@ FILES = \
     components/success-light.js \
     components/warning-light.js \
     components/name-dialog.js \
-    components/filter-attribute-field.js \
-    components/filter-attribute-type.js \
+    components/filter-condition.js \
+    components/filter-condition-group.js \
     components/filter-dialog.js \
     components/filter-interface.js \
     components/filter-data.js \

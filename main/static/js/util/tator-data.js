@@ -12,17 +12,6 @@ class TatorData {
     var outData;
     var donePromise = new Promise(resolve => {
 
-      const mediaRestUrl = "/rest/MediaTypes/" + this._project;
-      const mediaPromise = fetchRetry(mediaRestUrl, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      });
-
       const localizationRestUrl = "/rest/LocalizationTypes/" + this._project;
       const localizationPromise = fetchRetry(localizationRestUrl, {
         method: "GET",
@@ -34,13 +23,47 @@ class TatorData {
         },
       });
 
-      Promise.all([mediaPromise, localizationPromise])
-        .then(([mediaResponse, localizationResponse]) => {
-          const mediaJson = mediaResponse.json();
+      Promise.all([localizationPromise])
+        .then(([localizationResponse]) => {
           const localizationJson = localizationResponse.json();
-          Promise.all([mediaJson, localizationJson])
-        .then(([mediaTypes, localizationTypes]) => {
-          outData = [...mediaTypes, ...localizationTypes];
+          Promise.all([localizationJson])
+        .then(([localizationTypes]) => {
+          outData = [...localizationTypes];
+          resolve();
+        });
+      });
+
+    });
+
+    await donePromise;
+    return outData;
+  }
+
+  /**
+   * Returns the list of media types associated with this project
+   */
+  async getAllMediaTypes() {
+
+    var outData;
+    var donePromise = new Promise(resolve => {
+
+      const mediaRestUrl = "/rest/MediaTypes/" + this._project;
+      const mediaPromise = fetchRetry(mediaRestUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([mediaPromise])
+        .then(([mediaResponse]) => {
+          const mediaJson = mediaResponse.json();
+          Promise.all([mediaJson])
+        .then(([mediaTypes]) => {
+          outData = [...mediaTypes];
           resolve();
         });
       });

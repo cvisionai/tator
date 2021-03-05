@@ -143,10 +143,6 @@
   }
 }
 
-.analysis__search_wrapper {
-  //width: 100vw;
-}
-
 .analysis__search {
   flex-grow: 1;
 
@@ -182,13 +178,14 @@
   width: 100%;
 }
 
-.analysis__filter_attribute_border {
+.analysis__filter_conditions_border {
   border: 1px solid $color-gray--dark50;
 }
 
-.analysis__filter_types_list {
+.analysis__filter_conditions_list {
   overflow-y: auto;
   max-height: 500px;
+  width: 100%;
 }
 
 .analysis__filter_field_border {

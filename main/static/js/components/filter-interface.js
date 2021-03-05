@@ -1,7 +1,7 @@
 /**
  * Filter/search widget
  *
- * This encapsulates the filter query bar and the modal/associated button.
+ * Encapsulates the filter query bar and associated modal.
  */
 class FilterInterface extends TatorElement {
 
@@ -9,20 +9,16 @@ class FilterInterface extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "analysis__search_wrapper d-flex");
+    div.setAttribute("class", "d-flex");
     this._shadow.appendChild(div);
 
     const barDiv = document.createElement("div");
     barDiv.setAttribute("class", "analysis__search d-flex");
     div.appendChild(barDiv);
 
-    this._input = document.createElement("input");
-    this._input.setAttribute("class", "form-control py-3 mr-3 col-12 f2 text-white has-more");
-    this._input.setAttribute("autocomplete", "off");
-    this._input.setAttribute("type", "search");
-    this._input.setAttribute("id", "filter-data");
-    this._input.setAttribute("name", "q");
-    barDiv.appendChild(this._input);
+    this._filterString = document.createElement("input");
+    this._filterString.setAttribute("class", "form-control py-3 mr-3 col-12 f2 text-white has-more");
+    barDiv.appendChild(this._filterString);
 
     const filterButton = document.createElement("button");
     filterButton.setAttribute("class", "btn btn-clear");
@@ -40,7 +36,12 @@ class FilterInterface extends TatorElement {
 
     // Respond to user hitting apply in the filter dialog. Update the data filter
     // and remove the modal
-    this._filterDialog.addEventListener("applyFilterString", () => {
+    this._filterDialog.addEventListener("newFilterSet", () => {
+
+      // Create the filter parmaeters to display in the filter bar
+      this.setFilterBar();
+
+      // Close up the dialog
       this._filterDialog.removeAttribute("is-open");
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
@@ -52,6 +53,21 @@ class FilterInterface extends TatorElement {
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
 
+  }
+
+  /**
+   * Sets the data interface that the submodules will use
+   *
+   * @param {FilterData} val - Data interface object specific for the filtering operations
+   */
+  set dataView(val) {
+    this._dataView = val;
+
+    // With the data view connected, query the data and setup the UI based
+    // on the available types
+    this._filterDialog.data = this._dataView.getAllTypes();
+
+    // Now that the UI has been setup, check the URL for settings info (if there are any)
   }
 
   /**
@@ -67,24 +83,21 @@ class FilterInterface extends TatorElement {
   }
 
   /**
-   * Sets the data interface that the submodules will use
-   *
-   * @param {array} val - List of objects with the following fields
-   *   .name - str - Name of attribute type
-   *   .attributes - array - Array of objects with the following fields
-   *     .name - str - Name of attribute
-   *     .dtype - str - string|bool|float|int|datetime|geopos|enum
-   *     .choices - array - Valid only if enum was provided
+   * Sets the information displayed in the filter bar based on the
    */
-  set dataView(val) {
-    this._dataView = val;
-
-    // With the data view connected, query the data and setup the UI based
-    // on the available types
-    this._filterDialog.data = this._dataView.getAllTypes();
-
-    // Now that the UI has been setup, check the URL for settings info (if there are any)
+  setFilterBar() {
+    // Loop through all the conditions and create the string
+    var filterString = "";
+    var conditions = this._filterDialog.getConditions();
+    for (const [index, condition] of conditions.entries()) {
+      filterString += condition.getString();
+      if (index != conditions.length - 1) {
+        filterString += " AND ";
+      }
+    }
+    this._filterString.value = filterString;
   }
+
 }
 
 customElements.define("filter-interface", FilterInterface);
