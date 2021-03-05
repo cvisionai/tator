@@ -814,7 +814,7 @@ class Media(Model, ModelDiffMixin):
     deleted = BooleanField(default=False)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
-    bucket = ForeignKey(Bucket, on_delete=SET_NULL, null=True, blank=True)
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
     """ If set, media files are assumed to be stored in this bucket.
     """
 
