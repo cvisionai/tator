@@ -12,22 +12,22 @@ class FilterInterface extends TatorElement {
     div.setAttribute("class", "analysis__search_wrapper d-flex");
     this._shadow.appendChild(div);
 
-    const filterButton = document.createElement("button");
-    filterButton.setAttribute("class", "btn btn-clear");
-    filterButton.textContent = "Filter Data";
-    div.appendChild(filterButton);
-
     const barDiv = document.createElement("div");
     barDiv.setAttribute("class", "analysis__search d-flex");
     div.appendChild(barDiv);
 
     this._input = document.createElement("input");
-    this._input.setAttribute("class", "py-3 px-3 col-12 f2 text-white has-more");
+    this._input.setAttribute("class", "form-control py-3 mr-3 col-12 f2 text-white has-more");
     this._input.setAttribute("autocomplete", "off");
     this._input.setAttribute("type", "search");
     this._input.setAttribute("id", "filter-data");
     this._input.setAttribute("name", "q");
     barDiv.appendChild(this._input);
+
+    const filterButton = document.createElement("button");
+    filterButton.setAttribute("class", "btn btn-clear");
+    filterButton.textContent = "Filter Data";
+    barDiv.appendChild(filterButton);
 
     // Main filter dialog the user will interact with to set the data filter
     this._filterDialog = document.createElement("filter-dialog");

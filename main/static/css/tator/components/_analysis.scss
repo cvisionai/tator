@@ -1,3 +1,7 @@
+// analytics-annotations {
+//   background-color: $color-charcoal--light !important;
+// }
+
 .analysis__panel-group {
   border-top: 1px solid $color-charcoal--light;
 }
@@ -13,7 +17,7 @@
 }
 
 .analysis {
-  background-color: $color-charcoal--light;
+  //background-color: $color-charcoal--light;
   bottom: 0;
   box-sizing: border-box;
   overflow-y: auto;
@@ -104,7 +108,7 @@
 }
 
 .analysis__annotation {
-  background-color: $color-charcoal--medium;
+  background-color: $color-charcoal--light;
   overflow: hidden;
   position: relative;
   &:hover,
@@ -140,16 +144,16 @@
 }
 
 .analysis__search_wrapper {
-  width: 100vw;
+  //width: 100vw;
 }
 
 .analysis__search {
   flex-grow: 1;
-  padding-left: $spacing-6;
-  margin-right: 100px;
+
   input {
     -webkit-appearance: none;
-    background-color: transparent;
+    //background-color: transparent;
+    background: $color-charcoal--medium;
     border: 1px solid $color-charcoal--light;
     font-family: inherit;
     & + .more {
@@ -170,8 +174,8 @@
 }
 
 .analysis__filter {
-  background-color: $color-charcoal--dark;
-  border-bottom: 1px solid $color-gray--dark50;
+  //background-color: $color-charcoal--light;
+  //border-bottom: 1px solid $color-gray--dark50;
   box-sizing: border-box;
   height: 100px;
   //position: fixed;
