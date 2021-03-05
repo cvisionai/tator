@@ -25,9 +25,10 @@ class DownloadInfoAPI(BaseListView):
 
         # Parse parameters.
         keys = params['keys']
+        bucket = params.get('bucket')
         expiration = params['expiration']
         project = params['project']
-        s3 = TatorS3()
+        s3 = TatorS3(bucket)
         response_data = []
         for key in keys:
             # Make sure the key corresponds to the correct project.
