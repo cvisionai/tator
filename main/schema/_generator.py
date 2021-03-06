@@ -64,6 +64,8 @@ class CustomGenerator(SchemaGenerator):
                 'ImageDefinition': image_definition,
                 'JobNode': job_node,
                 'Job': job,
+                'JobCluster': job_cluster,
+                'JobClusterSpec': job_cluster_spec,
                 'LeafTypeSpec': leaf_type_spec,
                 'LeafTypeUpdate': leaf_type_update,
                 'LeafType': leaf_type,

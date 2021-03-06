@@ -2742,3 +2742,80 @@ class MutateAliasTestCase(APITestCase):
 
     #TODO: write totally different test for geopos mutations (not supported in query string queries)
 
+class JobClusterTestCase(APITestCase):
+    @staticmethod
+    def _random_job_cluster_spec():
+        uid = str(uuid1())
+        return {
+            "name": f"Job Cluster {uid}",
+            "host": "test-host",
+            "port": random.randint(4000, 6000),
+            "token": uid,
+            "cert": f"{uid}.cert",
+        }
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.list_uri = "JobClusters"
+        self.detail_uri = "JobCluster"
+        self.create_json = self._random_job_cluster_spec()
+        self.entity = JobCluster(organization=self.organization, **self.create_json)
+        self.entity.save()
+
+    def test_list_is_an_admin_permissions(self):
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_no_affiliation_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_list_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        old_permission = affiliation.permission
+        affiliation.permission = 'Member'
+        affiliation.save()
+        url = f"/rest/{self.list_uri}/{self.organization.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.permission = old_permission
+        affiliation.save()
+
+    def test_detail_is_an_admin_permissions(self):
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_detail_no_affiliation_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        affiliation.delete()
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.save()
+
+    def test_detail_is_a_member_permissions(self):
+        affiliation = self.get_affiliation(self.organization, self.user)
+        old_permission = affiliation.permission
+        affiliation.permission = 'Member'
+        affiliation.save()
+        url = f"/rest/{self.detail_uri}/{self.entity.pk}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        affiliation.permission = old_permission
+        affiliation.save()
+
+    def tearDown(self):
+        self.entity.delete()
+        self.organization.delete()
