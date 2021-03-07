@@ -11,31 +11,40 @@ class FilterCondition extends TatorElement {
     this._shadow.appendChild(this._div);
 
     this._category = document.createElement("enum-input");
-    this._category.setAttribute("class", "col-3");
+    this._category.setAttribute("class", "col-4");
     this._category.setAttribute("name", "Category");
     this._category.style.marginLeft = "15px";
     this._div.appendChild(this._category);
 
     this._fieldName = document.createElement("enum-input");
-    this._fieldName.setAttribute("class", "col-3");
+    this._fieldName.setAttribute("class", "col-4");
     this._fieldName.setAttribute("name", "Field");
     this._fieldName.style.marginLeft = "15px";
     this._fieldName.permission = "View Only";
     this._div.appendChild(this._fieldName);
 
     this._modifier = document.createElement("enum-input");
-    this._modifier.setAttribute("class", "col-3");
+    this._modifier.setAttribute("class", "col-4");
     this._modifier.style.marginLeft = "15px";
     this._modifier.setAttribute("name", "Modifier");
     this._modifier.permission = "View Only";
     this._div.appendChild(this._modifier);
 
     this._value = document.createElement("text-input");
-    this._value.setAttribute("class", "col-3");
+    this._value.setAttribute("class", "col-4");
     this._value.style.marginLeft = "15px";
     this._value.setAttribute("name", "Value");
     this._value.permission = "View Only";
     this._div.appendChild(this._value);
+
+    this._valueBool = document.createElement("enum-input");
+    this._valueBool.setAttribute("class", "col-4");
+    this._valueBool.style.marginLeft = "15px";
+    this._valueBool.setAttribute("name", "Value");
+    this._valueBool.permission = "View Only";
+    this._valueBool.choices = [{"value": "True"}, {"value": "False"}];
+    this._valueBool.style.display = "none";
+    this._div.appendChild(this._valueBool);
 
     var removeButton = document.createElement("entity-delete-button");
     removeButton.style.marginLeft = "15px";
@@ -65,15 +74,14 @@ class FilterCondition extends TatorElement {
       // Create the menu options for the field name
       var fieldChoices = [];
 
-      fieldChoices.push({"value": "Select"});
       for (const attributeType of this._data)
       {
         if (attributeType.name == this._category.getValue())
         {
           for (const attribute of attributeType.attribute_types)
-          {        
+          {
             fieldChoices.push({"value": attribute.name});
-          }      
+          }
           this._currentType = attributeType;
           break;
         }
@@ -81,8 +89,10 @@ class FilterCondition extends TatorElement {
 
       this._fieldName.choices = fieldChoices;
       this._fieldName.permission = "Can Edit";
+      this._fieldName.selectedIndex = -1;
       this._modifier.permission = "View Only";
       this._value.permission = "View Only";
+      this._valueBool.permission = "View Only";
     });
 
     // Adjust the modifier based on the selected field
@@ -96,6 +106,8 @@ class FilterCondition extends TatorElement {
       var choices = [];
       let selectedFieldName = this._fieldName.getValue();
       var dtype = "string";
+      this._value.style.display = "block";
+      this._valueBool.style.display = "none";
       for (const attribute of this._currentType.attribute_types)
       {
         if (attribute.name == selectedFieldName)
@@ -113,15 +125,23 @@ class FilterCondition extends TatorElement {
         choices.push({"value": "<"});
         choices.push({"value": "<="});
       }
+      else if (dtype == "bool")
+      {
+        choices.push({"value": "=="});
+        this._value.style.display = "none";
+        this._valueBool.style.display = "block";
+      }
       else
       {
         choices.push({"value": "Includes"});
-        choices.push({"value": "Exact Match"});
+        choices.push({"value": "=="});
       }
 
       this._modifier.choices = choices;
       this._modifier.permission = "Can Edit";
       this._value.permission = "Can Edit";
+      this._valueBool.permission = "Can Edit";
+      this._modifier.selectedIndex = -1;
     });
   }
 
@@ -147,6 +167,7 @@ class FilterCondition extends TatorElement {
       choices.push({"value": attributeType.name});
     }
     this._category.choices = choices;
+    this._category.selectedIndex = -1;
     this._currentType = [];
   }
 
@@ -155,19 +176,30 @@ class FilterCondition extends TatorElement {
    *                                null if there's an error (e.g. missing information)
    */
   getCondition() {
+
+    // #TODO remove try/catch and change getValue to return null if enum selection didn't occur
+    try {
+      const category = this._category.getValue();
+      const field = this._fieldName.getValue();
+      const modifier = this._modifier.getValue();
+      var value = this._value.getValue();
+      var condition = null;
   
-    const category = this._category.getValue();
-    const field = this._fieldName.getValue();
-    const modifier = this._modifier.getValue();
-    const value = this._value.getValue();
-    var condition = null;
-
-    if (category && field && modifier && value)
-    {
-      condition = new FilterConditionData(category, field, modifier, value);
+      if (this._valueBool.style.display == "block")
+      {
+        value = this._valueBool.getValue();
+      }
+  
+      if (category && field && modifier && value)
+      {
+        condition = new FilterConditionData(category, field, modifier, value);
+      }
+  
+      return condition;
     }
-
-    return condition;
+    catch (error) {
+      return null;
+    }
   }
 }
 
