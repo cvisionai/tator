@@ -34,6 +34,7 @@ from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
 from ..s3 import TatorS3
+from ..util import get_s3_lookup
 
 from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
@@ -52,31 +53,32 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
-def _presign(buckets, expiration, media, fields=['archival', 'streaming', 'audio', 'image',
-                                                   'thumbnail', 'thumbnail_gif']):
+def _presign(expiration, medias, fields=['archival', 'streaming', 'audio', 'image',
+                                         'thumbnail', 'thumbnail_gif']):
     """ Replaces specified media fields with presigned urls.
     """
-    s3_lookup = {}
-    for bucket in buckets:
-        if bucket is None:
-            s3_lookup[bucket] = TatorS3()
-        else:
-            s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
-    if media.get('media_files') is not None:
-        s3 = s3_lookup[media.get('bucket')]
-        for field in fields:
-            if field in media['media_files']:
-                for idx, media_def in enumerate(media['media_files'][field]):
-                    media_def['path'] = s3.get_download_url(media_def['path'], expiration)
-                    if field == 'streaming':
-                        if 'segment_info' in media_def:
-                            media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
-                                                                            expiration)
-                        else:
-                            logger.warning(f"No segment file in media {media['id']} for file "
-                                           f"{media_def['path']}!")
-                    media['media_files'][field][idx] = media_def
-    return media
+    # First get resources referenced by the given media.
+    media_ids = [media['id'] for media in medias]
+    resources = Resource.objects.filter(media__in=media_ids)
+    s3_lookup = get_s3_lookup(resources)
+
+    # Get replace all keys with presigned urls.
+    for media_idx, media in enumerate(medias):
+        if media.get('media_files') is not None:
+            for field in fields:
+                if field in media['media_files']:
+                    for idx, media_def in enumerate(media['media_files'][field]):
+                        s3 = s3_lookup[media_def['path']]
+                        media_def['path'] = s3.get_download_url(media_def['path'], expiration)
+                        if field == 'streaming':
+                            if 'segment_info' in media_def:
+                                media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
+                                                                                expiration)
+                            else:
+                                logger.warning(f"No segment file in media {media['id']} for file "
+                                               f"{media_def['path']}!")
+                        medias[media_idx]['media_files'][field][idx] = media_def
+    return medias
 
 def _save_image(url, media_obj, project_obj, role):
     """ Downloads an image, uploads it to the appropriate S3 location, 
@@ -143,8 +145,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            buckets = set([item.get('bucket') for item in response_data])
-            response_data = [_presign(buckets, presigned, item) for item in response_data]
+            response_data = _presign(presigned, response_data)
         return response_data
 
     def _post(self, params):
@@ -480,8 +481,7 @@ class MediaDetailAPI(BaseDetailView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            bucket = [response_data.get('bucket')]
-            response_data = _presign(bucket, presigned, response_data)
+            response_data = _presign(presigned, [response_data])[0]
         return response_data
 
     @transaction.atomic
