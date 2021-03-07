@@ -6,9 +6,10 @@ import boto3
 from rest_framework.exceptions import PermissionDenied
 
 from ..models import Project
+from ..models import Resource
 from ..schema import DownloadInfoSchema
 from ..s3 import TatorS3
-from ..util import get_s3_lookup
+from ..s3 import get_s3_lookup
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -33,10 +34,13 @@ class DownloadInfoAPI(BaseListView):
         resources = Resource.objects.filter(path__in=keys)
         s3_lookup = get_s3_lookup(resources)
 
+        # Uploads without resources saved will use the default project bucket.
+        s3_default = TatorS3(Project.objects.get(pk=project).bucket)
+
         # Set up S3 interfaces.
         response_data = []
         for key in keys:
-            s3 = s3_lookup[key]
+            s3 = s3_lookup.get(key, s3_default)
             # Make sure the key corresponds to the correct project.
             project_from_key = int(key.split('/')[1])
             if project != project_from_key:
