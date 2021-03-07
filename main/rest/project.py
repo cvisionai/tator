@@ -63,6 +63,12 @@ class ProjectListAPI(BaseListView):
             membership__user=self.request.user).filter(name__iexact=params['name']).exists():
             raise Exception("Project with this name already exists!")
 
+        # Make sure bucket can be set by this user.
+        if params['bucket'] is not None:
+            params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
+            if params['bucket'].organization != params['organization']:
+                raise PermissionDenied
+
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
         project = Project.objects.create(
@@ -127,6 +133,10 @@ class ProjectDetailAPI(BaseDetailView):
             project.thumb = params['thumb']
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']
+        if 'bucket' in params:
+            project.bucket = get_object_or_404(Bucket, pk=params['bucket'])
+            if project.bucket.organization != project.organization:
+                raise PermissionDenied
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
 
