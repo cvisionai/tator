@@ -50,6 +50,7 @@ svg {
 
 summary {
   cursor: pointer;
+  list-style-type: none;
   &:focus {
     outline: none;
   }
