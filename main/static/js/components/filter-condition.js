@@ -11,23 +11,27 @@ class FilterCondition extends TatorElement {
     this._shadow.appendChild(this._div);
 
     this._category = document.createElement("enum-input");
+    this._category.setAttribute("class", "col-3");
     this._category.setAttribute("name", "Category");
     this._category.style.marginLeft = "15px";
     this._div.appendChild(this._category);
 
     this._fieldName = document.createElement("enum-input");
+    this._fieldName.setAttribute("class", "col-3");
     this._fieldName.setAttribute("name", "Field");
     this._fieldName.style.marginLeft = "15px";
     this._fieldName.permission = "View Only";
     this._div.appendChild(this._fieldName);
 
     this._modifier = document.createElement("enum-input");
+    this._modifier.setAttribute("class", "col-3");
     this._modifier.style.marginLeft = "15px";
     this._modifier.setAttribute("name", "Modifier");
     this._modifier.permission = "View Only";
     this._div.appendChild(this._modifier);
 
     this._value = document.createElement("text-input");
+    this._value.setAttribute("class", "col-3");
     this._value.style.marginLeft = "15px";
     this._value.setAttribute("name", "Value");
     this._value.permission = "View Only";

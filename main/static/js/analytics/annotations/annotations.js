@@ -30,7 +30,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._shadow.appendChild(main);
 
     const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter py-6 px-6");
+    filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
     main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
@@ -55,6 +55,7 @@ class AnalyticsAnnotations extends TatorPage {
   }
 
   _init() {
+
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);

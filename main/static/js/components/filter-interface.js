@@ -9,21 +9,27 @@ class FilterInterface extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex");
+    div.setAttribute("class", "analysis__filter_interface px-6 py-3 rounded-2");
     this._shadow.appendChild(div);
 
-    const barDiv = document.createElement("div");
-    barDiv.setAttribute("class", "analysis__search d-flex");
-    div.appendChild(barDiv);
+    /*
+    const barLabel = document.createElement("span");
+    barLabel.textContent = "Filter Criteria"
+    barLabel.setAttribute("class", "f1 text-gray text-semibold");
+    div.appendChild(barLabel);
+    */
 
-    this._filterString = document.createElement("input");
-    this._filterString.setAttribute("class", "form-control py-3 mr-3 col-12 f2 text-white has-more");
-    barDiv.appendChild(this._filterString);
+    const filterButton = document.createElement("filter-data-button");
+    div.appendChild(filterButton);
 
-    const filterButton = document.createElement("button");
-    filterButton.setAttribute("class", "btn btn-clear");
-    filterButton.textContent = "Filter Data";
-    barDiv.appendChild(filterButton);
+    this._filterString = document.createElement("div");
+    this._filterString.setAttribute("class", "analysis__filter_string");
+    this._filterString.style.marginLeft = "10px";
+    div.appendChild(this._filterString);
+
+    this._filterStringDiv = document.createElement("div");
+    this._filterStringDiv.setAttribute("class", "px-2 py-2");
+    this._filterString.appendChild(this._filterStringDiv);
 
     // Main filter dialog the user will interact with to set the data filter
     this._filterDialog = document.createElement("filter-dialog");
@@ -86,16 +92,28 @@ class FilterInterface extends TatorElement {
    * Sets the information displayed in the filter bar based on the
    */
   setFilterBar() {
+
+    // Remove all the children (if there are any)
+    while (this._filterStringDiv.firstChild) {
+      this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
+    }
+
     // Loop through all the conditions and create the string
-    var filterString = "";
     var conditions = this._filterDialog.getConditions();
     for (const [index, condition] of conditions.entries()) {
-      filterString += condition.getString();
+
+      var elem = document.createElement("span");
+      elem.setAttribute("class", "text-gray px-1");
+      elem.textContent = condition.getString();
+      this._filterStringDiv.appendChild(elem);
+
       if (index != conditions.length - 1) {
-        filterString += " AND ";
+        var elem = document.createElement("span");
+        elem.setAttribute("class", "text-purple px-1");
+        elem.textContent = "AND";
+        this._filterStringDiv.appendChild(elem);
       }
     }
-    this._filterString.value = filterString;
   }
 
 }
