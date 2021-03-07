@@ -8,25 +8,27 @@ class FilterDialog extends ModalDialog {
     super();
 
     this._div.setAttribute("class", "modal-wrap modal-extra-wide d-flex");
-    this._modal.setAttribute("class", "modal rounded-2");
-    this._header.setAttribute("class", "px-6 py-6");
+    this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
+    this._header.setAttribute("class", "px-3 py-3");
     this._titleDiv.setAttribute("class", "h2");
-    this._title.nodeValue = "Filter Data";
+    this._title.nodeValue = "Apply filter conditions";
+    this._titleDiv.style.marginBottom = "10px";
+    this._main.remove();
 
     this._conditionsDiv = document.createElement("div");
     this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
-    this._main.appendChild(this._conditionsDiv);
+    this._header.appendChild(this._conditionsDiv);
 
     const favesDiv = document.createElement("div");
     favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
-    this._main.appendChild(favesDiv);
+    this._header.appendChild(favesDiv);
 
     this._favorites = document.createElement("favorites-panel");
     favesDiv.appendChild(this._favorites);
 
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
-    apply.textContent = "Apply Filters";
+    apply.textContent = "Apply Filter";
     this._footer.appendChild(apply);
 
     const cancel = document.createElement("button");

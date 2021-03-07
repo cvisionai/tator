@@ -33,33 +33,6 @@
   }
 }
 
-.analysis__parameters {
-  overflow: hidden;
-}
-
-.analysis__parameters input {
-  background-color: $color-charcoal--medium;
-  color: transparent;
-}
-
-.analysis__parameters input:focus {
-  color: $color-white;
-}
-
-.analysis__parameters input:focus + div {
-  opacity: 0;
-}
-
-.analysis__parameters div {
-  border: 1px solid transparent;
-  opacity: 0.6;
-  pointer-events: none;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-}
-
 .analysis__nav-wrap {
   border-bottom: 1px solid $color-gray--dark50;
 }
@@ -143,42 +116,76 @@
   }
 }
 
-.analysis__search {
-  flex-grow: 1;
 
-  input {
-    -webkit-appearance: none;
-    //background-color: transparent;
-    background: $color-charcoal--medium;
-    border: 1px solid $color-charcoal--light;
-    font-family: inherit;
-    & + .more {
-      display: none;
-    }
-    & + .more:hover {
-      display: block;
-    }
-    &:focus {
-      border-color: $color-purple;
-      outline: none;
-
-      & + .more {
-        display: block;
-      }
-    }
-  }
+// .analysis__parameters aren't used.
+// These are used here as a reference from MM
+// #TODO remove later
+.analysis__parameters {
+  overflow: hidden;
 }
 
+.analysis__parameters input {
+  background-color: $color-charcoal--medium;
+  color: transparent;
+}
+
+.analysis__parameters input:focus {
+  color: $color-white;
+}
+
+.analysis__parameters input:focus + div {
+  opacity: 0;
+}
+
+.analysis__parameters div {
+  border: 1px solid transparent;
+  opacity: 0.6;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+
 .analysis__filter {
-  //background-color: $color-charcoal--light;
-  //border-bottom: 1px solid $color-gray--dark50;
   box-sizing: border-box;
   height: 100px;
-  //position: fixed;
   width: 100%;
 }
 
-.analysis__filter_conditions_border {
+.analysis__filter_interface {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  height: 50px; // Slightly taller than the 46px height of the button
+  border: 2px solid $color-charcoal--medium;
+}
+
+.analysis__filter_string {
+  display: flex;
+  overflow: hidden;
+  flex-grow: 1;
+  height: 100%;
+  //border: 1px solid $color-gray--dark50;
+  background: $color-charcoal--medium-dark;
+}
+
+.analysis__filter_string div {
+  display: flex;
+  border: 1px solid transparent;
+  opacity: 0.6;
+  pointer-events: none;
+  white-space: nowrap;
+  align-items: center;
+}
+
+.analysis__filter_condition_group {
+  border-top: 1px solid $color-gray--dark50;
+  border-bottom: 1px solid $color-gray--dark50;
+}
+
+.analysis__filter_conditions {
   border: 1px solid $color-gray--dark50;
 }
 
