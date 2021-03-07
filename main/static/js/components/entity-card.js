@@ -16,7 +16,7 @@ class EntityCard extends TatorElement {
 
       // List element (card)
       this._li = document.createElement("li");
-      this._li.setAttribute("class", "entity-card rounded-2");
+      this._li.setAttribute("class", "entity-card rounded-2 clickable");
       this._shadow.appendChild(this._li);
   
       // Link
