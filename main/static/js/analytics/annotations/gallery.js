@@ -5,7 +5,7 @@ class AnnotationsGallery extends EntityCardGallery {
     * Add tools, headings and pagination for gallery here
     * 
     */
-    this._main.setAttribute("class", "enitity-gallery px-4 py-2 mx-6 pb-3 mt-6");
+
 
     // Custom width for annotations gallery
     this.colSize = 200;
