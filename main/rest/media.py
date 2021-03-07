@@ -143,7 +143,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            buckets = set([item['bucket'] for item in response_data])
+            buckets = set([item.get('bucket') for item in response_data])
             response_data = [_presign(buckets, presigned, item) for item in response_data]
         return response_data
 
@@ -477,11 +477,11 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = database_qs(qs)[0]
+        response_data = list(qs.values(*MEDIA_PROPERTIES))[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            bucket = [Bucket.objects.get(pk=response_data['bucket'])]
-            response_data = [_presign(bucket, presigned, item) for item in response_data]
+            bucket = [response_data.get('bucket')]
+            response_data = _presign(bucket, presigned, response_data)
         return response_data
 
     @transaction.atomic
