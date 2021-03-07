@@ -49,3 +49,27 @@ class TatorS3:
             url = urlunsplit(parsed)
         return url
 
+def get_s3_size(path, s3, bucket_name):
+    """ Returns the file size of a path.
+    """
+    size = 0
+    try:
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        size = response['ContentLength']
+    except:
+        logger.warning(f"Could not find object {path}!")
+    return size
+
+
+def get_s3_lookup(resources):
+    """ Returns a mapping between resource keys and TatorS3 objects.
+    """
+    buckets = resources.values_list('bucket', flat=True).distinct()
+    s3_lookup = {}
+    for bucket in buckets:
+        if bucket is None:
+            s3_lookup[bucket] = TatorS3()
+        else:
+            s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
+    s3_lookup = {resource.path:s3_lookup[resource.bucket] for resource in list(resources)}
+    return s3_lookup

@@ -45,6 +45,8 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .s3 import get_s3_lookup
+from .s3 import get_s3_size
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -815,6 +817,33 @@ class Media(Model, ModelDiffMixin):
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
+    def get_file_sizes(self):
+        """ Returns total size and download size for this media object.
+        """
+        total_size = 0
+        download_size = None
+        resources = Resource.objects.filter(media__in=[self])
+        s3_lookup = get_s3_lookup(resources)
+        s3_default = TatorS3(self.project.bucket)
+        if self.media_files:
+            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+                if key in self.media_files:
+                    for media_def in self.media_files[key]:
+                        tator_s3 = s3_lookup.get(media_def['path'], s3_default)
+                        s3 = tator_s3.s3
+                        bucket_name = tator_s3.bucket_name
+                        size = get_s3_size(media_def['path'], s3, bucket_name)
+                        total_size += size
+                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                            download_size = size
+                        if key == 'streaming':
+                            try:
+                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                            except:
+                                logger.warning(f"Media {self.id} does not have a segment file "
+                                               f"definition {media_def['path']}!")
+        return (total_size, download_size)
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
@@ -826,8 +855,10 @@ class Resource(Model):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
-        if media is not None:
+        if media is None:
+            obj, created = Resource.objects.get_or_create(path=path, bucket=None)
+        else:
+            obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
             obj.media.add(media)
 
     @transaction.atomic

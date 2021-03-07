@@ -7,10 +7,6 @@ from uuid import uuid1
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
-from .s3 import TatorS3
-from .util import get_s3_lookup
-from .models import Resource
-
 logger = logging.getLogger(__name__)
 
 # Indicates what types can mutate into. Maps from type -> to type.
@@ -27,42 +23,6 @@ ALLOWED_MUTATIONS = {
 # Used for duplicate ID storage
 id_bits=448
 id_mask=(1 << id_bits) - 1
-
-def _path_size(path, s3, bucket_name):
-    """ Returns the file size of a path.
-    """
-    size = 0
-    try:
-        response = s3.head_object(Bucket=bucket_name, Key=path)
-        size = response['ContentLength']
-    except:
-        logger.warning(f"Could not find object {path}!")
-    return size
-
-def mediaFileSizes(media):
-    total_size = 0
-    download_size = None
-    resources = Resource.objects.filter(media__in=[media])
-    s3_lookup = get_s3_lookup(resources)
-
-    if media.media_files:
-        for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
-            if key in media.media_files:
-                for media_def in media.media_files[key]:
-                    tator_s3 = s3_lookup[key]
-                    s3 = tator_s3.s3
-                    bucket_name = tator_s3.bucket_name
-                    size = _path_size(media_def['path'], s3, bucket_name)
-                    total_size += size
-                    if (key in ['archival', 'streaming', 'image']) and (download_size is None):
-                        download_size = size
-                    if key == 'streaming':
-                        try:
-                            total_size += _path_size(media_def['segment_info'], s3, bucket_name)
-                        except:
-                            logger.warning(f"Media {media.id} does not have a segment file "
-                                           f"definition {media_def['path']}!")
-    return (total_size, download_size)
 
 def drop_dupes(ids):
     """ Drops duplicates in a list without changing the order.
@@ -567,7 +527,7 @@ class TatorSearch:
             aux['_uid'] = entity.uid
 
             # Get total size and download size of this file.
-            total_size, download_size = mediaFileSizes(entity)
+            total_size, download_size = entity.get_file_sizes()
             aux['_total_size'] = total_size
             aux['_download_size'] = download_size
 
