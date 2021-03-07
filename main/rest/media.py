@@ -34,7 +34,7 @@ from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
 from ..s3 import TatorS3
-from ..util import get_s3_lookup
+from ..s3 import get_s3_lookup
 
 from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
@@ -222,7 +222,6 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
-                bucket=project_obj.bucket,
             )
             media_obj.media_files = {}
 
@@ -304,7 +303,6 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
-                bucket=project_obj.bucket,
             )
 
             # Add optional parameters.

@@ -64,7 +64,7 @@ class ProjectListAPI(BaseListView):
             raise Exception("Project with this name already exists!")
 
         # Make sure bucket can be set by this user.
-        if params['bucket'] is not None:
+        if 'bucket' in params:
             params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
             if params['bucket'].organization != params['organization']:
                 raise PermissionDenied
