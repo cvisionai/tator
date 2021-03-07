@@ -10,6 +10,7 @@ from ..models import Organization
 from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
+from ..models import Bucket
 from ..models import database_qs
 from ..models import safe_delete
 from ..models import Resource
