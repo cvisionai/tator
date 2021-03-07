@@ -16,7 +16,7 @@ class AnnotationsCard extends EntityCard {
 
   }
 
-  init(obj){
+  init(obj, panelContainer, annotationPanelDiv){
     this.titleDiv.innerHTML = `ID ${obj.id}`;
 
     if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
@@ -26,6 +26,14 @@ class AnnotationsCard extends EntityCard {
     } else {
       this._img.hidden = true;
     }
+
+    let posText = document.createTextNode(`${obj.posText}`)
+    this._pos_text.appendChild(posText);
+
+    // Give card access to panel
+    this.panelContainer = panelContainer;
+    this.annotationPanelDiv = annotationPanelDiv;
+    this._li.addEventListener("click", this.togglePanel.bind(this) );
 
     // this.typeInfo = document.createElement('div');
     // this.typeInfo.innerHTML = `${obj.metaDetails.name} (${obj.metaDetails.type})`;
@@ -65,6 +73,42 @@ class AnnotationsCard extends EntityCard {
 
   _setImgSrc (e) {
     return this._img.setAttribute("src", this.reader.result );
+  }
+
+  togglePanel(){
+    console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
+
+    // If we already have this open, toggle shut
+    if(!this.annotationPanelDiv.hidden) {
+      this.hidePanelContainer();
+      this._li.classList.remove("is-selected");      
+    } else {
+      // Otherwise hide other content...
+      let openPanels = this.panelContainer.querySelectorAll(".entity-panel--div:not([hidden])");
+      console.log(openPanels);
+      
+      // Hides content div, deselects the _li
+      for(let openPanel of openPanels){
+        let unselectedEvent = new Event("unselected");
+        openPanel.dispatchEvent(unselectedEvent);
+        openPanel.hidden = true;
+      }
+
+      // Show this content
+      this._li.classList.add("is-selected");
+      this.annotationPanelDiv.hidden = false
+      this.showPanelContainer();
+    }   
+  }
+
+  hidePanelContainer(){
+    this.panelContainer.classList.remove("slide");
+    this.panelContainer.hidden = true;
+  }
+
+  showPanelContainer(){
+    this.panelContainer.classList.add("slide");
+    this.panelContainer.hidden = false;
   }
 
 }

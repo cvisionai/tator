@@ -22,12 +22,17 @@ class AnalyticsAnnotations extends TatorPage {
     div.appendChild(this._breadcrumbs);
     this._breadcrumbs.setAttribute("analytics-name", "Annotation Gallery");
 
+    // 
+    const mainWrapper = document.createElement("div");
+    mainWrapper.setAttribute("class", "d-flex");
+    this._shadow.appendChild(mainWrapper);
+
     //
     // Define the main section of the page
     //
     const main = document.createElement("main");
-    main.setAttribute("class", "d-flex");
-    this._shadow.appendChild(main);
+    main.setAttribute("class", "analysis--main");
+    mainWrapper.appendChild(main);
 
     const filterDiv = document.createElement("div");
     filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
@@ -47,7 +52,16 @@ class AnalyticsAnnotations extends TatorPage {
 
     // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
-    this._shadow.appendChild(this._filterResults);
+    main.appendChild(this._filterResults);
+
+    // Gallery navigation panel  
+    this._panelContainer = document.createElement("div");
+    this._panelContainer.setAttribute("class", "entity-panel--container mt-6")
+    this._panelContainer.hidden = true;
+    mainWrapper.appendChild(this._panelContainer);
+
+    // Init gallery with this panel
+    this._filterResults._initPanel( { panelContainer : this._panelContainer} );
 
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
@@ -62,7 +76,7 @@ class AnalyticsAnnotations extends TatorPage {
     // Init vars for pagination state
     this._paginationState = {};
     this._paginationState._pageSize = 10;
-    this._paginationState._start = 0;
+    this._paginationState._start = 1;
     this._paginationState._stop = 10;
     this._paginationState._page = 0;
     
@@ -92,7 +106,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._getQueryParams();
 
     // Init Card Gallery
-    this._cardGallery({}); 
+    this._cardGallery({panelContainer : this.panelContainer});
 
     // Listen for pagination events
     this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));

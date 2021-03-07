@@ -1,6 +1,9 @@
 // analytics-annotations {
 //   background-color: $color-charcoal--light !important;
 // }
+.analysis--main {
+  width: 100%;
+}
 
 .analysis__panel-group {
   border-top: 1px solid $color-charcoal--light;
@@ -108,7 +111,7 @@
     height: 91px;
     object-fit: contain;
     //width: 100%
-    width: 201px;
+    width: 171px;
     background-image: linear-gradient(
         to right,
         $color-teal--50 1px,
