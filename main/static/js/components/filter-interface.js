@@ -19,7 +19,7 @@ class FilterInterface extends TatorElement {
     this._input = document.createElement("input");
     this._input.setAttribute("class", "form-control py-3 mr-3 col-12 f2 text-white has-more");
     this._input.setAttribute("autocomplete", "off");
-    this._input.setAttribute("type", "search");
+    this._input.setAttribute("type", "text");
     this._input.setAttribute("id", "filter-data");
     this._input.setAttribute("name", "q");
     barDiv.appendChild(this._input);
