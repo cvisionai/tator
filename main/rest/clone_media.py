@@ -85,9 +85,9 @@ class CloneMediaListAPI(BaseListView):
                 for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail',
                             'thumbnail_gif']:
                     for f in media.media_files.get(key, []):
-                        Resource.add_resource(f['path'], media.id)
+                        Resource.add_resource(f['path'], media)
                         if key == 'streaming':
-                            Resource.add_resource(f['segment_info'], media.id)
+                            Resource.add_resource(f['segment_info'], media)
 
         # Build ES documents.
         ts = TatorSearch()
