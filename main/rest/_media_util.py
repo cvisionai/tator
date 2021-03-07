@@ -12,8 +12,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ..s3 import TatorS3
-from ..util import get_s3_lookup
+from ..s3 import get_s3_lookup
 from ..models import Resource
 
 logger = logging.getLogger(__name__)
@@ -44,6 +43,9 @@ class MediaUtil:
                     if delta < max_delta:
                         quality_idx = idx
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
+            tator_s3 = s3_lookup[self._video_file]
+            self._s3 = tator_s3.s3
+            self._bucket_name = tator_s3.bucket_name
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
@@ -63,11 +65,13 @@ class MediaUtil:
                         quality_idx = idx
             # Image
             self._video_file = video.media_files["image"][quality_idx]["path"]
+            tator_s3 = s3_lookup[self._video_file]
+            self._s3 = tator_s3.s3
+            self._bucket_name = tator_s3.bucket_name
             self._height = video.height
             self._width = video.width
-        tator_s3 = s3_lookup[self._video_file]
-        self._s3 = tator_s3.s3
-        self._bucket_name = tator_s3.bucket_name
+        else:
+            raise RuntimeError(f"Media {video.id} does not have streaming or image media!")
         self._fps = video.fps
 
     def _get_impacted_segments(self, frames):
