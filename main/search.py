@@ -8,6 +8,8 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
 from .s3 import TatorS3
+from .util import get_s3_lookup
+from .models import Resource
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +42,16 @@ def _path_size(path, s3, bucket_name):
 def mediaFileSizes(media):
     total_size = 0
     download_size = None
-    tator_s3 = TatorS3(media.bucket)
-    s3 = tator_s3.s3
-    bucket_name = tator_s3.bucket_name
+    resources = Resource.objects.filter(media__in=[media])
+    s3_lookup = get_s3_lookup(resources)
 
     if media.media_files:
         for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
             if key in media.media_files:
                 for media_def in media.media_files[key]:
+                    tator_s3 = s3_lookup[key]
+                    s3 = tator_s3.s3
+                    bucket_name = tator_s3.bucket_name
                     size = _path_size(media_def['path'], s3, bucket_name)
                     total_size += size
                     if (key in ['archival', 'streaming', 'image']) and (download_size is None):
