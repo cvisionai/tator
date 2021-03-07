@@ -52,6 +52,20 @@ class AnalyticsAnnotations extends TatorPage {
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg() );
+
+    // Init vars for filter state 
+    // @TODO checkback to integration w/ this._filterView
+    this._filterState = {};
+    this._filterState.filtered = false;
+    this._filterState.params = "";
+
+    // Init vars for pagination state
+    this._paginationState = {};
+    this._paginationState._pageSize = 10;
+    this._paginationState._start = 0;
+    this._paginationState._stop = 10;
+    this._paginationState._page = 0;
+    
   }
 
   _init() {
@@ -74,8 +88,11 @@ class AnalyticsAnnotations extends TatorPage {
       localizationTypes : this.localizationTypes
     });
 
-    // Init Card Gallery with default : 0-20 of All Localizations
-    this._cardGallery({});
+    // If state is stored in URL, update default states
+    this._getQueryParams();
+
+    // Init Card Gallery
+    this._cardGallery({}); 
 
     // Listen for pagination events
     this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
@@ -101,34 +118,65 @@ class AnalyticsAnnotations extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery({filtered = false, params = "", start = 0, stop = 10} = {}){
-    this.setAttribute("has-open-modal", "");
+  // @TODO start of integrating query params into pages
+  _getQueryParams(){
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+
+    // Update filter state from URL query params
+    if(urlParams.get("filter")) {
+      let decoded = decodeURI(urlParams.get("filter"));
+      this._filterState.params = decoded != null ? decoded : "" ;
+      this._filterState.filtered = true;
+    } else {
+      this._filterState.filtered = false;
+    }
+
+    // Update pagination state from query params
+    if(urlParams.get("pageSize")) this._paginationState._pageSize = urlParams.get("pg_size");
+    if(urlParams.get("start")) this._paginationState._start = urlParams.get("start");
+    if(urlParams.get("stop")) this._paginationState._stop = urlParams.get("stop");
+    if(urlParams.get("page")) this._paginationState._page = urlParams.get("page");
+  }
+
+  _cardGallery({
+    filterState = this._filterState, 
+    paginationState = this._paginationState
+  } = {}){
+    console.log(filterState);
+    console.log(paginationState);
     this.loading.showSpinner();
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList({params, start, stop})
+    this.cardData.makeCardList( { filterState, paginationState } )
     .then((cardList) => {
       this.loading.hideSpinner();
       this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
-      this._filterResults.show( {filtered, start, stop, cardList} );
+      this._filterResults.show( { cardList } );
     });
   }
 
+  // Handler for filter submission
   _updateFilterResults(e){
     let params = this._localizationParams(e.detail.filterString);
-    this._cardGallery({
-      filtered : true,
-      params
-    });
+    this._filterState.filtered = true;
+    this._filterState.params = params;
+    this._cardGallery({});
   }
 
+  // Handler for pagination click
   _paginateFilterResults(e){
+    e.preventDefault();
     console.log(e.detail);
+    this._paginationState._start = e.detail.start;
+    this._paginationState._stop = e.detail.stop;
+    this._cardGallery({});
   }
 
+  // @TODO - Do we need to convert any params here to work for our API calls?
   _localizationParams(string){
     console.log("Convert this to usable query params? or ok ::: "+string);
-    return "";
+    return string;
   }
 
 }

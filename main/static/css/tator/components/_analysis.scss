@@ -104,9 +104,21 @@
   }
 
   img {
-    height: 87px;
-    object-fit: cover;
-    width: 100%;
+    background-color: $color-charcoal--medium;
+    height: 91px;
+    object-fit: contain;
+    //width: 100%
+    width: 201px;
+    background-image: linear-gradient(
+        to right,
+        $color-teal--50 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, $color-teal--50 1px, transparent 1px);
+    background-size: 10px 10px;
+    padding: 10px;
+    padding: 10px;
+    margin: 5px auto;
   }
 
   & > span {

@@ -2,6 +2,8 @@ class EntityGalleryPaginator extends TatorElement {
   constructor() {
     super();
 
+    this._pageSize = 10;
+
     const div = document.createElement("div");
     div.setAttribute("class", "entity-gallery__paginator flex-justify-center pagination d-flex flex-items-center py-5 text-gray");
     this._shadow.appendChild(div);
@@ -29,6 +31,7 @@ class EntityGalleryPaginator extends TatorElement {
       this._pages.push(document.createElement("a"));
       this._pages[idx].addEventListener("click", evt => {
         this._setPage(Number(evt.target.textContent) - 1);
+        console.log("Clicked "+  evt.target.textContent );
         this._emit();
       });
       this._pages[idx].style.cursor = "pointer";
@@ -69,14 +72,17 @@ class EntityGalleryPaginator extends TatorElement {
 
     const pageSize = document.createElement("select");
     pageSize.setAttribute("class", "form-select select-sm2 has-border");
+    let selected = pageSize;
     for (const pageOption of [10, 25, 50, 100]) {
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
+      if( this._pageSize == pageOption) selected = option;
       option.textContent = pageOption;
       pageSize.appendChild(option);
     }
     pageSize.selectedIndex = 2;
     div.appendChild(pageSize);
+    selected.selected = true;
 
     const goToPageText = document.createElement("span");
     goToPageText.setAttribute("class", "pagination__ellipsis");
@@ -122,14 +128,20 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    this._pageSize = 10;
+
   }
 
-  init(numFiles) {
+  init({numFiles, paginationState}) {
+    // Set pagination properties from state
+    this._pageSize = paginationState._pageSize
+
+    // Use number of files to update the rest
     this._numFiles = numFiles;
     this._numPages = Math.ceil(this._numFiles / this._pageSize);
     this._last.textContent = this._numPages;
-    this._setPage(0);
+
+    // Set page
+    this._setPage(paginationState._page);
   }
 
   _setPage(page) {
@@ -157,7 +169,10 @@ class EntityGalleryPaginator extends TatorElement {
       this._next.style.cursor = "pointer";
       this._next.classList.remove("is-disabled");
     }
+    console.log(this._pages);
+    console.log(this._numPages);
     const displayPages = Math.min(this._pages.length, this._numPages);
+
     for (let idx = 0; idx < this._pages.length; idx++) {
       if (idx < displayPages) {
         this._pages[idx].style.display = "block";
@@ -169,6 +184,7 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < displayPages; idx++) {
         const val = idx + 1;
         this._pages[idx].textContent = val;
+        console.log(`1 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -181,6 +197,7 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = idx + 1;
         this._pages[idx].textContent = val;
+        console.log(`2 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -193,6 +210,7 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = this._numPages - this._pages.length + idx + 1
         this._pages[idx].textContent = val;
+        console.log(`3 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -206,6 +224,7 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = page - offset + idx + 1;
         this._pages[idx].textContent = val;
+        console.log(`4 LAST val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {

@@ -28,7 +28,7 @@ class EntityCard extends TatorElement {
       // Image, spinner until SRC set
       this._img = document.createElement("img");
       this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
-      this._img.setAttribute("class", "entity-card__image col-12 rounded-1");
+      this._img.setAttribute("class", "entity-card__image rounded-1");
       this._link.appendChild(this._img);
   
       // containing div for li element (styling)

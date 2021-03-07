@@ -11,8 +11,8 @@
 }
 
 .entity-resize {
-  border: 1px solid $color-charcoal--medium;
-  padding: $spacing-2 $spacing-4;
+  //border: 1px solid $color-charcoal--medium;
+  //padding: $spacing-2 $spacing-4;
 
   .entity-resize__label {
     padding-right: $spacing-2;
@@ -26,9 +26,9 @@
 
 .enitity-gallery__tools,
 .entity-gallery__paginator {
-  background-color: $color-charcoal--light;
+  //background-color: $color-charcoal--light;
   padding: $spacing-1;
-  margin: $spacing-3 0;
+  margin: $spacing-1 0;
 }
 
 .entity-card {
