@@ -52,12 +52,18 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
-def _presign(s3_lookup, expiration, media, fields=['archival', 'streaming', 'audio', 'image',
+def _presign(buckets, expiration, media, fields=['archival', 'streaming', 'audio', 'image',
                                                    'thumbnail', 'thumbnail_gif']):
     """ Replaces specified media fields with presigned urls.
     """
+    s3_lookup = {}
+    for bucket in buckets:
+        if bucket is None:
+            s3_lookup[bucket] = TatorS3()
+        else:
+            s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
     if media.get('media_files') is not None:
-        s3 = s3_lookup[media.bucket]
+        s3 = s3_lookup[media.get('bucket')]
         for field in fields:
             if field in media['media_files']:
                 for idx, media_def in enumerate(media['media_files'][field]):
@@ -137,9 +143,8 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            buckets = set([item.bucket for item in response_data])
-            s3_lookup = {bucket:TatorS3(Bucket.objects.get(pk=bucket)) for bucket in buckets}
-            response_data = [_presign(s3_lookup, presigned, item) for item in response_data]
+            buckets = set([item['bucket'] for item in response_data])
+            response_data = [_presign(buckets, presigned, item) for item in response_data]
         return response_data
 
     def _post(self, params):
@@ -475,9 +480,8 @@ class MediaDetailAPI(BaseDetailView):
         response_data = database_qs(qs)[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            bucket = Bucket.objects.get(pk=response_data['bucket'])
-            s3_lookup = {bucket.id:TatorS3(bucket)}
-            response_data = [_presign(s3_lookup, presigned, item) for item in response_data]
+            bucket = [Bucket.objects.get(pk=response_data['bucket'])]
+            response_data = [_presign(bucket, presigned, item) for item in response_data]
         return response_data
 
     @transaction.atomic
