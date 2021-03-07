@@ -84,11 +84,6 @@ media_get_properties = {
         'description': 'Unique ID for the upload of this media.',
         'type': 'string',
     },
-    'bucket': {
-        'description': 'Unique integer identifying bucket containing this media.',
-        'type': 'integer',
-        'minimum': 1,
-    },
 }
 
 media_spec = {
