@@ -441,3 +441,16 @@ def move_backups_to_s3():
         os.remove(path)
         num_moved += 1
     logger.info(f"Finished moving {num_moved} files!")
+
+def get_s3_lookup(resources):
+    """ Returns a mapping between resource keys and TatorS3 objects.
+    """
+    buckets = resources.values_list('bucket', flat=True).distinct()
+    s3_lookup = {}
+    for bucket in buckets:
+        if bucket is None:
+            s3_lookup[bucket] = TatorS3()
+        else:
+            s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
+    s3_lookup = {resource.path:s3_lookup[resource.bucket] for resource in list(resources)}
+    return s3_lookup
