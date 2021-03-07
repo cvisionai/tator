@@ -814,13 +814,11 @@ class Media(Model, ModelDiffMixin):
     deleted = BooleanField(default=False)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
-    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
-    """ If set, media files are assumed to be stored in this bucket.
-    """
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
 
     @transaction.atomic
     def add_resource(path_or_link, media):
@@ -828,7 +826,7 @@ class Resource(Model):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        obj, created = Resource.objects.get_or_create(path=path)
+        obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
         if media is not None:
             obj.media.add(media)
 
@@ -843,8 +841,10 @@ class Resource(Model):
         if obj.media.all().count() == 0:
             logger.info(f"Deleting object {path}")
             obj.delete()
-            s3 = TatorS3().s3
-            s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
+            tator_s3 = TatorS3(obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
+            s3.delete_object(Bucket=bucket_name, Key=path)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
