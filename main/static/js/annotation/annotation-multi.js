@@ -925,7 +925,7 @@ class AnnotationMulti extends TatorElement {
 
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-    }, 20);
+    }, 250);
   }
 
   /**
@@ -983,7 +983,7 @@ class AnnotationMulti extends TatorElement {
     // Wait for reassignments to calculate resize event.
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-    }, 20);
+    }, 250);
   }
 
   set annotationData(val) {
