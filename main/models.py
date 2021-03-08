@@ -309,7 +309,7 @@ class Affiliation(Model):
 class Bucket(Model):
     """ Stores info required for remote S3 buckets.
     """
-    organization = ForeignKey(Organization, on_delete=CASCADE)
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     name = CharField(max_length=63)
     access_key = CharField(max_length=128)
     secret_key = CharField(max_length=40)
