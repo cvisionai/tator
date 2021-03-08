@@ -1098,6 +1098,7 @@ class AnnotationMulti extends TatorElement {
           this._play.removeAttribute("is-paused");
         }
       });
+      this.syncCheck();
     }
   }
 
@@ -1150,6 +1151,7 @@ class AnnotationMulti extends TatorElement {
           }
         }
       });
+      this.syncCheck();
     }
   }
 
