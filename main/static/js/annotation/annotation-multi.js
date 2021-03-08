@@ -675,7 +675,7 @@ class AnnotationMulti extends TatorElement {
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
         this._slider.setAttribute("max", max_frames-1);
         this._maxFrameNumber = max_frames - 1;
-  
+
         let multiview = null;
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.has("multiview"))
@@ -1103,25 +1103,54 @@ class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
+    if (this._rate > 1.0)
+    {
+      let playing = false;
+      // Check to see if the video player can play at this rate
+      // at the current frame. If not, inform the user.
+      for (let video of this._videos)
+      {
+        if (!video.canPlayRate(this._rate))
+        {
+          window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+          return;
+        }
+        video.rateChange(this._rate);
+        playing |= video.play();
+      }
+
+      if (playing)
+      {
+        this._play.removeAttribute("is-paused");
+        this._syncThread = setTimeout(() => {this.syncCheck()},
+                                      500);
+      }
+    }
+
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
 
-    this._playbackReadyId += 1;
-    this._playbackReadyCount = 0;
-    this._pauseId = this._playbackReadyId;
-    this.goToFrame(this._videos[0].currentFrame()).then(() => {
-      for (let video of this._videos)
-      {
-        video.waitPlayback(true, this._playbackReadyId);
-        video.pause();
-        video.rateChange(this._rate);
-        if (video.playBackwards())
+    const paused = this.is_paused();
+    if (paused) {
+      let playing = false;
+      this._playbackReadyId += 1;
+      this._playbackReadyCount = 0;
+      this._pauseId = this._playbackReadyId;
+      this.goToFrame(this._videos[0].currentFrame()).then(() => {
+        for (let video of this._videos)
         {
-          this._play.setAttribute("is-paused", "");
+          video.waitPlayback(true, this._playbackReadyId);
+          video.pause();
+          video.rateChange(this._rate);
+          playing |= video.playBackwards();
+          if (playing)
+          {
+            this._play.removeAttribute("is-paused");
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   pause()
