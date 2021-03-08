@@ -89,7 +89,7 @@ class UploadInfoAPI(BaseDetailView):
                 urls.append(url)
 
         # Replace host if external host is given.
-        if external_host:
+        if external_host and (project_obj.bucket is None):
             for idx, url in enumerate(urls):
                 parsed = urlsplit(url)
                 parsed = parsed._replace(netloc=external_host, scheme=PROTO)
