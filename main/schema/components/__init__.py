@@ -51,6 +51,7 @@ from .localization_type import localization_type_spec
 from .localization_type import localization_type_update
 from .localization_type import localization_type
 from .localization import localization_spec
+from .localization import localization_bulk_update
 from .localization import localization_update
 from .localization import localization
 from .localization import localization_id_query

@@ -81,6 +81,7 @@ class CustomGenerator(SchemaGenerator):
                 'LocalizationTypeUpdate': localization_type_update,
                 'LocalizationType': localization_type,
                 'LocalizationSpec': localization_spec,
+                'LocalizationBulkUpdate': localization_bulk_update,
                 'LocalizationUpdate': localization_update,
                 'Localization': localization,
                 'LocalizationIdQuery': localization_id_query,

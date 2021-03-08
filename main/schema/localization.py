@@ -233,7 +233,7 @@ class LocalizationListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/AttributeBulkUpdate',
+                    '$ref': '#/components/schemas/LocalizationBulkUpdate',
                 },
                 'examples': {
                     'single': {
