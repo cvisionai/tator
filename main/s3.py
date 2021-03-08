@@ -1,7 +1,10 @@
 import os
+import logging
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
+
+logger = logging.getLogger(__name__)
 
 class TatorS3:
     """Interface for object storage.
@@ -15,12 +18,14 @@ class TatorS3:
             access_key = os.getenv('OBJECT_STORAGE_ACCESS_KEY')
             secret_key = os.getenv('OBJECT_STORAGE_SECRET_KEY')
             self.bucket_name = os.getenv('BUCKET_NAME')
+            self.external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         else:
             endpoint = bucket.endpoint_url
             region = bucket.region
             access_key = bucket.access_key
             secret_key = bucket.secret_key
             self.bucket_name = bucket.name
+            self.external_host = None
         if endpoint:
             self.s3 = boto3.client('s3',
                                    endpoint_url=f'{endpoint}',
@@ -32,7 +37,6 @@ class TatorS3:
             self.s3 = boto3.client('s3')
 
     def get_download_url(self, path, expiration):
-        external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
         else:
@@ -43,9 +47,9 @@ class TatorS3:
                                                      'Key': path},
                                              ExpiresIn=expiration)
         # Replace host if external host is given.
-        if external_host:
+        if self.external_host:
             parsed = urlsplit(url)
-            parsed = parsed._replace(netloc=external_host, scheme=PROTO)
+            parsed = parsed._replace(netloc=self.external_host, scheme=PROTO)
             url = urlunsplit(parsed)
         return url
 
