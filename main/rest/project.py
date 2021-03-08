@@ -67,7 +67,7 @@ class ProjectListAPI(BaseListView):
         # Make sure bucket can be set by this user.
         if 'bucket' in params:
             params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
-            if params['bucket'].organization != params['organization']:
+            if params['bucket'].organization.pk != params['organization']:
                 raise PermissionDenied
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
