@@ -24,8 +24,8 @@ from ._permissions import ProjectFullControlPermission
 
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
-    s3 = TatorS3()
     for idx, project in enumerate(projects):
+        s3 = TatorS3(project.bucket)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
@@ -123,8 +123,9 @@ class ProjectDetailAPI(BaseDetailView):
         if 'summary' in params:
             project.summary = params['summary']
         if 'thumb' in params:
-            s3 = TatorS3().s3
-            bucket_name = os.getenv('BUCKET_NAME')
+            tator_s3 = TatorS3(project.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
             s3.head_object(Bucket=bucket_name, Key=params['thumb'])
             project_from_key = int(params['thumb'].split('/')[1])
             if project.pk != project_from_key:
