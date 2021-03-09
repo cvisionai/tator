@@ -3309,6 +3309,8 @@ class AnnotationCanvas extends TatorElement
       var boxCoords = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]];
 
       that._draw.beginDraw();
+      that.drawCrosshair([x0,y0], colorReq, 128);
+      that.drawCrosshair([x2,y2], colorReq, 128);
       that._draw.drawPolygon(boxCoords,
                              colorReq,
                              defaultDrawWidth*that._draw.displayToViewportScale()[0]);
@@ -3328,6 +3330,8 @@ class AnnotationCanvas extends TatorElement
       var lineCoords = [[x0,y0],[x1,y1]];
 
       that._draw.beginDraw();
+      that.drawCrosshair([x0,y0], colorReq, 128);
+      that.drawCrosshair([x1,y1], colorReq, 128);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
