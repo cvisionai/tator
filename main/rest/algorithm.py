@@ -63,13 +63,6 @@ class AlgorithmListAPI(BaseListView):
         # Have to check the validity of the provided parameters before committing them
         # to the database
 
-        # Is the name unique?
-        alg_workflow_name = params[fields.name]
-        if Algorithm.objects.filter(name=alg_workflow_name).exists():
-            log_msg = f'Provided algorithm workflow name ({alg_workflow_name}) already exists'
-            logger.error(log_msg)
-            raise ValueError(log_msg)
-
         # Does the project ID exist?
         project_id = params[fields.project]
         try:
@@ -78,6 +71,13 @@ class AlgorithmListAPI(BaseListView):
             log_msg = f'Provided project ID ({project_id}) does not exist'
             logger.error(log_msg)
             raise exc
+
+        # Is the name unique?
+        alg_workflow_name = params[fields.name]
+        if Algorithm.objects.filter(project=project, name=alg_workflow_name).exists():
+            log_msg = f"Provided algorithm workflow name '{alg_workflow_name}' already exists for project '{project_id}'"
+            logger.error(log_msg)
+            raise ValueError(log_msg)
 
         # Does the user ID exist?
         user_id = params[fields.user]
@@ -97,21 +97,9 @@ class AlgorithmListAPI(BaseListView):
             logging.error(log_msg)
             raise ValueError(log_msg)
 
-        ''' #TODO Review this, ideally this would happen instead of the YAML syntax error load
-        # Try loading the manifest yaml and verify there are no YAML syntax errors
-        result = subprocess.run(['argo', 'lint', manifest_path],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        if len(result.stderr) > 0:
-            log_msg = f'Provided manifest file has the following errors'
-            log_msg += result.stderr
-            logging.error(log_msg)
-            raise exc
-        '''
-
         try:
-            with open(manifest_path, 'r') as file:
-                loaded_yaml = yaml.safe_load(file)
+            with open(manifest_path, 'r') as fp:
+                loaded_yaml = yaml.safe_load(fp)
         except Exception as exc:
             log_msg = 'Provided yaml file has syntax errors'
             logging.error(log_msg)

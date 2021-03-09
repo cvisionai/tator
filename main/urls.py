@@ -181,6 +181,14 @@ urlpatterns += [
         JobDetailAPI.as_view(),
     ),
     path(
+        'rest/JobClusters/<int:id>',
+        JobClusterListAPI.as_view(),
+    ),
+    path(
+        'rest/JobCluster/<int:id>',
+        JobClusterDetailAPI.as_view(),
+    ),
+    path(
         'rest/Leaves/Suggestion/<str:ancestor>/<int:project>',
         LeafSuggestionAPI.as_view(),
     ),

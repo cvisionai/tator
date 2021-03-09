@@ -217,7 +217,7 @@ favorite-button {
 }
 
 .annotation__multi-grid {
-  display: grid;
+    display: grid;
 }
 
 .annotation__multi-grid-entry {
@@ -232,6 +232,7 @@ favorite-button {
   overflow: hidden;
   margin-bottom: $spacing-3;
   margin-top: $spacing-3;
+  width: 100%;
   &.is-full-screen {
     margin-right: $spacing-3;
 

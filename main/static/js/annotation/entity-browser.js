@@ -146,6 +146,12 @@ class EntityBrowser extends TatorElement {
         });
       } else if (this._dataType.isTrack) {
         groups[group].sort((item_a, item_b) => {
+          if (item_a.segments == null) {
+            return -1;
+          }
+          if (item_b.segments == null) {
+            return 1;
+          }
           if (item_a.segments[0][0] == item_b.segments[0][0]) {
             return item_a.id - item_b.id;
           }
