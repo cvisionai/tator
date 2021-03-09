@@ -3620,17 +3620,32 @@ class AnnotationCanvas extends TatorElement
         {
           if (objType.dtype == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE,
+            let poly = translatedPoly(dragEvent.start, dragEvent.current);
+            that.drawCrosshair(poly[0], color.WHITE, 128);
+            that.drawCrosshair(poly[2], color.WHITE, 128);
+            that.blackoutOutside(poly);
+            this._draw.drawPolygon(poly, color.WHITE,
                                    Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else if (objType.dtype == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
+            let x0 = line[0][0];
+            let y0 = line[0][1];
+            let x1 = line[1][0];
+            let y1 = line[1][1];
+            var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+            that.drawCrosshair([x0,y0], color.WHITE, 128);
+            that.drawCrosshair([x1,y1], color.WHITE, 128);
+            that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else
           {
             var line = translatedDot(dragEvent.start, dragEvent.current);
+            var center = [(line[0][0]+line[1][0])/2,
+                          (line[0][1]+line[1][1])/2];
+            that.drawCrosshair(center, color.WHITE, 128);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(defaultDotWidth * this._draw.displayToViewportScale()[0]));
           }
           this._draw.dispImage(true, true);
@@ -3693,10 +3708,10 @@ class AnnotationCanvas extends TatorElement
           if (type == 'box')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
-            this._draw.drawPolygon(poly, color.WHITE, width);
             that.drawCrosshair(poly[0], color.WHITE, 128);
             that.drawCrosshair(poly[2], color.WHITE, 128);
             that.blackoutOutside(poly);
+            this._draw.drawPolygon(poly, color.WHITE, width);
           }
           else if (type == 'line')
           {
