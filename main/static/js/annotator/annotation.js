@@ -774,7 +774,7 @@ class AnnotationCanvas extends TatorElement
     this._metaMode = false;
     this._redrawObj = null;
     this._fillBoxes = true;
-    this._lastHoverDraw = performance.now();
+    this._lastHoverDraw = 0;
 
     try
     {
@@ -2240,11 +2240,18 @@ class AnnotationCanvas extends TatorElement
       let over_threshold = () => {
         return (performance.now()-this._lastHoverDraw) > (1000.0/30);
       };
-      if (this._dragHandler.isActive() == false && over_threshold())
+      if (this._dragHandler.isActive() == false)
       {
-        this._lastHoverDraw = performance.now();
-        this.drawCrosshair(location, color.WHITE, 200);
-        this._draw.dispImage(true,false);
+        if (over_threshold())
+        {
+          this._lastHoverDraw = performance.now();
+          this.drawCrosshair(location, color.WHITE, 200);
+          this._draw.dispImage(true,false);
+        }
+      }
+      else
+      {
+        this._lastHoverDraw = 0;
       }
     }
   }
@@ -3827,8 +3834,9 @@ class AnnotationCanvas extends TatorElement
   {
     this.draft = null;
     // Only refresh if it wasn't a call to new else we get flashes
-    if (this._mouseMode != MouseMode.NEW)
+    if (this._mouseMode != MouseMode.NEW || this._lastHoverDraw > 0)
     {
+      this._lastHoverDraw == 0;
       this.refresh();
     }
     this._mouseMode = MouseMode.QUERY;
