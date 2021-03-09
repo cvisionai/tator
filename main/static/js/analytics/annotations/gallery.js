@@ -6,7 +6,6 @@ class AnnotationsGallery extends EntityCardGallery {
     * 
     */
 
-
     // Custom width for annotations gallery
     this.colSize = 200;
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`

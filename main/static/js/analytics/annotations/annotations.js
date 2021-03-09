@@ -35,7 +35,7 @@ class AnalyticsAnnotations extends TatorPage {
     mainWrapper.appendChild(main);
 
     const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter py-6 px-6");
+    filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
     main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
@@ -50,7 +50,7 @@ class AnalyticsAnnotations extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
-    // Gallery of cards showing filter results    
+    // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
     main.appendChild(this._filterResults);
 
@@ -83,6 +83,7 @@ class AnalyticsAnnotations extends TatorPage {
   }
 
   _init() {
+
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
@@ -96,7 +97,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     // Card Data class collects raw model and parses into view-model format
     this.cardData = new CardData({
-      projectId : this.projectId, 
+      projectId : this.projectId,
       modelData : this._modelData,
       localizationTypes : this.localizationTypes
     });
@@ -111,8 +112,8 @@ class AnalyticsAnnotations extends TatorPage {
     this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
 
     // Listen for filter events
-    this._filterView._filterDialog.addEventListener("applyFilterString", this._updateFilterResults.bind(this));  
-    
+    this._filterView._filterDialog.addEventListener("newFilterSet", this._updateFilterResults.bind(this));
+
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -130,6 +131,7 @@ class AnalyticsAnnotations extends TatorPage {
   static get observedAttributes() {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
+
 
   // @TODO start of integrating query params into pages
   _getQueryParams(){
@@ -163,6 +165,7 @@ class AnalyticsAnnotations extends TatorPage {
     this.cardData.makeCardList( { filterState, paginationState } )
     .then((cardList) => {
       this.loading.hideSpinner();
+      this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show( { cardList } );
     });
