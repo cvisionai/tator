@@ -144,6 +144,7 @@ class CanvasDrag
     this._cb = cb;
     this._canvas = canvas;
     this._scaleFn=scaleFn;
+    this._active = false;
 
     if (dragLimiter != undefined)
     {
@@ -165,6 +166,11 @@ class CanvasDrag
     return Math.sqrt(Math.pow(start.x-end.x,2)+Math.pow(start.y-end.y,2));
   }
 
+  isActive()
+  {
+    return this._active;
+  }
+
   onMouseDown(event)
   {
     this._event={start : {}, current: {}}
@@ -184,6 +190,7 @@ class CanvasDrag
     {
       this.onMouseUp(event);
     }
+    this._active = true;
     var now = Date.now();
     var scale = this._scaleFn();
     var x = Math.min((event.pageX-this._canvas.offsetLeft),
@@ -222,6 +229,7 @@ class CanvasDrag
 
   onMouseUp(event)
   {
+    this._active = false;
     var last = this._event.current;
     delete this._event.current;
     this._event.end = {};
