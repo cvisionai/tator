@@ -774,6 +774,7 @@ class AnnotationCanvas extends TatorElement
     this._metaMode = false;
     this._redrawObj = null;
     this._fillBoxes = true;
+    this._lastHoverDraw = performance.now();
 
     try
     {
@@ -2236,6 +2237,15 @@ class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
       this._textOverlay.classList.add("select-crosshair");
+      let over_threshold = () => {
+        return (performance.now()-this._lastHoverDraw) > (1000.0/30);
+      };
+      if (this._dragHandler.isActive() == false && over_threshold())
+      {
+        this._lastHoverDraw = performance.now();
+        this.drawCrosshair(location, color.WHITE, 200);
+        this._draw.dispImage(true,false);
+      }
     }
   }
 
