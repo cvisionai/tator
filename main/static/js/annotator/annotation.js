@@ -3291,6 +3291,36 @@ class AnnotationCanvas extends TatorElement
 
   blackoutOutside(box)
   {
+    let fix_box = (box) =>
+      {
+        let min = Number.MAX_SAFE_INTEGER;
+        let min_idx = -1;
+        let max = 0;
+        let max_idx = -1;
+        for (let idx = 0; idx < box.length; idx++)
+        {
+          let dist = Math.sqrt(Math.pow(box[idx][0],2)+Math.pow(box[idx][1],2));
+          if (dist < min)
+          {
+            min = dist;
+            min_idx = idx;
+          }
+          if (dist > max)
+          {
+            max = dist;
+            max_idx = idx;
+          }
+        }
+        console.info(`${min_idx} / ${max_idx}`);
+        let x0 = box[min_idx][0];
+        let y0 = box[min_idx][1];
+        let x1 = box[max_idx][0];
+        let y1 = box[max_idx][1];
+        let new_box = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+        return new_box;
+      };
+    box = fix_box(box);
+
     let left = [[0,0],
                 [box[0][0],0],
                 [box[0][0], this._dims[1]],
