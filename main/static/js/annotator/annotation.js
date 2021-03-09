@@ -3692,11 +3692,23 @@ class AnnotationCanvas extends TatorElement
           width = Math.round(width);
           if (type == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
+            let poly = translatedPoly(dragEvent.start, dragEvent.current);
+            this._draw.drawPolygon(poly, color.WHITE, width);
+            that.drawCrosshair(poly[0], color.WHITE, 128);
+            that.drawCrosshair(poly[2], color.WHITE, 128);
+            that.blackoutOutside(poly);
           }
           else if (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
+            let x0 = line[0][0];
+            let y0 = line[0][1];
+            let x1 = line[1][0];
+            let y1 = line[1][1];
+            var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+            that.drawCrosshair([x0,y0], color.WHITE, 128);
+            that.drawCrosshair([x1,y1], color.WHITE, 128);
+            that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
           }
           this._draw.dispImage(true, true);
