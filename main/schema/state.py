@@ -119,7 +119,7 @@ class StateListSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/AttributeBulkUpdate'},
+                'schema': {'$ref': '#/components/schemas/StateBulkUpdate'},
                 'examples': {
                     'single': {
                         'summary': 'Update Species attribute of many states',

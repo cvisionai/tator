@@ -232,6 +232,7 @@ class LocalizationListAPI(BaseListView):
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
+        patched_version = params.pop("version", None)
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
@@ -239,6 +240,8 @@ class LocalizationListAPI(BaseListView):
             original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
+            if patched_version is not None:
+                qs.update(version=patched_version)
             qs.update(modified_by=self.request.user)
 
             # Get one object from the queryset to create the change log
