@@ -387,6 +387,7 @@ FILES = \
     annotation/version-button.js \
     annotation/version-select.js \
     annotation/version-dialog.js \
+    annotation/video-settings-dialog.js \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/dashboard/dashboard.js \

@@ -69,6 +69,9 @@ class AnnotationPage extends TatorPage {
       this._bookmarkDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
+
+    this._videoSettingsDialog = document.createElement("video-settings-dialog");
+    this._main.appendChild(this._videoSettingsDialog);
   }
 
   /**
@@ -517,6 +520,15 @@ class AnnotationPage extends TatorPage {
         });
       }
       this.removeAttribute("has-open-modal", "");
+    });
+
+    this._videoSettingsDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._settings.addEventListener("openVideoSettings", () => {
+      this._videoSettingsDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
   }
 
