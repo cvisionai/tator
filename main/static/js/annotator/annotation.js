@@ -3255,6 +3255,21 @@ class AnnotationCanvas extends TatorElement
     return coords
   }
 
+  drawCrosshair(center, color_req, alpha)
+  {
+    let vertical = [[center[0], 0], [center[0],this._dims[1]]];
+    let horizontal = [[0, center[1]], [this._dims[0],center[1]]];
+    this._draw.drawLine(vertical[0],
+                        vertical[1],
+                        color_req,
+                        defaultDrawWidth*this._draw.displayToViewportScale()[0],
+                        alpha);
+    this._draw.drawLine(horizontal[0],
+                        horizontal[1],
+                        color_req,
+                        defaultDrawWidth*this._draw.displayToViewportScale()[0],
+                        alpha);
+  }
   dragHandler(dragEvent)
   {
     var that = this;
