@@ -45,6 +45,8 @@ from django.db import transaction
 from .search import TatorSearch
 from .download import download_file
 from .s3 import TatorS3
+from .s3 import get_s3_lookup
+from .s3 import get_s3_size
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -304,6 +306,16 @@ class Affiliation(Model):
     def __str__(self):
         return f'{self.user} | {self.organization}'
 
+class Bucket(Model):
+    """ Stores info required for remote S3 buckets.
+    """
+    organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
+    name = CharField(max_length=63)
+    access_key = CharField(max_length=128)
+    secret_key = CharField(max_length=40)
+    endpoint_url = CharField(max_length=1024)
+    region = CharField(max_length=16)
+
 class Project(Model):
     name = CharField(max_length=128)
     creator = ForeignKey(User, on_delete=PROTECT, related_name='creator', db_column='creator')
@@ -324,6 +336,9 @@ class Project(Model):
     usernames = ArrayField(CharField(max_length=256), default=list)
     """ Mapping between attribute type names and UUIDs. Used internally for 
         maintaining elasticsearch field aliases.
+    """
+    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    """ If set, media will use this bucket by default.
     """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
@@ -802,9 +817,37 @@ class Media(Model, ModelDiffMixin):
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
+    def get_file_sizes(self):
+        """ Returns total size and download size for this media object.
+        """
+        total_size = 0
+        download_size = None
+        resources = Resource.objects.filter(media__in=[self])
+        s3_lookup = get_s3_lookup(resources)
+        s3_default = TatorS3(self.project.bucket)
+        if self.media_files:
+            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
+                if key in self.media_files:
+                    for media_def in self.media_files[key]:
+                        tator_s3 = s3_lookup.get(media_def['path'], s3_default)
+                        s3 = tator_s3.s3
+                        bucket_name = tator_s3.bucket_name
+                        size = get_s3_size(media_def['path'], s3, bucket_name)
+                        total_size += size
+                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
+                            download_size = size
+                        if key == 'streaming':
+                            try:
+                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
+                            except:
+                                logger.warning(f"Media {self.id} does not have a segment file "
+                                               f"definition {media_def['path']}!")
+        return (total_size, download_size)
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
+    bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
 
     @transaction.atomic
     def add_resource(path_or_link, media):
@@ -812,8 +855,10 @@ class Resource(Model):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        obj, created = Resource.objects.get_or_create(path=path)
-        if media is not None:
+        if media is None:
+            obj, created = Resource.objects.get_or_create(path=path, bucket=None)
+        else:
+            obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
             obj.media.add(media)
 
     @transaction.atomic
@@ -827,8 +872,10 @@ class Resource(Model):
         if obj.media.all().count() == 0:
             logger.info(f"Deleting object {path}")
             obj.delete()
-            s3 = TatorS3().s3
-            s3.delete_object(Bucket=os.getenv('BUCKET_NAME'), Key=path)
+            tator_s3 = TatorS3(obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
+            s3.delete_object(Bucket=bucket_name, Key=path)
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):

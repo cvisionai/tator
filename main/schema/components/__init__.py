@@ -21,6 +21,9 @@ from .attribute_value import attribute_value
 from .bookmark import bookmark_spec
 from .bookmark import bookmark_update
 from .bookmark import bookmark
+from .bucket import bucket_spec
+from .bucket import bucket_update
+from .bucket import bucket
 from .change_log import change_log
 from .clone_media import clone_media_spec
 from .download_info import download_info_spec

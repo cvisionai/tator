@@ -15,7 +15,6 @@ from PIL import Image
 from main.models import *
 from main.models import Resource
 from main.search import TatorSearch
-from main.search import mediaFileSizes
 from main.s3 import TatorS3
 
 from django.conf import settings
@@ -288,10 +287,14 @@ def clearOldFilebeatIndices():
 def cleanup_object_uploads(max_age_days=1):
     """ Removes s3 uploads that are greater than a day old.
     """
-    s3 = TatorS3().s3
-    bucket_name = os.getenv('BUCKET_NAME')
+    items = Project.objects.values('bucket', 'pk')
     now = datetime.datetime.now(datetime.timezone.utc)
-    for project in Project.objects.all().iterator():
+    for item in items:
+        bucket = Bucket.objects.get(pk=item['bucket'])
+        tator_s3 = TatorS3(bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
+        project = Project.objects.get(pk=item['project'])
         logger.info(f"Searching project {project.id} | {project.name} for stale uploads...")
         if project.organization is None:
             logger.info(f"Skipping because this project has no organization!")
@@ -437,3 +440,4 @@ def move_backups_to_s3():
         os.remove(path)
         num_moved += 1
     logger.info(f"Finished moving {num_moved} files!")
+

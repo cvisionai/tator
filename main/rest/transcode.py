@@ -41,6 +41,7 @@ class TranscodeAPI(BaseListView):
         media_id = params.get('media_id', None)
         token, _ = Token.objects.get_or_create(user=self.request.user)
 
+        project_obj = Project.objects.get(pk=project)
         type_objects = MediaType.objects.filter(project=project)
         if entity_type != -1:
             #If we are transcoding and not unpacking we know its a video type we need
@@ -61,8 +62,10 @@ class TranscodeAPI(BaseListView):
             # This is a presigned url for S3. Presigned urls do not allow HEAD requests, so parse
             # out the object key and get object size via S3 api.
             key = '/'.join(parsed.path.split('/')[-4:])
-            s3 = TatorS3().s3
-            response = s3.head_object(Bucket=os.getenv('BUCKET_NAME'), Key=key)
+            tator_s3 = TatorS3(project_obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
+            response = s3.head_object(Bucket=bucket_name, Key=key)
             upload_size = response['ContentLength']
         else:
             # This is a normal url. Use HEAD request to obtain content length.

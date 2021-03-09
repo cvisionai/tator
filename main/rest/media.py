@@ -23,6 +23,7 @@ from ..models import Localization
 from ..models import State
 from ..models import Project
 from ..models import Resource
+from ..models import Bucket
 from ..models import database_qs
 from ..models import database_query_ids
 from ..search import TatorSearch
@@ -33,6 +34,7 @@ from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
 from ..s3 import TatorS3
+from ..s3 import get_s3_lookup
 
 from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
@@ -51,24 +53,32 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
-def _presign(s3, expiration, media, fields=['archival', 'streaming', 'audio', 'image', 'thumbnail',
-                                            'thumbnail_gif']):
+def _presign(expiration, medias, fields=['archival', 'streaming', 'audio', 'image',
+                                         'thumbnail', 'thumbnail_gif']):
     """ Replaces specified media fields with presigned urls.
     """
-    if media.get('media_files') is not None:
-        for field in fields:
-            if field in media['media_files']:
-                for idx, media_def in enumerate(media['media_files'][field]):
-                    media_def['path'] = s3.get_download_url(media_def['path'], expiration)
-                    if field == 'streaming':
-                        if 'segment_info' in media_def:
-                            media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
-                                                                            expiration)
-                        else:
-                            logger.warning(f"No segment file in media {media['id']} for file "
-                                           f"{media_def['path']}!")
-                    media['media_files'][field][idx] = media_def
-    return media
+    # First get resources referenced by the given media.
+    media_ids = [media['id'] for media in medias]
+    resources = Resource.objects.filter(media__in=media_ids)
+    s3_lookup = get_s3_lookup(resources)
+
+    # Get replace all keys with presigned urls.
+    for media_idx, media in enumerate(medias):
+        if media.get('media_files') is not None:
+            for field in fields:
+                if field in media['media_files']:
+                    for idx, media_def in enumerate(media['media_files'][field]):
+                        s3 = s3_lookup[media_def['path']]
+                        media_def['path'] = s3.get_download_url(media_def['path'], expiration)
+                        if field == 'streaming':
+                            if 'segment_info' in media_def:
+                                media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
+                                                                                expiration)
+                            else:
+                                logger.warning(f"No segment file in media {media['id']} for file "
+                                               f"{media_def['path']}!")
+                        medias[media_idx]['media_files'][field][idx] = media_def
+    return medias
 
 def _save_image(url, media_obj, project_obj, role):
     """ Downloads an image, uploads it to the appropriate S3 location, 
@@ -84,8 +94,8 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    s3 = TatorS3()
-    bucket_name = os.getenv('BUCKET_NAME')
+    s3 = TatorS3(project_obj.bucket)
+    bucket_name = s3.bucket_name
 
     # Upload image.
     if media_obj.media_files is None:
@@ -135,8 +145,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = TatorS3()
-            response_data = [_presign(s3, presigned, item) for item in response_data]
+            response_data = _presign(presigned, response_data)
         return response_data
 
     def _post(self, params):
@@ -152,6 +161,7 @@ class MediaListAPI(BaseListView):
         new_attributes = params.get('attributes', None)
         if gid is not None:
             gid = str(gid)
+        project_obj = Project.objects.get(pk=project)
 
         # If section does not exist and is not an empty string, create a section.
         tator_user_sections = ""
@@ -161,7 +171,7 @@ class MediaListAPI(BaseListView):
                 tator_user_sections = section_obj[0].tator_user_sections
             else:
                 tator_user_sections = str(uuid1())
-                Section.objects.create(project=Project.objects.get(pk=project),
+                Section.objects.create(project=project_obj,
                                        name=section,
                                        tator_user_sections=tator_user_sections)
 
@@ -202,7 +212,6 @@ class MediaListAPI(BaseListView):
 
         if media_type.dtype == 'image':
             # Create the media object.
-            project_obj = Project.objects.get(pk=project)
             media_obj = Media.objects.create(
                 project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
@@ -252,8 +261,9 @@ class MediaListAPI(BaseListView):
                 thumb.close()
 
             # Set up S3 client.
-            s3 = TatorS3().s3
-            bucket_name = os.getenv('BUCKET_NAME')
+            tator_s3 = TatorS3(project_obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
 
             if url:
                 # Upload image.
@@ -283,7 +293,6 @@ class MediaListAPI(BaseListView):
 
         else:
             # Create the media object.
-            project_obj = Project.objects.get(pk=project)
             media_obj = Media.objects.create(
                 project=project_obj,
                 meta=MediaType.objects.get(pk=entity_type),
@@ -467,11 +476,10 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = database_qs(qs)[0]
+        response_data = list(qs.values(*MEDIA_PROPERTIES))[0]
         presigned = params.get('presigned')
         if presigned is not None:
-            s3 = TatorS3()
-            response_data = _presign(s3, presigned, response_data)
+            response_data = _presign(presigned, [response_data])[0]
         return response_data
 
     @transaction.atomic

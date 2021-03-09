@@ -12,7 +12,8 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ..s3 import TatorS3
+from ..s3 import get_s3_lookup
+from ..models import Resource
 
 logger = logging.getLogger(__name__)
 
@@ -23,69 +24,54 @@ class MediaUtil:
         # If available we only attempt to fetch
         # the part of the file we need to
         self._segment_info = None
+        resources = Resource.objects.filter(media__in=[video])
+        s3_lookup = get_s3_lookup(resources)
 
-        if video.media_files:
-            self._s3 = TatorS3().s3
-            self._bucket_name = os.getenv('BUCKET_NAME')
-            if "streaming" in video.media_files:
-                if quality is None:
-                    # Select highest quality if not specified
-                    highest_res = -1
-                    quality_idx = 0
-                    for idx, media_info in enumerate(video.media_files["streaming"]):
-                        if media_info['resolution'][0] > highest_res:
-                            highest_res = media_info['resolution'][0]
-                            quality_idx = idx
-                else:
-                    max_delta = sys.maxsize
-                    for idx, media_info in enumerate(video.media_files["streaming"]):
-                        delta = abs(quality-media_info['resolution'][0])
-                        if delta < max_delta:
-                            quality_idx = idx
-                self._video_file = video.media_files["streaming"][quality_idx]["path"]
-                self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
-                self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
-                segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-                f_p = io.BytesIO()
-                self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
-                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
-                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
-                                                              ['segments']) if x['name'] == 'moof']
-            elif "image" in video.media_files:
-                if quality is None:
-                    # Select highest quality if not specified
-                    highest_res = -1
-                    quality_idx = 0
-                    for idx, media_info in enumerate(video.media_files["image"]):
-                        if media_info['resolution'][0] > highest_res:
-                            highest_res = media_info['resolution'][0]
-                            quality_idx = idx
-                # Image
-                self._video_file = video.media_files["image"][quality_idx]["path"]
-                self._height = video.height
-                self._width = video.width
-
-        elif video.original:
-            video_file = video.original
+        if "streaming" in video.media_files:
+            if quality is None:
+                # Select highest quality if not specified
+                highest_res = -1
+                quality_idx = 0
+                for idx, media_info in enumerate(video.media_files["streaming"]):
+                    if media_info['resolution'][0] > highest_res:
+                        highest_res = media_info['resolution'][0]
+                        quality_idx = idx
+            else:
+                max_delta = sys.maxsize
+                for idx, media_info in enumerate(video.media_files["streaming"]):
+                    delta = abs(quality-media_info['resolution'][0])
+                    if delta < max_delta:
+                        quality_idx = idx
+            self._video_file = video.media_files["streaming"][quality_idx]["path"]
+            tator_s3 = s3_lookup[self._video_file]
+            self._s3 = tator_s3.s3
+            self._bucket_name = tator_s3.bucket_name
+            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+            f_p = io.BytesIO()
+            self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+            self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+            self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
+                                                          ['segments']) if x['name'] == 'moof']
+        elif "image" in video.media_files:
+            if quality is None:
+                # Select highest quality if not specified
+                highest_res = -1
+                quality_idx = 0
+                for idx, media_info in enumerate(video.media_files["image"]):
+                    if media_info['resolution'][0] > highest_res:
+                        highest_res = media_info['resolution'][0]
+                        quality_idx = idx
+            # Image
+            self._video_file = video.media_files["image"][quality_idx]["path"]
+            tator_s3 = s3_lookup[self._video_file]
+            self._s3 = tator_s3.s3
+            self._bucket_name = tator_s3.bucket_name
             self._height = video.height
             self._width = video.width
-            # Make file relative to URL to be consistent with streaming files below
-            video_file = os.path.relpath(video_file, settings.MEDIA_ROOT)
-            self._video_file = os.path.join(settings.MEDIA_URL, video_file)
-        elif video.file:
-            if video.fps is not None:
-                # Legacy video path where the video.file is capped at 720p
-                # So scale the height and width to 720p being the max
-                self._height = int((min(video.height, 720) / video.height) * video.height)
-                self._width = int((self._height / video.height) * video.width)
-            else:
-                # Image
-                self._height = video.height
-                self._width = video.width
-
-            # Make file relative to URL to be consistent with streaming files below
-            self._video_file = video.file.path
-
+        else:
+            raise RuntimeError(f"Media {video.id} does not have streaming or image media!")
         self._fps = video.fps
 
     def _get_impacted_segments(self, frames):

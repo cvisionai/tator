@@ -10,6 +10,7 @@ from ..models import Organization
 from ..models import Affiliation
 from ..models import Permission
 from ..models import Media
+from ..models import Bucket
 from ..models import database_qs
 from ..models import safe_delete
 from ..models import Resource
@@ -23,8 +24,8 @@ from ._permissions import ProjectFullControlPermission
 
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
-    s3 = TatorS3()
     for idx, project in enumerate(projects):
+        s3 = TatorS3(project.bucket)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
@@ -62,6 +63,12 @@ class ProjectListAPI(BaseListView):
         if Project.objects.filter(
             membership__user=self.request.user).filter(name__iexact=params['name']).exists():
             raise Exception("Project with this name already exists!")
+
+        # Make sure bucket can be set by this user.
+        if 'bucket' in params:
+            params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
+            if params['bucket'].organization.pk != params['organization']:
+                raise PermissionDenied
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
@@ -116,8 +123,9 @@ class ProjectDetailAPI(BaseDetailView):
         if 'summary' in params:
             project.summary = params['summary']
         if 'thumb' in params:
-            s3 = TatorS3().s3
-            bucket_name = os.getenv('BUCKET_NAME')
+            tator_s3 = TatorS3(project.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
             s3.head_object(Bucket=bucket_name, Key=params['thumb'])
             project_from_key = int(params['thumb'].split('/')[1])
             if project.pk != project_from_key:
@@ -127,6 +135,10 @@ class ProjectDetailAPI(BaseDetailView):
             project.thumb = params['thumb']
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']
+        if 'bucket' in params:
+            project.bucket = get_object_or_404(Bucket, pk=params['bucket'])
+            if project.bucket.organization != project.organization:
+                raise PermissionDenied
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
 

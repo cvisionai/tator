@@ -11,6 +11,8 @@ from .audio_file import AudioFileListAPI
 from .audio_file import AudioFileDetailAPI
 from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
+from .bucket import BucketListAPI
+from .bucket import BucketDetailAPI
 from .change_log import ChangeLogListAPI
 from .clone_media import CloneMediaListAPI
 from .download_info import DownloadInfoAPI
