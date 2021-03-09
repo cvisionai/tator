@@ -77,5 +77,6 @@ def get_s3_lookup(resources):
             # This is to avoid a circular import
             Bucket = resources.model._meta.get_field('bucket').related_model
             s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
-    s3_lookup = {resource.path:s3_lookup[resource.bucket.pk] for resource in list(resources)}
+    s3_lookup = {resource.path:(s3_lookup[resource.bucket.pk] if resource.bucket else s3_lookup[None])
+                 for resource in list(resources)}
     return s3_lookup
