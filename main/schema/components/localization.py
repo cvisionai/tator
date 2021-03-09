@@ -153,11 +153,10 @@ localization_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
-        # TODO uncomment and use this
-        # 'version': {
-        #     'type': 'integer',
-        #     'description': 'Unique integer identifying a version.',
-        # },
+        'version': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a version.',
+        },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '
                            'parameters.',

@@ -44,6 +44,7 @@ from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
 from .leaf import leaf_suggestion
 from .leaf import leaf_spec
+from .leaf import leaf_bulk_update
 from .leaf import leaf_update
 from .leaf import leaf
 from .leaf import leaf_id_query
@@ -59,6 +60,7 @@ from .media_next import media_next
 from .media_prev import media_prev
 from .media import media_spec
 from .media import media_update
+from .media import media_bulk_update
 from .media import media
 from .media import media_id_query
 from .media_stats import media_stats
@@ -79,6 +81,7 @@ from .section import section_update
 from .section import section
 from .section_analysis import section_analysis
 from .state import state_spec
+from .state import state_bulk_update
 from .state import state_update
 from .state import state
 from .state import state_id_query
@@ -121,6 +124,5 @@ from ._color import fill
 from ._common import create_response
 from ._common import create_list_response
 from ._common import message_response
-from ._common import attribute_bulk_update
 from ._errors import not_found_response
 from ._errors import bad_request_response
