@@ -1,6 +1,9 @@
 // analytics-annotations {
 //   background-color: $color-charcoal--light !important;
 // }
+.analysis--main {
+  width: 100%;
+}
 
 .analysis__panel-group {
   border-top: 1px solid $color-charcoal--light;
@@ -104,9 +107,21 @@
   }
 
   img {
-    height: 87px;
-    object-fit: cover;
-    width: 100%;
+    background-color: $color-charcoal--medium;
+    height: 91px;
+    object-fit: contain;
+    //width: 100%
+    width: 171px;
+    background-image: linear-gradient(
+        to right,
+        $color-charcoal--light 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+    background-size: 10px 10px;
+    padding: 10px;
+    padding: 10px;
+    margin: 5px auto;
   }
 
   & > span {

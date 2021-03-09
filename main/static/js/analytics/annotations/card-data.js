@@ -10,25 +10,27 @@ class CardData {
           this.localizationTypes = localizationTypes;
     }
 
-    async makeCardList({ params = "", start = 0, stop = 20} = {}){
+    async makeCardList({ filterState, paginationState } = {}){
         this.cardList = {};
         this.cardList.cards = [];
-        this.cardList.total = this._modelData.getLocalizationCount({params});
+        this.cardList.filterState = filterState;
+        this.cardList.paginationState = paginationState;
+        this.cardList.total = await this._modelData.getLocalizationCount({params : filterState.params});
 
         this.localizations= await this._modelData.getLocalizations({
-            params, 
-            start, 
-            stop
+            params : filterState.params, 
+            start : paginationState._start, 
+            stop : paginationState._stop
         });
-        await this.getCardList(this.localizations, params);
+        await this.getCardList(this.localizations);
         return this.cardList;
     }
 
-    getCardList(localizations, params){
+    getCardList(localizations){
         return new Promise((resolve, reject) => {
 
             let counter = localizations.length;
-            for(let l of localizations){
+            for(let [i, l] of localizations.entries()){
                 let id = l.id;
                 
                 //let metaDetails = this.findMetaDetails( l.meta );
@@ -42,17 +44,18 @@ class CardData {
                 let created = new Date(l.created_datetime);
                 let modified = new Date(l.modified_datetime);
 
+                let position = i + this.cardList.paginationState._start;
+                let posText = `${position} of ${this.cardList.total}`;
+
                 let promises = [ 
                         this._modelData.getUser(l.modified_by),
-                        this._modelData.getLocalizationGraphic(l.id),
-                        this._modelData.getLocalizationCount({params})
+                        this._modelData.getLocalizationGraphic(l.id)
                     ]
                 
                 Promise.all(promises)
                 .then((respArray) => {
                     let userName = respArray[0].username;
                     let graphic = respArray[1];
-                    this.cardList.total = respArray[2];
             
                     let card = {
                         id,
@@ -62,7 +65,8 @@ class CardData {
                         attributes,
                         created,
                         modified,
-                        userName
+                        userName,
+                        posText
                     };
                     //console.log(card);
                     this.cardList.cards.push(card);

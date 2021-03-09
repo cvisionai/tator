@@ -14,7 +14,7 @@ class EntityCardResize extends TatorElement {
 
     // Resize label text
     this._resizeLabel = document.createElement("span");
-    this._resizeLabel.setAttribute("class", "text-gray entity-resize__label f2");
+    this._resizeLabel.setAttribute("class", "text-gray entity-resize__label f2 text-top");
     let resize = document.createTextNode("Resize ");
     this._resizeLabel.appendChild(resize);
     this._slideInputLabel.appendChild(this._resizeLabel);
@@ -32,7 +32,7 @@ class EntityCardResize extends TatorElement {
     this._slideInput.setAttribute("min", "50");
     this._slideInput.setAttribute("max", "250");
     this._slideInput.setAttribute("value", "150");
-    this._slideInput.setAttribute("class", "slider");
+    this._slideInput.setAttribute("class", "range-div select-pointer");
     this._slideInput.setAttribute("id", "resizeAnnotationImages");
     this._slideInputLabel.appendChild(this._slideInput);
 
