@@ -3288,9 +3288,37 @@ class AnnotationCanvas extends TatorElement
                         defaultDrawWidth*this._draw.displayToViewportScale()[0],
                         alpha);
   }
+
+  blackoutOutside(box)
+  {
+    let left = [[0,0],
+                [box[0][0],0],
+                [box[0][0], this._dims[1]],
+                [0,this._dims[1]]
+               ];
+    let right = [[box[1][0],0],
+                 [this._dims[0], 0],
+                 [this._dims[0], this._dims[1]],
+                 [box[1][0], this._dims[1]]];
+    let top = [[box[0][0],0],
+               [box[1][0], 0],
+               [box[1][0], box[1][1]],
+               [box[0][0], box[1][1]]];
+    let bottom = [[box[3][0],box[3][1]],
+                  [box[2][0], box[2][1]],
+                  [box[2][0], this._dims[1]],
+                  [box[3][0], this._dims[1]]];
+
+    this._draw.fillPolygon(left, 0, color.BLACK, 75);
+    this._draw.fillPolygon(right, 0, color.BLACK, 75);
+    this._draw.fillPolygon(top, 0, color.BLACK, 75);
+    this._draw.fillPolygon(bottom, 0, color.BLACK, 75);
+  }
+
   dragHandler(dragEvent)
   {
     var that = this;
+
     var drawBox=function(dragStart, dragEnd, colorReq)
     {
       if (colorReq == undefined)
@@ -3311,6 +3339,7 @@ class AnnotationCanvas extends TatorElement
       that._draw.beginDraw();
       that.drawCrosshair([x0,y0], colorReq, 128);
       that.drawCrosshair([x2,y2], colorReq, 128);
+      that.blackoutOutside(boxCoords);
       that._draw.drawPolygon(boxCoords,
                              colorReq,
                              defaultDrawWidth*that._draw.displayToViewportScale()[0]);
@@ -3328,10 +3357,12 @@ class AnnotationCanvas extends TatorElement
       var y1 = dragEnd.y;
 
       var lineCoords = [[x0,y0],[x1,y1]];
+      var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
       that.drawCrosshair([x0,y0], colorReq, 128);
       that.drawCrosshair([x1,y1], colorReq, 128);
+      that.blackoutOutside(fauxBoxCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
