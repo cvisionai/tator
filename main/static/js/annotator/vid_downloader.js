@@ -159,10 +159,12 @@ class VideoDownloader
    * This also resets the internal on-demand downloading.
    *
    * @param {string} direction - 'forward'|'backward'
-   * @param {integer} frame - Frame number to start downloading from
+   * @param {integer} frame - Target frame number to include in the next packet
    * @param {integer} mediaFileIndex - Index of media file list from constructor to use
+   * @param {float} fps
+   * @param {integer} maxFrame - Last valid frame number
    */
-  setupOnDemandDownload(direction, frame, mediaFileIndex)
+  setupOnDemandDownload(direction, frame, mediaFileIndex, fps, maxFrame)
   {
     this._onDemandConfig = {};
     this._onDemandConfig["direction"] = direction;
@@ -172,6 +174,8 @@ class VideoDownloader
     this._onDemandConfig["numPacketsDownloaded"] = 0;
     this._onDemandConfig["init"] = false;
     this._onDemandConfig["lastStartByte"] = -1;
+    this._onDemandConfig["fps"] = fps;
+    this._onDemandConfig["maxFrame"] = maxFrame;
 
     postMessage({"type": "onDemandInit"});
   }
@@ -310,14 +314,18 @@ class VideoDownloader
     var offsets = [];  // Stores the segments (aka packets)
     var startByte;
     var iterBlockSize = this._blockSize;
+    var initialDownload = false;
+    var initalPacketIndex = 0;
 
     if (!this._onDemandConfig["init"])
     {
       // Set the current packet based on the play start frame plus some wiggle room
       this._onDemandConfig["init"] = true;
+      var frameToStart;
+      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 2);
       if (this._onDemandConfig["direction"] == "forward")
       {
-        var frameToStart = this._onDemandConfig["frame"] ;
+        frameToStart = this._onDemandConfig["frame"] - startBuffer;
         if (frameToStart < 0)
         {
           frameToStart = 0;
@@ -325,14 +333,21 @@ class VideoDownloader
       }
       else
       {
-        var frameToStart = this._onDemandConfig["frame"];
+        frameToStart = this._onDemandConfig["frame"] + startBuffer;
+        if (frameToStart > this._onDemandConfig["maxFrame"])
+        {
+          frameToStart = this._onDemandConfig["maxFrame"];
+        }
       }
-      let {matchIdx, boundary, lastPacket, lastFrame} = this.getSegmentIndex(frameToStart, mediaFileIndex);
+      var segmentResult = this.getSegmentIndex(frameToStart, mediaFileIndex);
+      var segmentResult2 = this.getSegmentIndex(this._onDemandConfig["frame"], mediaFileIndex);
+
+      var matchIdx = segmentResult.matchIdx;
       if (this._onDemandConfig["direction"] == "backward")
       {
-        if (frameToStart > lastFrame)
+        if (frameToStart > segmentResult.lastFrame)
         {
-          matchIdx = lastPacket;
+          matchIdx = segmentResult.lastPacket;
         }
         else
         {
@@ -345,6 +360,8 @@ class VideoDownloader
         return;
       }
       packetIndex = matchIdx;
+      var initalPacketIndex = segmentResult2.matchIdx;
+      initialDownload = true;
     }
 
     // Establish the size of downloads
@@ -366,8 +383,20 @@ class VideoDownloader
       }
 
       startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex]["offset"]);
-      while (currentSize < iterBlockSize && packetIndex < this._numPackets[mediaFileIndex])
+      while (packetIndex < this._numPackets[mediaFileIndex])
       {
+        // Ensure the target packet has been downloaded if this is the first download
+        if (initialDownload) {
+          if (currentSize > iterBlockSize && initalPacketIndex < packetIndex) {
+            break;
+          }
+        }
+        else {
+          if (currentSize > iterBlockSize) {
+            break;
+          }
+        }
+
         const packet = this._info[mediaFileIndex]["segments"][packetIndex];
         const pos = parseInt(packet["offset"]);
         const size = parseInt(packet["size"]);
@@ -387,8 +416,20 @@ class VideoDownloader
       }
 
       var packetData = [];
-      while (currentSize < iterBlockSize && packetIndex >= 2)
+      while (packetIndex >= 2)
       {
+        // Ensure the target packet has been downloaded if this is the first download
+        if (initialDownload) {
+          if (currentSize > iterBlockSize && initalPacketIndex > packetIndex) {
+            break;
+          }
+        }
+        else {
+          if (currentSize > iterBlockSize) {
+            break;
+          }
+        }
+
         const packet = this._info[mediaFileIndex]["segments"][packetIndex];
         const packetStart = parseInt(packet["offset"]);
         const packetSize = parseInt(packet["size"]);
@@ -653,7 +694,7 @@ onmessage = function(e)
     if (ref == null)
     {
       ref = new VideoDownloader(msg.media_files,
-                                1*1024*1024, // Download in 5 MB chunks
+                                2*1024*1024,
                                 msg.offsite_config);
     }
   }
@@ -684,7 +725,7 @@ onmessage = function(e)
   }
   else if (type == 'onDemandInit')
   {
-    ref.setupOnDemandDownload(msg['direction'], msg['frame'], msg['mediaFileIndex']);
+    ref.setupOnDemandDownload(msg['direction'], msg['frame'], msg['mediaFileIndex'], msg['fps'], msg['maxFrame']);
   }
   else if (type == 'onDemandDownload')
   {

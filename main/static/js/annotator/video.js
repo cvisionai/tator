@@ -295,10 +295,12 @@ class VideoBufferDemux
         }
       }
 
+      /*
       if (ranges.length > 0)
       {
         console.warn(`Playback buffer doesn't contain time (ranges/start/end/time) ${ranges.length} ${start} ${end} ${time}`);
       }
+      */
     }
     else if (buffer == "scrub")
     {
@@ -2409,6 +2411,8 @@ class VideoCanvas extends AnnotationCanvas {
               {
                 "type": "onDemandInit",
                 "frame": currentFrame,
+                "fps": that._fps,
+                "maxFrame": that._numFrames - 1,
                 "direction": downloadDirection,
                 "mediaFileIndex": that._play_idx
               }
@@ -2496,6 +2500,8 @@ class VideoCanvas extends AnnotationCanvas {
                   {
                     if (video.playBuffer().readyState > 0)
                     {
+
+                      console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
                       that._sentPlaybackReady = true;
                       that.dispatchEvent(new CustomEvent(
                         "playbackReady",
@@ -2524,7 +2530,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime - 2;
                   if (trimEnd > start && that._playing)
                   {
-                    //console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                    console.log(`...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                     video.deletePendingOnDemand([start, trimEnd]);
                   }
                 }
@@ -2533,7 +2539,7 @@ class VideoCanvas extends AnnotationCanvas {
                   var trimEnd = currentTime + 2;
                   if (trimEnd < end && that._playing)
                   {
-                    //console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                    console.log(`...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                     video.deletePendingOnDemand([trimEnd, end]);
                   }
                 }
