@@ -15,6 +15,22 @@ from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
+
+def _get_archived_filter(params):
+    archive_state = params.get("archive_state", "live")
+    if archive_state == "archived":
+        return True
+    if archive_state == "all":
+        return None
+    if archive_state == "live":
+        return False
+
+    raise ValueError(
+        f"Received invalid value '{archive_state}' for 'archive_state'. Valid values are "
+        f"['archived', 'live', 'all']."
+    )
+
+
 def get_media_es_query(project, params):
     """ Constructs an elasticsearch query.
     """
@@ -33,6 +49,7 @@ def get_media_es_query(project, params):
     start = params.get('start')
     stop = params.get('stop')
     after = params.get('after')
+    archived = _get_archived_filter(params)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
@@ -129,6 +146,9 @@ def get_media_es_query(project, params):
     if after is not None:
         bools.append({'range': {'_exact_name': {'gt': after}}})
 
+    if archived is not None:
+        bools.append({'match': {'_archived': {'query': archived}}})
+
     query = get_attribute_es_query(params, query, bools, project, is_media=True,
                                    annotation_bools=annotation_bools)
     return query
@@ -149,6 +169,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     uid = params.get('uid')
     start = params.get('start')
     stop = params.get('stop')
+    archived = _get_archived_filter(params)
 
     qs = Media.objects.filter(project=project, deleted=False)
     media_ids = []
@@ -187,6 +208,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if uid is not None:
         qs = qs.filter(uid=uid)
 
+    if archived is not None:
+        qs = qs.filter(archived=archived)
+
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('name')
@@ -221,7 +245,7 @@ def _use_es(project, params):
     use_es = use_es or use_es_for_attributes
 
     return use_es, section_uuid, filter_ops
-        
+
 def get_media_queryset(project, params):
     # Determine whether to use ES or not.
     use_es, section_uuid, filter_ops = _use_es(project, params)

@@ -425,21 +425,29 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
+        patch_archived = params.pop("archived", None)
         qs = get_media_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
             # Get the current representation of the object for comparison
             original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
-            bulk_patch_attributes(new_attrs, qs)
+            if new_attrs is not None:
+                bulk_patch_attributes(new_attrs, qs)
+            if patch_archived is not None:
+                qs.update(
+                    archived=patch_archived,
+                    modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                )
 
             # Get one object from the queryset to create the change log
             obj = qs.first()
             change_dict = obj.change_dict(original_dict)
             ref_table = ContentType.objects.get_for_model(obj)
 
-            query = get_media_es_query(params['project'], params)
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+            if new_attrs is not None:
+                query = get_media_es_query(params['project'], params)
+                TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
             # Create the ChangeLog entry and associate it with all objects in the queryset
             cl = ChangeLog(
@@ -545,6 +553,10 @@ class MediaDetailAPI(BaseDetailView):
                 if params['multi'].get(key):
                     obj.media_files[key] = params['multi'][key]
 
+        if "archived" in params:
+            obj.archived = params["archived"]
+            obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+
         obj.save()
         cl = ChangeLog(
             project=obj.project,
@@ -598,4 +610,3 @@ class MediaDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return Media.objects.all()
-

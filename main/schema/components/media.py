@@ -21,6 +21,10 @@ media_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+    'archived': {
+        'type': 'boolean',
+        'description': 'Marks media for archival.',
+    },
 }
 
 media_get_properties = {
@@ -164,6 +168,10 @@ media_bulk_update = {
             'description': 'Attribute values to bulk update an entity list.',
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'archived': {
+            'type': 'boolean',
+            'description': 'Marks media for archival.',
         },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '
