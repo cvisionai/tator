@@ -2123,10 +2123,19 @@ class AnnotationCanvas extends TatorElement
 
   mouseOutHandler(mouseEvent)
   {
+    let needRefresh = false;
     this._textOverlay.classList.remove("select-pointer");
     if (this._emphasis != null && this._emphasis != this.activeLocalization)
     {
       this._emphasis = null;
+      needRefresh = true;
+    }
+    if (this._lastHoverDraw > 0)
+    {
+      needRefresh = true;
+    }
+    if (needRefresh == true)
+    {
       this.refresh();
     }
   }
