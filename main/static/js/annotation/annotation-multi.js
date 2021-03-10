@@ -1166,7 +1166,7 @@ class AnnotationMulti extends TatorElement {
     }
 
     this.dispatchEvent(new Event("playing", {composed: true}));
-    this._fastForward.removeAttribute("disabled");
+    this._fastForward.setAttribute("disabled", "");
     this._rewind.removeAttribute("disabled");
 
     const paused = this.is_paused();

@@ -2257,6 +2257,7 @@ class VideoCanvas extends AnnotationCanvas {
       if (that._draw.canLoad() == false)
       {
         that._loaderTimeout = setTimeout(loader, bufferWaitTime);
+        console.log("draw buffer is full");
         return;
       }
 
@@ -2270,6 +2271,7 @@ class VideoCanvas extends AnnotationCanvas {
         if (source == null)
         {
           // Video isn't ready yet, wait and try again
+          console.log("video buffer not ready for loading - frame: " + frameIdx);
           that._loaderTimeout = setTimeout(loader, 250);
         }
         else
@@ -2381,6 +2383,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandFinished = false;
     this._loaderStarted = false;
     this._sentPlaybackReady = false;
+
     var onDemandDownload = function (_)
     {
       const video = that._videoElement[that._play_idx];
@@ -2406,12 +2409,18 @@ class VideoCanvas extends AnnotationCanvas {
           if (ranges.length == 0 && !video.isOnDemandBufferBusy())
           {
             that._onDemandPendingDownloads = 0;
-            //console.log("Sending onDemandInit to downloader")
             that._onDemandInitSent = true;
+
+            // Note: These are here because it's possible that currentFrame gets out of sync.
+            //       Perhaps this is more of a #TODO, but this is some defensive programmingf
+            //       to keep things in line.
+            that._onDemandInitStartFrame = that._dispFrame;
+            currentFrame = that._dispFrame;
+
             that._dlWorker.postMessage(
               {
                 "type": "onDemandInit",
-                "frame": currentFrame,
+                "frame": that._dispFrame,
                 "fps": that._fps,
                 "maxFrame": that._numFrames - 1,
                 "direction": downloadDirection,
@@ -2423,7 +2432,6 @@ class VideoCanvas extends AnnotationCanvas {
           {
             if (!video.isOnDemandBufferCleared() && !video.isOnDemandBufferBusy())
             {
-              //console.log("Resetting onDemand buffer")
               video.resetOnDemandBuffer();
             }
           }
@@ -2477,6 +2485,7 @@ class VideoCanvas extends AnnotationCanvas {
             playbackReadyThreshold = 0;
           }
 
+          var foundMatchingRange = false;
           for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
           {
             var end = ranges.end(rangeIdx);
@@ -2493,15 +2502,16 @@ class VideoCanvas extends AnnotationCanvas {
 
             if (currentTime <= end && currentTime >= start)
             {
+              foundMatchingRange = true;
               if (timeToEnd > playbackReadyThreshold)
               {
                 if (that._waitPlayback)
                 {
                   if (!that._sentPlaybackReady)
                   {
-                    if (video.playBuffer().readyState > 3 && that._draw.canLoad())
+                    if (video.playBuffer().readyState > 0 && that.videoBuffer(that.currentFrame(), "play") != null)
                     {
-                      console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
+                      console.log(`playbackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
                       that._sentPlaybackReady = true;
                       that.dispatchEvent(new CustomEvent(
                         "playbackReady",
@@ -2515,6 +2525,10 @@ class VideoCanvas extends AnnotationCanvas {
                 else
                 {
                   // Enough data to start playback
+                  if (!that._onDemandPlaybackReady)
+                  {
+                    console.log(`onDemandPlaybackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`);
+                  }
                   that._onDemandPlaybackReady = true;
                 }
               }
@@ -2552,12 +2566,30 @@ class VideoCanvas extends AnnotationCanvas {
 
             //console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
           }
+          if (!foundMatchingRange && that._onDemandPendingDownloads < 1 && !that._onDemandPlaybackReady)
+          {
+            if (that._onDemandInitStartFrame != that._dispFrame)
+            {
+              // If for some reason the onDemand was initialized incorrectly, reinitialize
+              // #TODO Worth looking at in the future to figure out how to prevent this scenario.
+              console.log(`onDemand was initialized with frame ${that._onDemandInitStartFrame} - reinitializing with ${that._dispFrame}`);
+              that._onDemandInitSent = false;
+              that._onDemandInit = false;
+              that._onDemandPlaybackReady = false;
+            }
+            else
+            {
+              // Request more data, we received a block of data but it's likely on the boundary.
+              console.log("playback not ready -- downloading additional data");
+              needMoreData = true;
+            }
+          }
         }
 
         if (needMoreData && !that._onDemandFinished)
         {
           // Kick of the download worker to get the next onDemand segments
-          //console.log("Requesting more onDemand data");
+          console.log("Requesting more onDemand data");
           that._onDemandPendingDownloads += 1;
           that._dlWorker.postMessage({"type": "onDemandDownload"});
         }

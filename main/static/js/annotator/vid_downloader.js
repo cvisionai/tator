@@ -177,6 +177,8 @@ class VideoDownloader
     this._onDemandConfig["fps"] = fps;
     this._onDemandConfig["maxFrame"] = maxFrame;
 
+    console.log(`setupOnDemandDownload (direction/frame/fileIndex/fps/maxFrame): ${direction} ${frame} ${mediaFileIndex} ${fps} ${maxFrame}`);
+
     postMessage({"type": "onDemandInit"});
   }
 
@@ -322,7 +324,7 @@ class VideoDownloader
       // Set the current packet based on the play start frame plus some wiggle room
       this._onDemandConfig["init"] = true;
       var frameToStart;
-      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 2);
+      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 3);
       if (this._onDemandConfig["direction"] == "forward")
       {
         frameToStart = this._onDemandConfig["frame"] - startBuffer;
