@@ -3291,8 +3291,10 @@ class AnnotationCanvas extends TatorElement
 
   drawCrosshair(center, color_req, alpha)
   {
-    let vertical = [[center[0], 0], [center[0],this._dims[1]]];
-    let horizontal = [[0, center[1]], [this._dims[0],center[1]]];
+    const maxX = this._canvas.width;
+    const maxY = this._canvas.height;
+    let vertical = [[center[0], 0], [center[0],maxY]];
+    let horizontal = [[0, center[1]], [maxX,center[1]]];
     this._draw.drawLine(vertical[0],
                         vertical[1],
                         color_req,
@@ -3337,23 +3339,25 @@ class AnnotationCanvas extends TatorElement
       };
     box = fix_box(box);
 
+    const maxX = this._canvas.width;
+    const maxY = this._canvas.height;
     let left = [[0,0],
                 [box[0][0],0],
-                [box[0][0], this._dims[1]],
-                [0,this._dims[1]]
+                [box[0][0], maxY],
+                [0,maxY]
                ];
     let right = [[box[1][0],0],
-                 [this._dims[0], 0],
-                 [this._dims[0], this._dims[1]],
-                 [box[1][0], this._dims[1]]];
+                 [maxX, 0],
+                 [maxX, maxY],
+                 [box[1][0], maxY]];
     let top = [[box[0][0],0],
                [box[1][0], 0],
                [box[1][0], box[1][1]],
                [box[0][0], box[1][1]]];
     let bottom = [[box[3][0],box[3][1]],
                   [box[2][0], box[2][1]],
-                  [box[2][0], this._dims[1]],
-                  [box[3][0], this._dims[1]]];
+                  [box[2][0], maxY],
+                  [box[3][0], maxY]];
 
     this._draw.fillPolygon(left, 0, color.BLACK, 75);
     this._draw.fillPolygon(right, 0, color.BLACK, 75);
