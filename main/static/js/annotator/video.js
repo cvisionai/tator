@@ -1248,7 +1248,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "onDemandFinished")
       {
-        //console.log("onDemand finished downloading. Reached end of video.");
+        console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
       }
       else if (type == "onDemand")
@@ -1614,6 +1614,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     if (ended == true)
     {
+      console.log("video.playbackEnded");
       this.dispatchEvent(new CustomEvent("playbackEnded", {
       composed: true
       }));
@@ -2498,9 +2499,8 @@ class VideoCanvas extends AnnotationCanvas {
                 {
                   if (!that._sentPlaybackReady)
                   {
-                    if (video.playBuffer().readyState > 0)
+                    if (video.playBuffer().readyState > 3 && that._draw.canLoad())
                     {
-
                       console.log(`(start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
                       that._sentPlaybackReady = true;
                       that.dispatchEvent(new CustomEvent(
@@ -2573,15 +2573,15 @@ class VideoCanvas extends AnnotationCanvas {
         }
       }
 
-      if (!that._onDemandFinished)
+      // Sleep for a period before checking the onDemand buffer again
+      // This period is quicker when we have not begun playback
+      if (!that._onDemandPlaybackReady)
       {
-        // Sleep for a period before checking the onDemand buffer again
-        // This period is quicker when we have not begun playback
-        if (!that._onDemandPlaybackReady)
-        {
-          that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 100);
-        }
-        else
+        that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 100);
+      }
+      else
+      {
+        if (!that._onDemandFinished)
         {
           that._onDemandDownloadTimeout = setTimeout(onDemandDownload, 250);
         }

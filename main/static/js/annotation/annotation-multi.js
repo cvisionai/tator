@@ -646,7 +646,7 @@ class AnnotationMulti extends TatorElement {
       {
         if (evt.detail.playbackReadyId == this._playbackReadyId)
         {
-          console.log(`waitPlayback Rx'd ID - ${this._playbackReadyId}`);
+          console.log(`waitPlayback Rx'd IDs - ${vid_id} ${this._playbackReadyId}`);
           this._playbackReadyCount += 1;
           if (this._playbackReadyCount == this._numVideos)
           {
@@ -1102,7 +1102,7 @@ class AnnotationMulti extends TatorElement {
           return;
         }
         video.rateChange(this._rate);
-        playing |= video.play();
+        playing |= video.playBackwards();
       }
 
       if (playing)
