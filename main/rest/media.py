@@ -498,7 +498,7 @@ class MediaDetailAPI(BaseDetailView):
                 bulk_patch_attributes(new_attrs, qs)
 
             if 'name' in params:
-                qs.update(name=parmas['name'])
+                qs.update(name=params['name'])
 
             if 'last_edit_start' in params:
                 qs.update(last_edit_start=params['last_edit_start'])
