@@ -1143,7 +1143,7 @@ class AnnotationMulti extends TatorElement {
           return;
         }
         video.rateChange(this._rate);
-        playing |= video.play();
+        playing |= video.playBackwards();
       }
 
       if (playing)
