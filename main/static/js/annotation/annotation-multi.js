@@ -1101,8 +1101,12 @@ class AnnotationMulti extends TatorElement {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
           return;
         }
+      }
+
+      for (let video of this._videos)
+      {
         video.rateChange(this._rate);
-        playing |= video.playBackwards();
+        playing |= video.play();
       }
 
       if (playing)
@@ -1153,6 +1157,10 @@ class AnnotationMulti extends TatorElement {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
           return;
         }
+      }
+
+      for (let video of this._videos)
+      {
         video.rateChange(this._rate);
         playing |= video.playBackwards();
       }
@@ -1167,7 +1175,7 @@ class AnnotationMulti extends TatorElement {
 
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
-    this._rewind.removeAttribute("disabled");
+    this._rewind.setAttribute("disabled", "");
 
     const paused = this.is_paused();
     if (paused) {
