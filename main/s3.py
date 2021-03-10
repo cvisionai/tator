@@ -28,7 +28,7 @@ class TatorS3:
             self.bucket_name = bucket.name
             self.external_host = None
         if endpoint:
-            config = Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 0})
+            config = Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 5})
             self.s3 = boto3.client('s3',
                                    endpoint_url=f'{endpoint}',
                                    region_name=region,
@@ -73,12 +73,12 @@ def get_s3_lookup(resources):
     """
     buckets = resources.values_list('bucket', flat=True).distinct()
     s3_lookup = {}
+    # This is to avoid a circular import
+    Bucket = resources.model._meta.get_field('bucket').related_model
     for bucket in buckets:
         if bucket is None:
             s3_lookup[bucket] = TatorS3()
         else:
-            # This is to avoid a circular import
-            Bucket = resources.model._meta.get_field('bucket').related_model
             s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
     s3_lookup = {resource.path:(s3_lookup[resource.bucket.pk] if resource.bucket else s3_lookup[None])
                  for resource in list(resources)}
