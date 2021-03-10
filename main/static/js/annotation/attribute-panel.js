@@ -99,6 +99,7 @@ class AttributePanel extends TatorElement {
         ));
       });
       goToTrackDiv.appendChild(goToTrackButton);
+      this.displayGoToTrack(false);
     }
 
     const sorted = val.attribute_types.sort((a, b) => {
