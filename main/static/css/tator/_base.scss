@@ -46,6 +46,10 @@ p svg {
 
 svg {
   fill: currentColor;
+
+  &.no-fill {
+    fill: none;
+  }
 }
 
 summary {

@@ -17,8 +17,22 @@ class AnnotationsCard extends EntityCard {
   }
 
   init(obj, panelContainer, annotationPanelDiv){
+    // ID is title
     this.titleDiv.innerHTML = `ID ${obj.id}`;
 
+    // Give card access to panel
+    this.panelContainer = panelContainer;
+    this.annotationPanelDiv = annotationPanelDiv;
+    this._li.addEventListener("click", this.togglePanel.bind(this) );
+
+    // Additional information about localization
+    // Name and type like "ABOX (Box)"
+    this.typeInfo = document.createElement('div');
+    this.typeInfo.innerHTML = `${obj.metaDetails.name} (${obj.metaDetails.type})`;
+    this.titleDiv.appendChild(this.typeInfo);
+
+
+    // Graphic
     if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
@@ -27,47 +41,50 @@ class AnnotationsCard extends EntityCard {
       this._img.hidden = true;
     }
 
+    // Add position text related to pagination
     let posText = document.createTextNode(`${obj.posText}`)
     this._pos_text.appendChild(posText);
 
-    // Give card access to panel
-    this.panelContainer = panelContainer;
-    this.annotationPanelDiv = annotationPanelDiv;
-    this._li.addEventListener("click", this.togglePanel.bind(this) );
-
-    // this.typeInfo = document.createElement('div');
-    // this.typeInfo.innerHTML = `${obj.metaDetails.name} (${obj.metaDetails.type})`;
-    // this.descDiv.appendChild(this.typeInfo);
-
+    // Link to the media @TODO
     // this.mediaLink = document.createElement('div');
-    // this.mediaLink.innerHTML = `Media: ${obj.mediaLink}`;
+    // this.mediaLink.innerHTML = `Media ID ${obj.mediaLink}`;
     // this.descDiv.appendChild(this.mediaLink);
 
-    // this.mediaLink = document.createElement('div');
-    // this.mediaLink.innerHTML = `Media: ${obj.mediaLink}`;
-    // this.descDiv.appendChild(this.mediaLink);
+    // Attributes for as many exist
+    this.attributesDiv = document.createElement('div');
 
-    // this.attributesDiv = document.createElement('div');
-    // for(let attr of obj.attributes){
-    //   let attrDiv = document.createElement("div");
-    //   let attribute = document.createTextNode(`${attr} : ${obj.attributes[attr]}`);
-    //   attrDiv.appendChild(attribute);
-    //   this.attributesDiv.appendChild(attrDiv);
-    // }
-    // this.descDiv.appendChild(this.attributesDiv);
+    for(const [attr, value] of Object.entries(obj.attributes)){
+      let attrDiv = document.createElement("div");
+      attrDiv.setAttribute("class", `card-attribute ${encodeURI(obj.metaDetails.name)}_${encodeURI(attr)}`)
+      
+      let attrLabel = document.createElement("strong");
+      attrLabel.appendChild( document.createTextNode(`${attr}: `) );
+      attrLabel.setAttribute("class", "text-bold");
+      attrDiv.appendChild(attrLabel);
+      
+      let attribute = document.createTextNode(value);
+      attrDiv.appendChild(attribute);
 
-    // this.created = document.createElement('div');
-    // this.created.innerHTML = `Created: ${obj.created}`;
-    // this.descDiv.appendChild(this.created);
+      this.attributesDiv.appendChild(attrDiv);
+    }
+    this.descDiv.appendChild(this.attributesDiv);
 
-    // this.modified = document.createElement('div');
-    // this.modified.innerHTML = `Modified: ${obj.modified}`;
-    // this.descDiv.appendChild(this.modified);
+    // Create Date
+    this.created = document.createElement('div');
+    this.created.innerHTML = `Created: ${obj.created}`;
+    this.descDiv.appendChild(this.created);
 
-    // this.modifiedby = document.createElement('div');
-    // this.modifiedby.innerHTML = `Modified by: ${obj.username}`;
-    // this.descDiv.appendChild(this.modifiedby);
+    // Modified Date
+    this.modified = document.createElement('div');
+    this.modified.innerHTML = `Modified: ${obj.modified}`;
+    this.descDiv.appendChild(this.modified);
 
+    // Modified By
+    this.modifiedby = document.createElement('div');
+    this.modifiedby.innerHTML = `By: ${obj.userName}`;
+    this.descDiv.appendChild(this.modifiedby);
+
+    // Show description div
     this.descDiv.hidden = false;
   }
 
@@ -78,12 +95,14 @@ class AnnotationsCard extends EntityCard {
   togglePanel(){
     console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
 
-    // If we already have this open, toggle shut
+    
     if(!this.annotationPanelDiv.hidden) {
-      this.hidePanelContainer();
-      this._li.classList.remove("is-selected");      
+      // If we already have this open, toggle shut
+      this._li.classList.remove("is-selected"); 
+      this.annotationPanelDiv.hidden = true;
+      this.hidePanelContainer(); 
     } else {
-      // Otherwise hide other content...
+      // Otherwise find and close open panel... should just be 1, but grabbing all...
       let openPanels = this.panelContainer.querySelectorAll(".entity-panel--div:not([hidden])");
       console.log(openPanels);
       
@@ -91,24 +110,20 @@ class AnnotationsCard extends EntityCard {
       for(let openPanel of openPanels){
         let unselectedEvent = new Event("unselected");
         openPanel.dispatchEvent(unselectedEvent);
-        openPanel.hidden = true;
       }
-
       // Show this content
       this._li.classList.add("is-selected");
-      this.annotationPanelDiv.hidden = false
+      this.annotationPanelDiv.hidden = false;
       this.showPanelContainer();
     }   
   }
 
   hidePanelContainer(){
     this.panelContainer.classList.remove("slide");
-    this.panelContainer.hidden = true;
   }
 
   showPanelContainer(){
     this.panelContainer.classList.add("slide");
-    this.panelContainer.hidden = false;
   }
 
 }

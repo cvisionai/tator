@@ -57,13 +57,11 @@ class AnalyticsAnnotations extends TatorPage {
     // Gallery navigation panel  
     this._panelContainer = document.createElement("div");
     this._panelContainer.setAttribute("class", "entity-panel--container mt-6")
-    this._panelContainer.hidden = true;
+    this._filterResults._initPanel( { panelContainer : this._panelContainer });
     mainWrapper.appendChild(this._panelContainer);
 
-    // Init gallery with this panel
-    this._filterResults._initPanel( { panelContainer : this._panelContainer} );
-
     // Class to hide and showing loading spinner
+    // @TODO what is standard use?
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg() );
 
@@ -105,7 +103,7 @@ class AnalyticsAnnotations extends TatorPage {
     // If state is stored in URL, update default states
     this._getQueryParams();
 
-    // Init Card Gallery
+    // Init Card Gallery and Right Panel
     this._cardGallery({panelContainer : this.panelContainer});
 
     // Listen for pagination events
@@ -161,13 +159,16 @@ class AnalyticsAnnotations extends TatorPage {
     console.log(filterState);
     console.log(paginationState);
     this.loading.showSpinner();
+
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList( { filterState, paginationState } )
     .then((cardList) => {
       this.loading.hideSpinner();
       this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
+      this._filterResults._initPanel( { panelContainer : this._panelContainer, localizationsMap : cardList.localizationsMap} );
       this._filterResults.show( { cardList } );
+      
     });
   }
 
