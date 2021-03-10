@@ -35,6 +35,7 @@ from ..notify import Notify
 from ..download import download_file
 from ..s3 import TatorS3
 from ..s3 import get_s3_lookup
+from ..search import TatorSearch
 
 from ._util import bulk_create_from_generator
 from ._util import computeRequiredFields
@@ -489,63 +490,66 @@ class MediaDetailAPI(BaseDetailView):
             A media may be an image or a video. Media are a type of entity in Tator,
             meaning they can be described by user defined attributes.
         """
-        obj = Media.objects.select_for_update().get(pk=params['id'], deleted=False)
-        original_dict = obj.model_dict
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(pk=params['id'], deleted=False)
+            original_dict = qs[0].model_dict
+            if 'attributes' in params:
+                new_attrs = validate_attributes(params, qs[0])
+                bulk_patch_attributes(new_attrs, qs)
 
+            if 'name' in params:
+                qs.update(name=parmas['name'])
+
+            if 'last_edit_start' in params:
+                qs.update(last_edit_start=params['last_edit_start'])
+
+            if 'last_edit_end' in params:
+                qs.update(last_edit_end=params['last_edit_end'])
+
+            if 'fps' in params:
+                qs.update(fps=params['fps'])
+
+            if 'num_frames' in params:
+                qs.update(num_frames=params['num_frames'])
+
+            if 'codec' in params:
+                qs.update(codec=params['codec'])
+
+            if 'width' in params:
+                qs.update(width=params['width'])
+
+            if 'height' in params:
+                qs.update(height=params['height'])
+
+            if 'multi' in params:
+                media_files = qs[0].media_files
+                # If this object already contains non-multi media definitions, raise an exception.
+                if media_files:
+                    for role in ['streaming', 'archival', 'image']:
+                        items = media_files.get(role, [])
+                        if len(items) > 0:
+                            raise ValueError(f"Cannot set a multi definition on a Media that contains "
+                                              "individual media!")
+                # Check values of IDs (that they exist and are part of the same project).
+                sub_media = Media.objects.filter(project=qs[0].project, pk__in=params['multi']['ids'])
+                if len(params['multi']['ids']) != sub_media.count():
+                    raise ValueError(f"One or more media IDs in multi definition is not part of "
+                                      "project {qs[0].project.pk} or does not exist!")
+                if media_files is None:
+                    media_files = {}
+                for key in ['ids', 'layout', 'quality']:
+                    if params['multi'].get(key):
+                        media_files[key] = params['multi'][key]
+                qs.update(media_files=media_files)
+
+        obj = Media.objects.get(pk=params['id'], deleted=False)
+        TatorSearch().create_document(obj)
         if 'attributes' in params:
-            new_attrs = validate_attributes(params, obj)
-            obj = patch_attributes(new_attrs, obj)
-
             if obj.meta.dtype == 'image':
                 for localization in obj.localization_thumbnail_image.all():
                     localization = patch_attributes(new_attrs, localization)
                     localization.save()
 
-        if 'name' in params:
-            obj.name = params['name']
-
-        if 'last_edit_start' in params:
-            obj.last_edit_start = params['last_edit_start']
-
-        if 'last_edit_end' in params:
-            obj.last_edit_end = params['last_edit_end']
-
-        if 'fps' in params:
-            obj.fps = params['fps']
-
-        if 'num_frames' in params:
-            obj.num_frames = params['num_frames']
-
-        if 'codec' in params:
-            obj.codec = params['codec']
-
-        if 'width' in params:
-            obj.width = params['width']
-
-        if 'height' in params:
-            obj.height = params['height']
-
-        if 'multi' in params:
-            # If this object already contains non-multi media definitions, raise an exception.
-            if obj.media_files:
-                video =  obj.media_files.get('video', [])
-                image =  obj.media_files.get('image', [])
-                has_media = (len(video) > 0) or (len(image) > 0)
-                if has_media:
-                    raise ValueError(f"Cannot set a multi definition on a Media that contains "
-                                      "individual media!")
-            # Check values of IDs (that they exist and are part of the same project).
-            sub_media = Media.objects.filter(project=obj.project, pk__in=params['multi']['ids'])
-            if len(params['multi']['ids']) != sub_media.count():
-                raise ValueError(f"One or more media IDs in multi definition is not part of "
-                                  "project {obj.project.pk} or does not exist!")
-            if obj.media_files is None:
-                obj.media_files = {}
-            for key in ['ids', 'layout', 'quality']:
-                if params['multi'].get(key):
-                    obj.media_files[key] = params['multi'][key]
-
-        obj.save()
         cl = ChangeLog(
             project=obj.project,
             user=self.request.user,
