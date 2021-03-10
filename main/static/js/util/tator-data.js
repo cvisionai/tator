@@ -172,4 +172,25 @@ class TatorData {
     
     return data;
   }
+
+  /* START - Rest calls with data manipulation */
+
+  // Creates an object like:
+  //  { "Test box type" : [ "attr1", "attr2", "attr3"], 
+  //    "Test line type" : [ "attr1", "attr2", "attr3"]  }
+  getAttributesByLocalizationType(){
+    this.getAllLocalizationTypes().then((data) => {
+      console.log(data);
+      let newDataObj = {}
+      for(let loc in data){
+        newDataObj[loc.name] = [];
+        for(let a in loc.attributeTypes){
+          newDataObj[loc.name].push(a.name)
+        }
+      }
+      console.log(newDataObj);
+      return newDataObj;
+    });
+  }
 }
+

@@ -38,7 +38,7 @@ class EntityCard extends TatorElement {
   
       // Title Div
       this.titleDiv = document.createElement("div");
-      this.titleDiv.setAttribute("class", "entity-card__title py-1 d-flex flex-justify-between");
+      this.titleDiv.setAttribute("class", "entity-card__title py-1");
       div.appendChild(this.titleDiv);
   
       // Text for Title Div
@@ -49,8 +49,8 @@ class EntityCard extends TatorElement {
 
       // OPTIONAL Description Div
       this.descDiv = document.createElement("div");
-      this.descDiv.setAttribute("class", "entity-card__description py-1 d-flex flex-justify-between");
-      this._li.appendChild(this.descDiv);
+      this.descDiv.setAttribute("class", "entity-card__description py-1 f2");
+      div.appendChild(this.descDiv);
       this.descDiv.hidden = true; // HIDDEN default
   
       // "More" (three dots) menu (OPTIONAL)

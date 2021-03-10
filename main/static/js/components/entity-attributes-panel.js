@@ -29,14 +29,14 @@ class EntityAttrPanel extends TatorElement {
 
       // View media button link to annotation media
       this.viewMedia = document.createElement("button");
-      this.viewMedia.setAttribute("class", "btn col-6");
+      this.viewMedia.setAttribute("class", "btn btn-charcoal col-6");
       let vmText = document.createTextNode("View Media");
       this.viewMedia.appendChild(vmText);
       actions.appendChild(this.viewMedia);
 
       // View submission
       this.viewSubmission = document.createElement("button");
-      this.viewSubmission.setAttribute("class", "btn col-6");
+      this.viewSubmission.setAttribute("class", "btn btn-charcoal col-6");
       let vsText = document.createTextNode("View Submission");
       this.viewSubmission.appendChild(vsText);
       actions.appendChild(this.viewSubmission);

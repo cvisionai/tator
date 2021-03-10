@@ -4,24 +4,30 @@
 }
 
 .enitity-gallery__ul {
-  background-color: $color-charcoal--light;
+  //background-color: $color-charcoal--light;
+  border: 2px solid #151b28;
   display: grid;
   grid-gap: 20px;
   grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
 }
 
+.entity-gallery-labels {
+  border: 1px solid $color-charcoal--medium;
+  width: 300px;
+}
+
 .entity-resize {
   //border: 1px solid $color-charcoal--medium;
   //padding: $spacing-2 $spacing-4;
+  //width: 300px;
 
   .entity-resize__label {
     padding-right: $spacing-2;
   }
 }
 
-.entity-labels {
-  border: 1px solid $color-charcoal--light;
-  padding: $spacing-1 $spacing-3;
+entity-gallery-aspect-ratio {
+  width: 300px;
 }
 
 .enitity-gallery__tools,
@@ -35,6 +41,28 @@
   background-color: $color-charcoal--dark;
   padding: 6px;
   position: relative;
+
+  img {
+    background-color: $color-charcoal--medium;
+    height: 130px;
+    object-fit: cover;
+    width: 100%;
+    background-image: linear-gradient(
+        to right,
+        $color-charcoal--light 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+    background-size: 10px 10px;
+    transition: all 300ms linear;
+  }
+
+  &.aspect-true {
+    img {
+      object-fit: contain !important;
+      padding: 10px;
+    }
+  }
 
   &:hover,
   &:focus {
@@ -54,21 +82,41 @@
   details {
     opacity: 0;
   }
+
+  .card-attribute {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .entity-panel--container {
+  transition: width 1s linear;
   width: 0;
   background: $color-charcoal--medium;
-  border-left: 10px solid $color-purple;
   -webkit-animation: slide 0.5s forwards;
   -webkit-animation-delay: 1s;
   animation: slide 0.5s forwards;
   animation-delay: 1s;
   border-bottom: 1px solid $color-gray--dark50;
+  content: "&nbsp;";
+
+  // .entity-panel--div {
+  //   transition: ease-in-out right 1s;
+  //   position: absolute;
+  //   right: -410px;
+  //   width: 400px;
+  //   @media (min-width: $width-md) {
+  //     right: -610px;
+  //     width: 600px;
+  //   }
+  // }
 
   &.slide {
+    border-left: 10px solid $color-purple;
     transition: 1s;
     width: 410px;
+
     @media (min-width: $width-md) {
       width: 610px;
     }
@@ -80,16 +128,6 @@
     background-color: $color-charcoal--medium;
     height: 200px;
     object-fit: contain;
-    //width: 100%
-    width: 390px;
-    background-image: linear-gradient(
-        to right,
-        $color-teal--50 1px,
-        transparent 1px
-      ),
-      linear-gradient(to bottom, $color-teal--50 1px, transparent 1px);
-    background-size: 10px 10px;
-    padding: 10px;
     padding: 10px;
     margin: 5px auto;
   }
@@ -104,11 +142,13 @@
 @-webkit-keyframes slide {
   100% {
     right: 0;
+    width: 0;
   }
 }
 
 @keyframes slide {
   100% {
     right: 0;
+    width: 0;
   }
 }

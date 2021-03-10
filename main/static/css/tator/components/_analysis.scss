@@ -108,10 +108,10 @@
 
   img {
     background-color: $color-charcoal--medium;
-    height: 91px;
-    object-fit: contain;
-    //width: 100%
-    width: 171px;
+    height: 130px;
+    object-fit: cover;
+    margin: 5px auto;
+    width: 100%;
     background-image: linear-gradient(
         to right,
         $color-charcoal--light 1px,
@@ -119,9 +119,7 @@
       ),
       linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
     background-size: 10px 10px;
-    padding: 10px;
-    padding: 10px;
-    margin: 5px auto;
+    transition: all 300ms linear;
   }
 
   & > span {
@@ -130,7 +128,6 @@
     width: 87px;
   }
 }
-
 
 // .analysis__parameters aren't used.
 // These are used here as a reference from MM
@@ -161,7 +158,6 @@
   transform: translateY(-50%);
   white-space: nowrap;
 }
-
 
 .analysis__filter {
   box-sizing: border-box;
