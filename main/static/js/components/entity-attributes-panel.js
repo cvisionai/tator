@@ -12,6 +12,7 @@ class EntityAttrPanel extends TatorElement {
 
       // Panel Img Container
       this._imgContainer = document.createElement("div");
+      this._imgContainer.setAttribute("class", "col-12 text-center");
       this._main.appendChild(this._imgContainer)
 
       // Panel Img
@@ -19,27 +20,27 @@ class EntityAttrPanel extends TatorElement {
       this._imgContainer.appendChild(this._img);
 
       // Entity Data in Form ( @TODO Editable? or display only )
-      this.entityData = document.createElement("entity-form");
+      this.entityData = document.createElement("entity-form-for-panel");
       this._main.appendChild(this.entityData);
 
-      // Actions
-      let actions = document.createElement("div");
-      actions.setAttribute("class", "d-flex");
-      this._main.appendChild(actions);
+      // // Actions
+      // let actions = document.createElement("div");
+      // actions.setAttribute("class", "d-flex");
+      // this._main.appendChild(actions);
 
-      // View media button link to annotation media
-      this.viewMedia = document.createElement("button");
-      this.viewMedia.setAttribute("class", "btn btn-charcoal col-6");
-      let vmText = document.createTextNode("View Media");
-      this.viewMedia.appendChild(vmText);
-      actions.appendChild(this.viewMedia);
+      // // View media button link to annotation media
+      // this.viewMedia = document.createElement("button");
+      // this.viewMedia.setAttribute("class", "btn btn-charcoal col-6");
+      // let vmText = document.createTextNode("View Media");
+      // this.viewMedia.appendChild(vmText);
+      // actions.appendChild(this.viewMedia);
 
-      // View submission
-      this.viewSubmission = document.createElement("button");
-      this.viewSubmission.setAttribute("class", "btn btn-charcoal col-6");
-      let vsText = document.createTextNode("View Submission");
-      this.viewSubmission.appendChild(vsText);
-      actions.appendChild(this.viewSubmission);
+      // // View submission
+      // this.viewSubmission = document.createElement("button");
+      // this.viewSubmission.setAttribute("class", "btn btn-charcoal col-6");
+      // let vsText = document.createTextNode("View Submission");
+      // this.viewSubmission.appendChild(vsText);
+      // actions.appendChild(this.viewSubmission);
 
     }
 
@@ -64,7 +65,7 @@ class EntityAttrPanel extends TatorElement {
         this._img.hidden = true;
       }
 
-      this.entityData.init(annotationObject);
+      this.entityData._init( annotationObject );
 
     }
 

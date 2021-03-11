@@ -8,17 +8,16 @@ class AnnotationsGallery extends EntityCardGallery {
 
 
     // Custom width for annotations gallery
-    this.colSize = 200;
+    this.colSize = 272;
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
 
     // Heading
     //this._h3Text = document.createTextNode("All Annotations")
     //this._h3.appendChild( this._h3Text );
 
-    // Tools: Card labels display
-    this._labelsDropDown = document.createElement('entity-gallery-labels');
-    this._initLabels()
-    this._tools.appendChild( this._labelsDropDown );
+    // @TODO Tools: Card labels display
+    // this._labelsDropDown = document.createElement('entity-gallery-labels');
+    // this._tools.appendChild( this._labelsDropDown );
 
     // Tools: Slider to resize images
     this._resizeCards = document.createElement('entity-card-resize');
@@ -36,16 +35,17 @@ class AnnotationsGallery extends EntityCardGallery {
 
   // Provide access to side panel for events
   _initPanel({
-    panelContainer
+    panelContainer,
+    localizationTypes
   }){
     this.panelContainer = panelContainer;
-  }
 
-  // Init labels
-  async _initLabels(){
     // Init gallery with data for filtering
-    this._labelsDropDown.init({gallery : this});
-    this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
+    // this._labelsDropDown.init({
+    //   gallery : this,
+    //   localizationTypes
+    // });
+    //this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
   }
 
   handleLabelChange(e){
@@ -78,7 +78,7 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   // Accepts a cardList object and appends each card to the page web component
-  appendCardList(cardList, panelContainer){    
+  appendCardList(cardList){    
     for(let cardObj of cardList){
       let card = document.createElement("annotations-card");
       
@@ -92,20 +92,33 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Inner div of side panel
       let annotationPanelDiv = document.createElement("div");
-      annotationPanelDiv.setAttribute("class", "entity-panel--div")
+      annotationPanelDiv.setAttribute("class", "entity-panel--div hidden")
       annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
       this.panelContainer.appendChild( annotationPanelDiv );
 
       // Init a side panel that can be triggered from card
       let annotationPanel = document.createElement("entity-attributes-panel");
       annotationPanel.init( cardObj, this.panelContainer );
-      annotationPanelDiv.hidden = true;
       annotationPanelDiv.appendChild(annotationPanel);
 
-      // // Update view
+      // Update view
+      annotationPanelDiv.addEventListener("unselected", () => {
+        card._li.classList.remove("is-selected");
+        annotationPanelDiv.classList.add("hidden");
+        annotationPanelDiv.classList.remove("is-selected");
+        console.log("Hiding "+annotationPanelDiv.dataset.locId);
+      });
+
+      // Listen for all clicks on the document
+      document.addEventListener('click', function (event) {
+        if (event.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
+          card._li.click();
+        }
+
+      }, false);
+
+      // Update view
       this.addEventListener("view-change", (e) => {
-        console.log(e.detail);
-        this._ul.classList.toggle("aspect-true");
         card._li.classList.toggle("aspect-true");
       });
 

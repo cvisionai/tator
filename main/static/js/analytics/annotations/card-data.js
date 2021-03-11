@@ -36,9 +36,7 @@ class CardData {
                 //let metaDetails = this.findMetaDetails( l.meta );
                 let metaDetails = {name : "sample name", type : "sample type"};
 
-                let mediaLink = document.createElement("a");
-                mediaLink.setAttribute("href", `/${this.projectId}/annotation/${l.media}`)
-                mediaLink.innerHTML = `Media ID ${l.media}`;
+                let mediaLink = `/${this.projectId}/annotation/${l.media}`;
             
                 let attributes = l.attributes;
                 let created = new Date(l.created_datetime);
@@ -83,6 +81,68 @@ class CardData {
                 }
                 }, 500)
         });
+    }
+
+    getCardListFaster(localizations){
+        //return new Promise((resolve, reject) => {
+
+            let counter = localizations.length;
+            for(let [i, l] of localizations.entries()){
+                let id = l.id;
+                
+                //let metaDetails = this.findMetaDetails( l.meta );
+                let metaDetails = {name : "sample name", type : "sample type"};
+
+                let mediaLink = document.createElement("a");
+                mediaLink.setAttribute("href", `/${this.projectId}/annotation/${l.media}`)
+                mediaLink.innerHTML = `Media ID ${l.media}`;
+            
+                let attributes = l.attributes;
+                let created = new Date(l.created_datetime);
+                let modified = new Date(l.modified_datetime);
+
+                let position = i + this.cardList.paginationState._start;
+                let posText = `${position} of ${this.cardList.total}`;
+
+                let promises = [ 
+                        this._modelData.getUser(l.modified_by),
+                        this._modelData.getLocalizationGraphic(l.id)
+                    ]
+                
+                // Promise.all(promises)
+                // .then((respArray) => {
+                //     let userName = respArray[0].username;
+                //     let graphic = respArray[1];
+            
+                    let card = {
+                        id,
+                        metaDetails,
+                        mediaLink,
+                        graphic : this._modelData.getLocalizationGraphic(l.id),
+                        attributes,
+                        created,
+                        modified,
+                        userName : this._modelData.getUser(l.modified_by),
+                        posText
+                    };
+                    //console.log(card);
+                    this.cardList.cards.push(card);
+                    //counter --;
+                    //console.log("counter went down is now: "+counter); 
+                // });
+                
+            }
+
+            // let counterCheckout = setInterval(function(){
+            //     //console.log("interval check for counter "+counter); 
+            //     if(counter == 0){
+            //         clearInterval(counterCheckout);
+            //         resolve("complete");
+            //     }
+            //     }, 100)
+
+            return this.cardList;
+        //});
     }
 
     findMetaDetails(id){

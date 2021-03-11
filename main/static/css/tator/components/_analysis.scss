@@ -1,8 +1,13 @@
 // analytics-annotations {
 //   background-color: $color-charcoal--light !important;
 // }
-.analysis--main {
+.analysis--main--wrapper {
   width: 100%;
+}
+
+.analysis--main,
+.entity-panel--div {
+  //overflow-y: scroll;
 }
 
 .analysis__panel-group {

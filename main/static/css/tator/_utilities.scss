@@ -389,6 +389,18 @@
 }
 
 // Hide utilities
+.hidden {
+  display: none;
+  opacity: 0;
+  transition: 300ms ease all;
+}
+
+.preview {
+  display: block !important;
+  opacity: 0.5;
+  transition: 300ms ease all;
+}
+
 // Each hide utility only applies to one breakpoint range.
 @media (max-width: $width-sm - 1px) {
   .hide-sm {

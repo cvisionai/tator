@@ -22,21 +22,24 @@ class AnalyticsAnnotations extends TatorPage {
     div.appendChild(this._breadcrumbs);
     this._breadcrumbs.setAttribute("analytics-name", "Annotation Gallery");
 
-    // 
-    const mainWrapper = document.createElement("div");
-    mainWrapper.setAttribute("class", "d-flex");
-    this._shadow.appendChild(mainWrapper);
+    // Wrapper to allow r.side bar to slide into left
+    this.mainWrapper = document.createElement("div");
+    this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-7 d-flex");
+    this._shadow.appendChild(this.mainWrapper);
 
     //
     // Define the main section of the page
     //
-    const main = document.createElement("main");
-    main.setAttribute("class", "analysis--main");
-    mainWrapper.appendChild(main);
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "analysis--main col-7");
+    this.mainWrapper.appendChild(this.main);
+
+    // Dynamic
+    this.setScrollHeight()
 
     const filterDiv = document.createElement("div");
     filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
-    main.appendChild(filterDiv);
+    this.main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
     this._filterView.setDialogParent(this._shadow);
@@ -52,13 +55,12 @@ class AnalyticsAnnotations extends TatorPage {
 
     // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
-    main.appendChild(this._filterResults);
+    this.main.appendChild(this._filterResults);
 
     // Gallery navigation panel  
     this._panelContainer = document.createElement("div");
-    this._panelContainer.setAttribute("class", "entity-panel--container mt-6")
-    this._filterResults._initPanel( { panelContainer : this._panelContainer });
-    mainWrapper.appendChild(this._panelContainer);
+    this._panelContainer.setAttribute("class", "entity-panel--container col-5 px-3 py-3") //@TODO .slide = open by default
+    this.mainWrapper.appendChild(this._panelContainer);
 
     // Class to hide and showing loading spinner
     // @TODO what is standard use?
@@ -99,6 +101,12 @@ class AnalyticsAnnotations extends TatorPage {
       modelData : this._modelData,
       localizationTypes : this.localizationTypes
     });
+
+    // Pass panel and localization types to gallery
+    this._filterResults._initPanel( { 
+      panelContainer : this._panelContainer, 
+      localizationTypes : this.localizationTypes 
+    } );
 
     // If state is stored in URL, update default states
     this._getQueryParams();
@@ -155,8 +163,6 @@ class AnalyticsAnnotations extends TatorPage {
     filterState = this._filterState, 
     paginationState = this._paginationState
   } = {}){
-    console.log(filterState);
-    console.log(paginationState);
     this.loading.showSpinner();
 
     // Initial view-modal "Cardlist" from fetched localizations
@@ -165,7 +171,6 @@ class AnalyticsAnnotations extends TatorPage {
       this.loading.hideSpinner();
       this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
-      this._filterResults._initPanel( { panelContainer : this._panelContainer, localizationsMap : cardList.localizationsMap} );
       this._filterResults.show( { cardList } );
       
     });
@@ -192,6 +197,15 @@ class AnalyticsAnnotations extends TatorPage {
   _localizationParams(string){
     console.log("Convert this to usable query params? or ok ::: "+string);
     return string;
+  }
+
+  setScrollHeight(){
+    console.log(window.innerHeight);
+    this.main.style.height = window.innerHeight;
+
+    window.addEventListener("resize", () => {
+      this.main.style.height = window.innerHeight;
+    })
   }
 
 }
