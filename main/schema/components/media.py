@@ -157,6 +157,23 @@ media_spec = {
     },
 }
 
+media_bulk_update = {
+    'type': 'object',
+    'properties': {
+        'attributes': {
+            'description': 'Attribute values to bulk update an entity list.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'ids': {
+            'description': 'Specific IDs to update. This is applied in addition to query '
+                           'parameters.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+    },
+}
+
 media_update = {
     'type': 'object',
     'properties': {

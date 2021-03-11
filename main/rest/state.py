@@ -17,6 +17,7 @@ from ..models import Localization
 from ..models import Project
 from ..models import Membership
 from ..models import Version
+from ..models import User
 from ..models import InterpolationMethods
 from ..models import database_qs
 from ..models import database_query_ids
@@ -92,23 +93,48 @@ class StateListAPI(BaseListView):
 
         t1 = datetime.datetime.now()
         response_data = _fill_m2m(response_data)
-        if (self.request.accepted_renderer.format == 'csv'
-            and 'type' in params):
-            type_object=StateType.objects.get(pk=params['type'])
-            if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
-                for idx,el in enumerate(response_data):
-                    mediaEl=Media.objects.get(pk=el['media'])
-                    endFrame=0
-                    if idx + 1 < len(response_data):
-                        next_element=response_data[idx+1]
-                        endFrame=next_element['frame']
-                    else:
-                        endFrame=mediaEl.num_frames
-                    el['media']=mediaEl.name
+        if self.request.accepted_renderer.format == 'csv':
 
-                    el['endFrame'] = endFrame
-                    el['startSeconds'] = int(el['frame']) * mediaEl.fps
-                    el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
+            # CSV creation requires a bit more
+            user_ids = set([d['modified_by'] for d in response_data])
+            users = list(User.objects.filter(id__in=user_ids).values('id','email'))
+            email_dict = {}
+            for user in users:
+                email_dict[user['id']] = user['email']
+
+            media_ids = set(media for d in response_data for media in d['media'])
+            medias = list(Media.objects.filter(id__in=media_ids).values('id','name'))
+            filename_dict = {media['id']:media['name'] for media in medias}
+
+            for element in response_data:
+                del element['meta']
+
+                oldAttributes = element['attributes']
+                del element['attributes']
+                element.update(oldAttributes)
+
+                user_id = element['modified_by']
+                media_ids = element['media']
+
+                element['user'] = email_dict[user_id]
+                element['media'] = [filename_dict[media_id] for media_id in media_ids]
+
+            if 'type' in params:
+                type_object=StateType.objects.get(pk=params['type'])
+                if type_object.association == 'Frame' and type_object.interpolation == InterpolationMethods.LATEST:
+                    for idx,el in enumerate(response_data):
+                        mediaEl=Media.objects.get(pk=el['media'])
+                        endFrame=0
+                        if idx + 1 < len(response_data):
+                            next_element=response_data[idx+1]
+                            endFrame=next_element['frame']
+                        else:
+                            endFrame=mediaEl.num_frames
+                        el['media']=mediaEl.name
+
+                        el['endFrame'] = endFrame
+                        el['startSeconds'] = int(el['frame']) * mediaEl.fps
+                        el['endSeconds'] = int(el['endFrame']) * mediaEl.fps
         t2 = datetime.datetime.now()
         logger.info(f"Number of states: {len(response_data)}")
         logger.info(f"Time to get states: {t1-t0}")

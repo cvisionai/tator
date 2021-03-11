@@ -33,6 +33,8 @@ class KeyboardShortcuts extends TatorElement {
       ["Zoom Out", "-", null],
       ["Skip Forward 1 Frame", "\u{2192}", null],
       ["Skip Backward 1 Frame", "\u{2190}", null],
+      ["Play/Pause", "Spacebar", null],
+      ["Rewind", "R", null],
     ]
 
     for (let shortcut of shortcuts) {

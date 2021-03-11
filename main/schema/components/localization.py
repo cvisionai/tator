@@ -145,6 +145,27 @@ localization_update = {
     },
 }
 
+localization_bulk_update = {
+    'type': 'object',
+    'properties': {
+        'attributes': {
+            'description': 'Attribute values to bulk update an entity list.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'version': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a version.',
+        },
+        'ids': {
+            'description': 'Specific IDs to update. This is applied in addition to query '
+                           'parameters.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+    },
+}
+
 localization_id_query = {
     'type': 'object',
     'properties': {

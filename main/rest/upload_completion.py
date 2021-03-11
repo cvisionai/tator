@@ -23,10 +23,12 @@ class UploadCompletionAPI(BaseListView):
         parts = params['parts']
         upload_id = params['upload_id']
         project = params['project']
-        bucket_name = os.getenv('BUCKET_NAME')
+        project_obj = Project.objects.get(pk=project)
 
         # Complete the upload.
-        s3 = TatorS3().s3
+        tator_s3 = TatorS3(project_obj.bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
         response = s3.complete_multipart_upload(Bucket=bucket_name,
                                                 Key=key,
                                                 MultipartUpload={'Parts': parts},

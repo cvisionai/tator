@@ -12,6 +12,8 @@ from .audio_file import AudioFileListSchema
 from .audio_file import AudioFileDetailSchema
 from .bookmark import BookmarkListSchema
 from .bookmark import BookmarkDetailSchema
+from .bucket import BucketListSchema
+from .bucket import BucketDetailSchema
 from .change_log import ChangeLogListSchema
 from .clone_media import CloneMediaListSchema
 from .download_info import DownloadInfoSchema

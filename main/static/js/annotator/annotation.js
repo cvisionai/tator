@@ -144,6 +144,7 @@ class CanvasDrag
     this._cb = cb;
     this._canvas = canvas;
     this._scaleFn=scaleFn;
+    this._active = false;
 
     if (dragLimiter != undefined)
     {
@@ -165,6 +166,11 @@ class CanvasDrag
     return Math.sqrt(Math.pow(start.x-end.x,2)+Math.pow(start.y-end.y,2));
   }
 
+  isActive()
+  {
+    return this._active;
+  }
+
   onMouseDown(event)
   {
     this._event={start : {}, current: {}}
@@ -184,6 +190,7 @@ class CanvasDrag
     {
       this.onMouseUp(event);
     }
+    this._active = true;
     var now = Date.now();
     var scale = this._scaleFn();
     var x = Math.min((event.pageX-this._canvas.offsetLeft),
@@ -222,6 +229,7 @@ class CanvasDrag
 
   onMouseUp(event)
   {
+    this._active = false;
     var last = this._event.current;
     delete this._event.current;
     this._event.end = {};
@@ -766,6 +774,7 @@ class AnnotationCanvas extends TatorElement
     this._metaMode = false;
     this._redrawObj = null;
     this._fillBoxes = true;
+    this._lastHoverDraw = 0;
 
     try
     {
@@ -2114,10 +2123,19 @@ class AnnotationCanvas extends TatorElement
 
   mouseOutHandler(mouseEvent)
   {
+    let needRefresh = false;
     this._textOverlay.classList.remove("select-pointer");
     if (this._emphasis != null && this._emphasis != this.activeLocalization)
     {
       this._emphasis = null;
+      needRefresh = true;
+    }
+    if (this._lastHoverDraw > 0)
+    {
+      needRefresh = true;
+    }
+    if (needRefresh == true)
+    {
       this.refresh();
     }
   }
@@ -2228,6 +2246,22 @@ class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
       this._textOverlay.classList.add("select-crosshair");
+      let over_threshold = () => {
+        return (performance.now()-this._lastHoverDraw) > (1000.0/30);
+      };
+      if (this._dragHandler.isActive() == false)
+      {
+        if (over_threshold())
+        {
+          this._lastHoverDraw = performance.now();
+          this.drawCrosshair(location, color.WHITE, 200);
+          this._draw.dispImage(true,false);
+        }
+      }
+      else
+      {
+        this._lastHoverDraw = 0;
+      }
     }
   }
 
@@ -3255,9 +3289,86 @@ class AnnotationCanvas extends TatorElement
     return coords
   }
 
+  drawCrosshair(center, color_req, alpha)
+  {
+    const maxX = this._canvas.width;
+    const maxY = this._canvas.height;
+    let vertical = [[center[0], 0], [center[0],maxY]];
+    let horizontal = [[0, center[1]], [maxX,center[1]]];
+    this._draw.drawLine(vertical[0],
+                        vertical[1],
+                        color_req,
+                        defaultDrawWidth*this._draw.displayToViewportScale()[0],
+                        alpha);
+    this._draw.drawLine(horizontal[0],
+                        horizontal[1],
+                        color_req,
+                        defaultDrawWidth*this._draw.displayToViewportScale()[0],
+                        alpha);
+  }
+
+  blackoutOutside(box)
+  {
+    let fix_box = (box) =>
+      {
+        let min = Number.MAX_SAFE_INTEGER;
+        let min_idx = -1;
+        let max = 0;
+        let max_idx = -1;
+        for (let idx = 0; idx < box.length; idx++)
+        {
+          let dist = Math.sqrt(Math.pow(box[idx][0],2)+Math.pow(box[idx][1],2));
+          if (dist < min)
+          {
+            min = dist;
+            min_idx = idx;
+          }
+          if (dist > max)
+          {
+            max = dist;
+            max_idx = idx;
+          }
+        }
+        console.info(`${min_idx} / ${max_idx}`);
+        let x0 = box[min_idx][0];
+        let y0 = box[min_idx][1];
+        let x1 = box[max_idx][0];
+        let y1 = box[max_idx][1];
+        let new_box = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+        return new_box;
+      };
+    box = fix_box(box);
+
+    const maxX = this._canvas.width;
+    const maxY = this._canvas.height;
+    let left = [[0,0],
+                [box[0][0],0],
+                [box[0][0], maxY],
+                [0,maxY]
+               ];
+    let right = [[box[1][0],0],
+                 [maxX, 0],
+                 [maxX, maxY],
+                 [box[1][0], maxY]];
+    let top = [[box[0][0],0],
+               [box[1][0], 0],
+               [box[1][0], box[1][1]],
+               [box[0][0], box[1][1]]];
+    let bottom = [[box[3][0],box[3][1]],
+                  [box[2][0], box[2][1]],
+                  [box[2][0], maxY],
+                  [box[3][0], maxY]];
+
+    this._draw.fillPolygon(left, 0, color.BLACK, 75);
+    this._draw.fillPolygon(right, 0, color.BLACK, 75);
+    this._draw.fillPolygon(top, 0, color.BLACK, 75);
+    this._draw.fillPolygon(bottom, 0, color.BLACK, 75);
+  }
+
   dragHandler(dragEvent)
   {
     var that = this;
+
     var drawBox=function(dragStart, dragEnd, colorReq)
     {
       if (colorReq == undefined)
@@ -3276,6 +3387,9 @@ class AnnotationCanvas extends TatorElement
       var boxCoords = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]];
 
       that._draw.beginDraw();
+      that.drawCrosshair([x0,y0], colorReq, 128);
+      that.drawCrosshair([x2,y2], colorReq, 128);
+      that.blackoutOutside(boxCoords);
       that._draw.drawPolygon(boxCoords,
                              colorReq,
                              defaultDrawWidth*that._draw.displayToViewportScale()[0]);
@@ -3293,8 +3407,12 @@ class AnnotationCanvas extends TatorElement
       var y1 = dragEnd.y;
 
       var lineCoords = [[x0,y0],[x1,y1]];
+      var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
+      that.drawCrosshair([x0,y0], colorReq, 128);
+      that.drawCrosshair([x1,y1], colorReq, 128);
+      that.blackoutOutside(fauxBoxCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
@@ -3515,17 +3633,32 @@ class AnnotationCanvas extends TatorElement
         {
           if (objType.dtype == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE,
+            let poly = translatedPoly(dragEvent.start, dragEvent.current);
+            that.drawCrosshair(poly[0], color.WHITE, 128);
+            that.drawCrosshair(poly[2], color.WHITE, 128);
+            that.blackoutOutside(poly);
+            this._draw.drawPolygon(poly, color.WHITE,
                                    Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else if (objType.dtype == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
+            let x0 = line[0][0];
+            let y0 = line[0][1];
+            let x1 = line[1][0];
+            let y1 = line[1][1];
+            var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+            that.drawCrosshair([x0,y0], color.WHITE, 128);
+            that.drawCrosshair([x1,y1], color.WHITE, 128);
+            that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else
           {
             var line = translatedDot(dragEvent.start, dragEvent.current);
+            var center = [(line[0][0]+line[1][0])/2,
+                          (line[0][1]+line[1][1])/2];
+            that.drawCrosshair(center, color.WHITE, 128);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(defaultDotWidth * this._draw.displayToViewportScale()[0]));
           }
           this._draw.dispImage(true, true);
@@ -3587,11 +3720,23 @@ class AnnotationCanvas extends TatorElement
           width = Math.round(width);
           if (type == 'box')
           {
-            this._draw.drawPolygon(translatedPoly(dragEvent.start, dragEvent.current), color.WHITE, width);
+            let poly = translatedPoly(dragEvent.start, dragEvent.current);
+            that.drawCrosshair(poly[0], color.WHITE, 128);
+            that.drawCrosshair(poly[2], color.WHITE, 128);
+            that.blackoutOutside(poly);
+            this._draw.drawPolygon(poly, color.WHITE, width);
           }
           else if (type == 'line')
           {
             var line = translatedLine(dragEvent.start, dragEvent.current);
+            let x0 = line[0][0];
+            let y0 = line[0][1];
+            let x1 = line[1][0];
+            let y1 = line[1][1];
+            var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
+            that.drawCrosshair([x0,y0], color.WHITE, 128);
+            that.drawCrosshair([x1,y1], color.WHITE, 128);
+            that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
           }
           this._draw.dispImage(true, true);
@@ -3729,8 +3874,9 @@ class AnnotationCanvas extends TatorElement
   {
     this.draft = null;
     // Only refresh if it wasn't a call to new else we get flashes
-    if (this._mouseMode != MouseMode.NEW)
+    if (this._mouseMode != MouseMode.NEW || this._lastHoverDraw > 0)
     {
+      this._lastHoverDraw == 0;
       this.refresh();
     }
     this._mouseMode = MouseMode.QUERY;

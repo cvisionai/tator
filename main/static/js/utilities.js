@@ -73,6 +73,7 @@ class Utilities
     let hostname;
     let path;
     var media_files = media_element.media_files;
+    const byRes = (a, b) => {return b.resolution[0] - a.resolution[0];};
     if (media_files)
     {
       if (media_files.layout)
@@ -81,18 +82,21 @@ class Utilities
       }
       if (media_files.image)
       {
+        media_files.image.sort(byRes);
         path = media_files.image[0].path;
         http_authorization = media_files.image[0].http_auth;
         hostname = media_files.image[0].host;
       }
       else if (media_files.archival)
       {
+        media_files.archival.sort(byRes);
         path = media_files.archival[0].path;
         http_authorization = media_files.archival[0].http_auth;
         hostname = media_files.archival[0].host;
       }
       else if (media_files.streaming)
       {
+        media_files.streaming.sort(byRes);
         path = media_files.streaming[0].path;
         http_authorization = media_files.streaming[0].http_auth;
         hostname = media_files.streaming[0].host;

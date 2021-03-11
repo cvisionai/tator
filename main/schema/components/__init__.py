@@ -21,6 +21,9 @@ from .attribute_value import attribute_value
 from .bookmark import bookmark_spec
 from .bookmark import bookmark_update
 from .bookmark import bookmark
+from .bucket import bucket_spec
+from .bucket import bucket_update
+from .bucket import bucket
 from .change_log import change_log
 from .clone_media import clone_media_spec
 from .download_info import download_info_spec
@@ -41,6 +44,7 @@ from .leaf_type import leaf_type_update
 from .leaf_type import leaf_type
 from .leaf import leaf_suggestion
 from .leaf import leaf_spec
+from .leaf import leaf_bulk_update
 from .leaf import leaf_update
 from .leaf import leaf
 from .leaf import leaf_id_query
@@ -48,6 +52,7 @@ from .localization_type import localization_type_spec
 from .localization_type import localization_type_update
 from .localization_type import localization_type
 from .localization import localization_spec
+from .localization import localization_bulk_update
 from .localization import localization_update
 from .localization import localization
 from .localization import localization_id_query
@@ -55,6 +60,7 @@ from .media_next import media_next
 from .media_prev import media_prev
 from .media import media_spec
 from .media import media_update
+from .media import media_bulk_update
 from .media import media
 from .media import media_id_query
 from .media_stats import media_stats
@@ -75,6 +81,7 @@ from .section import section_update
 from .section import section
 from .section_analysis import section_analysis
 from .state import state_spec
+from .state import state_bulk_update
 from .state import state_update
 from .state import state
 from .state import state_id_query
@@ -117,6 +124,5 @@ from ._color import fill
 from ._common import create_response
 from ._common import create_list_response
 from ._common import message_response
-from ._common import attribute_bulk_update
 from ._errors import not_found_response
 from ._errors import bad_request_response

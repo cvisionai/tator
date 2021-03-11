@@ -48,6 +48,15 @@ def create_test_affiliation(user, organization):
         permission='Admin',
     )
 
+def create_test_bucket(organization):
+    return Bucket.objects.create(
+        organization=organization,
+        access_key='asdf',
+        secret_key='asdf',
+        endpoint_url='https://asdf.com',
+        region='us-east-2',
+    )
+
 def create_test_project(user, organization=None):
     return Project.objects.create(
         name="asdf",
@@ -488,14 +497,19 @@ class PermissionListAffiliationTestMixin:
         affiliation.save()
 
     def test_list_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.organization, self.user)
-        affiliation.permission = 'Member'
-        affiliation.save()
-        url = f'/rest/{self.list_uri}/{self.organization.pk}'
-        if hasattr(self, 'entity_type'):
-            url += f'?type={self.entity_type.pk}'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for index, level in enumerate(affiliation_levels):
+            affiliation = self.get_affiliation(self.organization, self.user)
+            affiliation.permission = level
+            affiliation.save()
+            if self.get_requires_admin and not (level == 'Admin'):
+                expected_status = status.HTTP_403_FORBIDDEN
+            else:
+                expected_status = status.HTTP_200_OK
+            url = f'/rest/{self.list_uri}/{self.organization.pk}'
+            if hasattr(self, 'entity_type'):
+                url += f'?type={self.entity_type.pk}'
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, expected_status)
         affiliation.permission = 'Admin'
         affiliation.save()
 
@@ -511,14 +525,19 @@ class PermissionDetailAffiliationTestMixin:
         affiliation.save()
 
     def test_detail_is_a_member_permissions(self):
-        affiliation = self.get_affiliation(self.get_organization(), self.user)
-        affiliation.permission = 'Member'
-        affiliation.save()
-        url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
-        if hasattr(self, 'entity_type'):
-            url += f'?type={self.entity_type.pk}'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for index, level in enumerate(affiliation_levels):
+            affiliation = self.get_affiliation(self.get_organization(), self.user)
+            affiliation.permission = level
+            affiliation.save()
+            if self.get_requires_admin and not (level == 'Admin'):
+                expected_status = status.HTTP_403_FORBIDDEN
+            else:
+                expected_status = status.HTTP_200_OK
+            url = f'/rest/{self.detail_uri}/{self.entities[0].pk}'
+            if hasattr(self, 'entity_type'):
+                url += f'?type={self.entity_type.pk}'
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, expected_status)
         affiliation.permission = 'Admin'
         affiliation.save()
 
@@ -2136,6 +2155,7 @@ class AffiliationTestCase(
             'permission': 'Admin',
         }
         self.edit_permission = 'Admin'
+        self.get_requires_admin = False
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -2167,6 +2187,7 @@ class OrganizationTestCase(
             'name': 'My new org'
         }
         self.edit_permission = 'Admin'
+        self.get_requires_admin = False
 
     def get_affiliation(self, organization, user):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
@@ -2181,6 +2202,48 @@ class OrganizationTestCase(
 
     def tearDown(self):
         self.project.delete()
+
+class BucketTestCase(
+        APITestCase,
+        PermissionListAffiliationTestMixin,
+        PermissionDetailAffiliationTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.entities = [create_test_bucket(self.organization) for _ in range(3)]
+        self.list_uri = 'Buckets'
+        self.detail_uri = 'Bucket'
+        self.create_json = {
+            'name': 'my-bucket',
+            'access_key': 'asdf',
+            'secret_key': 'asdf',
+            'endpoint_url': 'https://asdf.com:8000',
+            'region': 'us-east-1',
+        }
+        self.patch_json = {
+            'name': 'my-bucket1',
+            'access_key': 'asdf1',
+            'secret_key': 'asdf2',
+            'endpoint_url': 'https://asdf.com:8001',
+            'region': 'us-east-2',
+        }
+        self.edit_permission = 'Admin'
+        self.get_requires_admin = True
+
+    def get_affiliation(self, organization, user):
+        return Affiliation.objects.filter(organization=organization, user=user)[0]
+
+    def get_organization(self):
+        return self.organization
+
+    def test_create_no_affiliation(self):
+        endpoint = f'/rest/{self.list_uri}/{self.organization.pk}'
+        self.affiliation.delete()
+        response = self.client.post(endpoint, self.create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.affiliation.save()
 
 class ImageFileTestCase(APITestCase, FileMixin):
     def setUp(self):

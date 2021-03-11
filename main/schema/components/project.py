@@ -18,6 +18,11 @@ project_properties = {
         'type': 'boolean',
         'default': True,
     },
+    'bucket': {
+        'description': 'Unique integer identifying a bucket.',
+        'type': 'integer',
+        'minimum': 1,
+    },
 }
 
 project_spec = {
@@ -36,6 +41,7 @@ project_update = {
             'description': 'S3 key of thumbnail used to represent the project.',
         },
         'enable_downloads': project_properties['enable_downloads'],
+        'bucket': project_properties['bucket'],
     },
 }
 

@@ -7,6 +7,7 @@ from ..models import safe_delete
 from ..models import drop_media_from_resource
 from ..schema import VideoFileListSchema
 from ..schema import VideoFileDetailSchema
+from ..search import TatorSearch
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -26,24 +27,29 @@ class VideoFileListAPI(BaseListView):
                 response_data = media.media_files[role]
         return response_data
 
-    @transaction.atomic
     def _post(self, params):
-        media = Media.objects.select_for_update().get(pk=params['id'])
-        role = params['role']
-        body = params['body']
-        index = params.get('index')
-        if not media.media_files:
-            media.media_files = {}
-        if role not in media.media_files:
-            media.media_files[role] = []
-        if index is None:
-            media.media_files[role].append(body)
-        else:
-            if index >= len(media.media_files[role]):
-                raise ValueError(f"Supplied index {index} is larger than current array size "
-                                 f"{len(media.media_files[role])}")
-            media.media_files[role].insert(index, body)
-        media.save()
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(pk=params['id'])
+            if qs.count() != 1:
+                raise Http404
+            media_files = qs[0].media_files
+            role = params['role']
+            body = params['body']
+            index = params.get('index')
+            if not media_files:
+                media_files = {}
+            if role not in media_files:
+                media_files[role] = []
+            if index is None:
+                media_files[role].append(body)
+            else:
+                if index >= len(media_files[role]):
+                    raise ValueError(f"Supplied index {index} is larger than current array size "
+                                     f"{len(media_files[role])}")
+                media_files[role].insert(index, body)
+            qs.update(media_files=media_files)
+        media = Media.objects.get(pk=params['id'])
+        TatorSearch().create_document(media)
         Resource.add_resource(body['path'], media)
         if role == 'streaming':
             Resource.add_resource(body['segment_info'], media)
@@ -71,30 +77,35 @@ class VideoFileDetailAPI(BaseDetailView):
                              f"{len(response_data)}")
         return response_data[index]
 
-    @transaction.atomic
     def _patch(self, params):
-        media = Media.objects.select_for_update().get(pk=params['id'])
-        role = params['role']
-        body = params['body']
-        index = params['index']
-        if not media.media_files:
-            raise Http404
-        if role not in media.media_files:
-            raise Http404
-        if (role == 'streaming') and ('segment_info' not in body):
-            raise ValueError(f"Streaming files are required to include a segment_info!")
-        if (role == 'streaming') and (not body['segment_info']):
-            raise ValueError(f"Streaming files are required to include a segment_info!")
-        if index >= len(media.media_files[role]):
-            raise ValueError(f"Supplied index {index} is larger than current array size "
-                             f"{len(media.media_files[role])}")
-        old_path = media.media_files[role][index]['path']
-        new_path = body['path']
-        if role == 'streaming':
-            old_segments = media.media_files[role][index]['segment_info']
-            new_segments = body['segment_info']
-        media.media_files[role][index] = body
-        media.save()
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(pk=params['id'])
+            if qs.count() != 1:
+                raise Http404
+            media_files = qs[0].media_files
+            role = params['role']
+            body = params['body']
+            index = params['index']
+            if not media_files:
+                raise Http404
+            if role not in media_files:
+                raise Http404
+            if (role == 'streaming') and ('segment_info' not in body):
+                raise ValueError(f"Streaming files are required to include a segment_info!")
+            if (role == 'streaming') and (not body['segment_info']):
+                raise ValueError(f"Streaming files are required to include a segment_info!")
+            if index >= len(media_files[role]):
+                raise ValueError(f"Supplied index {index} is larger than current array size "
+                                 f"{len(media_files[role])}")
+            old_path = media_files[role][index]['path']
+            new_path = body['path']
+            if role == 'streaming':
+                old_segments = media_files[role][index]['segment_info']
+                new_segments = body['segment_info']
+            media_files[role][index] = body
+            qs.update(media_files=media_files)
+        media = Media.objects.get(pk=params['id'])
+        TatorSearch().create_document(media)
         if old_path != new_path:
             drop_media_from_resource(old_path, media)
             safe_delete(old_path)
@@ -106,20 +117,25 @@ class VideoFileDetailAPI(BaseDetailView):
                 Resource.add_resource(new_segments, media)
         return {'message': f"Media file in media object {media.id} successfully updated!"}
 
-    @transaction.atomic
     def _delete(self, params):
-        media = Media.objects.select_for_update().get(pk=params['id'])
-        role = params['role']
-        index = params['index']
-        if not media.media_files:
-            raise Http404
-        if role not in media.media_files:
-            raise Http404
-        if index >= len(media.media_files[role]):
-            raise ValueError(f"Supplied index {index} is larger than current array size "
-                             f"{len(media.media_files[role])}")
-        deleted = media.media_files[role].pop(index)
-        media.save()
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(pk=params['id'])
+            if qs.count() != 1:
+                raise Http404
+            media_files = qs[0].media_files
+            role = params['role']
+            index = params['index']
+            if not media_files:
+                raise Http404
+            if role not in media_files:
+                raise Http404
+            if index >= len(media_files[role]):
+                raise ValueError(f"Supplied index {index} is larger than current array size "
+                                 f"{len(media_files[role])}")
+            deleted = media_files[role].pop(index)
+            qs.update(media_files=media_files)
+        media = Media.objects.get(pk=params['id'])
+        TatorSearch().create_document(media)
         drop_media_from_resource(deleted['path'], media)
         safe_delete(deleted['path'])
         if role == 'streaming':

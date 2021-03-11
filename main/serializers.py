@@ -7,7 +7,6 @@ from django.db import models
 from django.db.models.functions import Cast
 
 from .models import *
-from .s3 import TatorS3
 import logging
 import datetime
 import traceback

@@ -1,5 +1,6 @@
 download_info_spec = {
     'type': 'object',
+    'required': ['keys'],
     'properties': {
         'keys': {
             'type': 'array',

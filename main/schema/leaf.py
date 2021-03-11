@@ -163,7 +163,7 @@ class LeafListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/AttributeBulkUpdate',
+                    '$ref': '#/components/schemas/LeafBulkUpdate',
                 },
             }}}
         if method == 'PUT':
