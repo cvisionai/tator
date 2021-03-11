@@ -1338,6 +1338,68 @@ class VideoCanvas extends AnnotationCanvas {
                                 "offsite_config": offsite_config});
   }
 
+  /**
+   * Returns the video quality information of the provided video buffer
+   *
+   * @param {string} buffer - play|scrub|seek
+   * @returns {object} Object will have the following fields:
+   *    .quality {float}
+   *    .fps {float}
+   */
+  getQuality(buffer)
+  {
+    var outVal = {quality: null, fps: null};
+    if (buffer == "play")
+    {
+      outVal.quality = this._videoObject.media_files["streaming"][this._play_idx].resolution[0];
+      outVal.fps = this._videoObject.fps;
+    }
+    else if (buffer == "scrub")
+    {
+      outVal.quality = this._videoObject.media_files["streaming"][this._scrub_idx].resolution[0];
+      outVal.fps = this._videoObject.fps;
+    }
+    else if (buffer = "seek")
+    {
+      outVal.quality = this._videoObject.media_files["streaming"][this._hq_idx].resolution[0];
+      outVal.fps = this._videoObject.fps;
+    }
+    return outVal;
+  }
+
+  /**
+   * @param {integer} quality - e.g. 144,360,720 (width parameter)
+   * @returns {object} Object will have the following fields:
+   *    .quality {float}
+   *    .fps {float}
+   */
+  nearestQuality(quality)
+  {
+    let find_closest = (videoObject, resolution) => {
+      let play_idx = -1;
+      let max_delta = Number.MAX_SAFE_INTEGER;
+      let resolutions = videoObject.media_files["streaming"].length;
+      for (let idx = 0; idx < resolutions; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        let delta = Math.abs(quality - height);
+        if (delta < max_delta)
+        {
+          max_delta = delta;
+          play_idx = idx;
+        }
+      }
+      return play_idx;
+    };
+
+    let selectedIndex = find_closest(this._videoObject, quality);
+    let outValue = {
+      quality: this._videoObject.media_files["streaming"][selectedIndex].resolution[0],
+      fps: this._videoObject.fps
+    };
+    return outValue;
+  }
+
   setQuality(quality)
   {
     let find_closest = (videoObject, resolution) => {

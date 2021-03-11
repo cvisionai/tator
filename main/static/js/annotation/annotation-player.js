@@ -453,6 +453,26 @@ class AnnotationPlayer extends TatorElement {
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject)
       .then(() => {
+        const seekInfo = this._video.getQuality("seek");
+        const scrubInfo = this._video.getQuality("scrub");
+        const playInfo = this._video.getQuality("play");
+
+        this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
+          composed: true,
+          detail: {
+            seekQuality: seekInfo.quality,
+            seekFPS: seekInfo.fps,
+            scrubQuality: scrubInfo.quality,
+            scrubFPS: scrubInfo.fps,
+            playQuality: playInfo.quality,
+            playFPS: playInfo.fps,
+            focusedQuality: null,
+            focusedFPS: null,
+            dockedQuality: null,
+            dockedFPS: null,
+          }
+        }));
+
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));

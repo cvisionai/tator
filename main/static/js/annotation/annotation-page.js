@@ -163,6 +163,7 @@ class AnnotationPage extends TatorPage {
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
               this._browser.canvas = player._video;
+              this._videoSettingsDialog.mode("single", [data]);
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -225,6 +226,7 @@ class AnnotationPage extends TatorPage {
               })
               .then(response => response.json())
               .then(primeMediaData => {
+                this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
@@ -432,6 +434,10 @@ class AnnotationPage extends TatorPage {
       this._canvasInitialized = true;
       _handleQueryParams();
       _removeLoading();
+    });
+
+    canvas.addEventListener("defaultVideoSettings", evt => {
+      this._videoSettingsDialog.defaultSources = evt.detail;
     });
 
     this._settings._lock.addEventListener("click", evt=> {

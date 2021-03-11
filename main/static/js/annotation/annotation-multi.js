@@ -569,7 +569,33 @@ class AnnotationMulti extends TatorElement {
          "color": "white",
          "background": "rgba(0,0,0,0.33)"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
-      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject);
+      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject).then(() =>
+      {
+        this._focusQuality = 1080;
+        this._dockQuality = 144;
+        const seekInfo = this._videos[idx].getQuality("seek");
+        const scrubInfo = this._videos[idx].getQuality("scrub");
+        const playInfo = this._videos[idx].getQuality("play");
+        const focusedInfo = this._videos[idx].nearestQuality(1080);
+        const dockedInfo = this._videos[idx].nearestQuality(144);
+
+        this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
+          composed: true,
+          detail: {
+            media: video_info,
+            seekQuality: seekInfo.quality,
+            seekFPS: seekInfo.fps,
+            scrubQuality: scrubInfo.quality,
+            scrubFPS: scrubInfo.fps,
+            playQuality: playInfo.quality,
+            playFPS: playInfo.fps,
+            focusedQuality: focusedInfo.quality,
+            focusedFPS: focusedInfo.fps,
+            dockedQuality: dockedInfo.quality,
+            dockedFPS: dockedInfo.fps
+          }
+        }));
+      });
 
       // #TODO This should be changed to dispatched events vs. calling the parent directly.
       this.parent._getMetadataTypes(this,
@@ -729,6 +755,7 @@ class AnnotationMulti extends TatorElement {
             }
           }
         }
+
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
@@ -790,12 +817,12 @@ class AnnotationMulti extends TatorElement {
       video.contextMenuNone.hideMenu();
       if (videoId != vid_id)
       {
-        this.assignToSecondary(Number(videoId), this._quality / 3);
+        this.assignToSecondary(Number(videoId), this._dockQuality);
       }
       else
       {
         this.setMultiviewUrl("focus", Number(videoId));
-        this.assignToPrimary(Number(videoId), 1080);
+        this.assignToPrimary(Number(videoId), this._focusQuality);
       }
     }
   }
