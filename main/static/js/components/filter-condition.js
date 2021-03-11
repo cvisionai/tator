@@ -102,8 +102,6 @@ class FilterCondition extends TatorElement {
       this._modifier.clear();
       this._value.setValue("");
 
-      // #TODO Add more options to the other dtypes
-      var choices = [];
       let selectedFieldName = this._fieldName.getValue();
       var dtype = "string";
       this._value.style.display = "block";
@@ -117,27 +115,12 @@ class FilterCondition extends TatorElement {
         }
       }
 
-      if (dtype == "int" || dtype == "float")
-      {
-        choices.push({"value": "=="});
-        choices.push({"value": ">"});
-        choices.push({"value": ">="});
-        choices.push({"value": "<"});
-        choices.push({"value": "<="});
-      }
-      else if (dtype == "bool")
-      {
-        choices.push({"value": "=="});
+      if (dtype == "bool") {
         this._value.style.display = "none";
         this._valueBool.style.display = "block";
       }
-      else
-      {
-        choices.push({"value": "Includes"});
-        choices.push({"value": "=="});
-      }
 
-      this._modifier.choices = choices;
+      this._modifier.choices = FilterUtilities.getModifierChoices(dtype);
       this._modifier.permission = "Can Edit";
       this._value.permission = "Can Edit";
       this._valueBool.permission = "Can Edit";
@@ -184,17 +167,17 @@ class FilterCondition extends TatorElement {
       const modifier = this._modifier.getValue();
       var value = this._value.getValue();
       var condition = null;
-  
+
       if (this._valueBool.style.display == "block")
       {
         value = this._valueBool.getValue();
       }
-  
+
       if (category && field && modifier && value)
       {
         condition = new FilterConditionData(category, field, modifier, value);
       }
-  
+
       return condition;
     }
     catch (error) {

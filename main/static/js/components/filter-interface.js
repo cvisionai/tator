@@ -55,6 +55,14 @@ class FilterInterface extends TatorElement {
       // Create the filter parmaeters to display in the filter bar
       this.setFilterBar();
 
+      // Send out an event to anyone listening that there's a new filter applied
+      this.dispatchEvent(new CustomEvent("filterParameters", {
+        composed: true,
+        detail: {
+          conditions: this._filterDialog.getConditions()
+        }
+      }));
+
       // Close up the dialog
       this._filterDialog.removeAttribute("is-open");
       this.dispatchEvent(new Event("closedFilterDialog"));

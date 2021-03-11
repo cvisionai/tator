@@ -10,18 +10,14 @@ class CardData {
           this.localizationTypes = localizationTypes;
     }
 
-    async makeCardList({ filterState, paginationState } = {}){
+    async makeCardList({ filterParams, paginationState } = {}){
         this.cardList = {};
         this.cardList.cards = [];
-        this.cardList.filterState = filterState;
+        this.cardList.filterParams = filterParams;
         this.cardList.paginationState = paginationState;
-        this.cardList.total = await this._modelData.getLocalizationCount({params : filterState.params});
 
-        this.localizations= await this._modelData.getLocalizations({
-            params : filterState.params, 
-            start : paginationState._start, 
-            stop : paginationState._stop
-        });
+        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterParams);
+        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterParams, paginationState._start, paginationState._stop);
         await this.getCardList(this.localizations);
         return this.cardList;
     }
