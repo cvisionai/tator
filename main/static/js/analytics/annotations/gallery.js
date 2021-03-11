@@ -104,8 +104,9 @@ class AnnotationsGallery extends EntityCardGallery {
       // Update view
       annotationPanelDiv.addEventListener("unselected", () => {
         card._li.classList.remove("is-selected");
-        annotationPanelDiv.classList.add("hidden");
         annotationPanelDiv.classList.remove("is-selected");
+        annotationPanelDiv.classList.add("hidden");
+        console.log(annotationPanelDiv.classList);
         console.log("Hiding "+annotationPanelDiv.dataset.locId);
       });
 

@@ -146,6 +146,7 @@ class AnnotationsCard extends EntityCard {
     // }
    
     if(this._li.classList.contains("is-selected")) {
+          // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
       // If we already have this open, toggle shut
       this._deselectedCard();
        
@@ -182,6 +183,7 @@ class AnnotationsCard extends EntityCard {
   }
 
   _selectedCard(){
+    this.tmpHidden = this.annotationPanelDiv;
     this._li.classList.add("is-selected");
     this.annotationPanelDiv.classList.add("is-selected");
     this.annotationPanelDiv.classList.remove("hidden");
