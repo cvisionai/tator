@@ -22,20 +22,15 @@ class EntityGalleryLabels extends TatorElement {
      * @gallery - element
      * 
     */
-    async init( {gallery} ){
+    async init( {gallery, localizationTypes} ){
       this._gallery = gallery;
-      this._modelData = new TatorData(this.projectId);
-
-      let locAttrMap = await this._modelData.getAttributesByLocalizationType();
-    console.log(locAttrMap);
-
       console.log("label init");
 
       // Stop here if we aren't ok after init
-      if (gallery === null || locAttrMap === {}) return console.log("Error in label init");;
+      if (gallery === null || typeof localizationTypes == "undefined") return console.log("Error in label init");;
 
       // If ok, create the checkbox list for each Localization
-      for(let [key, val] of Object.entries(locAttrMap) ) {
+      for(let [key, val] of Object.entries(localizationTypes) ) {
           console.log(`Loc att map output key ${key} and val ${val}`);
           let checkboxList = this.makeListFrom(val, key);
           let selectionBox = this.inputHelper.multipleCheckboxes({

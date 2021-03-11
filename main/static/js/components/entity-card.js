@@ -60,15 +60,29 @@ class EntityCard extends TatorElement {
       this.titleDiv.appendChild(this._more); 
       this._more.hidden = true; // HIDDEN default
   
-      // OPTIONAL Detail text
+      
+
+      // OPTIONAL pagination + id display
+      this._bottom = document.createElement("div");
+      this._bottom.setAttribute("class", "f3 d-flex flex-justify-between");
+      div.appendChild(this._bottom);
+
+      // OPTIONAL Detail text (ie file extension)
       this._ext = document.createElement("span");
       this._ext.setAttribute("class", "f3 text-gray");
-      div.appendChild(this._ext);
-  
+      this._ext.hidden = true;
+      this._bottom.appendChild(this._ext);
+      
       // OPTIONAL Pagination position
       this._pos_text = document.createElement("span");
       this._pos_text.setAttribute("class", "f3 text-gray px-2");
-      div.appendChild(this._pos_text);
+      
+      this._bottom.appendChild(this._pos_text);
+
+      // OPTIONAL ID data
+      this._id_text = document.createElement("span");
+      this._id_text.setAttribute("class", "f3 text-gray px-2");
+      this._bottom.appendChild(this._id_text);
   
       // More menu styling (if included)
       this.addEventListener("mouseenter", () => {

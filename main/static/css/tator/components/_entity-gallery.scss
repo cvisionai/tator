@@ -27,7 +27,7 @@
 }
 
 entity-gallery-aspect-ratio {
-  width: 300px;
+  width: 200px;
 }
 
 .enitity-gallery__tools,
@@ -38,7 +38,7 @@ entity-gallery-aspect-ratio {
 }
 
 .entity-card {
-  background-color: $color-charcoal--dark;
+  background-color: $color-charcoal--light;
   padding: 6px;
   position: relative;
 
@@ -91,16 +91,39 @@ entity-gallery-aspect-ratio {
 }
 
 .entity-panel--container {
-  transition: width 1s linear;
-  width: 0;
   background: $color-charcoal--medium;
-  -webkit-animation: slide 0.5s forwards;
-  -webkit-animation-delay: 1s;
-  animation: slide 0.5s forwards;
-  animation-delay: 1s;
-  border-bottom: 1px solid $color-gray--dark50;
-  content: "&nbsp;";
+  transition: all 500s linear;
+  // width: 0;
 
+  // position: absolute;
+  // right: -610px;
+  // top: 0;
+  // bottom: 0;
+  // overflow: scroll;
+
+  .entity-panel--container--pinned {
+    border: 5px solid transparent;
+    .pinned-annotation {
+      img {
+        height: 15px;
+        width: 15px;
+      }
+      .pin-icons {
+        display: none;
+        transition: 1s ease all;
+      }
+      &:hover {
+        .pin-icons {
+          display: block;
+        }
+      }
+    }
+  }
+
+  // -webkit-animation: slide 0.5s forwards;
+  // -webkit-animation-delay: 1s;
+  // animation: slide 0.5s forwards;
+  // animation-delay: 1s;
   // .entity-panel--div {
   //   transition: ease-in-out right 1s;
   //   position: absolute;
@@ -113,23 +136,24 @@ entity-gallery-aspect-ratio {
   // }
 
   &.slide {
-    border-left: 10px solid $color-purple;
-    transition: 1s;
-    width: 410px;
+    transition: 500s;
+    width: 500px;
 
-    @media (min-width: $width-md) {
-      width: 610px;
+    .entity-panel--container--pinned {
+      border-color: $color-purple;
+      background-color: $color-purple;
     }
   }
 }
 
 .entity-panel {
+  width: 100%; // fill container
+
   img {
-    background-color: $color-charcoal--medium;
-    height: 200px;
+    width: 100%;
+    //background-color: $color-charcoal--medium;
+    max-height: 350px;
     object-fit: contain;
-    padding: 10px;
-    margin: 5px auto;
   }
 
   & > span {
