@@ -57,7 +57,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._filterResults = document.createElement("annotations-gallery");
     this.main.appendChild(this._filterResults);
 
-    // Gallery navigation panel  
+    // Gallery navigation panel
     this._panelContainer = document.createElement("div");
     this._panelContainer.setAttribute("class", "entity-panel--container col-5 px-3 py-3") //@TODO .slide = open by default
     this.mainWrapper.appendChild(this._panelContainer);
@@ -67,59 +67,56 @@ class AnalyticsAnnotations extends TatorPage {
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg() );
 
-    // Init vars for filter state 
-    // @TODO checkback to integration w/ this._filterView
-    this._filterState = {};
-    this._filterState.filtered = false;
-    this._filterState.params = "";
-
     // Init vars for pagination state
     this._paginationState = {};
     this._paginationState._pageSize = 10;
     this._paginationState._start = 1;
     this._paginationState._stop = 10;
     this._paginationState._page = 0;
-    
+
   }
 
   _init() {
 
+    this.loading.showSpinner();
+    this.setAttribute("has-open-modal", "");
+
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
+    this._modelData.init().then(() => {
 
-    // Filter interface
-    this._filterDataView = new FilterData(this._modelData);
-    this._filterDataView.init().then((localizationTypes) => {
-      this.localizationTypes = localizationTypes;
+      // Filter interface
+      this._filterDataView = new FilterData(this._modelData);
+      this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
+
+      // Card Data class collects raw model and parses into view-model format
+      this.cardData = new CardData({
+        projectId : this.projectId,
+        modelData : this._modelData,
+        localizationTypes : this.localizationTypes
+      });
+
+      // Pass panel and localization types to gallery
+      this._filterResults._initPanel( {
+        panelContainer : this._panelContainer,
+        localizationTypes : this.localizationTypes
+      } );
+
+      // If state is stored in URL, update default states
+      this._getQueryParams();
+
+      // Init Card Gallery and Right Panel
+      this._cardGallery({panelContainer : this.panelContainer});
+
+      // Listen for pagination events
+      this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+
+      // Listen for filter events
+      this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+
     });
-
-    // Card Data class collects raw model and parses into view-model format
-    this.cardData = new CardData({
-      projectId : this.projectId,
-      modelData : this._modelData,
-      localizationTypes : this.localizationTypes
-    });
-
-    // Pass panel and localization types to gallery
-    this._filterResults._initPanel( { 
-      panelContainer : this._panelContainer, 
-      localizationTypes : this.localizationTypes 
-    } );
-
-    // If state is stored in URL, update default states
-    this._getQueryParams();
-
-    // Init Card Gallery and Right Panel
-    this._cardGallery({panelContainer : this.panelContainer});
-
-    // Listen for pagination events
-    this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-
-    // Listen for filter events
-    this._filterView._filterDialog.addEventListener("newFilterSet", this._updateFilterResults.bind(this));
-
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -144,15 +141,6 @@ class AnalyticsAnnotations extends TatorPage {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
-    // Update filter state from URL query params
-    if(urlParams.get("filter")) {
-      let decoded = decodeURI(urlParams.get("filter"));
-      this._filterState.params = decoded != null ? decoded : "" ;
-      this._filterState.filtered = true;
-    } else {
-      this._filterState.filtered = false;
-    }
-
     // Update pagination state from query params
     if(urlParams.get("pageSize")) this._paginationState._pageSize = urlParams.get("pg_size");
     if(urlParams.get("start")) this._paginationState._start = urlParams.get("start");
@@ -161,27 +149,26 @@ class AnalyticsAnnotations extends TatorPage {
   }
 
   _cardGallery({
-    filterState = this._filterState, 
+    filterParams = this._filterParams,
     paginationState = this._paginationState
   } = {}){
     this.loading.showSpinner();
+    this.setAttribute("has-open-modal", "");
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList( { filterState, paginationState } )
+    this.cardData.makeCardList( { filterParams, paginationState } )
     .then((cardList) => {
       this.loading.hideSpinner();
       this.removeAttribute("has-open-modal");
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show( { cardList } );
-      
+
     });
   }
 
   // Handler for filter submission
-  _updateFilterResults(e){
-    let params = this._localizationParams(e.detail.filterString);
-    this._filterState.filtered = true;
-    this._filterState.params = params;
+  _updateFilterResults(evt){
+    this._filterParams = evt.detail.conditions;
     this._cardGallery({});
   }
 
@@ -192,12 +179,6 @@ class AnalyticsAnnotations extends TatorPage {
     this._paginationState._start = e.detail.start;
     this._paginationState._stop = e.detail.stop;
     this._cardGallery({});
-  }
-
-  // @TODO - Do we need to convert any params here to work for our API calls?
-  _localizationParams(string){
-    console.log("Convert this to usable query params? or ok ::: "+string);
-    return string;
   }
 
   setScrollHeight(){

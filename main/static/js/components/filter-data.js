@@ -13,20 +13,12 @@ class FilterData {
   }
 
   /**
-   * Sets the following object properties:
-   * localizationTypes - array - List of localizationType objects
-   *
-   * #TODO Add more types
+   * @precondition The provided modelData must have been initialized
    */
-  async init()
+  init()
   {
-    let [localizationTypes, mediaTypes] = await Promise.all([
-      this._modelData.getAllLocalizationTypes(),
-      this._modelData.getAllMediaTypes(),
-    ]);
-
-    this.localizationTypes = localizationTypes;
-    this.mediaTypes = mediaTypes;
+    this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+    this.mediaTypes = this._modelData.getStoredMediaTypes();
   }
 
   /**
