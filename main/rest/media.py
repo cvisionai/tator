@@ -430,6 +430,7 @@ class MediaListAPI(BaseListView):
         if patch_archived is None and params.get("attributes") is None:
             raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
+        ids_to_update = list(qs.values_list('pk', flat=True).distinct())
         count = qs.count()
         if count > 0:
             # Get the current representation of the object for comparison
@@ -444,13 +445,19 @@ class MediaListAPI(BaseListView):
                 )
 
             # Get one object from the queryset to create the change log
-            obj = qs.first()
+            qs = Media.objects.filter(pk__in=ids_to_update)
+            obj = Media.objects.get(id=original_dict["id"])
             change_dict = obj.change_dict(original_dict)
             ref_table = ContentType.objects.get_for_model(obj)
 
             if new_attrs is not None:
                 query = get_media_es_query(params['project'], params)
                 TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+            if patch_archived is not None:
+                documents = []
+                for entity in qs:
+                    documents += TatorSearch().build_document(entity)
+                TatorSearch().bulk_add_documents(documents)
 
             # Create the ChangeLog entry and associate it with all objects in the queryset
             cl = ChangeLog(
