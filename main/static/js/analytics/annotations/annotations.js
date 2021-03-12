@@ -5,6 +5,10 @@ class AnalyticsAnnotations extends TatorPage {
   constructor() {
     super();
 
+    // Allow css access to body
+    const body = document.getElementsByTagName("BODY")[0];
+    body.setAttribute("class", "analysis-annotations-body");
+
     //
     // Header
     //
@@ -53,15 +57,35 @@ class AnalyticsAnnotations extends TatorPage {
       this.removeAttribute("has-open-modal");
     });
 
+    /* Card Gallery */
     // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
     this.main.appendChild(this._filterResults);
 
+    /* Right Navigation Pane - Annotation Detail Viewer */
     // Gallery navigation panel  
     this._panelContainer = document.createElement("div");
-    this._panelContainer.setAttribute("class", "entity-panel--container col-5 px-3 py-3") //@TODO .slide = open by default
+    this._panelContainer.setAttribute("class", "entity-panel--container col-5 py-3") //@TODO .slide = open by default
     this.mainWrapper.appendChild(this._panelContainer);
 
+    // Panel top bar
+    this._topBar = document.createElement("div");
+    this._topBar.setAttribute("class", "entity-panel--container--top-bar py-6 px-3");
+    this._panelContainer.appendChild(this._topBar);
+
+    // Panel name
+    this._topBarH3 = document.createElement("h3");
+    this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3  text-semibold h3 ");
+    this._topBarH3.appendChild( document.createTextNode("Annotation Viewer") );
+    this._topBar.appendChild(this._topBarH3);
+
+    // Panel text
+    this._topBarP = document.createElement("p");
+    this._topBarP.setAttribute("class", "entity-panel--container--top-bar--p text-gray py-2 ");
+    this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
+    this._topBar.appendChild(this._topBarP);    
+
+    /* Other */
     // Class to hide and showing loading spinner
     // @TODO what is standard use?
     this.loading = new LoadingSpinner();

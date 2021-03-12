@@ -1,8 +1,13 @@
-// analytics-annotations {
-//   background-color: $color-charcoal--light !important;
-// }
+body.analysis-annotations-body {
+  //background-color: $color-charcoal--light !important;
+  padding-bottom: 0px;
+}
 .analysis--main--wrapper {
   width: 100%;
+}
+
+.enitity-gallery {
+  margin-bottom: 1000px;
 }
 
 .analysis--main,

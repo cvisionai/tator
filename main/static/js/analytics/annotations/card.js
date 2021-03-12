@@ -61,7 +61,7 @@ class AnnotationsCard extends EntityCard {
       if(i != 0) attrDiv.classList.add("hidden")
       i++;
       let attrLabel = document.createElement("span");
-      attrLabel.appendChild( document.createTextNode(`${attr.toUpperCase()} `) );
+      attrLabel.appendChild( document.createTextNode(`${attr}: `) );
       attrLabel.setAttribute("class", "text-bold f3");
       attrDiv.appendChild(attrLabel);
       
@@ -195,13 +195,13 @@ class AnnotationsCard extends EntityCard {
   }
 
   // @TODO - currently not used bc we assume panel stays open
-  hidePanelContainer(){
-    this.panelContainer.classList.remove("slide");
-  }
+  // hidePanelContainer(){
+  //   this.panelContainer.classList.remove("slide");
+  // }
 
-  showPanelContainer(){
-    this.panelContainer.classList.add("slide");
-  }
+  // showPanelContainer(){
+  //   this.panelContainer.classList.add("slide");
+  // }
 
 }
   
