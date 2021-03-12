@@ -47,9 +47,7 @@ class PprintRenderer(BaseRenderer):
 
     def render(self, listObj, media_type=None, renderer_context=None):
         """ Returns a pretty printed representation of the list object """
-        temp_file=io.StringIO()
-        pprint(listObj, temp_file)
-        return temp_file.getvalue()
+        return ujson.dumps(listObj, indent=4)
 
 
 class UJsonRenderer(BaseRenderer):
