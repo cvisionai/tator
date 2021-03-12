@@ -17,12 +17,14 @@ class EntityFormForPanel extends TatorElement {
       for(const [attr, value] of Object.entries(obj.attributes)){
         // Attribute name and it's value
         const NAME = "Name";
-        this.form.appendChild( this.inputHelper.inputText({
+        const nameInput = this.inputHelper.inputText({
           "labelText" : attr,
           "name" : attr,
-          "value" : value,
-          "disabled" : true
-        }) );
+          "value" : value
+        });
+        nameInput.querySelector("input").disabled = true;
+        nameInput.querySelector("input").classList.add("disabled");
+        this.form.appendChild( nameInput );
       }
 
         // View Media Button
