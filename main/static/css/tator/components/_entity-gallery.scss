@@ -90,9 +90,16 @@ entity-gallery-aspect-ratio {
   }
 }
 
+.entity-panel--container--top-bar {
+  border-bottom: 1px solid $color-charcoal--light;
+}
+
 .entity-panel--container {
-  background: $color-charcoal--medium;
+  background: $color-charcoal--dark;
   transition: all 500s linear;
+  padding-left: 5px;
+  border-left: 5px solid $color-purple;
+
   // width: 0;
 
   // position: absolute;
@@ -154,6 +161,14 @@ entity-gallery-aspect-ratio {
     //background-color: $color-charcoal--medium;
     max-height: 350px;
     object-fit: contain;
+    padding: 15px;
+    background-image: linear-gradient(
+        to right,
+        $color-charcoal--light 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
+    background-size: 10px 10px;
   }
 
   & > span {

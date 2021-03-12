@@ -27,9 +27,11 @@ import traceback
 # Load the main.view logger
 logger = logging.getLogger(__name__)
 
+
 class APIBrowserView(LoginRequiredMixin, TemplateView):
     template_name = 'browser.html'
     extra_context = {'schema_url': 'schema'}
+
 
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
@@ -41,20 +43,24 @@ class MainRedirect(View):
                     config = yaml.safe_load(f)
                 out = redirect(f"https://{config['domain']}/login"
                                f"?client_id={config['client-id']}"
-                                "&response_type=code&scope=openid"
+                               "&response_type=code&scope=openid"
                                f"&redirect_uri=https://{os.getenv('MAIN_HOST')}/jwt-gateway")
             else:
                 out = redirect('accounts/login')
         return out
 
+
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
+
 
 class CustomView(LoginRequiredMixin, TemplateView):
     template_name = 'new-project/custom.html'
 
+
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
+
 
 class ProjectBase(LoginRequiredMixin):
 
@@ -69,6 +75,7 @@ class ProjectBase(LoginRequiredMixin):
             raise PermissionDenied
         return context
 
+
 class ProjectDetailView(ProjectBase, TemplateView):
     template_name = 'project-detail.html'
 
@@ -78,23 +85,33 @@ class ProjectDetailView(ProjectBase, TemplateView):
         context['token'] = token
         return context
 
+
 class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
+
 
 class AnalyticsDashboardView(ProjectBase, TemplateView):
     template_name = 'analytics/dashboard.html'
 
+
 class AnalyticsAnnotationsView(ProjectBase, TemplateView):
     template_name = 'analytics/annotations.html'
+
+    def get_class():
+        return template_name
+
 
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
     template_name = 'analytics/collections.html'
 
+
 class AnalyticsVisualizationView(ProjectBase, TemplateView):
     template_name = 'analytics/visualization.html'
 
+
 class AnalyticsReportsView(ProjectBase, TemplateView):
     template_name = 'analytics/reports.html'
+
 
 class AnnotationView(ProjectBase, TemplateView):
     template_name = 'annotation.html'
@@ -104,6 +121,7 @@ class AnnotationView(ProjectBase, TemplateView):
         media = get_object_or_404(Media, pk=self.kwargs['id'])
         context['media'] = media
         return context
+
 
 def validate_project(user, project):
     # We only cache 'True' effectively with this logic
@@ -124,10 +142,11 @@ def validate_project(user, project):
         if membership.count() == 0:
             granted = False
         else:
-            #Only cache granted attempts
+            # Only cache granted attempts
             granted = True
             TatorCache().set_cred_cache(user.id, project.id, granted)
     return granted
+
 
 class AuthProjectView(View):
     def dispatch(self, request, *args, **kwargs):
@@ -144,9 +163,9 @@ class AuthProjectView(View):
         # to see if a token was provided. Bail out if the user is anonymous
         # before we get too far
         user = request.user
-        if isinstance(user,AnonymousUser):
+        if isinstance(user, AnonymousUser):
             try:
-                (user,token) = TokenAuthentication().authenticate(request)
+                (user, token) = TokenAuthentication().authenticate(request)
             except Exception as e:
                 msg = "*Security Alert:* "
                 msg += f"Bad credentials presented for '{original_url}' ({user})"
@@ -181,6 +200,7 @@ class AuthProjectView(View):
 
         return HttpResponse(status=403)
 
+
 class AuthAdminView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for an nginx location requiring admin
@@ -195,9 +215,9 @@ class AuthAdminView(View):
         # to see if a token was provided. Bail out if the user is anonymous
         # before we get too far
         user = request.user
-        if isinstance(user,AnonymousUser):
+        if isinstance(user, AnonymousUser):
             try:
-                (user,token) = TokenAuthentication().authenticate(request)
+                (user, token) = TokenAuthentication().authenticate(request)
             except Exception as e:
                 msg = "*Security Alert:* "
                 msg += f"Bad credentials presented for '{original_url}'"
@@ -216,13 +236,14 @@ class AuthAdminView(View):
 
         return HttpResponse(status=403)
 
-def ErrorNotifierView(request, code,message,details=None):
+
+def ErrorNotifierView(request, code, message, details=None):
 
     context = {}
     context['code'] = code
     context['msg'] = message
     context['details'] = details
-    response=render(request,'error-page.html', context=context)
+    response = render(request, 'error-page.html', context=context)
     response.status_code = code
 
     # Generate slack message
@@ -240,13 +261,18 @@ def ErrorNotifierView(request, code,message,details=None):
 
     return response
 
+
 def NotFoundView(request, exception=None):
     return ErrorNotifierView(request, 404, "Not Found")
+
+
 def PermissionErrorView(request, exception=None):
     return ErrorNotifierView(request, 403, "Permission Denied")
+
+
 def ServerErrorView(request, exception=None):
     e_type, value, tb = sys.exc_info()
-    error_trace=traceback.format_exception(e_type,value,tb)
+    error_trace = traceback.format_exception(e_type, value, tb)
     return ErrorNotifierView(request,
                              500,
                              "Server Error",

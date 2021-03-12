@@ -2,13 +2,25 @@ class EntityAttrPanel extends TatorElement {
     constructor() {
       super();
     
-      // Hide panel by default
+
       
       // Panel Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "entity-panel");
+      this._main.setAttribute("class", "entity-panel px-3");
       //this._main.hidden = true;
       this._shadow.appendChild(this._main);
+
+      // Pin Actions
+      // Pin then < to close the panel (keep open v1)
+      // this.pinned = new EntityPanelPin({ panelContainer: this });
+      // let actions = this.pinned.pinThisEl();
+      // actions.setAttribute("class", "d-flex");
+      // this._main.appendChild(actions);
+
+      // Content id
+      this._heading = document.createElement("h4");
+      this._heading.setAttribute("class", "h4 py-3")
+      this._main.appendChild(this._heading);
 
       // Panel Img Container
       this._imgContainer = document.createElement("div");
@@ -23,10 +35,10 @@ class EntityAttrPanel extends TatorElement {
       this.entityData = document.createElement("entity-form-for-panel");
       this._main.appendChild(this.entityData);
 
-      // // Actions
-      // let actions = document.createElement("div");
-      // actions.setAttribute("class", "d-flex");
-      // this._main.appendChild(actions);
+      //
+      // this.pinnedEl = this.pinned.pinEl();
+      // this._main.appendChild(this.pinnedEl);
+
 
       // // View media button link to annotation media
       // this.viewMedia = document.createElement("button");
@@ -56,6 +68,7 @@ class EntityAttrPanel extends TatorElement {
       // posText
 
       this._container = panelContainer;
+      this._heading.appendChild( document.createTextNode( `ID ${annotationObject.id}` ) )
 
       if(typeof annotationObject.graphic !== "undefined" && annotationObject.graphic !== null) {
         this.reader = new FileReader();
