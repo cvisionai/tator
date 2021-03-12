@@ -1,6 +1,8 @@
 /**
  * This works in conjunction with FilterInterface. It is the backend portion
  * that connects with the database.
+ *
+ * #TODO Convert this to a TatorElement so that events can be dispatched
  */
 class FilterData {
   constructor (modelData) {
