@@ -3,6 +3,7 @@ import logging
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
+from botocore.client import Config
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +28,13 @@ class TatorS3:
             self.bucket_name = bucket.name
             self.external_host = None
         if endpoint:
+            config = Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 5})
             self.s3 = boto3.client('s3',
                                    endpoint_url=f'{endpoint}',
                                    region_name=region,
                                    aws_access_key_id=access_key,
-                                   aws_secret_access_key=secret_key)
+                                   aws_secret_access_key=secret_key,
+                                   config=config)
         else:
             # Client generator will not have env variables defined
             self.s3 = boto3.client('s3')
@@ -70,12 +73,12 @@ def get_s3_lookup(resources):
     """
     buckets = resources.values_list('bucket', flat=True).distinct()
     s3_lookup = {}
+    # This is to avoid a circular import
+    Bucket = resources.model._meta.get_field('bucket').related_model
     for bucket in buckets:
         if bucket is None:
             s3_lookup[bucket] = TatorS3()
         else:
-            # This is to avoid a circular import
-            Bucket = resources.model._meta.get_field('bucket').related_model
             s3_lookup[bucket] = TatorS3(Bucket.objects.get(pk=bucket))
     s3_lookup = {resource.path:(s3_lookup[resource.bucket.pk] if resource.bucket else s3_lookup[None])
                  for resource in list(resources)}

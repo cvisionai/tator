@@ -352,6 +352,14 @@ class AnnotationMulti extends TatorElement {
           this.pause();
         }
       }
+      else if (evt.key == "r")
+      {
+        evt.preventDefault();
+        if (this.is_paused())
+        {
+          this.playBackwards();
+        }
+      }
     });
   }
 
@@ -638,9 +646,11 @@ class AnnotationMulti extends TatorElement {
       {
         if (evt.detail.playbackReadyId == this._playbackReadyId)
         {
+          console.log(`waitPlayback Rx'd IDs - ${vid_id} ${this._playbackReadyId}`);
           this._playbackReadyCount += 1;
           if (this._playbackReadyCount == this._numVideos)
           {
+            console.log(`disabling waitPlayback ID - ${this._playbackReadyId}`);
             for (var video of this._videos)
             {
               video.waitPlayback(false, this._playbackReadyId);
@@ -1091,6 +1101,10 @@ class AnnotationMulti extends TatorElement {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
           return;
         }
+      }
+
+      for (let video of this._videos)
+      {
         video.rateChange(this._rate);
         playing |= video.play();
       }
@@ -1112,6 +1126,7 @@ class AnnotationMulti extends TatorElement {
       let playing = false;
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
+      console.log(`waitPlayback (playForward) - ${this._playbackReadyId}`);
       this.goToFrame(this._videos[0].currentFrame()).then(() => {
         for (let video of this._videos)
         {
@@ -1142,6 +1157,10 @@ class AnnotationMulti extends TatorElement {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
           return;
         }
+      }
+
+      for (let video of this._videos)
+      {
         video.rateChange(this._rate);
         playing |= video.playBackwards();
       }
@@ -1155,8 +1174,8 @@ class AnnotationMulti extends TatorElement {
     }
 
     this.dispatchEvent(new Event("playing", {composed: true}));
-    this._fastForward.removeAttribute("disabled");
-    this._rewind.removeAttribute("disabled");
+    this._fastForward.setAttribute("disabled", "");
+    this._rewind.setAttribute("disabled", "");
 
     const paused = this.is_paused();
     if (paused) {
@@ -1164,6 +1183,7 @@ class AnnotationMulti extends TatorElement {
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
       this._pauseId = this._playbackReadyId;
+      console.log(`waitPlayback (playBackwards) - ${this._playbackReadyId}`);
       this.goToFrame(this._videos[0].currentFrame()).then(() => {
         for (let video of this._videos)
         {

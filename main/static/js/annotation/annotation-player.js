@@ -341,6 +341,14 @@ class AnnotationPlayer extends TatorElement {
           this.pause();
         }
       }
+      else if (evt.key == "r")
+      {
+        evt.preventDefault();
+        if (this.is_paused())
+        {
+          this.playBackwards();
+        }
+      }
     });
   }
 
