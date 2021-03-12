@@ -108,6 +108,7 @@ class AnnotationsCard extends EntityCard {
   }
 
   /**
+   * Set the card's main image thumbnail
    * @param {image} image
    */
   setImage(image) {
