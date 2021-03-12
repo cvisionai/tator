@@ -1,7 +1,7 @@
 class EntityFormForPanel extends TatorElement {
     constructor() {
       super();
-    
+
        // @TODO what can be reused for this?
        this.todo = document.createElement("div");
        this._shadow.appendChild(this.todo);
@@ -10,6 +10,10 @@ class EntityFormForPanel extends TatorElement {
 
     }
 
+    /**
+     *
+     * @param {object} obj - Entity object to display
+     */
     _init( obj ){
       this.form = document.createElement("form");
 
@@ -30,17 +34,17 @@ class EntityFormForPanel extends TatorElement {
         // View Media Button
         //class="btn btn-clear btn-charcoal text-gray"
         const viewMedia = document.createElement("a");
-        viewMedia.setAttribute("href", obj.mediaLink);
+
         viewMedia.setAttribute("value", "View Media");
         viewMedia.setAttribute("class", `col-12 btn btn-clear btn-charcoal text-gray text-semibold`);
         viewMedia.appendChild( document.createTextNode("View Media") );
+        viewMedia.setAttribute("href", obj.mediaLink);
         this.form.appendChild(viewMedia);
-      
+
         // Append form to el
         this._shadow.appendChild(this.form)
 
     }
-   
   }
-  
-  customElements.define("entity-form-for-panel", EntityFormForPanel);  
+
+  customElements.define("entity-form-for-panel", EntityFormForPanel);

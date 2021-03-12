@@ -82,8 +82,19 @@ class EntityAttrPanel extends TatorElement {
 
     }
 
-    _setImgSrc (e) {
-      return this._img.setAttribute("src", this.reader.result );
+    /**
+    * Set the card's main image thumbnail
+    * @param {image} image
+    */
+    setImage(image) {
+      this.reader = new FileReader();
+      this.reader.readAsDataURL(image); // converts the blob to base64
+      this.reader.addEventListener("load", this._setImgSrc.bind(this));
+    }
+
+    _setImgSrc () {
+      this._img.setAttribute("src", this.reader.result);
+      this._img.hidden = false;
     }
    
   }

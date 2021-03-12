@@ -29,8 +29,13 @@ class AnnotationsGallery extends EntityCardGallery {
     this._aspectToggle.init(this);
 
     this.panelContainer = null;
-    this.cardList = {};
 
+    // Property IDs are the entity IDs (which are expected to be unique)
+    // Each property (ID) points to the index of the card information stored in _cardElements
+    this._currentCardIndexes = {};
+
+    // Entity cards aren't deleted. They are reused and hidden if not used.
+    this._cardElements = [];
   }
 
   // Provide access to side panel for events
@@ -87,69 +92,84 @@ class AnnotationsGallery extends EntityCardGallery {
    * @param {image} image
    */
   updateCardImage(id, image) {
-    if (id in this.cardList) {
-      this.cardList[id].setImage(image);
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.card.setImage(image);
+      info.annotationPanel.setImage(image);
     }
   }
 
+  /**
+   * Creates the card display in the gallery portion of the page using the provided
+   * localization information
+   *
+   * @param {object} cardInfo
+   */
   makeCards(cardInfo) {
 
-    this._cardList = {}; // Clear the mapping from entity ID to card
-    const children = this._ul.children;
+    this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
 
     // Loop through all of the card entries and create a new card if needed. Otherwise
     // apply the card entry to an existing card.
     for (const [index, cardObj] of cardInfo.entries()) {
-      const newCard = index >= children.length;
+      const newCard = index >= this._cardElements.length;
       let card;
       if (newCard) {
         card = document.createElement("annotations-card");
+
+        // Resize Tool needs to change style within card on change
+        this._resizeCards._slideInput.addEventListener("change", (evt) => {
+          let resizeValue = evt.target.value;
+          let resizeValuePerc = parseFloat(resizeValue / 100);
+          return card._img.style.height = `${130 * resizeValuePerc}px`;
+        });
+
+        // Inner div of side panel
+        let annotationPanelDiv = document.createElement("div");
+        annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
+        this.panelContainer.appendChild(annotationPanelDiv);
+
+        // Init a side panel that can be triggered from card
+        let annotationPanel = document.createElement("entity-attributes-panel");
+        annotationPanelDiv.appendChild(annotationPanel);
+
+        // Update view
+        annotationPanelDiv.addEventListener("unselected", () => {
+          card._li.classList.remove("is-selected");
+          annotationPanelDiv.classList.remove("is-selected");
+          annotationPanelDiv.classList.add("hidden");
+          console.log(annotationPanelDiv.classList);
+          console.log("Hiding "+annotationPanelDiv.dataset.locId);
+        });
+
+        // Listen for all clicks on the document
+        document.addEventListener('click', function (evt) {
+          if (evt.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
+            card._li.click();
+          }
+        }, false);
+
+        // Update view
+        this.addEventListener("view-change", () => {
+          card._li.classList.toggle("aspect-true");
+        });
+
+        cardInfo = {
+          card: card,
+          annotationPanel: annotationPanel,
+          annotationPanelDiv: annotationPanelDiv
+        };
+        this._cardElements.push(cardInfo);
+
       } else {
-        card = children[index];
+        card = this._cardElements[index].card;
       }
-      this.cardList[cardObj.id] = card;
-
-      // Resize Tool needs to change style within card on change
-      this._resizeCards._slideInput.addEventListener("change", (e) => {
-        let resizeValue = e.target.value;
-        let resizeValuePerc = parseFloat( resizeValue / 100 );
-        return card._img.style.height = `${130 * resizeValuePerc}px`;
-      });
-
-      // Inner div of side panel
-      let annotationPanelDiv = document.createElement("div");
-      annotationPanelDiv.setAttribute("class", "entity-panel--div hidden")
-      annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this.panelContainer.appendChild( annotationPanelDiv );
-
-      // Init a side panel that can be triggered from card
-      let annotationPanel = document.createElement("entity-attributes-panel");
-      annotationPanel.init( cardObj, this.panelContainer );
-      annotationPanelDiv.appendChild(annotationPanel);
-
-      // Update view
-      annotationPanelDiv.addEventListener("unselected", () => {
-        card._li.classList.remove("is-selected");
-        annotationPanelDiv.classList.remove("is-selected");
-        annotationPanelDiv.classList.add("hidden");
-        console.log(annotationPanelDiv.classList);
-        console.log("Hiding "+annotationPanelDiv.dataset.locId);
-      });
-
-      // Listen for all clicks on the document
-      document.addEventListener('click', function (event) {
-        if (event.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
-          card._li.click();
-        }
-      }, false);
-
-      // Update view
-      this.addEventListener("view-change", (e) => {
-        card._li.classList.toggle("aspect-true");
-      });
+      this._currentCardIndexes[cardObj.id] = index;
 
       // Initialize the card
-      card.init(cardObj, this.panelContainer, annotationPanelDiv);
+      this._cardElements[index].annotationPanel.init(cardObj, this.panelContainer);
+      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+      card.init(cardObj, this.panelContainer, this._cardElements[index].annotationPanelDiv);
       card.style.display = "block";
 
       // Add new card to the gallery div
@@ -159,69 +179,13 @@ class AnnotationsGallery extends EntityCardGallery {
     }
 
     // Hide unused cards
-    if (children.length > cardInfo.length) {
-      const len = children.length;
-      for (let idx = len - 1; idx >= cardInfo.length; idx--) {
-        children[idx].style.display = "none";
+    if (this._cardElements.length > this._cardElements.length) {
+      const len = this._cardElements.length;
+      for (let idx = len - 1; idx >= this._cardElements.length; idx--) {
+        this._cardElements[idx].card.style.display = "none";
       }
     }
   }
-
-  /*
-  // Accepts a cardList object and appends each card to the page web component
-  appendCardList(cardList){
-    for(let cardObj of cardList){
-      let card = document.createElement("annotations-card");
-      this.cardList[cardObj.id] = card;
-
-      // Resize Tool needs to change style within card on change
-      this._resizeCards._slideInput.addEventListener("change", (e) => {
-        let resizeValue = e.target.value;
-        let resizeValuePerc = parseFloat( resizeValue / 100 );
-        return card._img.style.height = `${130 * resizeValuePerc}px`;
-      });
-
-      // Inner div of side panel
-      let annotationPanelDiv = document.createElement("div");
-      annotationPanelDiv.setAttribute("class", "entity-panel--div hidden")
-      annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this.panelContainer.appendChild( annotationPanelDiv );
-
-      // Init a side panel that can be triggered from card
-      let annotationPanel = document.createElement("entity-attributes-panel");
-      annotationPanel.init( cardObj, this.panelContainer );
-      annotationPanelDiv.appendChild(annotationPanel);
-
-      // Update view
-      annotationPanelDiv.addEventListener("unselected", () => {
-        card._li.classList.remove("is-selected");
-        annotationPanelDiv.classList.remove("is-selected");
-        annotationPanelDiv.classList.add("hidden");
-        console.log(annotationPanelDiv.classList);
-        console.log("Hiding "+annotationPanelDiv.dataset.locId);
-      });
-
-      // Listen for all clicks on the document
-      document.addEventListener('click', function (event) {
-        if (event.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
-          card._li.click();
-        }
-      }, false);
-
-      // Update view
-      this.addEventListener("view-change", (e) => {
-        card._li.classList.toggle("aspect-true");
-      });
-
-      // init and append card
-      card.init( cardObj, this.panelContainer, annotationPanelDiv);
-      this._ul.appendChild(card);
-    }
-
-    return this._ul;
-  }
-  */
-
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);
