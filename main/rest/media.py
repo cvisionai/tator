@@ -427,6 +427,8 @@ class MediaListAPI(BaseListView):
             Only attributes are eligible for bulk patch operations.
         """
         patch_archived = params.pop("archived", None)
+        if patch_archived is None and params.get("attributes") is None:
+            raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
