@@ -3,9 +3,12 @@ from rest_framework.renderers import BaseRenderer
 import csv
 import io
 import ujson
+import logging
 
 from collections import OrderedDict
 from pprint import pprint
+
+logger = logging.getLogger(__name__)
 
 class CsvRenderer(BaseRenderer):
     """ renders an object (list of objects) to a CSV file """
@@ -19,16 +22,17 @@ class CsvRenderer(BaseRenderer):
         return_value="No Records found."
         try:
             if len(listObj) > 0:
-                field_names=listObj[0].keys()
+                field_names = set()
+                for entry in listObj:
+                    field_names.update(list(entry.keys()))
                 for entry in listObj:
                     row_object={}
                     for field in field_names:
-                        if type(entry[field]) in [OrderedDict, dict]:
-                            row_object.update(entry[field])
+                        if type(entry.get(field)) in [OrderedDict, dict]:
+                            row_object.update(entry.get(field))
                         else:
-                            row_object[field] = entry[field]
+                            row_object[field] = entry.get(field)
                     temp_list.append(row_object)
-                field_names=temp_list[0].keys()
                 writer=csv.DictWriter(temp_file,
                                       fieldnames=field_names,
                                       extrasaction='ignore')
