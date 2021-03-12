@@ -66,14 +66,6 @@ class AnalyticsAnnotations extends TatorPage {
     // @TODO what is standard use?
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg() );
-
-    // Init vars for pagination state
-    this._paginationState = {};
-    this._paginationState._pageSize = 10;
-    this._paginationState._start = 1;
-    this._paginationState._stop = 10;
-    this._paginationState._page = 0;
-
   }
 
   _init() {
@@ -86,16 +78,25 @@ class AnalyticsAnnotations extends TatorPage {
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
 
+      // Init vars for pagination state
+      this._paginationState = {
+        pageSize: this._filterResults._paginator.getPageSize(),
+        start: 0,
+        stop: this._filterResults._paginator.getPageSize() - 1,
+        init: true
+      };
+
       // Filter interface
       this._filterDataView = new FilterData(this._modelData);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
 
       // Card Data class collects raw model and parses into view-model format
-      this.cardData = new CardData({
-        projectId : this.projectId,
-        modelData : this._modelData,
-        localizationTypes : this.localizationTypes
+      this.cardData = document.createElement("annotation-card-data");
+      this.cardData.init(this._modelData);
+
+      this.cardData.addEventListener("setCardImage", (evt) => {
+        this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
       });
 
       // Pass panel and localization types to gallery
@@ -108,7 +109,7 @@ class AnalyticsAnnotations extends TatorPage {
       this._getQueryParams();
 
       // Init Card Gallery and Right Panel
-      this._cardGallery({panelContainer : this.panelContainer});
+      this._cardGallery(this._filterParams, this._paginationState);
 
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
@@ -141,47 +142,46 @@ class AnalyticsAnnotations extends TatorPage {
     const urlParams = new URLSearchParams(queryString);
 
     // Update pagination state from query params
-    if(urlParams.get("pageSize")) this._paginationState._pageSize = urlParams.get("pg_size");
-    if(urlParams.get("start")) this._paginationState._start = urlParams.get("start");
-    if(urlParams.get("stop")) this._paginationState._stop = urlParams.get("stop");
-    if(urlParams.get("page")) this._paginationState._page = urlParams.get("page");
+    if(urlParams.get("pageSize")) this._paginationState.pageSize = urlParams.get("pg_size");
+    if(urlParams.get("start")) this._paginationState.start = urlParams.get("start");
+    if(urlParams.get("stop")) this._paginationState.stop = urlParams.get("stop");
   }
 
-  _cardGallery({
-    filterParams = this._filterParams,
-    paginationState = this._paginationState
-  } = {}){
+  _cardGallery(filterParams, paginationState) {
     this.loading.showSpinner();
     this.setAttribute("has-open-modal", "");
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList( { filterParams, paginationState } )
+    this.cardData.makeCardList(filterParams, paginationState)
     .then((cardList) => {
+      // CardList inits Gallery component with cards & pagination on page
+      this._filterResults.show(cardList);
       this.loading.hideSpinner();
       this.removeAttribute("has-open-modal");
-      // CardList inits Gallery component with cards & pagination on page
-      this._filterResults.show( { cardList } );
-
     });
   }
 
   // Handler for filter submission
+  // Reset the pagination back to page 0
   _updateFilterResults(evt){
     this._filterParams = evt.detail.conditions;
-    this._cardGallery({});
+    this._paginationState.init = true;
+    this._paginationState.pageSize = this._filterResults._paginator.getPageSize();
+    this._paginationState.start = 0;
+    this._paginationState.stop = this._paginationState.pageSize - 1;
+    this._cardGallery(this._filterParams, this._paginationState);
   }
 
   // Handler for pagination click
-  _paginateFilterResults(e){
-    e.preventDefault();
-    console.log(e.detail);
-    this._paginationState._start = e.detail.start;
-    this._paginationState._stop = e.detail.stop;
-    this._cardGallery({});
+  _paginateFilterResults(evt){
+    this._paginationState.start = evt.detail.start;
+    this._paginationState.stop = evt.detail.stop;
+    this._paginationState.init = false;
+    this._cardGallery(this._filterParams, this._paginationState);
   }
 
   setScrollHeight(){
-    console.log(window.innerHeight);
+    console.log("window.innerHeight: " + window.innerHeight);
     this.main.style.height = window.innerHeight;
 
     window.addEventListener("resize", () => {

@@ -14,6 +14,10 @@ class TatorData {
     this._localizaitonTypeNames = [];
   }
 
+  getProjectId() {
+    return this._project;
+  }
+
   getStoredLocalizationTypes() {
     return this._localizationTypes;
   }
@@ -277,7 +281,7 @@ class TatorData {
 
     if (mediaIds != undefined && mediaIds.length > 0) {
       paramString += "&media_id=";
-      for (let idx = 0; idx <= mediaIds.length; idx) {
+      for (let idx = 0; idx < mediaIds.length; idx++) {
         paramString += mediaIds[idx];
         if (idx < mediaIds.length - 1) {
           paramString += ","

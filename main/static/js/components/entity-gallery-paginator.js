@@ -2,10 +2,8 @@ class EntityGalleryPaginator extends TatorElement {
   constructor() {
     super();
 
-    this._pageSize = 10;
-
     const div = document.createElement("div");
-    div.setAttribute("class", "entity-gallery__paginator flex-justify-center pagination d-flex flex-items-center py-5 text-gray");
+    div.setAttribute("class", "flex-justify-center pagination d-flex flex-items-center py-5 text-gray f3");
     this._shadow.appendChild(div);
 
     this._prev = document.createElement("a");
@@ -72,17 +70,14 @@ class EntityGalleryPaginator extends TatorElement {
 
     const pageSize = document.createElement("select");
     pageSize.setAttribute("class", "form-select select-sm2 has-border");
-    let selected = pageSize;
-    for (const pageOption of [10, 25, 50, 100]) {
+    for (const pageOption of [10, 25, 50]) { // #TODO Fix
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
-      if( this._pageSize == pageOption) selected = option;
       option.textContent = pageOption;
       pageSize.appendChild(option);
     }
     pageSize.selectedIndex = 2;
     div.appendChild(pageSize);
-    selected.selected = true;
 
     const goToPageText = document.createElement("span");
     goToPageText.setAttribute("class", "pagination__ellipsis");
@@ -111,7 +106,8 @@ class EntityGalleryPaginator extends TatorElement {
     pageSize.addEventListener("change", evt => {
       if (evt.target.value != "Page Size") {
         this._pageSize = Number(evt.target.value);
-        this.init(this._numFiles);
+        this._paginationState.start = 0;
+        this.init(this._numFiles, this._paginationState);
         this._emit();
       }
     });
@@ -128,24 +124,32 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-
+    this._pageSize = 50;
   }
 
-  init({numFiles, paginationState}) {
+  getPageSize() {
+    return this._pageSize;
+  }
+
+  init(numFiles, paginationState) {
     // Set pagination properties from state
-    this._pageSize = paginationState._pageSize
+    // #TODO When the URL pagination is implemented, set page size based on start-stop
+    //this._pageSize = paginationState._pageSize
 
     // Use number of files to update the rest
+    this._paginationState = paginationState;
     this._numFiles = numFiles;
     this._numPages = Math.ceil(this._numFiles / this._pageSize);
     this._last.textContent = this._numPages;
 
-    // Set page
-    this._setPage(paginationState._page);
+    // Set page based on given start/stop
+    const pageNumber = this._pageSize * paginationState.start;
+    this._setPage(pageNumber);
   }
 
   _setPage(page) {
     this._page = page;
+    console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {
@@ -169,10 +173,7 @@ class EntityGalleryPaginator extends TatorElement {
       this._next.style.cursor = "pointer";
       this._next.classList.remove("is-disabled");
     }
-    console.log(this._pages);
-    console.log(this._numPages);
     const displayPages = Math.min(this._pages.length, this._numPages);
-
     for (let idx = 0; idx < this._pages.length; idx++) {
       if (idx < displayPages) {
         this._pages[idx].style.display = "block";
@@ -184,7 +185,6 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < displayPages; idx++) {
         const val = idx + 1;
         this._pages[idx].textContent = val;
-        console.log(`1 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -197,7 +197,6 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = idx + 1;
         this._pages[idx].textContent = val;
-        console.log(`2 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -210,7 +209,6 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = this._numPages - this._pages.length + idx + 1
         this._pages[idx].textContent = val;
-        console.log(`3 val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {
@@ -224,7 +222,6 @@ class EntityGalleryPaginator extends TatorElement {
       for (let idx = 0; idx < this._pages.length; idx++) {
         const val = page - offset + idx + 1;
         this._pages[idx].textContent = val;
-        console.log(`4 LAST val == page + 1 ${val == page + 1} and ${val} == ${page} + 1`);
         if (val == page + 1) {
           this._pages[idx].setAttribute("class", "is-active");
         } else {

@@ -5,7 +5,7 @@ class AnnotationsCard extends EntityCard {
     // - @this._name Title
     // - Card is list element; Parent can be UL element, or see: EntityCardGallery
     // - Card links out to one destination
-    // Optional: 
+    // Optional:
     // - @this._ext Detail text
     // - @this._pos_text Pagination position text
     // - @this._more Menu
@@ -19,7 +19,7 @@ class AnnotationsCard extends EntityCard {
   init(obj, panelContainer, annotationPanelDiv){
     // ID is title
     //this.titleDiv.innerHTML = `ID ${obj.id}`;
-    this._id_text.innerHTML = `ID ${obj.id}`;
+    this._id_text.innerHTML = `ID: ${obj.id}`;
 
     // Give card access to panel
     this.panelContainer = panelContainer;
@@ -29,8 +29,8 @@ class AnnotationsCard extends EntityCard {
 
     // Additional information about localization
     // Name and type like "ABOX (Box)"
-    this.typeInfo = document.createElement('div');
-    this.typeInfo.innerHTML = `${obj.metaDetails.name} (${obj.metaDetails.type})`;
+    //this.typeInfo = document.createElement('div');
+    //this.typeInfo.innerHTML = `${obj.localizationType.name} (${obj.localizationType.type})`;
     //this.titleDiv.appendChild(this.typeInfo);
 
 
@@ -39,38 +39,50 @@ class AnnotationsCard extends EntityCard {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
       this.reader.addEventListener("load", this._setImgSrc.bind(this));
-    } else {
-      this._img.hidden = true;
+    }
+    else {
+      this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
     }
 
     // Add position text related to pagination
-    let posText = document.createTextNode(`${obj.posText}`)
-    this._pos_text.appendChild(posText);
+    this.setAttribute("pos-text", obj.posText);
 
     // Link to the media @TODO
     // this.mediaLink = document.createElement('div');
     // this.mediaLink.innerHTML = `Media ID ${obj.mediaLink}`;
     // this.descDiv.appendChild(this.mediaLink);
 
-    // Attributes for as many exist
+    // Display the first 0 order attribute value
+    this.setAttribute("name", "");
+    for (let attrType of obj.localizationType.attribute_types) {
+      if (attrType.order == 0) {
+        if (obj.attributes[attrType.name] != undefined) {
+          this._name.textContent = obj.attributes[attrType.name];
+        }
+        break;
+      }
+    }
+
+    /*
     this.attributesDiv = document.createElement('div');
     let i = 0;
     for(const [attr, value] of Object.entries(obj.attributes)){
       let attrDiv = document.createElement("div");
-      attrDiv.setAttribute("class", `card-attribute ${encodeURI(obj.metaDetails.name)}_${encodeURI(attr)}`)
+      attrDiv.setAttribute("class", `card-attribute ${encodeURI(obj.localizationType.name)}_${encodeURI(attr)}`)
       if(i != 0) attrDiv.classList.add("hidden")
       i++;
       let attrLabel = document.createElement("span");
       attrLabel.appendChild( document.createTextNode(`${attr.toUpperCase()} `) );
       attrLabel.setAttribute("class", "text-bold f3");
       attrDiv.appendChild(attrLabel);
-      
+
       let attribute = document.createTextNode(value);
       attrDiv.appendChild(attribute);
 
       this.attributesDiv.appendChild(attrDiv);
     }
     this.descDiv.appendChild(this.attributesDiv);
+    */
 
     // // Create Date
     // this.created = document.createElement('div');
@@ -95,8 +107,18 @@ class AnnotationsCard extends EntityCard {
     // Add more ... > labels, swap views?
   }
 
+  /**
+   * @param {image} image
+   */
+  setImage(image) {
+    this.reader = new FileReader();
+    this.reader.readAsDataURL(image); // converts the blob to base64
+    this.reader.addEventListener("load", this._setImgSrc.bind(this));
+  }
+
   _setImgSrc (e) {
-    return this._img.setAttribute("src", this.reader.result );
+    this.setAttribute("thumb", this.reader.result);
+    //return this._img.setAttribute("src", this.reader.result );
   }
 
   _mouseEnterHandler(e){
@@ -110,7 +132,7 @@ class AnnotationsCard extends EntityCard {
       // Wait for mouse out to stop preview
       const once = { once : true };
       this.addEventListener("mouseout", this._removePreview.bind(this), once );
-    } 
+    }
   }
 
   _showPreview() {
@@ -142,21 +164,21 @@ class AnnotationsCard extends EntityCard {
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
     // if(isInPreview) {
     //   const once = { once : true };
-    //   this.removeEventListener("mouseout", this._removePreview.bind(this), once );  
+    //   this.removeEventListener("mouseout", this._removePreview.bind(this), once );
     // }
-   
+
     if(this._li.classList.contains("is-selected")) {
           // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
       // If we already have this open, toggle shut
       this._deselectedCard();
-       
+
     } else {
       // Hide open panels
       this._hideOpenPanel();
 
       // Show this content
       this._selectedCard();
-    }   
+    }
   }
 
   _hideOpenPanel(){
@@ -204,6 +226,5 @@ class AnnotationsCard extends EntityCard {
   }
 
 }
-  
+
 customElements.define("annotations-card", AnnotationsCard);
-  

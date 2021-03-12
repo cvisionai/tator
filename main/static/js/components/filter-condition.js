@@ -42,7 +42,7 @@ class FilterCondition extends TatorElement {
     this._valueBool.style.marginLeft = "15px";
     this._valueBool.setAttribute("name", "Value");
     this._valueBool.permission = "View Only";
-    this._valueBool.choices = [{"value": "True"}, {"value": "False"}];
+    this._valueBool.choices = [{"value": "true"}, {"value": "false"}];
     this._valueBool.style.display = "none";
     this._div.appendChild(this._valueBool);
 
