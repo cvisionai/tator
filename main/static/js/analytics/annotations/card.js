@@ -13,7 +13,8 @@ class AnnotationsCard extends EntityCard {
 
     // Add annotation class to list item
     this._li.classList.add("analysis__annotation");
-
+    this.addEventListener("click", this.togglePanel.bind(this) );
+    this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
   }
 
   init(obj, panelContainer, annotationPanelDiv){
@@ -24,8 +25,6 @@ class AnnotationsCard extends EntityCard {
     // Give card access to panel
     this.panelContainer = panelContainer;
     this.annotationPanelDiv = annotationPanelDiv;
-    this.addEventListener("click", this.togglePanel.bind(this) );
-    this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
 
     // Additional information about localization
     // Name and type like "ABOX (Box)"
@@ -54,7 +53,7 @@ class AnnotationsCard extends EntityCard {
 
     // Display the first 0 order attribute value
     this.setAttribute("name", "");
-    for (let attrType of obj.localizationType.attribute_types) {
+    for (let attrType of obj.entityType.attribute_types) {
       if (attrType.order == 0) {
         if (obj.attributes[attrType.name] != undefined) {
           this._name.textContent = obj.attributes[attrType.name];
@@ -142,7 +141,7 @@ class AnnotationsCard extends EntityCard {
     console.log("temp hide?"+this.tmpHidden);
     if(this.tmpHidden != null) {
       this.tmpHidden.classList.add("hidden");
-      console.log("temp hiding :"+this.tmpHidden.dataset.locId);
+      console.log("temp hiding :"+this.tmpHidden.dataset.id);
     }
 
     // Show this panel
@@ -212,6 +211,15 @@ class AnnotationsCard extends EntityCard {
     this.annotationPanelDiv.classList.remove("hidden");
     this.annotationPanelDiv.classList.remove("preview");
     //this.showPanelContainer();
+
+    // Loop through all the panels, they should be hidden and have no preview except for this one.
+    for (let idx = 0; idx < this.panelContainer.children.length; idx++) {
+      var childDiv = this.panelContainer.children[idx];
+      if (!childDiv.classList.contains("is-selected")) {
+        childDiv.classList.add("hidden");
+        childDiv.classList.remove("preview");
+      }
+    }
 
     //remove preview listener
     this.removeEventListener("mouseenter", this._mouseEnterHandler.bind(this) );

@@ -82,6 +82,11 @@ class AnnotationsGallery extends EntityCardGallery {
       this._paginator.init(cardList.total, cardList.paginationState);
     }
 
+    // Hide all cards' panels and de-select
+    for (let idx = 0; idx < this._cardElements.length; idx++) {
+      this._cardElements[idx].card._deselectedCard();
+    }
+
     // Append the cardList
     this.makeCards(cardList.cards)
   }
@@ -108,6 +113,7 @@ class AnnotationsGallery extends EntityCardGallery {
   makeCards(cardInfo) {
 
     this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
+    var numberOfDisplayedCards = 0;
 
     // Loop through all of the card entries and create a new card if needed. Otherwise
     // apply the card entry to an existing card.
@@ -166,11 +172,12 @@ class AnnotationsGallery extends EntityCardGallery {
       }
       this._currentCardIndexes[cardObj.id] = index;
 
-      // Initialize the card
+      // Initialize the card and associated panel
       this._cardElements[index].annotationPanel.init(cardObj, this.panelContainer);
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
       card.init(cardObj, this.panelContainer, this._cardElements[index].annotationPanelDiv);
       card.style.display = "block";
+      numberOfDisplayedCards += 1;
 
       // Add new card to the gallery div
       if (newCard) {
@@ -179,9 +186,9 @@ class AnnotationsGallery extends EntityCardGallery {
     }
 
     // Hide unused cards
-    if (this._cardElements.length > this._cardElements.length) {
+    if (numberOfDisplayedCards < this._cardElements.length) {
       const len = this._cardElements.length;
-      for (let idx = len - 1; idx >= this._cardElements.length; idx--) {
+      for (let idx = len - 1; idx >= numberOfDisplayedCards; idx--) {
         this._cardElements[idx].card.style.display = "none";
       }
     }
