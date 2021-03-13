@@ -9,19 +9,21 @@ class FilterConditionData {
    * @param {string} field
    * @param {string} modifier
    * @param {string} value
+   * @param {string} categoryGroup
    */
-  constructor (category, field, modifier, value) {
+  constructor (category, field, modifier, value, categoryGroup) {
     this.category = category;
     this.field = field;
     this.modifier = modifier;
     this.value = value;
+    this.categoryGroup = categoryGroup;
   }
 
   /**
    * @returns {string} String version of this object
    */
   getString() {
-    return this.category + ":" + this.field + " " + this.modifier + " " + this.value;
+    return this.categoryGroup + ":" + this.field + " " + this.modifier + " " + this.value;
   }
 }
 

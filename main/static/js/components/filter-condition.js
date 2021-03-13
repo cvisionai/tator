@@ -64,68 +64,75 @@ class FilterCondition extends TatorElement {
     });
 
     // Adjust the field name based on the selected field
-    this._category.addEventListener("change", () => {
-
-      // Remove existing choices
-      this._fieldName.clear();
-      this._modifier.clear();
-      this._value.setValue("");
-
-      // Create the menu options for the field name
-      var fieldChoices = [];
-
-      for (const attributeType of this._data)
-      {
-        if (attributeType.name == this._category.getValue())
-        {
-          for (const attribute of attributeType.attribute_types)
-          {
-            fieldChoices.push({"value": attribute.name});
-          }
-          this._currentType = attributeType;
-          break;
-        }
-      }
-
-      this._fieldName.choices = fieldChoices;
-      this._fieldName.permission = "Can Edit";
-      this._fieldName.selectedIndex = -1;
-      this._modifier.permission = "View Only";
-      this._value.permission = "View Only";
-      this._valueBool.permission = "View Only";
-    });
+    this._category.addEventListener("change", this._userSelectedCategory.bind(this));
 
     // Adjust the modifier based on the selected field
-    this._fieldName.addEventListener("change", () => {
+    this._fieldName.addEventListener("change", this._userSelectedField.bind(this));
+  }
 
-      // Remove existing choices for the modifier and clear the value
-      this._modifier.clear();
-      this._value.setValue("");
+  _userSelectedCategory() {
+    // Remove existing choices
+    this._fieldName.clear();
+    this._modifier.clear();
+    this._value.setValue("");
 
-      let selectedFieldName = this._fieldName.getValue();
-      var dtype = "string";
-      this._value.style.display = "block";
-      this._valueBool.style.display = "none";
-      for (const attribute of this._currentType.attribute_types)
+    // Create the menu options for the field name
+    var fieldChoices = [];
+    var uniqueFieldChoices = [];
+
+    for (const attributeType of this._data)
+    {
+      if (attributeType.typeGroupName == this._category.getValue())
       {
-        if (attribute.name == selectedFieldName)
+        for (const attribute of attributeType.attribute_types)
         {
-          dtype = attribute.dtype;
-          break;
+          if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
+            fieldChoices.push({"value": attribute.name});
+            uniqueFieldChoices.push(attribute.name);
+          }
         }
+        this._currentType = attributeType;
+        break;
       }
+    }
 
-      if (dtype == "bool") {
-        this._value.style.display = "none";
-        this._valueBool.style.display = "block";
+    this._fieldName.choices = fieldChoices;
+    this._fieldName.permission = "Can Edit";
+    this._fieldName.selectedIndex = -1;
+    this._modifier.permission = "View Only";
+    this._value.permission = "View Only";
+    this._valueBool.permission = "View Only";
+    this._userSelectedField();
+  }
+
+  _userSelectedField() {
+    // Remove existing choices for the modifier and clear the value
+    this._modifier.clear();
+    this._value.setValue("");
+
+    let selectedFieldName = this._fieldName.getValue();
+    var dtype = "string";
+    this._value.style.display = "block";
+    this._valueBool.style.display = "none";
+    for (const attribute of this._currentType.attribute_types)
+    {
+      if (attribute.name == selectedFieldName)
+      {
+        dtype = attribute.dtype;
+        break;
       }
+    }
 
-      this._modifier.choices = FilterUtilities.getModifierChoices(dtype);
-      this._modifier.permission = "Can Edit";
-      this._value.permission = "Can Edit";
-      this._valueBool.permission = "Can Edit";
-      this._modifier.selectedIndex = -1;
-    });
+    if (dtype == "bool") {
+      this._value.style.display = "none";
+      this._valueBool.style.display = "block";
+    }
+
+    this._modifier.choices = FilterUtilities.getModifierChoices(dtype);
+    this._modifier.permission = "Can Edit";
+    this._value.permission = "Can Edit";
+    this._valueBool.permission = "Can Edit";
+    this._modifier.selectedIndex = -1;
   }
 
   /**
@@ -145,13 +152,20 @@ class FilterCondition extends TatorElement {
     this._category.clear();
 
     var choices = [];
+    var uniqueCategories = [];
+    this._categoryMap = {};
     for (const attributeType of this._data)
     {
-      choices.push({"value": attributeType.name});
+      if (uniqueCategories.indexOf(attributeType.typeGroupName) < 0) {
+        choices.push({"value": attributeType.typeGroupName});
+        uniqueCategories.push(attributeType.typeGroupName);
+      }
+      this._categoryMap[attributeType.name] = attributeType.typeGroupName;
     }
     this._category.choices = choices;
     this._category.selectedIndex = -1;
     this._currentType = [];
+    this._userSelectedCategory();
   }
 
   /**
@@ -175,7 +189,17 @@ class FilterCondition extends TatorElement {
 
       if (category && field && modifier && value)
       {
-        condition = new FilterConditionData(category, field, modifier, value);
+        // #TODO We will need to revisit this. For now, just pick a type that matches
+        //       the group. It should still work because of how tator-data.js works.
+        var entityTypeName;
+        for (const attributeTypeName in this._categoryMap) {
+          if (this._categoryMap[attributeTypeName] == category) {
+            entityTypeName = attributeTypeName;
+            break;
+          }
+        }
+
+        condition = new FilterConditionData(entityTypeName, field, modifier, value, category);
       }
 
       return condition;

@@ -32,6 +32,10 @@ class AnnotationCardData extends HTMLElement {
 
             let counter = localizations.length;
             console.log("Processing " + counter + " localizations in gallery.");
+
+            // Handle the case where we get nothing back
+            haveCardShells();
+
             for(let [i, l] of localizations.entries()){
                 let id = l.id;
 
