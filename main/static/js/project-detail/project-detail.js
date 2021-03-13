@@ -114,8 +114,19 @@ class ProjectDetail extends TatorPage {
     buttons.setAttribute("class", "d-flex");
     header.appendChild(buttons);
 
+    // #TODO Move this to its own component when we have an icon
+    this._analyticsButton = document.createElement("a");
+    this._analyticsButton.setAttribute("class", "file__link d-flex flex-items-center btn btn-clear btn-outline");
+    this._analyticsButton.setAttribute("href", "#");
+    buttons.appendChild(this._analyticsButton);
+
+    const analyticsLabel = document.createElement("span");
+    analyticsLabel.setAttribute("class", "d-flex flex-items-center flex-justify-center height-full");
+    analyticsLabel.textContent = "Analytics";
+    this._analyticsButton.appendChild(analyticsLabel);
+
     this._algorithmButton = document.createElement("algorithm-button");
-    buttons.appendChild(this._algorithmButton);
+    //buttons.appendChild(this._algorithmButton);
 
     this._activityButton = document.createElement("activity-button");
     buttons.appendChild(this._activityButton);
@@ -606,7 +617,7 @@ class ProjectDetail extends TatorPage {
         }
         // Put "Last visited" bookmark on top
         const first = "Last visited";
-        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;}); 
+        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;});
         for (const bookmark of bookmarks) {
           const card = document.createElement("section-card");
           card.init(bookmark, "bookmark");
@@ -641,6 +652,7 @@ class ProjectDetail extends TatorPage {
       case "username":
         break;
       case "project-id":
+        this._analyticsButton.setAttribute("href",`/${newValue}/analytics/annotations`);
         this._algorithmButton.setAttribute("project-id", newValue);
         this._init();
         break;
