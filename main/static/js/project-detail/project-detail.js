@@ -116,7 +116,7 @@ class ProjectDetail extends TatorPage {
 
     // #TODO Move this to its own component when we have an icon
     this._analyticsButton = document.createElement("a");
-    this._analyticsButton.setAttribute("class", "file__link d-flex flex-items-center btn btn-clear btn-outline");
+    this._analyticsButton.setAttribute("class", "file__link d-flex flex-items-center btn btn-clear btn-outline main__header px-2 position-relative");
     this._analyticsButton.setAttribute("href", "#");
     buttons.appendChild(this._analyticsButton);
 
@@ -126,7 +126,7 @@ class ProjectDetail extends TatorPage {
     this._analyticsButton.appendChild(analyticsLabel);
 
     this._algorithmButton = document.createElement("algorithm-button");
-    //buttons.appendChild(this._algorithmButton);
+    buttons.appendChild(this._algorithmButton);
 
     this._activityButton = document.createElement("activity-button");
     buttons.appendChild(this._activityButton);
