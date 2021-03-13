@@ -114,19 +114,9 @@ class ProjectDetail extends TatorPage {
     buttons.setAttribute("class", "d-flex");
     header.appendChild(buttons);
 
-    // #TODO Move this to its own component when we have an icon
-    this._analyticsButton = document.createElement("a");
-    this._analyticsButton.setAttribute("class", "file__link d-flex flex-items-center btn btn-clear btn-outline main__header px-2 position-relative");
-    this._analyticsButton.setAttribute("href", "#");
+    this._analyticsButton = document.createElement("analytics-button");
+    this._analyticsButton.style.marginRight = "10px";
     buttons.appendChild(this._analyticsButton);
-
-    const analyticsLabel = document.createElement("span");
-    analyticsLabel.setAttribute("class", "d-flex flex-items-center flex-justify-center height-full");
-    analyticsLabel.textContent = "Analytics";
-    this._analyticsButton.appendChild(analyticsLabel);
-
-    this._algorithmButton = document.createElement("algorithm-button");
-    buttons.appendChild(this._algorithmButton);
 
     this._activityButton = document.createElement("activity-button");
     buttons.appendChild(this._activityButton);
@@ -417,8 +407,6 @@ class ProjectDetail extends TatorPage {
       });
     };
 
-    this._algorithmButton.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-
     cancelJob.addEventListener("confirmGroupCancel", () => {
       cancelJob.removeAttribute("is-open");
     });
@@ -563,9 +551,6 @@ class ProjectDetail extends TatorPage {
         this._algorithms = parsedAlgos;
         this._mediaSection.project = project;
         this._mediaSection.algorithms = this._algorithms;
-        if (!hasPermission(project.permission, "Can Execute")) {
-          this._algorithmButton.style.display = "none";
-        }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
         this._description.setAttribute("text", project.summary);
@@ -652,8 +637,7 @@ class ProjectDetail extends TatorPage {
       case "username":
         break;
       case "project-id":
-        this._analyticsButton.setAttribute("href",`/${newValue}/analytics/annotations`);
-        this._algorithmButton.setAttribute("project-id", newValue);
+        this._analyticsButton.setAttribute("project-id", newValue);
         this._init();
         break;
       case "token":

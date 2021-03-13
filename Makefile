@@ -256,6 +256,7 @@ FILES = \
     project-detail/algorithm-menu.js \
     project-detail/algorithm-button.js \
     project-detail/confirm-run-algorithm.js \
+    project-detail/analytics-button.js \
     project-detail/activity-button.js \
     project-detail/project-text.js \
     project-detail/project-search.js \
