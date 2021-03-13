@@ -18,8 +18,8 @@ class EntityAttrPanel extends TatorElement {
       // this._main.appendChild(actions);
 
       // Content id
-      this._heading = document.createElement("h4");
-      this._heading.setAttribute("class", "h4 py-3")
+      this._heading = document.createElement("h2");
+      this._heading.setAttribute("class", "h2 py-3")
       this._main.appendChild(this._heading);
 
       // Panel Img Container
@@ -68,17 +68,20 @@ class EntityAttrPanel extends TatorElement {
       // posText
 
       this._container = panelContainer;
-      this._heading.appendChild( document.createTextNode( `ID ${annotationObject.id}` ) )
+      //this._heading.appendChild( document.createTextNode( `ID ${annotationObject.id}` ) )
+
+      this._heading.textContent = `Annotation Information (ID: ${annotationObject.id})`;
 
       if(typeof annotationObject.graphic !== "undefined" && annotationObject.graphic !== null) {
         this.reader = new FileReader();
         this.reader.readAsDataURL(annotationObject.graphic); // converts the blob to base64
         this.reader.addEventListener("load", this._setImgSrc.bind(this));
       } else {
-        this._img.hidden = true;
+        this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
+        this._img.hidden = false;
       }
 
-      this.entityData._init( annotationObject );
+      this.entityData._init(annotationObject);
 
     }
 
