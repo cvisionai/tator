@@ -8,7 +8,7 @@ class EntityCardResize extends TatorElement {
 
     // Slide Range container for resize range
     this._sliderContainer = document.createElement("div");
-    this._sliderContainer.setAttribute("class", "entity-resize px-6");
+    this._sliderContainer.setAttribute("class", "entity-resize px-6 float-right");
     this._shadow.appendChild(this._sliderContainer);
 
     // Container Label for spans - / +

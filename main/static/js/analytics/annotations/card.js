@@ -215,7 +215,7 @@ class AnnotationsCard extends EntityCard {
     // Loop through all the panels, they should be hidden and have no preview except for this one.
     for (let idx = 0; idx < this.panelContainer.children.length; idx++) {
       var childDiv = this.panelContainer.children[idx];
-      if (!childDiv.classList.contains("is-selected")) {
+      if (!childDiv.classList.contains("is-selected") && childDiv.hasAttribute("data-loc-id")) {
         childDiv.classList.add("hidden");
         childDiv.classList.remove("preview");
       }

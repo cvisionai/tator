@@ -11,21 +11,37 @@ class AnnotationsGallery extends EntityCardGallery {
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
 
     // Heading
+    this._h3.hidden = true;
     //this._h3Text = document.createTextNode("All Annotations")
     //this._h3.appendChild( this._h3Text );
 
+    // Count text
+    this._p.classList.add("col-3");
+    this._p.classList.add("px-2");
+
     // @TODO Tools: Card labels display
-    // this._labelsDropDown = document.createElement('entity-gallery-labels');
-    // this._tools.appendChild( this._labelsDropDown );
+    this.labelContainer = document.createElement("div");
+    this.labelContainer.setAttribute("class", "col-3")
+    this._labelsDropDown = document.createElement('entity-gallery-labels');
+    this.labelContainer.appendChild( this._labelsDropDown );
+    this._tools.appendChild( this.labelContainer );
 
     // Tools: Slider to resize images
+    this.sliderContainer = document.createElement("div");
+    this.sliderContainer.setAttribute("class", "col-3")
     this._resizeCards = document.createElement('entity-card-resize');
     this._resizeCards._initGallery(this._ul, this.colSize);
-    this._tools.appendChild( this._resizeCards );
+    this.sliderContainer.appendChild( this._resizeCards );
+    this._tools.appendChild( this.sliderContainer );
 
     // Tools: Show @aspect ratio
+    this.aspectToolContainer = document.createElement("div");
+    this.aspectToolContainer.setAttribute("class", "col-3")
     this._aspectToggle = document.createElement('entity-gallery-aspect-ratio');
-    this._tools.appendChild( this._aspectToggle );
+    this.aspectToolContainer.appendChild( this._aspectToggle );
+    this._tools.appendChild( this.aspectToolContainer );
+
+    // Init aspect toggle
     this._aspectToggle.init(this);
 
     this.panelContainer = null;
@@ -41,16 +57,18 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    localizationTypes
+    localizationTypes,
+    panelControls
   }){
     this.panelContainer = panelContainer;
+    this.panelControls = panelControls;
 
     // Init gallery with data for filtering
-    // this._labelsDropDown.init({
-    //   gallery : this,
-    //   localizationTypes
-    // });
-    //this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
+    this._labelsDropDown.init({
+      gallery : this,
+      localizationTypes
+    });
+    this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
   }
 
   handleLabelChange(e){
@@ -154,6 +172,14 @@ class AnnotationsGallery extends EntityCardGallery {
             card._li.click();
           }
         }, false);
+
+        // Open panel if a card is clicked
+        card.addEventListener("click", () => {
+          // if the panel is closed and you click, open it...
+          console.log("attempting to call cardClicked");
+          this.panelControls.cardClicked();
+          console.log(this.panelControls);
+        });
 
         // Update view
         this.addEventListener("view-change", () => {
