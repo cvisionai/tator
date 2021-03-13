@@ -59,8 +59,6 @@ class EntityCard extends TatorElement {
       this._more.style.opacity = 0;
       this.titleDiv.appendChild(this._more); 
       this._more.hidden = true; // HIDDEN default
-  
-      
 
       // OPTIONAL pagination + id display
       this._bottom = document.createElement("div");

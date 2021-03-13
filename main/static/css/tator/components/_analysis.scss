@@ -12,7 +12,7 @@ body.analysis-annotations-body {
 
 .analysis--main,
 .entity-panel--div {
-  //overflow-y: scroll;
+  transition: 300ms linear width;
 }
 
 .analysis__panel-group {
