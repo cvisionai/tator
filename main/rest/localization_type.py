@@ -1,5 +1,6 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import Media
 from ..models import MediaType
