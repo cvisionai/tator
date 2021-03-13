@@ -21,6 +21,18 @@ class FilterData {
   {
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
     this.mediaTypes = this._modelData.getStoredMediaTypes();
+
+    this._allTypes = [];
+    for (let idx = 0; idx < this.mediaTypes.length; idx++) {
+      let entityType = this.mediaTypes[idx];
+      entityType.typeGroupName = "Media";
+      this._allTypes.push(entityType);
+    }
+    for (let idx = 0; idx < this.localizationTypes.length; idx++) {
+      let entityType = this.localizationTypes[idx];
+      entityType.typeGroupName = "Annotation";
+      this._allTypes.push(entityType);
+    }
   }
 
   /**
@@ -34,6 +46,6 @@ class FilterData {
    */
   getAllTypes()
   {
-    return [...this.localizationTypes, ...this.mediaTypes];
+    return this._allTypes;
   }
 }

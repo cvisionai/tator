@@ -224,8 +224,8 @@ class TatorData {
     }
 
     // Lucene search string requires spaces to have the backlash preceding it
-    var field = filter.field.replace(" ","\ ");
-    var value = filter.value.replace(" ","\ ");
+    var field = filter.field.replace(" ","\\ ");
+    var value = filter.value.replace(" ","\\ ");
 
     // Finally generate the final parameter string compliant with Tator's REST call
     var paramStr = `${field}:${modifier}${value}${modifierEnd}`;
@@ -252,10 +252,12 @@ class TatorData {
    *   Used in conjunction with dataStart and pagination of data.
    *   If null, pagination is ignored.
    *
+   * @param #TODO mediaIds
+   *
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, dataStart, dataStop) {
+  async _getData(outputType, filterData, dataStart, dataStop, mediaIds) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -266,7 +268,6 @@ class TatorData {
     var paramSearch = "";
     for (const name in filterData) {
       entityType = filterData[name].entityType;
-      mediaIds = filterData[name].mediaIds;
       for (let idx = 0; idx < filterData[name].filters.length; idx++) {
         paramSearch += encodeURIComponent(this._convertFilterForTator(filterData[name].filters[idx]));
         if (idx < filterData[name].filters.length - 1) {
@@ -397,17 +398,21 @@ class TatorData {
       if (mediaFilters.length > 0) {
         mediaIds = await this.getFilteredMedia("ids", mediaFilters);
         console.log("matching mediaIds: " + mediaIds);
+
+        if (mediaIds.length == 0) {
+          // Found no matching media, so bail
+          return [];
+        }
       }
 
       localizationFilters.forEach(filter => {
-        locGroups[filter.category].mediaIds = mediaIds;
         if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
           locGroups[filter.category].filters.push(filter);
         }
       });
     }
 
-    var outData = await this._getData(outputType, locGroups, dataStart, dataStop);
+    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds);
     return outData;
   }
 

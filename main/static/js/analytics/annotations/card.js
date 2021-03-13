@@ -125,7 +125,7 @@ class AnnotationsCard extends EntityCard {
     const isHidden = this.annotationPanelDiv.classList.contains("hidden");
     const isSelected = this.annotationPanelDiv.classList.contains("is-selected")
     if(isHidden && !isSelected) {
-      console.log(`Previewing: ${this.annotationPanelDiv.dataset.locId}`);
+      //console.log(`Previewing: ${this.annotationPanelDiv.dataset.locId}`);
       // If we do not already have this open or selected... show a preview
       this._showPreview();
 
@@ -138,10 +138,10 @@ class AnnotationsCard extends EntityCard {
   _showPreview() {
     // Tmp Hide open panels (if any)
     this.tmpHidden = this.panelContainer.querySelector(".is-selected");
-    console.log("temp hide?"+this.tmpHidden);
+    //console.log("temp hide?"+this.tmpHidden);
     if(this.tmpHidden != null) {
       this.tmpHidden.classList.add("hidden");
-      console.log("temp hiding :"+this.tmpHidden.dataset.id);
+      //console.log("temp hiding :"+this.tmpHidden.dataset.id);
     }
 
     // Show this panel
@@ -159,7 +159,7 @@ class AnnotationsCard extends EntityCard {
   }
 
   togglePanel(){
-    console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
+    //console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
     // If they click while in preview, don't do this
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
     // if(isInPreview) {
@@ -187,7 +187,7 @@ class AnnotationsCard extends EntityCard {
 
     if(openPanel != null){
       let unselectedEvent = new CustomEvent("unselected");
-      console.log("Dispatching event to "+openPanel.dataset.locId);
+      //console.log("Dispatching event to "+openPanel.dataset.locId);
       openPanel.dispatchEvent( unselectedEvent );
     }
   }
