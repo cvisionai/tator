@@ -96,7 +96,7 @@ class AnalyticsAnnotations extends TatorPage {
       this._paginationState = {
         pageSize: this._filterResults._paginator.getPageSize(),
         start: 0,
-        stop: this._filterResults._paginator.getPageSize() - 1,
+        stop: this._filterResults._paginator.getPageSize(),
         init: true
       };
 
@@ -184,7 +184,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._paginationState.init = true;
     this._paginationState.pageSize = this._filterResults._paginator.getPageSize();
     this._paginationState.start = 0;
-    this._paginationState.stop = this._paginationState.pageSize - 1;
+    this._paginationState.stop = this._paginationState.pageSize;
     this._cardGallery(this._filterParams, this._paginationState);
   }
 

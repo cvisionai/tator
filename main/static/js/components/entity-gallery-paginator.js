@@ -124,7 +124,7 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    this._pageSize = 50;
+    this._pageSize = 10;
   }
 
   getPageSize() {
