@@ -16,9 +16,22 @@ class AnnotationsGallery extends EntityCardGallery {
     //this._h3Text = document.createTextNode("All Annotations")
     //this._h3.appendChild( this._h3Text );
 
+    const header = document.createElement("div");
+    header.setAttribute("class", "project__header d-flex flex-items-center flex-justify-between px-2");
+    this._p.appendChild(header);
+
+    this._name = document.createElement("h2");
+    this._name.setAttribute("class", "h3 text-white"); //not a typo
+    this._name.textContent = "Annotations";
+    header.appendChild(this._name);
+
+    this._numFiles = document.createElement("span");
+    this._numFiles.setAttribute("class", "text-gray px-2");
+    header.appendChild(this._numFiles);
+
     // Count text
-    this._p.classList.add("col-3");
-    this._p.classList.add("px-2");
+    //this._p.classList.add("col-3");
+    //this._p.classList.add("px-2");
 
     // @TODO Tools: Card labels display
     this.labelContainer = document.createElement("div");
@@ -88,12 +101,7 @@ class AnnotationsGallery extends EntityCardGallery {
     //   this._h3Text = document.createTextNode("All Annotations");
     // }
 
-    //Update descriptive count text
-    var stopCount = cardList.paginationState.stop + 1;
-    if (cardList.total < cardList.paginationState.stop + 1) {
-      stopCount = cardList.total;
-    }
-    this._p.innerHTML = `Annotations ${cardList.paginationState.start + 1}-${stopCount} of ${cardList.total}`;
+    this._numFiles.textContent = `${cardList.total} Results`;
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)
