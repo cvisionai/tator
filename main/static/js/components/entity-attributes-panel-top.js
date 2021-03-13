@@ -7,7 +7,7 @@ class EntityAttrPanelTop extends TatorElement {
 
         // Panel top bar
         this._topBar = document.createElement("div");
-        this._topBar.setAttribute("class", "entity-panel--container--top-bar  px-3");
+        this._topBar.setAttribute("class", "entity-panel--container--top-bar");
         this._shadow.appendChild(this._topBar);
 
         // topbar arrow
@@ -27,7 +27,7 @@ class EntityAttrPanelTop extends TatorElement {
 
         // Text box
         this._box = document.createElement("div");
-        this._box.setAttribute("class", "py-6");
+        this._box.setAttribute("class", "px-3 ml-6 py-6");
         this._topBar.appendChild(this._box);
 
         // Panel name
@@ -69,19 +69,19 @@ class EntityAttrPanelTop extends TatorElement {
 
         });
 
-        rside.addEventListener("mouseenter", () => {
-          if(rside.classList.contains("slide-close")){
-            rside.classList.add("show-arrow");
-            lside.classList.remove("col-11");
-          }
-        });
+        // rside.addEventListener("mouseenter", () => {
+        //   if(rside.classList.contains("slide-close")){
+        //     rside.classList.add("show-arrow");
+        //     lside.classList.remove("col-11");
+        //   }
+        // });
 
-        rside.addEventListener("mouseleave", () => {
-          if(rside.classList.contains("slide-close")){
-            rside.classList.remove("show-arrow");
-            lside.classList.remove("col-11");
-          }
-        });
+        // rside.addEventListener("mouseleave", () => {
+        //   if(rside.classList.contains("slide-close")){
+        //     rside.classList.remove("show-arrow");
+        //     lside.classList.remove("col-11");
+        //   }
+        // });
 
     }
 
@@ -91,6 +91,8 @@ class EntityAttrPanelTop extends TatorElement {
         this.rside.classList.remove("slide-close");
         this.lside.classList.add("col-9");
         this.lside.classList.remove("col-12");
+        this.lside.style.marginRight = "0";
+        this._topBarArrow.style.transform ="scaleX(1)";
         this.open = true;
         return this.open;
       }

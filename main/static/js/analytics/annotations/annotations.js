@@ -64,7 +64,7 @@ class AnalyticsAnnotations extends TatorPage {
     /* Right Navigation Pane - Annotation Detail Viewer */
     // Gallery navigation panel  
     this._panelContainer = document.createElement("div");
-    this._panelContainer.setAttribute("class", "entity-panel--container col-3 py-3") //@TODO .slide = open by default
+    this._panelContainer.setAttribute("class", "entity-panel--container col-3");
     this.mainWrapper.appendChild(this._panelContainer);
 
     // Close side panel bar with arrow and panel title

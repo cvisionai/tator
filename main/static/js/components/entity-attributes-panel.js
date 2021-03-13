@@ -1,8 +1,6 @@
 class EntityAttrPanel extends TatorElement {
     constructor() {
       super();
-    
-
       
       // Panel Container
       this._main = document.createElement("div");
@@ -24,7 +22,7 @@ class EntityAttrPanel extends TatorElement {
 
       // Panel Img Container
       this._imgContainer = document.createElement("div");
-      this._imgContainer.setAttribute("class", "col-12 text-center");
+      this._imgContainer.setAttribute("class", "text-center");
       this._main.appendChild(this._imgContainer)
 
       // Panel Img
