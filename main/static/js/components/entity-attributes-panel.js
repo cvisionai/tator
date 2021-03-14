@@ -39,10 +39,16 @@ class EntityAttrPanel extends TatorElement {
 
 
       // // View media button link to annotation media
-      // this.viewMedia = document.createElement("button");
-      // this.viewMedia.setAttribute("class", "btn btn-charcoal col-6");
-      // let vmText = document.createTextNode("View Media");
-      // this.viewMedia.appendChild(vmText);
+
+      this._mediaLink = document.createElement("a");
+      this._mediaLink.setAttribute("href", "#");
+      this._main.appendChild(this._mediaLink);
+
+      this.viewMedia = document.createElement("button");
+      this.viewMedia.setAttribute("class", "btn btn-charcoal btn-clear col-12 text-gray");
+      let vmText = document.createTextNode("Adjust Annotation");
+      this.viewMedia.appendChild(vmText);
+      this._mediaLink.appendChild(this.viewMedia);
       // actions.appendChild(this.viewMedia);
 
       // // View submission
@@ -79,6 +85,7 @@ class EntityAttrPanel extends TatorElement {
         this._img.hidden = false;
       }
 
+      this._mediaLink.setAttribute("href", annotationObject.mediaLink);
       this.entityData._init(annotationObject);
 
     }
