@@ -98,6 +98,7 @@ entity-gallery-aspect-ratio {
 
 .entity-panel--container--top-bar {
   border-bottom: 1px solid $color-charcoal--light;
+  display: flex;
 }
 
 .top-bar-arrow {
@@ -106,7 +107,7 @@ entity-gallery-aspect-ratio {
   padding-right: 10px;
   //height: 100px;
   cursor: pointer;
-  padding: 52px 0;
+  padding: 60px 0;
 
   &:hover {
     background-color: $color-charcoal--light;
