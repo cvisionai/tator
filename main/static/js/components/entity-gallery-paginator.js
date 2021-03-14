@@ -2,6 +2,8 @@ class EntityGalleryPaginator extends TatorElement {
   constructor() {
     super();
 
+    this._pageSize = 10;
+
     const div = document.createElement("div");
     div.setAttribute("class", "flex-justify-center pagination d-flex flex-items-center py-5 text-gray f3");
     this._shadow.appendChild(div);
@@ -73,10 +75,11 @@ class EntityGalleryPaginator extends TatorElement {
     for (const pageOption of [10, 25, 50]) { // #TODO Fix
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
+      if(this._pageSize == pageOption) option.selected = true;
       option.textContent = pageOption;
       pageSize.appendChild(option);
     }
-    pageSize.selectedIndex = 2;
+    //pageSize.selectedIndex = 2;
     div.appendChild(pageSize);
 
     const goToPageText = document.createElement("span");
@@ -124,7 +127,7 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    this._pageSize = 10;
+    
   }
 
   getPageSize() {
