@@ -158,7 +158,8 @@ class AnnotationsCard extends EntityCard {
     if(this.tmpHidden != null) this.tmpHidden.classList.remove("hidden");
   }
 
-  togglePanel(){
+  togglePanel(e){
+    e.preventDefault();
     //console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
     // If they click while in preview, don't do this
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
