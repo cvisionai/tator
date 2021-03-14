@@ -1,7 +1,7 @@
 class EntityAttrPanel extends TatorElement {
     constructor() {
       super();
-      
+
       // Panel Container
       this._main = document.createElement("div");
       this._main.setAttribute("class", "entity-panel px-3");
@@ -40,15 +40,25 @@ class EntityAttrPanel extends TatorElement {
 
       // // View media button link to annotation media
 
+      this._linksDiv = document.createElement("div");
+      this._linksDiv.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f1 d-flex col-11");
+      this._main.appendChild(this._linksDiv);
+
+      const mediaLinkDiv = document.createElement("div");
+      mediaLinkDiv.setAttribute("class", "d-flex flex-items-center py-1");
+      this._linksDiv.appendChild(mediaLinkDiv);
+
+      const mediaLinkLabel = document.createElement("label");
+      mediaLinkLabel.textContent = "View Annotation In Media";
+      mediaLinkDiv.appendChild(mediaLinkLabel);
+
       this._mediaLink = document.createElement("a");
       this._mediaLink.setAttribute("href", "#");
-      this._main.appendChild(this._mediaLink);
+      //mediaLinkDiv.appendChild(this._mediaLink);
+      const goToFrameButton = document.createElement("entity-frame-button");
+      goToFrameButton.style.marginLeft = "16px";
+      mediaLinkDiv.appendChild(goToFrameButton);
 
-      this.viewMedia = document.createElement("button");
-      this.viewMedia.setAttribute("class", "btn btn-charcoal btn-clear col-12 text-gray");
-      let vmText = document.createTextNode("Adjust Annotation");
-      this.viewMedia.appendChild(vmText);
-      this._mediaLink.appendChild(this.viewMedia);
       // actions.appendChild(this.viewMedia);
 
       // // View submission
@@ -57,6 +67,11 @@ class EntityAttrPanel extends TatorElement {
       // let vsText = document.createTextNode("View Submission");
       // this.viewSubmission.appendChild(vsText);
       // actions.appendChild(this.viewSubmission);
+
+      this._mediaLink = "#";
+      goToFrameButton.addEventListener("click", () => {
+        window.location = this._mediaLink;
+      });
 
     }
 
@@ -85,7 +100,7 @@ class EntityAttrPanel extends TatorElement {
         this._img.hidden = false;
       }
 
-      this._mediaLink.setAttribute("href", annotationObject.mediaLink);
+      this._mediaLink = annotationObject.mediaLink;
       this.entityData._init(annotationObject);
 
     }
@@ -104,7 +119,7 @@ class EntityAttrPanel extends TatorElement {
       this._img.setAttribute("src", this.reader.result);
       this._img.hidden = false;
     }
-   
+
   }
-  
-  customElements.define("entity-attributes-panel", EntityAttrPanel);  
+
+  customElements.define("entity-attributes-panel", EntityAttrPanel);
