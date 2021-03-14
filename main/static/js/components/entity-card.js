@@ -73,7 +73,7 @@ class EntityCard extends TatorElement {
       
       // OPTIONAL Pagination position
       this._pos_text = document.createElement("span");
-      this._pos_text.setAttribute("class", "f3 text-gray px-2");
+      this._pos_text.setAttribute("class", "f3 text-gray pr-2");
       
       this._bottom.appendChild(this._pos_text);
 
