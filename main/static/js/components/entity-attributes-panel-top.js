@@ -17,7 +17,7 @@ class EntityAttrPanelTop extends TatorElement {
         svg.setAttribute("class", "f2 icon-chevron-right");
         //svg.setAttribute("viewBox", "0 0 32 32");
         svg.setAttribute("height", "40px");
-        svg.setAttribute("width", "20px");
+        svg.setAttribute("width", "40px");
         this._topBarArrow.appendChild(svg);
     
         const path = document.createElementNS(svgNamespace, "path");

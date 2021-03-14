@@ -17,7 +17,7 @@ class AnnotationsGallery extends EntityCardGallery {
     //this._h3.appendChild( this._h3Text );
 
     const header = document.createElement("div");
-    header.setAttribute("class", "project__header d-flex flex-items-center flex-justify-between px-2");
+    header.setAttribute("class", "project__header d-flex flex-items-center px-2");
     this._p.appendChild(header);
 
     this._name = document.createElement("h2");
@@ -33,16 +33,16 @@ class AnnotationsGallery extends EntityCardGallery {
     //this._p.classList.add("col-3");
     //this._p.classList.add("px-2");
 
-    // @TODO Tools: Card labels display
-    this.labelContainer = document.createElement("div");
-    this.labelContainer.setAttribute("class", "col-3")
-    this._labelsDropDown = document.createElement('entity-gallery-labels');
-    this.labelContainer.appendChild( this._labelsDropDown );
-    this._tools.appendChild( this.labelContainer );
+    // @TODO Tools: Card labels display -- Not impleemented currently
+    //this.labelContainer = document.createElement("div");
+    //this.labelContainer.setAttribute("class", "col-2")
+    // this._labelsDropDown = document.createElement('entity-gallery-labels');
+    // this.labelContainer.appendChild( this._labelsDropDown );
+    //this._tools.appendChild( this.labelContainer );
 
     // Tools: Slider to resize images
     this.sliderContainer = document.createElement("div");
-    this.sliderContainer.setAttribute("class", "col-3")
+    this.sliderContainer.setAttribute("class", "col-4")
     this._resizeCards = document.createElement('entity-card-resize');
     this._resizeCards._initGallery(this._ul, this.colSize);
     this.sliderContainer.appendChild( this._resizeCards );
@@ -78,11 +78,11 @@ class AnnotationsGallery extends EntityCardGallery {
     this.panelControls = panelControls;
 
     // Init gallery with data for filtering
-    this._labelsDropDown.init({
-      gallery : this,
-      localizationTypes
-    });
-    this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
+    // this._labelsDropDown.init({
+    //   gallery : this,
+    //   localizationTypes
+    // });
+    // this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
   }
 
   handleLabelChange(e){

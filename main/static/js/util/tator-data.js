@@ -123,7 +123,7 @@ class TatorData {
   }
 
     /**
-   * Returns data for getFrame with project ID
+   * Returns data for getLocalizationGraphic with project ID
    */
   async getLocalizationGraphic( localizationID ){
     const response = await fetch(`/rest/LocalizationGraphic/${localizationID}`, {
