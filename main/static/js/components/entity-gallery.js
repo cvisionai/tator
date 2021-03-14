@@ -19,7 +19,7 @@ class EntityCardGallery extends TatorElement {
 
       // Gallery count / info
       this._p = document.createElement("p");
-      this._p.setAttribute("class", "enitity-gallery__count py-2 text-gray");
+      this._p.setAttribute("class", "enitity-gallery__count col-5 py-2 text-gray");
       this._galleryCountText = document.createTextNode("");
       this._p.appendChild(this._galleryCountText);
       this._tools.appendChild(this._p);

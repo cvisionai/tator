@@ -29,6 +29,12 @@
 
 entity-gallery-aspect-ratio {
   min-width: 200px;
+
+  .radio-slide-wrap div {
+    display: flex;
+    float: right;
+    width: auto;
+  }
 }
 
 .enitity-gallery__tools,
@@ -46,7 +52,7 @@ entity-gallery-aspect-ratio {
   img {
     background-color: $color-charcoal--medium;
     height: 130px;
-    object-fit: cover;
+    object-fit: fill;
     width: 100%;
     background-image: linear-gradient(
         to right,
@@ -126,7 +132,7 @@ entity-gallery-aspect-ratio {
     position: absolute;
     right: -23%;
     top: 62px;
-    //bottom: 0;
+    height: 20000px;
 
     &.show-arrow {
       right: -20%;
