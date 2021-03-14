@@ -10,8 +10,8 @@ class EntityGalleryAspectRatio extends TatorElement {
     //this._slider.prepend(imageSvg);
     this._slider.setAttribute("name", " ");
     this._slider.innerHTML = `${imageSvg} ${this._slider.innerHTML} ${localizationBoxSvg}`;
-    this._slider.setAttribute("on-text", `Fill`);
-    this._slider.setAttribute("off-text", `Aspect`);
+    this._slider.setAttribute("on-text", `Aspect`);
+    this._slider.setAttribute("off-text", `Fill`);
     //this._slider.prepend(localizationBoxSvg);
 
     // Add element

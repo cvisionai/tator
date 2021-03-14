@@ -230,6 +230,7 @@ class AnnotationsGallery extends EntityCardGallery {
         }, false);
 
         // Update view
+        card._li.classList.toggle("aspect-true");
         this.addEventListener("view-change", () => {
           card._li.classList.toggle("aspect-true");
         });
