@@ -21,16 +21,34 @@ class FilterData {
   {
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
     this.mediaTypes = this._modelData.getStoredMediaTypes();
+    this.versions = this._modelData.getStoredVersions();
+
+    // Versions aren't typically part of the localization.
+    // Pretend that it's an attribute with the name _version and apply it to each
+    // localization type so that it can be part of the filter parameters.
+    var versionNames = [];
+    for (let idx = 0; idx < this.versions.length; idx++) {
+      let version = this.versions[idx];
+      versionNames.push(`${version.name} (ID:${version.id})`);
+    }
 
     this._allTypes = [];
     for (let idx = 0; idx < this.mediaTypes.length; idx++) {
-      let entityType = this.mediaTypes[idx];
+      let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
       entityType.typeGroupName = "Media";
       this._allTypes.push(entityType);
     }
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
-      let entityType = this.localizationTypes[idx];
+      let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
       entityType.typeGroupName = "Annotation";
+
+      var versionAttribute = {
+        choices: versionNames,
+        name: "_version",
+        dtype: "enum"
+      };
+      entityType.attribute_types.push(versionAttribute);
+
       this._allTypes.push(entityType);
     }
   }

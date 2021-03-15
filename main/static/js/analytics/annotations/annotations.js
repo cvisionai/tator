@@ -62,7 +62,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
-    // Gallery navigation panel  
+    // Gallery navigation panel
     this._panelContainer = document.createElement("div");
     this._panelContainer.setAttribute("class", "entity-panel--container col-3");
     this.mainWrapper.appendChild(this._panelContainer);
@@ -113,12 +113,11 @@ class AnalyticsAnnotations extends TatorPage {
         this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
       });
 
-    // Pass panel and localization types to gallery
-    this._filterResults._initPanel( { 
-      panelControls : this._panelTop, 
-      panelContainer : this._panelContainer, 
-      localizationTypes : this.localizationTypes 
-    } );
+      // Pass panel and localization types to gallery
+      this._filterResults._initPanel( {
+        panelControls : this._panelTop,
+        panelContainer : this._panelContainer
+      } );
 
       // If state is stored in URL, update default states
       this._getQueryParams();

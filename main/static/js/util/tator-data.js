@@ -12,6 +12,8 @@ class TatorData {
 
     this._localizationTypes = [];
     this._localizaitonTypeNames = [];
+
+    this._versions = [];
   }
 
   getProjectId() {
@@ -26,9 +28,14 @@ class TatorData {
     return this._mediaTypes;
   }
 
+  getStoredVersions() {
+    return this._versions;
+  }
+
   async init() {
     await this.getAllLocalizationTypes();
     await this.getAllMediaTypes();
+    await this.getAllVersions();
   }
 
   /**
@@ -101,6 +108,38 @@ class TatorData {
 
     this._mediaTypeNames = [];
     this._mediaTypes.forEach(typeElem => this._mediaTypeNames.push(typeElem.name));
+  }
+
+  /**
+   * #TODO
+   */
+  async getAllVersions() {
+    var donePromise = new Promise(resolve => {
+
+      const versionsRestUrl = "/rest/Versions/" + this._project;
+      const versionsPromise = fetchRetry(versionsRestUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([versionsPromise])
+        .then(([versionsResponse]) => {
+          const versionsJson = versionsResponse.json();
+          Promise.all([versionsJson])
+        .then(([versions]) => {
+          this._versions = [...versions];
+          resolve();
+        });
+      });
+
+    });
+
+    await donePromise;
   }
 
   /**
@@ -254,10 +293,12 @@ class TatorData {
    *
    * @param #TODO mediaIds
    *
+   * @param #TODO versionIds
+   *
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, dataStart, dataStop, mediaIds) {
+  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -285,6 +326,16 @@ class TatorData {
       for (let idx = 0; idx < mediaIds.length; idx++) {
         paramString += mediaIds[idx];
         if (idx < mediaIds.length - 1) {
+          paramString += ","
+        }
+      }
+    }
+
+    if (versionIds != undefined && versionIds.length > 0) {
+      paramString += "&version=";
+      for (let idx = 0; idx < versionIds.length; idx++) {
+        paramString += versionIds[idx];
+        if (idx < versionIds.length - 1) {
           paramString += ","
         }
       }
@@ -378,6 +429,7 @@ class TatorData {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
+    var versionFilters = [];
     var locGroups = {};
       this._localizationTypes.forEach(locType => {
         locGroups[locType.name] = {filters: [], entityType: locType};
@@ -389,7 +441,12 @@ class TatorData {
           mediaFilters.push(filter);
         }
         else {
-          localizationFilters.push(filter);
+          if (filter.field == "_version") {
+            versionFilters.push(filter);
+          }
+          else {
+            localizationFilters.push(filter);
+          }
         }
       });
 
@@ -405,6 +462,15 @@ class TatorData {
         }
       }
 
+      var versionIds = [];
+      if (versionFilters.length > 0) {
+        for (let idx = 0; idx < versionFilters.length; idx++) {
+            // Expected format (Name (ID:#))
+            // #TODO Maybe this should be moved elsewhere to remove this dependency
+            versionIds.push(Number(versionFilters[idx].value.split('(ID:')[1].replace(")","")));
+        }
+      }
+
       localizationFilters.forEach(filter => {
         if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
           locGroups[filter.category].filters.push(filter);
@@ -412,7 +478,7 @@ class TatorData {
       });
     }
 
-    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds);
+    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds);
     return outData;
   }
 

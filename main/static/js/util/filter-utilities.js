@@ -36,13 +36,16 @@ class FilterUtilities {
    *                             Stored within the value property of the object because this
    *                             syncs up with the enum-input javascript.
    */
-  static getModifierChoices(dtype) {
+  static getModifierChoices(selectedAttributeType) {
 
     var choices = [];
+    var dtype = selectedAttributeType.dtype;
 
     // #TODO Add more options for the different dtypes
-
-    if (dtype == "int" || dtype == "float") {
+    if (selectedAttributeType.name == "_version") {
+      choices.push({"value": "=="});
+    }
+    else if (dtype == "int" || dtype == "float") {
       choices.push({"value": "=="});
       choices.push({"value": ">"});
       choices.push({"value": ">="});
