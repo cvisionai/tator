@@ -25,6 +25,8 @@ from .search import ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)
 
+TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
+
 def create_test_user():
     return User.objects.create(
         username=random.choices(string.ascii_lowercase, k=10),
@@ -2506,7 +2508,7 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+        body = {'url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
@@ -2532,8 +2534,8 @@ class ResourceTestCase(APITestCase):
         self.assertFalse(self._s3_obj_exists(thumb_key))
 
         # Create an image with thumbnail_url included.
-        body = {'url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
-                'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
+        body = {'url': TEST_IMAGE,
+                'thumbnail_url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
@@ -2559,8 +2561,8 @@ class ResourceTestCase(APITestCase):
         self.assertFalse(self._s3_obj_exists(thumb_key))
 
         # Create a video that has thumbnails.
-        body = {'thumbnail_url': 'https://cvisionai.com/wp-content/themes/cvision/public/img/logo.png',
-                'thumbnail_gif_url': 'https://cvisionai.com/wp-content/uploads/2018/06/screen.png',
+        body = {'thumbnail_url': TEST_IMAGE,
+                'thumbnail_gif_url': TEST_IMAGE,
                 'type': self.entity_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
