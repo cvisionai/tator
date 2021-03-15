@@ -71,7 +71,6 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    localizationTypes,
     panelControls
   }){
     this.panelContainer = panelContainer;

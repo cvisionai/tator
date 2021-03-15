@@ -125,10 +125,12 @@ class FilterCondition extends TatorElement {
 
     let selectedFieldName = this._fieldName.getValue();
     var dtype = "string";
+    var selectedAttributeType;
     for (const attribute of this._currentType.attribute_types)
     {
       if (attribute.name == selectedFieldName)
       {
+        selectedAttributeType = attribute;
         dtype = attribute.dtype;
         if (dtype == "enum") {
           let enumChoices = [];
@@ -142,7 +144,7 @@ class FilterCondition extends TatorElement {
     }
 
     this._currentDtype = dtype;
-    this._modifier.choices = FilterUtilities.getModifierChoices(dtype);
+    this._modifier.choices = FilterUtilities.getModifierChoices(selectedAttributeType);
     this._modifier.permission = "Can Edit";
     this._modifier.selectedIndex = -1;
     this._userSelectedModifier();

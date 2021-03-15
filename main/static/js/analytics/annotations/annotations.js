@@ -62,7 +62,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
-    // Gallery navigation panel  
+    // Gallery navigation panel
     this._panelContainer = document.createElement("div");
     this._panelContainer.setAttribute("class", "entity-panel--container col-3");
     this.mainWrapper.appendChild(this._panelContainer);
@@ -109,12 +109,15 @@ class AnalyticsAnnotations extends TatorPage {
       this.cardData = document.createElement("annotation-card-data");
       this.cardData.init(this._modelData);
 
-    // Pass panel and localization types to gallery
-    this._filterResults._initPanel( { 
-      panelControls : this._panelTop, 
-      panelContainer : this._panelContainer, 
-      localizationTypes : this.localizationTypes 
-    } );
+      this.cardData.addEventListener("setCardImage", (evt) => {
+        this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+      });
+
+      // Pass panel and localization types to gallery
+      this._filterResults._initPanel( {
+        panelControls : this._panelTop,
+        panelContainer : this._panelContainer
+      } );
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
@@ -197,18 +200,6 @@ class AnalyticsAnnotations extends TatorPage {
     this._cardGallery(this._filterParams, this._paginationState);
   }
 
-<<<<<<< HEAD
-  setScrollHeight(){
-    console.log("window.innerHeight: " + window.innerHeight);
-    this.main.style.height = window.innerHeight;
-
-    window.addEventListener("resize", () => {
-      this.main.style.height = window.innerHeight;
-    })
-  }
-
-=======
->>>>>>> rside behavior
 }
 
 customElements.define("analytics-annotations", AnalyticsAnnotations);
