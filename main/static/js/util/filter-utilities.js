@@ -42,7 +42,8 @@ class FilterUtilities {
     var dtype = selectedAttributeType.dtype;
 
     // #TODO Add more options for the different dtypes
-    if (selectedAttributeType.name == "_version") {
+    if (selectedAttributeType.name == "_version" ||
+        selectedAttributeType.name == "_section") {
       choices.push({"value": "=="});
     }
     else if (dtype == "int" || dtype == "float") {

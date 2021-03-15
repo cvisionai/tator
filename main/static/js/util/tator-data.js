@@ -14,6 +14,7 @@ class TatorData {
     this._localizaitonTypeNames = [];
 
     this._versions = [];
+    this._sections = [];
   }
 
   getProjectId() {
@@ -32,10 +33,20 @@ class TatorData {
     return this._versions;
   }
 
+  getStoredSections() {
+    return this._sections;
+  }
+
+  /**
+   * #TODO May want to consider what it is actually necessary here to initialize with to speed up
+   *       initial loading times. There typically aren't that many versions. There might be a good
+   *       amount of sections.
+   */
   async init() {
     await this.getAllLocalizationTypes();
     await this.getAllMediaTypes();
     await this.getAllVersions();
+    await this.getAllSections();
   }
 
   /**
@@ -133,6 +144,38 @@ class TatorData {
           Promise.all([versionsJson])
         .then(([versions]) => {
           this._versions = [...versions];
+          resolve();
+        });
+      });
+
+    });
+
+    await donePromise;
+  }
+
+  /**
+   * #TODO
+   */
+  async getAllSections() {
+    var donePromise = new Promise(resolve => {
+
+      const sectionsRestUrl = "/rest/Sections/" + this._project;
+      const sectionsPromise = fetchRetry(sectionsRestUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([sectionsPromise])
+        .then(([sectionsResponse]) => {
+          const sectionsJson = sectionsResponse.json();
+          Promise.all([sectionsJson])
+        .then(([sections]) => {
+          this._sections = [...sections];
           resolve();
         });
       });
@@ -295,10 +338,12 @@ class TatorData {
    *
    * @param #TODO versionIds
    *
+   * @param #TODO sectionIds
+   *
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds) {
+  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -336,6 +381,16 @@ class TatorData {
       for (let idx = 0; idx < versionIds.length; idx++) {
         paramString += versionIds[idx];
         if (idx < versionIds.length - 1) {
+          paramString += ","
+        }
+      }
+    }
+
+    if (sectionIds != undefined && sectionIds.length > 0) {
+      paramString += "&section=";
+      for (let idx = 0; idx < sectionIds.length; idx++) {
+        paramString += sectionIds[idx];
+        if (idx < sectionIds.length - 1) {
           paramString += ","
         }
       }
@@ -507,6 +562,7 @@ class TatorData {
   async getFilteredMedia(outputType, filters, dataStart, dataStop) {
 
     let mediaGroups = {};
+    var sectionFilters = [];
 
     this._mediaTypes.forEach(mediaType => {
       mediaGroups[mediaType.name] = {entityType: mediaType, filters: []};
@@ -515,12 +571,26 @@ class TatorData {
     if (filters != undefined) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          mediaGroups[filter.category].filters.push(filter);
+          if (filter.field == "_section") {
+            sectionFilters.push(filter);
+          }
+          else {
+            mediaGroups[filter.category].filters.push(filter);
+          }
         }
       });
     }
 
-    var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop);
+    var sectionIds = [];
+    if (sectionFilters.length > 0) {
+      for (let idx = 0; idx < sectionFilters.length; idx++) {
+          // Expected format (Name (ID:#))
+          // #TODO Maybe this should be moved elsewhere to remove this dependency
+          sectionIds.push(Number(sectionFilters[idx].value.split('(ID:')[1].replace(")","")));
+      }
+    }
+
+    var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
     return outData;
   }
 }

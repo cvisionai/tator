@@ -22,6 +22,7 @@ class FilterData {
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
     this.mediaTypes = this._modelData.getStoredMediaTypes();
     this.versions = this._modelData.getStoredVersions();
+    this.sections = this._modelData.getStoredSections();
 
     // Versions aren't typically part of the localization.
     // Pretend that it's an attribute with the name _version and apply it to each
@@ -32,10 +33,27 @@ class FilterData {
       versionNames.push(`${version.name} (ID:${version.id})`);
     }
 
+    // Media sections aren't typically part of the media type.
+    // Pretend that it's an attribute with the name _section and apply it to each
+    // media type so that it can be part of the filter parameters.
+    var sectionNames = [];
+    for (let idx = 0; idx < this.sections.length; idx++) {
+      let section = this.sections[idx];
+      sectionNames.push(`${section.name} (ID:${section.id})`);
+    }
+
     this._allTypes = [];
     for (let idx = 0; idx < this.mediaTypes.length; idx++) {
       let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
       entityType.typeGroupName = "Media";
+
+      var sectionAttribute = {
+        choices: sectionNames,
+        name: "_section",
+        dtype: "enum"
+      };
+      entityType.attribute_types.push(sectionAttribute);
+
       this._allTypes.push(entityType);
     }
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
