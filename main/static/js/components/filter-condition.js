@@ -46,6 +46,14 @@ class FilterCondition extends TatorElement {
     this._valueBool.style.display = "none";
     this._div.appendChild(this._valueBool);
 
+    this._valueEnum = document.createElement("enum-input");
+    this._valueEnum.setAttribute("class", "col-4");
+    this._valueEnum.style.marginLeft = "15px";
+    this._valueEnum.setAttribute("name", "Value");
+    this._valueEnum.permission = "View Only";
+    this._valueEnum.style.display = "none";
+    this._div.appendChild(this._valueEnum);
+
     var removeButton = document.createElement("entity-delete-button");
     removeButton.style.marginLeft = "15px";
     removeButton.style.marginRight = "8px";
@@ -68,6 +76,9 @@ class FilterCondition extends TatorElement {
 
     // Adjust the modifier based on the selected field
     this._fieldName.addEventListener("change", this._userSelectedField.bind(this));
+
+    // Set the value field based on the modifier
+    this._modifier.addEventListener("change", this._userSelectedModifier.bind(this));
   }
 
   _userSelectedCategory() {
@@ -102,37 +113,62 @@ class FilterCondition extends TatorElement {
     this._modifier.permission = "View Only";
     this._value.permission = "View Only";
     this._valueBool.permission = "View Only";
+    this._valueEnum.permission = "View Only";
     this._userSelectedField();
   }
 
   _userSelectedField() {
     // Remove existing choices for the modifier and clear the value
     this._modifier.clear();
+    this._valueEnum.clear();
     this._value.setValue("");
 
     let selectedFieldName = this._fieldName.getValue();
     var dtype = "string";
-    this._value.style.display = "block";
-    this._valueBool.style.display = "none";
     for (const attribute of this._currentType.attribute_types)
     {
       if (attribute.name == selectedFieldName)
       {
         dtype = attribute.dtype;
+        if (dtype == "enum") {
+          let enumChoices = [];
+          for (let choice of attribute.choices) {
+            enumChoices.push({"value": choice});
+          }
+          this._valueEnum.choices = enumChoices;
+        }
         break;
       }
     }
 
-    if (dtype == "bool") {
-      this._value.style.display = "none";
-      this._valueBool.style.display = "block";
-    }
-
+    this._currentDtype = dtype;
     this._modifier.choices = FilterUtilities.getModifierChoices(dtype);
     this._modifier.permission = "Can Edit";
+    this._modifier.selectedIndex = -1;
+    this._userSelectedModifier();
+  }
+
+  _userSelectedModifier() {
+    const modifier = this._modifier.getValue();
+
+    this._value.style.display = "block";
+    this._valueBool.style.display = "none";
+    this._valueEnum.style.display = "none";
+
+    if (this._currentDtype == "enum" && modifier == "==") {
+      this._value.style.display = "none";
+      this._valueBool.style.display = "none";
+      this._valueEnum.style.display = "block";
+    }
+    else if (this._currentDtype == "bool") {
+      this._value.style.display = "none";
+      this._valueBool.style.display = "block";
+      this._valueEnum.style.display = "none";
+    }
+
     this._value.permission = "Can Edit";
     this._valueBool.permission = "Can Edit";
-    this._modifier.selectedIndex = -1;
+    this._valueEnum.permission = "Can Edit";
   }
 
   /**
@@ -185,6 +221,10 @@ class FilterCondition extends TatorElement {
       if (this._valueBool.style.display == "block")
       {
         value = this._valueBool.getValue();
+      }
+      else if (this._valueEnum.style.display == "block")
+      {
+        value = this._valueEnum.getValue();
       }
 
       if (category && field && modifier && value)
