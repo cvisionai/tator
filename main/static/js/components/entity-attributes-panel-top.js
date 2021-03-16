@@ -27,7 +27,7 @@ class EntityAttrPanelTop extends TatorElement {
 
         // Text box
         this._box = document.createElement("div");
-        this._box.setAttribute("class", "px-3 ml-6 py-6");
+        this._box.setAttribute("class", "px-3 py-6");
         this._topBar.appendChild(this._box);
 
         // Panel name
