@@ -450,6 +450,7 @@ class MediaListAPI(BaseListView):
             if new_attrs is not None:
                 attr_count = len(ids_to_update)
                 obj = qs.first()
+                ref_table = ContentType.objects.get_for_model(obj)
                 original_dict = obj.model_dict
                 bulk_patch_attributes(new_attrs, qs)
                 query = get_media_es_query(params["project"], params)
