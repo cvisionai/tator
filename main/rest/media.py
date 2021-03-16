@@ -432,6 +432,8 @@ class MediaListAPI(BaseListView):
             if new_attrs is not None:
                 bulk_patch_attributes(new_attrs, qs)
             if patch_archive_state is not None:
+                # TODO intelligently set archive state based on current state, e.g. `to_archive`
+                # that is given `to_live` should go immediately to `live`
                 qs.update(
                     archive_state=patch_archive_state,
                     modified_datetime=datetime.datetime.now(datetime.timezone.utc),
