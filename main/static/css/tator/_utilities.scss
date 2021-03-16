@@ -406,6 +406,7 @@
 .preview {
   display: block !important;
   ///opacity: 0.5; @TODO this should prob be used differntly
+  opacity: 1;
   transition: 300ms ease all;
 }
 
