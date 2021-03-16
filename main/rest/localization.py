@@ -130,6 +130,29 @@ class LocalizationListAPI(BaseListView):
         versions = {obj.id:obj for obj in version_qs.iterator()}
         versions[None] = default_version
 
+        # Make sure project of all foreign keys is correct.
+        meta_projects = list(meta_qs.values_list('project', flat=True).distinct())
+        media_projects = list(media_qs.values_list('project', flat=True).distinct())
+        version_projects = list(version_qs.values_list('project', flat=True).distinct())
+        if len(meta_projects) != 1:
+            raise Exception(f"Localization types must be part of project {project.id}, got "
+                            f"projects {meta_projects}!")
+        elif meta_projects[0] != project.id:
+            raise Exception(f"Localization types must be part of project {project.id}, got "
+                            f"project {meta_projects[0]!")
+        if len(media_projects) != 1:
+            raise Exception(f"Media must be part of project {project.id}, got projects "
+                            f"{media_projects}!")
+        elif media_projects[0] != project.id:
+            raise Exception(f"Media must be part of project {project.id}, got project "
+                            f"{media_projects[0]!")
+        if len(version_projects) != 1:
+            raise Exception(f"Versions must be part of project {project.id}, got projects "
+                            f"{version_projects}!")
+        elif version_projects[0] != project.id:
+            raise Exception(f"Versions must be part of project {project.id}, got project "
+                            f"{version_projects[0]!")
+
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
         attr_specs = [check_required_fields(required_fields[loc['type']][0],
