@@ -241,11 +241,6 @@ class EntityBrowser extends TatorElement {
         selector.addEventListener("open", () => {
           li.classList.add("is-open");
           this._closeBesides(selector);
-          selector.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-            inline: "start",
-          });
         });
 
         selector.addEventListener("close", () => {
