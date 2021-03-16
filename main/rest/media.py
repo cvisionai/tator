@@ -14,41 +14,32 @@ from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
 
-from ..models import ChangeLog
-from ..models import ChangeToObject
-from ..models import Media
-from ..models import MediaType
-from ..models import Section
-from ..models import Localization
-from ..models import State
-from ..models import Project
-from ..models import Resource
-from ..models import Bucket
-from ..models import database_qs
-from ..models import database_query_ids
+from ..models import (
+    ChangeLog,
+    ChangeToObject,
+    Media,
+    MediaType,
+    Section,
+    Localization,
+    State,
+    Project,
+    Resource,
+    Bucket,
+    database_qs,
+    database_query_ids,
+)
 from ..search import TatorSearch
-from ..schema import MediaListSchema
-from ..schema import MediaDetailSchema
-from ..schema import parse
+from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
-from ..s3 import TatorS3
-from ..s3 import get_s3_lookup
-from ..search import TatorSearch
+from ..s3 import TatorS3, get_s3_lookup
 
-from ._util import bulk_create_from_generator
-from ._util import computeRequiredFields
-from ._util import check_required_fields
-from ._base_views import BaseListView
-from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
-from ._media_query import get_media_es_query
-from ._attributes import bulk_patch_attributes
-from ._attributes import patch_attributes
-from ._attributes import validate_attributes
-from ._permissions import ProjectEditPermission
-from ._permissions import ProjectTransferPermission
+from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
+from ._base_views import BaseListView, BaseDetailView
+from ._media_query import get_media_queryset, get_media_es_query
+from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
+from ._permissions import ProjectEditPermission, ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
@@ -426,21 +417,23 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
-        patch_archived = params.pop("archived", None)
-        if patch_archived is None and params.get("attributes") is None:
+        patch_archive_state = params.pop("archive_state", None)
+        if patch_archive_state is None and params.get("attributes") is None:
             raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
         ids_to_update = list(qs.values_list('pk', flat=True).distinct())
         count = qs.count()
         if count > 0:
+            ts = TatorSearch()
+
             # Get the current representation of the object for comparison
             original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
             if new_attrs is not None:
                 bulk_patch_attributes(new_attrs, qs)
-            if patch_archived is not None:
+            if patch_archive_state is not None:
                 qs.update(
-                    archived=patch_archived,
+                    archive_state=patch_archive_state,
                     modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                 )
 
@@ -452,12 +445,12 @@ class MediaListAPI(BaseListView):
 
             if new_attrs is not None:
                 query = get_media_es_query(params['project'], params)
-                TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-            if patch_archived is not None:
+                ts.update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+            if patch_archive_state is not None:
                 documents = []
                 for entity in qs:
-                    documents += TatorSearch().build_document(entity)
-                TatorSearch().bulk_add_documents(documents)
+                    documents += ts.build_document(entity)
+                ts.bulk_add_documents(documents)
 
             # Create the ChangeLog entry and associate it with all objects in the queryset
             cl = ChangeLog(
@@ -559,9 +552,9 @@ class MediaDetailAPI(BaseDetailView):
                         media_files[key] = params['multi'][key]
                 qs.update(media_files=media_files)
 
-            if "archived" in params:
+            if "archive_state" in params:
                 qs.update(
-                    archived=params["archived"],
+                    archive_state=params["archive_state"],
                     modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                 )
 

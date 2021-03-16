@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 def _get_archived_filter(params):
     archive_state = params.get("archive_state", "live")
     if archive_state == "archived":
-        return True
+        return ["to_archive", "archived"]
     if archive_state == "all":
         return None
     if archive_state == "live":
-        return False
+        return ["to_live", "live"]
 
     raise ValueError(
         f"Received invalid value '{archive_state}' for 'archive_state'. Valid values are "
@@ -49,7 +49,7 @@ def get_media_es_query(project, params):
     start = params.get('start')
     stop = params.get('stop')
     after = params.get('after')
-    archived = _get_archived_filter(params)
+    archive_state = _get_archived_filter(params)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_exact_name'] = 'asc'
@@ -146,8 +146,15 @@ def get_media_es_query(project, params):
     if after is not None:
         bools.append({'range': {'_exact_name': {'gt': after}}})
 
-    if archived is not None:
-        bools.append({'match': {'_archived': {'query': archived}}})
+    if archive_state is not None:
+        bools.append(
+            {
+                "bool": {
+                    "should": [{"match": {"_archive_state": state}} for state in archive_state],
+                    "minimum_should_match": 1,
+                }
+            }
+        )
 
     query = get_attribute_es_query(params, query, bools, project, is_media=True,
                                    annotation_bools=annotation_bools)
@@ -169,7 +176,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     uid = params.get('uid')
     start = params.get('start')
     stop = params.get('stop')
-    archived = _get_archived_filter(params)
+    archive_states = _get_archived_filter(params)
 
     qs = Media.objects.filter(project=project, deleted=False)
     media_ids = []
@@ -208,8 +215,8 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if uid is not None:
         qs = qs.filter(uid=uid)
 
-    if archived is not None:
-        qs = qs.filter(archived=archived)
+    if archive_states is not None:
+        qs = qs.filter(archive_state__in=archive_states)
 
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 

@@ -21,9 +21,10 @@ media_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
-    'archived': {
-        'type': 'boolean',
-        'description': 'Marks media for archival.',
+    'archive_state': {
+        'type': 'string',
+        'description': 'Marks media for archival or retrieval.',
+        'enum': ['to_archive', 'to_live']
     },
 }
 
@@ -169,9 +170,10 @@ media_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
-        'archived': {
-            'type': 'boolean',
-            'description': 'Marks media for archival.',
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval.',
+            'enum': ['to_archive', 'to_live']
         },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '

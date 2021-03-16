@@ -222,6 +222,13 @@ class TwoDPlotType(Enum):
     LINE = 'line'
     SCATTER = 'scatter'
 
+
+class ArchiveState(Enum):
+    LIVE = "live"
+    TO_ARCHIVE = "to_archive"
+    ARCHIVED = "archived"
+    TO_LIVE = "to_live"
+
 class Organization(Model):
     name = CharField(max_length=128)
     def __str__(self):
@@ -814,7 +821,7 @@ class Media(Model, ModelDiffMixin):
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
-    archived = BooleanField(default=False)
+    archive_state = EnumField(ArchiveState, max_length=16, default=ArchiveState.LIVE)
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 

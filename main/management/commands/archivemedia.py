@@ -26,7 +26,7 @@ class Command(BaseCommand):
         while True:
             # We cannot archive with a LIMIT query, so make a separate query using IDs.
             # TODO Update filter to handle already-archived media
-            archived = Media.objects.filter(archived=True, modified_datetime__lte=max_datetime)
+            archived = Media.objects.filter(archive_state="to_archive", modified_datetime__lte=max_datetime)
             media_ids = archived.values_list("pk", flat=True)[:BATCH_SIZE]
             media_list = Media.objects.filter(pk__in=media_ids)
             num_media = media_list.count()
