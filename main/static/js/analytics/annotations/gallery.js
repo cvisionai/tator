@@ -106,6 +106,7 @@ class AnnotationsGallery extends EntityCardGallery {
     // needs to be reinitialized)
     if (cardList.paginationState.init) {
       this._paginator.init(cardList.total, cardList.paginationState);
+      this._paginator_top.init(cardList.total, cardList.paginationState);
     }
 
     // Hide all cards' panels and de-select

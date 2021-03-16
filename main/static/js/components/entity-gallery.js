@@ -23,6 +23,11 @@ class EntityCardGallery extends TatorElement {
       this._galleryCountText = document.createTextNode("");
       this._p.appendChild(this._galleryCountText);
       this._tools.appendChild(this._p);
+
+      // Gallery Pagination Bottom
+      this._paginator_top = document.createElement("entity-gallery-paginator");
+      this._paginator_top.div.classList.add("pb-3");
+      this._main.appendChild(this._paginator_top);
   
       // Gallery List
       this._ul = document.createElement("ul");
@@ -31,6 +36,7 @@ class EntityCardGallery extends TatorElement {
 
       // Gallery Pagination Bottom
       this._paginator = document.createElement("entity-gallery-paginator");
+      this._paginator.div.classList.add("py-5");
       this._main.appendChild(this._paginator);
     }
 

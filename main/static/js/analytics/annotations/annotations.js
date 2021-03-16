@@ -95,6 +95,7 @@ class AnalyticsAnnotations extends TatorPage {
       // Init vars for pagination state
       this._paginationState = {
         pageSize: this._filterResults._paginator.getPageSize(),
+        page: 1,
         start: 0,
         stop: this._filterResults._paginator.getPageSize(),
         init: true
@@ -133,6 +134,7 @@ class AnalyticsAnnotations extends TatorPage {
 
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+      this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
 
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
@@ -158,13 +160,71 @@ class AnalyticsAnnotations extends TatorPage {
 
   // @TODO start of integrating query params into pages
   _getQueryParams(){
+    let thereWereFixes = false;
+    // Reads Query params and updates the default states before card gallery is drawn
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
+    //Update filter with query params
+    if(urlParams.get("fc")) {
+      const decodedFc = decodeURI( urlParams.get("fc") );
+      this._filterParams = decodedFc;
+      console.log(fc);
+      console.log(decodedFc);
+    } 
+
     // Update pagination state from query params
-    if(urlParams.get("pageSize")) this._paginationState.pageSize = urlParams.get("pg_size");
-    if(urlParams.get("start")) this._paginationState.start = urlParams.get("start");
-    if(urlParams.get("stop")) this._paginationState.stop = urlParams.get("stop");
+    // Only if we minimally have either a page, or a start & stop
+    if(urlParams.get("p") || (urlParams.get("pst") && urlParams.get("pstp"))){
+      
+      // Set start and stop
+      if(urlParams.get("pst")) this._paginationState.start = urlParams.get("pst");
+      if(urlParams.get("pstp")) this._paginationState.stop = urlParams.get("pstp");      
+      
+      // Page size (with conditions for != start stop, or page #)
+      if(urlParams.get("psz")) {
+        if( urlParams.get("pst") && urlParams.get("pstp") ) {
+          let paramSize = Number(urlParams.get("psz"));
+          let paramStart = Number(urlParams.get("pst"));
+          let paramStop = Number(urlParams.get("pstp"));
+          let startStopRange = (paramStop - paramStart);
+
+          if( startStopRange !== paramSize) {
+            if( (startStopRange == 10) || (startStopRange == 25) || (startStopRange == 50)){
+              // if it on track with our page size options this use instead of passed pagesz
+              this._paginationState.pageSize = startStopRange;
+              let page = startStopRange / paramStart;
+              if( page !== this._paginationState.page ){
+                this._paginationState.page = page;
+                thereWereFixes = true;
+              }
+            } else { // If stop & start don't make sense ignore them 
+              // Means the start and stop match pgsize... reset them to match, use pgSize as truth
+              // @TODO
+              // find start & stop using pageSize and page
+            }
+            
+          }
+          }
+        } else {
+          // Means the start and stop match pgsize...
+          // Double check the page value & set the size as it is passed
+          this._paginationState.pageSize = urlParams.get("psz");
+        }
+
+        // Use start and top to double check page selected
+        // let pageCalc = this._paginationState.stop / this._paginationState.start;
+        // if( pageCalc !== this._paginationState.page ){
+        //   this._paginationState.page = page;
+        // }
+      
+    }
+
+    if(thereWereFixes){
+      // Pushes path + new Query param to history so user can press back
+      //this._handlePushState({ fp : this._filterParams, ps : this._paginationState});
+    }
+
   }
 
   _cardGallery(filterParams, paginationState) {
@@ -181,23 +241,65 @@ class AnalyticsAnnotations extends TatorPage {
     });
   }
 
-  // Handler for filter submission
   // Reset the pagination back to page 0
   _updateFilterResults(evt){
     this._filterParams = evt.detail.conditions;
     this._paginationState.init = true;
+
+    // @TODO reset to default page size? or keep if something was chosen?
     this._paginationState.pageSize = this._filterResults._paginator.getPageSize();
     this._paginationState.start = 0;
+    this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
     this._cardGallery(this._filterParams, this._paginationState);
+
+    // Pushes path + new Query param to history so user can press back
+    //this._handlePushState({ fp : this._filterParams, ps : this._paginationState});
   }
 
   // Handler for pagination click
   _paginateFilterResults(evt){
+    // set state
     this._paginationState.start = evt.detail.start;
     this._paginationState.stop = evt.detail.stop;
+    this._paginationState.page = evt.detail.page;
+    this._paginationState.pageSize = evt.detail.pgsize;
     this._paginationState.init = false;
+   
+    // get the gallery 
     this._cardGallery(this._filterParams, this._paginationState);
+
+    // make sure view lined up top and bottom
+    this._filterResults._paginator.setValues(this._paginationState);
+    this._filterResults._paginator_top.setValues(this._paginationState);
+
+    // Pushes path + new Query param to history so user can press back
+    //this._handlePushState({ fp : this._filterParams, ps : this._paginationState});
+  }
+  
+  // Handle push state, will not remake query param if no change in pagination or filter
+  // uses passed states instead of reading in case there are changes
+  _handlePushState({ fp = null, ps = null} = {}){
+    const state = { 'page_id': this.projectId }
+    const title = ''
+    const urlBase = window.location.pathname;
+    let pq = "";
+    let fq = "";
+
+    // Get pagination info for URL
+    if(ps != null) {
+      pq = `pst=${ps.start}&pstp=${ps.stop}&p=${ps.page}&psz=${ps.pageSize}`;
+    }
+
+     // Get filter info for URL
+    if(fp != null) {
+      let fpEncoded = encodeURI();
+      fq =`fc=${fpEncoded}`;
+    }
+
+    const URL = `${urlBase}?${pq}${fq != null ? "&" : ""}${fq} `;
+
+    if(pq || fq) return history.pushState(state, title, URL);
   }
 
 }
