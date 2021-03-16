@@ -45,6 +45,25 @@ logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
+
+def _get_next_archive_state(desired_archive_state, last_archive_state):
+    if desired_archive_state == "to_live":
+        if last_archive_state == "archived":
+            return "to_live"
+        if last_archive_state == "to_archive":
+            return "live"
+        return None
+
+    if desired_archive_state == "to_archive":
+        if last_archive_state == "live":
+            return "to_archive"
+        if last_archive_state == "to_live":
+            return "archived"
+        return None
+
+    raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")
+
+
 def _presign(expiration, medias, fields=['archival', 'streaming', 'audio', 'image',
                                          'thumbnail', 'thumbnail_gif']):
     """ Replaces specified media fields with presigned urls.
@@ -417,52 +436,96 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
-        patch_archive_state = params.pop("archive_state", None)
-        if patch_archive_state is None and params.get("attributes") is None:
+        desired_archive_state = params.pop("archive_state", None)
+        if desired_archive_state is None and params.get("attributes") is None:
             raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
-        ids_to_update = list(qs.values_list('pk', flat=True).distinct())
-        count = qs.count()
-        if count > 0:
+        count = 0
+        if qs.exists():
             ts = TatorSearch()
+            ids_to_update = list(qs.values_list("pk", flat=True).distinct())
 
             # Get the current representation of the object for comparison
-            original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
             if new_attrs is not None:
+                attr_count = len(ids_to_update)
+                obj = qs.first()
+                original_dict = obj.model_dict
                 bulk_patch_attributes(new_attrs, qs)
-            if patch_archive_state is not None:
-                # TODO intelligently set archive state based on current state, e.g. `to_archive`
-                # that is given `to_live` should go immediately to `live`
-                qs.update(
-                    archive_state=patch_archive_state,
-                    modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                query = get_media_es_query(params["project"], params)
+                ts.update(self.kwargs["project"], obj.meta, query, new_attrs)
+                qs = Media.objects.filter(pk__in=ids_to_update)
+                obj = Media.objects.get(id=original_dict["id"])
+                change_dict = obj.change_dict(original_dict)
+                # Create the ChangeLog entry and associate it with all objects in the queryset
+                cl = ChangeLog(
+                    project=obj.project, user=self.request.user, description_of_change=change_dict
                 )
+                cl.save()
+                objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
+                bulk_create_from_generator(objs, ChangeToObject)
+                count = max(count, attr_count)
 
-            # Get one object from the queryset to create the change log
-            qs = Media.objects.filter(pk__in=ids_to_update)
-            obj = Media.objects.get(id=original_dict["id"])
-            change_dict = obj.change_dict(original_dict)
-            ref_table = ContentType.objects.get_for_model(obj)
+            if desired_archive_state is not None:
+                archive_count = 0
+                qs = Media.objects.filter(pk__in=ids_to_update)
 
-            if new_attrs is not None:
-                query = get_media_es_query(params['project'], params)
-                ts.update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-            if patch_archive_state is not None:
-                documents = []
-                for entity in qs:
-                    documents += ts.build_document(entity)
-                ts.bulk_add_documents(documents)
+                # Track previously updated IDs to avoid multiple updates to a single entity
+                previously_updated = []
 
-            # Create the ChangeLog entry and associate it with all objects in the queryset
-            cl = ChangeLog(
-                project=obj.project, user=self.request.user, description_of_change=change_dict
-            )
-            cl.save()
-            objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
-            bulk_create_from_generator(objs, ChangeToObject)
+                # Further filter on current archive state to correctly update based on previous
+                # state
+                for state in ["live", "to_live", "archived", "to_archive"]:
+                    next_archive_state = _get_next_archive_state(desired_archive_state, state)
 
-        return {'message': f'Successfully patched {count} medias!'}
+                    # If the next archive state is a noop, skip the update
+                    if next_archive_state is None:
+                        continue
+
+                    archive_qs = qs.filter(archive_state=state).exclude(pk__in=previously_updated)
+
+                    # If no media match the archive state, skip the update
+                    if not archive_qs.exists():
+                        continue
+
+                    # Get the original dict for creating the change log
+                    archive_objs = list(archive_qs)
+                    obj = archive_objs[0]
+                    ref_table = ContentType.objects.get_for_model(obj)
+                    original_dict = obj.model_dict
+
+                    # Store the list of ids updated for this state and update them
+                    archive_ids_to_update = [o.id for o in archive_objs]
+                    archive_count += len(archive_ids_to_update)
+                    previously_updated += archive_ids_to_update
+                    archive_qs.update(
+                        archive_state=next_archive_state,
+                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                    )
+                    archive_qs = Media.objects.filter(pk__in=archive_ids_to_update)
+
+                    # Update in ES
+                    documents = []
+                    for entity in archive_qs:
+                        documents += ts.build_document(entity)
+                    ts.bulk_add_documents(documents)
+
+                    # Create the ChangeLog entry and associate it with all updated objects
+                    obj = Media.objects.get(id=original_dict["id"])
+                    cl = ChangeLog(
+                        project=obj.project,
+                        user=self.request.user,
+                        description_of_change=obj.change_dict(original_dict),
+                    )
+                    cl.save()
+                    objs = (
+                        ChangeToObject(ref_table=ref_table, ref_id=obj_id, change_id=cl)
+                        for obj_id in archive_ids_to_update
+                    )
+                    bulk_create_from_generator(objs, ChangeToObject)
+                count = max(count, archive_count)
+
+        return {"message": f"Successfully patched {count} medias!"}
 
     def _put(self, params):
         """ Retrieve list of media by ID.
@@ -555,10 +618,15 @@ class MediaDetailAPI(BaseDetailView):
                 qs.update(media_files=media_files)
 
             if "archive_state" in params:
-                qs.update(
-                    archive_state=params["archive_state"],
-                    modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                next_archive_state = _get_next_archive_state(
+                    params["archive_state"], qs[0].archive_state
                 )
+
+                if next_archive_state is not None:
+                    qs.update(
+                        archive_state=next_archive_state,
+                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                    )
 
         obj = Media.objects.get(pk=params['id'], deleted=False)
         TatorSearch().create_document(obj)

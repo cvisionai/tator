@@ -21,11 +21,6 @@ media_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
-    'archive_state': {
-        'type': 'string',
-        'description': 'Marks media for archival or retrieval.',
-        'enum': ['to_archive', 'to_live']
-    },
 }
 
 media_get_properties = {
@@ -210,6 +205,11 @@ media_update = {
             'type': 'integer',
         },
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval.',
+            'enum': ['to_archive', 'to_live']
+        },
     },
 }
 
@@ -250,5 +250,10 @@ media = {
     'properties': {
         **media_properties,
         **media_get_properties,
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval.',
+            'enum': ['archive', 'to_archive', 'live', 'to_live']
+        },
     },
 }
