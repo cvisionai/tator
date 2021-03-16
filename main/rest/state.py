@@ -434,6 +434,24 @@ class StateDetailAPI(BaseDetailView):
             localizations = Localization.objects.filter(pk__in=params['localization_ids_remove'])
             obj.localizations.remove(*list(localizations))
 
+        # Make sure media and localizations are part of this project.
+        media_qs = Media.objects.filter(pk__in=obj.media)
+        localization_qs = Localization.objects.filter(pk__in=obj.localizations)
+        media_projects = list(media_qs.values_list('project', flat=True).distinct())
+        localization_projects = list(localization_qs.values_list('project', flat=True).distinct()
+        if len(localization_projects) != 1:
+            raise Exception(f"Localizations must be part of project {obj.project.id}, got projects "
+                            f"{localization_projects}!")
+        elif localization_projects[0] != obj.project.id:
+            raise Exception(f"Localizations must be part of project {obj.project.id}, got project "
+                            f"{localization_projects[0]!")
+        if len(media_projects) != 1:
+            raise Exception(f"Media must be part of project {obj.project.id}, got projects "
+                            f"{media_projects}!")
+        elif media_projects[0] != obj.project.id:
+            raise Exception(f"Media must be part of project {obj.project.id}, got project "
+                            f"{media_projects[0]!")
+
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         # Update modified_by to be the last user
