@@ -117,6 +117,7 @@ class LocalizationListAPI(BaseListView):
         meta_ids = set([loc['type'] for loc in loc_specs])
         media_ids = set([loc['media_id'] for loc in loc_specs])
         version_ids = set([loc.get('version', None) for loc in loc_specs])
+        version_ids.add(default_version.id)
 
         # Make foreign key querysets.
         meta_qs = LocalizationType.objects.filter(pk__in=meta_ids)
@@ -139,19 +140,19 @@ class LocalizationListAPI(BaseListView):
                             f"projects {meta_projects}!")
         elif meta_projects[0] != project.id:
             raise Exception(f"Localization types must be part of project {project.id}, got "
-                            f"project {meta_projects[0]!")
+                            f"project {meta_projects[0]}!")
         if len(media_projects) != 1:
             raise Exception(f"Media must be part of project {project.id}, got projects "
                             f"{media_projects}!")
         elif media_projects[0] != project.id:
             raise Exception(f"Media must be part of project {project.id}, got project "
-                            f"{media_projects[0]!")
+                            f"{media_projects[0]}!")
         if len(version_projects) != 1:
             raise Exception(f"Versions must be part of project {project.id}, got projects "
                             f"{version_projects}!")
         elif version_projects[0] != project.id:
             raise Exception(f"Versions must be part of project {project.id}, got project "
-                            f"{version_projects[0]!")
+                            f"{version_projects[0]}!")
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}

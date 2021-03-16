@@ -169,11 +169,12 @@ class StateListAPI(BaseListView):
         # Find unique foreign keys.
         meta_ids = set([state['type'] for state in state_specs])
         version_ids = set([state.get('version', None) for state in state_specs])
+        version_ids.add(default_version.id)
         localization_ids = set()
         media_ids = set()
         for state_spec in state_specs:
-            localization_ids.update(state_specs['localization_ids'])
-            media_ids.update(state_specs['media_ids'])
+            localization_ids.update(state_spec.get('localization_ids', []))
+            media_ids.update(state_spec['media_ids'])
 
         # Make foreign key querysets.
         meta_qs = StateType.objects.filter(pk__in=meta_ids)
@@ -197,25 +198,26 @@ class StateListAPI(BaseListView):
                             f"projects {meta_projects}!")
         elif meta_projects[0] != project.id:
             raise Exception(f"Localization types must be part of project {project.id}, got "
-                            f"project {meta_projects[0]!")
+                            f"project {meta_projects[0]}!")
         if len(version_projects) != 1:
             raise Exception(f"Versions must be part of project {project.id}, got projects "
                             f"{version_projects}!")
         elif version_projects[0] != project.id:
             raise Exception(f"Versions must be part of project {project.id}, got project "
-                            f"{version_projects[0]!")
-        if len(localization_projects) != 1:
-            raise Exception(f"Localizations must be part of project {project.id}, got projects "
-                            f"{localization_projects}!")
-        elif localization_projects[0] != project.id:
-            raise Exception(f"Localizations must be part of project {project.id}, got project "
-                            f"{localization_projects[0]!")
+                            f"{version_projects[0]}!")
+        if len(localization_ids) > 0:
+            if len(localization_projects) != 1:
+                raise Exception(f"Localizations must be part of project {project.id}, got projects "
+                                f"{localization_projects}!")
+            elif localization_projects[0] != project.id:
+                raise Exception(f"Localizations must be part of project {project.id}, got project "
+                                f"{localization_projects[0]}!")
         if len(media_projects) != 1:
             raise Exception(f"Media must be part of project {project.id}, got projects "
                             f"{media_projects}!")
         elif media_projects[0] != project.id:
             raise Exception(f"Media must be part of project {project.id}, got project "
-                            f"{media_projects[0]!")
+                            f"{media_projects[0]}!")
 
         # Get required fields for attributes.
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
@@ -435,22 +437,23 @@ class StateDetailAPI(BaseDetailView):
             obj.localizations.remove(*list(localizations))
 
         # Make sure media and localizations are part of this project.
-        media_qs = Media.objects.filter(pk__in=obj.media)
-        localization_qs = Localization.objects.filter(pk__in=obj.localizations)
+        media_qs = Media.objects.filter(pk__in=obj.media.all())
+        localization_qs = Localization.objects.filter(pk__in=obj.localizations.all())
         media_projects = list(media_qs.values_list('project', flat=True).distinct())
-        localization_projects = list(localization_qs.values_list('project', flat=True).distinct()
-        if len(localization_projects) != 1:
-            raise Exception(f"Localizations must be part of project {obj.project.id}, got projects "
-                            f"{localization_projects}!")
-        elif localization_projects[0] != obj.project.id:
-            raise Exception(f"Localizations must be part of project {obj.project.id}, got project "
-                            f"{localization_projects[0]!")
+        localization_projects = list(localization_qs.values_list('project', flat=True).distinct())
+        if obj.localizations.count() > 0:
+            if len(localization_projects) != 1:
+                raise Exception(f"Localizations must be part of project {obj.project.id}, got projects "
+                                f"{localization_projects}!")
+            elif localization_projects[0] != obj.project.id:
+                raise Exception(f"Localizations must be part of project {obj.project.id}, got project "
+                                f"{localization_projects[0]}!")
         if len(media_projects) != 1:
             raise Exception(f"Media must be part of project {obj.project.id}, got projects "
                             f"{media_projects}!")
         elif media_projects[0] != obj.project.id:
             raise Exception(f"Media must be part of project {obj.project.id}, got project "
-                            f"{media_projects[0]!")
+                            f"{media_projects[0]}!")
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
