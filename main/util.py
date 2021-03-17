@@ -56,8 +56,9 @@ def updateProjectTotals(force=False):
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                s3 = TatorS3().s3
-                bucket_name = os.getenv('BUCKET_NAME')
+                tator_s3 = TatorS3(project.bucket)
+                s3 = tator_s3.s3
+                bucket_name = tator_s3.bucket_name
                 if 'thumbnail' in media.media_files:
                     if len(media.media_files['thumbnail']) > 0:
                         src_key = media.media_files['thumbnail'][0]['path']

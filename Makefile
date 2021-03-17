@@ -288,7 +288,6 @@ FILES = \
     project-detail/section-expand.js \
     project-detail/section-paginator.js \
     project-detail/section-files.js \
-    project-detail/section-overview.js \
     project-detail/media-section.js \
     project-detail/delete-section-form.js \
     project-detail/delete-file-form.js \
