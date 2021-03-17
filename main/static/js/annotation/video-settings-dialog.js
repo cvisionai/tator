@@ -29,6 +29,35 @@ class VideoSettingsDialog extends ModalDialog {
     defaultButton.style.gridRow = 1;
     this._gridDiv.appendChild(defaultButton);
 
+    const overlayGridDiv = document.createElement("div");
+    overlayGridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
+    this._main.appendChild(overlayGridDiv);
+
+    const overlayHeaderDiv = document.createElement("div");
+    overlayHeaderDiv.style.gridColumn = 1;
+    overlayHeaderDiv.style.gridRow = 1;
+    overlayGridDiv.appendChild(overlayHeaderDiv);
+
+    const overlayHeader = document.createElement("div");
+    overlayHeader.textContent = "Diagnostics Overlay";
+    overlayHeader.setAttribute("class", "h3 d-flex flex-items-center text-uppercase")
+    overlayHeaderDiv.appendChild(overlayHeader);
+
+    const overlaySubHeader = document.createElement("div");
+    overlaySubHeader.textContent = "Toggle displaying video's current frame, FPS, and source qualities";
+    overlaySubHeader.setAttribute("class", "text-gray f2");
+    overlayHeaderDiv.appendChild(overlaySubHeader);
+
+    const overlayOption = document.createElement("bool-input");
+    overlayOption.setAttribute("class", "col-12");
+    overlayOption.style.gridColumn = 2;
+    overlayOption.style.gridRow = 1;
+    overlayOption.setAttribute("name", "");
+    overlayOption.setAttribute("off-text", "Off");
+    overlayOption.setAttribute("on-text", "On");
+    overlayOption.reset();
+    overlayGridDiv.appendChild(overlayOption);
+
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
     apply.textContent = "Apply";
@@ -38,6 +67,16 @@ class VideoSettingsDialog extends ModalDialog {
     apply.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this.dispatchEvent(new Event("close"));
+      this.dispatchEvent(new CustomEvent("applyVideoSources", {
+        composed: true,
+        detail: {
+          playback: this.getSourceObject("play"),
+          seek: this.getSourceObject("seek"),
+          scrub: this.getSourceObject("scrub"),
+          focusPlayback: this.getSourceObject("focusPlayback"),
+          dockPlayback: this.getSourceObject("dockPlayback")
+        }
+      }));
     });
 
     // Sets all the choices to the defaults
@@ -45,12 +84,22 @@ class VideoSettingsDialog extends ModalDialog {
       this.applyDefaults();
     });
 
+    // Display video diagnostics
+    overlayOption.addEventListener("change", () => {
+      this.dispatchEvent(new CustomEvent("displayOverlays", {
+        composed: true,
+        detail: {
+          displayDiagnostic: overlayOption.getValue()
+        }
+      }));
+    });
+
     this._divOptions = {};
     this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 1x playback");
     this._createBuffer(3, "seek", "Seek Quality", "Pause quality");
-    this._createBuffer(4, "playback", "On-Demand 1x Playback", "1x playback for single vidoes and grid videos");
+    this._createBuffer(4, "play", "On-Demand 1x Playback", "1x playback for single vidoes and grid videos");
     this._createBuffer(5, "focusPlayback", "Focused On-Demand 1x Playback", "1x playback for the focused video (if present)");
-    this._createBuffer(6, "dockedPlayback", "Docked On-Demand 1x Playback", "1x playback for docked videos (if present)");
+    this._createBuffer(6, "dockPlayback", "Docked On-Demand 1x Playback", "1x playback for docked videos (if present)");
   }
 
   _createBuffer(gridRow, id, title, description) {
@@ -100,14 +149,14 @@ class VideoSettingsDialog extends ModalDialog {
     this._divOptions["seek"].choice.setValue(defaultStr);
 
     defaultStr = this.createSourceString(this._defaultSources.playQuality, this._defaultSources.playFPS);
-    this._divOptions["playback"].choice.setValue(defaultStr);
+    this._divOptions["play"].choice.setValue(defaultStr);
 
     if (this._mode == "multiview") {
       defaultStr = this.createSourceString(this._defaultSources.focusedQuality, this._defaultSources.focusedFPS);
       this._divOptions["focusPlayback"].choice.setValue(defaultStr);
 
       defaultStr = this.createSourceString(this._defaultSources.dockedQuality, this._defaultSources.dockedFPS);
-      this._divOptions["dockedPlayback"].choice.setValue(defaultStr);
+      this._divOptions["dockPlayback"].choice.setValue(defaultStr);
     }
   }
 
@@ -119,6 +168,29 @@ class VideoSettingsDialog extends ModalDialog {
    */
   createSourceString(quality, fps) {
     return `${quality}p, ${fps.toFixed(2)} FPS`;
+  }
+
+  /**
+   * Generates the object describing the selected video source
+   * @param {string} sourceName - source name used in this dialog and video.js / multiview
+   * @returns {object} Has .fps {Number} and .quality {Number} and .name {string} properties
+   */
+  getSourceObject(sourceName) {
+
+    if ((sourceName == "focusPlayback" && this._mode != "multiview") ||
+        (sourceName == "dockPlayback" && this._mode != "multiview")) {
+      return null;
+    }
+
+    var str = this._divOptions[sourceName].choice.getValue();
+    const quality = parseInt(str.split("p")[0]);
+    const fps = parseFloat(str.split(",")[1].split("FPS")[0]);
+
+    return {
+      quality: quality,
+      fps: fps,
+      name: sourceName
+    };
   }
 
   /**
@@ -142,24 +214,24 @@ class VideoSettingsDialog extends ModalDialog {
 
     this._divOptions["scrub"].choice.choices = sourceList;
     this._divOptions["seek"].choice.choices = sourceList;
-    this._divOptions["playback"].choice.choices = sourceList;
+    this._divOptions["play"].choice.choices = sourceList;
     this._divOptions["focusPlayback"].choice.choices = sourceList;
-    this._divOptions["dockedPlayback"].choice.choices = sourceList;
+    this._divOptions["dockPlayback"].choice.choices = sourceList;
 
     if (mode == "single")
     {
       this._divOptions["focusPlayback"].textDiv.style.display = "none";
-      this._divOptions["dockedPlayback"].textDiv.style.display = "none";
+      this._divOptions["dockPlayback"].textDiv.style.display = "none";
       this._divOptions["focusPlayback"].choiceDiv.style.display = "none";
-      this._divOptions["dockedPlayback"].choiceDiv.style.display = "none";
+      this._divOptions["dockPlayback"].choiceDiv.style.display = "none";
 
     }
     else if (mode == "multiview")
     {
       this._divOptions["focusPlayback"].textDiv.style.display = "block";
-      this._divOptions["dockedPlayback"].textDiv.style.display = "block";
+      this._divOptions["dockPlayback"].textDiv.style.display = "block";
       this._divOptions["focusPlayback"].choiceDiv.style.display = "block";
-      this._divOptions["dockedPlayback"].choiceDiv.style.display = "block";
+      this._divOptions["dockPlayback"].choiceDiv.style.display = "block";
     }
     this.applyDefaults();
   }

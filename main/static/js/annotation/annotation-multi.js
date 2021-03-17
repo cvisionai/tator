@@ -1268,10 +1268,25 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  setQuality(quality) {
-    for (let video of this._videos)
-    {
-      video.setQuality(quality);
+  setQuality(quality, buffer) {
+    if (buffer == "focusPlayback") {
+      this._focusQuality = quality;
+      for (let videoDiv of this._focusDiv.children) {
+        videoDiv.children[0].setQuality(this._focusQuality, "play");
+      }
+    }
+    else if (buffer == "dockPlayback") {
+      this._dockQuality = quality;
+      for (let videoDiv of this._focusTopDockDiv.children) {
+        videoDiv.children[0].setQuality(this._dockQuality, "play");
+      }
+    }
+    else {
+      this._quality = quality;
+      for (let video of this._videos)
+      {
+        video.setQuality(quality, buffer);
+      }
     }
   }
 
@@ -1416,13 +1431,6 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  enableDisplayFrame() {
-    for (let video of this._videos)
-    {
-      video.setupOverlay({mode: "displayFrameNumber"});
-    }
-  }
-
   safeMode() {
     for (let video of this._videos)
     {
@@ -1454,6 +1462,13 @@ class AnnotationMulti extends TatorElement {
   _timeToFrame(minutes, seconds) {
     var frame = minutes * 60 * this._fps_of_max + seconds * this._fps_of_max + 1;
     return frame;
+  }
+
+  displayVideoDiagnosticOverlay(display) {
+    for (let video of this._videos)
+    {
+      video.updateVideoDiagnosticOverlay(display);
+    }
   }
 }
 

@@ -579,16 +579,16 @@ class AnnotationPlayer extends TatorElement {
     this._video.rateChange(this._rate);
   }
 
-  setQuality(quality) {
+  setQuality(quality, buffer) {
     // For now reload the video
     if (this.is_paused())
     {
-      this._video.setQuality(quality);
+      this._video.setQuality(quality, buffer);
     }
     else
     {
       this.pause();
-      this._video.setQuality(quality);
+      this._video.setQuality(quality, buffer);
     }
     this._video.refresh(true);
   }
@@ -701,6 +701,10 @@ class AnnotationPlayer extends TatorElement {
   _timeToFrame(minutes, seconds) {
     var frame = minutes * 60 * this._fps + seconds * this._fps + 1;
     return frame;
+  }
+
+  displayVideoDiagnosticOverlay(display) {
+    this._video.updateVideoDiagnosticOverlay(display);
   }
 }
 

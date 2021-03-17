@@ -170,6 +170,9 @@ class AnnotationPage extends TatorPage {
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
+              this._videoSettingsDialog.addEventListener("apply", (evt) => {
+                player.apply
+              });
             } else if (type_data.dtype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
@@ -308,7 +311,6 @@ class AnnotationPage extends TatorPage {
         const haveLock = searchParams.has("lock");
         const haveFillBoxes = searchParams.has("fill_boxes");
         const haveToggleText = searchParams.has("toggle_text");
-        const haveDisplayFrame = searchParams.has("display_frame");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -367,15 +369,6 @@ class AnnotationPage extends TatorPage {
             this._settings._toggle_text.toggle = false
           }
           canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
-        }
-        if (haveDisplayFrame) {
-          const display_frame = Number(searchParams.get("display_frame"));
-          if (display_frame) {
-            if (typeof canvas.enableDisplayFrame != undefined)
-            {
-              canvas.enableDisplayFrame();
-            }
-          }
         }
       }
     }
@@ -528,8 +521,21 @@ class AnnotationPage extends TatorPage {
       this.removeAttribute("has-open-modal", "");
     });
 
-    this._videoSettingsDialog.addEventListener("close", evt => {
+    this._videoSettingsDialog.addEventListener("close", () => {
       this.removeAttribute("has-open-modal", "");
+    });
+
+    this._videoSettingsDialog.addEventListener("applyVideoSources", evt => {
+      for (let sourceName in evt.detail) {
+        let source = evt.detail[sourceName];
+        if (source) {
+          canvas.setQuality(source.quality, source.name);
+        }
+      }
+    });
+
+    this._videoSettingsDialog.addEventListener("displayOverlays", evt => {
+      canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
     this._settings.addEventListener("openVideoSettings", () => {
