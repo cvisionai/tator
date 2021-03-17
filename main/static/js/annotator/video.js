@@ -115,8 +115,6 @@ class VideoBufferDemux
     // Create another video buffer specifically used for onDemand playback
     this._onDemandBufferIndex = this._numBuffers;
     this._pendingOnDemandDeletes = [];
-    this._waitPlayback = false;
-    this._waitId = null;
 
     this._init = false;
     this._dataLag = [];
@@ -1075,7 +1073,11 @@ class VideoCanvas extends AnnotationCanvas {
       //Utilities.sendNotification(msg, true);
     }
 
+    this._waitPlayback = false;
+    this._waitId = null;
+
     this._videoDiagnostics = {
+      id: null,
       currentFrame: null,
       sourceFPS: null,
       actualFPS: null,
@@ -1088,7 +1090,7 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   // #TODO Refactor this so that it uses internal variables?
-  updateVideoDiagnosticOverlay(display, currentFrame, sourceFPS, actualFPS, playQuality, scrubQuality, seekQuality) {
+  updateVideoDiagnosticOverlay(display, currentFrame, sourceFPS, actualFPS, playQuality, scrubQuality, seekQuality, id) {
     if (this._mediaType.dtype == "video" || this._mediaType.dtype == "multi") {
 
       if (currentFrame != undefined) {
@@ -1109,6 +1111,9 @@ class VideoCanvas extends AnnotationCanvas {
       if (seekQuality != undefined) {
         this._videoDiagnostics.seekQuality = seekQuality;
       }
+      if (id != undefined) {
+        this._videoDiagnostics.id = id;
+      }
 
       var textContent = `
       Frame: ${this._videoDiagnostics.currentFrame}\r\n
@@ -1117,6 +1122,7 @@ class VideoCanvas extends AnnotationCanvas {
       Seek Quality: ${this._videoDiagnostics.seekQuality}\r\n
       Source FPS: ${this._videoDiagnostics.sourceFPS}\r\n
       Actual FPS: ${this._videoDiagnostics.actualFPS}\r\n
+      ID: ${this._videoDiagnostics.id}\r\n
       `;
 
       if (display == true) {
@@ -1521,7 +1527,8 @@ class VideoCanvas extends AnnotationCanvas {
           null, this._dispFrame, "N/A", "N/A",
           this._videoObject.media_files["streaming"][this._play_idx].resolution[0],
           this._videoObject.media_files["streaming"][this._scrub_idx].resolution[0],
-          this._videoObject.media_files["streaming"][this._seek_idx].resolution[0]);
+          this._videoObject.media_files["streaming"][this._seek_idx].resolution[0],
+          this._videoObject.id);
       }
       catch {}
     }
@@ -1689,7 +1696,8 @@ class VideoCanvas extends AnnotationCanvas {
       null, this._dispFrame, "N/A", "N/A",
       streaming_files[this._play_idx].resolution[0],
       streaming_files[this._scrub_idx].resolution[0],
-      streaming_files[this._seek_idx].resolution[0]);
+      streaming_files[this._seek_idx].resolution[0],
+      videoObject.id);
 
     // On load seek to frame 0
     return promise;
@@ -2193,7 +2201,27 @@ class VideoCanvas extends AnnotationCanvas {
     /// and seeks to the current frame in the off-screen buffer. If the player
     /// isn't running and there are sufficient frames it will kick off the player
     /// in 10 load cycles
+    this._sentPlaybackReady = false;
     var loader=function(){
+
+      // Wait playback used to sync up with other videos
+      if (that._waitPlayback)
+      {
+        if (!that._sentPlaybackReady)
+        {
+          console.log(`playbackReady: _playGenericScrub`)
+          that._sentPlaybackReady = true;
+          that.dispatchEvent(new CustomEvent(
+            "playbackReady",
+            {
+              composed: true,
+              detail: {playbackReadyId: that._waitId},
+            }));
+        }
+
+        that._loaderTimeout=setTimeout(loader, 100);
+        return;
+      }
 
       // If the load buffer is full try again in the load interval
       if (that._draw.canLoad() == false)
@@ -2280,7 +2308,8 @@ class VideoCanvas extends AnnotationCanvas {
           null, that._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2),
           that._videoObject.media_files["streaming"][that._play_idx].resolution[0],
           that._videoObject.media_files["streaming"][that._scrub_idx].resolution[0],
-          that._videoObject.media_files["streaming"][that._seek_idx].resolution[0]);
+          that._videoObject.media_files["streaming"][that._seek_idx].resolution[0],
+          that._videoObject.id);
 
         //if ((that._networkUpdate % 3) == 0 && that._diagnosticMode == true)
         //{
@@ -2334,7 +2363,7 @@ class VideoCanvas extends AnnotationCanvas {
   _playGenericOnDemand(direction)
   {
     var that = this;
-    console.log("Setting direction " + direction);
+    console.log("_playGenericOnDemand - Setting direction " + direction);
     this._direction=direction;
 
     // Reset the GPU buffer on a new play action
@@ -2549,7 +2578,8 @@ class VideoCanvas extends AnnotationCanvas {
         null, that._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2),
         that._videoObject.media_files["streaming"][that._play_idx].resolution[0],
         that._videoObject.media_files["streaming"][that._scrub_idx].resolution[0],
-        that._videoObject.media_files["streaming"][that._seek_idx].resolution[0]);
+        that._videoObject.media_files["streaming"][that._seek_idx].resolution[0],
+        that._videoObject.id);
 
       if (that._direction!=Direction.STOPPED)
       {
@@ -2782,6 +2812,7 @@ class VideoCanvas extends AnnotationCanvas {
         // Kick off the loader thread once we have buffered enough data (do this just once)
         if (that._onDemandPlaybackReady && !that._loaderStarted)
         {
+          console.log("Launching playback loader");
           that._loaderStarted = true;
           that._loaderTimeout = setTimeout(loader, 250);
         }
@@ -2831,6 +2862,7 @@ class VideoCanvas extends AnnotationCanvas {
   {
     this._waitPlayback = waitStatus;
     this._waitId = waitId;
+    console.log(`waitPlayback (status/ID) ${waitStatus} ${waitId}`)
   }
 
   /**
@@ -2914,6 +2946,9 @@ class VideoCanvas extends AnnotationCanvas {
    */
   stopPlayerThread()
   {
+    this._onDemandInit = false;
+    this._direction = Direction.STOPPED;
+
     if (this._audioPlayer)
     {
       this._audioPlayer.pause();
@@ -2940,9 +2975,6 @@ class VideoCanvas extends AnnotationCanvas {
       this._onDemandDownloadTimeout=null;
       this._dlWorker.postMessage({"type": "onDemandShutdown"});
     }
-
-    this._onDemandInit = false;
-    this._direction = Direction.STOPPED;
   }
 
   /**

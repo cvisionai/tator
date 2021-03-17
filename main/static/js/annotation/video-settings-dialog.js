@@ -44,7 +44,7 @@ class VideoSettingsDialog extends ModalDialog {
     overlayHeaderDiv.appendChild(overlayHeader);
 
     const overlaySubHeader = document.createElement("div");
-    overlaySubHeader.textContent = "Toggle displaying video's current frame, FPS, and source qualities";
+    overlaySubHeader.textContent = "Toggle displaying video's ID, current frame, FPS, and source qualities";
     overlaySubHeader.setAttribute("class", "text-gray f2");
     overlayHeaderDiv.appendChild(overlaySubHeader);
 
