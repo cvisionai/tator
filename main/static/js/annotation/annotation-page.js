@@ -906,11 +906,11 @@ class AnnotationPage extends TatorPage {
         this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
         canvas.addEventListener("maximize", () => {
-          this._browser.style.display = "none";
+          document.body.requestFullscreen();
         });
 
         canvas.addEventListener("minimize", () => {
-          this._browser.style.display = "block";
+          document.exitFullscreen();
         });
       });
    });
