@@ -1470,6 +1470,26 @@ class AnnotationMulti extends TatorElement {
       video.updateVideoDiagnosticOverlay(display);
     }
   }
+
+  getVideoSettings() {
+
+    const seekInfo = this._videos[0].getQuality("seek");
+    const scrubInfo = this._videos[0].getQuality("scrub");
+    const playInfo = this._videos[0].getQuality("play");
+
+    return {
+        seekQuality: seekInfo.quality,
+        seekFPS: seekInfo.fps,
+        scrubQuality: scrubInfo.quality,
+        scrubFPS: scrubInfo.fps,
+        playQuality: playInfo.quality,
+        playFPS: playInfo.fps,
+        focusedQuality: this._focusQuality,
+        focusedFPS: playInfo.fps,
+        dockedQuality: this._dockQuality,
+        dockedFPS: playInfo.fps
+      };
+  }
 }
 
 customElements.define("annotation-multi", AnnotationMulti);

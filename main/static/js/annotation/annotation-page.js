@@ -539,6 +539,8 @@ class AnnotationPage extends TatorPage {
     });
 
     this._settings.addEventListener("openVideoSettings", () => {
+      var videoSettings = canvas.getVideoSettings();
+      this._videoSettingsDialog.applySettings(videoSettings);
       this._videoSettingsDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });

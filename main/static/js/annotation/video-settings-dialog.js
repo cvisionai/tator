@@ -134,30 +134,33 @@ class VideoSettingsDialog extends ModalDialog {
     this._divOptions[id].choice = choice;
   }
 
-  applyDefaults() {
+  applySettings(settings) {
+    let settingsStr = "";
 
+    settingsStr = this.createSourceString(settings.scrubQuality, settings.scrubFPS);
+    this._divOptions["scrub"].choice.setValue(settingsStr);
+
+    settingsStr = this.createSourceString(settings.seekQuality, settings.seekFPS);
+    this._divOptions["seek"].choice.setValue(settingsStr);
+
+    settingsStr = this.createSourceString(settings.playQuality, settings.playFPS);
+    this._divOptions["play"].choice.setValue(settingsStr);
+
+    if (this._mode == "multiview") {
+      settingsStr = this.createSourceString(settings.focusedQuality, settings.focusedFPS);
+      this._divOptions["focusPlayback"].choice.setValue(settingsStr);
+
+      settingsStr = this.createSourceString(settings.dockedQuality, this._defaultSources.dockedFPS);
+      this._divOptions["dockPlayback"].choice.setValue(settingsStr);
+    }
+  }
+
+  applyDefaults() {
     if (this._defaultSources == undefined) {
       return;
     }
 
-    let defaultStr = "";
-
-    defaultStr = this.createSourceString(this._defaultSources.scrubQuality, this._defaultSources.scrubFPS);
-    this._divOptions["scrub"].choice.setValue(defaultStr);
-
-    defaultStr = this.createSourceString(this._defaultSources.seekQuality, this._defaultSources.seekFPS);
-    this._divOptions["seek"].choice.setValue(defaultStr);
-
-    defaultStr = this.createSourceString(this._defaultSources.playQuality, this._defaultSources.playFPS);
-    this._divOptions["play"].choice.setValue(defaultStr);
-
-    if (this._mode == "multiview") {
-      defaultStr = this.createSourceString(this._defaultSources.focusedQuality, this._defaultSources.focusedFPS);
-      this._divOptions["focusPlayback"].choice.setValue(defaultStr);
-
-      defaultStr = this.createSourceString(this._defaultSources.dockedQuality, this._defaultSources.dockedFPS);
-      this._divOptions["dockPlayback"].choice.setValue(defaultStr);
-    }
+    this.applySettings(this._defaultSources);
   }
 
   /**
@@ -237,7 +240,6 @@ class VideoSettingsDialog extends ModalDialog {
   }
 
   /**
-   *
    * @param {object} val - source buffer info with the following properties
    *     seekQuality
    *     seekFPS

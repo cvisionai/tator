@@ -706,6 +706,26 @@ class AnnotationPlayer extends TatorElement {
   displayVideoDiagnosticOverlay(display) {
     this._video.updateVideoDiagnosticOverlay(display);
   }
+
+  getVideoSettings() {
+
+    const seekInfo = this._video.getQuality("seek");
+    const scrubInfo = this._video.getQuality("scrub");
+    const playInfo = this._video.getQuality("play");
+
+    return {
+        seekQuality: seekInfo.quality,
+        seekFPS: seekInfo.fps,
+        scrubQuality: scrubInfo.quality,
+        scrubFPS: scrubInfo.fps,
+        playQuality: playInfo.quality,
+        playFPS: playInfo.fps,
+        focusedQuality: null,
+        focusedFPS: null,
+        dockedQuality: null,
+        dockedFPS: null,
+      };
+  }
 }
 
 customElements.define("annotation-player", AnnotationPlayer);
