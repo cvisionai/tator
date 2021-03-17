@@ -1,7 +1,7 @@
 /**
  * Filter/search widget
  *
- * This encapsulates the filter query bar and the modal/associated button.
+ * Encapsulates the filter query bar and associated modal.
  */
 class FilterInterface extends TatorElement {
 
@@ -9,25 +9,27 @@ class FilterInterface extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "analysis__search_wrapper d-flex");
+    div.setAttribute("class", "analysis__filter_interface px-6 py-3 rounded-2");
     this._shadow.appendChild(div);
 
-    const filterButton = document.createElement("button");
-    filterButton.setAttribute("class", "btn btn-clear");
-    filterButton.textContent = "Filter Data";
+    /*
+    const barLabel = document.createElement("span");
+    barLabel.textContent = "Filter Criteria"
+    barLabel.setAttribute("class", "f1 text-gray text-semibold");
+    div.appendChild(barLabel);
+    */
+
+    const filterButton = document.createElement("filter-data-button");
     div.appendChild(filterButton);
 
-    const barDiv = document.createElement("div");
-    barDiv.setAttribute("class", "analysis__search d-flex px-6");
-    div.appendChild(barDiv);
+    this._filterString = document.createElement("div");
+    this._filterString.setAttribute("class", "analysis__filter_string");
+    this._filterString.style.marginLeft = "10px";
+    div.appendChild(this._filterString);
 
-    this._input = document.createElement("input");
-    this._input.setAttribute("class", "py-3 px-3 col-12 f2 text-white has-more");
-    this._input.setAttribute("autocomplete", "off");
-    this._input.setAttribute("type", "search");
-    this._input.setAttribute("id", "filter-data");
-    this._input.setAttribute("name", "q");
-    barDiv.appendChild(this._input);
+    this._filterStringDiv = document.createElement("div");
+    this._filterStringDiv.setAttribute("class", "px-2 py-2");
+    this._filterString.appendChild(this._filterStringDiv);
 
     // Main filter dialog the user will interact with to set the data filter
     this._filterDialog = document.createElement("filter-dialog");
@@ -40,7 +42,20 @@ class FilterInterface extends TatorElement {
 
     // Respond to user hitting apply in the filter dialog. Update the data filter
     // and remove the modal
-    this._filterDialog.addEventListener("applyFilterString", () => {
+    this._filterDialog.addEventListener("newFilterSet", () => {
+
+      // Create the filter parmaeters to display in the filter bar
+      this.setFilterBar();
+
+      // Send out an event to anyone listening that there's a new filter applied
+      this.dispatchEvent(new CustomEvent("filterParameters", {
+        composed: true,
+        detail: {
+          conditions: this._filterDialog.getConditions()
+        }
+      }));
+
+      // Close up the dialog
       this._filterDialog.removeAttribute("is-open");
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
@@ -52,6 +67,21 @@ class FilterInterface extends TatorElement {
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
 
+  }
+
+  /**
+   * Sets the data interface that the submodules will use
+   *
+   * @param {FilterData} val - Data interface object specific for the filtering operations
+   */
+  set dataView(val) {
+    this._dataView = val;
+
+    // With the data view connected, query the data and setup the UI based
+    // on the available types
+    this._filterDialog.data = this._dataView.getAllTypes();
+
+    // Now that the UI has been setup, check the URL for settings info (if there are any)
   }
 
   /**
@@ -67,24 +97,33 @@ class FilterInterface extends TatorElement {
   }
 
   /**
-   * Sets the data interface that the submodules will use
-   *
-   * @param {array} val - List of objects with the following fields
-   *   .name - str - Name of attribute type
-   *   .attributes - array - Array of objects with the following fields
-   *     .name - str - Name of attribute
-   *     .dtype - str - string|bool|float|int|datetime|geopos|enum
-   *     .choices - array - Valid only if enum was provided
+   * Sets the information displayed in the filter bar based on the
    */
-  set dataView(val) {
-    this._dataView = val;
+  setFilterBar() {
 
-    // With the data view connected, query the data and setup the UI based
-    // on the available types
-    this._filterDialog.data = this._dataView.getAllTypes();
+    // Remove all the children (if there are any)
+    while (this._filterStringDiv.firstChild) {
+      this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
+    }
 
-    // Now that the UI has been setup, check the URL for settings info (if there are any)
+    // Loop through all the conditions and create the string
+    var conditions = this._filterDialog.getConditions();
+    for (const [index, condition] of conditions.entries()) {
+
+      var elem = document.createElement("span");
+      elem.setAttribute("class", "text-gray px-1");
+      elem.textContent = condition.getString();
+      this._filterStringDiv.appendChild(elem);
+
+      if (index != conditions.length - 1) {
+        var elem = document.createElement("span");
+        elem.setAttribute("class", "text-purple px-1");
+        elem.textContent = "AND";
+        this._filterStringDiv.appendChild(elem);
+      }
+    }
   }
+
 }
 
 customElements.define("filter-interface", FilterInterface);

@@ -15,6 +15,7 @@
     <script src={% static "js/util/fetch-retry.js" %}></script>
     <script src={% static "js/util/has-permission.js" %}></script>
     <script src={% static "js/util/join-params.js" %}></script>
+    <script src={% static "js/util/filter-utilities.js" %}></script>
     <script src={% static "js/util/tator-data.js" %}></script>
     <script src={% static "js/components/tator-element.js" %}></script>
     <script src={% static "js/components/labeled-checkbox.js" %}></script>
@@ -29,6 +30,16 @@
     <script src={% static "js/components/canvas-ctxmenu.js" %}></script>
     <script src={% static "js/components/big-upload-form.js" %}></script>
     <script src={% static "js/components/upload-element.js" %}></script>
+    <script src={% static "js/components/entity-card.js" %}></script>
+    <script src={% static "js/components/entity-form.js" %}></script>
+    <script src={% static "js/components/entity-panel-pinned.js" %}></script>
+    <script src={% static "js/components/entity-attributes-panel-top.js" %}></script>
+    <script src={% static "js/components/entity-attributes-panel.js" %}></script>
+    <script src={% static "js/components/entity-gallery-resize.js" %}></script>
+    <script src={% static "js/components/entity-gallery-aspect-ratio.js" %}></script>
+    <script src={% static "js/components/entity-gallery-paginator.js" %}></script>
+    <script src={% static "js/components/entity-gallery-labels.js" %}></script>
+    <script src={% static "js/components/entity-gallery.js" %}></script>
     <script src={% static "js/components/header-notification.js" %}></script>
     <script src={% static "js/components/header-menu.js" %}></script>
     <script src={% static "js/components/header-user.js" %}></script>
@@ -47,8 +58,9 @@
     <script src={% static "js/components/success-light.js" %}></script>
     <script src={% static "js/components/warning-light.js" %}></script>
     <script src={% static "js/components/name-dialog.js" %}></script>
-    <script src={% static "js/components/filter-attribute-field.js" %}></script>
-    <script src={% static "js/components/filter-attribute-type.js" %}></script>
+    <script src={% static "js/components/filter-data-button.js" %}></script>
+    <script src={% static "js/components/filter-condition.js" %}></script>
+    <script src={% static "js/components/filter-condition-group.js" %}></script>
     <script src={% static "js/components/filter-dialog.js" %}></script>
     <script src={% static "js/components/filter-interface.js" %}></script>
     <script src={% static "js/components/filter-data.js" %}></script>
@@ -69,6 +81,7 @@
     <script src={% static "js/project-detail/algorithm-menu.js" %}></script>
     <script src={% static "js/project-detail/algorithm-button.js" %}></script>
     <script src={% static "js/project-detail/confirm-run-algorithm.js" %}></script>
+    <script src={% static "js/project-detail/analytics-button.js" %}></script>
     <script src={% static "js/project-detail/activity-button.js" %}></script>
     <script src={% static "js/project-detail/project-text.js" %}></script>
     <script src={% static "js/project-detail/project-search.js" %}></script>
@@ -195,6 +208,9 @@
     <script src={% static "js/annotation/volume-control.js" %}></script>
     <script src={% static "js/analytics/analytics-breadcrumbs.js" %}></script>
     <script src={% static "js/analytics/dashboard/dashboard.js" %}></script>
+    <script src={% static "js/analytics/annotations/card.js" %}></script>
+    <script src={% static "js/analytics/annotations/gallery.js" %}></script>
+    <script src={% static "js/analytics/annotations/card-data.js" %}></script>
     <script src={% static "js/analytics/annotations/annotations.js" %}></script>
     <script src={% static "js/analytics/collections/collections.js" %}></script>
     <script src={% static "js/analytics/visualization/visualization.js" %}></script>
@@ -208,6 +224,7 @@
     {% endblock head %}
   </head>
   <body>
+
     {% block body %}
     {% endblock body %}
   </body>

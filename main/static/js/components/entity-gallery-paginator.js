@@ -1,14 +1,18 @@
-class SectionPaginator extends TatorElement {
+class EntityGalleryPaginator extends TatorElement {
   constructor() {
     super();
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "pagination d-flex flex-items-center f3 py-6 text-gray");
-    this._shadow.appendChild(div);
+    //Controls default page size & page indexes to list on number line
+    this._pageSize = 10;
+    this._showIndexLength = 8;
+
+    this.div = document.createElement("div");
+    this.div.setAttribute("class", "flex-justify-center pagination d-flex flex-items-center text-gray f3");
+    this._shadow.appendChild(this.div);
 
     this._prev = document.createElement("a");
     this._prev.setAttribute("class", "is-disabled unselectable");
-    div.appendChild(this._prev);
+    this.div.appendChild(this._prev);
 
     const prevSvg = document.createElementNS(svgNamespace, "svg");
     prevSvg.setAttribute("class", "px-1");
@@ -25,29 +29,30 @@ class SectionPaginator extends TatorElement {
     this._prev.appendChild(prevText);
 
     this._pages = []
-    for (let idx = 0; idx < 5; idx++) {
+    for (let idx = 0; idx < this._showIndexLength; idx++) {
       this._pages.push(document.createElement("a"));
       this._pages[idx].addEventListener("click", evt => {
+        evt.preventDefault();
         this._setPage(Number(evt.target.textContent) - 1);
         console.log("Clicked "+  evt.target.textContent );
         this._emit();
       });
       this._pages[idx].style.cursor = "pointer";
-      div.appendChild(this._pages[idx]);
+      this.div.appendChild(this._pages[idx]);
     }
 
     this._ellipsis = document.createElement("span");
     this._ellipsis.setAttribute("class", "pagination__ellipsis");
     this._ellipsis.textContent = "...";
-    div.appendChild(this._ellipsis);
+    this.div.appendChild(this._ellipsis);
 
     this._last = document.createElement("a");
     this._last.style.cursor = "pointer";
-    div.appendChild(this._last);
+    this.div.appendChild(this._last);
 
     this._next = document.createElement("a");
     this._next.setAttribute("class", "unselectable");
-    div.appendChild(this._next);
+    this.div.appendChild(this._next);
 
     const nextText = document.createTextNode("Next");
     this._next.appendChild(nextText);
@@ -66,47 +71,53 @@ class SectionPaginator extends TatorElement {
     const pageSizeText = document.createElement("span");
     pageSizeText.setAttribute("class", "pagination__ellipsis");
     pageSizeText.textContent = "Page Size:";
-    div.appendChild(pageSizeText);
+    this.div.appendChild(pageSizeText);
 
-    const pageSize = document.createElement("select");
-    pageSize.setAttribute("class", "form-select select-sm2 has-border");
-    for (const pageOption of [10, 25, 50, 100]) {
+    this.pageSizeEl = document.createElement("select");
+    this.pageSizeEl.setAttribute("class", "form-select select-sm2 has-border");
+    for (const pageOption of [10, 25, 50]) { // #TODO Fix
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
+      if(this._pageSize == pageOption) option.selected = true;
       option.textContent = pageOption;
-      pageSize.appendChild(option);
+      this.pageSizeEl.appendChild(option);
     }
-    pageSize.selectedIndex = 2;
-    div.appendChild(pageSize);
+    //pageSize.selectedIndex = 2;
+    this.div.appendChild(this.pageSizeEl);
 
     const goToPageText = document.createElement("span");
     goToPageText.setAttribute("class", "pagination__ellipsis");
     goToPageText.textContent = "Go To:";
-    div.appendChild(goToPageText);
+    this.div.appendChild(goToPageText);
 
     const goToPage = document.createElement("input");
     goToPage.setAttribute("class", "form-control input-sm2 has-border");
-    div.appendChild(goToPage);
+    this.div.appendChild(goToPage);
 
-    this._prev.addEventListener("click", () => {
+    this._prev.addEventListener("click", (evt) => {
+      evt.preventDefault();
       this._setPage(Math.max(0, this._page - 1));
       this._emit();
     });
 
-    this._next.addEventListener("click", () => {
+    this._next.addEventListener("click", (evt) => {
+      evt.preventDefault();
       this._setPage(Math.min(this._numPages - 1, this._page + 1));
       this._emit();
     });
 
-    this._last.addEventListener("click", () => {
+    this._last.addEventListener("click", (evt) => {
+      evt.preventDefault();
       this._setPage(this._numPages - 1);
       this._emit();
     });
 
-    pageSize.addEventListener("change", evt => {
+    this.pageSizeEl.addEventListener("change", evt => {
+      evt.preventDefault();
       if (evt.target.value != "Page Size") {
         this._pageSize = Number(evt.target.value);
-        this.init(this._numFiles);
+        this._paginationState.start = 0;
+        this.init(this._numFiles, this._paginationState);
         this._emit();
       }
     });
@@ -123,14 +134,27 @@ class SectionPaginator extends TatorElement {
       }
     });
 
-    this._pageSize = 50;
+    
   }
 
-  init(numFiles) {
+  getPageSize() {
+    return this._pageSize;
+  }
+
+  init(numFiles, paginationState) {
+    // Set pagination properties from state
+    // #TODO When the URL pagination is implemented, set page size based on start-stop
+    // this._pageSize = paginationState._pageSize
+
+    // Use number of files to update the rest
+    this._paginationState = paginationState;
     this._numFiles = numFiles;
     this._numPages = Math.ceil(this._numFiles / this._pageSize);
     this._last.textContent = this._numPages;
-    this._setPage(0);
+
+    // Set page based on given start/stop
+    const pageNumber = this._pageSize * paginationState.start;
+    this._setPage(pageNumber);
   }
 
   _setPage(page) {
@@ -225,9 +249,25 @@ class SectionPaginator extends TatorElement {
       detail: {
         start: this._page * this._pageSize,
         stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
+        page: this._page + 1,
+        pgsize: this._pageSize
       },
     }));
   }
+
+  setValues(pagObj){
+    let newValBool = false;
+    if(this._pageSize !== pagObj.pageSize){
+      this._pageSize = pagObj.pageSize;
+      this.pageSizeEl.value = pagObj.pageSize;
+      newValBool = true;
+    }
+    let pageVal = pagObj.page - 1;
+    if (this.page !== pageVal){
+      newValBool = true;
+    }
+    if(newValBool === true) return this._setPage( pageVal );
+  }
 }
 
-customElements.define("section-paginator", SectionPaginator);
+customElements.define("entity-gallery-paginator", EntityGalleryPaginator);

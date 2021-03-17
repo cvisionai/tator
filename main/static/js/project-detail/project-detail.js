@@ -114,8 +114,9 @@ class ProjectDetail extends TatorPage {
     buttons.setAttribute("class", "d-flex");
     header.appendChild(buttons);
 
-    this._algorithmButton = document.createElement("algorithm-button");
-    buttons.appendChild(this._algorithmButton);
+    this._analyticsButton = document.createElement("analytics-button");
+    this._analyticsButton.style.marginRight = "10px";
+    buttons.appendChild(this._analyticsButton);
 
     this._activityButton = document.createElement("activity-button");
     buttons.appendChild(this._activityButton);
@@ -406,8 +407,6 @@ class ProjectDetail extends TatorPage {
       });
     };
 
-    this._algorithmButton.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-
     cancelJob.addEventListener("confirmGroupCancel", () => {
       cancelJob.removeAttribute("is-open");
     });
@@ -552,9 +551,6 @@ class ProjectDetail extends TatorPage {
         this._algorithms = parsedAlgos;
         this._mediaSection.project = project;
         this._mediaSection.algorithms = this._algorithms;
-        if (!hasPermission(project.permission, "Can Execute")) {
-          this._algorithmButton.style.display = "none";
-        }
         this._projectText.nodeValue = project.name;
         this._search.setAttribute("project-name", project.name);
         this._description.setAttribute("text", project.summary);
@@ -606,7 +602,7 @@ class ProjectDetail extends TatorPage {
         }
         // Put "Last visited" bookmark on top
         const first = "Last visited";
-        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;}); 
+        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;});
         for (const bookmark of bookmarks) {
           const card = document.createElement("section-card");
           card.init(bookmark, "bookmark");
@@ -641,7 +637,7 @@ class ProjectDetail extends TatorPage {
       case "username":
         break;
       case "project-id":
-        this._algorithmButton.setAttribute("project-id", newValue);
+        this._analyticsButton.setAttribute("project-id", newValue);
         this._init();
         break;
       case "token":

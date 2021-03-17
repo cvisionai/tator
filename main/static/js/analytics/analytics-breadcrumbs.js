@@ -14,6 +14,15 @@ class AnalyticsBreadcrumbs extends TatorElement {
     chevron1.setAttribute("class", "px-2");
     div.appendChild(chevron1);
 
+    this.analyticsText = document.createElement("a");
+    this.analyticsText.setAttribute("class", "text-gray");
+    this.analyticsText.textContent = "Analytics";
+    div.appendChild(this.analyticsText);
+
+    const chevron2 = document.createElement("chevron-right");
+    chevron2.setAttribute("class", "px-2");
+    div.appendChild(chevron2);
+
     this._analyticsText = document.createElement("a");
     this._analyticsText.setAttribute("class", "text-gray");
     div.appendChild(this._analyticsText);

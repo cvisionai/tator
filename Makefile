@@ -211,6 +211,7 @@ FILES = \
     util/fetch-retry.js \
     util/has-permission.js \
     util/join-params.js \
+    util/filter-utilities.js \
     util/tator-data.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
@@ -224,6 +225,7 @@ FILES = \
     components/cancel-confirm.js \
     components/big-upload-form.js \
     components/upload-element.js \
+    components/entity-card.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
@@ -243,8 +245,9 @@ FILES = \
     components/success-light.js \
     components/warning-light.js \
     components/name-dialog.js \
-    components/filter-attribute-field.js \
-    components/filter-attribute-type.js \
+    components/filter-data-button.js \
+    components/filter-condition.js \
+    components/filter-condition-group.js \
     components/filter-dialog.js \
     components/filter-interface.js \
     components/filter-data.js \
@@ -265,6 +268,7 @@ FILES = \
     project-detail/algorithm-menu.js \
     project-detail/algorithm-button.js \
     project-detail/confirm-run-algorithm.js \
+    project-detail/analytics-button.js \
     project-detail/activity-button.js \
     project-detail/project-text.js \
     project-detail/project-search.js \
