@@ -530,6 +530,10 @@ class AnnotationPage extends TatorPage {
         let source = evt.detail[sourceName];
         if (source) {
           canvas.setQuality(source.quality, source.name);
+
+          if (source.name == "play") {
+            this._settings.quality = source.quality;
+          }
         }
       }
     });

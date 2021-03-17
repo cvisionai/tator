@@ -117,5 +117,6 @@ Steps
 1. Change the qualities to lowest except for the docked quality. Make the docked quality the highest. Verify playback and scrubbing are at the lowest quality.
 1. Focus a video. Verify the qualities are as expected (central/focused video 1x playback == focus quality, small videos 1x playback == docked quality)
 1. Change to horizontal. Verify all qualities are expected (1x playback == normal 1x playback). Do the same with resetting the grid.
+1. Change the quality in the dropdown box on the main annotator header. Verify in the video settings the 1x playback has changed. Change the 1x playback and verify the dropdown box has changed.
 1. Restore defaults and verify playbacks and scrubbing are the same as normal/on document load.
 1. Repeat the above steps with a single-view video, ignoring the steps with focus/docks source verification.
