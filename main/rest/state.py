@@ -448,12 +448,13 @@ class StateDetailAPI(BaseDetailView):
             elif localization_projects[0] != obj.project.id:
                 raise Exception(f"Localizations must be part of project {obj.project.id}, got project "
                                 f"{localization_projects[0]}!")
-        if len(media_projects) != 1:
-            raise Exception(f"Media must be part of project {obj.project.id}, got projects "
-                            f"{media_projects}!")
-        elif media_projects[0] != obj.project.id:
-            raise Exception(f"Media must be part of project {obj.project.id}, got project "
-                            f"{media_projects[0]}!")
+        if obj.media.count() > 0:
+            if len(media_projects) != 1:
+                raise Exception(f"Media must be part of project {obj.project.id}, got projects "
+                                f"{media_projects}!")
+            elif media_projects[0] != obj.project.id:
+                raise Exception(f"Media must be part of project {obj.project.id}, got project "
+                                f"{media_projects[0]}!")
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
