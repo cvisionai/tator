@@ -6,6 +6,7 @@ class AnnotationCardData extends HTMLElement {
     init(modelData) {
         this._modelData = modelData;
         this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+        this.mediaTypes = this._modelData.getStoredMediaTypes();
         this.projectId = this._modelData.getProjectId();
     }
 
@@ -38,17 +39,11 @@ class AnnotationCardData extends HTMLElement {
 
             for(let [i, l] of localizations.entries()){
                 let id = l.id;
-
-                let entityType = this.findMetaDetails( l.meta );
-                //let metaDetails = {name : "sample name", type : "sample type"};
-
-                // #TODO Move this URL generation to _modelData
-                let mediaLink = `/${this.projectId}/annotation/${l.media}?selected_entity=${l.id}&frame=${l.frame}`;
-
+                let entityType = this.findMetaDetails(l.meta);
+                let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id);
                 let attributes = l.attributes;
                 let created = new Date(l.created_datetime);
                 let modified = new Date(l.modified_datetime);
-
                 let position = i + this.cardList.paginationState.start;
                 let posText = `${position + 1} of ${this.cardList.total}`;
 
@@ -66,12 +61,6 @@ class AnnotationCardData extends HTMLElement {
                 counter--;
                 haveCardShells();
 
-                // #TODO User list shouldn't need to be a promise and should be part
-                //       of the modelData initialization
-                //let promises = [
-                //        this._modelData.getUser(l.modified_by),
-                //        this._modelData.getLocalizationGraphic(l.id)
-                //    ]
 
                 this._modelData.getLocalizationGraphic(l.id).then((image) => {
                     this.dispatchEvent(new CustomEvent("setCardImage", {
@@ -82,6 +71,17 @@ class AnnotationCardData extends HTMLElement {
                         }
                     }));
                 });
+
+                this._modelData.getDataById(l.media, "media").then((media) => {
+                    media.entityType = this.findMediaMetaDetails(media.meta);
+                    this.dispatchEvent(new CustomEvent("setMedia", {
+                        composed: true,
+                        detail: {
+                            id: l.id,
+                            media: media
+                        }
+                    }))
+                });
             }
         });
     }
@@ -90,6 +90,14 @@ class AnnotationCardData extends HTMLElement {
         for(let lt of this.localizationTypes){
             if(lt.id == id){
                 return lt;
+            }
+        }
+    }
+
+    findMediaMetaDetails(id) {
+        for (let mediaType of this.mediaTypes) {
+            if (mediaType.id == id) {
+                return mediaType;
             }
         }
     }

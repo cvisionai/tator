@@ -315,6 +315,38 @@ class TatorData {
   }
 
   /**
+   * Retrieves the data for a given entity
+   * @param {integer} id
+   * @param {string} entityType - media|localization
+   */
+  async getDataById(id, entityType) {
+
+    let url = "/rest";
+
+    if (entityType == "localization") {
+      url += "/Localization/";
+    }
+    else if (entityType == "media") {
+      url += "/Media/";
+    }
+
+    url += id;
+
+    var dataPromise = (fetchRetry(url, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }));
+
+    var outData = await dataPromise.then((response) => {return response.json()});
+    return outData;
+  }
+
+  /**
    * Gets data from the corresponding Tator REST endpoint
    * #TODO Currently, this will search through all of a given entity type
    *
@@ -592,5 +624,24 @@ class TatorData {
 
     var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
     return outData;
+  }
+
+  /**
+   * Creates a Tator link to the given media and provided parameters
+   * Assumes the media is in the same project as this tator data module.
+   * @param {integer} mediaId
+   * @param {integer} frame - optional
+   * @param {integer} entityId - optional
+   * @returns {str} Tator link using given parameters
+   */
+  generateMediaLink(mediaId, frame, entityId) {
+    var outStr = `/${this._project}/annotation/${mediaId}?`;
+    if (mediaId) {
+      outStr += `frame=${frame}`;
+    }
+    if (entityId) {
+      outStr += `selected_entity=${entityId}`;
+    }
+    return outStr;
   }
 }

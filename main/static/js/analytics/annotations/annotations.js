@@ -114,6 +114,10 @@ class AnalyticsAnnotations extends TatorPage {
         this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
       });
 
+      this.cardData.addEventListener("setMedia", (evt) => {
+        this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
+      });
+
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
         panelControls : this._panelTop,

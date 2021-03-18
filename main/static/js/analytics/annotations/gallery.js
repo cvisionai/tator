@@ -131,6 +131,18 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   /**
+   * Updates the specific card's panel's media
+   * @param {integer} id
+   * @param {entityObject} media
+   */
+  updateCardMedia(id, media) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.annotationPanel.setMedia(media);
+    }
+  }
+
+  /**
    * Creates the card display in the gallery portion of the page using the provided
    * localization information
    *

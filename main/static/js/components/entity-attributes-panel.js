@@ -17,7 +17,7 @@ class EntityAttrPanel extends TatorElement {
 
       // Content id
       this._heading = document.createElement("h2");
-      this._heading.setAttribute("class", "h2 py-3")
+      this._heading.setAttribute("class", "h2 py-3");
       this._main.appendChild(this._heading);
 
       // Panel Img Container
@@ -30,23 +30,35 @@ class EntityAttrPanel extends TatorElement {
       this._imgContainer.appendChild(this._img);
 
       // Entity Data in Form ( @TODO Editable? or display only )
+
+      const subAnnotationHeader = document.createElement("h3");
+      subAnnotationHeader.setAttribute("class", "h3 py-3 text-gray");
+      subAnnotationHeader.textContent = "Attributes";
+
+      this._main.appendChild(subAnnotationHeader);
       this.entityData = document.createElement("entity-form-for-panel");
       this._main.appendChild(this.entityData);
 
       //
-      // this.pinnedEl = this.pinned.pinEl();
-      // this._main.appendChild(this.pinnedEl);
+      const mediaDiv = document.createElement("div");
+      mediaDiv.setAttribute("class", "py-3 text-gray col-12");
+      this._main.appendChild(mediaDiv);
 
+      this._mediaHeader = document.createElement("h3");
+      this._mediaHeader.setAttribute("class", "h3 py-3");
+      mediaDiv.appendChild(this._mediaHeader);
 
-      // // View media button link to annotation media
+      this._mediaPanel = document.createElement("entity-form-for-panel");
+      mediaDiv.appendChild(this._mediaPanel);
 
-      this._linksDiv = document.createElement("div");
-      this._linksDiv.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f1 d-flex col-11");
-      this._main.appendChild(this._linksDiv);
+      // View media button link to annotation media
+      const linksDiv = document.createElement("div");
+      linksDiv.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f1 d-flex col-11");
+      this._main.appendChild(linksDiv);
 
       const mediaLinkDiv = document.createElement("div");
       mediaLinkDiv.setAttribute("class", "d-flex flex-items-center py-1");
-      this._linksDiv.appendChild(mediaLinkDiv);
+      linksDiv.appendChild(mediaLinkDiv);
 
       const mediaLinkLabel = document.createElement("label");
       mediaLinkLabel.textContent = "View Annotation In Media";
@@ -75,7 +87,7 @@ class EntityAttrPanel extends TatorElement {
 
     }
 
-    init( annotationObject, panelContainer ){
+    init(annotationObject, panelContainer){
       // id,
       // metaDetails,
       // mediaLink,
@@ -89,7 +101,7 @@ class EntityAttrPanel extends TatorElement {
       this._container = panelContainer;
       //this._heading.appendChild( document.createTextNode( `ID ${annotationObject.id}` ) )
 
-      this._heading.textContent = `Annotation Information (ID: ${annotationObject.id})`;
+      this._heading.textContent = `Annotation (ID: ${annotationObject.id})`;
 
       if(typeof annotationObject.graphic !== "undefined" && annotationObject.graphic !== null) {
         this.reader = new FileReader();
@@ -118,6 +130,14 @@ class EntityAttrPanel extends TatorElement {
     _setImgSrc () {
       this._img.setAttribute("src", this.reader.result);
       this._img.hidden = false;
+    }
+
+    /**
+     * @param {entityObject} media
+     */
+    setMedia(media) {
+      this._mediaPanel._init(media);
+      this._mediaHeader.textContent = `Associated Media Attributes (ID: ${media.id})`;
     }
 
   }
