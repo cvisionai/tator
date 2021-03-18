@@ -222,13 +222,6 @@ class TwoDPlotType(Enum):
     LINE = 'line'
     SCATTER = 'scatter'
 
-
-class ArchiveState(Enum):
-    LIVE = "live"
-    TO_ARCHIVE = "to_archive"
-    ARCHIVED = "archived"
-    TO_LIVE = "to_live"
-
 class Organization(Model):
     name = CharField(max_length=128)
     def __str__(self):
@@ -322,6 +315,8 @@ class Bucket(Model):
     secret_key = CharField(max_length=40)
     endpoint_url = CharField(max_length=1024)
     region = CharField(max_length=16)
+    archive_sc = CharField(max_length=16, choices=["DEEP_ARCHIVE"], default="DEEP_ARCHIVE")
+    live_sc = CharField(max_length=16, choices=["STANDARD"], default="STANDARD")
 
 class Project(Model):
     name = CharField(max_length=128)
@@ -822,9 +817,12 @@ class Media(Model, ModelDiffMixin):
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
-    archive_state = CharField(max_length=32, default="live")
-    recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
-                               related_name='recycled_from')
+    archive_state = CharField(
+        max_length=16, choices=["live", "to_live", "archived", "to_archive"], default="live"
+    )
+    recycled_from = ForeignKey(
+        Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
+    )
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
@@ -888,39 +886,132 @@ class Resource(Model):
 
     @transaction.atomic
     def archive_resource(path):
+        """
+        Moves the object into archive storage. If True is returned, the following should be executed
+        by the management command that called this method:
+
+            media.archive_state = "archived"
+            media.save()
+        """
         obj = Resource.objects.get(path=path)
-        media_list = list(obj.media.all())
-        if len(media_list) == 1:
-            logger.info(f"Archiving object {path}")
-            tator_s3 = TatorS3(obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
-            copy_source = {"Bucket": bucket_name, "Key": path}
+        logger.info(f"Archiving object {path}")
+        tator_s3 = TatorS3(obj.bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        if response.get("StorageClass", "") is bucket.archive_sc:
+            logger.info(f"Object {path} already archived, skipping")
+            return True
+        try:
             s3.copy(
-                copy_source,
+                {"Bucket": bucket_name, "Key": path},
                 bucket_name,
                 path,
                 ExtraArgs={"StorageClass": bucket.archive_sc, "MetadataDirective": "COPY"},
             )
-            media = media_list[0]
-            media.archive_state = "archived"
+        except:
+            logger.warning(f"Exception while archiving object {path}", exc_info=True)
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        if response.get("StorageClass", "") is not bucket.archive_sc:
+            logger.warning(f"Archiving object {path} failed")
+            return False
+        return True
+
+    @transaction.atomic
+    def request_restoration(path, min_exp_days):
+        """
+        Requests object restortation from archive storage. If True is returned, the following should
+        be executed by the management command that called this method:
+
+            media.restoration_requested = True
+            media.save()
+        """
+        obj = Resource.objects.get(path=path)
+        logger.info(f"Requesting restoration of object {path}")
+        tator_s3 = TatorS3(obj.bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        if 'ongoing-request="true"' in response.get("Request", ""):
+            logger.info(f"Object {path} has an ongoing restoration request, skipping")
+            return True
+        try:
+            s3.restore_object(Bucket=bucket_name, Key=path, RestoreRequest={"Days": min_exp_days})
+        except:
+            logger.warning(
+                f"Exception while requesting restoration of object {path}", exc_info=True
+            )
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        if 'ongoing-request' not in response.get("Request", ""):
+            logger.warning(f"Request to restore object {path} failed")
+            return False
+        return True
 
     @transaction.atomic
     def restore_resource(path):
+        """
+        Performs the final copy operation that makes a restoration request permanent. Returns True
+        if the copy operation succeeds or if it has succeeded previously. If True is returned, the
+        following should be executed by the management command that called this method:
+
+            media.restoration_requested = False
+            media.archive_state = "live"
+            media.save()
+        """
         obj = Resource.objects.get(path=path)
-        media_list = list(obj.media.all())
-        if len(media_list) == 1:
-            logger.info(f"Restoring object {path}")
-            tator_s3 = TatorS3(obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
-            s3.restore_object(
-                Bucket=bucket_name,
-                Key=path,
-                RestoreRequest={"Days": 30},
+        tator_s3 = TatorS3(obj.bucket)
+        s3 = tator_s3.s3
+        bucket_name = tator_s3.bucket_name
+        logger.info(f"Restoring object {path}")
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+
+        # Check the current state of the restoration request
+        request_state = response.get("Request", "")
+        if not request_state:
+            # There is no ongoing request and the object is not in the temporary restored state
+            storage_class = response.get("StorageClass", "")
+            if storage_class == bucket.archive_sc:
+                # Something went wrong with the original restoration request
+                logger.warning(
+                    f"Object {path} has no associated restoration request, requesting restoration"
+                )
+                Resource.request_restoration(path)
+                return False
+            if not storage_class:
+                # The resource was already restored
+                logger.info(f"Object {path} already restored")
+                return True
+
+            # The resource is in an unexpected storage class
+            logger.error(f"Object {path} in unexpected storage class {storage_class}")
+            return False
+        if 'ongoing-request="true"' in request_state:
+            # There is an ongoing request and the object is not ready to be permanently restored
+            logger.info(f"Object {path} not in standard access yet, skipping")
+            return False
+        if 'ongoing-request="false"' not in request_state:
+            # This should not happen unless the API for s3.head_object changes
+            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
+            return False
+
+        # Then ongoing-request="false" must be in request_state, which means its storage class can
+        # be modified
+        try:
+            s3.copy(
+                {"Bucket": bucket_name, "Key": path},
+                bucket_name,
+                path,
+                ExtraArgs={"StorageClass": bucket.live_sc, "MetadataDirective": "COPY"},
             )
-            media = media_list[0]
-            media.restoration_requested = True
+        except:
+            logger.warning(
+                f"Exception while changing storage class of object {path}", exc_info=True
+            )
+        response = s3.head_object(Bucket=bucket_name, Key=path)
+        if response.get("StorageClass", "") == bucket.archive_sc:
+            logger.warning(f"Storage class not changed for object {path}")
+            return False
+        return True
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
