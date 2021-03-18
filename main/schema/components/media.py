@@ -252,7 +252,7 @@ media = {
         **media_get_properties,
         'archive_state': {
             'type': 'string',
-            'description': 'Marks media for archival or retrieval.',
+            'description': 'The current archival state of the media.',
             'enum': ['archive', 'to_archive', 'live', 'to_live']
         },
     },

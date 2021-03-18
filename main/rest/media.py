@@ -58,7 +58,10 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
         if last_archive_state == "live":
             return "to_archive"
         if last_archive_state == "to_live":
-            return "archived"
+            # TODO confirm behavior. None is a silent failure to change state, but does it make
+            # sense to raise a ValueError here? Better yet, do we check the restore_requested bool
+            # and conditionally archive|raise/None here?
+            return None
         return None
 
     raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")

@@ -17,16 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 def _get_archived_filter(params):
-    archive_state = params.get("archive_state", "live")
-    if archive_state == "archived":
-        return ["to_archive", "archived"]
-    if archive_state == "all":
+    archive_lifecycle = params.get("archive_lifecycle", "live")
+    if archive_lifecycle == "archived":
+        return ["to_archive", "archived", "to_live"]
+    if archive_lifecycle == "all":
         return None
-    if archive_state == "live":
-        return ["to_live", "live"]
+    if archive_lifecycle == "live":
+        return ["live"]
 
     raise ValueError(
-        f"Received invalid value '{archive_state}' for 'archive_state'. Valid values are "
+        f"Received invalid value '{archive_lifecycle}' for 'archive_lifecycle'. Valid values are "
         f"['archived', 'live', 'all']."
     )
 

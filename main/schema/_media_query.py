@@ -72,10 +72,11 @@ media_filter_parameter_schema = [
         'schema': {'type': 'string'},
     },
     {
-        "name": "archive_state",
+        "name": "archive_lifecycle",
         "in": "query",
         "required": False,
-        "description": "Archive state of the files, one of live, archived, or all. Defaults to 'live'",
+        "description": ("Archive lifecycle of the files, one of live (live only), archived "
+                        "(to_archive, archived, or to_live), or all. Defaults to 'live'"),
         "schema": {"type": "string", "enum": ["live", "archived", "all"]},
     },
 ]

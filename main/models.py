@@ -821,7 +821,8 @@ class Media(Model, ModelDiffMixin):
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
-    archive_state = CharField(max_length=16, default="live")
+    restoration_requested = BooleanField(default=False)
+    archive_state = CharField(max_length=32, default="live")
     recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                                related_name='recycled_from')
 
@@ -884,6 +885,42 @@ class Resource(Model):
             s3 = tator_s3.s3
             bucket_name = tator_s3.bucket_name
             s3.delete_object(Bucket=bucket_name, Key=path)
+
+    @transaction.atomic
+    def archive_resource(path):
+        obj = Resource.objects.get(path=path)
+        media_list = list(obj.media.all())
+        if len(media_list) == 1:
+            logger.info(f"Archiving object {path}")
+            tator_s3 = TatorS3(obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
+            copy_source = {"Bucket": bucket_name, "Key": path}
+            s3.copy(
+                copy_source,
+                bucket_name,
+                path,
+                ExtraArgs={"StorageClass": bucket.archive_sc, "MetadataDirective": "COPY"},
+            )
+            media = media_list[0]
+            media.archive_state = "archived"
+
+    @transaction.atomic
+    def restore_resource(path):
+        obj = Resource.objects.get(path=path)
+        media_list = list(obj.media.all())
+        if len(media_list) == 1:
+            logger.info(f"Restoring object {path}")
+            tator_s3 = TatorS3(obj.bucket)
+            s3 = tator_s3.s3
+            bucket_name = tator_s3.bucket_name
+            s3.restore_object(
+                Bucket=bucket_name,
+                Key=path,
+                RestoreRequest={"Days": 30},
+            )
+            media = media_list[0]
+            media.restoration_requested = True
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
