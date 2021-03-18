@@ -398,3 +398,14 @@ video-canvas {
 {
     cursor: not-allowed;
 }
+
+.video__settings
+{
+  display: grid;
+  grid-column-gap: 20px;
+  grid-row-gap: 20px;
+  grid-template-columns: 60% 40%;
+  grid-template-rows: auto;
+  border-bottom: 1px solid $color-charcoal--light;
+  border-top: 1px solid $color-charcoal--light;
+}

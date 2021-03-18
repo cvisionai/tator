@@ -145,6 +145,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
+    after = params.get('after')
     exclude_parents = params.get('excludeParents')
     start = params.get('start')
     stop = params.get('stop')
@@ -183,6 +184,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if frame is not None:
         qs = qs.filter(frame=frame)
 
+    if after is not None:
+        qs = qs.filter(pk__gt=after)
+
     if exclude_parents:
         parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
@@ -204,7 +208,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'after']
+    ES_ONLY_PARAMS = ['search']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:

@@ -545,25 +545,49 @@ class TextOverlay extends TatorElement {
   constructor() {
     super();
     this._texts = [];
+    this._enabledTexts = [];
+    this._display = true;
   }
 
   // Toggles displaying the texts
   display(showText)
   {
-    for (let text of this._texts)
+    this._display = showText;
+    for (let idx = 0; idx < this._texts.length; idx++)
     {
+      let text = this._texts[idx];
       let div = text.element;
-      if (showText) {
+      let x = text.x;
+      let y = text.y;
+
+      if (showText && this._enabledTexts[idx]) {
         div.style.display = "block";
-        for (let text of this._texts)
-        {
-          let div = text.element;
-          let x = text.x;
-          let y = text.y;
-          this._setPosition(x,y,div);
-        }
-      } else {
+        this._setPosition(x,y,div);
+      }
+      else {
         div.style.display = "none";
+      }
+    }
+  }
+
+  /**
+   * Toggles the text on/off for a partiular text overlay
+   * @param {integer} idx - Index returned from addText
+   * @param {boolean} display - True to display the text, false to hide it.
+   */
+  toggleTextDisplay(idx, display) {
+    this._enabledTexts[idx] = display;
+    const text = this._texts[idx]
+    const div = text.element;
+
+    if (!this._enabledTexts[idx]) {
+      div.style.display = "none";
+    }
+    else {
+      if (div.style.display == "none") {
+        if (this._display) {
+          div.style.display = "block";
+        }
       }
     }
   }
@@ -642,6 +666,7 @@ class TextOverlay extends TatorElement {
     {
       this._shadow.removeChild(text.element);
     }
+    this._enabledTexts = [];
   }
 
   // Add text at a given position
@@ -678,6 +703,7 @@ class TextOverlay extends TatorElement {
     this._shadow.appendChild(div);
     this._setPosition(x,y,div);
     this._texts.push({element: div,x:x,y:y});
+    this._enabledTexts.push(true);
     return this._texts.length-1;
   }
 }
@@ -776,6 +802,8 @@ class AnnotationCanvas extends TatorElement
     this._fillBoxes = true;
     this._lastHoverDraw = 0;
 
+
+
     try
     {
       this._offscreen = new OffscreenCanvas(100, 100);
@@ -790,6 +818,7 @@ class AnnotationCanvas extends TatorElement
   get contextMenuNone() {
     return this._contextMenuNone;
   }
+
 
   setupOverlay(overlay_config)
   {
@@ -834,19 +863,6 @@ class AnnotationCanvas extends TatorElement
       this._textOverlay.addText(pos[0],pos[1],value, style);
     }
 
-    if (mode == "displayFrameNumber")
-    {
-      let frameNumberText = this._textOverlay.addText(0.9,0.1,"");
-      if (this._mediaType.dtype == "video" || this._mediaType.dtype == "multi")
-      {
-        this.addEventListener("frameChange", (evt) => {
-          this._textOverlay.modifyText(
-            frameNumberText,
-            {content: evt.detail.frame,
-             style: this.overlayTextStyle});
-        });
-      }
-    }
 
     if (mode == "datetime")
     {

@@ -69,6 +69,9 @@ class AnnotationPage extends TatorPage {
       this._bookmarkDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
+
+    this._videoSettingsDialog = document.createElement("video-settings-dialog");
+    this._main.appendChild(this._videoSettingsDialog);
   }
 
   /**
@@ -160,12 +163,16 @@ class AnnotationPage extends TatorPage {
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
               this._browser.canvas = player._video;
+              this._videoSettingsDialog.mode("single", [data]);
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
+              this._videoSettingsDialog.addEventListener("apply", (evt) => {
+                player.apply
+              });
             } else if (type_data.dtype == "image" ){
               player = document.createElement("annotation-image");
               this._player = player;
@@ -222,6 +229,7 @@ class AnnotationPage extends TatorPage {
               })
               .then(response => response.json())
               .then(primeMediaData => {
+                this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
@@ -303,7 +311,6 @@ class AnnotationPage extends TatorPage {
         const haveLock = searchParams.has("lock");
         const haveFillBoxes = searchParams.has("fill_boxes");
         const haveToggleText = searchParams.has("toggle_text");
-        const haveDisplayFrame = searchParams.has("display_frame");
         if (haveEntity && haveEntityType) {
           const typeId = Number(searchParams.get("selected_entity_type"));
           const entityId = Number(searchParams.get("selected_entity"));
@@ -363,15 +370,6 @@ class AnnotationPage extends TatorPage {
           }
           canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
         }
-        if (haveDisplayFrame) {
-          const display_frame = Number(searchParams.get("display_frame"));
-          if (display_frame) {
-            if (typeof canvas.enableDisplayFrame != undefined)
-            {
-              canvas.enableDisplayFrame();
-            }
-          }
-        }
       }
     }
 
@@ -429,6 +427,10 @@ class AnnotationPage extends TatorPage {
       this._canvasInitialized = true;
       _handleQueryParams();
       _removeLoading();
+    });
+
+    canvas.addEventListener("defaultVideoSettings", evt => {
+      this._videoSettingsDialog.defaultSources = evt.detail;
     });
 
     this._settings._lock.addEventListener("click", evt=> {
@@ -517,6 +519,34 @@ class AnnotationPage extends TatorPage {
         });
       }
       this.removeAttribute("has-open-modal", "");
+    });
+
+    this._videoSettingsDialog.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal", "");
+    });
+
+    this._videoSettingsDialog.addEventListener("applyVideoSources", evt => {
+      for (let sourceName in evt.detail) {
+        let source = evt.detail[sourceName];
+        if (source) {
+          canvas.setQuality(source.quality, source.name);
+
+          if (source.name == "play") {
+            this._settings.quality = source.quality;
+          }
+        }
+      }
+    });
+
+    this._videoSettingsDialog.addEventListener("displayOverlays", evt => {
+      canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
+    });
+
+    this._settings.addEventListener("openVideoSettings", () => {
+      var videoSettings = canvas.getVideoSettings();
+      this._videoSettingsDialog.applySettings(videoSettings);
+      this._videoSettingsDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     });
   }
 
@@ -876,11 +906,11 @@ class AnnotationPage extends TatorPage {
         this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
         canvas.addEventListener("maximize", () => {
-          this._browser.style.display = "none";
+          document.body.requestFullscreen();
         });
 
         canvas.addEventListener("minimize", () => {
-          this._browser.style.display = "block";
+          document.exitFullscreen();
         });
       });
    });

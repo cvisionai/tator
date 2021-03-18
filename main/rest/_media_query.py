@@ -174,6 +174,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     md5 = params.get('md5')
     gid = params.get('gid')
     uid = params.get('uid')
+    after = params.get('after')
     start = params.get('start')
     stop = params.get('stop')
     archive_states = _get_archived_filter(params)
@@ -215,6 +216,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if uid is not None:
         qs = qs.filter(uid=uid)
 
+    if after is not None:
+        qs = qs.filter(name__gt=after)
+
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
 
@@ -232,7 +236,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'after']
+    ES_ONLY_PARAMS = ['search']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
