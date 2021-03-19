@@ -6,24 +6,35 @@ from main.models import Media, Resource
 logger = logging.getLogger(__name__)
 
 
-def _request_restore_multi(media, expiry_days):
+def _request_restore_multi(multi, expiry_days):
     """
-    Requests restoration of all media associated with a multi view
+    Requests restoration of all media associated with a multi view by iterating over its media file
+    ids. If successful, the restoration requested boolean is set to True and the archive state
+    remains `to_live`.
     """
-    num_media = 0
-    media_qs = Media.objects.filter(pk__in=media.media_files["ids"])
+    media_ids = multi.media_files.get("ids")
+
+    if not media_ids:
+        # No media associated with this multiview, consider it live
+        multi.archive_state = "live"
+        multi.save()
+        return 0
+
+    media_qs = Media.objects.filter(pk__in=media_ids)
     multi_restored = [_request_restore_single(obj, expiry_days) for obj in media_qs]
 
     if all(multi_restored):
-        media.restoration_requested = True
-        media.save()
+        multi.restoration_requested = True
+        multi.save()
 
     return sum(multi_restored)
 
 
 def _request_restore_single(media, expiry_days):
     """
-    Requests restoration of all media associated with a video or image, except for thumbnails
+    Requests restoration of all media associated with a video or image, except for thumbnails. If
+    successful, the restoration requested boolean is set to True and the archive state remains
+    `to_live`.
     """
     media_requested = True
     for key in ["streaming", "archival", "audio", "image"]:

@@ -8,10 +8,21 @@ logger = logging.getLogger(__name__)
 
 def _restore_multi(multi):
     """
-    Requests restoration of all media associated with a multi view
+    Finalizes restoration of all media associated with a multi view by iterating over its media file
+    ids. If successful, the restoration requested boolean is set to False and the archive state is
+    changed from `to_live` to `live`.
     """
-    multi_qs = Media.objects.filter(pk__in=multi.multi_files["ids"])
-    multi_restored = [_restore_single(media) for media in multi_qs]
+    media_ids = multi.media_files.get("ids")
+
+    if not media_ids:
+        # No media associated with this multiview, consider it live
+        multi.archive_state = "live"
+        multi.restoration_requested = False
+        multi.save()
+        return 0
+
+    media_qs = Media.objects.filter(pk__in=media_ids)
+    multi_restored = [_restore_single(media) for media in media_qs]
 
     if all(multi_restored):
         multi.archive_state = "live"
@@ -23,7 +34,9 @@ def _restore_multi(multi):
 
 def _restore_single(media):
     """
-    Requests restoration of all media associated with a video or image, except for thumbnails
+    Requests restoration of all media associated with a video or image, except for thumbnails. If
+    successful, the restoration requested boolean is set to False and the archive state is changed
+    from `to_live` to `live`.
     """
     media_restored = True
     for key in ["streaming", "archival", "audio", "image"]:

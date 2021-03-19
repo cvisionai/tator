@@ -896,7 +896,8 @@ class Resource(Model):
     @transaction.atomic
     def archive_resource(path):
         """
-        Moves the object into archive storage. If True is returned, the following should be executed
+        Moves the object into archive storage. If True is returned by every call to
+        Resource.archive_resource on each path in a media object, the following should be executed
         by the management command that called this method:
 
             media.archive_state = "archived"
@@ -929,8 +930,9 @@ class Resource(Model):
     @transaction.atomic
     def request_restoration(path, min_exp_days):
         """
-        Requests object restortation from archive storage. If True is returned, the following should
-        be executed by the management command that called this method:
+        Requests object restortation from archive storage. If True is returned by every call to
+        Resource.request_restoration on each path in a media object, the following should be
+        executed by the management command that called this method:
 
             media.restoration_requested = True
             media.save()
@@ -960,8 +962,9 @@ class Resource(Model):
     def restore_resource(path):
         """
         Performs the final copy operation that makes a restoration request permanent. Returns True
-        if the copy operation succeeds or if it has succeeded previously. If True is returned, the
-        following should be executed by the management command that called this method:
+        if the copy operation succeeds or if it has succeeded previously. If True is returned by
+        every call to Resource.restore_resource on each path in a media object, the following should
+        be executed by the management command that called this method:
 
             media.restoration_requested = False
             media.archive_state = "live"

@@ -7,23 +7,33 @@ from main.models import Media, Resource
 logger = logging.getLogger(__name__)
 
 
-def _archive_multi(media):
+def _archive_multi(multi):
     """
-    Archives all media associated with a multi view
+    Attempts to archive all media associated with a multi view by iterating over its media file ids.
+    If successful, the archive state of the multi view is changed from `to_archive` to `archived`.
     """
-    media_qs = Media.objects.filter(pk__in=media.media_files["ids"])
+    media_ids = multi.media_files.get("ids")
+
+    if not media_ids:
+        # No media associated with this multiview, consider it archived
+        multi.archive_state = "archived"
+        multi.save()
+        return 0
+
+    media_qs = Media.objects.filter(pk__in=media_ids)
     multi_archived = [_archive_single(obj) for obj in media_qs]
 
     if all(multi_archived):
-        media.archive_state = "archived"
-        media.save()
+        multi.archive_state = "archived"
+        multi.save()
 
     return sum(multi_archived)
 
 
 def _archive_single(media):
     """
-    Archives all media associated with a video or image
+    Attempts to archive all media associated with a video or image, except for thumbnails. If
+    successful, the archive state of the media is changed from `to_archive` to `archived`.
     """
     media_archived = True
     for key in ["streaming", "archival", "audio", "image"]:
@@ -51,7 +61,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min_age_days",
             type=int,
-            default=30,
+            default=7,
             help="Minimum age in days of media objects for archive.",
         )
 
