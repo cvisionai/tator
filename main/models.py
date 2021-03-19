@@ -315,8 +315,10 @@ class Bucket(Model):
     secret_key = CharField(max_length=40)
     endpoint_url = CharField(max_length=1024)
     region = CharField(max_length=16)
-    archive_sc = CharField(max_length=16, choices=["DEEP_ARCHIVE"], default="DEEP_ARCHIVE")
-    live_sc = CharField(max_length=16, choices=["STANDARD"], default="STANDARD")
+    archive_sc = CharField(
+        max_length=16, choices=[("DEEP_ARCHIVE", "DEEP_ARCHIVE")], default="DEEP_ARCHIVE"
+    )
+    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")], default="STANDARD")
 
 class Project(Model):
     name = CharField(max_length=128)
@@ -818,7 +820,14 @@ class Media(Model, ModelDiffMixin):
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
     archive_state = CharField(
-        max_length=16, choices=["live", "to_live", "archived", "to_archive"], default="live"
+        max_length=16,
+        choices=[
+            ("live", "live"),
+            ("to_live", "to_live"),
+            ("archived", "archived"),
+            ("to_archive", "to_archive"),
+        ],
+        default="live",
     )
     recycled_from = ForeignKey(
         Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
