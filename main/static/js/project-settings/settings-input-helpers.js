@@ -247,7 +247,8 @@ class SettingsInput {
     customCol = '',
     labelText = '',
     type = 'checkbox',
-    name = ""
+    name = "",
+    getSlide = false
   } = {} ){
     const forId = this._getUniqueIdentifier(name);
     const slide = document.createElement("settings-bool-input");
@@ -257,6 +258,7 @@ class SettingsInput {
     slide.setOffLabel("No");
     slide.setValue(value);
 
+    if(getSlide) return { slide, fieldset };
     return fieldset;
   }
 
