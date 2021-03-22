@@ -8,13 +8,6 @@ class EntityAttrPanel extends TatorElement {
       //this._main.hidden = true;
       this._shadow.appendChild(this._main);
 
-      // Pin Actions
-      // Pin then < to close the panel (keep open v1)
-      // this.pinned = new EntityPanelPin({ panelContainer: this });
-      // let actions = this.pinned.pinThisEl();
-      // actions.setAttribute("class", "d-flex");
-      // this._main.appendChild(actions);
-
       // Content id
       this._heading = document.createElement("h2");
       this._heading.setAttribute("class", "h2 py-3")
@@ -48,13 +41,7 @@ class EntityAttrPanel extends TatorElement {
       this.entityData = document.createElement("entity-form-for-panel");
       this._main.appendChild(this.entityData);
 
-      //
-      // this.pinnedEl = this.pinned.pinEl();
-      // this._main.appendChild(this.pinnedEl);
-
-
-      // // View media button link to annotation media
-
+      // View media button link to annotation media
       this._linksDiv = document.createElement("div");
       this._linksDiv.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f1 d-flex col-11");
       this._main.appendChild(this._linksDiv);
@@ -95,7 +82,6 @@ class EntityAttrPanel extends TatorElement {
     panelData, 
     pageModal  
   }){
-      console.log("panel was init with this info:");
       this.cardObj = cardObj;
       this.panelContainer = panelContainer
       this.panelData = panelData;
@@ -133,18 +119,17 @@ class EntityAttrPanel extends TatorElement {
       e.preventDefault();
 
       // Title
-      let text = document.createTextNode("v1 Modal Player");
+      let text = document.createTextNode( this._heading.textContent );
       this.pageModal._titleDiv.append(text);
       
-      this.pageModal.setAttribute("is-open", "true")
-      
       // Main Body
-      this.pageModal._main.appendChild( this._initPlayer() );
+      this._initPlayer();
+      this.pageModal._main.appendChild( this.loc || {} );
 
       // When we close modal, remove the player
       //this.pageModal.addEventListener("close", this._removePlayer.bind(this));
 
-      
+      this.pageModal.setAttribute("is-open", "true")      
     }
 
     _initPlayer(){
@@ -168,7 +153,7 @@ class EntityAttrPanel extends TatorElement {
           this._image.mediaInfo = this.cardObj.mediaData.mediaInfo;
 
           // After init, or if this has already been defined return 
-          return this.loc._player;
+          return this.loc;
         });
         
     }
