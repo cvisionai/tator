@@ -17,7 +17,7 @@ class AnnotationsCard extends EntityCard {
     this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
   }
 
-  init(obj, panelContainer, annotationPanelDiv){
+  init({obj, panelContainer, annotationPanelDiv}){
     // ID is title
     //this.titleDiv.innerHTML = `ID ${obj.id}`;
     this._id_text.innerHTML = `ID: ${obj.id}`;

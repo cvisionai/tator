@@ -71,10 +71,14 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    panelControls
+    panelControls,
+    panelData,
+    pageModal
   }){
     this.panelContainer = panelContainer;
     this.panelControls = panelControls;
+    this.panelData = panelData;
+    this.pageModal = pageModal
 
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
@@ -218,7 +222,7 @@ class AnnotationsGallery extends EntityCardGallery {
           card._li.classList.remove("is-selected");
           annotationPanelDiv.classList.remove("is-selected");
           annotationPanelDiv.classList.add("hidden");
-          console.log(annotationPanelDiv.classList);
+          //console.log(annotationPanelDiv.classList);
           console.log("Hiding "+annotationPanelDiv.dataset.locId);
         });
 
@@ -228,6 +232,12 @@ class AnnotationsGallery extends EntityCardGallery {
             card._li.click();
           }
         }, false);
+
+        // Open panel if a card is clicked
+        card.addEventListener("click", () => {
+          // if the panel is closed and you click, open it...
+          this.panelControls.cardClicked();
+        });
 
         // Update view
         card._li.classList.toggle("aspect-true");
@@ -247,10 +257,21 @@ class AnnotationsGallery extends EntityCardGallery {
       }
       this._currentCardIndexes[cardObj.id] = index;
 
-      // Initialize the card and associated panel
-      this._cardElements[index].annotationPanel.init(cardObj, this.panelContainer);
+      // Initialize the card panel
+      this._cardElements[index].annotationPanel.init({
+        cardObj, 
+        panelContainer: this.panelContainer, 
+        panelData : this.panelData, 
+        pageModal : this.pageModal
+      } );
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      card.init(cardObj, this.panelContainer, this._cardElements[index].annotationPanelDiv);
+      
+      // Initialize Card
+      card.init({
+        obj : cardObj, 
+        panelContainer : this.panelContainer, 
+        annotationPanelDiv : this._cardElements[index].annotationPanelDiv
+      });
       card.style.display = "block";
       numberOfDisplayedCards += 1;
 

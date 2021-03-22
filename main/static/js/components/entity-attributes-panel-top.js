@@ -86,7 +86,6 @@ class EntityAttrPanelTop extends TatorElement {
     }
 
     cardClicked(){
-      console.log("card click made it here!");
       if(!this.open){
         this.rside.classList.remove("slide-close");
         this.lside.classList.add("col-9");

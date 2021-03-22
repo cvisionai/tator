@@ -29,6 +29,7 @@ class EntityAttrPanel extends TatorElement {
       this._img = document.createElement("img");
       this._imgContainer.appendChild(this._img);
 
+
       // Entity Data in Form ( @TODO Editable? or display only )
       this.entityData = document.createElement("entity-form-for-panel");
       this._main.appendChild(this.entityData);
@@ -72,37 +73,79 @@ class EntityAttrPanel extends TatorElement {
       goToFrameButton.addEventListener("click", () => {
         window.location = this._mediaLink;
       });
-
     }
 
-    init( annotationObject, panelContainer ){
-      // id,
-      // metaDetails,
-      // mediaLink,
-      // graphic,
-      // attributes,
-      // created,
-      // modified,
-      // userName,
-      // posText
+  async init( {        
+    cardObj, 
+    panelContainer, 
+    panelData, 
+    pageModal  
+  }){
+      console.log("panel was init with this info:");
+      this.cardObj = cardObj;
+      this.panelContainer = panelContainer
+      this.panelData = panelData;
+      this.pageModal = pageModal;
 
-      this._container = panelContainer;
-      //this._heading.appendChild( document.createTextNode( `ID ${annotationObject.id}` ) )
+      this._heading.textContent = `Annotation Information (ID: ${cardObj.id})`;
 
-      this._heading.textContent = `Annotation Information (ID: ${annotationObject.id})`;
-
-      if(typeof annotationObject.graphic !== "undefined" && annotationObject.graphic !== null) {
+      // Show localization in side panel
+      // @TODO show media with localization here
+      if(typeof this.cardObj.graphic !== "undefined" && this.cardObj.graphic !== null) {
         this.reader = new FileReader();
-        this.reader.readAsDataURL(annotationObject.graphic); // converts the blob to base64
+        this.reader.readAsDataURL(this.cardObj.graphic); // converts the blob to base64
         this.reader.addEventListener("load", this._setImgSrc.bind(this));
+      
+        // @TODO for now just show media with localization in modal on click
+        this._img.addEventListener("click", this._popModalWithPlayer.bind(this))
       } else {
         this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
         this._img.hidden = false;
       }
 
-      this._mediaLink = annotationObject.mediaLink;
-      this.entityData._init(annotationObject);
+      // Setup linkout and the entity data for panel here
+      this._mediaLink = this.cardObj.mediaLink;
+      this.entityData._init(this.cardObj);
+    }
 
+    
+    _popModalWithPlayer(){
+      // Title
+      let text = document.createTextNode("v1 Modal Player");
+      this.modal._titleDiv.append(text);
+      
+      // Main Body
+      this.modal._main.appendChild( this._initPlayer() );
+
+      // When we close modal, remove the player
+      this.modal.addEventListener("close", this._removePlayer.bind(this));
+
+      return this.modal.setAttribute("is-open", "true")
+    }
+
+    async _initPlayer(){
+      if(typeof this.cardObj.mediaData !== "undefined" && this.cardObj.mediaData !== null){
+        // Get mediaData and save it to this card object
+        let mediaId = this.cardObj.mediaId;
+        
+        this.cardObj.mediaData = await this.panelData.getMediaData( mediaId );
+        this.loc = document.createElement("localization-in-page");
+
+        // Init creates a canvas element with media
+        this.loc._init({
+          cardObj,
+          panelContainer
+        });
+      } 
+
+      // After init, or if this has already been defined return 
+      return this.loc._player;
+    }
+
+    _removePlayer(){
+      // Clear this panel player and title from modal
+      this.modal._titleDiv.innerHTML = "";
+      this.modal._main.innerHTML = "";
     }
 
     /**
