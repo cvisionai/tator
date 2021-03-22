@@ -23,11 +23,25 @@ class EntityAttrPanel extends TatorElement {
       // Panel Img Container
       this._imgContainer = document.createElement("div");
       this._imgContainer.setAttribute("class", "text-center");
-      this._main.appendChild(this._imgContainer)
+      this._main.appendChild(this._imgContainer);
 
-      // Panel Img
+      // Panel Graphic Img
       this._img = document.createElement("img");
       this._imgContainer.appendChild(this._img);
+
+      // Panel Img Canvas
+      this._image = document.createElement("image-canvas");
+      this._main.appendChild(this._image);
+
+      // Image modal link @TODO styling - this is for specific testing
+      const modalLinkDiv = document.createElement("div");
+      modalLinkDiv.setAttribute("class", "d-flex flex-items-center py-1");
+      this._main.appendChild(modalLinkDiv);
+      
+      this._modalLink = document.createElement("a");
+      this._modalLink.setAttribute("href", "#");
+      this._modalLink.textContent = "Open Modal";
+      modalLinkDiv.appendChild(this._modalLink);     
 
 
       // Entity Data in Form ( @TODO Editable? or display only )
@@ -95,51 +109,68 @@ class EntityAttrPanel extends TatorElement {
         this.reader = new FileReader();
         this.reader.readAsDataURL(this.cardObj.graphic); // converts the blob to base64
         this.reader.addEventListener("load", this._setImgSrc.bind(this));
-      
-        // @TODO for now just show media with localization in modal on click
-        this._img.addEventListener("click", this._popModalWithPlayer.bind(this))
       } else {
         this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
         this._img.hidden = false;
       }
+
+      // Create canvas Image
+      this.setupImage();
+      // @TODO for now just show media with localization in modal on click
+      this._modalLink.addEventListener("click", this._popModalWithPlayer.bind(this))
 
       // Setup linkout and the entity data for panel here
       this._mediaLink = this.cardObj.mediaLink;
       this.entityData._init(this.cardObj);
     }
 
+    setupImage(){
+      this._initPlayer();
+      
+    }
     
-    _popModalWithPlayer(){
+    _popModalWithPlayer(e){
+      e.preventDefault();
+
       // Title
       let text = document.createTextNode("v1 Modal Player");
-      this.modal._titleDiv.append(text);
+      this.pageModal._titleDiv.append(text);
+      
+      this.pageModal.setAttribute("is-open", "true")
       
       // Main Body
-      this.modal._main.appendChild( this._initPlayer() );
+      this.pageModal._main.appendChild( this._initPlayer() );
 
       // When we close modal, remove the player
-      this.modal.addEventListener("close", this._removePlayer.bind(this));
+      //this.pageModal.addEventListener("close", this._removePlayer.bind(this));
 
-      return this.modal.setAttribute("is-open", "true")
+      
     }
 
-    async _initPlayer(){
-      if(typeof this.cardObj.mediaData !== "undefined" && this.cardObj.mediaData !== null){
+    _initPlayer(){
+      // @TODO optimize later - only init this the first time
+      //if(typeof this.cardObj.mediaData !== "undefined" && this.cardObj.mediaData !== null){
         // Get mediaData and save it to this card object
         let mediaId = this.cardObj.mediaId;
         
-        this.cardObj.mediaData = await this.panelData.getMediaData( mediaId );
-        this.loc = document.createElement("localization-in-page");
+        this.panelData.getMediaData( mediaId ).then((data) => {
+          this.cardObj.mediaData = data;
 
-        // Init creates a canvas element with media
-        this.loc._init({
-          cardObj,
-          panelContainer
+          this.loc = document.createElement("localization-in-page");
+
+          // Init creates a canvas element with media & localization controls
+          this.loc._init({
+            annotationObject : this.cardObj,
+            panelContainer : this.panelContainer
+          });
+
+          // Inits image-only canvas
+          this._image.mediaInfo = this.cardObj.mediaData.mediaInfo;
+
+          // After init, or if this has already been defined return 
+          return this.loc._player;
         });
-      } 
-
-      // After init, or if this has already been defined return 
-      return this.loc._player;
+        
     }
 
     _removePlayer(){

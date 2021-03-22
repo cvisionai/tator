@@ -23,7 +23,7 @@ class AnnotationPanelData extends HTMLElement {
 
         const mediaData = {
             mediaInfo : this.mediaInfo,
-            medaTypeData : this.mediaTypeData
+            mediaTypeData : this.mediaTypeData
         };
 
         return mediaData;
