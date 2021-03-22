@@ -93,6 +93,7 @@ class EntityAttrPanelTop extends TatorElement {
         this.lside.style.marginRight = "0";
         this._topBarArrow.style.transform ="scaleX(1)";
         this.open = true;
+        
         return this.open;
       }
     }

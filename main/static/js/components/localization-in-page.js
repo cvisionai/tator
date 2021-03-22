@@ -11,8 +11,8 @@ class LocalizationInPage extends TatorElement {
         this._versionButton.setAttribute("class", "px-2");
         div.appendChild(this._versionButton);
 
-        this._settings = document.createElement("annotation-settings");
-        div.appendChild(this._settings);
+        // this._settings = document.createElement("annotation-settings");
+        // div.appendChild(this._settings);
 
         this._main = document.createElement("main");
         this._main.setAttribute("class", "d-flex");
@@ -24,17 +24,17 @@ class LocalizationInPage extends TatorElement {
         this._bookmarkDialog = document.createElement("name-dialog");
         this._main.appendChild(this._bookmarkDialog);
 
-        this._sidebar = document.createElement("annotation-sidebar");
-        this._main.appendChild(this._sidebar);
+        // this._sidebar = document.createElement("annotation-sidebar");
+        // this._main.appendChild(this._sidebar);
 
         this._undo = document.createElement("undo-buffer");
 
         this._data = document.createElement("annotation-data");
 
-        this._browser = document.createElement("annotation-browser");
-        this._browser.undoBuffer = this._undo;
-        this._browser.annotationData = this._data;
-        this._main.appendChild(this._browser);
+        // this._browser = document.createElement("annotation-browser");
+        // this._browser.undoBuffer = this._undo;
+        // this._browser.annotationData = this._data;
+        // this._main.appendChild(this._browser);
 
         this._progressDialog = document.createElement("progress-dialog");
         this._main.appendChild(this._progressDialog);
@@ -83,7 +83,7 @@ class LocalizationInPage extends TatorElement {
             this._player.mediaType = type_data;
             this.setDomParents();
             
-            player.mediaInfo = data;
+            player.mediaInfo = this.mediaData.mediaInfo;
             this._setupInitHandlers(player);
             this._getMetadataTypes(player, player._video._canvas);
             this._player.canvas = player._video;
@@ -99,7 +99,7 @@ class LocalizationInPage extends TatorElement {
               this._player.mediaType = type_data;
               //player.style.minWidth="70%";
               this.setDomParents();
-              player.mediaInfo = data;
+              player.mediaInfo = this.mediaData.mediaInfo;
               //this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._image._canvas);
@@ -285,11 +285,11 @@ class LocalizationInPage extends TatorElement {
     _getMetadataTypes(canvas, canvasElement, block_signals, subelement_id, update) {
         const projectId = this.projectId;
         //const projectId = Number(this.getAttribute("project-id"));
-        let mediaId = Number(this.getAttribute("media-id"));
-        if (subelement_id)
-        {
-          mediaId = subelement_id;
-        }
+        let mediaId = this.annotationObject.mediaId;
+        // if (subelement_id)
+        // {
+        //   mediaId = subelement_id;
+        // }
         const query = "?media_id=" + mediaId;
         const favoritePromise = fetch("/rest/Favorites/" + projectId, {
           method: "GET",
