@@ -222,8 +222,6 @@ class AnnotationsGallery extends EntityCardGallery {
           card._li.classList.remove("is-selected");
           annotationPanelDiv.classList.remove("is-selected");
           annotationPanelDiv.classList.add("hidden");
-          //console.log(annotationPanelDiv.classList);
-          console.log("Hiding "+annotationPanelDiv.dataset.locId);
         });
 
         // Listen for all clicks on the document

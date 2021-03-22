@@ -53,18 +53,24 @@ class LocalizationInPage extends TatorElement {
 
     _init({ annotationObject,
         panelContainer }){
+
+        console.log("annotationObject");
+        console.log(annotationObject);
         
         this.annotationObject = annotationObject;
         this.panelContainer = panelContainer;
 
-        let type_data = this.annotationObject.mediaTypeData;
+        this.mediaData = this.annotationObject.mediaData
+
+        let type_data = this.mediaData.mediaTypeData;
         this._browserMediaType = type_data;
         this._undoMediaType = type_data;
 
-        console.log(`Project ID: ${type_data.project}`);
-        this.projectId = type_data.project;
+        let data = this.mediaData.mediaInfo;
 
-        let data = this.annotationObject.mediaTypeInfo;
+        console.log(`Project ID: ${data.project}`);
+        //this.projectId = type_data.project;
+        this.projectId = 21;
         
         let player;
         this._mediaIds = [];
