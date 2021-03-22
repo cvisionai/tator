@@ -52,19 +52,25 @@ class AttributesForm extends HTMLElement {
 
     // required
     const REQUIRED = "Required";
-    this.form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": REQUIRED,
-      "name": REQUIRED.toLowerCase(),
-      "value": false
-    }) );
+    let req_slideObj = this.inputHelper.inputRadioSlide({
+      labelText : REQUIRED,
+      name : REQUIRED.toLowerCase(),
+      value : false,
+      getSlide : true
+    });
+    this.req_slide = req_slideObj.slide;
+    this.form.appendChild( req_slideObj.fieldset );
 
     // visible
     const VISIBLE = "Visible";
-    this.form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": VISIBLE,
-      "name": VISIBLE.toLowerCase(),
-      "value": false
-    }) );
+    let vis_slideObj = this.inputHelper.inputRadioSlide({
+      labelText : VISIBLE,
+      name : VISIBLE.toLowerCase(),
+      value : false,
+      getSlide : true
+    });
+    this.vis_slide = vis_slideObj.slide;
+    this.form.appendChild( vis_slideObj.fieldset );
 
     // default
     this.form.appendChild( this._getDefaultInput( 0 ) );
@@ -120,9 +126,13 @@ class AttributesForm extends HTMLElement {
     this.form.querySelector(`input[name^="name"]`).value = name;
     this.form.querySelector(`input[name^="description"]`).value = description;
     this.form.querySelector(`input[name^="order"]`).value = order;
-    this.form.querySelector(`input[name^="required"]`).value = required;
-    this.form.querySelector(`input[name^="visible"]`).value = visible;
+    //this.form.querySelector(`input[name^="required"]`).value = required;
+    //this.form.querySelector(`input[name^="visible"]`).value = visible;
     this.form.querySelector(`input[name^="default"]`).value = _default;
+
+    // Bools require value set differently
+    this.req_slide.setValue( required );
+    this.vis_slide.setValue( visible );
 
     // The dtype select & following fields changes on selection
     this.form.querySelector(`.dataTypeSelectDiv`).innerHTML = "";
