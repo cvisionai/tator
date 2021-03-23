@@ -44,9 +44,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .s3 import TatorS3
-from .s3 import get_s3_lookup
-from .s3 import get_s3_size
+from .s3 import TatorS3, ObjectStore, get_s3_lookup, get_s3_size
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -907,34 +905,24 @@ class Resource(Model):
         logger.info(f"Archiving object {path}")
         bucket = obj.bucket
         tator_s3 = TatorS3(bucket)
-        s3 = tator_s3.s3
-        bucket_name = tator_s3.bucket_name
-        response = s3.head_object(Bucket=bucket_name, Key=path)
-        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
-        logger.info(f"archive_resource detected server type '{server}'")
-        # S3 requires source key to include bucket name, but Minio does not.
-        if server == "MinIO":
+
+        if tator_s3.server is ObjectStore.MINIO:
             logger.info(
                 f"No storage class change required for MinIO bucket, object {path} archived"
             )
             return True
-        if server == "AmazonS3":
-            key = f"{bucket_name}/{path}"
-        else:
-            logger.warning(f"Unexpected server type '{server}', archiving object {path} failed")
-            return False
 
+        response = tator_s3.head_object(path)
         archive_sc = bucket.archive_sc
         if response.get("StorageClass", "") == archive_sc:
             logger.info(f"Object {path} already archived, skipping")
             return True
-        extra_args = {"StorageClass": archive_sc, "MetadataDirective": "COPY"}
-        copy_source = {"Bucket": bucket_name, "Key": key}
+
         try:
-            s3.copy_object(CopySource=copy_source, Bucket=bucket_name, Key=path, **extra_args)
+            tator_s3.copy(path, path, {"StorageClass": archive_sc, "MetadataDirective": "COPY"})
         except:
             logger.warning(f"Exception while archiving object {path}", exc_info=True)
-        response = s3.head_object(Bucket=bucket_name, Key=path)
+        response = tator_s3.head_object(path)
         if response.get("StorageClass", "") != archive_sc:
             logger.warning(f"Archiving object {path} failed")
             return False
@@ -954,28 +942,22 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         logger.info(f"Requesting restoration of object {path}")
         tator_s3 = TatorS3(obj.bucket)
-        s3 = tator_s3.s3
-        bucket_name = tator_s3.bucket_name
-        response = s3.head_object(Bucket=bucket_name, Key=path)
-        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
-        if server == "MinIO":
+        if tator_s3.server is ObjectStore.MINIO:
             logger.info(
-                f"No storage class change required for MinIO bucket, object {path} restoration requested"
+                f"No storage class change required, object {path} restoration requested"
             )
             return True
-        if server != "AmazonS3":
-            logger.warning(f"Unexpected server type '{server}', restoring object {path} failed")
-            return False
+        response = tator_s3.head_object(path)
         if 'ongoing-request="true"' in response.get("Restore", ""):
             logger.info(f"Object {path} has an ongoing restoration request, skipping")
             return True
         try:
-            s3.restore_object(Bucket=bucket_name, Key=path, RestoreRequest={"Days": min_exp_days})
+            tator_s3.restore_object(path, min_exp_days)
         except:
             logger.warning(
                 f"Exception while requesting restoration of object {path}", exc_info=True
             )
-        response = s3.head_object(Bucket=bucket_name, Key=path)
+        response = tator_s3.head_object(path)
         if "ongoing-request" not in response.get("Restore", ""):
             logger.warning(f"Request to restore object {path} failed")
             return False
@@ -996,23 +978,16 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         bucket = obj.bucket
         tator_s3 = TatorS3(bucket)
-        s3 = tator_s3.s3
         bucket_name = tator_s3.bucket_name
         logger.info(f"Restoring object {path}")
-        response = s3.head_object(Bucket=bucket_name, Key=path)
-        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
-        if server == "MinIO":
+
+        if tator_s3.server is ObjectStore.MINIO:
             logger.info(f"No storage class change required for MinIO bucket, object {path} live")
             return True
-        if server == "AmazonS3":
-            key = f"{bucket_name}/{path}"
-        else:
-            logger.warning(f"Unexpected server type '{server}', restoring object {path} failed")
-            return False
 
         # Check the current state of the restoration request
         archive_sc = bucket.archive_sc
-        live_sc = bucket.live_sc
+        response = tator_s3.head_object(path)
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
@@ -1041,18 +1016,12 @@ class Resource(Model):
         # Then ongoing-request="false" must be in request_state, which means its storage class can
         # be modified
         try:
-            s3.copy_object(
-                CopySource={"Bucket": bucket_name, "Key": key},
-                Bucket=bucket_name,
-                Key=path,
-                StorageClass=live_sc,
-                MetadataDirective="COPY",
-            )
+            tator_s3.copy(path, path, {"MetadataDirective": "COPY", "StorageClass": bucket.live_sc})
         except:
             logger.warning(
                 f"Exception while changing storage class of object {path}", exc_info=True
             )
-        response = s3.head_object(Bucket=bucket_name, Key=path)
+        response = tator_s3.head_object(path)
         if response.get("StorageClass", "") == archive_sc:
             logger.warning(f"Storage class not changed for object {path}")
             return False
