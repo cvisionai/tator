@@ -253,7 +253,7 @@ media = {
         'archive_state': {
             'type': 'string',
             'description': 'The current archival state of the media.',
-            'enum': ['archive', 'to_archive', 'live', 'to_live']
+            'enum': ['archived', 'to_archive', 'live', 'to_live']
         },
     },
 }

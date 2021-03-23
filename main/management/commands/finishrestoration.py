@@ -63,7 +63,9 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         num_rr = 0
-        restoration_qs = Media.objects.filter(archive_state="to_live", restoration_requested=True)
+        restoration_qs = Media.objects.filter(
+            deleted=False, archive_state="to_live", restoration_requested=True
+        )
         if not restoration_qs.exists():
             logger.info(f"No media requiring restoration finalization!")
             return

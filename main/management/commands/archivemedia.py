@@ -18,7 +18,7 @@ def _archive_multi(multi):
         # No media associated with this multiview, consider it archived
         multi.archive_state = "archived"
         multi.save()
-        return 0
+        return 1
 
     media_qs = Media.objects.filter(pk__in=media_ids)
     multi_archived = [_archive_single(obj) for obj in media_qs]
@@ -70,7 +70,7 @@ class Command(BaseCommand):
         min_delta = datetime.timedelta(days=options["min_age_days"])
         max_datetime = datetime.datetime.now(datetime.timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
-            archive_state="to_archive", modified_datetime__lte=max_datetime
+            deleted=False, archive_state="to_archive", modified_datetime__lte=max_datetime
         )
         if not archived_qs.exists():
             logger.info(f"No media to archive!")

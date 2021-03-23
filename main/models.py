@@ -905,27 +905,41 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Archiving object {path}")
-        tator_s3 = TatorS3(obj.bucket)
+        bucket = obj.bucket
+        tator_s3 = TatorS3(bucket)
         s3 = tator_s3.s3
         bucket_name = tator_s3.bucket_name
         response = s3.head_object(Bucket=bucket_name, Key=path)
-        if response.get("StorageClass", "") is bucket.archive_sc:
+        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
+        logger.info(f"archive_resource detected server type '{server}'")
+        # S3 requires source key to include bucket name, but Minio does not.
+        if server == "MinIO":
+            logger.info(
+                f"No storage class change required for MinIO bucket, object {path} archived"
+            )
+            return True
+        if server == "AmazonS3":
+            key = f"{bucket_name}/{path}"
+        else:
+            logger.warning(f"Unexpected server type '{server}', archiving object {path} failed")
+            return False
+
+        archive_sc = bucket.archive_sc
+        if response.get("StorageClass", "") == archive_sc:
             logger.info(f"Object {path} already archived, skipping")
             return True
+        extra_args = {"StorageClass": archive_sc, "MetadataDirective": "COPY"}
+        copy_source = {"Bucket": bucket_name, "Key": key}
         try:
-            s3.copy(
-                {"Bucket": bucket_name, "Key": path},
-                bucket_name,
-                path,
-                ExtraArgs={"StorageClass": bucket.archive_sc, "MetadataDirective": "COPY"},
-            )
+            s3.copy_object(CopySource=copy_source, Bucket=bucket_name, Key=path, **extra_args)
         except:
             logger.warning(f"Exception while archiving object {path}", exc_info=True)
         response = s3.head_object(Bucket=bucket_name, Key=path)
-        if response.get("StorageClass", "") is not bucket.archive_sc:
+        if response.get("StorageClass", "") != archive_sc:
             logger.warning(f"Archiving object {path} failed")
             return False
         return True
+
 
     @transaction.atomic
     def request_restoration(path, min_exp_days):
@@ -943,7 +957,16 @@ class Resource(Model):
         s3 = tator_s3.s3
         bucket_name = tator_s3.bucket_name
         response = s3.head_object(Bucket=bucket_name, Key=path)
-        if 'ongoing-request="true"' in response.get("Request", ""):
+        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
+        if server == "MinIO":
+            logger.info(
+                f"No storage class change required for MinIO bucket, object {path} restoration requested"
+            )
+            return True
+        if server != "AmazonS3":
+            logger.warning(f"Unexpected server type '{server}', restoring object {path} failed")
+            return False
+        if 'ongoing-request="true"' in response.get("Restore", ""):
             logger.info(f"Object {path} has an ongoing restoration request, skipping")
             return True
         try:
@@ -953,7 +976,7 @@ class Resource(Model):
                 f"Exception while requesting restoration of object {path}", exc_info=True
             )
         response = s3.head_object(Bucket=bucket_name, Key=path)
-        if 'ongoing-request' not in response.get("Request", ""):
+        if "ongoing-request" not in response.get("Restore", ""):
             logger.warning(f"Request to restore object {path} failed")
             return False
         return True
@@ -971,23 +994,32 @@ class Resource(Model):
             media.save()
         """
         obj = Resource.objects.get(path=path)
-        tator_s3 = TatorS3(obj.bucket)
+        bucket = obj.bucket
+        tator_s3 = TatorS3(bucket)
         s3 = tator_s3.s3
         bucket_name = tator_s3.bucket_name
         logger.info(f"Restoring object {path}")
         response = s3.head_object(Bucket=bucket_name, Key=path)
+        server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
+        if server == "MinIO":
+            logger.info(f"No storage class change required for MinIO bucket, object {path} live")
+            return True
+        if server == "AmazonS3":
+            key = f"{bucket_name}/{path}"
+        else:
+            logger.warning(f"Unexpected server type '{server}', restoring object {path} failed")
+            return False
 
         # Check the current state of the restoration request
-        request_state = response.get("Request", "")
+        archive_sc = bucket.archive_sc
+        live_sc = bucket.live_sc
+        request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
             storage_class = response.get("StorageClass", "")
-            if storage_class == bucket.archive_sc:
+            if storage_class == archive_sc:
                 # Something went wrong with the original restoration request
-                logger.warning(
-                    f"Object {path} has no associated restoration request, requesting restoration"
-                )
-                Resource.request_restoration(path)
+                logger.warning(f"Object {path} has no associated restoration request")
                 return False
             if not storage_class:
                 # The resource was already restored
@@ -1009,21 +1041,23 @@ class Resource(Model):
         # Then ongoing-request="false" must be in request_state, which means its storage class can
         # be modified
         try:
-            s3.copy(
-                {"Bucket": bucket_name, "Key": path},
-                bucket_name,
-                path,
-                ExtraArgs={"StorageClass": bucket.live_sc, "MetadataDirective": "COPY"},
+            s3.copy_object(
+                CopySource={"Bucket": bucket_name, "Key": key},
+                Bucket=bucket_name,
+                Key=path,
+                StorageClass=live_sc,
+                MetadataDirective="COPY",
             )
         except:
             logger.warning(
                 f"Exception while changing storage class of object {path}", exc_info=True
             )
         response = s3.head_object(Bucket=bucket_name, Key=path)
-        if response.get("StorageClass", "") == bucket.archive_sc:
+        if response.get("StorageClass", "") == archive_sc:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         return True
+
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
