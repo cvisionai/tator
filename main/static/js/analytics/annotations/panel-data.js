@@ -3,14 +3,16 @@ class AnnotationPanelData extends HTMLElement {
         super();
     }
 
-    init(modelData) {
+    init( modelData ) {
+        // Connect to model for fetch calls
         this._modelData = modelData;
     }
 
     /*
     * Gets Media information for the localization
-    * - Saves it back to it's annotationObject
-    * - Would be cool if shows spinner then replaces it
+    * - Required information is what type of media (image/video/multi)
+    * - Other parts of media info used to get media image URL
+    * - Manipulate data here to provide that to page
     */
     async getMediaData(mediaId) {
         console.log("mediaId : "+mediaId);
@@ -28,6 +30,20 @@ class AnnotationPanelData extends HTMLElement {
 
         return mediaData;
     }
+
+    /* Future object to be returned like.... */
+    // Assumes we already have the loc coordinates
+    /*
+        {
+            mediaInfo : {
+                id : [int]
+                type : "image",
+                url : [ path to image ] 
+            }
+        }
+
+
+    */
 
 }
 

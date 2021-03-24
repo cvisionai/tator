@@ -1,4 +1,4 @@
-class EntityFormForPanel extends TatorElement {
+class EntityGalleryPanelForm extends TatorElement {
   constructor() {
     super();
 
@@ -62,7 +62,7 @@ class EntityFormForPanel extends TatorElement {
     if (!(data.entityType.id in this._attributeTypes)) {
 
       // #TODO This is a band-aid. We need to modify attribute-panel to not include
-      //       specific REST calls or utilize a modified form of the SettingsHelper
+      // specific REST calls or utilize a modified form of the SettingsHelper
       attributes = document.createElement("attribute-panel");
       this._div.appendChild(attributes);
 
@@ -82,4 +82,4 @@ class EntityFormForPanel extends TatorElement {
   }
 }
 
-customElements.define("entity-form-for-panel", EntityFormForPanel);
+customElements.define("entity-gallery-panel-form", EntityGalleryPanelForm);

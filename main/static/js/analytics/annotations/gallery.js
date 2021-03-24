@@ -70,14 +70,15 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    panelControls,
-    panelData,
-    pageModal
+    pageModal,
+    modelData
   }){
     this.panelContainer = panelContainer;
-    this.panelControls = panelControls;
-    this.panelData = panelData;
-    this.pageModal = pageModal
+    this.panelContainerEl = this.panelContainer.panelWrapper;
+    this.panelControls = this.panelContainer._panelTop;
+    this.panelData = this.panelContainer.data;
+    this.pageModal = pageModal;
+    this.modelData = modelData;
 
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
@@ -130,7 +131,7 @@ class AnnotationsGallery extends EntityCardGallery {
     if (id in this._currentCardIndexes) {
       var info = this._cardElements[this._currentCardIndexes[id]];
       info.card.setImage(image);
-      info.annotationPanel.setImage(image);
+      // info.annotationPanel.setImage(image);
     }
   }
 
@@ -163,10 +164,10 @@ class AnnotationsGallery extends EntityCardGallery {
         // Inner div of side panel
         let annotationPanelDiv = document.createElement("div");
         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-        this.panelContainer.appendChild(annotationPanelDiv);
+        this.panelContainerEl.appendChild(annotationPanelDiv);
 
         // Init a side panel that can be triggered from card
-        let annotationPanel = document.createElement("entity-attributes-panel");
+        let annotationPanel = document.createElement("entity-gallery-panel");
         annotationPanelDiv.appendChild(annotationPanel);
 
         // Update view
@@ -208,13 +209,11 @@ class AnnotationsGallery extends EntityCardGallery {
       this._currentCardIndexes[cardObj.id] = index;
 
       // Initialize the card panel
-      this._cardElements[index].annotationPanel.init({
-        cardObj, 
-        panelContainer: this.panelContainer, 
-        panelData : this.panelData, 
-        pageModal : this.pageModal
-      } );
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+      this._cardElements[index].annotationPanel.init({
+        cardObj
+      } );
+      
       
       // Initialize Card
       card.init({
