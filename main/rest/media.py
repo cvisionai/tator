@@ -67,36 +67,41 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
     raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")
 
 
-def _presign(expiration, medias, fields=['archival', 'streaming', 'audio', 'image',
-                                         'thumbnail', 'thumbnail_gif']):
+def _presign(expiration, medias, fields=None):
     """ Replaces specified media fields with presigned urls.
     """
     # First get resources referenced by the given media.
+    fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif"]
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
     s3_lookup = get_s3_lookup(resources)
 
     # Get replace all keys with presigned urls.
     for media_idx, media in enumerate(medias):
-        if media.get('media_files') is not None:
-            for field in fields:
-                if field in media['media_files']:
-                    for idx, media_def in enumerate(media['media_files'][field]):
-                        s3 = s3_lookup[media_def['path']]
-                        media_def['path'] = s3.get_download_url(media_def['path'], expiration)
-                        if field == 'streaming':
-                            if 'segment_info' in media_def:
-                                media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
-                                                                                expiration)
-                            else:
-                                logger.warning(f"No segment file in media {media['id']} for file "
-                                               f"{media_def['path']}!")
-                        medias[media_idx]['media_files'][field][idx] = media_def
-    return medias
+        if media.get("media_files") is None:
+            continue
+
+        for field in fields:
+            if field not in media["media_files"]:
+                continue
+
+            for idx, media_def in enumerate(media["media_files"][field]):
+                tator_s3 = s3_lookup[media_def["path"]]
+                media_def["path"] = tator_s3.get_download_url(media_def["path"], expiration)
+                if field == "streaming":
+                    if "segment_info" in media_def:
+                        media_def["segment_info"] = tator_s3.get_download_url(
+                            media_def["segment_info"], expiration
+                        )
+                    else:
+                        logger.warning(
+                            f"No segment file in media {media['id']} for file {media_def['path']}!"
+                        )
 
 def _save_image(url, media_obj, project_obj, role):
-    """ Downloads an image, uploads it to the appropriate S3 location, 
-        and returns an updated media object.
+    """
+    Downloads an image, uploads it to the appropriate S3 location and returns an updated media
+    object.
     """
     # Download the image file and load it.
     temp_image = tempfile.NamedTemporaryFile(delete=False)
@@ -108,14 +113,13 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    s3 = TatorS3(project_obj.bucket)
-    bucket_name = s3.bucket_name
+    tator_s3 = TatorS3(project_obj.bucket)
 
     # Upload image.
     if media_obj.media_files is None:
         media_obj.media_files = {}
     image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
-    s3.s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+    tator_s3.put_object(image_key, temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
                                     'resolution': [image.height, image.width],
@@ -159,7 +163,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            response_data = _presign(presigned, response_data)
+            _presign(presigned, response_data)
         return response_data
 
     def _post(self, params):
@@ -276,13 +280,11 @@ class MediaListAPI(BaseListView):
 
             # Set up S3 client.
             tator_s3 = TatorS3(project_obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
 
             if url:
                 # Upload image.
                 image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-                s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+                tator_s3.put_object(image_key, temp_image)
                 media_obj.media_files['image'] = [{'path': image_key,
                                                    'size': os.stat(temp_image.name).st_size,
                                                    'resolution': [media_obj.height, media_obj.width],
@@ -294,7 +296,7 @@ class MediaListAPI(BaseListView):
                 # Upload thumbnail.
                 thumb_format = image.format
                 thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
-                s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
+                tator_s3.put_object(thumb_key, temp_thumb)
                 media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                        'size': os.stat(temp_thumb.name).st_size,
                                                        'resolution': [thumb_height, thumb_width],

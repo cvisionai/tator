@@ -44,7 +44,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .s3 import TatorS3, ObjectStore, get_s3_lookup, get_s3_size
+from .s3 import TatorS3, ObjectStore, get_s3_lookup
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -836,26 +836,27 @@ class Media(Model, ModelDiffMixin):
         """
         total_size = 0
         download_size = None
+        if not self.media_files:
+            return (total_size, download_size)
+
         resources = Resource.objects.filter(media__in=[self])
         s3_lookup = get_s3_lookup(resources)
         s3_default = TatorS3(self.project.bucket)
-        if self.media_files:
-            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
-                if key in self.media_files:
-                    for media_def in self.media_files[key]:
-                        tator_s3 = s3_lookup.get(media_def['path'], s3_default)
-                        s3 = tator_s3.s3
-                        bucket_name = tator_s3.bucket_name
-                        size = get_s3_size(media_def['path'], s3, bucket_name)
-                        total_size += size
-                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
-                            download_size = size
-                        if key == 'streaming':
-                            try:
-                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
-                            except:
-                                logger.warning(f"Media {self.id} does not have a segment file "
-                                               f"definition {media_def['path']}!")
+
+        for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif"]:
+            if key not in self.media_files:
+                continue
+
+            for media_def in self.media_files[key]:
+                tator_s3 = s3_lookup.get(media_def["path"], s3_default)
+                s3 = tator_s3.s3
+                bucket_name = tator_s3.bucket_name
+                size = tator_s3.get_size(media_def["path"])
+                total_size += size
+                if key in ["archival", "streaming", "image"] and download_size is None:
+                    download_size = size
+                if key == "streaming":
+                    total_size += tator_s3.get_size(media_def['segment_info'])
         return (total_size, download_size)
 
 class Resource(Model):
@@ -887,9 +888,7 @@ class Resource(Model):
             logger.info(f"Deleting object {path}")
             obj.delete()
             tator_s3 = TatorS3(obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
-            s3.delete_object(Bucket=bucket_name, Key=path)
+            tator_s3.delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):

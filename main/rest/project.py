@@ -114,7 +114,7 @@ class ProjectDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        project = Project.objects.get(pk=params['id']) 
+        project = Project.objects.get(pk=params['id'])
         if 'name' in params:
             if Project.objects.filter(
                 membership__user=self.request.user).filter(name__iexact=params['name']).exists():
@@ -124,9 +124,7 @@ class ProjectDetailAPI(BaseDetailView):
             project.summary = params['summary']
         if 'thumb' in params:
             tator_s3 = TatorS3(project.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
-            s3.head_object(Bucket=bucket_name, Key=params['thumb'])
+            tator_s3.head_object(params["thumb"])
             project_from_key = int(params['thumb'].split('/')[1])
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")

@@ -62,38 +62,14 @@ class UploadInfoAPI(BaseDetailView):
         # Generate presigned urls.
         urls = []
         tator_s3 = TatorS3(project_obj.bucket)
-        s3 = tator_s3.s3
-        bucket_name = tator_s3.bucket_name
-        upload_id = ''
-        if num_parts == 1:
-            # Generate a presigned upload url.
-            url = s3.generate_presigned_url(ClientMethod='put_object',
-                                            Params={'Bucket': bucket_name,
-                                                    'Key': key},
-                                            ExpiresIn=expiration)
-            urls.append(url)
-        else:
-            # Initiate a multipart upload.
-            response = s3.create_multipart_upload(Bucket=bucket_name,
-                                                  Key=key)
-            upload_id = response['UploadId']
-
-            # Get a presigned URL for each part.
-            for part in range(num_parts):
-                url = s3.generate_presigned_url(ClientMethod='upload_part',
-                                                Params={'Bucket': bucket_name,
-                                                        'Key': key,
-                                                        'UploadId': upload_id,
-                                                        'PartNumber': part + 1},
-                                                ExpiresIn=expiration)
-                urls.append(url)
+        urls, upload_id = tator_s3.get_upload_urls(key, expiration, num_parts)
 
         # Replace host if external host is given.
-        if external_host and (project_obj.bucket is None):
-            for idx, url in enumerate(urls):
-                parsed = urlsplit(url)
-                parsed = parsed._replace(netloc=external_host, scheme=PROTO)
-                urls[idx] = urlunsplit(parsed)
+        if external_host and project_obj.bucket is None:
+            urls = [
+                urlunsplit(urlsplit(url)._replace(netloc=external_host, scheme=PROTO))
+                for url in urls
+            ]
 
         return {'urls': urls, 'key': key, 'upload_id': upload_id}
 
