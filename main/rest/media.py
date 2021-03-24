@@ -58,9 +58,6 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
         if last_archive_state == "live":
             return "to_archive"
         if last_archive_state == "to_live":
-            # TODO confirm behavior. None is a silent failure to change state, but does it make
-            # sense to raise a ValueError here? Better yet, do we check the restore_requested bool
-            # and conditionally archive|raise/None here?
             return None
         return None
 
@@ -558,11 +555,11 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = list(qs.values(*MEDIA_PROPERTIES))[0]
+        response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            response_data = _presign(presigned, [response_data])[0]
-        return response_data
+            _presign(presigned, response_data)
+        return response_data[0]
 
     @transaction.atomic
     def _patch(self, params):
