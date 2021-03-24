@@ -66,6 +66,7 @@ entity-gallery-aspect-ratio {
 
   &.aspect-true {
     img {
+      box-sizing: border-box;
       object-fit: contain !important;
       padding: 10px;
     }

@@ -71,14 +71,15 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    panelControls,
-    panelData,
-    pageModal
+    pageModal,
+    modelData
   }){
     this.panelContainer = panelContainer;
-    this.panelControls = panelControls;
-    this.panelData = panelData;
-    this.pageModal = pageModal
+    this.panelContainerEl = this.panelContainer.panelWrapper;
+    this.panelControls = this.panelContainer._panelTop;
+    this.panelData = this.panelContainer.data;
+    this.pageModal = pageModal;
+    this.modelData = modelData;
 
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
@@ -122,63 +123,16 @@ class AnnotationsGallery extends EntityCardGallery {
     this.makeCards(cardList.cards)
   }
 
-  // Accepts a cardList object and appends each card to the page web component
-  appendCardList(cardList){    
-    for(let cardObj of cardList){
-      let card = document.createElement("annotations-card");
-      
-      
-      // Resize Tool needs to change style within card on change
-      this._resizeCards._slideInput.addEventListener("change", (e) => {
-        let resizeValue = e.target.value;
-        let resizeValuePerc = parseFloat( resizeValue / 100 );
-        return card._img.style.height = `${130 * resizeValuePerc}px`;
-      });
-
-      // Inner div of side panel
-      let annotationPanelDiv = document.createElement("div");
-      annotationPanelDiv.setAttribute("class", "entity-panel--div hidden")
-      annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this.panelContainer.appendChild( annotationPanelDiv );
-
-      // Init a side panel that can be triggered from card
-      let annotationPanel = document.createElement("entity-attributes-panel");
-      annotationPanel.init( cardObj, this.panelContainer );
-      annotationPanelDiv.appendChild(annotationPanel);
-
-      // Update view
-      annotationPanelDiv.addEventListener("unselected", () => {
-        card._li.classList.remove("is-selected");
-        annotationPanelDiv.classList.remove("is-selected");
-        annotationPanelDiv.classList.add("hidden");
-        console.log(annotationPanelDiv.classList);
-        console.log("Hiding "+annotationPanelDiv.dataset.locId);
-      });
-
-      // Open panel if a card is clicked
-      card.addEventListener("click", () => {
-        // if the panel is closed and you click, open it...
-        console.log("attempting to call cardClicked");
-        this.panelControls.cardClicked();
-        console.log(this.panelControls);
-      });
-
-      // Listen for all clicks on the document
-      window.addEventListener('click', function (event) {
-        if (event.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
-          card._li.click();
-        }
-
-      }, false);
-
-      // Update view
-      this.addEventListener("view-change", (e) => {
-        card._li.classList.toggle("aspect-true");
-      });
-
-      // init and append card
-      card.init( cardObj, this.panelContainer, annotationPanelDiv);
-      this._ul.appendChild(card);
+  /**
+   * Updates the specific card's thumbnail image
+   * @param {integer} id
+   * @param {image} image
+   */
+  updateCardImage(id, image) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.card.setImage(image);
+      // info.annotationPanel.setImage(image);
     }
   }
 
@@ -211,10 +165,10 @@ class AnnotationsGallery extends EntityCardGallery {
         // Inner div of side panel
         let annotationPanelDiv = document.createElement("div");
         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-        this.panelContainer.appendChild(annotationPanelDiv);
+        this.panelContainerEl.appendChild(annotationPanelDiv);
 
         // Init a side panel that can be triggered from card
-        let annotationPanel = document.createElement("entity-attributes-panel");
+        let annotationPanel = document.createElement("entity-gallery-panel");
         annotationPanelDiv.appendChild(annotationPanel);
 
         // Update view
@@ -256,13 +210,11 @@ class AnnotationsGallery extends EntityCardGallery {
       this._currentCardIndexes[cardObj.id] = index;
 
       // Initialize the card panel
-      this._cardElements[index].annotationPanel.init({
-        cardObj, 
-        panelContainer: this.panelContainer, 
-        panelData : this.panelData, 
-        pageModal : this.pageModal
-      } );
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+      this._cardElements[index].annotationPanel.init({
+        cardObj
+      } );
+      
       
       // Initialize Card
       card.init({

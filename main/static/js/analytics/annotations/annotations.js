@@ -62,17 +62,13 @@ class AnalyticsAnnotations extends TatorPage {
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
+    this.aside = document.createElement("aside");
+    this.aside.setAttribute("class", "entity-panel-container col-3")
+    this.mainWrapper.appendChild(this.aside);
+
     // Gallery navigation panel
-    this._panelContainer = document.createElement("div");
-    this._panelContainer.setAttribute("class", "entity-panel--container col-3");
-    this.mainWrapper.appendChild(this._panelContainer);
-
-    // Close side panel bar with arrow and panel title
-    this._panelTop = document.createElement("entity-attr-panel-top");
-    this._panelContainer.appendChild(this._panelTop);
-
-    // listener to close panelContainer
-    this._panelTop._toggleRightOnClick( { lside: this.main, rside : this._panelContainer } );
+    this._panelContainer = document.createElement("annotations-panel-container");
+    this.aside.appendChild(this._panelContainer);
 
     //
     /* Other */
@@ -123,16 +119,14 @@ class AnalyticsAnnotations extends TatorPage {
         this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
       });
 
-      // Panel data creates a canvas to do view localizations in analysis view
-      this.annotationPanelData = document.createElement("annotation-panel-data");
-      this.annotationPanelData.init(this._modelData);
+      // Init panel side behavior
+      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal });
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
-        panelControls : this._panelTop,
         panelContainer : this._panelContainer,
-        panelData : this.annotationPanelData,
-        pageModal : this.modal
+        pageModal : this.modal,
+        modelData : this._modelData
       } );
 
       // Pass panel and localization types to gallery
@@ -142,7 +136,7 @@ class AnalyticsAnnotations extends TatorPage {
       } );
 
       // If state is stored in URL, update default states
-      //this.history._readQueryParams();
+      // this.history._readQueryParams();
 
       // Init Card Gallery and Right Panel
       this._cardGallery(this._filterParams, this._paginationState);
@@ -175,7 +169,7 @@ class AnalyticsAnnotations extends TatorPage {
 
   _cardGallery(filterParams, paginationState) {
     this.loading.showSpinner();
-    this.setAttribute("has-open-modal", "");
+    this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList(filterParams, paginationState)
@@ -183,7 +177,7 @@ class AnalyticsAnnotations extends TatorPage {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
       this.loading.hideSpinner();
-      this.removeAttribute("has-open-modal");
+      this.hideDimmer();
     });
   }
 
@@ -223,14 +217,12 @@ class AnalyticsAnnotations extends TatorPage {
     //this.history._handlePushState({ fp : this._filterParams, ps : this._paginationState});
   }
 
-  // Modal for this page, and handlers
+  // Page dimmer handler
   showDimmer(){
-    console.log("Modal opened!");
     return this.setAttribute("has-open-modal", "");
   }
 
   hideDimmer(){
-    console.log("Modal closed!");
     return this.removeAttribute("has-open-modal");
   }
 
