@@ -225,6 +225,14 @@ class Organization(Model):
     def __str__(self):
         return self.name
 
+class Invitation(Model):
+    email = EmailField()
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    permission = CharField(max_length=16,
+                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
+                           default='Member')
+    signup_token = UUIDField(primary_key=False, db_index=True, editable=False, default=uuid.uuid1)
+
 class TatorUserManager(UserManager):
     def get_or_create_for_cognito(self, payload):
         cognito_id = payload['sub']
