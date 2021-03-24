@@ -305,6 +305,13 @@ class Invitation(Model):
                        default='Pending')
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    if created:
+        invites = Invitation.objects.filter(email=instance.email)
+        if invites.count() == 0:
+            organization = organization.objects.create(name=f"{instance}'s Team")
+            Affiliation.objects.create(organization=organization,
+                                       user=instance,
+                                       permission='Admin')
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
