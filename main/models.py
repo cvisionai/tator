@@ -225,14 +225,6 @@ class Organization(Model):
     def __str__(self):
         return self.name
 
-class Invitation(Model):
-    email = EmailField()
-    organization = ForeignKey(Organization, on_delete=CASCADE)
-    permission = CharField(max_length=16,
-                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
-                           default='Member')
-    signup_token = UUIDField(primary_key=False, db_index=True, editable=False, default=uuid.uuid1)
-
 class TatorUserManager(UserManager):
     def get_or_create_for_cognito(self, payload):
         cognito_id = payload['sub']
@@ -300,6 +292,19 @@ def user_save(sender, instance, created, **kwargs):
             instance.move_to_cognito()
         else:
             TatorCognito().update_attributes(instance)
+class Invitation(Model):
+    email = EmailField()
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    permission = CharField(max_length=16,
+                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
+                           default='Member')
+    signup_token = UUIDField(primary_key=False, db_index=True, editable=False, default=uuid.uuid1)
+    status = CharField(max_length=16,
+                       choices=[('Pending', 'Pending'), ('Expired', 'Expired'),
+                                ('Accepted', 'Accepted')],
+                       default='Pending')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
