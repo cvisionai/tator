@@ -123,11 +123,14 @@ class ProjectDetailAPI(BaseDetailView):
         if 'summary' in params:
             project.summary = params['summary']
         if 'thumb' in params:
-            tator_s3 = TatorS3(project.bucket)
-            tator_s3.head_object(params["thumb"])
             project_from_key = int(params['thumb'].split('/')[1])
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")
+
+            tator_s3 = TatorS3(project.bucket)
+            if not tator_s3.check_key(params["thumb"]):
+                raise ValueError(f"Key {params['thumb']} not found in bucket")
+
             if project.thumb:
                 safe_delete(project.thumb)
             project.thumb = params['thumb']

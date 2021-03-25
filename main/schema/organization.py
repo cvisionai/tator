@@ -45,7 +45,6 @@ class OrganizationListSchema(AutoSchema):
                 'schema': {'$ref': '#/components/schemas/OrganizationSpec'},
                 'example': {
                     'name': 'My Organization',
-                    'summary': 'First organization',
                 },
             }}}
         return body

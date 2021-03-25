@@ -849,8 +849,6 @@ class Media(Model, ModelDiffMixin):
 
             for media_def in self.media_files[key]:
                 tator_s3 = s3_lookup.get(media_def["path"], s3_default)
-                s3 = tator_s3.s3
-                bucket_name = tator_s3.bucket_name
                 size = tator_s3.get_size(media_def["path"])
                 total_size += size
                 if key in ["archival", "streaming", "image"] and download_size is None:
@@ -977,7 +975,6 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         bucket = obj.bucket
         tator_s3 = TatorS3(bucket)
-        bucket_name = tator_s3.bucket_name
         logger.info(f"Restoring object {path}")
 
         if tator_s3.server is ObjectStore.MINIO:

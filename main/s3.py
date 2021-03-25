@@ -5,6 +5,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 from botocore.client import Config
+from botocore.errorfactory import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +58,21 @@ class TatorS3:
         self._server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
 
         if self._server in [ObjectStore.AWS]:
-            self._path_to_key = lambda path: f"{self.bucket_name}/{path}"
+            self._path_to_key = self._aws_path_to_key
         elif self._server in [ObjectStore.MINIO]:
             self._path_to_key = lambda path: path
+
+    def _aws_path_to_key(self, path):
+        if "upload" in path:
+            return path
+        return f"{self.bucket_name}/{path}"
 
     @property
     def server(self):
         return self._server
+
+    def check_key(self, path):
+        return self.list_objects_v2(self._path_to_key(path))["KeyCount"] > 0
 
     def head_object(self, path):
         return self.s3.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
@@ -108,24 +117,25 @@ class TatorS3:
         return url
 
     def get_upload_urls(self, path, expiration, num_parts):
+        key = self._path_to_key(path)
         if num_parts == 1:
             upload_id = ""
             urls = [
                 self.s3.generate_presigned_url(
                     ClientMethod="put_object",
-                    Params={"Bucket": self.bucket_name, "Key": path},
+                    Params={"Bucket": self.bucket_name, "Key": key},
                     ExpiresIn=expiration,
                 )
             ]
         else:
-            response = self.s3.create_multipart_upload(Bucket=self.bucket_name, Key=path)
+            response = self.s3.create_multipart_upload(Bucket=self.bucket_name, Key=key)
             upload_id = response["UploadId"]
             urls = [
                 self.s3.generate_presigned_url(
                     ClientMethod="upload_part",
                     Params={
                         "Bucket": self.bucket_name,
-                        "Key": path,
+                        "Key": key,
                         "UploadId": upload_id,
                         "PartNumber": part,
                     },
@@ -140,7 +150,7 @@ class TatorS3:
         size = 0
         try:
             response = self.head_object(path)
-        except:
+        except ClientError:
             logger.warning(f"Could not find object {path}!")
         else:
             size = response["ContentLength"]
@@ -149,20 +159,25 @@ class TatorS3:
 
     def list_objects_v2(self, prefix=None, **kwargs):
         if prefix is not None:
-            kwargs["Prefix"] = self._path_to_key(prefix)
+            kwargs["Prefix"] = prefix
 
         return self.s3.list_objects_v2(Bucket=self.bucket_name, **kwargs)
 
-    def complete_multipart_upload(self, key, parts, upload_id):
+    def complete_multipart_upload(self, path, parts, upload_id):
         return self.s3.complete_multipart_upload(
             Bucket=self.bucket_name,
-            Key=key,
+            Key=self._path_to_(path),
             MultipartUpload={"Parts": parts},
             UploadId=upload_id,
         )
 
-    def put_object(self, key, body):
-        return self.s3.put_object(Bucket=self.bucket_name, Key=key, Body=body)
+    def put_object(self, path, body):
+        return self.s3.put_object(Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body)
+
+    def get_object(self, path, byte_range):
+        return self.s3.get_object(
+            Bucket=self.bucket_name, Key=self._path_to_key(path), Range=byte_range
+        )
 
     def download_fileobj(self, path, fp):
         self.s3.download_fileobj(self.bucket_name, self._path_to_key(path), fp)

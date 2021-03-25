@@ -60,7 +60,6 @@ class UploadInfoAPI(BaseDetailView):
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
 
         # Generate presigned urls.
-        urls = []
         tator_s3 = TatorS3(project_obj.bucket)
         urls, upload_id = tator_s3.get_upload_urls(key, expiration, num_parts)
 
