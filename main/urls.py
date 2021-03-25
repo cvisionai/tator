@@ -169,6 +169,12 @@ urlpatterns += [
     path('rest/ImageFile/<int:id>',
          ImageFileDetailAPI.as_view(),
     ),
+    path('rest/Invitations/<int:organization>',
+         InvitationListAPI.as_view(),
+    ),
+    path('rest/Invitation/<int:id>',
+         InvitationDetailAPI.as_view(),
+    ),
     path(
         'rest/Jobs/<int:project>',
         JobListAPI.as_view(),

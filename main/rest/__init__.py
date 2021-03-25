@@ -23,6 +23,8 @@ from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .image_file import ImageFileListAPI
 from .image_file import ImageFileDetailAPI
+from .invitation import InvitationListAPI
+from .invitation import InvitationDetailAPI
 from .job import JobListAPI
 from .job import JobDetailAPI
 from .job_cluster import JobClusterListAPI

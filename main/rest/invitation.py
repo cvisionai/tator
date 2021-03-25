@@ -1,0 +1,101 @@
+import uuid
+import logging
+
+from django.db import transaction
+from django.conf import settings
+from django.http import Http404
+
+from ..models import Invitation
+from ..models import Organization
+from ..models import User
+from ..schema import InvitationListSchema
+from ..schema import InvitationDetailSchema
+from ..schema.components import invitation as invitation_schema
+from ..ses import TatorSES
+
+from ._base_views import BaseListView
+from ._base_views import BaseDetailView
+from ._permissions import OrganizationAdminPermission
+
+logger = logging.getLogger(__name__)
+
+INVITATION_PROPERTIES = list(invitation_schema['properties'].keys())
+
+class InvitationListAPI(BaseListView):
+    """ Create or retrieve a list of project invitations.
+    """
+    schema = InvitationListSchema()
+    permission_classes = [OrganizationAdminPermission]
+    http_method_names = ['get', 'post']
+
+    def _get(self, params):
+        invites = Invitation.objects.filter(organization=params['organization'])
+        return list(invites.values(*INVITATION_PROPERTIES))
+
+    def _post(self, params):
+        organization = params['organization']
+        email = params['email']
+        permission = params['permission']
+
+        organization = Organization.objects.get(pk=params['organization'])
+        existing = Invitation.objects.filter(organization=organization, email=email, status='Pending')
+        if existing.exists():
+            raise RuntimeError(f"Pending invitation already exists for organization {organization}, email {email}!")
+        users = User.objects.filter(email=email)
+        if users.count() > 0:
+            raise RuntimeError(f"User already exists with email {email}!")
+        else:
+            invite = Invitation(organization=organization,
+                                email=email,
+                                permission=permission,
+                                created_by=self.request.user,
+                                registration_token=uuid.uuid1())
+            url = f"{os.getenv('MAIN_HOST')}/registration?registration_token={invite.registration_token}"
+            if settings.TATOR_EMAIL_ENABLED:
+                email_response = TatorSES().email(
+                    sender=settings.TATOR_EMAIL_SENDER,
+                    recipients=[email],
+                    title=f"Tator invitation from {organization}",
+                    text=f"You have been invited to collaborate with {organization} using Tator. "
+                         f"To create an account, please visit: \n\n{url}",
+                    html=None,
+                    attachments=[])
+                if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                    logger.error(email_response)
+                    raise ValueError(f"Unable to send email to {email}! Invitation creation failed.")
+            invite.save()
+        return {'message': f"User can register at {url}",
+                'id': invitation.id}
+
+    def get_queryset(self):
+        organization_id = self.kwargs['organization']
+        invites = Invitation.objects.filter(organization=organization_id)
+        return invites
+
+class InvitationDetailAPI(BaseDetailView):
+    """ Interact with an individual invitation.
+    """
+    schema = InvitationDetailSchema()
+    permission_classes = [OrganizationAdminPermission]
+    lookup_field = 'id'
+    http_method_names = ['get', 'patch', 'delete']
+
+    def _get(self, params):
+        invites = Invitation.objects.filter(pk=params['id'])
+        if invites.count() == 0:
+            raise Http404
+        return list(invites.values(*INVITATION_PROPERTIES))[0]
+
+    def _patch(self, params):
+        invitation = Invitation.objects.get(pk=params['id']) 
+        if 'status' in params:
+            invitation.status = params['status']
+        invitation.save()
+        return {'message': f"Invitation {params['id']} successfully updated!"}
+
+    def _delete(self, params):
+        Invitation.objects.get(pk=params['id']).delete()
+        return {'message': f'Invitation {params["id"]} successfully deleted!'}
+
+    def get_queryset(self):
+        return Invitation.objects.all()

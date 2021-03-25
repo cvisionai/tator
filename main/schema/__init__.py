@@ -24,6 +24,8 @@ from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .image_file import ImageFileListSchema
 from .image_file import ImageFileDetailSchema
+from .invitation import InvitationListSchema
+from .invitation import InvitationDetailSchema
 from .job import JobListSchema
 from .job import JobDetailSchema
 from .job_cluster import JobClusterListSchema
