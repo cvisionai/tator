@@ -525,6 +525,7 @@ class TatorSearch:
             aux['_md5'] = entity.md5
             aux['_gid'] = entity.gid
             aux['_uid'] = entity.uid
+            aux['_archive_state'] = entity.archive_state
 
             # Get total size and download size of this file.
             total_size, download_size = entity.get_file_sizes()

@@ -43,14 +43,12 @@ class MediaUtil:
                     if delta < max_delta:
                         quality_idx = idx
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            tator_s3 = s3_lookup[self._video_file]
-            self._s3 = tator_s3.s3
-            self._bucket_name = tator_s3.bucket_name
+            self._s3 = s3_lookup[self._video_file]
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
             f_p = io.BytesIO()
-            self._s3.download_fileobj(self._bucket_name, segment_file, f_p)
+            self._s3.download_fileobj(segment_file, f_p)
             self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
             self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
                                                           ['segments']) if x['name'] == 'moof']
@@ -65,9 +63,7 @@ class MediaUtil:
                         quality_idx = idx
             # Image
             self._video_file = video.media_files["image"][quality_idx]["path"]
-            tator_s3 = s3_lookup[self._video_file]
-            self._s3 = tator_s3.s3
-            self._bucket_name = tator_s3.bucket_name
+            self._s3 = s3_lookup[self._video_file]
             self._height = video.height
             self._width = video.width
         else:
@@ -181,9 +177,7 @@ class MediaUtil:
                 for scatter in sc_graph:
                     start = scatter[0]
                     stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
-                    response = self._s3.get_object(Bucket=self._bucket_name,
-                                                   Key=self._video_file,
-                                                   Range=f'bytes={start}-{stop}')
+                    response = self._s3.get_object(self._video_file, f"bytes={start}-{stop}")
                     out_fp.write(response['Body'].read())
 
         return lookup, segment_info
@@ -328,7 +322,7 @@ class MediaUtil:
         lower = upper + roi[1] * self._height
 
         out = io.BytesIO()
-        self._s3.download_fileobj(self._bucket_name, self._video_file, out)
+        self._s3.download_fileobj(self._video_file, out)
         out.seek(0)
         img = Image.open(out)
         img = img.crop((left, upper, right, lower))

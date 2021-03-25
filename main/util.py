@@ -25,6 +25,13 @@ from elasticsearch.helpers import streaming_bulk
 
 logger = logging.getLogger(__name__)
 
+def upload_prefix_from_project(project):
+    """
+    TatorS3 depends on the keyword `upload` being the third token in the key path for uploaded
+    objects; see main/s3.py for details
+    """
+    return f"{project.organization.pk}/{project.pk}/upload"
+
 """ Utility scripts for data management in django-shell """
 
 def clearDataAboutMedia(id):
@@ -46,8 +53,9 @@ def updateProjectTotals(force=False):
     for project in projects:
         temp_files = TemporaryFile.objects.filter(project=project)
         files = Media.objects.filter(project=project)
-        if (files.count() + temp_files.count() != project.num_files) or force:
-            project.num_files = files.count() + temp_files.count()
+        num_files = temp_files.count() + files.count()
+        if force or num_files != project.num_files:
+            project.num_files = num_files
             duration_info = files.values('num_frames', 'fps')
             project.duration = sum([info['num_frames'] / info['fps'] for info in duration_info
                                     if info['num_frames'] and info['fps']])
@@ -57,24 +65,11 @@ def updateProjectTotals(force=False):
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
                 tator_s3 = TatorS3(project.bucket)
-                s3 = tator_s3.s3
-                bucket_name = tator_s3.bucket_name
-                if 'thumbnail' in media.media_files:
-                    if len(media.media_files['thumbnail']) > 0:
-                        src_key = media.media_files['thumbnail'][0]['path']
-                        fname = os.path.basename(src_key)
-                        dest_key = f"{project.organization.pk}/{project.pk}/{fname}"
-                        try:
-                            # S3 requires source key to include bucket name.
-                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                           CopySource={'Bucket': bucket_name,
-                                                       'Key': f"{bucket_name}/{src_key}"})
-                        except:
-                            # Minio requires source key to not include bucket name.
-                            s3.copy_object(Bucket=bucket_name, Key=dest_key,
-                                           CopySource={'Bucket': bucket_name,
-                                                       'Key': src_key})
-                        project.thumb = dest_key
+                if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
+                    src_path = media.media_files['thumbnail'][0]['path']
+                    dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
+                    tator_s3.copy(src_path, dest_path)
+                    project.thumb = dest_path
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
         usernames = [str(user) for user in users]
@@ -291,33 +286,32 @@ def cleanup_object_uploads(max_age_days=1):
     items = Project.objects.values('bucket', 'pk')
     now = datetime.datetime.now(datetime.timezone.utc)
     for item in items:
-        bucket = Bucket.objects.get(pk=item['bucket'])
-        tator_s3 = TatorS3(bucket)
-        s3 = tator_s3.s3
-        bucket_name = tator_s3.bucket_name
-        project = Project.objects.get(pk=item['project'])
+        project = Project.objects.get(pk=item["pk"])
+
         logger.info(f"Searching project {project.id} | {project.name} for stale uploads...")
         if project.organization is None:
             logger.info(f"Skipping because this project has no organization!")
             continue
-        prefix = f"{project.organization.pk}/{project.pk}/upload/"
-        after = None
+
+        bucket = Bucket.objects.get(pk=item["bucket"]) if item["bucket"] else None
+        tator_s3 = TatorS3(bucket)
+
+        prefix = upload_prefix_from_project(project)
+        last_key = None
         num_deleted = 0
         while True:
-            kwargs = {'Bucket': bucket_name,
-                      'Prefix': prefix}
-            if after:
-                kwargs['StartAfter'] = after
-            response = s3.list_objects_v2(**kwargs)
-            if response['KeyCount'] == 0:
+            kwargs = {}
+            if last_key:
+                kwargs["StartAfter"] = last_key
+            response = tator_s3.list_objects_v2(prefix, **kwargs)
+            if response["KeyCount"] == 0:
                 break
-            keys = [item['Key'] for item in response['Contents']]
-            ages = [now - item['LastModified'] for item in response['Contents']]
-            after = keys[-1]
-            for key, age in zip(keys, ages):
-                not_resource = Resource.objects.filter(path=key).count() == 0
-                if (age > datetime.timedelta(days=max_age_days)) and not_resource:
-                    s3.delete_object(Bucket=bucket_name, Key=key)
+            key_age_list = [(obj["Key"], now - obj["LastModified"]) for obj in response["Contents"]]
+            last_key = key_age_list[-1][0]
+            for key, age in key_age_list:
+                not_resource = not Resource.objects.filter(path=key).exists()
+                if age > datetime.timedelta(days=max_age_days) and not_resource:
+                    tator_s3.delete_object(key)
                     num_deleted += 1
         logger.info(f"Deleted {num_deleted} objects in project {project.id}!")
     logger.info("Object cleanup finished!")

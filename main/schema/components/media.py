@@ -165,6 +165,13 @@ media_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval. Media may not be set directly '
+                           'to `live` or `archived`, the system performs that transition for the '
+                           'user.',
+            'enum': ['to_archive', 'to_live']
+        },
         'ids': {
             'description': 'Specific IDs to update. This is applied in addition to query '
                            'parameters.',
@@ -200,6 +207,13 @@ media_update = {
             'type': 'integer',
         },
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval. Media may not be set directly '
+                           'to `live` or `archived`, the system performs that transition for the '
+                           'user.',
+            'enum': ['to_archive', 'to_live']
+        },
     },
 }
 
@@ -240,5 +254,10 @@ media = {
     'properties': {
         **media_properties,
         **media_get_properties,
+        'archive_state': {
+            'type': 'string',
+            'description': 'The current archival state of the media.',
+            'enum': ['archived', 'to_archive', 'live', 'to_live']
+        },
     },
 }
